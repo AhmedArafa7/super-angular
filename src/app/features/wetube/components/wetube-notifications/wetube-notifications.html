@@ -1,0 +1,18 @@
+<div class="notifications-container">
+  <h1>الإشعارات</h1>
+  <div class="notifications-list">
+    <div *ngFor="let notif of notifications" class="notification-item" [class.unread]="!notif.read">
+      <div class="notif-icon" [ngSwitch]="notif.type">
+        <lucide-icon *ngSwitchCase="'video'" [img]="Video"></lucide-icon>
+        <lucide-icon *ngSwitchCase="'comment'" [img]="Bell"></lucide-icon>
+        <lucide-icon *ngSwitchCase="'subscribe'" [img]="User"></lucide-icon>
+      </div>
+      <div class="notif-content">
+        <p class="notif-channel">{{ notif.channel }}</p>
+        <p class="notif-message">{{ notif.message }}</p>
+        <p class="notif-time">{{ notif.time }}</p>
+      </div>
+      <div *ngIf="!notif.read" class="unread-dot"></div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,412 @@
+<div class="h-[calc(100vh-6rem)] flex flex-col text-white overflow-hidden animate-in fade-in duration-700 font-sans text-right" dir="rtl">
+
+  <!-- 1. HEADER BAR -->
+  <header class="p-8 border-b border-white/5 bg-slate-900/10 shrink-0 space-y-2">
+    <div class="inline-flex items-center gap-2 px-4 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full mb-2 flex-row-reverse">
+      <svg lucideIcon="sparkles" class="size-3 text-indigo-400 animate-pulse"></svg>
+      <span class="text-[9px] uppercase font-black text-indigo-400 tracking-widest leading-none">System Preferences v2.0</span>
+    </div>
+    <h2 class="text-3xl font-black text-white tracking-tighter flex items-center gap-3 justify-start flex-row-reverse">
+      <svg lucideIcon="settings" class="text-indigo-400 size-8"></svg>
+      الإعدادات المركزية
+    </h2>
+    <p class="text-xs text-slate-500 font-bold uppercase tracking-widest leading-none">
+      تحكم في بروتوكولات النظام، الواجهة، ومحركات الكلام العصبية ⚙️
+    </p>
+  </header>
+
+  <!-- 2. SCROLLABLE CONTAINER -->
+  <div class="flex-1 p-8 overflow-y-auto space-y-8 bg-slate-950/20">
+    <div class="max-w-6xl mx-auto space-y-8 pb-24">
+
+      <!-- CARD A: REPORTING WeTube Pro SAVINGS -->
+      <div class="glass p-8 rounded-[2.5rem] border border-white/5 bg-indigo-500/5 relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
+        
+        <div class="flex flex-col md:flex-row-reverse justify-between gap-6 items-start">
+          <div class="text-right space-y-1">
+            <div class="flex items-center gap-2 justify-end mb-1">
+              <span class="bg-gradient-to-r from-amber-400 to-orange-500 text-black px-2.5 py-0.5 rounded-lg font-black text-[9px] uppercase tracking-tighter shadow-lg shadow-orange-500/20">Pro Max Active</span>
+              <h3 class="text-2xl font-black text-white flex items-center gap-3 flex-row-reverse">
+                <svg lucideIcon="activity" class="text-indigo-400 size-7"></svg>
+                تقرير التوفير الذكي
+              </h3>
+            </div>
+            <p class="text-[10px] text-slate-500 font-bold">مراقبة حية لاستهلاك البيانات وفعالية WeTube Pro.</p>
+          </div>
+
+          <div class="flex items-center gap-6 bg-black/30 p-4 rounded-3xl border border-white/5 shrink-0 flex-row-reverse">
+            <div class="text-center px-4 border-r border-white/10">
+              <span class="text-[9px] text-slate-500 font-bold uppercase block">إجمالي التوفير</span>
+              <span class="text-2xl font-black text-indigo-450 font-mono tracking-tight">{{ settingsService.totalSavedMB() | number:'1.2-2' }}MB</span>
+            </div>
+            <div class="text-center px-4">
+              <span class="text-[9px] text-slate-500 font-bold uppercase block">جلسات نشطة</span>
+              <span class="text-2xl font-black text-white font-mono tracking-tight">{{ settingsService.usageLog().length }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Latest Consumption Log Lists -->
+        <div class="mt-8 space-y-4">
+          <div class="flex items-center justify-between flex-row-reverse text-[9px] uppercase font-black tracking-widest text-slate-500 px-2">
+            <span>آخر النشاطات وجلسات البث</span>
+            <button (click)="clearProLogs()" class="hover:text-red-400 text-slate-650 transition-colors">✕ مسح السجل</button>
+          </div>
+          
+          <div class="space-y-3 max-h-[220px] overflow-y-auto pr-1">
+            <div 
+              *ngIf="settingsService.usageLog().length === 0"
+              class="text-center py-10 text-slate-500 italic border-2 border-dashed border-white/5 rounded-3xl text-xs">
+              لا يوجد بيانات استهلاك مسجلة حالياً.
+            </div>
+
+            <div 
+              *ngFor="let log of settingsService.usageLog()" 
+              class="bg-white/5 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-white/5 hover:border-indigo-500/20 transition-all">
+              
+              <div class="flex items-center gap-4 flex-row-reverse">
+                <div class="size-10 bg-indigo-500/20 rounded-xl flex items-center justify-center shrink-0">
+                  <svg lucideIcon="play" class="size-4 text-indigo-400" fill="currentColor"></svg>
+                </div>
+                <div class="text-right">
+                  <p class="text-xs font-black text-white truncate max-w-[200px]">{{ log.videoId }}</p>
+                  <span class="text-[9px] text-slate-500 font-bold font-mono">{{ log.timestamp | date:'shortTime' }}</span>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-6 justify-between sm:justify-end flex-wrap text-center flex-row-reverse">
+                <div>
+                  <span class="text-[8px] text-slate-500 block font-bold uppercase leading-none mb-1">الدقة</span>
+                  <div class="border border-white/15 text-[9px] px-2 py-0.5 rounded-md font-bold">{{ log.quality }}</div>
+                </div>
+                <div>
+                  <span class="text-[8px] text-slate-500 block font-bold uppercase leading-none mb-1">مستهلك</span>
+                  <span class="text-xs font-mono font-black text-orange-400">{{ (log.bytesConsumed / 1024 / 1024) | number:'1.1-1' }}MB</span>
+                </div>
+                <div>
+                  <span class="text-[8px] text-slate-500 block font-bold uppercase leading-none mb-1">موفّر</span>
+                  <span class="text-xs font-mono font-black text-emerald-450">{{ (log.bytesSaved / 1024 / 1024) | number:'1.1-1' }}MB</span>
+                </div>
+                <div>
+                  <span class="text-[8px] text-slate-500 block font-bold uppercase leading-none mb-1">طريقة الضغط</span>
+                  <span 
+                    [ngClass]="log.method === 'cache' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-indigo-500/20 text-indigo-400'"
+                    class="text-[9px] font-black uppercase py-0.5 px-2 rounded-md">
+                    {{ log.method }}
+                  </span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- MAIN CONTROLLERS LAYOUT GRID -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- COLUMN 1: GENERAL CONTROLS -->
+        <div class="lg:col-span-1 space-y-6">
+          
+          <div class="glass border border-white/5 p-6 rounded-[2rem] space-y-6">
+            <h3 class="text-base font-black text-white flex items-center gap-2 justify-start flex-row-reverse">
+              <svg lucideIcon="globe" class="size-5 text-indigo-400"></svg>
+              الواجهة واللغة
+            </h3>
+            
+            <div class="space-y-4 text-right">
+              
+              <!-- Language Select -->
+              <div class="space-y-2">
+                <label class="text-[9px] uppercase font-black text-slate-500 tracking-widest">لغة الواجهة</label>
+                <select 
+                  [ngModel]="settingsService.language()"
+                  (ngModelChange)="setLanguage($event)"
+                  class="w-full bg-white/5 border border-white/10 h-12 px-4 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
+                  <option value="ar" class="bg-slate-900">العربية (الافتراضية)</option>
+                  <option value="en" class="bg-slate-900">English (Neural translation)</option>
+                </select>
+              </div>
+
+              <!-- Theme Style -->
+              <div class="space-y-2">
+                <label class="text-[9px] uppercase font-black text-slate-500 tracking-widest block">نمط وثيم التصميم</label>
+                <div class="grid grid-cols-3 gap-2">
+                  <button 
+                    (click)="setTheme('dark')"
+                    [ngClass]="settingsService.theme() === 'dark' ? 'bg-indigo-650 text-white font-bold border-indigo-500' : 'bg-white/5 text-slate-400 hover:text-white border-transparent'"
+                    class="rounded-xl h-20 flex flex-col gap-2 items-center justify-center border text-[10px] font-black">
+                    <svg lucideIcon="moon" class="size-4.5"></svg>
+                    داكن
+                  </button>
+                  <button 
+                    (click)="setTheme('neural')"
+                    [ngClass]="settingsService.theme() === 'neural' ? 'bg-indigo-650 text-white font-bold border-indigo-500' : 'bg-white/5 text-slate-400 hover:text-white border-transparent'"
+                    class="rounded-xl h-20 flex flex-col gap-2 items-center justify-center border text-[10px] font-black">
+                    <svg lucideIcon="zap" class="size-4.5 text-yellow-450 animate-pulse"></svg>
+                    عصبي
+                  </button>
+                  <button 
+                    (click)="setTheme('light')"
+                    [ngClass]="settingsService.theme() === 'light' ? 'bg-indigo-650 text-white font-bold border-indigo-500' : 'bg-white/5 text-slate-400 hover:text-white border-transparent'"
+                    class="rounded-xl h-20 flex flex-col gap-2 items-center justify-center border text-[10px] font-black">
+                    <div class="size-4.5 rounded-full border-2 border-current"></div>
+                    مضيء
+                  </button>
+                </div>
+              </div>
+
+              <!-- Hide Music switches -->
+              <div class="space-y-2 pt-4 border-t border-white/5 flex items-center justify-between flex-row-reverse">
+                <label class="text-[10px] font-bold text-white text-right leading-relaxed flex-1 pr-3">
+                  تصفية الموسيقى
+                  <span class="text-[8px] text-slate-500 font-bold block mt-1">تصفية وإخفاء الفيديوهات التي تحتوي على موسيقى.</span>
+                </label>
+                <input 
+                  type="checkbox"
+                  [ngModel]="settingsService.hideMusic()"
+                  (ngModelChange)="toggleMusicFilter($event)"
+                  class="size-5 rounded bg-white/5 border border-white/10 accent-indigo-500 shrink-0"
+                />
+              </div>
+
+              <!-- Floating shortcuts switches -->
+              <div class="space-y-2 pt-4 border-t border-white/5 flex items-center justify-between flex-row-reverse">
+                <label class="text-[10px] font-bold text-white text-right leading-relaxed flex-1 pr-3">
+                  عائمة سريعة
+                  <span class="text-[8px] text-slate-500 font-bold block mt-1">تحويل الشريط الجانبي لعائم سريع تلقائياً.</span>
+                </label>
+                <input 
+                  type="checkbox"
+                  [ngModel]="settingsService.sidebarIconShortcutEnabled()"
+                  (ngModelChange)="toggleSidebarShortcut($event)"
+                  class="size-5 rounded bg-white/5 border border-white/10 accent-indigo-500 shrink-0"
+                />
+              </div>
+
+            </div>
+          </div>
+
+          <!-- DANGER ZONE CARD -->
+          <div class="glass border border-red-500/20 bg-red-500/5 p-6 rounded-[2rem] space-y-4">
+            <div class="flex items-center justify-between flex-row-reverse">
+              <h3 class="text-sm font-black text-red-400 flex items-center gap-2">
+                <svg lucideIcon="shield-alert" class="size-4"></svg>
+                منطقة التطهير
+              </h3>
+              <div class="border border-red-500/30 text-red-500 text-[8px] px-1.5 py-0.5 rounded-md font-bold uppercase">Destroy</div>
+            </div>
+            <p class="text-[10px] text-red-400/70 text-right leading-relaxed">
+              سيتم تطهير كافة الإعدادات والملفات المؤقتة المسجلة في المتصفح وإعادتها فوراً للقيم الافتراضية.
+            </p>
+            <button 
+              (click)="handlePurgeData()"
+              class="w-full h-11 rounded-xl bg-red-500/10 hover:bg-red-550 text-red-400 hover:text-white border border-red-500/20 font-black text-xs gap-2 flex items-center justify-center transition-all">
+              <svg lucideIcon="trash-2" class="size-4"></svg>
+              تطهير كافة البيانات
+            </button>
+          </div>
+
+        </div>
+
+        <!-- COLUMN 2: SPEECH SYNTHESIS LAB MAIN SECTION -->
+        <div class="lg:col-span-2 space-y-6">
+          
+          <div class="glass border border-indigo-500/20 bg-indigo-500/5 p-8 rounded-[2.5rem] relative overflow-hidden">
+            <div class="absolute top-0 right-0 size-64 bg-indigo-500/10 blur-[100px] -mr-32 -mt-32"></div>
+            
+            <div class="relative z-10 space-y-8 text-right">
+              
+              <div class="flex items-center justify-between flex-row-reverse">
+                <div class="text-right">
+                  <h3 class="text-2xl font-black text-white flex items-center gap-3 justify-end flex-row-reverse">
+                    <svg lucideIcon="volume-2" class="text-indigo-400 size-7"></svg>
+                    مختبر الصوت العصبي (TTS)
+                  </h3>
+                  <p class="text-[10px] text-slate-500 font-bold mt-1">تعديل وضبط نطق القراءة الآلية للمحتوى والنصوص.</p>
+                </div>
+                <span class="bg-indigo-650 text-white font-black text-[9px] uppercase px-3 py-1 rounded-full leading-none">Neural Engine</span>
+              </div>
+
+              <!-- Sandbox test text area -->
+              <div class="space-y-3">
+                <div class="flex items-center justify-between flex-row-reverse text-[9px] uppercase font-black text-slate-500 tracking-widest px-1">
+                  <span>منصة اختبار النطق الذكي</span>
+                  <span class="font-mono">Speech Buffer: active</span>
+                </div>
+                <div class="relative">
+                  <textarea 
+                    [ngModel]="testText()"
+                    (ngModelChange)="testText.set($event)"
+                    placeholder="ضع أي نص هنا للتحقق من جودة نطق المحرك المختار..."
+                    class="w-full h-32 bg-white/5 border border-white/10 rounded-2xl p-4 text-right text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition-all resize-none leading-relaxed"
+                  ></textarea>
+                  
+                  <div class="absolute bottom-4 left-4 flex gap-2">
+                    <button 
+                      *ngIf="isSpeaking()"
+                      (click)="stopSpeaking()"
+                      class="h-9 px-4 bg-red-650 hover:bg-red-600 text-white text-[10px] font-black rounded-lg gap-1.5 flex items-center justify-center animate-pulse">
+                      ■ إيقاف
+                    </button>
+                    <button 
+                      *ngIf="!isSpeaking()"
+                      (click)="testSpeech()"
+                      class="h-9 px-4 bg-indigo-650 hover:bg-indigo-600 text-white text-[10px] font-black rounded-lg gap-1.5 flex items-center justify-center shadow-lg shadow-indigo-650/20">
+                      ▶ تجربة النطق
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Engine selection and resources stats -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-right">
+                
+                <div class="space-y-2">
+                  <label class="text-[9px] uppercase font-black text-slate-500 tracking-widest">محرك النطق النشط</label>
+                  <select 
+                    [ngModel]="settingsService.preferredVoice()"
+                    (ngModelChange)="settingsService.preferredVoice.set($event); settingsService.saveState()"
+                    class="w-full bg-white/5 border border-white/10 h-12 px-4 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 font-mono">
+                    <option 
+                      *ngFor="let voice of combinedVoicesList" 
+                      [value]="voice.name" 
+                      class="bg-slate-900">
+                      {{ voice.name }} [{{ voice.lang }}] {{ voice.isNeural ? '⚡' : '' }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col justify-center gap-2">
+                  <div class="flex items-center justify-between flex-row-reverse text-[9px] uppercase font-black text-slate-500">
+                    <span>استهلاك البيانات المحملة</span>
+                    <svg lucideIcon="info" class="size-3.5"></svg>
+                  </div>
+                  <div class="flex items-baseline gap-1 justify-start flex-row-reverse">
+                    <span class="text-2xl font-black text-indigo-400 font-mono tracking-tight">
+                      {{ (settingsService.downloadedVoices().length * 35) | number:'1.0-0' }}
+                    </span>
+                    <span class="text-[8px] text-slate-500 font-bold uppercase">MB (محركات محملة محلياً)</span>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Speech Speed and Pitch controls -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- Speed Slider -->
+                <div class="space-y-3">
+                  <div class="flex justify-between items-center flex-row-reverse text-[9px] uppercase font-black text-slate-500">
+                    <label>سرعة نطق الكلام (Rate)</label>
+                    <span class="font-mono text-indigo-400">{{ settingsService.speechRate() | number:'1.1-1' }}x</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="0.5" 
+                    max="2.0" 
+                    step="0.1"
+                    [ngModel]="settingsService.speechRate()"
+                    (ngModelChange)="settingsService.speechRate.set($event); settingsService.saveState()"
+                    class="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                  />
+                </div>
+
+                <!-- Pitch Slider -->
+                <div class="space-y-3">
+                  <div class="flex justify-between items-center flex-row-reverse text-[9px] uppercase font-black text-slate-500">
+                    <label>طبقة/درجة الصوت (Pitch)</label>
+                    <span class="font-mono text-indigo-400">{{ settingsService.speechPitch() | number:'1.1-1' }}</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="0.5" 
+                    max="2.0" 
+                    step="0.1"
+                    [ngModel]="settingsService.speechPitch()"
+                    (ngModelChange)="settingsService.speechPitch.set($event); settingsService.saveState()"
+                    class="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                  />
+                </div>
+
+              </div>
+
+              <!-- Emergency voice override toggler -->
+              <div class="pt-6 border-t border-white/5 flex items-center justify-between flex-row-reverse">
+                <label class="text-[10px] font-bold text-white text-right leading-relaxed flex-1 pr-3">
+                  وضع الطوارئ الصوتي
+                  <span class="text-[8px] text-slate-500 font-bold block mt-1">استخدام المحركات المحلية كبديل طوارئ في حال انقطاع السيرفر.</span>
+                </label>
+                <input 
+                  type="checkbox"
+                  [ngModel]="settingsService.isEmergencyOnly()"
+                  (ngModelChange)="settingsService.isEmergencyOnly.set($event); settingsService.saveState()"
+                  class="size-5 rounded bg-white/5 border border-white/10 accent-indigo-500 shrink-0"
+                />
+              </div>
+
+            </div>
+          </div>
+
+          <!-- PREMIUM VOICES STORE SHOP -->
+          <div class="space-y-4">
+            <div class="flex items-center justify-between flex-row-reverse px-2">
+              <h4 class="text-lg font-black text-white flex items-center gap-2 flex-row-reverse">
+                <svg lucideIcon="sparkles" class="text-yellow-450 size-5 animate-pulse"></svg>
+                متجر أصوات نكسوس العصبية
+              </h4>
+              <span class="text-[9px] border border-white/10 text-slate-500 font-bold px-3 py-1 rounded-full uppercase leading-none">
+                {{ premiumVoices.length }} محركات صوتية ذكية
+              </span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div 
+                *ngFor="let voice of premiumVoices"
+                [ngClass]="settingsService.downloadedVoices().includes(voice.id) ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-white/5'"
+                class="glass p-5 rounded-[2rem] border relative overflow-hidden group transition-all">
+                
+                <div class="absolute top-2 left-2 flex gap-1">
+                  <span class="bg-white/10 text-white text-[8px] px-1.5 py-0.5 rounded-sm font-bold uppercase">{{ voice.provider }}</span>
+                </div>
+
+                <div class="pt-4 text-right space-y-4">
+                  <div>
+                    <h5 class="font-black text-sm text-white leading-none mb-1">{{ voice.name }}</h5>
+                    <span class="text-[8px] text-slate-500 font-bold block uppercase">{{ voice.lang }} · Quality: {{ voice.quality }}</span>
+                  </div>
+
+                  <div class="flex items-end justify-between flex-row-reverse">
+                    <div class="text-right">
+                      <span class="text-[8px] text-slate-500 font-bold block leading-none mb-0.5">حجم المحرك</span>
+                      <span class="text-xs font-mono font-black text-white">{{ voice.sizeMB }}MB</span>
+                    </div>
+
+                    <button 
+                      (click)="!settingsService.downloadedVoices().includes(voice.id) && downloadNeuralVoice(voice.id)"
+                      [disabled]="downloadingIds().includes(voice.id)"
+                      [ngClass]="settingsService.downloadedVoices().includes(voice.id) ? 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10' : 'bg-indigo-650 hover:bg-indigo-600 text-white'"
+                      class="h-8 px-3 rounded-xl text-[9px] font-black gap-1 flex items-center justify-center border border-transparent transition-all">
+                      
+                      <span *ngIf="downloadingIds().includes(voice.id)" class="size-3 border border-white/30 border-t-white rounded-full animate-spin"></span>
+                      <svg *ngIf="!downloadingIds().includes(voice.id) && !settingsService.downloadedVoices().includes(voice.id)" lucideIcon="download-cloud" class="size-3"></svg>
+                      
+                      {{ downloadingIds().includes(voice.id) ? 'جاري التحميل...' : settingsService.downloadedVoices().includes(voice.id) ? 'متاح للاستخدام' : 'تحميل واستخدام' }}
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+</div>

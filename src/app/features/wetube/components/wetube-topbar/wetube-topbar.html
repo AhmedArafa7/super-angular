@@ -1,0 +1,20 @@
+<header class="wetube-topbar">
+  <div class="logo">
+    <h1>WeTube</h1>
+  </div>
+  <div class="search-bar">
+    <input type="text" [(ngModel)]="searchQuery" (keyup.enter)="onSearch()" placeholder="بحث...">
+    <button (click)="onSearch()">
+      <lucide-icon [img]="Search"></lucide-icon>
+    </button>
+  </div>
+  <div class="user-actions">
+    <button class="upload-btn">
+      <lucide-icon [img]="Upload"></lucide-icon>
+      <span>رفع فيديو</span>
+    </button>
+    <button class="user-btn">
+      <lucide-icon [img]="User"></lucide-icon>
+    </button>
+  </div>
+</header>

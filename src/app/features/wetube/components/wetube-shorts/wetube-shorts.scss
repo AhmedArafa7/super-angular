@@ -1,0 +1,47 @@
+.shorts-container {
+  padding: 1rem;
+}
+.shorts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 400px;
+  margin: 0 auto;
+}
+.short-item {
+  background-color: #0f0f0f;
+  border-radius: 12px;
+  overflow: hidden;
+  color: white;
+}
+.short-video {
+  height: 500px;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.placeholder-icon {
+  width: 64px;
+  height: 64px;
+  color: rgba(255,255,255,0.3);
+}
+.short-info {
+  padding: 1rem;
+}
+.short-info h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+}
+.short-stats {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: #aaa;
+}
+.stat-icon {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  margin-left: 0.25rem;
+}

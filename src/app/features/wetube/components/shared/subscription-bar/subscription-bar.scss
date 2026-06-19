@@ -1,0 +1,51 @@
+.subscription-bar {
+  padding: 1rem 0;
+  border-bottom: 1px solid #272727;
+  margin-bottom: 1rem;
+}
+.subscription-bar h3 {
+  margin: 0 0 0.75rem 1rem;
+  font-size: 0.75rem;
+  color: #aaa;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+.subs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.sub-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-radius: 8px;
+  margin: 0 0.5rem;
+}
+.sub-item:hover {
+  background-color: #272727;
+}
+.sub-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff0000, #cc0000);
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+.sub-name {
+  font-size: 0.9rem;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -1,0 +1,18 @@
+.source-detector {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: white;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.label {
+  color: white;
+}

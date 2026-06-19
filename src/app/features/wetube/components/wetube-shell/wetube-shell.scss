@@ -1,0 +1,15 @@
+.wetube-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+.wetube-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+.wetube-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}

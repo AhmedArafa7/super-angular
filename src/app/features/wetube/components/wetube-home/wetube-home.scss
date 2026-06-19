@@ -1,0 +1,147 @@
+.home-container {
+  width: 100%;
+}
+.categories-bar {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  border-bottom: 1px solid #272727;
+  position: sticky;
+  top: 0;
+  background-color: #0f0f0f;
+  z-index: 10;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.category-chip {
+  padding: 0.4rem 0.9rem;
+  background-color: #272727;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  white-space: nowrap;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+.category-chip:hover {
+  background-color: #3a3a3a;
+}
+.category-chip.active {
+  background-color: white;
+  color: black;
+  font-weight: bold;
+}
+.home-layout {
+  display: flex;
+  padding: 1rem;
+  gap: 1.5rem;
+}
+.subs-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+}
+.main-content {
+  flex: 1;
+  min-width: 0;
+}
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+.video-card {
+  cursor: pointer;
+}
+.video-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+.thumbnail-wrapper {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #1a1a1a;
+  position: relative;
+  margin-bottom: 0.75rem;
+}
+.thumbnail-wrapper.shorts {
+  aspect-ratio: 9 / 16;
+}
+.thumbnail-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+.video-link:hover .thumbnail-wrapper img {
+  transform: scale(1.05);
+}
+.shorts-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: linear-gradient(135deg, #ff0000, #cc0000);
+  color: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+.video-info {
+  display: flex;
+  gap: 0.75rem;
+}
+.channel-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #272727;
+  flex-shrink: 0;
+}
+.info-text {
+  flex: 1;
+  min-width: 0;
+}
+.video-title {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.95rem;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: white;
+}
+.channel-name {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #aaa;
+}
+.video-meta {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #aaa;
+}
+.empty-state {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: #aaa;
+}
+.empty-state h3 {
+  margin: 0 0 0.5rem 0;
+  color: white;
+}
+@media (max-width: 1024px) {
+  .subs-sidebar {
+    display: none;
+  }
+}

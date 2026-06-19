@@ -1,0 +1,39 @@
+<div class="modal-overlay" *ngIf="isOpen" (click)="onClose()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>استيراد الاشتراكات</h2>
+      <button class="close-btn" (click)="onClose()">
+        <lucide-icon [img]="X"></lucide-icon>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <p class="info">يمكنك استيراد قائمة اشتراكاتك من YouTube أو Google Takeout</p>
+      
+      <div class="upload-area" (click)="fileInput.click()">
+        <lucide-icon [img]="Upload" class="upload-icon"></lucide-icon>
+        <p *ngIf="!selectedFile">انقر لاختيار ملف JSON أو CSV</p>
+        <p *ngIf="selectedFile" class="file-name">
+          <lucide-icon [img]="FileText"></lucide-icon>
+          {{ selectedFile.name }}
+        </p>
+      </div>
+      <input #fileInput type="file" accept=".json,.csv" (change)="onFileSelected($event)" hidden>
+      
+      <div class="help-text">
+        <h4>كيفية تصدير الاشتراكات من YouTube:</h4>
+        <ol>
+          <li>اذهب إلى Google Takeout</li>
+          <li>اختر YouTube فقط</li>
+          <li>اختر Subscriptions</li>
+          <li>حمّل الملف وارفعه هنا</li>
+        </ol>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="cancel-btn" (click)="onClose()">إلغاء</button>
+      <button class="import-btn" (click)="onImport()" [disabled]="!selectedFile">استيراد</button>
+    </div>
+  </div>
+</div>

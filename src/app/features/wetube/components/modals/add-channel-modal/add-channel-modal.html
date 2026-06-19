@@ -1,0 +1,47 @@
+<div class="modal-overlay" *ngIf="isOpen" (click)="onClose()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>إضافة قناة جديدة</h2>
+      <button class="close-btn" (click)="onClose()">
+        <lucide-icon [img]="X"></lucide-icon>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="form-group">
+        <label>رابط القناة أو معرف القناة</label>
+        <input type="text" [(ngModel)]="channelUrl" placeholder="https://youtube.com/@channel أو UC...">
+      </div>
+      
+      <div class="form-group">
+        <label>نوع المزامنة التلقائية</label>
+        <div class="radio-group">
+          <label class="radio-option">
+            <input type="radio" [(ngModel)]="autoSyncType" value="all">
+            <span>جميع الفيديوهات</span>
+          </label>
+          <label class="radio-option">
+            <input type="radio" [(ngModel)]="autoSyncType" value="long">
+            <span>الفيديوهات الطويلة فقط</span>
+          </label>
+          <label class="radio-option">
+            <input type="radio" [(ngModel)]="autoSyncType" value="shorts">
+            <span>شورتس فقط</span>
+          </label>
+          <label class="radio-option">
+            <input type="radio" [(ngModel)]="autoSyncType" value="none">
+            <span>بدون مزامنة تلقائية</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="cancel-btn" (click)="onClose()">إلغاء</button>
+      <button class="add-btn" (click)="onAdd()">
+        <lucide-icon [img]="Plus"></lucide-icon>
+        <span>إضافة</span>
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,23 @@
+.bg-red-650\/20 {
+  background-color: rgba(220, 38, 38, 0.2);
+}
+
+.text-slate-650 {
+  color: rgb(71, 85, 105);
+}
+
+/* Custom scrollbars inside grid */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.3);
+}

@@ -1,0 +1,14 @@
+<div class="thumbnail-container" [class.shorts]="isShorts">
+  <div class="thumbnail" [style.background-image]="!imageError && thumbnail ? 'url(' + thumbnail + ')' : ''" (error)="onError()">
+    <div *ngIf="imageError || !thumbnail" class="placeholder">
+      <lucide-icon [img]="Play"></lucide-icon>
+    </div>
+    <span *ngIf="duration && !isShorts" class="duration">{{ duration }}</span>
+    <span *ngIf="hasMusic" class="music-badge">
+      <lucide-icon [img]="Music"></lucide-icon>
+    </span>
+    <div *ngIf="isShorts" class="shorts-overlay">
+      <span>Shorts</span>
+    </div>
+  </div>
+</div>

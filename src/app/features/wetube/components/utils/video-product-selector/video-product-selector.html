@@ -1,0 +1,42 @@
+<div class="product-selector">
+  <button class="trigger-btn" (click)="isOpen = !isOpen">
+    <lucide-icon [img]="Tag"></lucide-icon>
+    <span>المنتجات المرتبطة ({{ selectedProducts.length }})</span>
+  </button>
+  
+  <div class="dropdown" *ngIf="isOpen">
+    <div class="dropdown-header">
+      <h4>اختر المنتجات</h4>
+      <button class="close-btn" (click)="isOpen = false">
+        <lucide-icon [img]="X"></lucide-icon>
+      </button>
+    </div>
+    
+    <div class="search-bar">
+      <input type="text" [(ngModel)]="searchQuery" placeholder="ابحث عن منتج...">
+    </div>
+    
+    <div class="display-mode">
+      <label>طريقة العرض:</label>
+      <select [(ngModel)]="displayMode">
+        <option value="none">بدون</option>
+        <option value="shelf">رف المنتجات</option>
+        <option value="overlay">تراكب</option>
+      </select>
+    </div>
+    
+    <div class="products-list">
+      <label *ngFor="let product of filteredProducts" class="product-item">
+        <input type="checkbox" [checked]="selectedProducts.includes(product.id)" (change)="toggleProduct(product.id)">
+        <div class="product-details">
+          <span class="product-name">{{ product.name }}</span>
+          <span class="product-meta">{{ product.category }} • {{ product.price }} ر.س</span>
+        </div>
+      </label>
+    </div>
+    
+    <div class="dropdown-footer">
+      <button class="save-btn" (click)="save()">حفظ</button>
+    </div>
+  </div>
+</div>

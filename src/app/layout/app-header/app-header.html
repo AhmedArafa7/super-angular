@@ -1,0 +1,37 @@
+<header class="h-16 border-b border-white/5 bg-slate-900/40 backdrop-blur-md flex items-center justify-between px-6 z-20 flex-row-reverse shrink-0">
+  <div class="flex items-center gap-4 flex-row-reverse">
+    
+    <button class="md:hidden w-10 h-10 flex items-center justify-center text-muted-foreground hover:bg-white/5 rounded-md" (click)="sidebar.toggleCollapsed()">
+      <svg lucideIcon="menu" class="w-5 h-5"></svg>
+    </button>
+
+    <div class="relative hidden md:block">
+      <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center">
+        <svg lucideIcon="search" class="text-muted-foreground w-4 h-4"></svg>
+      </div>
+      <input type="text" placeholder="البحث في نكسوس..." class="w-64 pr-9 h-9 bg-white/5 border border-white/10 rounded-lg text-sm text-right focus:outline-none focus:border-indigo-500 transition-colors" />
+    </div>
+  </div>
+  
+  <div class="flex items-center gap-4 flex-row-reverse">
+    <button class="w-10 h-10 flex items-center justify-center text-muted-foreground hover:bg-white/5 rounded-md transition-colors" (click)="sidebar.toggleHeader()">
+      <svg lucideIcon="chevron-up" class="w-5 h-5"></svg>
+    </button>
+    
+    <div class="h-6 w-px bg-white/10 mx-1"></div>
+    
+    <button class="w-10 h-10 flex items-center justify-center text-muted-foreground hover:bg-white/5 rounded-md transition-colors relative">
+      <svg lucideIcon="bell" class="w-5 h-5"></svg>
+      @if (unreadCount > 0) {
+        <span class="absolute top-2 left-2 h-4 w-4 p-0 flex items-center justify-center bg-red-500 rounded border border-slate-900 text-[9px] font-bold text-white">{{ unreadCount }}</span>
+      }
+    </button>
+    
+    <div class="h-8 w-px bg-white/10"></div>
+    
+    <button class="h-9 px-4 rounded-xl border border-white/10 flex items-center gap-2 text-xs font-bold text-white hover:bg-white/5 transition-colors flex-row-reverse">
+      <svg lucideIcon="wallet" class="text-indigo-400 w-4 h-4"></svg>
+      رصيد المحفظة
+    </button>
+  </div>
+</header>

@@ -1,0 +1,15 @@
+<div class="watch-sidebar">
+  <h3>الفيديوهات المقترحة</h3>
+  <div class="recommendations">
+    <div *ngFor="let video of recommendations" class="recommendation-item" [routerLink]="['/stream/watch', video.id]">
+      <div class="video-thumbnail" [style.background-image]="'url(' + video.thumbnail + ')'">
+        <span class="duration">{{ video.duration }}</span>
+      </div>
+      <div class="video-info">
+        <h4>{{ video.title }}</h4>
+        <p class="author">{{ video.author }}</p>
+        <p class="meta">{{ video.views }} مشاهدة • {{ video.time }}</p>
+      </div>
+    </div>
+  </div>
+</div>

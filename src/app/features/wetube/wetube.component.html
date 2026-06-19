@@ -1,0 +1,188 @@
+<div class="h-[calc(100vh-6rem)] flex flex-col text-white bg-slate-950 font-sans text-right overflow-hidden relative" dir="rtl">
+
+  <!-- ═══ 1. WETUBE SUB-HEADER TOPBAR ═══ -->
+  <header class="h-16 border-b border-white/5 bg-slate-900/40 backdrop-blur-3xl flex items-center justify-between px-6 shrink-0 flex-row-reverse z-30">
+    
+    <!-- Logo & Sidebar Toggler -->
+    <div class="flex items-center gap-4 flex-row-reverse">
+      <button 
+        (click)="isSidebarOpen.set(!isSidebarOpen())"
+        class="size-9 rounded-xl hover:bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-all">
+        <svg lucideIcon="menu" class="size-5"></svg>
+      </button>
+      <div 
+        (click)="onLogoClick()" 
+        class="flex items-center gap-2 cursor-pointer select-none flex-row-reverse">
+        <div class="size-8 bg-red-650 rounded-xl flex items-center justify-center text-white shadow-lg shadow-red-500/20">
+          <svg lucideIcon="play" class="size-4 ml-0.5 fill-current"></svg>
+        </div>
+        <span class="text-lg font-black tracking-tight bg-gradient-to-r from-white via-slate-100 to-red-400 bg-clip-text text-transparent">WeTube</span>
+      </div>
+    </div>
+
+    <!-- Center Search Bar input -->
+    <div class="flex-1 max-w-lg mx-6 relative">
+      <div class="relative w-full flex items-center flex-row-reverse">
+        <input 
+          type="text" 
+          [(ngModel)]="searchQuery"
+          (keyup.enter)="handleSearch()"
+          placeholder="ابحث عن فيديوهات، قنوات، أو شروحات برمجية..."
+          class="w-full h-10 bg-white/5 border border-white/10 rounded-2xl pr-4 pl-12 text-xs text-white focus:outline-none focus:border-indigo-500 font-bold placeholder-slate-500 text-right"
+        />
+        <button 
+          (click)="handleSearch()"
+          class="absolute left-1 size-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-all">
+          <svg lucideIcon="search" class="size-4"></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Left side modifiers triggers -->
+    <div class="flex items-center gap-3">
+      <button 
+        (click)="connectVault()"
+        class="h-9 px-4 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 text-[10px] font-black rounded-xl flex items-center justify-center gap-2 flex-row-reverse transition-all">
+        <svg lucideIcon="external-link" class="size-3.5"></svg>
+        ربط السجل المركزي
+      </button>
+      <button 
+        (click)="showUploadModal.set(true)"
+        class="h-9 px-4 bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 text-[10px] font-black rounded-xl flex items-center justify-center gap-2 flex-row-reverse transition-all">
+        <svg lucideIcon="upload-cloud" class="size-3.5"></svg>
+        تحميل فيديو جديد
+      </button>
+    </div>
+
+  </header>
+
+  <!-- ═══ 2. MAIN HUB FLEX VIEWPORT ═══ -->
+  <div class="flex-1 flex overflow-hidden">
+    
+    <!-- Collapsible RTL Sub-Sidebar -->
+    <aside 
+      *ngIf="isSidebarOpen()"
+      class="w-60 border-l border-white/5 bg-slate-900/20 flex flex-col shrink-0 overflow-y-auto p-4 space-y-6 animate-in slide-in-from-right-4 duration-300">
+      
+      <!-- Primary feeds links -->
+      <nav class="space-y-1.5">
+        <button 
+          (click)="selectTab('home')"
+          [ngClass]="wetube.activeTab() === 'home' ? 'bg-white/5 border-white/5 text-white font-black' : 'border-transparent text-slate-400 hover:text-white'"
+          class="w-full h-11 border rounded-xl px-4 flex items-center gap-3 flex-row-reverse text-right text-xs font-bold transition-all">
+          <svg lucideIcon="home" class="size-4.5"></svg>
+          <span>الرئيسية</span>
+        </button>
+        <button 
+          (click)="selectTab('shorts')"
+          [ngClass]="wetube.activeTab() === 'shorts' ? 'bg-white/5 border-white/5 text-white font-black' : 'border-transparent text-slate-400 hover:text-white'"
+          class="w-full h-11 border rounded-xl px-4 flex items-center gap-3 flex-row-reverse text-right text-xs font-bold transition-all">
+          <svg lucideIcon="video" class="size-4.5"></svg>
+          <span>الفيديوهات القصيرة</span>
+        </button>
+        <button 
+          (click)="selectTab('subs')"
+          [ngClass]="wetube.activeTab() === 'subs' ? 'bg-white/5 border-white/5 text-white font-black' : 'border-transparent text-slate-400 hover:text-white'"
+          class="w-full h-11 border rounded-xl px-4 flex items-center gap-3 flex-row-reverse text-right text-xs font-bold transition-all">
+          <svg lucideIcon="library-big" class="size-4.5"></svg>
+          <span>الاشتراكات</span>
+        </button>
+        <button 
+          (click)="selectTab('library')"
+          [ngClass]="wetube.activeTab() === 'library' ? 'bg-white/5 border-white/5 text-white font-black' : 'border-transparent text-slate-400 hover:text-white'"
+          class="w-full h-11 border rounded-xl px-4 flex items-center gap-3 flex-row-reverse text-right text-xs font-bold transition-all">
+          <svg lucideIcon="folder-heart" class="size-4.5"></svg>
+          <span>المكتبة المعرفية</span>
+        </button>
+      </nav>
+
+      <!-- Channels subscriptions list section -->
+      <div class="space-y-3">
+        <h4 class="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none px-3">الاشتراكات المفضلة</h4>
+        <div class="space-y-1">
+          <button 
+            *ngFor="let sub of subscriptionsList()"
+            (click)="wetube.setActiveChannel({ id: sub.channelId, name: sub.channelTitle, avatar: sub.avatarUrl })"
+            class="w-full h-10 hover:bg-white/5 rounded-xl px-3 flex items-center justify-start gap-3 flex-row-reverse text-right text-[11px] font-bold text-slate-350 transition-all">
+            <img 
+              *ngIf="sub.avatarUrl" 
+              [src]="sub.avatarUrl" 
+              class="size-6 rounded-full border border-white/10" 
+            />
+            <span class="truncate">{{ sub.channelTitle }}</span>
+          </button>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Main Dynamic Content Workspace wrapper -->
+    <main class="flex-1 overflow-y-auto bg-slate-950/40 relative">
+      <router-outlet></router-outlet>
+    </main>
+
+  </div>
+
+  <!-- ═══ MODAL OVERLAY: UPLOAD VIDEO SIMULATOR ═══ -->
+  <div 
+    *ngIf="showUploadModal()"
+    class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-[99] animate-in fade-in duration-300"
+    (click)="showUploadModal.set(false)">
+    
+    <div 
+      class="bg-slate-950 border border-white/10 w-full max-w-sm rounded-[2.5rem] p-8 space-y-6 text-right relative shadow-2xl"
+      (click)="$event.stopPropagation()">
+      
+      <button 
+        (click)="showUploadModal.set(false)"
+        class="absolute top-6 left-6 size-9 rounded-full border border-white/10 bg-white/5 text-slate-400 hover:text-white flex items-center justify-center text-xs font-bold transition-all">✕</button>
+
+      <div class="space-y-1">
+        <h3 class="text-lg font-black text-white">رفع ونشر فيديو جديد</h3>
+        <p class="text-[9px] text-slate-500 font-bold uppercase">قم بكتابة تفاصيل الفيديو لنشره في الشبكة العصبية.</p>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="text-[10px] font-black text-slate-400 block mb-1">عنوان الفيديو</label>
+          <input 
+            type="text" 
+            [(ngModel)]="newVideoTitle"
+            placeholder="مثال: دورة هياكل البيانات المتقدمة"
+            class="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-indigo-500 font-bold"
+          />
+        </div>
+        <div>
+          <label class="text-[10px] font-black text-slate-400 block mb-1">اسم الناشر / القناة</label>
+          <input 
+            type="text" 
+            [(ngModel)]="newVideoAuthor"
+            placeholder="مثال: أكاديمية المطورين"
+            class="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-indigo-500 font-bold"
+          />
+        </div>
+        <div>
+          <label class="text-[10px] font-black text-slate-400 block mb-1">التصنيف</label>
+          <select 
+            [(ngModel)]="newVideoCategory"
+            class="w-full h-11 bg-slate-900 border border-white/10 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-indigo-500 font-bold">
+            <option value="تكنولوجيا">تكنولوجيا</option>
+            <option value="برمجة">برمجة</option>
+            <option value="ألعاب">ألعاب</option>
+            <option value="أخبار">أخبار</option>
+          </select>
+        </div>
+      </div>
+
+      <button 
+        (click)="simulateUpload()"
+        [disabled]="!newVideoTitle().trim() || !newVideoAuthor().trim()"
+        class="w-full h-13 bg-red-650 hover:bg-red-600 disabled:opacity-50 text-white rounded-xl text-xs font-black shadow-lg shadow-red-500/20 transition-all flex items-center justify-center gap-2 flex-row-reverse">
+        <svg lucideIcon="upload-cloud" class="size-4"></svg>
+        تأكيد رفع الفيديو عصبياً
+      </button>
+
+    </div>
+  </div>
+
+</div>

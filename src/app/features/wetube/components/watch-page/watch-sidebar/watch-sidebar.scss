@@ -1,0 +1,62 @@
+.watch-sidebar {
+  color: white;
+}
+.watch-sidebar h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  color: #aaa;
+}
+.recommendations {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.recommendation-item {
+  display: flex;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+.recommendation-item:hover {
+  background-color: #1a1a1a;
+}
+.video-thumbnail {
+  width: 168px;
+  height: 94px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 8px;
+  position: relative;
+  flex-shrink: 0;
+}
+.duration {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background-color: rgba(0,0,0,0.8);
+  color: white;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+.video-info {
+  flex: 1;
+  min-width: 0;
+}
+.video-info h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.9rem;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.author, .meta {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #aaa;
+}

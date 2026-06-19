@@ -1,0 +1,153 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+.modal-content {
+  background-color: #0f0f0f;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  color: white;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #272727;
+}
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.close-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+.close-btn lucide-icon {
+  width: 24px;
+  height: 24px;
+}
+.modal-body {
+  padding: 1.5rem;
+}
+.create-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #272727;
+}
+.create-section h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.9rem;
+}
+.create-form {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.create-form input {
+  flex: 1;
+  min-width: 150px;
+  padding: 0.5rem 1rem;
+  background-color: #1a1a1a;
+  border: 1px solid #272727;
+  border-radius: 8px;
+  color: white;
+  outline: none;
+}
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  background-color: #1a1a1a;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+.checkbox lucide-icon {
+  width: 16px;
+  height: 16px;
+}
+.create-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.create-btn:disabled {
+  background-color: #1a4d80;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.create-btn lucide-icon {
+  width: 16px;
+  height: 16px;
+}
+.playlists-section h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.9rem;
+}
+.playlists-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.playlist-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background-color: #1a1a1a;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.playlist-item:hover {
+  background-color: #272727;
+}
+.playlist-icon {
+  width: 32px;
+  height: 32px;
+  color: #ff0000;
+  flex-shrink: 0;
+}
+.playlist-info {
+  flex: 1;
+}
+.playlist-info h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.95rem;
+}
+.playlist-info p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #aaa;
+}
+.privacy-icon {
+  width: 16px;
+  height: 16px;
+  color: #aaa;
+}

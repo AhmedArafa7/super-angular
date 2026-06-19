@@ -1,0 +1,257 @@
+<div class="h-[calc(100vh-6rem)] flex flex-col text-white overflow-hidden animate-in fade-in duration-700 font-sans text-right" dir="rtl">
+
+  <!-- ================= VIEW 1: RUNNING APPLICATION IFRAME ================= -->
+  <div *ngIf="activeProject()" class="flex-1 flex flex-col h-full bg-black animate-in slide-in-from-bottom duration-500">
+    
+    <header class="h-16 border-b border-white/5 bg-slate-900/80 backdrop-blur-xl flex items-center justify-between px-6 z-20 flex-row-reverse">
+      
+      <!-- Back trigger and title -->
+      <div class="flex items-center gap-4 flex-row-reverse">
+        <button 
+          (click)="activeProject.set(null)"
+          class="size-10 rounded-full hover:bg-white/5 text-white flex items-center justify-center transition-all">
+          <svg lucideIcon="arrow-left" class="size-5"></svg>
+        </button>
+        
+        <div class="text-right">
+          <h2 class="text-sm font-black text-white">{{ activeProject()?.title }}</h2>
+          <div class="flex items-center gap-2 justify-end">
+            <span class="size-1.5 rounded-full animate-pulse" [ngClass]="isHeadlessStream() ? 'bg-amber-500' : 'bg-emerald-500'"></span>
+            <p class="text-[8px] text-slate-500 font-black uppercase tracking-wider">
+              {{ isHeadlessStream() ? 'Spy Protocol active' : 'Direct Workspace active' }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="flex items-center gap-6">
+        
+        <!-- Toggle button Diagnostics -->
+        <div class="flex items-center gap-3 bg-white/5 px-4 py-1.5 rounded-2xl border border-white/10 flex-row-reverse">
+          <div class="text-right">
+            <span class="text-[9px] font-black text-indigo-400 uppercase tracking-widest block leading-none">وضع التشخيص (Spy)</span>
+            <span class="text-[7px] text-amber-500 font-bold uppercase block mt-0.5">رصد استجابة الأزرار عصبياً</span>
+          </div>
+          <button 
+            (click)="isHeadlessStream.set(!isHeadlessStream())"
+            [ngClass]="isHeadlessStream() ? 'bg-indigo-650' : 'bg-slate-700'"
+            class="w-9 h-5 rounded-full p-0.5 transition-all relative flex items-center">
+            <span 
+              [ngClass]="isHeadlessStream() ? 'translate-x-4' : 'translate-x-0'"
+              class="size-4 rounded-full bg-white transition-all transform block"></span>
+          </button>
+        </div>
+
+        <button 
+          (click)="openExternal(activeProject()?.url || '')"
+          class="h-9 px-4 rounded-xl border border-white/10 text-[9px] font-black bg-white/5 hover:bg-indigo-650 text-white transition-all flex items-center gap-2 flex-row-reverse">
+          <svg lucideIcon="external-link" class="size-3.5"></svg>
+          فتح الرابط الأصلي
+        </button>
+      </div>
+
+    </header>
+
+    <!-- Sandbox workspace view iframe -->
+    <div class="flex-1 relative bg-white">
+      <iframe 
+        [src]="safeUrl" 
+        class="absolute inset-0 size-full border-none"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+        title="App Session Workspace"
+      ></iframe>
+    </div>
+
+  </div>
+
+  <!-- ================= VIEW 2: DYNAMIC APPS CATALOGUE ================= -->
+  <div *ngIf="!activeProject()" class="flex-1 flex flex-col overflow-hidden">
+    
+    <!-- 1. HEADER HERO GRID -->
+    <header class="p-8 border-b border-white/5 bg-slate-900/10 shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div class="space-y-2">
+        <div class="inline-flex items-center gap-2 px-4 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full mb-2 flex-row-reverse">
+          <svg lucideIcon="sparkles" class="size-3 text-amber-400 animate-pulse"></svg>
+          <span class="text-[9px] uppercase font-black text-amber-400 tracking-widest leading-none">Apps Launcher Node</span>
+        </div>
+        <h2 class="text-3xl font-black text-white tracking-tighter flex items-center gap-3 justify-start flex-row-reverse">
+          <svg lucideIcon="rocket" class="text-indigo-400 size-8"></svg>
+          منصة مشغل التطبيقات والروابط
+        </h2>
+        <p class="text-xs text-slate-500 font-bold uppercase tracking-widest leading-none">
+          شغل واستكشف المواقع البرمجية مع نظام "العميل الجاسوس" لتشخيص أخطاء الأزرار في الشبكة 🚀
+        </p>
+      </div>
+
+      <button 
+        (click)="isFormOpen.set(true)"
+        class="h-12 px-6 rounded-2xl bg-indigo-650 hover:bg-indigo-600 text-white font-black text-xs shadow-lg shadow-indigo-500/10 flex items-center gap-2 justify-center transition-all flex-row-reverse">
+        <svg lucideIcon="plus" class="size-4"></svg>
+        اقتراح تطبيق جديد
+      </button>
+    </header>
+
+    <!-- 2. SCROLL CONTAINER -->
+    <div class="flex-1 p-8 overflow-y-auto space-y-8 bg-slate-950/20">
+      <div class="max-w-6xl mx-auto space-y-8 pb-24">
+
+        <!-- SEARCH FILTERS -->
+        <div class="bg-slate-900/30 p-6 rounded-3xl border border-white/5 flex gap-4 items-center">
+          <div class="relative w-full">
+            <svg lucideIcon="search" class="absolute right-4 top-1/2 -translate-y-1/2 size-4 text-slate-500"></svg>
+            <input 
+              type="text"
+              [ngModel]="searchQuery()"
+              (ngModelChange)="searchQuery.set($event)"
+              placeholder="ابحث عن محاكيات، منصات IDE سحابية، أدوات برمجة..."
+              class="w-full h-12 pr-12 pl-4 bg-white/5 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 font-bold"
+            />
+          </div>
+        </div>
+
+        <!-- APPLICATIONS GRID -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          
+          <div 
+            *ngFor="let app of filteredApps()"
+            class="group glass rounded-[2.5rem] overflow-hidden border border-white/5 hover:border-indigo-550/40 transition-all duration-500 flex flex-col shadow-2xl relative">
+            
+            <!-- App Banner thumbnail -->
+            <div class="aspect-video relative overflow-hidden bg-slate-900 shrink-0">
+              <img [src]="app.thumbnail" alt="App Banner" class="w-full h-full object-cover opacity-80 transition-transform group-hover:scale-105 duration-750" />
+              
+              <!-- Run hover button -->
+              <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <button 
+                  (click)="launchApp(app)"
+                  class="size-16 rounded-full bg-indigo-650/80 hover:bg-indigo-600 text-white flex items-center justify-center border border-white/20 shadow-2xl transform scale-75 group-hover:scale-100 transition-all duration-300">
+                  <svg lucideIcon="play" class="size-8 fill-current"></svg>
+                </button>
+              </div>
+
+              <!-- Price & Category badges -->
+              <div class="absolute top-4 right-4 flex gap-1.5 flex-row-reverse">
+                <span 
+                  *ngIf="app.access === 'paid'"
+                  class="text-[9px] font-black uppercase py-0.5 px-2 bg-amber-500 text-slate-950 rounded-md">
+                  ★ متميز: {{ app.price }} BKC
+                </span>
+                <span 
+                  *ngIf="app.access === 'free'"
+                  class="text-[9px] font-black uppercase py-0.5 px-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-md">
+                  مجاني
+                </span>
+                <span class="text-[9px] font-black uppercase py-0.5 px-2 bg-slate-950/80 border border-white/10 rounded-md text-slate-300">
+                  {{ app.framework }}
+                </span>
+              </div>
+
+            </div>
+
+            <!-- Content descriptive details -->
+            <div class="p-6 flex-1 flex flex-col justify-between space-y-4 text-right">
+              
+              <div class="space-y-2">
+                <h3 class="text-base font-black text-white leading-snug group-hover:text-indigo-400 transition-colors">{{ app.title }}</h3>
+                <p class="text-xs text-slate-450 leading-relaxed font-bold line-clamp-3">{{ app.description }}</p>
+              </div>
+
+              <div class="pt-4 border-t border-white/5 flex items-center justify-between flex-row-reverse gap-4">
+                <div class="text-right">
+                  <span class="text-[8px] text-slate-500 block font-bold uppercase leading-none">مطور التطبيق</span>
+                  <span class="text-[10px] font-black text-slate-300">{{ app.authorName }}</span>
+                </div>
+                <button 
+                  (click)="launchApp(app)"
+                  class="h-9 px-4 bg-white/5 hover:bg-indigo-650 hover:text-white text-slate-300 text-xs font-black rounded-lg transition-all flex items-center gap-1.5">
+                  تشغيل
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================= PROPOSAL REQUEST DIALOG ================= -->
+  <div 
+    *ngIf="isFormOpen()"
+    class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-350">
+    <div class="bg-slate-900 border border-white/10 w-full max-w-md rounded-[2.5rem] p-8 space-y-6 text-right relative">
+      
+      <button 
+        (click)="isFormOpen.set(false)"
+        class="absolute top-6 left-6 text-slate-500 hover:text-white transition-colors">✕</button>
+
+      <div class="space-y-1">
+        <h3 class="text-xl font-black text-white flex items-center gap-2 justify-start flex-row-reverse">
+          <svg lucideIcon="rocket" class="text-indigo-400 size-6"></svg>
+          اقتراح تطبيق جديد للشبكة
+        </h3>
+        <p class="text-[10px] text-slate-500 font-bold">أرسل اقتراحك البرمجي وسيتم مراجعته من قبل مسؤولي النظام قبل نشره.</p>
+      </div>
+
+      <!-- App Name Input -->
+      <div class="space-y-2">
+        <label class="text-[9px] uppercase font-black text-slate-550 tracking-widest block">اسم التطبيق</label>
+        <input 
+          type="text" 
+          [(ngModel)]="appTitle"
+          placeholder="مثال: لوحة التحكم السحابية"
+          class="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-indigo-500 font-bold"
+        />
+      </div>
+
+      <!-- App URL Input -->
+      <div class="space-y-2">
+        <label class="text-[9px] uppercase font-black text-slate-550 tracking-widest block">رابط تشغيل التطبيق (URL)</label>
+        <input 
+          type="text" 
+          [(ngModel)]="appUrl"
+          placeholder="https://..."
+          class="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-indigo-500 font-bold"
+        />
+      </div>
+
+      <!-- Description Textarea -->
+      <div class="space-y-2">
+        <label class="text-[9px] uppercase font-black text-slate-550 tracking-widest block">شرح تفصيلي للتطبيق</label>
+        <textarea 
+          [(ngModel)]="appDescription"
+          placeholder="ما الذي تقدمه هذه المنصة لأعضاء الشبكة بالتفصيل؟"
+          class="w-full h-24 bg-white/5 border border-white/10 rounded-xl p-4 text-xs text-white focus:outline-none focus:border-indigo-500 resize-none font-semibold leading-relaxed"
+        ></textarea>
+      </div>
+
+      <!-- Framework Select dropdown -->
+      <div class="space-y-2">
+        <label class="text-[9px] uppercase font-black text-slate-550 tracking-widest block">إطار العمل المستخدم</label>
+        <select 
+          [(ngModel)]="appFramework"
+          class="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-indigo-500 font-bold">
+          <option *ngFor="let opt of frameworks" [value]="opt.id">{{ opt.label }}</option>
+        </select>
+      </div>
+
+      <!-- Buttons triggers -->
+      <div class="grid grid-cols-2 gap-3 pt-2">
+        <button 
+          (click)="isFormOpen.set(false)"
+          class="h-12 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl text-xs font-black transition-all">إلغاء</button>
+        <button 
+          (click)="submitProposal()"
+          [disabled]="!appTitle().trim() || !appUrl().trim()"
+          class="h-12 bg-indigo-650 hover:bg-indigo-600 disabled:opacity-50 text-white rounded-xl text-xs font-black transition-all">إطلاق للمراجعة الآن</button>
+      </div>
+
+    </div>
+  </div>
+
+</div>

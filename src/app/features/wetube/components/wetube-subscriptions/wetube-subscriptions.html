@@ -1,0 +1,24 @@
+<div class="subscriptions-container">
+  <h1>الاشتراكات</h1>
+
+  <div *ngIf="wetube.subscriptions().length === 0" class="empty-state">
+    <p>لا توجد اشتراكات بعد</p>
+    <p class="hint">اربط حسابك في YouTube من ستوديو لاستعراض قنواتك</p>
+  </div>
+
+  <div class="subscriptions-grid" *ngIf="wetube.subscriptions().length > 0">
+    <div *ngFor="let sub of wetube.subscriptions()" class="subscription-card">
+      <div class="channel-avatar">
+        <img *ngIf="sub.avatarUrl" [src]="sub.avatarUrl" [alt]="sub.channelTitle" />
+        <span *ngIf="!sub.avatarUrl">{{ (sub.channelTitle || '?').charAt(0) }}</span>
+      </div>
+      <div class="channel-info">
+        <h3>{{ sub.channelTitle }}</h3>
+        <p>
+          <lucide-icon [img]="Play" class="inline-icon"></lucide-icon>
+          {{ sub.id }}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

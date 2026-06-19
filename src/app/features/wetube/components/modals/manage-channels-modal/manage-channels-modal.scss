@@ -1,0 +1,108 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+.modal-content {
+  background-color: #0f0f0f;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  color: white;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #272727;
+}
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.close-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+.close-btn lucide-icon {
+  width: 24px;
+  height: 24px;
+}
+.modal-body {
+  padding: 1.5rem;
+}
+.channels-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.channel-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background-color: #1a1a1a;
+  border-radius: 8px;
+}
+.channel-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+}
+.channel-info {
+  flex: 1;
+}
+.channel-info h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.95rem;
+}
+.channel-info p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #aaa;
+}
+.channel-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+.action-icon {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+.action-icon:hover {
+  background-color: #272727;
+}
+.action-icon.danger:hover {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+.action-icon lucide-icon {
+  width: 20px;
+  height: 20px;
+}

@@ -1,0 +1,38 @@
+<div class="modal-overlay" *ngIf="isOpen" (click)="onClose()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>إنشاء مقطع</h2>
+      <button class="close-btn" (click)="onClose()">
+        <lucide-icon [img]="X"></lucide-icon>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="form-group">
+        <label>عنوان المقطع</label>
+        <input type="text" [(ngModel)]="clipTitle" placeholder="أضف عنواناً للمقطع">
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label>وقت البداية (ثانية)</label>
+          <input type="number" [(ngModel)]="startTime" min="0">
+        </div>
+        <div class="form-group">
+          <label>وقت النهاية (ثانية)</label>
+          <input type="number" [(ngModel)]="endTime" [min]="startTime + 1" [max]="maxDuration">
+        </div>
+      </div>
+      
+      <div class="duration-info">
+        <lucide-icon [img]="Scissors"></lucide-icon>
+        <span>مدة المقطع: {{ endTime - startTime }} ثانية</span>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="cancel-btn" (click)="onClose()">إلغاء</button>
+      <button class="create-btn" (click)="onCreate()">إنشاء</button>
+    </div>
+  </div>
+</div>

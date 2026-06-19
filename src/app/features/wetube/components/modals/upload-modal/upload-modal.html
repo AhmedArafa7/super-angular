@@ -1,0 +1,50 @@
+<div class="modal-overlay" *ngIf="isOpen" (click)="onClose()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>رفع فيديو جديد</h2>
+      <button class="close-btn" (click)="onClose()">
+        <lucide-icon [img]="X"></lucide-icon>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="upload-area">
+        <lucide-icon [img]="Upload" class="upload-icon"></lucide-icon>
+        <p>اسحب وأفلت ملفات الفيديو هنا</p>
+        <button class="select-btn">اختر ملف</button>
+        <span class="hint">سيتم نشر الفيديو بعد المعالجة</span>
+      </div>
+      
+      <div class="form-group">
+        <label>العنوان</label>
+        <input type="text" [(ngModel)]="title" placeholder="أضف عنواناً يجذب المشاهدين">
+      </div>
+      
+      <div class="form-group">
+        <label>الوصف</label>
+        <textarea [(ngModel)]="description" rows="4" placeholder="اكتب وصفاً للفيديو"></textarea>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label>التصنيف</label>
+          <select [(ngModel)]="category">
+            <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>الخصوصية</label>
+          <select [(ngModel)]="visibility">
+            <option *ngFor="let v of visibilities" [value]="v.value">{{ v.label }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="cancel-btn" (click)="onClose()">إلغاء</button>
+      <button class="upload-btn" (click)="onUpload()">نشر</button>
+    </div>
+  </div>
+</div>

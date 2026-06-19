@@ -1,0 +1,8 @@
+<aside class="wetube-sidebar">
+  <ul class="menu">
+    <li *ngFor="let item of menuItems" [routerLink]="item.route" routerLinkActive="active">
+      <lucide-icon [img]="item.icon" class="icon"></lucide-icon>
+      <span>{{ item.label }}</span>
+    </li>
+  </ul>
+</aside>

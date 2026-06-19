@@ -1,0 +1,42 @@
+<div class="flex min-h-screen w-full bg-slate-950 text-white overflow-hidden relative"
+     [ngClass]="{
+       'flex-row-reverse': sidebar.position() === 'right',
+       'flex-col': sidebar.position() === 'top',
+       'flex-col-reverse': sidebar.position() === 'bottom'
+     }">
+
+  @if (sidebar.isVisible()) {
+    <app-sidebar></app-sidebar>
+  }
+
+  @if (!sidebar.isVisible()) {
+    <button 
+      class="fixed top-4 left-4 z-50 w-10 h-10 rounded-2xl bg-slate-900/80 border border-white/10 text-indigo-500 shadow-2xl backdrop-blur-md hover:scale-110 transition-all flex items-center justify-center"
+      (click)="sidebar.setVisible(true)">
+      <svg lucideIcon="layers" class="w-5 h-5"></svg> 
+    </button>
+  }
+
+  <div class="flex-1 flex flex-col h-screen overflow-hidden relative">
+    @if (!sidebar.isHeaderVisible()) {
+      <div class="absolute top-0 inset-x-0 h-1 z-[100] group flex justify-center">
+        <button 
+          class="w-6 h-6 rounded-full bg-slate-900/60 border border-white/10 text-white/40 hover:text-white hover:bg-slate-800 transition-all opacity-0 group-hover:opacity-100 -translate-y-1 hover:translate-y-1 flex items-center justify-center"
+          (click)="sidebar.toggleHeader()">
+          <svg lucideIcon="chevron-down" class="w-4 h-4"></svg>
+        </button>
+      </div>
+    }
+
+    @if (sidebar.isHeaderVisible()) {
+      <app-header></app-header>
+    }
+
+    <main class="flex-1 overflow-y-auto relative transition-colors duration-500"
+          [ngClass]="sidebar.isVisible() ? 'bg-slate-900/20' : 'bg-slate-900/40'">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+  <!--<app-onboarding></app-onboarding>-->
+  <!--<app-privacy-consent></app-privacy-consent>-->
+</div>

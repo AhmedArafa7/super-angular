@@ -1,0 +1,14 @@
+<div class="native-ad" [attr.data-slot]="adSlot">
+  <span class="ad-label">إعلان</span>
+  <div class="ad-content">
+    <div class="ad-image" [style.background-image]="'url(' + currentAd.image + ')'"></div>
+    <div class="ad-info">
+      <h4>{{ currentAd.title }}</h4>
+      <p>{{ currentAd.description }}</p>
+      <a [href]="currentAd.url" target="_blank" class="ad-cta">
+        <span>{{ currentAd.cta }}</span>
+        <lucide-icon [img]="ExternalLink"></lucide-icon>
+      </a>
+    </div>
+  </div>
+</div>

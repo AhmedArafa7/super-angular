@@ -1,0 +1,17 @@
+<div class="shorts-container">
+  <div class="shorts-list">
+    <div *ngFor="let short of shorts" class="short-item">
+      <div class="short-video">
+        <lucide-icon [img]="Music" class="placeholder-icon"></lucide-icon>
+      </div>
+      <div class="short-info">
+        <h3>{{ short.title }}</h3>
+        <div class="short-stats">
+          <span><lucide-icon [img]="ThumbsUp" class="stat-icon"></lucide-icon> {{ short.likes }}</span>
+          <span><lucide-icon [img]="MessageCircle" class="stat-icon"></lucide-icon> {{ short.comments }}</span>
+          <span><lucide-icon [img]="Share2" class="stat-icon"></lucide-icon> مشاركة</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

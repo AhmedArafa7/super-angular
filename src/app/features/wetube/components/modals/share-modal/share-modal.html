@@ -1,0 +1,33 @@
+<div class="modal-overlay" *ngIf="isOpen" (click)="onClose()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>مشاركة</h2>
+      <button class="close-btn" (click)="onClose()">
+        <lucide-icon [img]="X"></lucide-icon>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="link-section">
+        <label>رابط الفيديو</label>
+        <div class="link-input">
+          <input type="text" [value]="videoUrl" readonly>
+          <button (click)="copyLink()">
+            <lucide-icon [img]="Link"></lucide-icon>
+            <span>{{ copied ? 'تم النسخ!' : 'نسخ' }}</span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="share-options">
+        <h3>مشاركة عبر</h3>
+        <div class="share-buttons">
+          <button class="share-btn whatsapp">واتساب</button>
+          <button class="share-btn telegram">تيليجرام</button>
+          <button class="share-btn twitter">تويتر</button>
+          <button class="share-btn facebook">فيسبوك</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

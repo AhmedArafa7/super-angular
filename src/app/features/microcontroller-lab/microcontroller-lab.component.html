@@ -1,0 +1,188 @@
+<div class="flex h-[calc(100vh-6rem)] w-full bg-[#1a1c22] overflow-hidden flex-row-reverse text-right" dir="rtl">
+  
+  <!-- 1. Left Activity Sidebar Icon Bar -->
+  <div class="w-14 bg-[#0d0f12] border-r border-white/5 flex flex-col items-center py-4 gap-4 z-20 shrink-0">
+    <div class="size-9 bg-indigo-600 rounded-xl flex items-center justify-center mb-4 text-white shadow-lg shadow-indigo-500/20">
+      <svg lucideIcon="cpu" class="size-5"></svg>
+    </div>
+
+    <!-- Boards Selection Panel tab -->
+    <button 
+      (click)="setSidebarView('boards')"
+      [ngClass]="serialService.activeSidebarView() === 'boards' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-white/5'"
+      class="rounded-xl size-10 flex items-center justify-center transition-all"
+      title="لوحات التطوير">
+      <svg lucideIcon="circuit-board" class="size-5"></svg>
+    </button>
+
+    <!-- Serial Connection Panel tab -->
+    <button 
+      (click)="setSidebarView('serial')"
+      [ngClass]="serialService.activeSidebarView() === 'serial' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-white/5'"
+      class="rounded-xl size-10 flex items-center justify-center transition-all"
+      title="الاتصال المباشر">
+      <svg lucideIcon="radio" class="size-5"></svg>
+    </button>
+
+    <div class="mt-auto">
+      <button 
+        (click)="setSidebarView('settings')"
+        [ngClass]="serialService.activeSidebarView() === 'settings' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-white/5'"
+        class="rounded-xl size-10 flex items-center justify-center transition-all"
+        title="الإعدادات">
+        <svg lucideIcon="settings" class="size-5"></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. Sidebar Detail Panel -->
+  <div 
+    *ngIf="serialService.activeSidebarView() as activeView"
+    class="w-72 bg-[#14161c] border-r border-white/5 flex flex-col font-sans shrink-0 animate-in slide-in-from-left duration-250">
+    
+    <div class="h-12 flex items-center px-4 uppercase tracking-widest text-[10px] font-bold text-indigo-400 border-b border-white/5 justify-end">
+      <span *ngIf="activeView === 'boards'">لوحات التطوير المدعومة</span>
+      <span *ngIf="activeView === 'serial'">إعدادات الاتصال العصبي</span>
+      <span *ngIf="activeView === 'settings'">تكوين المختبر</span>
+    </div>
+
+    <div class="flex-1 p-4">
+      <!-- Boards selection List -->
+      <div *ngIf="activeView === 'boards'" class="space-y-2">
+        <button 
+          *ngFor="let b of serialService.boards" 
+          (click)="serialService.activeBoardId.set(b.id)"
+          [ngClass]="serialService.activeBoardId() === b.id ? 'bg-indigo-500/10 border-indigo-500/40 text-indigo-400' : 'bg-white/5 border-transparent text-slate-400 hover:bg-white/10'"
+          class="w-full p-4 rounded-xl border text-right transition-all flex items-center justify-between flex-row-reverse">
+          <span class="text-xs font-bold">{{ b.name }}</span>
+          <span class="text-lg">{{ b.icon }}</span>
+        </button>
+      </div>
+
+      <!-- Serial port connection controls -->
+      <div *ngIf="activeView === 'serial'" class="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-4">
+        <button 
+          (click)="toggleConnection()"
+          [ngClass]="serialService.isConnected() ? 'bg-red-650/20 text-red-400 hover:bg-red-650/30' : 'bg-indigo-600 text-white hover:bg-indigo-500'"
+          class="w-full h-11 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95">
+          <span>{{ serialService.isConnected() ? 'قطع الاتصال بالجهاز' : 'الاتصال بالمنفذ USB' }}</span>
+        </button>
+        <p class="text-[10px] text-slate-500 leading-relaxed text-center">
+          يتيح لك هذا الخيار ربط لوحة التطوير الخاصة بك مباشرة بالمتصفح وقراءة الإشارات التناظرية والرقمية عصبياً.
+        </p>
+      </div>
+
+      <!-- Settings panel -->
+      <div *ngIf="activeView === 'settings'" class="space-y-4">
+        <div class="space-y-2">
+          <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">سرعة نقل الباود (BaudRate)</label>
+          <select class="w-full bg-white/5 border border-white/10 h-10 px-3 rounded-lg text-xs text-white">
+            <option value="115200" class="bg-slate-900">115200 (موصى به)</option>
+            <option value="9600" class="bg-slate-900">9600 (افتراضي)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Main Workspace Area -->
+  <div class="flex-1 flex flex-col min-w-0 bg-[#21252b]">
+    
+    <!-- Workspace Header tabs navbar -->
+    <header class="h-12 bg-[#1a1c22] flex items-center border-b border-white/5 px-4 flex-row-reverse shrink-0">
+      <button 
+        (click)="setViewMode('simulator')" 
+        [ngClass]="serialService.activeViewMode() === 'simulator' ? 'text-indigo-400 border-indigo-500' : 'text-slate-500 border-transparent hover:text-slate-300'"
+        class="h-full px-4 text-xs font-bold border-b-2 transition-all">
+        محاكاة Wokwi Interactive
+      </button>
+      <button 
+        (click)="setViewMode('editor')" 
+        [ngClass]="serialService.activeViewMode() === 'editor' ? 'text-amber-500 border-amber-500' : 'text-slate-500 border-transparent hover:text-slate-300'"
+        class="h-full px-4 text-xs font-bold border-b-2 transition-all">
+        محرر الأكواد main.ino
+      </button>
+
+      <div class="mr-auto flex items-center gap-3">
+        <!-- Flash button -->
+        <button 
+          (click)="handleFlash()"
+          class="h-8 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 gap-2 px-4 text-xs font-bold flex items-center justify-center">
+          <svg lucideIcon="zap" class="size-3.5"></svg>
+          رفع الكود (Flash)
+        </button>
+
+        <!-- Toggle terminal button -->
+        <button 
+          (click)="toggleTerminal()"
+          class="size-8 rounded-lg hover:bg-white/5 flex items-center justify-center text-slate-500 hover:text-white transition-colors">
+          <svg [lucideIcon]="serialService.isTerminalOpen() ? 'chevron-down' : 'chevron-up'" class="size-5"></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Workspace view: iframe simulator or text editor -->
+    <div class="flex-1 overflow-hidden relative">
+      <!-- 3.1. Embedded Simulator -->
+      <div 
+        *ngIf="serialService.activeViewMode() === 'simulator'"
+        class="absolute inset-0 w-full h-full bg-[#1a1c22]">
+        <iframe 
+          [src]="simulatorUrl" 
+          class="w-full h-full border-none"
+          allow="serial">
+        </iframe>
+      </div>
+
+      <!-- 3.2. Text IDE editor area -->
+      <div 
+        *ngIf="serialService.activeViewMode() === 'editor'"
+        class="absolute inset-0 w-full h-full bg-[#21252b] p-4">
+        <textarea 
+          [ngModel]="serialService.codeContent()"
+          (ngModelChange)="serialService.codeContent.set($event)"
+          class="w-full h-full bg-transparent text-slate-300 font-mono text-sm p-6 outline-none resize-none text-left" 
+          dir="ltr"
+          spellcheck="false">
+        </textarea>
+      </div>
+    </div>
+
+    <!-- 4. Bottom Serial logs terminal pane -->
+    <div 
+      *ngIf="serialService.isTerminalOpen()"
+      class="h-64 bg-[#0d0f12] border-t border-white/5 shrink-0 flex flex-col animate-in slide-in-from-bottom duration-200">
+      
+      <!-- Terminal Header controls -->
+      <header class="h-10 bg-[#0d0f12] border-b border-white/5 px-4 flex items-center justify-between flex-row-reverse text-[10px] font-black tracking-widest text-slate-500 uppercase">
+        <div class="flex items-center gap-2 flex-row-reverse">
+          <span class="text-indigo-400">منفذ قراءة البيانات التسلسلي (Serial Monitor)</span>
+          <span 
+            [ngClass]="serialService.isConnected() ? 'bg-emerald-500' : 'bg-red-500'"
+            class="size-1.5 rounded-full inline-block">
+          </span>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button 
+            (click)="clearLogs()"
+            class="text-[9px] hover:text-white transition-colors">
+            مسح الشاشة
+          </button>
+        </div>
+      </header>
+
+      <!-- Terminal logs output grid -->
+      <div class="flex-1 p-4 overflow-y-auto font-mono text-xs text-indigo-300 space-y-1 text-left" dir="ltr">
+        <div *ngFor="let log of serialService.logs()" class="leading-relaxed whitespace-pre-wrap select-text selection:bg-indigo-500/30">
+          {{ log }}
+        </div>
+        <div *ngIf="serialService.logs().length === 0" class="text-slate-650 italic text-center py-10">
+          لا توجد بيانات تسلسلية. اضغط "الاتصال بالمنفذ USB" أو "رفع الكود" للبدء.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>

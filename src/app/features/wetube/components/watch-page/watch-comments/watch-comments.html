@@ -1,0 +1,32 @@
+<div class="comments-container">
+  <div class="comments-header">
+    <lucide-icon [img]="MessageCircle"></lucide-icon>
+    <h3>{{ displayComments.length }} تعليق</h3>
+  </div>
+  
+  <div class="comment-input">
+    <div class="user-avatar">Y</div>
+    <input type="text" [(ngModel)]="newComment" (keyup.enter)="addComment()" placeholder="أضف تعليقاً...">
+    <button (click)="addComment()" *ngIf="newComment.trim()">إرسال</button>
+  </div>
+  
+  <div class="comments-list">
+    <div *ngFor="let comment of displayComments" class="comment-item">
+      <div class="comment-avatar">{{ comment.avatar }}</div>
+      <div class="comment-content">
+        <div class="comment-header">
+          <span class="comment-author">{{ comment.author }}</span>
+          <span class="comment-time">{{ comment.time }}</span>
+        </div>
+        <p class="comment-text">{{ comment.text }}</p>
+        <div class="comment-actions">
+          <button>
+            <lucide-icon [img]="ThumbsUp"></lucide-icon>
+            <span>{{ comment.likes }}</span>
+          </button>
+          <button>رد</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

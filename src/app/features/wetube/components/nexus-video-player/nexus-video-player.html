@@ -1,0 +1,99 @@
+<div #playerContainer
+     class="relative w-full h-full bg-black group overflow-hidden rounded-xl"
+     (mousemove)="handleMouseMove()"
+     (mouseleave)="handleMouseLeave()"
+     (click)="$event.stopPropagation(); togglePlay()">
+
+  <!-- 1. Cinematic Header Overlay -->
+  @if ((proSettings && proSettings !== null) || sourceType !== 'youtube') {
+    <div class="absolute top-0 inset-x-0 p-6 z-30 transition-all duration-700 pointer-events-none flex items-start justify-between bg-gradient-to-b from-black/80 via-black/20 to-transparent"
+         [ngClass]="showControls() ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'">
+      <div class="flex items-center gap-3">
+        @if (authorAvatar) {
+          <img [src]="authorAvatar" [alt]="author" class="w-10 h-10 rounded-full border border-white/20 shadow-lg" />
+        }
+        <div class="flex flex-col">
+          <h2 dir="auto" class="text-white font-bold text-lg leading-tight drop-shadow-md line-clamp-1">{{ title }}</h2>
+          <span dir="auto" class="text-white/70 text-sm font-medium">{{ author }}</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Center Play/Pause Button -->
+  @if ((proSettings && proSettings !== null) || sourceType !== 'youtube') {
+    <div class="absolute inset-0 z-20 flex items-center justify-center pointer-events-none transition-all duration-300"
+         [ngClass]="!isPlaying() || showControls() ? 'opacity-100 scale-100' : 'opacity-0 scale-110'">
+      <div class="w-20 h-20 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 shadow-2xl">
+        @if (isPlaying()) {
+          <svg lucideIcon="pause" class="text-white w-8 h-8" fill="white"></svg>
+        } @else {
+          <svg lucideIcon="play" class="text-white w-8 h-8 ml-1" fill="white"></svg>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Video Engine Selection -->
+  @if (sourceType === 'youtube' && !proSettings) {
+    <div class="relative w-full h-full">
+      <iframe [src]="youtubeIframeUrl | safe:'resourceUrl'"
+              class="w-full h-full border-none"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen>
+      </iframe>
+    </div>
+  } @else {
+    <video #videoPlayer
+           [src]="src"
+           [poster]="poster"
+           class="w-full h-full object-contain"
+           (timeupdate)="handleTimeUpdate()"
+           (loadedmetadata)="handleLoadedMetadata()"
+           (play)="isPlaying.set(true)"
+           (pause)="isPlaying.set(false)"
+           (click)="$event.stopPropagation(); togglePlay()"
+           playsinline>
+    </video>
+  }
+
+  <!-- Controls Overlay -->
+  <div class="video-controls absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 pb-2 pt-16 transition-opacity duration-300"
+       [ngClass]="(showControls() || !isPlaying()) && ((proSettings && proSettings !== null) || sourceType !== 'youtube') ? 'opacity-100' : 'opacity-0 pointer-events-none'"
+       (click)="$event.stopPropagation()">
+    
+    <input type="range" min="0" max="100"
+           [value]="progress()"
+           (change)="handleSeek($event)"
+           class="w-full h-1 bg-white/30 rounded-lg appearance-none cursor-pointer hover:h-1.5 transition-all mb-3 accent-red-600" />
+
+    <div class="flex items-center justify-between" dir="ltr">
+      <div class="flex items-center gap-5">
+        <button (click)="togglePlay()" class="text-white hover:text-red-500 transition-colors">
+          @if (isPlaying()) {
+            <svg lucideIcon="pause" class="w-5 h-5 font-bold" fill="currentColor"></svg>
+          } @else {
+            <svg lucideIcon="play" class="w-5 h-5 font-bold" fill="currentColor"></svg>
+          }
+        </button>
+        <button (click)="toggleMute()" class="text-white hover:text-red-500 transition-colors">
+          @if (isMuted()) {
+            <svg lucideIcon="volume-x" class="w-5 h-5"></svg>
+          } @else {
+            <svg lucideIcon="volume-2" class="w-5 h-5"></svg>
+          }
+        </button>
+        <div class="text-white text-xs font-medium tracking-wide">
+          {{ currentTime() }} <span class="opacity-50 mx-1">/</span> {{ duration() }}
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <button (click)="toggleFullScreen()" class="text-white hover:text-red-500 transition-colors">
+          <svg lucideIcon="maximize" class="w-5 h-5"></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

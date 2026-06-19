@@ -1,0 +1,314 @@
+<div class="h-[calc(100vh-6rem)] flex flex-col text-white overflow-hidden animate-in fade-in duration-700 font-sans text-right" dir="rtl">
+
+  <!-- 1. HEADER GRID -->
+  <header class="p-8 border-b border-white/5 bg-slate-900/10 shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div class="space-y-2">
+      <div class="inline-flex items-center gap-2 px-4 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full mb-2 flex-row-reverse">
+        <svg lucideIcon="sparkles" class="size-3 text-amber-400 animate-pulse"></svg>
+        <span class="text-[9px] uppercase font-black text-amber-400 tracking-widest leading-none">Neural Billboard ecosystem</span>
+      </div>
+      <h2 class="text-3xl font-black text-white tracking-tighter flex items-center gap-3 justify-start flex-row-reverse">
+        <svg lucideIcon="megaphone" class="text-amber-400 size-8"></svg>
+        مركز الإعلانات وعروض المطورين
+      </h2>
+      <p class="text-xs text-slate-500 font-bold uppercase tracking-widest leading-none">
+        تصفح الخدمات والمنتجات المتاحة واكسب نقاط EGC، أو أطلق إعلانك الخاص في الشبكة 🚀
+      </p>
+    </div>
+
+    <!-- Node wallet credits stats -->
+    <div class="flex items-center gap-4 bg-white/5 border border-white/10 p-3 rounded-2xl flex-row-reverse shrink-0">
+      <div class="text-right">
+        <span class="text-[9px] text-slate-500 block font-bold uppercase leading-none">رصيدك الرقمي الحالي</span>
+        <span class="text-sm font-black text-amber-400">{{ walletService.balances()['EGC'] }} EGC</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button 
+          (click)="isMySubmissionsOpen.set(true)"
+          class="h-9 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-350 text-[10px] font-black transition-all">
+          طلباتي الإعلانية
+        </button>
+        <button 
+          (click)="isFormOpen.set(true)"
+          class="h-9 px-4 rounded-xl bg-amber-550 hover:bg-amber-500 text-slate-950 text-[10px] font-black transition-all shadow-md shadow-amber-500/10">
+          إنشاء إعلان جديد
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 2. SCROLLABLE CONTAINER -->
+  <div class="flex-1 p-8 overflow-y-auto space-y-8 bg-slate-950/20">
+    <div class="max-w-6xl mx-auto space-y-8 pb-24">
+
+      <!-- FILTERS & SECTIONS -->
+      <div class="bg-slate-900/30 p-6 rounded-3xl border border-white/5 flex flex-col md:flex-row gap-4 items-center justify-between">
+        
+        <!-- Search input box -->
+        <div class="relative w-full md:max-w-md">
+          <svg lucideIcon="search" class="absolute right-4 top-1/2 -translate-y-1/2 size-4 text-slate-500"></svg>
+          <input 
+            type="text"
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
+            placeholder="ابحث عن أجهزة، استضافات، باقات تعلم..."
+            class="w-full h-12 pr-12 pl-4 bg-white/5 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500 font-bold"
+          />
+        </div>
+
+        <!-- Filter tags loops -->
+        <div class="flex items-center gap-2 flex-wrap justify-end flex-row-reverse">
+          <button 
+            *ngFor="let cat of categories"
+            (click)="selectedCategory.set(cat.id)"
+            [ngClass]="selectedCategory() === cat.id ? 'bg-amber-500 text-slate-950 font-black' : 'bg-white/5 text-slate-400 hover:text-white border border-white/5'"
+            class="h-10 px-5 rounded-xl text-xs font-bold transition-all">
+            {{ cat.label }}
+          </button>
+        </div>
+
+      </div>
+
+      <!-- MAIN PUBLICITY GRID -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        
+        <!-- Empty State -->
+        <div 
+          *ngIf="filteredAds().length === 0"
+          class="col-span-full text-center py-24 bg-white/5 border border-dashed border-white/5 rounded-[2.5rem] flex flex-col items-center justify-center space-y-4">
+          <svg lucideIcon="megaphone" class="size-16 text-slate-650"></svg>
+          <div class="space-y-1">
+            <p class="text-slate-400 font-black text-sm">لا توجد إعلانات نشطة حالياً</p>
+            <p class="text-[10px] text-slate-500 font-bold">يرجى تغيير فئة الفلتر أو تقديم إعلانك الخاص الأول!</p>
+          </div>
+        </div>
+
+        <!-- Cards loop -->
+        <div 
+          *ngFor="let ad of filteredAds()"
+          class="glass rounded-[2rem] border border-white/5 overflow-hidden flex flex-col transition-all hover:-translate-y-1 duration-300">
+          
+          <!-- Image frame -->
+          <div class="aspect-video relative overflow-hidden bg-slate-900 shrink-0">
+            <img [src]="ad.imageUrls[0]" alt="Ad Banner" class="w-full h-full object-cover transition-transform hover:scale-105 duration-700" />
+            
+            <div class="absolute top-4 right-4 flex items-center gap-1.5 flex-row-reverse">
+              <span class="text-[9px] font-black uppercase py-0.5 px-2 bg-slate-950/80 border border-white/10 rounded-md text-amber-400">
+                ★ مكافأة: +{{ ad.rewardAmount }} EGC
+              </span>
+              <span class="text-[9px] font-black uppercase py-0.5 px-2 bg-slate-950/80 border border-white/10 rounded-md text-slate-300">
+                {{ ad.category === 'hardware' ? 'أجهزة ومعدات' : ad.category === 'education' ? 'تعليم وكورسات' : 'خدمات عامة' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Description stats -->
+          <div class="p-6 flex-1 flex flex-col justify-between space-y-4 text-right">
+            
+            <div class="space-y-2">
+              <h3 class="text-base font-black text-white leading-snug">{{ ad.title }}</h3>
+              <p class="text-xs text-slate-405 leading-relaxed font-bold">{{ ad.description }}</p>
+            </div>
+
+            <!-- Footer interactions -->
+            <div class="pt-4 border-t border-white/5 flex items-center justify-between flex-row-reverse gap-4">
+              
+              <div class="text-right">
+                <span class="text-[8px] text-slate-500 block font-bold uppercase leading-none">مقدم العرض</span>
+                <span class="text-[10px] font-black text-white">{{ ad.authorName }}</span>
+              </div>
+
+              <!-- Claim Button trigger -->
+              <button 
+                (click)="claimReward(ad)"
+                class="h-10 px-5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/10 flex items-center gap-2 justify-center transition-all">
+                {{ ad.cta || 'زيارة العرض الآن' }}
+                <svg lucideIcon="arrow-left" class="size-3.5"></svg>
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= DIALOGS OVERLAYS ================= -->
+
+  <!-- 1. CREATE AD PROPOSAL DIALOG -->
+  <div 
+    *ngIf="isFormOpen()"
+    class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
+    <div class="bg-slate-900 border border-white/10 w-full max-w-lg rounded-[2.5rem] overflow-hidden p-8 space-y-6 text-right relative">
+      
+      <button 
+        (click)="isFormOpen.set(false)"
+        class="absolute top-6 left-6 text-slate-500 hover:text-white transition-colors">✕</button>
+
+      <div class="space-y-1">
+        <h3 class="text-xl font-black text-white">إطلاق حملة إعلانية جديدة</h3>
+        <p class="text-[10px] text-slate-500 font-bold">شارك خدماتك أو أجهزتك التقنية مع بقية العقد في الشبكة.</p>
+      </div>
+
+      <!-- Category selection -->
+      <div class="space-y-2">
+        <label class="text-[9px] uppercase font-black text-slate-550 tracking-widest block">تصنيف الإعلان</label>
+        <select 
+          [(ngModel)]="adCategory"
+          class="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-amber-500 font-bold">
+          <option value="hardware">أجهزة ومعدات ومتحكمات</option>
+          <option value="education">دورات وكورسات برمجية</option>
+          <option value="services">باقات استضافة وخدمات سحابية</option>
+        </select>
+      </div>
+
+      <!-- Title Input -->
+      <div class="space-y-2">
+        <label class="text-[9px] uppercase font-black text-slate-550 tracking-widest">عنوان الحملة الإعلانية</label>
+        <input 
+          type="text" 
+          [(ngModel)]="adTitle"
+          placeholder="عنوان تسويقي جذاب ومختصر..."
+          class="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-amber-500 font-bold"
+        />
+      </div>
+
+      <!-- Description Input -->
+      <div class="space-y-2">
+        <label class="text-[9px] uppercase font-black text-slate-550 tracking-widest">شرح العرض بالتفصيل</label>
+        <textarea 
+          [(ngModel)]="adDescription"
+          placeholder="شرح يوضح الخدمة أو العقد والخصومات المتاحة..."
+          class="w-full h-24 bg-white/5 border border-white/10 rounded-xl p-4 text-xs text-white focus:outline-none focus:border-amber-500 resize-none font-semibold leading-relaxed"
+        ></textarea>
+      </div>
+
+      <!-- Image URL & Redirect Link URLs -->
+      <div class="grid grid-cols-2 gap-4">
+        <div class="space-y-2">
+          <label class="text-[9px] uppercase font-black text-slate-550 tracking-widest">رابط صورة البانر (URL)</label>
+          <input 
+            type="text" 
+            [(ngModel)]="adImageUrl"
+            placeholder="رابط الصورة الخارجية..."
+            class="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-amber-500 font-bold"
+          />
+        </div>
+        <div class="space-y-2">
+          <label class="text-[9px] uppercase font-black text-slate-550 tracking-widest">رابط التوجيه عند الضغط</label>
+          <input 
+            type="text" 
+            [(ngModel)]="adLinkUrl"
+            placeholder="https://example.com"
+            class="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-amber-500 font-bold"
+          />
+        </div>
+      </div>
+
+      <!-- Credits budget reward -->
+      <div class="grid grid-cols-2 gap-4">
+        <div class="space-y-2">
+          <label class="text-[9px] uppercase font-black text-slate-550 tracking-widest">قيمة المكافأة للعقدة (EGC)</label>
+          <input 
+            type="number" 
+            [(ngModel)]="adRewardAmount"
+            class="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-amber-500 font-bold"
+          />
+        </div>
+        <div class="space-y-2">
+          <label class="text-[9px] uppercase font-black text-slate-550 tracking-widest">اسم الجهة المعلنة</label>
+          <input 
+            type="text" 
+            [(ngModel)]="adAdvertiserName"
+            class="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-amber-500 font-bold"
+          />
+        </div>
+      </div>
+
+      <!-- Buttons triggers -->
+      <div class="grid grid-cols-2 gap-3 pt-2">
+        <button 
+          (click)="isFormOpen.set(false)"
+          class="h-12 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl text-xs font-black transition-all">إلغاء</button>
+        <button 
+          (click)="submitAdProposal()"
+          [disabled]="!adTitle().trim() || !adDescription().trim()"
+          class="h-12 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 rounded-xl text-xs font-black transition-all">إطلاق الحملة الآن</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 2. TRACK MY SUBMISSIONS DIALOG -->
+  <div 
+    *ngIf="isMySubmissionsOpen()"
+    class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
+    <div class="bg-slate-900 border border-white/10 w-full max-w-xl rounded-[2.5rem] p-8 space-y-6 text-right relative max-h-[85vh] overflow-y-auto">
+      
+      <button 
+        (click)="isMySubmissionsOpen.set(false)"
+        class="absolute top-6 left-6 text-slate-500 hover:text-white transition-colors">✕</button>
+
+      <div class="space-y-1">
+        <h3 class="text-xl font-black text-white">تتبع طلباتك الإعلانية</h3>
+        <p class="text-[10px] text-slate-500 font-bold">قائمة الإعلانات التي قمت بتقديمها للشبكة وحالتها الحالية.</p>
+      </div>
+
+      <!-- Submissions list -->
+      <div class="space-y-4">
+        
+        <div *ngIf="myAds().length === 0" class="text-center py-10 opacity-30 italic text-xs">
+          لم تقم بتقديم أي طلبات إعلانية بعد.
+        </div>
+
+        <div 
+          *ngFor="let ad of myAds()"
+          class="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-3">
+          
+          <div class="flex justify-between items-start flex-row-reverse text-right gap-4">
+            <div>
+              <h4 class="font-bold text-white text-sm">{{ ad.title }}</h4>
+              <p class="text-[10px] text-slate-450 mt-1">المكافأة: +{{ ad.rewardAmount }} EGC | الفئة: {{ ad.category }}</p>
+            </div>
+            
+            <span 
+              [ngClass]="ad.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : ad.status === 'rejected' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'"
+              class="text-[9px] font-black uppercase py-0.5 px-2 rounded-md border shrink-0">
+              {{ ad.status === 'active' ? 'نشط ومقبول' : ad.status === 'rejected' ? 'مرفوض' : 'قيد المراجعة' }}
+            </span>
+          </div>
+
+          <!-- Rejection details -->
+          <div 
+            *ngIf="ad.status === 'rejected' && ad.rejectionReason"
+            class="bg-red-500/5 border border-red-500/10 p-3 rounded-xl flex items-start gap-2 flex-row-reverse text-right">
+            <svg lucideIcon="alert-circle" class="size-4 text-red-500 shrink-0 mt-0.5"></svg>
+            <div class="space-y-0.5">
+              <span class="text-[8px] uppercase font-black text-red-500 tracking-wider">سبب الرفض الإداري</span>
+              <p class="text-[10px] text-red-200/80 font-bold leading-normal">"{{ ad.rejectionReason }}"</p>
+            </div>
+          </div>
+
+          <!-- Stats clicks impressions -->
+          <div class="flex justify-between items-center text-[9px] text-slate-500 pt-2 border-t border-white/5">
+            <span>الزيارات الفعلية: {{ ad.clicks }}</span>
+            <span>الظهور بالشبكة: {{ ad.impressions }}</span>
+            <span>تاريخ الإطلاق: {{ ad.createdAt | date:'yyyy/MM/dd' }}</span>
+          </div>
+
+        </div>
+
+      </div>
+
+      <button 
+        (click)="isMySubmissionsOpen.set(false)"
+        class="w-full h-11 bg-white/5 hover:bg-white/10 text-slate-350 hover:text-white rounded-xl text-xs font-black transition-all">إغلاق القائمة</button>
+
+    </div>
+  </div>
+
+</div>

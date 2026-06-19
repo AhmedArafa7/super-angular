@@ -1,0 +1,187 @@
+<div class="p-8 max-w-7xl mx-auto space-y-12 animate-in fade-in duration-700 font-sans text-right" dir="rtl">
+  <!-- Header -->
+  <header class="flex flex-col md:flex-row items-center justify-between gap-6">
+    <div class="space-y-2">
+      <div class="inline-flex items-center gap-2 px-4 py-1 bg-red-500/10 border border-red-500/20 rounded-full mb-2">
+        <svg lucideIcon="heart-pulse" class="size-3 text-red-400 animate-pulse"></svg>
+        <span class="text-[10px] uppercase font-bold text-red-400 tracking-widest">Wellness Protocol Active</span>
+      </div>
+      <h1 class="text-5xl font-headline font-bold text-white tracking-tight flex items-center gap-4">
+        الصحة والرياضة
+        <svg lucideIcon="dumbbell" class="text-indigo-400 size-10"></svg>
+      </h1>
+      <p class="text-muted-foreground text-lg max-w-2xl">
+        استثمر في صحتك من خلال متابعة قياساتك، ترطيب جسمك، وتنظيم فترات تمرينك الذكية.
+      </p>
+    </div>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-10">
+    
+    <!-- BMI Calculator -->
+    <div class="glass border-white/5 rounded-[2.5rem] overflow-hidden flex flex-col">
+      <div class="card-header p-8 pb-4">
+        <h2 class="card-title text-2xl font-bold text-white flex items-center gap-3">
+          <svg lucideIcon="calculator" class="text-indigo-400"></svg> حاسبة كتلة الجسم (BMI)
+        </h2>
+      </div>
+      <div class="card-content p-8 space-y-6 flex-1">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label class="text-xs text-muted-foreground font-bold">الوزن (كجم)</label>
+            <input type="number" placeholder="70" class="bg-white/5 border-white/10 h-12 text-center text-lg w-full rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
+                   [(ngModel)]="weight">
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs text-muted-foreground font-bold">الطول (سم)</label>
+            <input type="number" placeholder="175" class="bg-white/5 border-white/10 h-12 text-center text-lg w-full rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
+                   [(ngModel)]="height">
+          </div>
+        </div>
+
+        <button (click)="calculateBmi()" class="w-full bg-indigo-600 hover:bg-indigo-500 rounded-2xl h-12 font-bold text-lg gap-2 flex items-center justify-center">
+          <svg lucideIcon="scale" class="size-5"></svg> احسب النتيجة
+        </button>
+
+        <div *ngIf="bmi !== null" class="mt-8 p-6 bg-white/5 border border-white/10 rounded-3xl text-center space-y-2 animate-in zoom-in duration-300">
+          <p class="text-sm text-muted-foreground">مؤشر كتلة جسمك هو:</p>
+          <h4 class="text-5xl font-black text-white">{{ bmi }}</h4>
+          <span class="badge mt-2 text-xs px-4 py-1 border border-white/10 rounded-full inline-block" [ngClass]="getBmiCategory(bmi).color">
+            {{ getBmiCategory(bmi).label }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Water Tracker -->
+    <div class="glass border-white/5 rounded-[2.5rem] overflow-hidden flex flex-col">
+      <div class="card-header p-8 pb-4">
+        <h2 class="card-title text-2xl font-bold text-white flex items-center gap-3">
+          <svg lucideIcon="droplets" class="text-blue-400"></svg> متتبع شرب الماء
+        </h2>
+      </div>
+      <div class="card-content p-8 space-y-8 flex-1">
+        <div class="relative flex items-center justify-center">
+          <div class="size-48 rounded-full border-8 border-white/5 flex flex-col items-center justify-center gap-2 relative overflow-hidden">
+            <div class="absolute bottom-0 left-0 right-0 bg-blue-500/20 transition-all duration-1000"
+                 [style.height.%]="(waterGlasses / waterGoal) * 100"></div>
+            <h4 class="text-5xl font-black text-white z-10">{{ waterGlasses }}</h4>
+            <p class="text-xs text-muted-foreground font-bold uppercase z-10">من {{ waterGoal }} أكواب</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <button (click)="decreaseWater()" class="size-16 rounded-2xl border border-white/10 bg-white/5 hover:bg-red-500/10 text-red-400 flex items-center justify-center">
+            <svg lucideIcon="minus" class="size-6"></svg>
+          </button>
+          <button (click)="increaseWater()" class="flex-1 h-16 bg-blue-600 hover:bg-blue-500 rounded-2xl font-bold text-xl gap-3 shadow-xl shadow-blue-600/20 flex items-center justify-center text-white">
+            <svg lucideIcon="droplets" class="size-6"></svg> إضافة كوب
+          </button>
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex justify-between text-[10px] font-bold text-muted-foreground uppercase">
+            <span>الهدف اليومي</span>
+            <span>{{ Math.round((waterGlasses / waterGoal) * 100) }}%</span>
+          </div>
+          <progress [value]="(waterGlasses / waterGoal) * 100" max="100" class="h-2 w-full bg-white/5 accent-blue-500 rounded-full overflow-hidden"></progress>
+        </div>
+      </div>
+    </div>
+
+    <!-- HIIT Timer -->
+    <div class="glass border-white/5 rounded-[2.5rem] overflow-hidden flex flex-col">
+      <div class="card-header p-8 pb-4">
+        <h2 class="card-title text-2xl font-bold text-white flex items-center gap-3">
+          <svg lucideIcon="timer" class="text-amber-400"></svg> مؤقت تمارين HIIT
+        </h2>
+      </div>
+      <div class="card-content p-8 space-y-8 flex-1">
+        <div class="p-8 rounded-3xl border transition-colors duration-500 text-center space-y-2"
+             [ngClass]="{
+               'bg-red-500/10 border-red-500/20': isWorkPeriod,
+               'bg-green-500/10 border-green-500/20': !isWorkPeriod
+             }">
+          <span class="badge mb-2 uppercase tracking-widest px-3 py-1 rounded-full text-xs font-bold inline-block text-white"
+                [ngClass]="{'bg-red-500': isWorkPeriod, 'bg-green-500': !isWorkPeriod}">
+            {{ isWorkPeriod ? 'فترة التمرين' : 'فترة الاستراحة' }}
+          </span>
+          <h4 class="text-7xl font-black text-white tabular-nums">
+            {{ Math.floor(timeLeft / 60) }}:{{ (timeLeft % 60).toString().padStart(2, '0') }}
+          </h4>
+        </div>
+
+        <div class="flex gap-4">
+          <button (click)="resetTimer()" class="size-14 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
+            <svg lucideIcon="rotate-ccw" class="size-6"></svg>
+          </button>
+          <button (click)="toggleTimer()"
+                  [ngClass]="{
+                    'flex-1 h-14 rounded-2xl font-bold text-lg gap-2 flex items-center justify-center transition-all': true,
+                    'bg-slate-800 hover:bg-slate-700 text-white': isActive,
+                    'bg-amber-600 hover:bg-amber-500 shadow-xl shadow-amber-600/20 text-white': !isActive
+                  }">
+            @if (isActive) {
+              <svg lucideIcon="pause" class="size-5"></svg>
+            } @else {
+              <svg lucideIcon="play" class="size-5"></svg>
+            }
+            {{ isActive ? 'إيقاف مؤقت' : 'ابدأ التحدي' }}
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="text-[10px] text-muted-foreground font-bold uppercase block">تمرين (ثانية)</label>
+            <input type="number" [ngModel]="workTime" (ngModelChange)="workTime = $event; timeLeft = !isActive ? workTime : timeLeft"
+                   class="h-10 w-full bg-white/5 border border-white/10 rounded-xl text-center font-bold focus:outline-none focus:border-indigo-500 transition-colors">
+          </div>
+          <div class="space-y-1">
+            <label class="text-[10px] text-muted-foreground font-bold uppercase block">راحة (ثانية)</label>
+            <input type="number" [ngModel]="restTime" (ngModelChange)="restTime = $event"
+                   class="h-10 w-full bg-white/5 border border-white/10 rounded-xl text-center font-bold focus:outline-none focus:border-indigo-500 transition-colors">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Health Tip Section -->
+  <section class="glass border-white/5 rounded-[2.5rem] p-12 relative overflow-hidden">
+    <div class="absolute top-0 right-0 p-12 opacity-5">
+      <svg lucideIcon="brain-circuit" class="size-64"></svg>
+    </div>
+    <div class="relative z-10 space-y-4 max-w-3xl">
+      <div class="flex items-center gap-2 text-indigo-400">
+        <svg lucideIcon="lightbulb" class="size-5"></svg>
+        <span class="text-xs font-black uppercase tracking-widest">Si-Neuro Health Wisdom</span>
+      </div>
+      <h2 class="text-4xl font-bold text-white leading-tight">
+        "{{ currentTip }}"
+      </h2>
+      <p class="text-slate-400">نصيحة تلقائية من خوادم النخاع الصحية لتحسين جودة حياتك اليومية.</p>
+      <button (click)="currentTip = healthTips[Math.floor(Math.random() * healthTips.length)]"
+              class="text-indigo-400 hover:text-indigo-300 hover:bg-indigo-400/10 font-bold gap-2 p-0 h-auto flex items-center">
+        نصيحة أخرى <svg lucideIcon="rotate-ccw" class="size-3"></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- Extra Info -->
+  <div class="flex flex-wrap gap-4 items-center justify-center pt-10 opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
+    <div class="flex items-center gap-2">
+      <svg lucideIcon="flame" class="size-4"></svg>
+      <span class="text-[10px] font-bold uppercase tracking-widest">Burn Calories</span>
+    </div>
+    <div class="size-1 rounded-full bg-white/20"></div>
+    <div class="flex items-center gap-2">
+      <svg lucideIcon="zap" class="size-4"></svg>
+      <span class="text-[10px] font-bold uppercase tracking-widest">Stay Energetic</span>
+    </div>
+    <div class="size-1 rounded-full bg-white/20"></div>
+    <div class="flex items-center gap-2">
+      <svg lucideIcon="droplets" class="size-4"></svg>
+      <span class="text-[10px] font-bold uppercase tracking-widest">Keep Hydrated</span>
+    </div>
+  </div>
+</div>

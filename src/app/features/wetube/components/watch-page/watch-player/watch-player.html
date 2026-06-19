@@ -1,0 +1,25 @@
+<div class="video-container">
+  <div class="video-wrapper" [style.background-image]="thumbnail ? 'url(' + thumbnail + ')' : ''">
+    <div class="play-overlay" (click)="togglePlay()" *ngIf="!isPlaying">
+      <lucide-icon [img]="Play" class="play-icon"></lucide-icon>
+    </div>
+    <div class="video-controls" *ngIf="isPlaying">
+      <div class="progress-bar">
+        <div class="progress" [style.width.%]="(currentTime / duration) * 100"></div>
+      </div>
+      <div class="controls-row">
+        <button (click)="togglePlay()">
+          <lucide-icon [img]="isPlaying ? Pause : Play"></lucide-icon>
+        </button>
+        <span class="time">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
+        <button (click)="toggleMute()">
+          <lucide-icon [img]="isMuted ? VolumeX : Volume2"></lucide-icon>
+        </button>
+        <input type="range" min="0" max="100" [value]="volume" class="volume-slider">
+        <button (click)="toggleFullscreen()">
+          <lucide-icon [img]="Maximize"></lucide-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

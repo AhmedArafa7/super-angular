@@ -1,0 +1,78 @@
+<div class="watch-view-container" dir="rtl">
+  @if (video(); as vid) {
+    <div class="watch-layout">
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- Video Player -->
+        <app-watch-player
+          [videoUrl]="vid.url || ''"
+          [thumbnail]="vid.thumbnail || ''"
+          [title]="vid.title">
+        </app-watch-player>
+
+        <!-- Source Detector -->
+        <div class="source-info">
+          <app-video-source-detector [url]="vid.url || ''" [source]="vid.source"></app-video-source-detector>
+        </div>
+
+        <!-- Title -->
+        <h1 class="video-title">{{ vid.title }}</h1>
+
+        <!-- Actions -->
+        <app-watch-actions
+          [likes]="likes()"
+          [isLiked]="isLiked()"
+          [isDisliked]="isDisliked()"
+          [isSubscribed]="isSubscribed()"
+          [channelName]="vid.author"
+          (like)="onLike()"
+          (dislike)="onDislike()"
+          (subscribe)="onSubscribe()"
+          (share)="onShare()"
+          (download)="onDownload()"
+          (clip)="onClip()"
+          (save)="onSave()">
+        </app-watch-actions>
+
+        <!-- Product Selector -->
+        <div *ngIf="showProductSelector()" class="product-selector-container">
+          <app-video-product-selector
+            [selectedProducts]="selectedProducts()"
+            [displayMode]="productDisplayMode()"
+            (update)="onProductUpdate($event)">
+          </app-video-product-selector>
+        </div>
+
+        <!-- Description -->
+        <app-watch-description
+          [description]="'في هذا الفيديو، نستعرض ' + vid.title + ' ضمن سلسلة المحتوى التقني الخاص بنا. نتمنى أن تستفيدوا من هذا الشرح ونرحب بتعليقاتكم واستفساراتكم في الأسفل.'"
+          [views]="likes()"
+          [date]="vid.time || ''"
+          [category]="vid.category || ''">
+        </app-watch-description>
+
+        <!-- Native Ad -->
+        <app-nexus-native-ads adSlot="watch-1" [category]="vid.category || ''"></app-nexus-native-ads>
+
+        <!-- Product Shelf -->
+        <app-watch-product-shelf
+          *ngIf="productDisplayMode() === 'shelf' && selectedProducts().length > 0"
+          [products]="[]">
+        </app-watch-product-shelf>
+
+        <!-- Comments -->
+        <app-watch-comments></app-watch-comments>
+      </div>
+
+      <!-- Sidebar (Recommendations) -->
+      <div class="sidebar-content">
+        <app-watch-sidebar></app-watch-sidebar>
+      </div>
+    </div>
+  } @else {
+    <div class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>جاري التحميل...</p>
+    </div>
+  }
+</div>

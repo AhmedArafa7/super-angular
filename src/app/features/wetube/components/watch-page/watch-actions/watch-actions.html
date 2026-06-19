@@ -1,0 +1,45 @@
+<div class="actions-container">
+  <div class="channel-info">
+    <div class="channel-avatar">{{ channelName.charAt(0) }}</div>
+    <div class="channel-details">
+      <h3>{{ channelName }}</h3>
+      <span class="subscribers">1.2M مشترك</span>
+    </div>
+    <button class="subscribe-btn" [class.subscribed]="isSubscribed" (click)="subscribe.emit()">
+      <lucide-icon [img]="Plus"></lucide-icon>
+      <span>{{ isSubscribed ? 'مشترك' : 'اشتراك' }}</span>
+    </button>
+  </div>
+  
+  <div class="action-buttons">
+    <div class="like-dislike-group">
+      <button class="action-btn" [class.active]="isLiked" (click)="like.emit()">
+        <lucide-icon [img]="ThumbsUp"></lucide-icon>
+        <span>{{ likes | number }}</span>
+      </button>
+      <div class="separator"></div>
+      <button class="action-btn" [class.active]="isDisliked" (click)="dislike.emit()">
+        <lucide-icon [img]="ThumbsDown"></lucide-icon>
+      </button>
+    </div>
+    
+    <button class="action-btn" (click)="share.emit()">
+      <lucide-icon [img]="Share2"></lucide-icon>
+      <span>مشاركة</span>
+    </button>
+    
+    <button class="action-btn" (click)="download.emit()">
+      <lucide-icon [img]="Download"></lucide-icon>
+      <span>تحميل</span>
+    </button>
+    
+    <button class="action-btn" (click)="clip.emit()">
+      <lucide-icon [img]="Scissors"></lucide-icon>
+      <span>قص</span>
+    </button>
+    
+    <button class="action-btn" (click)="save.emit()">
+      <span>حفظ</span>
+    </button>
+  </div>
+</div>

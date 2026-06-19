@@ -1,0 +1,37 @@
+.glass {
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass:hover {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(99, 102, 241, 0.2);
+  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.8),
+              0 0 50px -10px rgba(99, 102, 241, 0.1);
+}
+
+.bg-indigo-650 {
+  background-color: rgb(67, 56, 202);
+}
+
+.bg-indigo-650\/15 {
+  background-color: rgba(67, 56, 202, 0.15);
+}
+
+/* Custom scrollbar rules */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.3);
+}

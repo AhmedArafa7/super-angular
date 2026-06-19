@@ -1,0 +1,89 @@
+<div class="home-container" dir="rtl">
+  <!-- Onboarding Prompt for new users -->
+  <div *ngIf="showOnboardingBanner()" class="onboarding-banner" (click)="goToOnboarding()">
+    <div class="banner-icon">
+      <lucide-icon [img]="Sparkles"></lucide-icon>
+    </div>
+    <div class="banner-content">
+      <h3>عرّفنا على اهتماماتك</h3>
+      <p>ساعدنا نلاقي أفضل المحتوى ليك من خلال اختيار مواضيعك المفضلة</p>
+    </div>
+    <button class="banner-cta">
+      ابدأ الآن
+      <lucide-icon [img]="ArrowLeft"></lucide-icon>
+    </button>
+  </div>
+
+  <!-- Categories Bar -->
+  <div class="categories-bar hide-scrollbar">
+    <button
+      *ngFor="let category of categories"
+      class="category-chip"
+      [class.active]="wetube.activeCategory() === category"
+      (click)="onCategoryClick(category)">
+      {{ category }}
+    </button>
+  </div>
+
+  <div class="home-layout">
+    <!-- Subscriptions Sidebar -->
+    <div class="subs-sidebar">
+      <app-subscription-bar></app-subscription-bar>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Hero Ad -->
+      <app-nexus-native-ads adSlot="home-hero" category="الكل"></app-nexus-native-ads>
+
+      <!-- Loading State -->
+      <div *ngIf="wetube.isFeedLoading()" class="loading-state">
+        <div class="spinner"></div>
+        <p>جاري تحميل أحدث الفيديوهات...</p>
+      </div>
+
+      <!-- Video Grid -->
+      <div *ngIf="!wetube.isFeedLoading() && wetube.allHomeContent().length > 0" class="video-grid">
+        <div *ngFor="let video of wetube.allHomeContent(); let i = index" class="video-card">
+          <a [routerLink]="['/stream/watch', video.id]" class="video-link">
+            <div class="thumbnail-wrapper" [class.shorts]="video.isShorts">
+              <img [src]="video.thumbnail || 'assets/placeholder.jpg'" [alt]="video.title" loading="lazy">
+              <span *ngIf="video.isShorts" class="shorts-badge">Shorts</span>
+            </div>
+            <div class="video-info">
+              <img *ngIf="video.channelAvatar" [src]="video.channelAvatar" class="channel-avatar" [alt]="video.author">
+              <div class="info-text">
+                <h3 class="video-title">{{ video.title }}</h3>
+                <p class="channel-name">{{ video.author }}</p>
+                <p class="video-meta">
+                  <span *ngIf="video.time">{{ video.time }}</span>
+                  <span *ngIf="video.category"> • {{ video.category }}</span>
+                </p>
+              </div>
+            </div>
+          </a>
+          <app-nexus-native-ads *ngIf="(i + 1) % 4 === 0" adSlot="home-grid"></app-nexus-native-ads>
+        </div>
+      </div>
+
+      <!-- Empty state with helpful CTAs -->
+      <div *ngIf="!wetube.isFeedLoading() && wetube.allHomeContent().length === 0" class="empty-state">
+        <div class="empty-icon">
+          <lucide-icon [img]="TrendingUp"></lucide-icon>
+        </div>
+        <h3>مرحباً بك في WeTube! 👋</h3>
+        <p>يبدو إن مفيش محتوى متاح دلوقتي. جرّب الخيارات دي:</p>
+        <div class="empty-actions">
+          <button class="empty-btn primary" (click)="goToOnboarding()">
+            <lucide-icon [img]="Sparkles"></lucide-icon>
+            ابدأ رحلتك واختار اهتماماتك
+          </button>
+          <button class="empty-btn secondary">
+            <lucide-icon [img]="Search"></lucide-icon>
+            ابحث في YouTube
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

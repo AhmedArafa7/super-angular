@@ -1,0 +1,93 @@
+.actions-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.channel-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: white;
+}
+.channel-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff0000, #cc0000);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.25rem;
+}
+.channel-details h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.subscribers {
+  font-size: 0.8rem;
+  color: #aaa;
+}
+.subscribe-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+  background-color: white;
+  color: black;
+  border: none;
+  border-radius: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-right: 1rem;
+}
+.subscribe-btn.subscribed {
+  background-color: #272727;
+  color: white;
+}
+.subscribe-btn lucide-icon {
+  width: 16px;
+  height: 16px;
+}
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.like-dislike-group {
+  display: flex;
+  background-color: #272727;
+  border-radius: 20px;
+  overflow: hidden;
+}
+.like-dislike-group .separator {
+  width: 1px;
+  background-color: #444;
+}
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #272727;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+.action-btn:hover {
+  background-color: #3a3a3a;
+}
+.action-btn.active {
+  background-color: #3a3a3a;
+  color: #3b82f6;
+}
+.action-btn lucide-icon {
+  width: 20px;
+  height: 20px;
+}

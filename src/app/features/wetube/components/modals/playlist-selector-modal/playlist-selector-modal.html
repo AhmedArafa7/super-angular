@@ -1,0 +1,42 @@
+<div class="modal-overlay" *ngIf="isOpen" (click)="onClose()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>حفظ في قائمة التشغيل</h2>
+      <button class="close-btn" (click)="onClose()">
+        <lucide-icon [img]="X"></lucide-icon>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="create-section">
+        <h3>إنشاء قائمة جديدة</h3>
+        <div class="create-form">
+          <input type="text" [(ngModel)]="newPlaylistName" placeholder="اسم القائمة">
+          <label class="checkbox">
+            <input type="checkbox" [(ngModel)]="isPrivate">
+            <lucide-icon [img]="isPrivate ? Lock : Globe"></lucide-icon>
+            <span>{{ isPrivate ? 'خاصة' : 'عامة' }}</span>
+          </label>
+          <button class="create-btn" (click)="onCreate()" [disabled]="!newPlaylistName.trim()">
+            <lucide-icon [img]="Plus"></lucide-icon>
+            <span>إنشاء</span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="playlists-section">
+        <h3>قوائمك</h3>
+        <div class="playlists-list">
+          <div *ngFor="let playlist of playlists" class="playlist-item" (click)="select.emit(playlist.id)">
+            <lucide-icon [img]="ListVideo" class="playlist-icon"></lucide-icon>
+            <div class="playlist-info">
+              <h4>{{ playlist.name }}</h4>
+              <p>{{ playlist.count }} فيديو</p>
+            </div>
+            <lucide-icon [img]="playlist.isPrivate ? Lock : Globe" class="privacy-icon"></lucide-icon>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

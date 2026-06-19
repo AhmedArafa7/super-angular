@@ -1,0 +1,14 @@
+<div class="description-container">
+  <div class="description-header">
+    <span class="views">{{ views | number }} مشاهدة</span>
+    <span class="date">{{ date }}</span>
+    <span class="category" *ngIf="category">{{ category }}</span>
+  </div>
+  <div class="description-body" [class.expanded]="isExpanded">
+    <p>{{ description }}</p>
+  </div>
+  <button class="toggle-btn" (click)="toggle()">
+    <lucide-icon [img]="isExpanded ? ChevronUp : ChevronDown"></lucide-icon>
+    <span>{{ isExpanded ? 'عرض أقل' : 'عرض المزيد' }}</span>
+  </button>
+</div>

@@ -1,0 +1,61 @@
+.watch-view-container {
+  width: 100%;
+  padding: 1.5rem;
+  color: white;
+}
+.watch-layout {
+  display: flex;
+  gap: 1.5rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+.main-content {
+  flex: 1;
+  min-width: 0;
+}
+.sidebar-content {
+  width: 350px;
+  flex-shrink: 0;
+}
+.source-info {
+  margin-top: 0.75rem;
+}
+.video-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0.75rem 0;
+  line-height: 1.3;
+}
+.product-selector-container {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background-color: #1a1a1a;
+  border-radius: 8px;
+}
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  gap: 1rem;
+}
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #272727;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@media (max-width: 1024px) {
+  .watch-layout {
+    flex-direction: column;
+  }
+  .sidebar-content {
+    width: 100%;
+  }
+}

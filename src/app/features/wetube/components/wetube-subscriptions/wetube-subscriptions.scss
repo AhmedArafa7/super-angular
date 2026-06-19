@@ -1,0 +1,74 @@
+.subscriptions-container {
+  padding: 2rem;
+  color: white;
+}
+.subscriptions-container h1 {
+  margin-bottom: 2rem;
+  font-size: 1.75rem;
+}
+.subscriptions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+.subscription-card {
+  background-color: #0f0f0f;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  border: 1px solid #272727;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.subscription-card:hover {
+  transform: translateY(-2px);
+}
+.channel-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff0000, #cc0000);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 0 auto 1rem;
+  color: white;
+  position: relative;
+}
+.channel-avatar.live::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  background-color: #ef4444;
+  border: 3px solid #0f0f0f;
+  border-radius: 50%;
+}
+.channel-info h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+}
+.channel-info p {
+  margin: 0;
+  color: #aaa;
+  font-size: 0.875rem;
+}
+.inline-icon {
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+}
+.live-badge {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background-color: #ef4444;
+  color: white;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}

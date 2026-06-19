@@ -1,0 +1,11 @@
+<div class="subscription-bar">
+  <h3>الاشتراكات</h3>
+  <div class="subs-list">
+    <div *ngFor="let sub of wetube.subscriptions()" class="sub-item" [routerLink]="['/stream']" [queryParams]="{channel: sub.channelId}">
+      <div class="sub-avatar" [style.background-image]="sub.avatarUrl ? 'url(' + sub.avatarUrl + ')' : ''">
+        <span *ngIf="!sub.avatarUrl">{{ sub.channelTitle.charAt(0) }}</span>
+      </div>
+      <span class="sub-name">{{ sub.channelTitle }}</span>
+    </div>
+  </div>
+</div>

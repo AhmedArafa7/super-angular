@@ -1,0 +1,339 @@
+<div class="h-[calc(100vh-6rem)] flex text-white overflow-hidden animate-in fade-in duration-700 font-sans text-right" dir="rtl">
+  
+  <!-- 1. SIDEBAR: Main Categories -->
+  <aside class="w-72 border-l border-white/5 bg-slate-900/60 backdrop-blur-3xl flex flex-col shrink-0">
+    <div class="p-6">
+      <button 
+        (click)="isModalOpen = true"
+        class="w-full h-12 rounded-2xl bg-indigo-650 hover:bg-indigo-600 text-white font-black flex items-center justify-center gap-2 shadow-lg shadow-indigo-650/20 transition-all active:scale-95">
+        <svg lucideIcon="plus" class="size-5"></svg>
+        إضافة منتج جديد
+      </button>
+    </div>
+
+    <!-- Navigation links -->
+    <nav class="flex-1 px-3 space-y-1 overflow-y-auto">
+      <button 
+        (click)="setCategory('all')"
+        [ngClass]="marketService.activeCategory() === 'all' ? 'bg-indigo-500/10 text-indigo-400 font-bold border-indigo-500/20' : 'text-slate-400 hover:bg-white/5 border-transparent'"
+        class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all flex-row-reverse text-right group border">
+        <svg lucideIcon="shopping-cart" class="size-5"></svg>
+        <span class="text-xs">كل المنتجات والعقد</span>
+      </button>
+
+      <button 
+        (click)="setCategory('software')"
+        [ngClass]="marketService.activeCategory() === 'software' ? 'bg-indigo-500/10 text-indigo-400 font-bold border-indigo-500/20' : 'text-slate-400 hover:bg-white/5 border-transparent'"
+        class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all flex-row-reverse text-right group border">
+        <svg lucideIcon="laptop" class="size-5"></svg>
+        <span class="text-xs">البرمجيات والتطبيقات</span>
+      </button>
+
+      <button 
+        (click)="setCategory('hardware')"
+        [ngClass]="marketService.activeCategory() === 'hardware' ? 'bg-indigo-500/10 text-indigo-400 font-bold border-indigo-500/20' : 'text-slate-400 hover:bg-white/5 border-transparent'"
+        class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all flex-row-reverse text-right group border">
+        <svg lucideIcon="cpu" class="size-5"></svg>
+        <span class="text-xs">العتاد والمتحكمات</span>
+      </button>
+
+      <button 
+        (click)="setCategory('services')"
+        [ngClass]="marketService.activeCategory() === 'services' ? 'bg-indigo-500/10 text-indigo-400 font-bold border-indigo-500/20' : 'text-slate-400 hover:bg-white/5 border-transparent'"
+        class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all flex-row-reverse text-right group border">
+        <svg lucideIcon="users" class="size-5"></svg>
+        <span class="text-xs">الخدمات السحابية</span>
+      </button>
+    </nav>
+
+    <!-- Wallet quick stats -->
+    <div class="p-6 border-t border-white/5 space-y-3 bg-indigo-950/20">
+      <div class="flex items-center justify-between flex-row-reverse text-[10px] text-indigo-400 font-black uppercase tracking-wider">
+        <span>رصيدك في المحفظة الذكية</span>
+        <svg lucideIcon="wallet" class="size-4"></svg>
+      </div>
+      <div class="text-right">
+        <h4 class="text-2xl font-black text-white leading-none">
+          {{ marketService.walletService.balances().BKC }} <span class="text-xs text-indigo-400">BKC</span>
+        </h4>
+        <p class="text-[9px] text-slate-500 mt-2">يمكنك استخدام الرصيد مباشرة لشراء العقد البرمجية والأجهزة.</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 2. MAIN WORKSPACE AREA -->
+  <main class="flex-1 flex flex-col overflow-hidden bg-slate-950/20">
+    
+    <!-- 2.1. Dynamic Product Details view overlay -->
+    <ng-container *ngIf="viewingItem() as item; else gridList">
+      <div class="flex-1 flex flex-col overflow-y-auto p-8 space-y-8 animate-in zoom-in-95 duration-250">
+        
+        <!-- Header Actions -->
+        <div class="flex items-center justify-between flex-row-reverse">
+          <button 
+            (click)="viewingItem.set(null)"
+            class="h-12 px-6 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-bold gap-2 flex items-center justify-center">
+            ✕ العودة للمتجر
+          </button>
+
+          <button 
+            *ngIf="item.sellerId === 'me'"
+            (click)="handleDelete(item.id)"
+            class="h-12 px-6 rounded-2xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-xs font-bold text-red-400 gap-2 flex items-center justify-center">
+            حذف العقد
+          </button>
+        </div>
+
+        <!-- Details grid template -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 text-right">
+          
+          <!-- Image Section -->
+          <div class="lg:col-span-5 border border-white/10 rounded-[3rem] overflow-hidden bg-slate-950 aspect-video lg:aspect-square relative shadow-2xl">
+            <img [src]="item.imageUrl" [alt]="item.title" class="w-full h-full object-cover" />
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent"></div>
+          </div>
+
+          <!-- Product description info -->
+          <div class="lg:col-span-7 space-y-6 flex flex-col justify-center">
+            <div class="space-y-3">
+              <span class="text-[10px] text-indigo-400 font-black uppercase tracking-widest block">{{ item.mainCategory.toUpperCase() }}</span>
+              <h3 class="text-3xl lg:text-4xl font-black text-white leading-tight">{{ item.title }}</h3>
+              <p class="text-sm text-slate-400 leading-relaxed max-w-xl">{{ item.description }}</p>
+            </div>
+
+            <!-- Specs list parameters -->
+            <div class="grid grid-cols-3 gap-4 border-t border-b border-white/5 py-6 text-xs font-bold text-slate-400">
+              <div>
+                <span class="text-slate-500 block text-[9px] font-black uppercase tracking-widest">السعر المطلق</span>
+                <span class="text-white text-xl block mt-1">{{ item.price }} BKC</span>
+              </div>
+              <div>
+                <span class="text-slate-500 block text-[9px] font-black uppercase tracking-widest">الكمية المتوفرة</span>
+                <span class="text-white text-xl block mt-1">{{ item.stock }} قطع</span>
+              </div>
+              <div>
+                <span class="text-slate-500 block text-[9px] font-black uppercase tracking-widest">حالة الاتصال</span>
+                <span class="text-emerald-400 text-xs block mt-2">نشط عصبياً</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+              <button 
+                *ngIf="item.sellerId !== 'me' && !item.purchasedBy?.includes('me')"
+                (click)="handleAcquire(item)"
+                class="h-14 px-10 rounded-2xl bg-indigo-650 hover:bg-indigo-600 text-white font-black shadow-lg shadow-indigo-650/20 transition-all flex items-center justify-center gap-2">
+                <svg lucideIcon="zap" class="size-4.5"></svg>
+                الاستحواذ الفوري على المنتج
+              </button>
+
+              <button 
+                *ngIf="item.purchasedBy?.includes('me')"
+                class="h-14 px-10 rounded-2xl bg-emerald-500/10 text-emerald-400 font-black border border-emerald-500/20 flex items-center justify-center gap-2 cursor-default">
+                ✓ تم الشراء والاستحواذ
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </ng-container>
+
+    <!-- 2.2. Product grid list view -->
+    <ng-template #gridList>
+      <!-- Top navbar filters -->
+      <header class="px-8 pt-8 pb-4 shrink-0 space-y-4">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 flex-row-reverse">
+          <div class="text-right">
+            <h2 class="text-3xl font-black text-white tracking-tighter">سوق العقد العصبية</h2>
+            <p class="text-[10px] text-slate-500 mt-2 font-bold uppercase tracking-widest">
+              سوق الأصول البرمجية والحلول الذكية اللامركزية.
+            </p>
+          </div>
+
+          <!-- Tabs Buy vs Mine -->
+          <div class="flex bg-white/5 border border-white/10 rounded-2xl p-1 shrink-0">
+            <button 
+              (click)="setTab('buy')"
+              [ngClass]="marketService.activeTab() === 'buy' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'"
+              class="h-10 px-6 rounded-xl text-xs transition-all">
+              شراء أصول
+            </button>
+            <button 
+              (click)="setTab('mine')"
+              [ngClass]="marketService.activeTab() === 'mine' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'"
+              class="h-10 px-6 rounded-xl text-xs transition-all">
+              أصولي الخاصة
+            </button>
+          </div>
+        </div>
+
+        <!-- Search input box -->
+        <div class="relative w-full">
+          <svg lucideIcon="search" class="absolute right-4 top-1/2 -translate-y-1/2 size-4 text-slate-500"></svg>
+          <input 
+            type="text" 
+            [(ngModel)]="searchQuery"
+            placeholder="البحث في سجل العقد العالمي..." 
+            class="w-full h-12 pr-11 bg-white/5 border border-white/10 rounded-2xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 text-right"
+          />
+        </div>
+      </header>
+
+      <!-- Scroll area products -->
+      <div class="flex-1 p-8 overflow-y-auto">
+        <div 
+          *ngIf="filteredItems.length > 0; else emptyState"
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 pb-24">
+          
+          <div 
+            *ngFor="let item of filteredItems"
+            (click)="viewingItem.set(item)"
+            class="glass hover:bg-white/5 border border-white/5 hover:border-indigo-500/20 rounded-[2rem] overflow-hidden cursor-pointer group flex flex-col justify-between transition-all duration-300">
+            
+            <div class="aspect-video w-full relative bg-slate-950 overflow-hidden shrink-0">
+              <img [src]="item.imageUrl" [alt]="item.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent"></div>
+              
+              <!-- Absolute top badges -->
+              <span class="absolute top-4 right-4 bg-black/60 backdrop-blur-md border border-white/5 text-[9px] font-mono rounded-lg px-2.5 py-1 text-white">
+                {{ item.mainCategory.toUpperCase() }}
+              </span>
+            </div>
+
+            <!-- Title content -->
+            <div class="p-6 space-y-4 text-right flex-1 flex flex-col justify-between">
+              <div class="space-y-1.5">
+                <h4 class="font-bold text-white text-sm truncate group-hover:text-indigo-400 transition-colors">
+                  {{ item.title }}
+                </h4>
+                <p class="text-[10px] text-slate-500 line-clamp-2 leading-relaxed">
+                  {{ item.description }}
+                </p>
+              </div>
+
+              <!-- Price and actions -->
+              <div class="flex items-center justify-between flex-row-reverse border-t border-white/5 pt-4">
+                <div>
+                  <span class="text-[9px] text-slate-500 block">السعر المطلوب</span>
+                  <span class="text-white font-black text-sm font-mono leading-none">{{ item.price }} BKC</span>
+                </div>
+                <span 
+                  [ngClass]="item.stock > 0 ? 'text-emerald-400 bg-emerald-500/5 border border-emerald-500/10' : 'text-slate-500 bg-slate-500/5 border border-slate-500/10'"
+                  class="text-[9px] font-bold rounded-lg px-2 py-0.5">
+                  {{ item.stock > 0 ? 'متوفر' : 'نفذت الكمية' }}
+                </span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Empty stats view -->
+        <ng-template #emptyState>
+          <div class="text-center py-20 space-y-6">
+            <div class="size-20 bg-white/5 rounded-full flex items-center justify-center mx-auto border border-white/5">
+              <svg lucideIcon="shopping-cart" class="size-8 text-slate-550"></svg>
+            </div>
+            <div>
+              <h4 class="font-bold text-slate-400 text-sm">سجل العقد فارغ حالياً</h4>
+              <p class="text-[10px] text-slate-500 mt-2 leading-relaxed">لم يتم العثور على أصول تناسب معايير الفلترة المطبقة.</p>
+            </div>
+          </div>
+        </ng-template>
+      </div>
+    </ng-template>
+
+  </main>
+
+  <!-- 3. Product Listing Creator Modal Dialog -->
+  <div *ngIf="isModalOpen" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-950 border border-white/10 rounded-[3rem] p-10 max-w-sm w-full space-y-6 relative overflow-hidden animate-in zoom-in-95 duration-250">
+      
+      <button 
+        (click)="isModalOpen = false"
+        class="absolute left-6 top-6 size-9 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+        ✕
+      </button>
+
+      <div class="text-right">
+        <h3 class="text-xl font-black text-white">إطلاق منتج جديد</h3>
+        <p class="text-xs text-slate-500 mt-2 leading-relaxed">املأ بيانات العقدة لإدراج منتجك للبيع عصبياً.</p>
+      </div>
+
+      <div class="space-y-4 text-right overflow-y-auto max-h-[60vh] px-1">
+        
+        <div class="space-y-2">
+          <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">تسمية المنتج</label>
+          <input 
+            type="text" 
+            [(ngModel)]="newItemTitle"
+            placeholder="مثال: WeTube Cinema Expansion..."
+            class="w-full bg-white/5 border border-white/10 h-12 rounded-xl text-white px-4 text-right focus:outline-none focus:border-indigo-500 text-xs"
+          />
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">وصف تفصيلي</label>
+          <textarea 
+            [(ngModel)]="newItemDesc"
+            placeholder="أدخل ميزات التطبيق أو العتاد..."
+            class="w-full bg-white/5 border border-white/10 h-24 rounded-xl text-white p-4 text-right focus:outline-none focus:border-indigo-500 text-xs resize-none"
+          ></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">السعر المطلق (BKC)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="newItemPrice"
+              class="w-full bg-white/5 border border-white/10 h-12 rounded-xl text-white px-4 text-right focus:outline-none focus:border-indigo-500 text-xs"
+            />
+          </div>
+          <div class="space-y-2">
+            <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">الكمية المتوفرة</label>
+            <input 
+              type="number" 
+              [(ngModel)]="newItemStock"
+              class="w-full bg-white/5 border border-white/10 h-12 rounded-xl text-white px-4 text-right focus:outline-none focus:border-indigo-500 text-xs"
+            />
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">تصنيف المنتج</label>
+          <select 
+            [(ngModel)]="newItemCategory"
+            class="w-full bg-white/5 border border-white/10 h-12 px-4 rounded-xl text-xs text-white">
+            <option value="software" class="bg-slate-900">برمجيات وتطبيقات</option>
+            <option value="hardware" class="bg-slate-900">أجهزة ومتحكمات</option>
+            <option value="services" class="bg-slate-900">خدمات سحابية</option>
+            <option value="digital" class="bg-slate-900">أصول رقمية</option>
+          </select>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">رابط صورة المعاينة (اختياري)</label>
+          <input 
+            type="text" 
+            [(ngModel)]="newItemImage"
+            placeholder="أدخل رابط صورة مباشر..."
+            class="w-full bg-white/5 border border-white/10 h-12 rounded-xl text-white px-4 text-right focus:outline-none focus:border-indigo-500 text-xs"
+          />
+        </div>
+
+      </div>
+
+      <button 
+        (click)="handleCreateItem()"
+        [disabled]="!newItemTitle.trim()"
+        class="w-full h-14 bg-indigo-650 hover:bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-650/20 transition-all flex items-center justify-center">
+        تأكيد طرح وإطلاق المنتج
+      </button>
+    </div>
+  </div>
+
+</div>

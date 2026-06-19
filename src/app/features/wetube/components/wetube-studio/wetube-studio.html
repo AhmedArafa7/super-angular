@@ -1,0 +1,37 @@
+<div class="studio-container">
+  <h1>ستوديو WeTube</h1>
+  
+  <div class="stats-grid">
+    <div *ngFor="let stat of stats" class="stat-card">
+      <div class="stat-icon" [style.background-color]="stat.color">
+        <lucide-icon [img]="stat.icon"></lucide-icon>
+      </div>
+      <div class="stat-info">
+        <p class="stat-label">{{ stat.label }}</p>
+        <p class="stat-value">{{ stat.value }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="videos-section">
+    <h2>الفيديوهات الأخيرة</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>العنوان</th>
+          <th>المشاهدات</th>
+          <th>الإعجابات</th>
+          <th>الحالة</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let video of videos">
+          <td>{{ video.title }}</td>
+          <td>{{ video.views }}</td>
+          <td>{{ video.likes }}</td>
+          <td><span class="status">{{ video.status }}</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

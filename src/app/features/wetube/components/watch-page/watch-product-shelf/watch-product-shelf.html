@@ -1,0 +1,19 @@
+<div class="product-shelf" *ngIf="displayProducts.length > 0">
+  <div class="shelf-header">
+    <h3>منتجات ذات صلة</h3>
+    <lucide-icon [img]="ShoppingCart"></lucide-icon>
+  </div>
+  <div class="products-grid">
+    <div *ngFor="let product of displayProducts" class="product-card">
+      <div class="product-image" [style.background-image]="'url(' + product.image + ')'"></div>
+      <div class="product-info">
+        <h4>{{ product.name }}</h4>
+        <p class="price">{{ product.price }}</p>
+        <a [href]="product.url" target="_blank" class="buy-btn">
+          <span>تسوق الآن</span>
+          <lucide-icon [img]="ExternalLink"></lucide-icon>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

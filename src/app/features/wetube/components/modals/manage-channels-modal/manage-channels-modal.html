@@ -1,0 +1,30 @@
+<div class="modal-overlay" *ngIf="isOpen" (click)="onClose()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>إدارة القنوات</h2>
+      <button class="close-btn" (click)="onClose()">
+        <lucide-icon [img]="X"></lucide-icon>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="channels-list">
+        <div *ngFor="let channel of channels" class="channel-item">
+          <div class="channel-avatar" [style.background-image]="'url(' + channel.avatar + ')'"></div>
+          <div class="channel-info">
+            <h4>{{ channel.title }}</h4>
+            <p>المزامنة: {{ channel.sync === 'all' ? 'الكل' : channel.sync === 'long' ? 'طويلة' : 'شورتس' }}</p>
+          </div>
+          <div class="channel-actions">
+            <button class="action-icon" (click)="toggleNotifications.emit(channel.id)" [title]="channel.notifications ? 'إيقاف الإشعارات' : 'تفعيل الإشعارات'">
+              <lucide-icon [img]="channel.notifications ? Bell : BellOff"></lucide-icon>
+            </button>
+            <button class="action-icon danger" (click)="remove.emit(channel.id)" title="إزالة">
+              <lucide-icon [img]="Trash2"></lucide-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
