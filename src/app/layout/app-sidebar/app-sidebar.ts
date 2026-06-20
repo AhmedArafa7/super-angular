@@ -34,8 +34,8 @@ export class AppSidebarComponent {
   onMouseMove(event: MouseEvent) {
     if (!this.sidebar.isResizing()) return;
     
-    // In RTL, the sidebar is on the right side. The width is window.innerWidth - clientX
-    let newWidth = window.innerWidth - event.clientX;
+    // Sidebar is on the left side of the screen. Width = clientX
+    let newWidth = event.clientX;
     
     if (newWidth < 180) newWidth = 180;
     if (newWidth > 450) newWidth = 450;
