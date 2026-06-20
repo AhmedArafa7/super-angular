@@ -1,43 +1,86 @@
-<aside class="flex flex-col h-full border-r border-white/10 bg-slate-900/50 backdrop-blur-xl transition-all duration-300 relative"
-       [ngStyle]="{'width': sidebar.isCollapsed() ? '80px' : sidebar.width() + 'px'}"
-       [ngClass]="{'transition-none': sidebar.isResizing()}">
-       
-  <!-- Resize Handle (right edge of the left-aligned sidebar) -->
-  @if (!sidebar.isCollapsed()) {
-    <div class="absolute inset-y-0 right-0 w-1.5 cursor-col-resize hover:bg-indigo-500/50 z-50 transition-colors"
-         (mousedown)="startResizing($event)"></div>
-  }
-
-  <div class="h-16 flex items-center justify-between px-4 border-b border-white/10 shrink-0">
+<!-- Left Sidebar Mode -->
+@if (sidebar.position() === 'left') {
+  <aside class="flex flex-col h-full border-r border-white/10 bg-slate-900/50 backdrop-blur-xl transition-all duration-300 relative"
+         [ngStyle]="{'width': sidebar.isCollapsed() ? '80px' : sidebar.width() + 'px'}"
+         [ngClass]="{'transition-none': sidebar.isResizing()}">
+         
+    <!-- Resize Handle -->
     @if (!sidebar.isCollapsed()) {
-      <div class="flex items-center gap-3 w-full" [ngClass]="{'flex-row-reverse': true}">
-        <div class="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/50 flex items-center justify-center shrink-0">
-          <svg lucideIcon="zap" class="text-indigo-400 w-[18px] h-[18px]"></svg>
-        </div>
-        <span class="font-bold text-white text-lg tracking-tight">Si-Neuro OS</span>
-      </div>
-    } @else {
-      <div class="w-full flex justify-center">
-        <div class="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/50 flex items-center justify-center">
-          <svg lucideIcon="zap" class="text-indigo-400 w-[18px] h-[18px]"></svg>
-        </div>
-      </div>
+      <div class="absolute inset-y-0 right-0 w-1.5 cursor-col-resize hover:bg-indigo-500/50 z-50 transition-colors"
+           (mousedown)="startResizing($event)"></div>
     }
-  </div>
 
-  <div class="flex-1 overflow-y-auto p-2 space-y-1" dir="rtl">
-    @for (item of pinnedItems; track item.id) {
-      <app-sidebar-item [item]="item"></app-sidebar-item>
-    }
-  </div>
-  
-  <div class="p-4 border-t border-white/10 shrink-0">
-     <button class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-red-400 hover:bg-red-500/10"
-             [ngClass]="{'justify-center': sidebar.isCollapsed()}" dir="rtl">
-        <svg lucideIcon="log-out" class="w-5 h-5 shrink-0"></svg>
-        @if (!sidebar.isCollapsed()) {
-          <span class="truncate">تسجيل الخروج</span>
-        }
+    <div class="h-16 flex items-center justify-between px-4 border-b border-white/10 shrink-0">
+      @if (!sidebar.isCollapsed()) {
+        <div class="flex items-center gap-3 w-full" [ngClass]="{'flex-row-reverse': true}">
+          <div class="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/50 flex items-center justify-center shrink-0">
+            <svg lucideIcon="zap" class="text-indigo-400 w-[18px] h-[18px]"></svg>
+          </div>
+          <span class="font-bold text-white text-lg tracking-tight">Si-Neuro</span>
+          
+          <div class="mr-auto flex gap-1">
+            <button class="p-1.5 hover:bg-white/10 rounded-lg text-slate-400 transition-colors" title="إعدادات القائمة" (click)="showCustomizationDialog = true">
+              <svg lucideIcon="sliders-horizontal" class="w-4 h-4"></svg>
+            </button>
+            <button class="p-1.5 hover:bg-white/10 rounded-lg text-slate-400 transition-colors" title="وضع الدائرة العائمة" (click)="sidebar.setPosition('floating')">
+              <svg lucideIcon="minimize-2" class="w-4 h-4"></svg>
+            </button>
+          </div>
+        </div>
+      } @else {
+        <div class="w-full flex justify-center">
+          <button (click)="sidebar.setPosition('floating')" class="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/50 flex items-center justify-center hover:bg-indigo-500/30 transition-colors">
+            <svg lucideIcon="zap" class="text-indigo-400 w-[18px] h-[18px]"></svg>
+          </button>
+        </div>
+      }
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-hide" dir="rtl">
+      @for (item of pinnedItems; track item.id) {
+        <app-sidebar-item [item]="item"></app-sidebar-item>
+      }
+    </div>
+    
+    <div class="p-4 border-t border-white/10 shrink-0">
+       <button class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-red-400 hover:bg-red-500/10"
+               [ngClass]="{'justify-center': sidebar.isCollapsed()}" dir="rtl">
+          <svg lucideIcon="log-out" class="w-5 h-5 shrink-0"></svg>
+          @if (!sidebar.isCollapsed()) {
+            <span class="truncate">تسجيل الخروج</span>
+          }
+        </button>
+    </div>
+  </aside>
+}
+
+<!-- Floating Orb Mode -->
+@if (sidebar.position() === 'floating') {
+  <app-floating-orb></app-floating-orb>
+}
+
+<!-- Mobile Bottom Bar Mode -->
+@if (sidebar.position() === 'bottom') {
+  <nav class="fixed bottom-0 left-0 right-0 z-50 bg-slate-900/90 backdrop-blur-xl border-t border-white/10 pb-safe">
+    <div class="flex items-center justify-around p-2 overflow-x-auto scrollbar-hide snap-x" dir="rtl">
+      @for (item of pinnedItems.slice(0, 6); track item.id) {
+        <a [routerLink]="['/' + item.id]"
+           routerLinkActive="bg-white/10 text-white shadow-lg"
+           [routerLinkActiveOptions]="{ exact: true }"
+           class="flex flex-col items-center justify-center min-w-[64px] h-14 px-2 rounded-xl transition-all text-slate-400 hover:text-white snap-center relative">
+          <svg [lucideIcon]="item.icon" class="w-5 h-5 mb-1"></svg>
+          <span class="text-[10px] font-medium truncate w-full text-center">{{ item.label }}</span>
+        </a>
+      }
+      <button (click)="showCustomizationDialog = true" class="flex flex-col items-center justify-center min-w-[64px] h-14 px-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all snap-center">
+         <svg lucideIcon="menu" class="w-5 h-5 mb-1"></svg>
+         <span class="text-[10px] font-medium truncate w-full text-center">المزيد</span>
       </button>
-  </div>
-</aside>
+    </div>
+  </nav>
+}
+
+<!-- Customization Dialog -->
+@if (showCustomizationDialog) {
+  <app-sidebar-customization-dialog (onClose)="showCustomizationDialog = false"></app-sidebar-customization-dialog>
+}

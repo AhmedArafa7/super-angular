@@ -7,10 +7,13 @@ import { LucideDynamicIcon } from '@lucide/angular';
 
 import { SidebarItemComponent } from './sidebar-item/sidebar-item.component';
 
+import { FloatingOrbComponent } from './floating-orb/floating-orb.component';
+import { CustomizationDialogComponent } from './customization-dialog/customization-dialog.component';
+
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterModule, LucideDynamicIcon, SidebarItemComponent],
+  imports: [CommonModule, RouterModule, LucideDynamicIcon, SidebarItemComponent, FloatingOrbComponent, CustomizationDialogComponent],
   templateUrl: './app-sidebar.html',
   styleUrls: ['./app-sidebar.scss']
 })
@@ -18,6 +21,7 @@ export class AppSidebarComponent {
   sidebar = inject(SidebarService);
   
   userRole: string | null = 'admin'; 
+  showCustomizationDialog = false;
   
   get visibleItems(): NavItem[] {
     return getVisibleNavItems(this.userRole, ALL_NAV_ITEMS);
@@ -27,6 +31,26 @@ export class AppSidebarComponent {
     return this.visibleItems.filter(item => 
       item.isPermanent || this.sidebar.pinnedItems().includes(item.id as any)
     );
+  }
+
+  // Handle responsive layout automatically
+  @HostListener('window:resize')
+  onResize() {
+    if (window.innerWidth < 768) {
+      this.sidebar.isMobile.set(true);
+      if (this.sidebar.position() === 'left') {
+        this.sidebar.setPosition('bottom');
+      }
+    } else {
+      this.sidebar.isMobile.set(false);
+      if (this.sidebar.position() === 'bottom') {
+        this.sidebar.setPosition('left');
+      }
+    }
+  }
+
+  ngOnInit() {
+    this.onResize(); // Initial check
   }
 
   // --- Resizing Logic ---

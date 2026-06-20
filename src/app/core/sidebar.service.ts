@@ -17,6 +17,7 @@ export class SidebarService {
   readonly isResizing = signal<boolean>(false);
   readonly position = signal<SidebarPosition>("left");
   readonly floatingPos = signal<{x: number, y: number}>({ x: 20, y: 100 });
+  readonly isMobile = signal<boolean>(false);
 
   constructor() {
     this.loadState();
@@ -36,6 +37,11 @@ export class SidebarService {
     } else {
       this.pinnedItems.set([...current, id]);
     }
+    this.saveState();
+  }
+
+  reorderPinnedItems(newItems: NavItemId[]): void {
+    this.pinnedItems.set(newItems);
     this.saveState();
   }
 
