@@ -1,21 +1,22 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { SidebarService } from '../../core/sidebar.service';
 import { ALL_NAV_ITEMS, NavItem, getVisibleNavItems } from '../../core/nav-items';
 import { LucideDynamicIcon } from '@lucide/angular';
 
+import { SidebarItemComponent } from './sidebar-item/sidebar-item.component';
+
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterModule, LucideDynamicIcon],
+  imports: [CommonModule, RouterModule, LucideDynamicIcon, SidebarItemComponent],
   templateUrl: './app-sidebar.html',
   styleUrls: ['./app-sidebar.scss']
 })
 export class AppSidebarComponent {
   sidebar = inject(SidebarService);
   
-  // TODO: Connect user auth state
   userRole: string | null = 'admin'; 
   
   get visibleItems(): NavItem[] {
@@ -26,5 +27,35 @@ export class AppSidebarComponent {
     return this.visibleItems.filter(item => 
       item.isPermanent || this.sidebar.pinnedItems().includes(item.id as any)
     );
+  }
+
+  // --- Resizing Logic ---
+  @HostListener('window:mousemove', ['$event'])
+  onMouseMove(event: MouseEvent) {
+    if (!this.sidebar.isResizing()) return;
+    
+    // In RTL, the sidebar is on the right side. The width is window.innerWidth - clientX
+    let newWidth = window.innerWidth - event.clientX;
+    
+    if (newWidth < 180) newWidth = 180;
+    if (newWidth > 450) newWidth = 450;
+    
+    this.sidebar.setWidth(newWidth);
+  }
+
+  @HostListener('window:mouseup', ['$event'])
+  onMouseUp(event: MouseEvent) {
+    if (this.sidebar.isResizing()) {
+      this.sidebar.setIsResizing(false);
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = 'auto';
+    }
+  }
+
+  startResizing(event: MouseEvent) {
+    event.preventDefault();
+    this.sidebar.setIsResizing(true);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
   }
 }

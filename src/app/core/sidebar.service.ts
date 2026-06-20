@@ -14,6 +14,7 @@ export class SidebarService {
   readonly isVisible = signal<boolean>(true);
   readonly isHeaderVisible = signal<boolean>(true);
   readonly width = signal<number>(280);
+  readonly isResizing = signal<boolean>(false);
   readonly position = signal<SidebarPosition>("left");
   readonly floatingPos = signal<{x: number, y: number}>({ x: 20, y: 100 });
 
@@ -56,6 +57,10 @@ export class SidebarService {
   setWidth(val: number): void {
     this.width.set(val);
     this.saveState();
+  }
+
+  setIsResizing(val: boolean): void {
+    this.isResizing.set(val);
   }
 
   setPosition(val: SidebarPosition): void {

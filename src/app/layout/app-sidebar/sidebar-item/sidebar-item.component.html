@@ -1,0 +1,44 @@
+<a [routerLink]="['/' + item.id]"
+   routerLinkActive="bg-white/10 text-white font-bold shadow-lg"
+   [routerLinkActiveOptions]="{ exact: true }"
+   (contextmenu)="onContextMenu($event)"
+   class="w-full flex items-center h-12 gap-3 px-3 rounded-xl transition-all relative group overflow-hidden text-slate-300 hover:text-white hover:bg-white/5"
+   [ngClass]="{'justify-center': sidebar.isCollapsed()}">
+   
+  <svg [lucideIcon]="item.icon" 
+        class="w-5 h-5 shrink-0 transition-transform group-hover:scale-110"
+        [ngClass]="iconColorClass"></svg>
+
+  @if (!sidebar.isCollapsed()) {
+    <div class="flex items-center gap-2 flex-1 overflow-hidden relative">
+      <span class="font-medium truncate">{{ item.label }}</span>
+      
+      @if (isBeta) {
+        <div class="text-[8px] px-1.5 h-4 border border-amber-500/30 text-amber-500 font-black tracking-widest uppercase rounded-full flex items-center shrink-0">BETA</div>
+      }
+      
+      @if (item.id === 'stream') {
+        <div class="bg-gradient-to-r from-amber-400 to-orange-500 text-black px-1.5 py-0.5 rounded-md font-black text-[8px] uppercase tracking-tighter shrink-0">PRO</div>
+      }
+      
+      @if (badgeValue && badgeValue > 0 && !isBeta) {
+        <div class="mr-auto bg-indigo-500 text-white h-5 w-5 flex items-center justify-center text-[10px] rounded-full font-bold shrink-0">{{ badgeValue }}</div>
+      }
+    </div>
+  }
+</a>
+
+<!-- Context Menu Template -->
+<ng-template #contextMenu>
+  <div class="w-48 bg-slate-900 border border-white/10 rounded-xl shadow-2xl p-1 animate-in fade-in zoom-in-95" dir="rtl">
+    <div class="px-2 py-1.5 text-sm font-semibold text-white border-b border-white/5 mb-1 truncate">
+      {{ item.label }}
+    </div>
+    
+    <button (click)="togglePin()"
+            class="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-lg hover:bg-white/10 transition-colors text-white">
+      <svg [lucideIcon]="isPinned ? 'pin-off' : 'pin'" class="w-4 h-4 text-slate-400"></svg>
+      <span>{{ isPinned ? 'إلغاء التثبيت' : 'تثبيت في القائمة' }}</span>
+    </button>
+  </div>
+</ng-template>
