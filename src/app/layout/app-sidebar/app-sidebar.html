@@ -13,10 +13,10 @@
     <div class="h-16 flex items-center justify-between px-4 border-b border-white/10 shrink-0">
       @if (!sidebar.isCollapsed()) {
         <div class="flex items-center gap-3 w-full" [ngClass]="{'flex-row-reverse': true}">
-          <div class="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/50 flex items-center justify-center shrink-0">
-            <svg lucideIcon="zap" class="text-indigo-400 w-[18px] h-[18px]"></svg>
-          </div>
-          <span class="font-bold text-white text-lg tracking-tight">Si-Neuro</span>
+        <button (click)="sidebar.setPosition('floating')" class="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/50 flex items-center justify-center shrink-0 hover:bg-indigo-500/30 transition-colors cursor-pointer" title="تحويل لدائرة عائمة">
+          <svg lucideIcon="zap" class="text-indigo-400 w-[18px] h-[18px]"></svg>
+        </button>
+        <span class="font-bold text-white text-lg tracking-tight">Si-Neuro</span>
           
           <div class="mr-auto flex gap-1">
             <button class="p-1.5 hover:bg-white/10 rounded-lg text-slate-400 transition-colors" title="إعدادات القائمة" (click)="showCustomizationDialog = true">
