@@ -1,89 +1,121 @@
-<div class="home-container" dir="rtl">
+<div class="home-container bg-slate-950/40 relative h-full flex flex-col" dir="rtl">
+  
   <!-- Onboarding Prompt for new users -->
-  <div *ngIf="showOnboardingBanner()" class="onboarding-banner" (click)="goToOnboarding()">
-    <div class="banner-icon">
-      <lucide-icon [img]="Sparkles"></lucide-icon>
+  @if (showOnboardingBanner()) {
+    <div class="onboarding-banner mx-4 mt-4" (click)="goToOnboarding()">
+      <div class="banner-icon">
+        <lucide-icon [img]="Sparkles"></lucide-icon>
+      </div>
+      <div class="banner-content">
+        <h3>عرّفنا على اهتماماتك</h3>
+        <p>ساعدنا نلاقي أفضل المحتوى ليك من خلال اختيار مواضيعك المفضلة</p>
+      </div>
+      <button class="banner-cta">
+        ابدأ الآن
+        <lucide-icon [img]="ArrowLeft"></lucide-icon>
+      </button>
     </div>
-    <div class="banner-content">
-      <h3>عرّفنا على اهتماماتك</h3>
-      <p>ساعدنا نلاقي أفضل المحتوى ليك من خلال اختيار مواضيعك المفضلة</p>
-    </div>
-    <button class="banner-cta">
-      ابدأ الآن
-      <lucide-icon [img]="ArrowLeft"></lucide-icon>
-    </button>
-  </div>
+  }
 
   <!-- Categories Bar -->
-  <div class="categories-bar hide-scrollbar">
-    <button
-      *ngFor="let category of categories"
-      class="category-chip"
-      [class.active]="wetube.activeCategory() === category"
-      (click)="onCategoryClick(category)">
-      {{ category }}
-    </button>
+  <div class="categories-bar hide-scrollbar bg-slate-950/80 backdrop-blur-md sticky top-0 z-20 py-3 px-6 flex gap-2 border-b border-white/5 overflow-x-auto shadow-sm">
+    @for (category of categories; track category) {
+      <button
+        class="category-chip px-4 py-1.5 rounded-lg whitespace-nowrap text-sm font-semibold transition-all border"
+        [ngClass]="wetube.activeCategory() === category ? 'bg-white text-slate-950 border-white' : 'bg-slate-900/50 text-slate-300 border-white/10 hover:bg-white/10 hover:text-white'"
+        (click)="onCategoryClick(category)">
+        {{ category }}
+      </button>
+    }
   </div>
 
-  <div class="home-layout">
-    <!-- Subscriptions Sidebar -->
-    <div class="subs-sidebar">
+  <div class="home-layout flex flex-1 overflow-hidden p-6 gap-6">
+    <!-- Subscriptions Sidebar (Hidden on small screens) -->
+    <div class="subs-sidebar hidden lg:block w-56 flex-shrink-0">
       <app-subscription-bar></app-subscription-bar>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
+    <!-- Main Content Grid -->
+    <div class="main-content flex-1 min-w-0 overflow-y-auto hide-scrollbar pb-10">
+      
       <!-- Hero Ad -->
-      <app-nexus-native-ads adSlot="home-hero" category="الكل"></app-nexus-native-ads>
+      <app-nexus-native-ads adSlot="home-hero" category="الكل" class="block mb-8"></app-nexus-native-ads>
 
       <!-- Loading State -->
-      <div *ngIf="wetube.isFeedLoading()" class="loading-state">
-        <div class="spinner"></div>
-        <p>جاري تحميل أحدث الفيديوهات...</p>
-      </div>
+      @if (wetube.isFeedLoading()) {
+        <div class="loading-state flex flex-col items-center justify-center py-20 text-slate-400">
+          <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p class="font-bold text-sm">جاري تحميل أحدث الفيديوهات...</p>
+        </div>
+      }
 
       <!-- Video Grid -->
-      <div *ngIf="!wetube.isFeedLoading() && wetube.allHomeContent().length > 0" class="video-grid">
-        <div *ngFor="let video of wetube.allHomeContent(); let i = index" class="video-card">
-          <a [routerLink]="['/stream/watch', video.id]" class="video-link">
-            <div class="thumbnail-wrapper" [class.shorts]="video.isShorts">
-              <img [src]="video.thumbnail || 'assets/placeholder.jpg'" [alt]="video.title" loading="lazy">
-              <span *ngIf="video.isShorts" class="shorts-badge">Shorts</span>
-            </div>
-            <div class="video-info">
-              <img *ngIf="video.channelAvatar" [src]="video.channelAvatar" class="channel-avatar" [alt]="video.author">
-              <div class="info-text">
-                <h3 class="video-title">{{ video.title }}</h3>
-                <p class="channel-name">{{ video.author }}</p>
-                <p class="video-meta">
-                  <span *ngIf="video.time">{{ video.time }}</span>
-                  <span *ngIf="video.category"> • {{ video.category }}</span>
-                </p>
+      @if (!wetube.isFeedLoading() && wetube.allHomeContent().length > 0) {
+        <div class="video-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 gap-y-8">
+          @for (video of wetube.allHomeContent(); track video.id) {
+            <div class="video-card group cursor-pointer relative flex flex-col gap-3" [routerLink]="['/stream/watch', video.id]">
+              
+              <!-- Thumbnail Wrapper -->
+              <div class="thumbnail-wrapper relative w-full rounded-xl overflow-hidden bg-slate-900 border border-white/5 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-indigo-500/10 group-hover:-translate-y-1" [ngClass]="video.isShorts ? 'aspect-[9/16]' : 'aspect-video'">
+                <img [src]="video.thumbnail || 'assets/placeholder.jpg'" [alt]="video.title" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy">
+                
+                @if (video.isShorts) {
+                  <span class="absolute top-2 right-2 bg-gradient-to-br from-red-600 to-red-800 text-white px-2 py-0.5 rounded text-[10px] font-black shadow-lg">SHORTS</span>
+                }
+                
+                @if (video.duration) {
+                  <span class="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-[10px] font-bold">{{ video.duration }}</span>
+                }
+              </div>
+
+              <!-- Info Section -->
+              <div class="video-info flex gap-3 items-start px-1">
+                @if (video.channelAvatar) {
+                  <img [src]="video.channelAvatar" class="w-9 h-9 rounded-full bg-slate-800 border border-white/10 shrink-0 object-cover mt-0.5" [alt]="video.author">
+                } @else {
+                  <div class="w-9 h-9 rounded-full bg-slate-800 shrink-0 mt-0.5"></div>
+                }
+                
+                <div class="info-text flex flex-col min-w-0 flex-1">
+                  <h3 class="text-sm font-bold text-white leading-snug line-clamp-2 mb-1 group-hover:text-indigo-400 transition-colors">{{ video.title }}</h3>
+                  <p class="text-xs text-slate-400 font-medium truncate hover:text-slate-300">{{ video.author }}</p>
+                  <p class="text-[11px] text-slate-500 font-medium mt-0.5">
+                    @if (video.views) { <span>{{ video.views }} مشاهدة</span> }
+                    @if (video.time) { <span> • {{ video.time }}</span> }
+                  </p>
+                </div>
               </div>
             </div>
-          </a>
-          <app-nexus-native-ads *ngIf="(i + 1) % 4 === 0" adSlot="home-grid"></app-nexus-native-ads>
+            
+            <!-- Insert an Ad every 8 videos -->
+            @if (($index + 1) % 8 === 0) {
+              <app-nexus-native-ads adSlot="home-grid" class="col-span-full my-4"></app-nexus-native-ads>
+            }
+          }
         </div>
-      </div>
+      }
 
-      <!-- Empty state with helpful CTAs -->
-      <div *ngIf="!wetube.isFeedLoading() && wetube.allHomeContent().length === 0" class="empty-state">
-        <div class="empty-icon">
-          <lucide-icon [img]="TrendingUp"></lucide-icon>
+      <!-- Empty state -->
+      @if (!wetube.isFeedLoading() && wetube.allHomeContent().length === 0) {
+        <div class="empty-state flex flex-col items-center justify-center py-20 text-center px-4">
+          <div class="empty-icon w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center text-slate-500 mb-6">
+            <lucide-icon [img]="TrendingUp" class="w-8 h-8"></lucide-icon>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-2">مرحباً بك في WeTube! 👋</h3>
+          <p class="text-sm text-slate-400 mb-8 max-w-sm">يبدو إن مفيش محتوى متاح دلوقتي. جرّب تستكشف وتختار اهتماماتك.</p>
+          
+          <div class="empty-actions flex gap-4">
+            <button class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center gap-2" (click)="goToOnboarding()">
+              <lucide-icon [img]="Sparkles" class="w-4 h-4"></lucide-icon>
+              ابدأ رحلتك
+            </button>
+            <button class="bg-white/5 hover:bg-white/10 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center gap-2">
+              <lucide-icon [img]="Search" class="w-4 h-4"></lucide-icon>
+              ابحث
+            </button>
+          </div>
         </div>
-        <h3>مرحباً بك في WeTube! 👋</h3>
-        <p>يبدو إن مفيش محتوى متاح دلوقتي. جرّب الخيارات دي:</p>
-        <div class="empty-actions">
-          <button class="empty-btn primary" (click)="goToOnboarding()">
-            <lucide-icon [img]="Sparkles"></lucide-icon>
-            ابدأ رحلتك واختار اهتماماتك
-          </button>
-          <button class="empty-btn secondary">
-            <lucide-icon [img]="Search"></lucide-icon>
-            ابحث في YouTube
-          </button>
-        </div>
-      </div>
+      }
     </div>
   </div>
 </div>

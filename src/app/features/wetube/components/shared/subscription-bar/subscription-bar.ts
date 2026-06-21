@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { LucideAngularModule, Bell } from 'lucide-angular';
@@ -9,7 +9,8 @@ import { WeTubeService } from '../../../wetube.service';
   standalone: true,
   imports: [CommonModule, RouterModule, LucideAngularModule],
   templateUrl: './subscription-bar.html',
-  styleUrls: ['./subscription-bar.scss']
+  styleUrls: ['./subscription-bar.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SubscriptionBarComponent {
   wetube = inject(WeTubeService);

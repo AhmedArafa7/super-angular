@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, inject, signal, OnInit, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { WeTubeService } from '../../wetube.service';
@@ -13,7 +13,8 @@ import { LucideAngularModule, Sparkles, TrendingUp, Search, ArrowLeft } from 'lu
   standalone: true,
   imports: [CommonModule, RouterModule, LucideAngularModule, SubscriptionBarComponent, NexusNativeAdsComponent],
   templateUrl: './wetube-home.html',
-  styleUrls: ['./wetube-home.scss']
+  styleUrls: ['./wetube-home.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class WeTubeHomeComponent implements OnInit {
   wetube = inject(WeTubeService);

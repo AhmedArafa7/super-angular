@@ -5,32 +5,43 @@
 
   <div class="sidebar-content">
     <!-- Search -->
-    <div *ngIf="!collapsed()" class="sidebar-search">
-      <input type="text" 
-             placeholder="بحث في WeTube..." 
-             class="search-input"
-             (keydown)="onSearchKeydown($event)"
-             aria-label="بحث في WeTube">
-    </div>
+    @if (!collapsed()) {
+      <div class="sidebar-search">
+        <input type="text" 
+               placeholder="بحث في WeTube..." 
+               class="search-input"
+               (keydown)="onSearchKeydown($event)"
+               aria-label="بحث في WeTube">
+      </div>
+    }
 
-    <div *ngFor="let section of sections()" class="sidebar-section">
-      <h4 *ngIf="!collapsed() && section.title" class="section-title">{{ section.title }}</h4>
-      <nav class="menu" [attr.aria-label]="section.title">
-        <a *ngFor="let item of section.items"
-           [routerLink]="item.route"
-           class="menu-item"
-           [class.active]="item.active()"
-           [queryParams]="item.section === 'explore' ? { category: item.label } : null"
-           [attr.aria-current]="item.active() ? 'page' : null"
-           role="link"
-           [title]="item.label">
-          <lucide-icon [img]="item.icon" class="icon"></lucide-icon>
-          <span *ngIf="!collapsed()" class="menu-label">{{ item.label }}</span>
-        </a>
-      </nav>
-    </div>
+    @for (section of sections(); track section.title) {
+      <div class="sidebar-section">
+        @if (!collapsed() && section.title) {
+          <h4 class="section-title">{{ section.title }}</h4>
+        }
+        <nav class="menu" [attr.aria-label]="section.title">
+          @for (item of section.items; track item.label) {
+            <a [routerLink]="item.route"
+               class="menu-item"
+               [class.active]="item.active()"
+               [queryParams]="item.section === 'explore' ? { category: item.label } : null"
+               [attr.aria-current]="item.active() ? 'page' : null"
+               role="link"
+               [title]="item.label">
+              <lucide-icon [img]="item.icon" class="icon"></lucide-icon>
+              @if (!collapsed()) {
+                <span class="menu-label">{{ item.label }}</span>
+              }
+            </a>
+          }
+        </nav>
+      </div>
+    }
   </div>
 </aside>
 
 <!-- Mobile overlay -->
-<div *ngIf="showMobileMenu()" class="mobile-overlay" (click)="toggleMobileMenu()"></div>
+@if (showMobileMenu()) {
+  <div class="mobile-overlay" (click)="toggleMobileMenu()"></div>
+}

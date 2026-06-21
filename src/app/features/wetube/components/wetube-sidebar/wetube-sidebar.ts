@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -23,7 +23,8 @@ export interface MenuItem {
   standalone: true,
   imports: [CommonModule, RouterModule, LucideAngularModule],
   templateUrl: './wetube-sidebar.html',
-  styleUrls: ['./wetube-sidebar.scss']
+  styleUrls: ['./wetube-sidebar.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class WeTubeSidebarComponent {
   wetube = inject(WeTubeService);

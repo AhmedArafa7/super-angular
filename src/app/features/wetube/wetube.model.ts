@@ -17,6 +17,8 @@ export interface ContentItem {
   status?: string;
   visibility?: string;
   externalUrl?: string;
+  duration?: string;
+  views?: string;
 }
 
 export interface Video extends ContentItem {
