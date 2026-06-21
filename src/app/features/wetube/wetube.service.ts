@@ -3,6 +3,7 @@ import { Video, YouTubeSubscription, FeedVideo, HistoryItem, WeTubeTab, ContentI
 import { FirebaseService } from '../../core/services/firebase.service';
 import { YoutubeDiscoveryService, VideoDetails, YouTubeComment } from '../../core/services/youtube-discovery.service';
 import { YoutubeDataService, YouTubeChannelStats, YouTubeVideo } from '../../core/services/youtube-data.service';
+import { YoutubeCacheService } from '../../core/services/youtube-cache.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,6 +12,7 @@ export class WeTubeService {
   private firebaseService = inject(FirebaseService);
   private discoveryService = inject(YoutubeDiscoveryService);
   private dataService = inject(YoutubeDataService);
+  private cacheService = inject(YoutubeCacheService);
 
   // Core State
   readonly videos = signal<Video[]>([]);
@@ -27,6 +29,7 @@ export class WeTubeService {
   readonly isSearching = signal<boolean>(false);
   readonly isFeedLoading = signal<boolean>(false);
   readonly isShortsLoading = signal<boolean>(false);
+  readonly isUsingCachedData = signal<boolean>(false);
 
   // Active Content Context
   readonly activeChannel = signal<{ id: string, name: string, avatar?: string } | null>(null);
@@ -122,20 +125,43 @@ export class WeTubeService {
     this.searchQuery.set('');
   }
 
+  forceRefresh(): void {
+    this.cacheService.clearFeed();
+    this.cacheService.clearSubscriptions();
+    this.loadTrending(true);
+    this.loadMySubscriptions(true);
+  }
+
   // ── Real data fetching ─────────────────────────────────────
 
-  async loadTrending(): Promise<void> {
+  async loadTrending(force = false): Promise<void> {
+    if (!force) {
+      const cached = this.cacheService.getFeed();
+      if (cached && cached.length > 0) {
+        this.trendingVideos.set(cached);
+        this.feedVideos.set(cached);
+        this.isUsingCachedData.set(true);
+        return;
+      }
+    }
+
     this.isFeedLoading.set(true);
+    this.isUsingCachedData.set(false);
     this.discoveryService.fetchTrending().subscribe({
       next: (videos) => {
         this.trendingVideos.set(videos);
-        if (this.feedVideos().length === 0) {
-          this.feedVideos.set(videos);
-        }
+        this.feedVideos.set(videos);
+        this.cacheService.setFeed(videos);
         this.isFeedLoading.set(false);
       },
       error: (err) => {
         console.error('[WeTubeService] loadTrending failed:', err);
+        const fallback = this.cacheService.getFeed();
+        if (fallback) {
+          this.trendingVideos.set(fallback);
+          this.feedVideos.set(fallback);
+          this.isUsingCachedData.set(true);
+        }
         this.isFeedLoading.set(false);
       }
     });
@@ -203,31 +229,45 @@ export class WeTubeService {
     });
   }
 
-  async loadMySubscriptions(): Promise<void> {
+  async loadMySubscriptions(force = false): Promise<void> {
+    if (!force) {
+      const cachedSubs = this.cacheService.getSubscriptions();
+      if (cachedSubs && cachedSubs.length > 0) {
+        this.subscriptions.set(cachedSubs);
+        return;
+      }
+    }
+
     const ytAccount = this.firebaseService.getYouTubeAccount();
     if (!ytAccount?.accessToken) return;
 
     this.dataService.fetchMySubscriptions(ytAccount.accessToken).subscribe({
       next: (subs) => {
-        this.subscriptions.set(subs.map(s => ({
+        const mappedSubs = subs.map(s => ({
           id: s.channelId,
           channelId: s.channelId,
           channelTitle: s.title,
           avatarUrl: s.thumbnail
-        })));
+        }));
+        this.subscriptions.set(mappedSubs);
+        this.cacheService.setSubscriptions(mappedSubs);
       },
-      error: (err) => console.error('[WeTubeService] loadMySubscriptions failed:', err)
+      error: (err) => {
+        console.error('[WeTubeService] loadMySubscriptions failed:', err);
+        const fallback = this.cacheService.getSubscriptions();
+        if (fallback) {
+          this.subscriptions.set(fallback);
+        }
+      }
     });
   }
 
   startYouTubeAuth(): void {
-    const uid = this.firebaseService.getUserId();
-    if (!uid) {
-      console.warn('[WeTubeService] No user id, cannot start YouTube OAuth');
-      return;
-    }
-    const authUrl = this.dataService.getLoginUrl(uid);
-    window.location.href = authUrl;
+    this.firebaseService.signInWithGoogle().then(success => {
+      if (success) {
+        this.loadMySubscriptions(true);
+      }
+    });
   }
 
   // ── Initialization ─────────────────────────────────────────

@@ -6,7 +6,7 @@ import { FirebaseService } from '../../../../core/services/firebase.service';
 import { WETUBE_CATEGORIES } from '../../wetube.model';
 import { SubscriptionBarComponent } from '../shared/subscription-bar/subscription-bar';
 import { NexusNativeAdsComponent } from '../nexus-native-ads/nexus-native-ads';
-import { LucideAngularModule, Sparkles, TrendingUp, Search, ArrowLeft } from 'lucide-angular';
+import { LucideAngularModule, Sparkles, TrendingUp, Search, ArrowLeft, Youtube, RefreshCcw, LogIn } from 'lucide-angular';
 
 @Component({
   selector: 'app-wetube-home',
@@ -31,6 +31,9 @@ export class WeTubeHomeComponent implements OnInit {
   TrendingUp = TrendingUp;
   Search = Search;
   ArrowLeft = ArrowLeft;
+  Youtube = Youtube;
+  RefreshCcw = RefreshCcw;
+  LogIn = LogIn;
 
   needsOnboarding = computed(() => {
     const userData = this.firebaseService.userData();

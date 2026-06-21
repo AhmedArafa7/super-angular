@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, User } from 'firebase/auth';
+import { getAuth, Auth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { getFirestore, Firestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { environment } from '../../../environments/environment';
 
@@ -86,6 +86,77 @@ export class FirebaseService {
     } catch (err) {
       console.error('[FirebaseService] Custom token sign-in failed:', err);
     }
+  }
+
+  async signInWithGoogle(): Promise<boolean> {
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.addScope('https://www.googleapis.com/auth/youtube.readonly');
+      provider.setCustomParameters({
+        prompt: 'consent',
+        access_type: 'offline'
+      });
+
+      const result = await signInWithPopup(this.auth, provider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      
+      if (credential?.accessToken) {
+        // Token expires in ~1 hour (3600 seconds), we set expiry 5 minutes early to be safe
+        const expiresAt = Date.now() + (55 * 60 * 1000); 
+        
+        // Save the Google credentials locally immediately for fast access
+        localStorage.setItem('yt_access_token', credential.accessToken);
+        localStorage.setItem('yt_token_expiry', expiresAt.toString());
+
+        await this.saveYouTubeAuth({
+          accessToken: credential.accessToken,
+          expiresAt: expiresAt
+        });
+
+        // Also update the basic user data if we just linked a real account
+        if (result.user) {
+          const uid = result.user.uid;
+          const userRef = doc(this.firestore, 'users', uid);
+          await updateDoc(userRef, {
+            displayName: result.user.displayName,
+            photoURL: result.user.photoURL,
+            email: result.user.email
+          });
+          this.userData.update(u => u ? { 
+            ...u, 
+            displayName: result.user.displayName || u.displayName,
+            photoURL: result.user.photoURL || u.photoURL,
+            email: result.user.email || u.email
+          } : u);
+        }
+
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('[FirebaseService] Google sign-in failed:', err);
+      return false;
+    }
+  }
+
+  async refreshGoogleToken(): Promise<string | null> {
+    // Attempt silent refresh via a background popup
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.addScope('https://www.googleapis.com/auth/youtube.readonly');
+      const result = await signInWithPopup(this.auth, provider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential?.accessToken) {
+        const expiresAt = Date.now() + (55 * 60 * 1000); 
+        localStorage.setItem('yt_access_token', credential.accessToken);
+        localStorage.setItem('yt_token_expiry', expiresAt.toString());
+        await this.saveYouTubeAuth({ accessToken: credential.accessToken, expiresAt });
+        return credential.accessToken;
+      }
+    } catch (err) {
+      console.error('[FirebaseService] Token refresh failed', err);
+    }
+    return null;
   }
 
   private async loadUserData(uid: string): Promise<void> {

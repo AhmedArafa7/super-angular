@@ -9,6 +9,8 @@ import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { provideLucideIcons } from './core/icons.provider';
 
+import { youtubeAuthInterceptor } from './core/interceptors/youtube-auth.interceptor';
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
@@ -17,7 +19,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding(), withViewTransitions()),
     provideHttpClient(
       withFetch(),
-      withInterceptors([networkInterceptor, authInterceptor, errorInterceptor]),
+      withInterceptors([networkInterceptor, authInterceptor, errorInterceptor, youtubeAuthInterceptor]),
       withInterceptorsFromDi()
     ),
     provideServiceWorker('ngsw-worker.js', {
