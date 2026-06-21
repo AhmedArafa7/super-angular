@@ -1,8 +1,7 @@
-import { Component, inject, OnInit, input, computed, signal } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, input, computed, signal, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { SiNeuroVideoPlayerComponent } from '../nexus-video-player/nexus-video-player';
-import { WatchPlayerComponent } from '../watch-page/watch-player/watch-player';
 import { WatchDescriptionComponent } from '../watch-page/watch-description/watch-description';
 import { WatchActionsComponent } from '../watch-page/watch-actions/watch-actions';
 import { WatchCommentsComponent } from '../watch-page/watch-comments/watch-comments';
@@ -13,13 +12,13 @@ import { VideoSourceDetectorComponent } from '../utils/video-source-detector/vid
 import { NexusNativeAdsComponent } from '../nexus-native-ads/nexus-native-ads';
 import { WeTubeService } from '../../wetube.service';
 import { SidebarService } from '../../../../core/sidebar.service';
+import { VideoStateService } from '../../../../core/services/video-state.service';
 
 @Component({
   selector: 'app-wetube-watch-view',
   standalone: true,
   imports: [
     CommonModule,
-    WatchPlayerComponent,
     WatchDescriptionComponent,
     WatchActionsComponent,
     WatchCommentsComponent,
@@ -32,12 +31,13 @@ import { SidebarService } from '../../../../core/sidebar.service';
   templateUrl: './wetube-watch-view.html',
   styleUrls: ['./wetube-watch-view.scss']
 })
-export class WeTubeWatchViewComponent implements OnInit {
+export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
   id = input.required<string>();
   
   sidebar = inject(SidebarService);
   wetube = inject(WeTubeService);
   router = inject(Router);
+  videoState = inject(VideoStateService);
 
   video = computed(() => {
     return this.wetube.allHomeContent().find(v => v.id === this.id());
@@ -55,6 +55,44 @@ export class WeTubeWatchViewComponent implements OnInit {
 
   ngOnInit() {
     this.sidebar.setCollapsed(true);
+    
+    // Check if the current video is already playing to avoid reloading
+    const currentVideo = this.videoState.activeVideo();
+    if (!currentVideo || currentVideo.id !== this.id()) {
+      const vid = this.video();
+      if (vid) {
+        this.videoState.playVideo({
+          id: vid.id,
+          title: vid.title,
+          author: vid.author,
+          thumbnail: vid.thumbnail || ''
+        });
+      }
+    } else {
+      this.videoState.setPlayerMode('full');
+    }
+
+    // Small delay to allow DOM to render placeholder before measuring
+    setTimeout(() => this.updatePlayerRect(), 100);
+  }
+
+  ngOnDestroy() {
+    // When leaving the watch page, switch to floating mode if a video is playing
+    if (this.videoState.activeVideo()) {
+      this.videoState.setPlayerMode('floating');
+    }
+  }
+
+  @HostListener('window:resize')
+  onResize() {
+    this.updatePlayerRect();
+  }
+
+  updatePlayerRect() {
+    const placeholder = document.getElementById('video-placeholder');
+    if (placeholder) {
+      this.videoState.playerRect.set(placeholder.getBoundingClientRect());
+    }
   }
 
   onClose() {

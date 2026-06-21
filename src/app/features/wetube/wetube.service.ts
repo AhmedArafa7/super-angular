@@ -4,6 +4,7 @@ import { FirebaseService } from '../../core/services/firebase.service';
 import { YoutubeDiscoveryService, VideoDetails, YouTubeComment } from '../../core/services/youtube-discovery.service';
 import { YoutubeDataService, YouTubeChannelStats, YouTubeVideo } from '../../core/services/youtube-data.service';
 import { YoutubeCacheService } from '../../core/services/youtube-cache.service';
+import { IndexedDBService } from '../../core/services/indexed-db.service';
 
 @Injectable({
   providedIn: 'root'
@@ -13,6 +14,7 @@ export class WeTubeService {
   private discoveryService = inject(YoutubeDiscoveryService);
   private dataService = inject(YoutubeDataService);
   private cacheService = inject(YoutubeCacheService);
+  private idb = inject(IndexedDBService);
 
   // Core State
   readonly videos = signal<Video[]>([]);
@@ -230,10 +232,21 @@ export class WeTubeService {
   }
 
   async loadMySubscriptions(force = false): Promise<void> {
+    // 1. Load local subscriptions from IndexedDB (Phase 3 Immutability Rule)
+    try {
+      const localSubs = await this.idb.getAll('subscriptions') || [];
+      if (localSubs.length > 0) {
+        this.subscriptions.set(localSubs);
+      }
+    } catch (e) {
+      console.warn('Failed to load local subscriptions from IndexedDB', e);
+    }
+
     if (!force) {
       const cachedSubs = this.cacheService.getSubscriptions();
       if (cachedSubs && cachedSubs.length > 0) {
-        this.subscriptions.set(cachedSubs);
+        // Merge local and cached
+        this.mergeSubscriptions(cachedSubs);
         return;
       }
     }
@@ -249,17 +262,51 @@ export class WeTubeService {
           channelTitle: s.title,
           avatarUrl: s.thumbnail
         }));
-        this.subscriptions.set(mappedSubs);
+        this.mergeSubscriptions(mappedSubs);
         this.cacheService.setSubscriptions(mappedSubs);
       },
       error: (err) => {
         console.error('[WeTubeService] loadMySubscriptions failed:', err);
         const fallback = this.cacheService.getSubscriptions();
         if (fallback) {
-          this.subscriptions.set(fallback);
+          this.mergeSubscriptions(fallback);
         }
       }
     });
+  }
+
+  private mergeSubscriptions(newSubs: YouTubeSubscription[]) {
+    const current = this.subscriptions();
+    const currentIds = new Set(current.map(s => s.channelId));
+    const merged = [...current];
+    
+    for (const sub of newSubs) {
+      if (!currentIds.has(sub.channelId)) {
+        merged.push(sub);
+      }
+    }
+    this.subscriptions.set(merged);
+  }
+
+  async toggleSubscription(channelId: string, channelTitle: string, avatarUrl: string): Promise<boolean> {
+    const current = this.subscriptions();
+    const isSubscribed = current.some(s => s.channelId === channelId);
+    
+    try {
+      if (isSubscribed) {
+        await this.idb.delete('subscriptions', channelId);
+        this.subscriptions.update(subs => subs.filter(s => s.channelId !== channelId));
+        return false;
+      } else {
+        const newSub = { id: channelId, channelId, channelTitle, avatarUrl, subscribedAt: Date.now() };
+        await this.idb.put('subscriptions', newSub);
+        this.subscriptions.update(subs => [...subs, newSub]);
+        return true;
+      }
+    } catch (e) {
+      console.error('Failed to toggle subscription in IndexedDB', e);
+      return isSubscribed;
+    }
   }
 
   startYouTubeAuth(): void {

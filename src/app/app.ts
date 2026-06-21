@@ -1,11 +1,12 @@
 import { Component, inject } from '@angular/core';
 import { AppShellComponent } from './layout/app-shell/app-shell';
 import { SyncService } from './core/services/sync.service';
+import { GlobalVideoPlayerComponent } from './features/wetube/components/global-video-player/global-video-player.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [AppShellComponent],
+  imports: [AppShellComponent, GlobalVideoPlayerComponent],
   templateUrl: './app.html',
   styleUrls: ['./app.scss']
 })

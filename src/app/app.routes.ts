@@ -9,6 +9,7 @@ export const routes: Routes = [
       { path: 'onboarding', loadComponent: () => import('./features/wetube/components/wetube-onboarding/wetube-onboarding').then(c => c.WeTubeOnboardingComponent), title: 'WeTube - مرحباً' },
       { path: '', loadComponent: () => import('./features/wetube/components/wetube-home/wetube-home').then(c => c.WeTubeHomeComponent), title: 'WeTube - Stream' },
       { path: 'watch/:id', loadComponent: () => import('./features/wetube/components/wetube-watch-view/wetube-watch-view').then(c => c.WeTubeWatchViewComponent), title: 'WeTube - Watch' },
+      { path: 'channel/:id', loadComponent: () => import('./features/wetube/components/wetube-channel/wetube-channel.component').then(c => c.WeTubeChannelComponent), title: 'WeTube - Channel' },
       { path: 'shorts', loadComponent: () => import('./features/wetube/components/wetube-shorts/wetube-shorts').then(c => c.WeTubeShortsComponent), title: 'WeTube - Shorts' },
       { path: 'studio', loadComponent: () => import('./features/wetube/components/wetube-studio/wetube-studio').then(c => c.WeTubeStudioComponent), title: 'WeTube - Studio' },
       { path: 'library', loadComponent: () => import('./features/wetube/components/wetube-library/wetube-library').then(c => c.WeTubeLibraryComponent), title: 'WeTube - Library' },

@@ -1,14 +1,19 @@
-<div class="watch-view-container" dir="rtl">
+<div class="watch-view-container hide-scrollbar relative z-10" dir="rtl">
+  <!-- Ambient Background Layer (Hardware Accelerated Smoothing) -->
+  <div 
+    class="ambient-layer absolute inset-0 -z-10 pointer-events-none transition-all duration-1000 ease-in-out"
+    [style.backgroundColor]="videoState.ambientColor()"
+    style="opacity: 0.15; filter: blur(120px); transform: translateZ(0);"
+  ></div>
+
   @if (video(); as vid) {
-    <div class="watch-layout">
+    <div class="watch-layout relative z-10">
       <!-- Main Content -->
       <div class="main-content">
-        <!-- Video Player -->
-        <app-watch-player
-          [videoUrl]="vid.url || ''"
-          [thumbnail]="vid.thumbnail || ''"
-          [title]="vid.title">
-        </app-watch-player>
+        <!-- Video Placeholder for Global Player -->
+        <div id="video-placeholder" class="w-full aspect-video bg-transparent rounded-2xl overflow-hidden mb-6 relative z-20">
+          <!-- The global player will overlay here exactly -->
+        </div>
 
         <!-- Source Detector -->
         <div class="source-info">
