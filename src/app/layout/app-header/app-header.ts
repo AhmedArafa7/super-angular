@@ -1,6 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SidebarService } from '../../core/sidebar.service';
+import { GlobalStateService } from '../../core/services/global-state.service';
 import { LucideDynamicIcon } from '@lucide/angular';
 
 @Component({
@@ -8,9 +9,10 @@ import { LucideDynamicIcon } from '@lucide/angular';
   standalone: true,
   imports: [CommonModule, LucideDynamicIcon],
   templateUrl: './app-header.html',
-  styleUrls: ['./app-header.scss']
+  styleUrls: ['./app-header.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AppHeaderComponent {
   sidebar = inject(SidebarService);
-  unreadCount = 0; // TODO: Connect to Notification Service
+  globalState = inject(GlobalStateService);
 }

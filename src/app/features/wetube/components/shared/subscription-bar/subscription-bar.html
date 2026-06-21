@@ -1,11 +1,35 @@
 <div class="subscription-bar">
-  <h3>الاشتراكات</h3>
+  <div class="subs-header">
+    <h3>الاشتراكات</h3>
+    <span *ngIf="wetube.subscriptions().length > 0" class="subs-count">{{ wetube.subscriptions().length }}</span>
+  </div>
+
   <div class="subs-list">
-    <div *ngFor="let sub of wetube.subscriptions()" class="sub-item" [routerLink]="['/stream']" [queryParams]="{channel: sub.channelId}">
-      <div class="sub-avatar" [style.background-image]="sub.avatarUrl ? 'url(' + sub.avatarUrl + ')' : ''">
-        <span *ngIf="!sub.avatarUrl">{{ sub.channelTitle.charAt(0) }}</span>
+    <div *ngIf="wetube.subscriptions().length === 0 && !wetube.isFeedLoading()" class="empty-subs">
+      <p>لا توجد اشتراكات</p>
+      <p class="hint">قم بتسجيل الدخول بحساب YouTube الخاص بك</p>
+    </div>
+    <div *ngIf="wetube.isFeedLoading()" class="loading-subs">
+      <p>جارٍ تحميل الاشتراكات...</p>
+    </div>
+    <div *ngFor="let sub of wetube.subscriptions()" 
+         class="sub-item" 
+         [class.active]="isChannelSelected(sub.channelId)"
+         [routerLink]="['/stream']" 
+         [queryParams]="{channel: sub.channelId}"
+         title="{{ sub.channelTitle }}">
+      <div class="sub-avatar"
+           [style.background-image]="sub.avatarUrl ? 'url(' + sub.avatarUrl + ')' : 'none'">
+        <span *ngIf="!sub.avatarUrl">{{ trackSubAvatar(sub.channelTitle) }}</span>
       </div>
       <span class="sub-name">{{ sub.channelTitle }}</span>
+      <button class="sub-action" (click)="onBellClick($event, sub.channelId)" title="إعدادات الإشعارات">
+        <lucide-icon [img]="Bell" class="bell-icon"></lucide-icon>
+      </button>
     </div>
   </div>
+
+  <a *ngIf="wetube.subscriptions().length > 3" class="manage-link" [routerLink]="['/stream/subscriptions']">
+    عرض الكل ({{ wetube.subscriptions().length }})
+  </a>
 </div>

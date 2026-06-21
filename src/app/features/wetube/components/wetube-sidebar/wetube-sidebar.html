@@ -1,8 +1,36 @@
-<aside class="wetube-sidebar">
-  <ul class="menu">
-    <li *ngFor="let item of menuItems" [routerLink]="item.route" routerLinkActive="active">
-      <lucide-icon [img]="item.icon" class="icon"></lucide-icon>
-      <span>{{ item.label }}</span>
-    </li>
-  </ul>
+<aside class="wetube-sidebar" [class.collapsed]="collapsed()">
+  <button class="collapse-btn" (click)="toggleCollapse()" aria-label="طي القائمة">
+    <lucide-icon [img]="Menu" class="icon"></lucide-icon>
+  </button>
+
+  <div class="sidebar-content">
+    <!-- Search -->
+    <div *ngIf="!collapsed()" class="sidebar-search">
+      <input type="text" 
+             placeholder="بحث في WeTube..." 
+             class="search-input"
+             (keydown)="onSearchKeydown($event)"
+             aria-label="بحث في WeTube">
+    </div>
+
+    <div *ngFor="let section of sections()" class="sidebar-section">
+      <h4 *ngIf="!collapsed() && section.title" class="section-title">{{ section.title }}</h4>
+      <nav class="menu" [attr.aria-label]="section.title">
+        <a *ngFor="let item of section.items"
+           [routerLink]="item.route"
+           class="menu-item"
+           [class.active]="item.active()"
+           [queryParams]="item.section === 'explore' ? { category: item.label } : null"
+           [attr.aria-current]="item.active() ? 'page' : null"
+           role="link"
+           [title]="item.label">
+          <lucide-icon [img]="item.icon" class="icon"></lucide-icon>
+          <span *ngIf="!collapsed()" class="menu-label">{{ item.label }}</span>
+        </a>
+      </nav>
+    </div>
+  </div>
 </aside>
+
+<!-- Mobile overlay -->
+<div *ngIf="showMobileMenu()" class="mobile-overlay" (click)="toggleMobileMenu()"></div>

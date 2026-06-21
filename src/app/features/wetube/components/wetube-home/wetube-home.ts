@@ -1,6 +1,6 @@
 import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { WeTubeService } from '../../wetube.service';
 import { FirebaseService } from '../../../../core/services/firebase.service';
 import { WETUBE_CATEGORIES } from '../../wetube.model';
@@ -19,10 +19,12 @@ export class WeTubeHomeComponent implements OnInit {
   wetube = inject(WeTubeService);
   firebaseService = inject(FirebaseService);
   router = inject(Router);
+  route = inject(ActivatedRoute);
 
   categories = WETUBE_CATEGORIES;
   showUploadModal = signal(false);
   showOnboardingBanner = signal(false);
+  selectedChannelId = signal<string | null>(null);
 
   Sparkles = Sparkles;
   TrendingUp = TrendingUp;
@@ -39,6 +41,14 @@ export class WeTubeHomeComponent implements OnInit {
       this.router.navigate(['/stream/onboarding']);
       return;
     }
+
+    this.route.queryParams.subscribe(params => {
+      if (params['channel']) {
+        this.selectedChannelId.set(params['channel']);
+        this.wetube.setActiveTab('home');
+      }
+    });
+
     this.wetube.initialize();
   }
 
@@ -52,5 +62,9 @@ export class WeTubeHomeComponent implements OnInit {
 
   goToOnboarding() {
     this.router.navigate(['/stream/onboarding']);
+  }
+
+  trackByVideoId(index: number, video: any): string {
+    return video.id || index.toString();
   }
 }

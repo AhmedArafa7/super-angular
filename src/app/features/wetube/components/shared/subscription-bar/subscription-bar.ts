@@ -1,7 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { LucideAngularModule, Bell, BellOff } from 'lucide-angular';
+import { LucideAngularModule, Bell } from 'lucide-angular';
 import { WeTubeService } from '../../../wetube.service';
 
 @Component({
@@ -14,5 +14,31 @@ import { WeTubeService } from '../../../wetube.service';
 export class SubscriptionBarComponent {
   wetube = inject(WeTubeService);
   Bell = Bell;
-  BellOff = BellOff;
+  mutedChannels = signal<Set<string>>(new Set());
+
+  isChannelSelected(channelId: string): boolean {
+    return this.wetube.activeChannel()?.id === channelId;
+  }
+
+  trackSubAvatar(channelTitle: string): string {
+    return channelTitle?.charAt(0) || '?';
+  }
+
+  isMuted(channelId: string): boolean {
+    return this.mutedChannels().has(channelId);
+  }
+
+  onBellClick(event: Event, channelId: string) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.mutedChannels.update(current => {
+      const next = new Set(current);
+      if (next.has(channelId)) {
+        next.delete(channelId);
+      } else {
+        next.add(channelId);
+      }
+      return next;
+    });
+  }
 }
