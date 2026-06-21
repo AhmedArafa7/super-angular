@@ -3,3 +3,24 @@
 @tailwind utilities;
 
 /* You can add global styles to this file, and also import other style files */
+
+/* --- Hardware-Accelerated Page Route Transitions --- */
+/* These rules customize the native View Transitions API provided by Angular's withViewTransitions() */
+
+::view-transition-old(root) {
+  animation: fade-out 0.2s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+::view-transition-new(root) {
+  animation: fade-in-slide-up 0.3s cubic-bezier(0, 0, 0.2, 1) both;
+}
+
+@keyframes fade-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-8px); }
+}
+
+@keyframes fade-in-slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -5,6 +5,7 @@ import { AppSidebarComponent } from '../app-sidebar/app-sidebar';
 import { AppHeaderComponent } from '../app-header/app-header';
 import { SidebarService } from '../../core/sidebar.service';
 import { LucideDynamicIcon } from '@lucide/angular';
+import { SyncMonitorComponent } from './sync-monitor/sync-monitor';
 //import { OnboardingComponent } from '../../shared/onboarding/onboarding';
 //import { PrivacyConsentComponent } from '../../shared/privacy/privacy';
 
@@ -16,6 +17,7 @@ import { LucideDynamicIcon } from '@lucide/angular';
     RouterOutlet,
     AppSidebarComponent,
     AppHeaderComponent,
+    SyncMonitorComponent,
     LucideDynamicIcon,
     //OnboardingComponent,
     //PrivacyConsentComponent
