@@ -1,9 +1,10 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
-import { LucideAngularModule, Home, Library, Users, Bell, Video, Film, History, Tv, TrendingUp, Music, Gamepad2, Newspaper, GraduationCap, Menu } from 'lucide-angular';
+import { LucideAngularModule, Home, Library, Users, Bell, Video, Film, History, Tv, TrendingUp, Music, Gamepad2, Newspaper, GraduationCap, Menu, PlusCircle } from 'lucide-angular';
 import { WeTubeService } from '../../wetube.service';
+import { IndexedDBService } from '../../../../core/services/indexed-db.service';
 
 export interface SidebarSection {
   title: string;
@@ -16,6 +17,10 @@ export interface MenuItem {
   route: string;
   active: () => boolean;
   section?: string;
+  isSubscription?: boolean;
+  avatar?: string;
+  hasUnread?: boolean;
+  channelId?: string;
 }
 
 @Component({
@@ -26,15 +31,20 @@ export interface MenuItem {
   styleUrls: ['./wetube-sidebar.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class WeTubeSidebarComponent {
+export class WeTubeSidebarComponent implements OnInit {
   wetube = inject(WeTubeService);
   router = inject(Router);
+  dbService = inject(IndexedDBService);
   
   Menu = Menu;
+  PlusCircle = PlusCircle;
   collapsed = signal(false);
   showMobileMenu = signal(false);
+  
+  // Dynamic Subscriptions from IndexedDB
+  subscriptions = signal<any[]>([]);
 
-  sections = signal<SidebarSection[]>([
+  baseSections: SidebarSection[] = [
     {
       title: 'أنت',
       items: [
@@ -43,12 +53,6 @@ export class WeTubeSidebarComponent {
         { label: 'شورتس', icon: Film, route: '/stream/shorts', active: () => this.wetube.activeTab() === 'shorts', section: 'you' },
         { label: 'سجل المشاهدة', icon: History, route: '/stream/library', active: () => this.wetube.activeTab() === 'library', section: 'you' },
         { label: 'مباشر', icon: Tv, route: '/stream', active: () => false, section: 'you' }
-      ]
-    },
-    {
-      title: 'الاشتراكات',
-      items: [
-        { label: 'الاشتراكات', icon: Users, route: '/stream/subscriptions', active: () => this.wetube.activeTab() === 'subs', section: 'subs' }
       ]
     },
     {
@@ -68,7 +72,45 @@ export class WeTubeSidebarComponent {
         { label: 'الإشعارات', icon: Bell, route: '/stream/notifications', active: () => this.wetube.activeTab() === 'notifications', section: 'creator' }
       ]
     }
-  ]);
+  ];
+
+  // Computed sections injects subscriptions dynamically
+  sections = computed<SidebarSection[]>(() => {
+    const subs = this.subscriptions();
+    
+    const subItems: MenuItem[] = subs.map(sub => ({
+      label: sub.name,
+      icon: null,
+      route: `/stream/channel/${sub.channelId}`,
+      active: () => this.router.url.includes(sub.channelId),
+      section: 'subs',
+      isSubscription: true,
+      avatar: sub.avatar,
+      hasUnread: Math.random() > 0.7, // Randomize unread indicator for demo, ideally from DB
+      channelId: sub.channelId
+    }));
+
+    // Always keep the main "Subscriptions" link
+    const allSubsItem: MenuItem = { 
+      label: 'كل الاشتراكات', 
+      icon: Users, 
+      route: '/stream/subscriptions', 
+      active: () => this.wetube.activeTab() === 'subs', 
+      section: 'subs' 
+    };
+
+    const subsSection: SidebarSection = {
+      title: 'الاشتراكات',
+      items: [allSubsItem, ...subItems]
+    };
+
+    return [
+      this.baseSections[0], // You
+      subsSection,          // Subscriptions
+      this.baseSections[1], // Explore
+      this.baseSections[2]  // Creator
+    ];
+  });
 
   menuItems = computed(() => this.sections().flatMap(s => s.items));
 
@@ -83,6 +125,28 @@ export class WeTubeSidebarComponent {
       else if (url === '/stream' && this.wetube.activeCategory() !== 'الكل') this.wetube.setActiveTab('explore');
       else this.wetube.setActiveTab('home');
     });
+  }
+
+  ngOnInit() {
+    this.loadSubscriptions();
+  }
+
+  async loadSubscriptions() {
+    try {
+      const subs = await this.dbService.getAll('subscriptions');
+      if (subs && subs.length > 0) {
+        this.subscriptions.set(subs);
+      } else {
+        // Mock data if no subscriptions found (to match React's nice UI if empty)
+        this.subscriptions.set([
+          { channelId: 'UC_x5XG1OV2P6uZZ5FSM9Ttw', name: 'Google Developers', avatar: 'https://ui-avatars.com/api/?name=GD&background=0D8ABC&color=fff' },
+          { channelId: 'UCWv7vMbUUWE73PtMVlNk52Q', name: 'Angular', avatar: 'https://ui-avatars.com/api/?name=A&background=DD0031&color=fff' },
+          { channelId: 'UCsBjURrPoezykLs9EqgamOA', name: 'Fireship', avatar: 'https://ui-avatars.com/api/?name=F&background=FF8A65&color=fff' }
+        ]);
+      }
+    } catch (e) {
+      console.warn('[WeTubeSidebar] Failed to load subscriptions', e);
+    }
   }
 
   toggleCollapse() {

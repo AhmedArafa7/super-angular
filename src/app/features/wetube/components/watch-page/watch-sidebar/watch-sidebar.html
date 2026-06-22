@@ -1,15 +1,116 @@
-<div class="watch-sidebar">
-  <h3>الفيديوهات المقترحة</h3>
-  <div class="recommendations">
-    <div *ngFor="let video of recommendations" class="recommendation-item" [routerLink]="['/stream/watch', video.id]">
-      <div class="video-thumbnail" [style.background-image]="'url(' + video.thumbnail + ')'">
-        <span class="duration">{{ video.duration }}</span>
-      </div>
-      <div class="video-info">
-        <h4>{{ video.title }}</h4>
-        <p class="author">{{ video.author }}</p>
-        <p class="meta">{{ video.views }} مشاهدة • {{ video.time }}</p>
-      </div>
-    </div>
+<div class="watch-sidebar-container h-full flex flex-col pt-4 pr-4 lg:pr-0" (click)="closeContextMenu()">
+  
+  <!-- Category Filters -->
+  <div class="categories-scroll flex gap-2 pb-4 overflow-x-auto scrollbar-hide sticky top-0 z-10 bg-slate-950/80 backdrop-blur-md">
+    @for (cat of categories; track cat) {
+      <button 
+        (click)="setCategory(cat)"
+        class="px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors border"
+        [ngClass]="activeCategory() === cat ? 'bg-white text-slate-900 border-white' : 'bg-white/5 text-white hover:bg-white/10 border-transparent'">
+        {{ cat }}
+      </button>
+    }
   </div>
+
+  <!-- Loading State -->
+  @if (videoState.isLoadingRelated()) {
+    <div class="flex flex-col items-center justify-center py-10 text-slate-400 gap-3">
+      <lucide-icon [img]="Loader2" class="w-8 h-8 animate-spin text-indigo-500"></lucide-icon>
+      <p class="text-sm">جاري البحث عن فيديوهات ذات صلة...</p>
+    </div>
+  } @else {
+    
+    <!-- Empty State -->
+    @if (displayedVideos().length === 0) {
+      <div class="flex flex-col items-center justify-center py-10 text-slate-500 gap-3">
+        <lucide-icon [img]="VideoOff" class="w-10 h-10 opacity-50"></lucide-icon>
+        <p class="text-sm font-medium">لا توجد فيديوهات مقترحة في هذا القسم حالياً</p>
+      </div>
+    } @else {
+      
+      <!-- Video List with @defer for Lazy Rendering -->
+      <div class="flex flex-col gap-3 pb-8">
+        @for (video of displayedVideos(); track getVideoId(video)) {
+          @defer (on viewport) {
+            <div class="video-card group flex gap-2 cursor-pointer relative rounded-xl p-1 hover:bg-white/5 transition-colors"
+                 [routerLink]="['/stream/watch', getVideoId(video)]">
+              
+              <!-- Thumbnail -->
+              <div class="relative w-40 min-w-[160px] aspect-video rounded-lg overflow-hidden shrink-0 bg-slate-800">
+                <img [src]="getThumbnail(video)" [alt]="video.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                @if (video.duration) {
+                  <span class="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-xs font-medium text-white backdrop-blur-sm">
+                    {{ video.duration >= 0 ? (video.duration | number:'1.0-0') : video.duration }}
+                  </span>
+                }
+              </div>
+
+              <!-- Info -->
+              <div class="flex flex-col py-0.5 pr-2 flex-1 min-w-0">
+                <h3 class="text-sm font-semibold text-white line-clamp-2 leading-tight mb-1 group-hover:text-indigo-400 transition-colors" [title]="video.title">
+                  {{ video.title }}
+                </h3>
+                
+                <div class="text-xs text-slate-400 mt-auto">
+                  <p class="hover:text-white transition-colors cursor-pointer truncate" (click)="goToChannel($event, video.uploaderUrl?.split('/channel/')[1])">
+                    {{ video.uploaderName }}
+                  </p>
+                  <p class="truncate mt-0.5">
+                    {{ video.views | number:'1.0-0' }} مشاهدة
+                    @if (video.uploadedDate) {
+                      <span class="mx-1">•</span>{{ video.uploadedDate }}
+                    }
+                  </p>
+                </div>
+              </div>
+
+              <!-- Context Menu Trigger -->
+              <button class="absolute top-2 left-2 p-1.5 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80 text-white backdrop-blur-md"
+                      (click)="toggleContextMenu($event, getVideoId(video))">
+                <lucide-icon [img]="MoreVertical" class="w-4 h-4"></lucide-icon>
+              </button>
+
+              <!-- Context Menu Dropdown -->
+              @if (activeContextMenu() === getVideoId(video)) {
+                <div class="absolute top-10 left-2 w-48 bg-slate-800 rounded-xl shadow-xl border border-white/10 overflow-hidden z-50 animate-in fade-in zoom-in duration-200">
+                  <div class="flex flex-col py-1">
+                    <button class="flex items-center gap-3 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/10 transition-colors" (click)="toggleContextMenu($event, '')">
+                      <lucide-icon [img]="ListPlus" class="w-4 h-4"></lucide-icon> إضافه للقائمة
+                    </button>
+                    <button class="flex items-center gap-3 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/10 transition-colors" (click)="toggleContextMenu($event, '')">
+                      <lucide-icon [img]="BookmarkPlus" class="w-4 h-4"></lucide-icon> مشاهدة لاحقاً
+                    </button>
+                    <div class="h-px bg-white/10 my-1"></div>
+                    <button class="flex items-center gap-3 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/10 transition-colors" (click)="toggleContextMenu($event, '')">
+                      <lucide-icon [img]="Share2" class="w-4 h-4"></lucide-icon> مشاركة
+                    </button>
+                    <button class="flex items-center gap-3 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/10 transition-colors" (click)="toggleContextMenu($event, '')">
+                      <lucide-icon [img]="Download" class="w-4 h-4"></lucide-icon> تنزيل
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          } @placeholder {
+            <!-- Skeleton Loader for the card -->
+            <div class="flex gap-2 p-1 animate-pulse">
+              <div class="w-40 min-w-[160px] aspect-video rounded-lg bg-slate-800 shrink-0"></div>
+              <div class="flex flex-col flex-1 py-1 gap-2">
+                <div class="h-4 bg-slate-800 rounded w-full"></div>
+                <div class="h-4 bg-slate-800 rounded w-3/4"></div>
+                <div class="h-3 bg-slate-800 rounded w-1/2 mt-auto"></div>
+              </div>
+            </div>
+          }
+        }
+      </div>
+
+      <!-- Infinite Scroll Trigger -->
+      <div #infiniteScrollTrigger class="h-10 w-full flex items-center justify-center mt-2 mb-10">
+        @if (displayedVideos().length < filteredVideos().length) {
+          <lucide-icon [img]="Loader2" class="w-5 h-5 animate-spin text-slate-500"></lucide-icon>
+        }
+      </div>
+    }
+  }
 </div>

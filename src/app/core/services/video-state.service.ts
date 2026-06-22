@@ -1,5 +1,6 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { PipedApiService, PipedVideoDetails } from './piped-api.service';
+import { IndexedDBService } from './indexed-db.service';
 
 export type PlayerMode = 'hidden' | 'floating' | 'full' | 'pip';
 export type PlayerType = 'native' | 'iframe';
@@ -16,6 +17,7 @@ export interface ActiveVideo {
 })
 export class VideoStateService {
   private pipedService = inject(PipedApiService);
+  private dbService = inject(IndexedDBService);
 
   // Player UI State
   readonly playerMode = signal<PlayerMode>('hidden');
@@ -26,6 +28,10 @@ export class VideoStateService {
   readonly activeVideo = signal<ActiveVideo | null>(null);
   readonly pipedDetails = signal<PipedVideoDetails | null>(null);
   readonly rawStreamUrl = signal<string | null>(null);
+  
+  // Watch Sidebar State
+  readonly relatedVideos = signal<any[]>([]);
+  readonly isLoadingRelated = signal<boolean>(false);
   
   // Playback State
   readonly isPlaying = signal<boolean>(false);
@@ -56,8 +62,10 @@ export class VideoStateService {
     this.playerMode.set('full');
     this.currentTime.set(0);
     this.isLoading.set(true);
+    this.isLoadingRelated.set(true);
     this.pipedDetails.set(null);
     this.rawStreamUrl.set(null);
+    this.relatedVideos.set([]);
 
     if (forceIframe) {
       this.switchToIframe();
@@ -66,8 +74,23 @@ export class VideoStateService {
 
     try {
       this.playerType.set('native');
+      
+      // Attempt to load related videos from cache first
+      const cachedRelated = await this.dbService.getWithTTL('related_videos', video.id, 2 * 60 * 60 * 1000);
+      if (cachedRelated) {
+        this.relatedVideos.set(cachedRelated.streams || []);
+        this.isLoadingRelated.set(false);
+      }
+
       const details = await this.pipedService.getVideoDetails(video.id);
       this.pipedDetails.set(details);
+      
+      // Update related videos and cache them if not cached or if we want to refresh
+      if (details.relatedStreams) {
+        this.relatedVideos.set(details.relatedStreams);
+        this.isLoadingRelated.set(false);
+        await this.dbService.setWithTTL('related_videos', { videoId: video.id, streams: details.relatedStreams });
+      }
       
       // Prefer HLS stream, otherwise fallback to highest quality mp4 videoOnly + audio (which is hard in native video tag)
       // Usually Piped HLS is best for native web playback.

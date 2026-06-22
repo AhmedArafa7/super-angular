@@ -23,15 +23,26 @@
         <nav class="menu" [attr.aria-label]="section.title">
           @for (item of section.items; track item.label) {
             <a [routerLink]="item.route"
-               class="menu-item"
+               class="menu-item group relative"
                [class.active]="item.active()"
                [queryParams]="item.section === 'explore' ? { category: item.label } : null"
                [attr.aria-current]="item.active() ? 'page' : null"
                role="link"
                [title]="item.label">
-              <lucide-icon [img]="item.icon" class="icon"></lucide-icon>
+               
+              @if (item.isSubscription && item.avatar) {
+                <img [src]="item.avatar" [alt]="item.label" class="w-6 h-6 rounded-full object-cover shrink-0 ml-4 group-hover:scale-110 transition-transform">
+              } @else {
+                <lucide-icon [img]="item.icon" class="icon shrink-0"></lucide-icon>
+              }
+              
               @if (!collapsed()) {
-                <span class="menu-label">{{ item.label }}</span>
+                <span class="menu-label truncate flex-1">{{ item.label }}</span>
+                
+                <!-- Unread / Favorite Indicator (Blue Dot) -->
+                @if (item.isSubscription && item.hasUnread) {
+                  <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)] ml-2"></span>
+                }
               }
             </a>
           }

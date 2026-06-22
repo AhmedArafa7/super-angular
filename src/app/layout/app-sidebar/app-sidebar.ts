@@ -4,24 +4,45 @@ import { RouterModule } from '@angular/router';
 import { SidebarService } from '../../core/sidebar.service';
 import { ALL_NAV_ITEMS, NavItem, getVisibleNavItems } from '../../core/nav-items';
 import { LucideDynamicIcon } from '@lucide/angular';
+import { OfflineQueueService } from '../../core/services/offline-queue.service';
+import { LucideAngularModule, LogOut, User, Settings, LayoutDashboard, CloudUpload, CheckCircle2, XCircle, CloudCog } from 'lucide-angular';
 
 import { SidebarItemComponent } from './sidebar-item/sidebar-item.component';
-
 import { FloatingOrbComponent } from './floating-orb/floating-orb.component';
 import { CustomizationDialogComponent } from './customization-dialog/customization-dialog.component';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterModule, LucideDynamicIcon, SidebarItemComponent, FloatingOrbComponent, CustomizationDialogComponent],
+  imports: [
+    CommonModule, 
+    RouterModule, 
+    LucideDynamicIcon, 
+    LucideAngularModule,
+    SidebarItemComponent, 
+    FloatingOrbComponent, 
+    CustomizationDialogComponent
+  ],
   templateUrl: './app-sidebar.html',
   styleUrls: ['./app-sidebar.scss']
 })
 export class AppSidebarComponent {
   sidebar = inject(SidebarService);
+  offlineQueue = inject(OfflineQueueService);
   
   userRole: string | null = 'admin'; 
   showCustomizationDialog = false;
+  showUserProfileDropdown = false;
+  
+  // Icons
+  LogOut = LogOut;
+  User = User;
+  Settings = Settings;
+  LayoutDashboard = LayoutDashboard;
+  CloudUpload = CloudUpload;
+  CheckCircle2 = CheckCircle2;
+  XCircle = XCircle;
+  CloudCog = CloudCog;
   
   get visibleItems(): NavItem[] {
     return getVisibleNavItems(this.userRole, ALL_NAV_ITEMS);
@@ -31,6 +52,25 @@ export class AppSidebarComponent {
     return this.visibleItems.filter(item => 
       item.isPermanent || this.sidebar.pinnedItems().includes(item.id as any)
     );
+  }
+
+  // Keyboard Shortcut: Ctrl + B or Cmd + B to toggle sidebar
+  @HostListener('window:keydown.control.b', ['$event'])
+  @HostListener('window:keydown.meta.b', ['$event'])
+  handleKeyboardToggle(event: Event) {
+    const e = event as KeyboardEvent;
+    e.preventDefault();
+    if (this.sidebar.position() === 'left') {
+      this.sidebar.toggleCollapsed();
+    } else {
+      this.sidebar.setPosition('left');
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    // Close dropdown if clicked outside. Handled via template usually or basic logic here.
+    // For simplicity, we can just let inline stopPropagation handle it.
   }
 
   // Handle responsive layout automatically
@@ -58,7 +98,6 @@ export class AppSidebarComponent {
   onMouseMove(event: MouseEvent) {
     if (!this.sidebar.isResizing()) return;
     
-    // Sidebar is on the left side of the screen. Width = clientX
     let newWidth = event.clientX;
     
     if (newWidth < 180) newWidth = 180;
@@ -81,5 +120,10 @@ export class AppSidebarComponent {
     this.sidebar.setIsResizing(true);
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
+  }
+
+  toggleProfileDropdown(event: Event) {
+    event.stopPropagation();
+    this.showUserProfileDropdown = !this.showUserProfileDropdown;
   }
 }

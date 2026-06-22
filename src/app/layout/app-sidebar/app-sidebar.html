@@ -2,7 +2,8 @@
 @if (sidebar.position() === 'left') {
   <aside class="flex flex-col h-full border-r border-white/10 bg-slate-900/50 backdrop-blur-xl transition-all duration-300 relative"
          [ngStyle]="{'width': sidebar.isCollapsed() ? '80px' : sidebar.width() + 'px'}"
-         [ngClass]="{'transition-none': sidebar.isResizing()}">
+         [ngClass]="{'transition-none': sidebar.isResizing()}"
+         (click)="showUserProfileDropdown = false">
          
     <!-- Resize Handle -->
     @if (!sidebar.isCollapsed()) {
@@ -42,14 +43,95 @@
       }
     </div>
     
-    <div class="p-4 border-t border-white/10 shrink-0">
-       <button class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-red-400 hover:bg-red-500/10"
-               [ngClass]="{'justify-center': sidebar.isCollapsed()}" dir="rtl">
-          <svg lucideIcon="log-out" class="w-5 h-5 shrink-0"></svg>
-          @if (!sidebar.isCollapsed()) {
-            <span class="truncate">تسجيل الخروج</span>
+    <!-- Upload Monitor (Only show if there are active syncs or recently completed ones) -->
+    @if (offlineQueue.activeSyncs().length > 0 && !sidebar.isCollapsed()) {
+      <div class="p-3 mx-2 mb-2 bg-slate-800/80 backdrop-blur border border-white/5 rounded-xl text-white">
+        <div class="flex items-center gap-2 mb-2" dir="rtl">
+          <lucide-icon [img]="CloudCog" class="w-4 h-4 text-indigo-400 animate-pulse"></lucide-icon>
+          <span class="text-xs font-semibold">المزامنة النشطة ({{ offlineQueue.activeSyncs().length }})</span>
+        </div>
+        
+        <div class="space-y-2 max-h-32 overflow-y-auto scrollbar-hide">
+          @for (sync of offlineQueue.activeSyncs(); track sync.id) {
+            <div class="bg-black/20 p-2 rounded-lg" dir="rtl">
+              <div class="flex justify-between text-[10px] mb-1">
+                <span class="truncate max-w-[120px] text-slate-300">{{ sync.url | slice:0:30 }}...</span>
+                @if (sync.status === 'syncing') {
+                  <span class="text-indigo-400">{{ sync.progress }}%</span>
+                } @else if (sync.status === 'pending') {
+                  <span class="text-yellow-400">في الانتظار</span>
+                } @else if (sync.status === 'error') {
+                  <span class="text-red-400">فشل</span>
+                }
+              </div>
+              <div class="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-300"
+                     [ngClass]="{
+                       'bg-indigo-500': sync.status === 'syncing',
+                       'bg-yellow-500': sync.status === 'pending',
+                       'bg-red-500': sync.status === 'error'
+                     }"
+                     [style.width.%]="sync.progress || 0"></div>
+              </div>
+            </div>
           }
-        </button>
+        </div>
+      </div>
+    }
+
+    <!-- Collapsed Upload Monitor Indicator -->
+    @if (offlineQueue.activeSyncs().length > 0 && sidebar.isCollapsed()) {
+      <div class="p-2 flex justify-center shrink-0">
+        <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/50 flex items-center justify-center text-indigo-400 relative">
+          <lucide-icon [img]="CloudUpload" class="w-5 h-5 animate-pulse"></lucide-icon>
+          <span class="absolute -top-1 -right-1 w-4 h-4 bg-indigo-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold">
+            {{ offlineQueue.activeSyncs().length }}
+          </span>
+        </div>
+      </div>
+    }
+    
+    <!-- User Profile Footer -->
+    <div class="p-3 border-t border-white/10 shrink-0 relative">
+      <button class="w-full flex items-center gap-3 p-2 rounded-xl text-sm font-medium transition-colors hover:bg-white/5 relative z-10"
+              [ngClass]="{'justify-center': sidebar.isCollapsed()}" 
+              dir="rtl"
+              (click)="toggleProfileDropdown($event)">
+        
+        <img src="https://ui-avatars.com/api/?name=Admin&background=4f46e5&color=fff" alt="User" class="w-8 h-8 rounded-lg shrink-0">
+        
+        @if (!sidebar.isCollapsed()) {
+          <div class="flex flex-col items-start flex-1 min-w-0">
+            <span class="text-white font-semibold truncate text-xs w-full text-right">أحمد عرفة</span>
+            <span class="text-slate-400 text-[10px] truncate w-full text-right">مدير النظام</span>
+          </div>
+        }
+      </button>
+
+      <!-- User Profile Dropdown -->
+      @if (showUserProfileDropdown) {
+        <div class="absolute bottom-16 right-3 left-3 bg-slate-800 rounded-xl shadow-xl border border-white/10 overflow-hidden z-50 animate-in slide-in-from-bottom-2 duration-200" dir="rtl" (click)="$event.stopPropagation()">
+          <div class="p-3 border-b border-white/10 flex items-center gap-3">
+            <img src="https://ui-avatars.com/api/?name=Admin&background=4f46e5&color=fff" alt="User" class="w-10 h-10 rounded-lg shrink-0">
+            <div class="flex flex-col">
+              <span class="text-white font-bold text-sm">أحمد عرفة</span>
+              <span class="text-slate-400 text-xs">admin&#64;si-neuro.com</span>
+            </div>
+          </div>
+          <div class="flex flex-col py-1">
+            <button class="flex items-center gap-3 px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors w-full text-right">
+              <lucide-icon [img]="LayoutDashboard" class="w-4 h-4"></lucide-icon> لوحة التحكم
+            </button>
+            <button class="flex items-center gap-3 px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors w-full text-right">
+              <lucide-icon [img]="Settings" class="w-4 h-4"></lucide-icon> الإعدادات
+            </button>
+            <div class="h-px bg-white/10 my-1 mx-2"></div>
+            <button class="flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors w-full text-right">
+              <lucide-icon [img]="LogOut" class="w-4 h-4"></lucide-icon> تسجيل الخروج
+            </button>
+          </div>
+        </div>
+      }
     </div>
   </aside>
 }
