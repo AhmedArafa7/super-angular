@@ -20,9 +20,9 @@
         @for (item of section.items; track item.label) {
           <a [routerLink]="item.route"
              [queryParams]="item.section === 'explore' ? { category: item.label } : null"
-             routerLinkActive="bg-white/5 border-r-red-650 text-white font-black shadow-[inset_-3px_0_0_0_#dc2626]"
+             routerLinkActive="bg-white/10 text-white font-black"
              [routerLinkActiveOptions]="{ exact: item.route === '/stream' && !item.section }"
-             class="h-11 border-r-2 border-transparent rounded-xl flex items-center gap-3  text-right text-xs font-bold transition-all text-slate-400 hover:text-white hover:bg-white/5 overflow-hidden group"
+             class="h-11 rounded-xl flex items-center gap-3 text-right text-xs font-bold transition-all text-slate-400 hover:text-white hover:bg-white/5 overflow-hidden group"
              [ngClass]="collapsed() ? 'w-11 justify-center px-0' : 'w-full px-4 justify-start'"
              [title]="item.label">
              

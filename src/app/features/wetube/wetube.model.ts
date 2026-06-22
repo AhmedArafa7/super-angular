@@ -54,4 +54,4 @@ export const WETUBE_CATEGORIES = [
   "بودكاست", "برمجة", "طبخ", "تكنولوجيا", "كوميديا", "اقتصاد"
 ];
 
-export type WeTubeTab = 'home' | 'shorts' | 'subs' | 'library' | 'notifications' | 'explore' | 'studio';
+export type WeTubeTab = 'home' | 'shorts' | 'subs' | 'library' | 'notifications' | 'explore' | 'studio' | 'history' | 'liked';

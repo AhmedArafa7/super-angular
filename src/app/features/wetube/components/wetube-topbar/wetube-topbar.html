@@ -1,48 +1,62 @@
-<header class="h-16 border-b border-white/5 bg-slate-900/40 backdrop-blur-3xl flex items-center justify-between px-6 shrink-0  z-30 w-full" dir="rtl">
+<header class="h-16 flex items-center justify-between px-6 shrink-0 z-30 w-full" dir="rtl">
   
-  <!-- Logo -->
-  <div class="flex items-center gap-4 ">
-    <div 
-      (click)="onLogoClick()" 
-      class="flex items-center gap-2 cursor-pointer select-none  group">
-      <div class="size-8 bg-red-650 rounded-xl flex items-center justify-center text-white shadow-lg shadow-red-500/20 group-hover:shadow-red-500/40 transition-shadow">
-        <svg lucideIcon="play" class="size-4 ml-0.5 fill-current"></svg>
-      </div>
-      <span class="text-lg font-black tracking-tight bg-gradient-to-r from-white via-slate-100 to-red-400 bg-clip-text text-transparent group-hover:to-red-500 transition-colors">WeTube</span>
+  <!-- Right Side (User Actions) -->
+  <div class="flex items-center gap-4">
+    <!-- User Avatar -->
+    <div class="relative cursor-pointer hover:ring-2 ring-indigo-500/50 rounded-full transition-all">
+      <img [src]="userPhoto" 
+           alt="User" 
+           class="w-8 h-8 rounded-full object-cover border border-white/10">
+      <div class="absolute bottom-0 right-0 w-2 h-2 bg-green-500 border border-[#0B0F19] rounded-full"></div>
     </div>
+
+    <!-- Bell Icon -->
+    <button class="w-10 h-10 rounded-full hover:bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors relative">
+      <lucide-icon [img]="Bell" class="w-5 h-5"></lucide-icon>
+    </button>
+
+    <!-- New Video Button -->
+    <button class="h-10 px-5 bg-indigo-500/90 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-[0_0_15px_rgba(99,102,241,0.3)]">
+      <lucide-icon [img]="Plus" class="w-4 h-4"></lucide-icon>
+      <span>فيديو جديد</span>
+    </button>
   </div>
 
-  <!-- Center Search Bar input -->
-  <div class="flex-1 max-w-lg mx-6 relative">
-    <div class="relative w-full flex items-center  group">
+  <!-- Center Search Bar -->
+  <div class="flex-1 max-w-2xl mx-12 relative flex items-center gap-2">
+    <div class="relative w-full flex items-center group">
       <input 
         type="text" 
         [ngModel]="searchQuery()"
         (ngModelChange)="searchQuery.set($event)"
         (keyup.enter)="onSearch()"
-        placeholder="ابحث عن فيديوهات، قنوات، أو شروحات برمجية..."
-        class="w-full h-10 bg-white/5 border border-white/10 rounded-2xl pr-4 pl-12 text-xs text-white focus:outline-none focus:border-indigo-500 font-bold placeholder-slate-500 text-right transition-all focus:bg-slate-900/50"
+        placeholder="بحث"
+        class="w-full h-11 bg-[#18181B] border border-white/5 rounded-full pr-5 pl-14 text-sm text-white focus:outline-none focus:border-indigo-500/50 focus:bg-[#1f1f23] font-medium placeholder-slate-500 transition-all shadow-inner"
       />
       <button 
         (click)="onSearch()"
-        class="absolute left-1 size-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-all group-focus-within:text-indigo-400">
-        <svg lucideIcon="search" class="size-4"></svg>
+        class="absolute left-1 w-12 h-9 rounded-full hover:bg-white/5 text-slate-400 hover:text-white flex items-center justify-center transition-all">
+        <lucide-icon [img]="Search" class="w-4 h-4"></lucide-icon>
       </button>
     </div>
+    <button class="w-11 h-11 shrink-0 rounded-full bg-[#18181B] hover:bg-white/10 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-inner">
+      <lucide-icon [img]="Mic" class="w-4 h-4"></lucide-icon>
+    </button>
   </div>
 
-  <!-- Left side modifiers triggers -->
-  <div class="flex items-center gap-3">
-    <button 
-      (click)="connectVault()"
-      class="h-9 px-4 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 text-[10px] font-black rounded-xl flex items-center justify-center gap-2  transition-all">
-      <svg lucideIcon="external-link" class="size-3.5"></svg>
-      <span class="hidden sm:inline">ربط السجل المركزي</span>
-    </button>
-    <button 
-      class="h-9 px-4 bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 text-[10px] font-black rounded-xl flex items-center justify-center gap-2  transition-all">
-      <svg lucideIcon="upload-cloud" class="size-3.5"></svg>
-      <span class="hidden sm:inline">تحميل فيديو جديد</span>
+  <!-- Left Side (Logo & Menu) -->
+  <div class="flex items-center gap-4">
+    <div 
+      (click)="onLogoClick()" 
+      class="flex items-center gap-2 cursor-pointer select-none group">
+      <div class="w-6 h-5 bg-red-600 rounded flex items-center justify-center text-white">
+        <div class="w-0 h-0 border-t-[4px] border-t-transparent border-l-[6px] border-l-white border-b-[4px] border-b-transparent ml-0.5"></div>
+      </div>
+      <span class="text-xl font-bold tracking-tight text-white">WeTube</span>
+    </div>
+    
+    <button class="w-10 h-10 rounded-full hover:bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-all ml-2">
+      <lucide-icon [img]="Menu" class="w-5 h-5"></lucide-icon>
     </button>
   </div>
 

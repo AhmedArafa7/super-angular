@@ -14,10 +14,13 @@
     <div class="h-16 flex items-center justify-between px-4 border-b border-white/5 shrink-0">
       @if (!sidebar.isCollapsed()) {
         <div class="flex items-center gap-3 w-full" [ngClass]="{'flex-row-reverse': true}">
-        <button (click)="sidebar.setPosition('floating')" class="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/50 flex items-center justify-center shrink-0 hover:bg-indigo-500/30 transition-colors cursor-pointer" title="تحويل لدائرة عائمة">
-          <svg lucideIcon="zap" class="text-indigo-400 w-[18px] h-[18px]"></svg>
+        <button (click)="sidebar.setPosition('floating')" class="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/50 flex items-center justify-center shrink-0 hover:bg-indigo-500/30 transition-colors cursor-pointer shadow-[0_0_10px_rgba(99,102,241,0.5)]" title="تحويل لدائرة عائمة">
+          <svg lucideIcon="layers" class="text-indigo-400 w-5 h-5"></svg>
         </button>
-        <span class="font-bold text-white text-lg tracking-tight">Si-Neuro</span>
+        <div class="flex flex-col items-start leading-none cursor-pointer">
+          <span class="font-black text-white text-sm tracking-widest uppercase">Nexus AI</span>
+          <span class="text-[8px] font-bold text-indigo-400 tracking-widest uppercase mt-0.5">Central Hub</span>
+        </div>
           
           <div class="mr-auto flex gap-1">
             <button class="p-1.5 hover:bg-white/10 rounded-lg text-slate-400 transition-colors" title="إعدادات القائمة" (click)="showCustomizationDialog = true">

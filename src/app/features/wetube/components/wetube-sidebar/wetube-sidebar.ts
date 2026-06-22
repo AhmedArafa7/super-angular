@@ -46,30 +46,27 @@ export class WeTubeSidebarComponent implements OnInit {
 
   baseSections: SidebarSection[] = [
     {
+      title: '', // No title for the first section
+      items: [
+        { label: 'الصفحة الرئيسية', icon: Home, route: '/stream', active: () => this.wetube.activeTab() === 'home', section: 'main' },
+        { label: 'استكشاف يوتيوب', icon: TrendingUp, route: '/stream', active: () => this.wetube.activeTab() === 'explore', section: 'main' },
+        { label: 'Shorts', icon: Film, route: '/stream/shorts', active: () => this.wetube.activeTab() === 'shorts', section: 'main' },
+        { label: 'الاشتراكات', icon: Users, route: '/stream/subscriptions', active: () => this.wetube.activeTab() === 'subs', section: 'main' },
+        { label: 'الإشعارات', icon: Bell, route: '/stream/notifications', active: () => this.wetube.activeTab() === 'notifications', section: 'main' }
+      ]
+    },
+    {
       title: 'أنت',
       items: [
-        { label: 'الرئيسية', icon: Home, route: '/stream', active: () => this.wetube.activeTab() === 'home', section: 'you' },
         { label: 'المكتبة', icon: Library, route: '/stream/library', active: () => this.wetube.activeTab() === 'library', section: 'you' },
-        { label: 'شورتس', icon: Film, route: '/stream/shorts', active: () => this.wetube.activeTab() === 'shorts', section: 'you' },
-        { label: 'سجل المشاهدة', icon: History, route: '/stream/library', active: () => this.wetube.activeTab() === 'library', section: 'you' },
-        { label: 'مباشر', icon: Tv, route: '/stream', active: () => false, section: 'you' }
+        { label: 'سجل المشاهدة', icon: History, route: '/stream/history', active: () => this.wetube.activeTab() === 'history', section: 'you' },
+        { label: 'فيديوهات أعجبتني', icon: Tv, route: '/stream/liked', active: () => this.wetube.activeTab() === 'liked', section: 'you' }
       ]
     },
     {
-      title: 'استكشاف',
+      title: 'أدوات المبدعين',
       items: [
-        { label: 'رائج', icon: TrendingUp, route: '/stream', active: () => this.wetube.activeTab() === 'explore' || this.wetube.activeCategory() === 'تريند', section: 'explore' },
-        { label: 'موسيقى', icon: Music, route: '/stream', active: () => this.wetube.activeCategory() === 'موسيقى', section: 'explore' },
-        { label: 'ألعاب', icon: Gamepad2, route: '/stream', active: () => this.wetube.activeCategory() === 'ألعاب', section: 'explore' },
-        { label: 'أخبار', icon: Newspaper, route: '/stream', active: () => this.wetube.activeCategory() === 'أخبار', section: 'explore' },
-        { label: 'تعلم', icon: GraduationCap, route: '/stream', active: () => this.wetube.activeCategory() === 'برمجة', section: 'explore' }
-      ]
-    },
-    {
-      title: 'منصة المبدعين',
-      items: [
-        { label: 'ستوديو', icon: Video, route: '/stream/studio', active: () => this.wetube.activeTab() === 'studio', section: 'creator' },
-        { label: 'الإشعارات', icon: Bell, route: '/stream/notifications', active: () => this.wetube.activeTab() === 'notifications', section: 'creator' }
+        { label: 'WeTube Studio', icon: Video, route: '/stream/studio', active: () => this.wetube.activeTab() === 'studio', section: 'creator' }
       ]
     }
   ];
@@ -90,25 +87,16 @@ export class WeTubeSidebarComponent implements OnInit {
       channelId: sub.channelId
     }));
 
-    // Always keep the main "Subscriptions" link
-    const allSubsItem: MenuItem = { 
-      label: 'كل الاشتراكات', 
-      icon: Users, 
-      route: '/stream/subscriptions', 
-      active: () => this.wetube.activeTab() === 'subs', 
-      section: 'subs' 
-    };
-
     const subsSection: SidebarSection = {
       title: 'الاشتراكات',
-      items: [allSubsItem, ...subItems]
+      items: subItems
     };
 
     return [
-      this.baseSections[0], // You
-      subsSection,          // Subscriptions
-      this.baseSections[1], // Explore
-      this.baseSections[2]  // Creator
+      this.baseSections[0], // Main
+      this.baseSections[1], // You
+      this.baseSections[2], // Creator
+      subsSection           // Subscriptions at the bottom
     ];
   });
 
