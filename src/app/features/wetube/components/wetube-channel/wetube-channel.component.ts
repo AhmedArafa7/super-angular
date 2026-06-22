@@ -95,6 +95,18 @@ import { SkeletonLoaderComponent } from '../skeleton-loader/skeleton-loader.comp
             }
           </div>
         </div>
+      } @else {
+        <!-- Error State -->
+        <div class="w-full h-full min-h-[60vh] flex flex-col items-center justify-center p-8 text-center">
+          <div class="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
+            <lucide-icon [img]="Bell" class="w-10 h-10 text-red-500 opacity-80"></lucide-icon>
+          </div>
+          <h2 class="text-2xl font-bold text-white mb-3">عذراً، لم نتمكن من تحميل بيانات القناة</h2>
+          <p class="text-slate-400 mb-6 max-w-md">قد تكون القناة غير متاحة حالياً أو هناك مشكلة في الاتصال بالخادم. يرجى المحاولة مرة أخرى لاحقاً.</p>
+          <button class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all" (click)="loadChannelData(channelId())">
+            إعادة المحاولة
+          </button>
+        </div>
       }
     </div>
   `,
@@ -106,7 +118,10 @@ import { SkeletonLoaderComponent } from '../skeleton-loader/skeleton-loader.comp
     .hide-scrollbar::-webkit-scrollbar {
       display: none;
     }
-  `]
+  `],
+  host: {
+    class: 'block h-full'
+  }
 })
 export class WeTubeChannelComponent implements OnInit {
   private route = inject(ActivatedRoute);
@@ -152,7 +167,7 @@ export class WeTubeChannelComponent implements OnInit {
     }
   }
 
-  private async loadChannelData(id: string) {
+  async loadChannelData(id: string) {
     this.isLoadingMeta.set(true);
     this.checkSubscriptionStatus(id);
 

@@ -72,6 +72,7 @@ export class PipedApiService {
       }
     }
 
+    throw new Error('All Piped instances failed to fetch channel details');
   }
 
   async getTrending(region: string = 'EG'): Promise<any[]> {

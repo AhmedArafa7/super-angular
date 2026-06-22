@@ -38,6 +38,7 @@ export class WeTubeSidebarComponent implements OnInit {
   
   Menu = Menu;
   PlusCircle = PlusCircle;
+  Users = Users;
   collapsed = signal(false);
   showMobileMenu = signal(false);
   
@@ -125,12 +126,7 @@ export class WeTubeSidebarComponent implements OnInit {
       if (subs && subs.length > 0) {
         this.subscriptions.set(subs);
       } else {
-        // Mock data if no subscriptions found (to match React's nice UI if empty)
-        this.subscriptions.set([
-          { channelId: 'UC_x5XG1OV2P6uZZ5FSM9Ttw', name: 'Google Developers', avatar: 'https://ui-avatars.com/api/?name=GD&background=0D8ABC&color=fff' },
-          { channelId: 'UCWv7vMbUUWE73PtMVlNk52Q', name: 'Angular', avatar: 'https://ui-avatars.com/api/?name=A&background=DD0031&color=fff' },
-          { channelId: 'UCsBjURrPoezykLs9EqgamOA', name: 'Fireship', avatar: 'https://ui-avatars.com/api/?name=F&background=FF8A65&color=fff' }
-        ]);
+        this.subscriptions.set([]);
       }
     } catch (e) {
       console.warn('[WeTubeSidebar] Failed to load subscriptions', e);

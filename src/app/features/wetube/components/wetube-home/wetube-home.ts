@@ -14,7 +14,10 @@ import { LucideAngularModule, Sparkles, TrendingUp, Search, ArrowLeft, Youtube, 
   imports: [CommonModule, RouterModule, LucideAngularModule, SubscriptionBarComponent, NexusNativeAdsComponent],
   templateUrl: './wetube-home.html',
   styleUrls: ['./wetube-home.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'block h-full'
+  }
 })
 export class WeTubeHomeComponent implements OnInit {
   wetube = inject(WeTubeService);

@@ -6,4 +6,8 @@
       <router-outlet></router-outlet>
     </main>
   </div>
+  
+  @if (wetube.showUploadModal()) {
+    <app-upload-modal (close)="wetube.showUploadModal.set(false)"></app-upload-modal>
+  }
 </div>

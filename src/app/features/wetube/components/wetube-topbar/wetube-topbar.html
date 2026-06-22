@@ -44,7 +44,8 @@
   <!-- Right Side (User Actions) -->
   <div class="flex items-center gap-4">
     <!-- New Video Button -->
-    <button class="h-9 px-4 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 hover:text-indigo-300 text-xs font-bold rounded-full flex items-center justify-center gap-2 transition-all border border-indigo-500/20">
+    <button class="h-9 px-4 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 hover:text-indigo-300 text-xs font-bold rounded-full flex items-center justify-center gap-2 transition-all border border-indigo-500/20"
+            (click)="wetube.showUploadModal.set(true)">
       <lucide-icon [img]="Plus" class="w-4 h-4"></lucide-icon>
       <span>فيديو جديد</span>
     </button>

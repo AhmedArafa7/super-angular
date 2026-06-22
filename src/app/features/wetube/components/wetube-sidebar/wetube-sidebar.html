@@ -41,6 +41,13 @@
             }
           </a>
         }
+
+        @if (section.title === 'الاشتراكات' && section.items.length === 0 && !collapsed()) {
+          <div class="w-full flex flex-col items-center justify-center py-5 px-3 text-center border border-white/5 bg-slate-900/30 rounded-xl mt-2 mx-2 transition-all">
+            <lucide-icon [img]="Users" class="w-6 h-6 text-slate-500 mb-2 opacity-60"></lucide-icon>
+            <p class="text-[10px] text-slate-400 font-bold leading-relaxed">اشترك في قنواتك المفضلة لتظهر هنا</p>
+          </div>
+        }
       </nav>
     </div>
   }

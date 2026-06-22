@@ -33,6 +33,7 @@ export class WeTubeService {
   readonly isFeedLoading = signal<boolean>(false);
   readonly isShortsLoading = signal<boolean>(false);
   readonly isUsingCachedData = signal<boolean>(false);
+  readonly showUploadModal = signal<boolean>(false);
 
   // Active Content Context
   readonly activeChannel = signal<{ id: string, name: string, avatar?: string } | null>(null);
