@@ -5,6 +5,7 @@ import { SidebarService } from '../../core/sidebar.service';
 import { ALL_NAV_ITEMS, NavItem, getVisibleNavItems } from '../../core/nav-items';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { OfflineQueueService } from '../../core/services/offline-queue.service';
+import { FirebaseService } from '../../core/services/firebase.service';
 import { LucideAngularModule, LogOut, User, Settings, LayoutDashboard, CloudUpload, CheckCircle2, XCircle, CloudCog } from 'lucide-angular';
 
 import { SidebarItemComponent } from './sidebar-item/sidebar-item.component';
@@ -29,6 +30,7 @@ import { CustomizationDialogComponent } from './customization-dialog/customizati
 export class AppSidebarComponent {
   sidebar = inject(SidebarService);
   offlineQueue = inject(OfflineQueueService);
+  firebase = inject(FirebaseService);
   
   userRole: string | null = 'admin'; 
   showCustomizationDialog = false;
@@ -69,8 +71,7 @@ export class AppSidebarComponent {
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent) {
-    // Close dropdown if clicked outside. Handled via template usually or basic logic here.
-    // For simplicity, we can just let inline stopPropagation handle it.
+    this.showUserProfileDropdown = false;
   }
 
   // Handle responsive layout automatically
@@ -110,16 +111,20 @@ export class AppSidebarComponent {
   onMouseUp(event: MouseEvent) {
     if (this.sidebar.isResizing()) {
       this.sidebar.setIsResizing(false);
-      document.body.style.cursor = 'default';
-      document.body.style.userSelect = 'auto';
+      if (typeof document !== 'undefined') {
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = 'auto';
+      }
     }
   }
 
   startResizing(event: MouseEvent) {
     event.preventDefault();
     this.sidebar.setIsResizing(true);
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
+    if (typeof document !== 'undefined') {
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    }
   }
 
   toggleProfileDropdown(event: Event) {

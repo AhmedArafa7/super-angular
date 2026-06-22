@@ -1,20 +1,49 @@
-<header class="wetube-topbar">
-  <div class="logo">
-    <h1>WeTube</h1>
+<header class="h-16 border-b border-white/5 bg-slate-900/40 backdrop-blur-3xl flex items-center justify-between px-6 shrink-0 flex-row-reverse z-30 w-full" dir="rtl">
+  
+  <!-- Logo -->
+  <div class="flex items-center gap-4 flex-row-reverse">
+    <div 
+      (click)="onLogoClick()" 
+      class="flex items-center gap-2 cursor-pointer select-none flex-row-reverse group">
+      <div class="size-8 bg-red-650 rounded-xl flex items-center justify-center text-white shadow-lg shadow-red-500/20 group-hover:shadow-red-500/40 transition-shadow">
+        <svg lucideIcon="play" class="size-4 ml-0.5 fill-current"></svg>
+      </div>
+      <span class="text-lg font-black tracking-tight bg-gradient-to-r from-white via-slate-100 to-red-400 bg-clip-text text-transparent group-hover:to-red-500 transition-colors">WeTube</span>
+    </div>
   </div>
-  <div class="search-bar">
-    <input type="text" [(ngModel)]="searchQuery" (keyup.enter)="onSearch()" placeholder="بحث...">
-    <button (click)="onSearch()">
-      <lucide-icon [img]="Search"></lucide-icon>
+
+  <!-- Center Search Bar input -->
+  <div class="flex-1 max-w-lg mx-6 relative">
+    <div class="relative w-full flex items-center flex-row-reverse group">
+      <input 
+        type="text" 
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+        (keyup.enter)="onSearch()"
+        placeholder="ابحث عن فيديوهات، قنوات، أو شروحات برمجية..."
+        class="w-full h-10 bg-white/5 border border-white/10 rounded-2xl pr-4 pl-12 text-xs text-white focus:outline-none focus:border-indigo-500 font-bold placeholder-slate-500 text-right transition-all focus:bg-slate-900/50"
+      />
+      <button 
+        (click)="onSearch()"
+        class="absolute left-1 size-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-all group-focus-within:text-indigo-400">
+        <svg lucideIcon="search" class="size-4"></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Left side modifiers triggers -->
+  <div class="flex items-center gap-3">
+    <button 
+      (click)="connectVault()"
+      class="h-9 px-4 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 text-[10px] font-black rounded-xl flex items-center justify-center gap-2 flex-row-reverse transition-all">
+      <svg lucideIcon="external-link" class="size-3.5"></svg>
+      <span class="hidden sm:inline">ربط السجل المركزي</span>
+    </button>
+    <button 
+      class="h-9 px-4 bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 text-[10px] font-black rounded-xl flex items-center justify-center gap-2 flex-row-reverse transition-all">
+      <svg lucideIcon="upload-cloud" class="size-3.5"></svg>
+      <span class="hidden sm:inline">تحميل فيديو جديد</span>
     </button>
   </div>
-  <div class="user-actions">
-    <button class="upload-btn">
-      <lucide-icon [img]="Upload"></lucide-icon>
-      <span>رفع فيديو</span>
-    </button>
-    <button class="user-btn">
-      <lucide-icon [img]="User"></lucide-icon>
-    </button>
-  </div>
+
 </header>

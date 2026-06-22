@@ -1,9 +1,9 @@
 <a [routerLink]="['/' + item.id]"
    routerLinkActive="bg-white/10 text-white font-bold shadow-lg"
    [routerLinkActiveOptions]="{ exact: true }"
-   (contextmenu)="onContextMenu($event)"
-   class="w-full flex items-center h-12 gap-3 px-3 rounded-xl transition-all relative group overflow-hidden text-slate-300 hover:text-white hover:bg-white/5"
-   [ngClass]="{'justify-center': sidebar.isCollapsed()}">
+   class="w-full flex items-center h-12 gap-3 px-3 rounded-xl transition-all relative group overflow-hidden text-slate-300 hover:text-white hover:bg-white/10"
+   [ngClass]="{'justify-center': sidebar.isCollapsed()}"
+   dir="rtl">
    
   <svg [lucideIcon]="item.icon" 
         class="w-5 h-5 shrink-0 transition-transform group-hover:scale-110"
@@ -11,26 +11,33 @@
 
   @if (!sidebar.isCollapsed()) {
     <div class="flex items-center gap-2 flex-1 overflow-hidden relative">
-      <span class="font-medium truncate">{{ item.label }}</span>
+      <span class="font-medium truncate text-sm">{{ item.label }}</span>
       
-      @if (isBeta) {
-        <div class="text-[8px] px-1.5 h-4 border border-amber-500/30 text-amber-500 font-black tracking-widest uppercase rounded-full flex items-center shrink-0">BETA</div>
+      @if (item.status === 'BETA') {
+        <div class="text-[8px] px-1.5 h-[18px] border border-amber-500/30 text-amber-500 font-black tracking-widest uppercase rounded flex items-center shrink-0">BETA</div>
       }
       
-      @if (item.id === 'stream') {
-        <div class="mr-auto bg-gradient-to-r from-amber-400 to-orange-500 text-black px-1.5 py-0.5 rounded-md font-black text-[8px] uppercase tracking-tighter shrink-0 shadow-sm shadow-orange-500/20">PRO</div>
+      @if (item.status === 'PRO') {
+        <div class="bg-gradient-to-r from-amber-400 to-orange-500 text-black px-1.5 h-[18px] rounded flex items-center font-black text-[8px] uppercase tracking-tighter shrink-0 shadow-sm shadow-orange-500/20">PRO</div>
       }
       
-      @if (badgeValue && badgeValue > 0 && !isBeta) {
-        <div class="mr-auto bg-indigo-500 text-white h-5 w-5 flex items-center justify-center text-[10px] rounded-full font-bold shrink-0">{{ badgeValue }}</div>
+      @if (badgeValue && badgeValue > 0 && !item.status) {
+        <div class="bg-indigo-500 text-white h-[18px] px-1.5 flex items-center justify-center text-[10px] rounded font-bold shrink-0">{{ badgeValue }}</div>
       }
     </div>
+
+    <!-- 3-dot context menu trigger on hover -->
+    <button class="w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-slate-400 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+            (click)="onContextMenu($event)"
+            title="خيارات إضافية">
+      <svg lucideIcon="more-vertical" class="w-4 h-4"></svg>
+    </button>
   }
 </a>
 
 <!-- Context Menu Template -->
 <ng-template #contextMenu>
-  <div class="w-48 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-1 animate-in fade-in zoom-in-95" dir="rtl">
+  <div class="w-48 bg-[#0B0F19]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-1 animate-in fade-in zoom-in-95" dir="rtl">
     <div class="px-2 py-1.5 text-sm font-semibold text-white border-b border-white/5 mb-1 truncate">
       {{ item.label }}
     </div>

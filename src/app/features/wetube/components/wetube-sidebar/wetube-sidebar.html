@@ -1,58 +1,53 @@
-<aside class="wetube-sidebar" [class.collapsed]="collapsed()">
-  <button class="collapse-btn" (click)="toggleCollapse()" aria-label="طي القائمة">
-    <lucide-icon [img]="Menu" class="icon"></lucide-icon>
+<aside 
+  class="h-full border-l border-white/5 bg-slate-900/20 flex flex-col shrink-0 overflow-y-auto p-4 space-y-6 transition-all duration-300"
+  [ngClass]="collapsed() ? 'w-20 items-center' : 'w-60'"
+  dir="rtl">
+  
+  <button 
+    (click)="toggleCollapse()"
+    class="w-10 h-10 rounded-xl hover:bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-all self-start mb-2"
+    [ngClass]="{'self-center': collapsed()}">
+    <lucide-icon [img]="Menu" class="size-5"></lucide-icon>
   </button>
 
-  <div class="sidebar-content">
-    <!-- Search -->
-    @if (!collapsed()) {
-      <div class="sidebar-search">
-        <input type="text" 
-               placeholder="بحث في WeTube..." 
-               class="search-input"
-               (keydown)="onSearchKeydown($event)"
-               aria-label="بحث في WeTube">
-      </div>
-    }
-
-    @for (section of sections(); track section.title) {
-      <div class="sidebar-section">
-        @if (!collapsed() && section.title) {
-          <h4 class="section-title">{{ section.title }}</h4>
-        }
-        <nav class="menu" [attr.aria-label]="section.title">
-          @for (item of section.items; track item.label) {
-            <a [routerLink]="item.route"
-               class="menu-item group relative"
-               [class.active]="item.active()"
-               [queryParams]="item.section === 'explore' ? { category: item.label } : null"
-               [attr.aria-current]="item.active() ? 'page' : null"
-               role="link"
-               [title]="item.label">
-               
-              @if (item.isSubscription && item.avatar) {
-                <img [src]="item.avatar" [alt]="item.label" class="w-6 h-6 rounded-full object-cover shrink-0 ml-4 group-hover:scale-110 transition-transform">
-              } @else {
-                <lucide-icon [img]="item.icon" class="icon shrink-0"></lucide-icon>
-              }
+  @for (section of sections(); track section.title) {
+    <div class="space-y-1.5 w-full">
+      @if (!collapsed() && section.title) {
+        <h4 class="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none px-3 mb-3">{{ section.title }}</h4>
+      }
+      
+      <nav class="space-y-1 w-full flex flex-col items-center">
+        @for (item of section.items; track item.label) {
+          <a [routerLink]="item.route"
+             [queryParams]="item.section === 'explore' ? { category: item.label } : null"
+             routerLinkActive="bg-white/5 border-r-red-650 text-white font-black shadow-[inset_-3px_0_0_0_#dc2626]"
+             [routerLinkActiveOptions]="{ exact: item.route === '/stream' && !item.section }"
+             class="h-11 border-r-2 border-transparent rounded-xl flex items-center gap-3 flex-row-reverse text-right text-xs font-bold transition-all text-slate-400 hover:text-white hover:bg-white/5 overflow-hidden group"
+             [ngClass]="collapsed() ? 'w-11 justify-center px-0' : 'w-full px-4 justify-start'"
+             [title]="item.label">
+             
+            @if (item.isSubscription && item.avatar) {
+              <img [src]="item.avatar" [alt]="item.label" class="size-6 rounded-full border border-white/10 shrink-0 group-hover:scale-110 transition-transform">
+            } @else {
+              <lucide-icon [img]="item.icon" class="size-4.5 shrink-0 group-hover:scale-110 transition-transform"></lucide-icon>
+            }
+            
+            @if (!collapsed()) {
+              <span class="truncate flex-1">{{ item.label }}</span>
               
-              @if (!collapsed()) {
-                <span class="menu-label truncate flex-1">{{ item.label }}</span>
-                
-                <!-- Unread / Favorite Indicator (Blue Dot) -->
-                @if (item.isSubscription && item.hasUnread) {
-                  <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)] ml-2"></span>
-                }
+              <!-- Unread Indicator (Blue Dot) -->
+              @if (item.isSubscription && item.hasUnread) {
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)] shrink-0"></span>
               }
-            </a>
-          }
-        </nav>
-      </div>
-    }
-  </div>
+            }
+          </a>
+        }
+      </nav>
+    </div>
+  }
 </aside>
 
 <!-- Mobile overlay -->
 @if (showMobileMenu()) {
-  <div class="mobile-overlay" (click)="toggleMobileMenu()"></div>
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity" (click)="toggleMobileMenu()"></div>
 }
