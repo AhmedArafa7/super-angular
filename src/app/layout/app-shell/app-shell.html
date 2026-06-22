@@ -28,7 +28,7 @@
       </div>
     }
 
-    @if (sidebar.isHeaderVisible()) {
+    @if (sidebar.isHeaderVisible() && !isWeTubeRoute()) {
       <app-header></app-header>
     }
 

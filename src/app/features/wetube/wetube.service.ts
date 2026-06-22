@@ -5,6 +5,7 @@ import { YoutubeDiscoveryService, VideoDetails, YouTubeComment } from '../../cor
 import { YoutubeDataService, YouTubeChannelStats, YouTubeVideo } from '../../core/services/youtube-data.service';
 import { YoutubeCacheService } from '../../core/services/youtube-cache.service';
 import { IndexedDBService } from '../../core/services/indexed-db.service';
+import { PipedApiService } from '../../core/services/piped-api.service';
 
 @Injectable({
   providedIn: 'root'
@@ -136,6 +137,8 @@ export class WeTubeService {
 
   // ── Real data fetching ─────────────────────────────────────
 
+  private pipedApiService = inject(PipedApiService);
+
   async loadTrending(force = false): Promise<void> {
     if (!force) {
       const cached = this.cacheService.getFeed();
@@ -149,24 +152,38 @@ export class WeTubeService {
 
     this.isFeedLoading.set(true);
     this.isUsingCachedData.set(false);
-    this.discoveryService.fetchTrending().subscribe({
-      next: (videos) => {
-        this.trendingVideos.set(videos);
-        this.feedVideos.set(videos);
-        this.cacheService.setFeed(videos);
-        this.isFeedLoading.set(false);
-      },
-      error: (err) => {
-        console.error('[WeTubeService] loadTrending failed:', err);
-        const fallback = this.cacheService.getFeed();
-        if (fallback) {
-          this.trendingVideos.set(fallback);
-          this.feedVideos.set(fallback);
-          this.isUsingCachedData.set(true);
-        }
-        this.isFeedLoading.set(false);
+    
+    try {
+      const pipedTrending = await this.pipedApiService.getTrending('EG');
+      const videos: FeedVideo[] = pipedTrending.map(v => ({
+        id: v.url.replace('/watch?v=', ''),
+        title: v.title,
+        url: `https://www.youtube.com${v.url}`,
+        thumbnail: v.thumbnail,
+        author: v.uploaderName,
+        authorId: v.uploaderUrl.replace('/channel/', ''),
+        time: v.uploadedDate || v.views + ' مشاهدة',
+        source: 'youtube',
+        isShorts: v.isShort,
+        channelAvatar: v.uploaderAvatar,
+        duration: v.duration > 0 ? new Date(v.duration * 1000).toISOString().substr(11, 8).replace(/^00:/, '') : undefined,
+        views: v.views ? `${v.views} مشاهدة` : undefined
+      }));
+      
+      this.trendingVideos.set(videos);
+      this.feedVideos.set(videos);
+      this.cacheService.setFeed(videos);
+    } catch (err) {
+      console.error('[WeTubeService] loadTrending failed from Piped:', err);
+      const fallback = this.cacheService.getFeed();
+      if (fallback) {
+        this.trendingVideos.set(fallback);
+        this.feedVideos.set(fallback);
+        this.isUsingCachedData.set(true);
       }
-    });
+    } finally {
+      this.isFeedLoading.set(false);
+    }
   }
 
   async search(query: string): Promise<void> {

@@ -1,6 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet } from '@angular/router';
+import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs';
 import { AppSidebarComponent } from '../app-sidebar/app-sidebar';
 import { AppHeaderComponent } from '../app-header/app-header';
 import { SidebarService } from '../../core/sidebar.service';
@@ -27,4 +28,15 @@ import { SyncMonitorComponent } from './sync-monitor/sync-monitor';
 })
 export class AppShellComponent {
   sidebar = inject(SidebarService);
+  router = inject(Router);
+  isWeTubeRoute = signal(false);
+
+  constructor() {
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: any) => {
+      this.isWeTubeRoute.set(event.url.includes('/stream'));
+    });
+    this.isWeTubeRoute.set(this.router.url.includes('/stream'));
+  }
 }

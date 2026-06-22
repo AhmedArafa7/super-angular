@@ -41,11 +41,27 @@
       <!-- Hero Ad -->
       <app-nexus-native-ads adSlot="home-hero" category="الكل" class="block mb-8"></app-nexus-native-ads>
 
-      <!-- Loading State -->
+      <!-- Loading State (Skeleton Cards) -->
       @if (wetube.isFeedLoading()) {
-        <div class="loading-state flex flex-col items-center justify-center py-20 text-slate-400">
-          <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <p class="font-bold text-sm">جاري تحميل أحدث الفيديوهات...</p>
+        <div class="video-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 gap-y-8 animate-pulse">
+          @for (i of [1,2,3,4,5,6,7,8]; track i) {
+            <div class="flex flex-col gap-3">
+              <div class="w-full aspect-video bg-[#222222] rounded-xl border border-white/5 flex items-center justify-center">
+                <lucide-icon [img]="Video" class="w-12 h-12 text-slate-700"></lucide-icon>
+              </div>
+              <div class="flex gap-3 px-1">
+                <div class="w-9 h-9 rounded-full bg-[#222222] shrink-0 mt-0.5"></div>
+                <div class="flex flex-col flex-1 gap-2 pt-1">
+                  <div class="h-4 bg-[#222222] rounded w-[90%]"></div>
+                  <div class="h-4 bg-[#222222] rounded w-[60%]"></div>
+                  <div class="h-3 bg-transparent flex gap-2 mt-1">
+                    <div class="h-full bg-[#222222] rounded w-[30%]"></div>
+                    <div class="h-full bg-[#222222] rounded w-[20%]"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
         </div>
       }
 

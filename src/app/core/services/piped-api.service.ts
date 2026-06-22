@@ -72,6 +72,22 @@ export class PipedApiService {
       }
     }
 
-    throw new Error(`All Piped instances failed to fetch channel ${channelId}`);
+  }
+
+  async getTrending(region: string = 'EG'): Promise<any[]> {
+    let lastError: any;
+
+    for (const instance of this.instances) {
+      try {
+        const url = `${instance}/trending?region=${region}`;
+        const response = await firstValueFrom(this.http.get<any[]>(url));
+        return response;
+      } catch (error) {
+        console.warn(`[PipedApiService] Instance ${instance} failed for trending`, error);
+        lastError = error;
+      }
+    }
+
+    throw new Error('All Piped instances failed to fetch trending');
   }
 }
