@@ -47,10 +47,11 @@ export class SidebarItemComponent {
     event.preventDefault();
     this.closeContextMenu();
     
+    const target = event.currentTarget as HTMLElement;
     const positionStrategy = this.overlay.position()
-      .flexibleConnectedTo({ x: event.clientX, y: event.clientY })
+      .flexibleConnectedTo(target)
       .withPositions([{
-        originX: 'end', originY: 'bottom',
+        originX: 'start', originY: 'bottom',
         overlayX: 'start', overlayY: 'top',
       }]);
 

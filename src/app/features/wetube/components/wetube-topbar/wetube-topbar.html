@@ -1,10 +1,10 @@
-<header class="h-16 border-b border-white/5 bg-slate-900/40 backdrop-blur-3xl flex items-center justify-between px-6 shrink-0 flex-row-reverse z-30 w-full" dir="rtl">
+<header class="h-16 border-b border-white/5 bg-slate-900/40 backdrop-blur-3xl flex items-center justify-between px-6 shrink-0  z-30 w-full" dir="rtl">
   
   <!-- Logo -->
-  <div class="flex items-center gap-4 flex-row-reverse">
+  <div class="flex items-center gap-4 ">
     <div 
       (click)="onLogoClick()" 
-      class="flex items-center gap-2 cursor-pointer select-none flex-row-reverse group">
+      class="flex items-center gap-2 cursor-pointer select-none  group">
       <div class="size-8 bg-red-650 rounded-xl flex items-center justify-center text-white shadow-lg shadow-red-500/20 group-hover:shadow-red-500/40 transition-shadow">
         <svg lucideIcon="play" class="size-4 ml-0.5 fill-current"></svg>
       </div>
@@ -14,7 +14,7 @@
 
   <!-- Center Search Bar input -->
   <div class="flex-1 max-w-lg mx-6 relative">
-    <div class="relative w-full flex items-center flex-row-reverse group">
+    <div class="relative w-full flex items-center  group">
       <input 
         type="text" 
         [ngModel]="searchQuery()"
@@ -35,12 +35,12 @@
   <div class="flex items-center gap-3">
     <button 
       (click)="connectVault()"
-      class="h-9 px-4 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 text-[10px] font-black rounded-xl flex items-center justify-center gap-2 flex-row-reverse transition-all">
+      class="h-9 px-4 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 text-[10px] font-black rounded-xl flex items-center justify-center gap-2  transition-all">
       <svg lucideIcon="external-link" class="size-3.5"></svg>
       <span class="hidden sm:inline">ربط السجل المركزي</span>
     </button>
     <button 
-      class="h-9 px-4 bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 text-[10px] font-black rounded-xl flex items-center justify-center gap-2 flex-row-reverse transition-all">
+      class="h-9 px-4 bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 text-[10px] font-black rounded-xl flex items-center justify-center gap-2  transition-all">
       <svg lucideIcon="upload-cloud" class="size-3.5"></svg>
       <span class="hidden sm:inline">تحميل فيديو جديد</span>
     </button>
