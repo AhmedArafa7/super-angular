@@ -1,6 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, BarChart, Users, Eye, TrendingUp } from 'lucide-angular';
+import { FirebaseService } from '../../../../core/services/firebase.service';
+import { WeTubeService } from '../../wetube.service';
+import { PipedApiService } from '../../../../core/services/piped-api.service';
+import { LucideAngularModule, LayoutDashboard, Eye, Users, Video, Heart, BarChart3, PlusCircle, Youtube, Link2, CheckCircle2, CloudLightning, Lock } from 'lucide-angular';
 
 @Component({
   selector: 'app-wetube-studio',
@@ -9,17 +12,134 @@ import { LucideAngularModule, BarChart, Users, Eye, TrendingUp } from 'lucide-an
   templateUrl: './wetube-studio.html',
   styleUrls: ['./wetube-studio.scss']
 })
-export class WeTubeStudioComponent {
-  stats = [
-    { label: 'المشاهدات', value: '125,430', icon: Eye, color: '#3b82f6' },
-    { label: 'المشتركون', value: '3,240', icon: Users, color: '#10b981' },
-    { label: 'الإيرادات', value: '$1,250', icon: TrendingUp, color: '#f59e0b' },
-    { label: 'التفاعل', value: '8.5%', icon: BarChart, color: '#ef4444' }
-  ];
+export class WeTubeStudioComponent implements OnInit {
+  firebase = inject(FirebaseService);
+  wetube = inject(WeTubeService);
 
-  videos = [
-    { title: 'فيديو تعليمي 1', views: 12000, likes: 850, status: 'منشور' },
-    { title: 'فيديو تعليمي 2', views: 8500, likes: 620, status: 'منشور' },
-    { title: 'فيديو تعليمي 3', views: 0, likes: 0, status: 'مسودة' }
-  ];
+  // Icons
+  LayoutDashboard = LayoutDashboard;
+  Eye = Eye;
+  Users = Users;
+  Video = Video;
+  Heart = Heart;
+  BarChart3 = BarChart3;
+  PlusCircle = PlusCircle;
+  Youtube = Youtube;
+  Link2 = Link2;
+  CheckCircle2 = CheckCircle2;
+  CloudLightning = CloudLightning;
+  Lock = Lock;
+
+  isLoadingStats = signal(false);
+  channelStats = signal<{ viewCount: string, subscriberCount: string, videoCount: string, name?: string } | null>(null);
+  videos = signal<any[]>([]);
+  isPreviewMode = signal(false);
+
+  connectedPlatforms = signal<{id: string, name: string, icon: any, connected: boolean}[]>([
+    { id: 'youtube', name: 'YouTube', icon: Youtube, connected: false },
+    { id: 'tiktok', name: 'TikTok', icon: Video, connected: false },
+    { id: 'facebook', name: 'Facebook', icon: Users, connected: false }
+  ]);
+
+  ngOnInit() {
+    this.checkConnections();
+  }
+
+  private async checkConnections() {
+    const user = this.firebase.userData();
+    let youtubeLinked = false;
+    let channelId = null;
+
+    if (user?.linkedAccounts && Array.isArray(user.linkedAccounts)) {
+      const ytAccount = user.linkedAccounts.find((a: any) => a.platform === 'youtube');
+      if (ytAccount) {
+        youtubeLinked = true;
+        channelId = ytAccount.channelId || ytAccount.id || null;
+      }
+    } else if (user?.linkedYouTubeChannel) {
+      // Fallback for old mock structure
+      youtubeLinked = true;
+      channelId = user.linkedYouTubeChannel;
+    }
+
+    if (youtubeLinked) {
+      this.connectedPlatforms.update(platforms => 
+        platforms.map(p => p.id === 'youtube' ? { ...p, connected: true } : p)
+      );
+      if (channelId && typeof channelId === 'string') {
+        await this.fetchRealStats(channelId);
+      } else {
+        // Channel linked but no ID saved, just show empty real state
+        this.channelStats.set({ viewCount: '0', subscriberCount: '0', videoCount: '0' });
+      }
+    }
+  }
+
+  private piped = inject(PipedApiService);
+
+  private async fetchRealStats(channelId: string) {
+    this.isLoadingStats.set(true);
+    try {
+      const details = await this.piped.getChannelDetails(channelId);
+      this.channelStats.set({
+        viewCount: '0', // Piped doesn't return total views easily
+        subscriberCount: details.subscriberCount?.toString() || '0',
+        videoCount: '0', // Piped doesn't return total video count
+        name: details.name
+      });
+      // Get last 4 videos
+      if (details.relatedStreams && details.relatedStreams.length > 0) {
+        this.videos.set(details.relatedStreams.slice(0, 4));
+      }
+    } catch (e) {
+      console.error('Failed to fetch real channel stats', e);
+      this.channelStats.set({ viewCount: '0', subscriberCount: '0', videoCount: '0' });
+    } finally {
+      this.isLoadingStats.set(false);
+    }
+  }
+
+  togglePreviewMode() {
+    this.isPreviewMode.update(v => !v);
+    if (this.isPreviewMode()) {
+      this.channelStats.set({
+        viewCount: '125430',
+        subscriberCount: '3240',
+        videoCount: '12',
+        name: 'قناة تجريبية'
+      });
+      this.videos.set([
+        { id: '1', title: 'تجربة التصوير السينمائي', thumbnail: 'assets/placeholder.jpg', publishedAt: Date.now() - 86400000 },
+        { id: '2', title: 'مراجعة الكاميرا الجديدة', thumbnail: 'assets/placeholder.jpg', publishedAt: Date.now() - 172800000 }
+      ]);
+    } else {
+      this.channelStats.set(null);
+      this.videos.set([]);
+      this.checkConnections();
+    }
+  }
+
+  formatNumber(numStr: string): string {
+    const num = parseInt(numStr, 10);
+    if (isNaN(num)) return numStr;
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return num.toString();
+  }
+
+  openUploadModal() {
+    this.wetube.showUploadModal.set(true);
+  }
+
+  connectPlatform(platformId: string) {
+    if (platformId === 'youtube') {
+      alert('يتم تحويلك إلى صفحة ربط يوتيوب...');
+      // Simulated link success
+      setTimeout(() => {
+        this.connectedPlatforms.update(platforms => 
+          platforms.map(p => p.id === 'youtube' ? { ...p, connected: true } : p)
+        );
+      }, 1000);
+    }
+  }
 }

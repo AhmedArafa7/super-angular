@@ -2,8 +2,9 @@ import { Component, input, inject, ElementRef, ViewChild, OnInit, OnDestroy, sig
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, Heart, MessageCircle, Share2, MoreVertical, Volume2, VolumeX, Play } from 'lucide-angular';
 import { PipedApiService } from '../../../../core/services/piped-api.service';
-import { VideoStateService } from '../../../../core/services/video-state.service';
 import { ShortVideo } from '../../../../core/services/shorts-queue.service';
+import { IndexedDBService } from '../../../../core/services/indexed-db.service';
+import { WeTubeService } from '../../wetube.service';
 
 @Component({
   selector: 'app-short-player',
@@ -70,16 +71,22 @@ import { ShortVideo } from '../../../../core/services/shorts-queue.service';
             <div class="flex items-center gap-2 mb-3">
               <img [src]="video().thumbnail || 'assets/placeholder.jpg'" class="w-10 h-10 rounded-full border border-white/20 object-cover">
               <span class="text-white font-bold text-sm drop-shadow-md">{{ video().author }}</span>
-              <button class="bg-white text-black px-3 py-1 rounded-full text-xs font-bold ml-2">اشتراك</button>
+              <button 
+                class="px-3 py-1 rounded-full text-xs font-bold ml-2 transition-all"
+                [ngClass]="isSubscribed() ? 'bg-white/20 text-white' : 'bg-white text-black'"
+                (click)="toggleSubscription($event)">
+                {{ isSubscribed() ? 'تمت المتابعة' : 'متابعة' }}
+              </button>
             </div>
             <p class="text-white text-sm line-clamp-2 drop-shadow-md mb-2">{{ video().title }}</p>
           </div>
 
           <!-- Actions Sidebar -->
           <div class="flex flex-col gap-6 items-center pointer-events-auto pb-4">
-            <button class="flex flex-col items-center gap-1 group">
-              <div class="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white group-hover:text-red-500 transition">
-                <lucide-icon [img]="Heart" class="w-6 h-6"></lucide-icon>
+            <button class="flex flex-col items-center gap-1 group" (click)="toggleLike($event)">
+              <div class="w-12 h-12 rounded-full backdrop-blur-md flex items-center justify-center transition-all shadow-lg"
+                [ngClass]="isLiked() ? 'bg-red-500/20 text-red-500 border border-red-500/30' : 'bg-black/40 text-white hover:text-red-400 hover:bg-black/60'">
+                <lucide-icon [img]="Heart" class="w-6 h-6" [class.fill-current]="isLiked()"></lucide-icon>
               </div>
               <span class="text-white text-xs font-bold drop-shadow-md">إعجاب</span>
             </button>
@@ -123,6 +130,8 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
   
   videoState = inject(VideoStateService);
   private piped = inject(PipedApiService);
+  private idb = inject(IndexedDBService);
+  private wetube = inject(WeTubeService);
   private el = inject(ElementRef);
 
   @ViewChild('videoElement') videoEl?: ElementRef<HTMLVideoElement>;
@@ -130,6 +139,9 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
   streamUrl = signal<string | null>(null);
   isLoading = signal<boolean>(true);
   isPlaying = signal<boolean>(false);
+  isLiked = signal<boolean>(false);
+  isSubscribed = signal<boolean>(false);
+  showToast = signal<{message: string, visible: boolean}>({ message: '', visible: false });
 
   private observer: IntersectionObserver | null = null;
   private hasLoadedStream = false;
@@ -144,6 +156,7 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.setupIntersectionObserver();
+    this.checkLocalInteractions();
   }
 
   ngOnDestroy() {
@@ -237,5 +250,88 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
       vid.pause();
       this.isPlaying.set(false);
     }
+  }
+
+  // --- Local Sync Interactions ---
+  
+  private async checkLocalInteractions() {
+    // Check Subscription
+    const subs = await this.idb.getAll('subscriptions');
+    if (subs.some(s => s.channelId === this.video().authorId)) {
+      this.isSubscribed.set(true);
+    }
+
+    // Check Like
+    const saved = await this.idb.get('saved_videos', this.video().id);
+    if (saved) {
+      this.isLiked.set(true);
+    }
+  }
+
+  async toggleLike(event: Event) {
+    event.stopPropagation();
+    const currentState = this.isLiked();
+    const newState = !currentState;
+    this.isLiked.set(newState);
+
+    try {
+      if (newState) {
+        await this.idb.put('saved_videos', {
+          videoId: this.video().id,
+          title: this.video().title,
+          thumbnail: this.video().thumbnail,
+          author: this.video().author,
+          savedAt: Date.now()
+        });
+        this.displayToast('تم تسجيل الإعجاب (حفظ محلياً)');
+      } else {
+        await this.idb.delete('saved_videos', this.video().id);
+        this.displayToast('تمت إزالة الإعجاب');
+      }
+    } catch (e) {
+      console.error('Failed to sync like locally', e);
+      this.isLiked.set(currentState);
+    }
+  }
+
+  async toggleSubscription(event: Event) {
+    event.stopPropagation();
+    const currentState = this.isSubscribed();
+    const newState = !currentState;
+    this.isSubscribed.set(newState);
+
+    try {
+      if (newState) {
+        const newSub = { 
+          id: this.video().authorId, 
+          channelId: this.video().authorId, 
+          channelTitle: this.video().author, 
+          avatarUrl: this.video().channelAvatar || '', 
+          subscribedAt: Date.now() 
+        };
+        await this.idb.put('subscriptions', newSub);
+        this.displayToast('تم الاشتراك بالقناة (حفظ محلياً)');
+      } else {
+        await this.idb.delete('subscriptions', this.video().authorId);
+        this.displayToast('تم إلغاء الاشتراك');
+      }
+      // Force refresh wetube service subscriptions array if needed
+      this.wetube.loadMySubscriptions(true);
+    } catch (e) {
+      console.error('Failed to sync subscription locally', e);
+      this.isSubscribed.set(currentState);
+    }
+  }
+
+  private displayToast(message: string) {
+    // Basic toast, you can replace with a real Toast service
+    const toastEl = document.createElement('div');
+    toastEl.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur text-white px-4 py-2 rounded-full text-xs z-[100] transition-opacity duration-300 pointer-events-none';
+    toastEl.innerText = message;
+    document.body.appendChild(toastEl);
+    setTimeout(() => {
+      toastEl.style.opacity = '0';
+      setTimeout(() => toastEl.remove(), 300);
+    }, 2000);
   }
 }

@@ -29,6 +29,7 @@ export class WeTubeService {
   readonly activeTab = signal<WeTubeTab>('home');
   readonly activeCategory = signal<string>('الكل');
   readonly searchQuery = signal<string>('');
+  readonly searchSp = signal<string>('');
   readonly isSearching = signal<boolean>(false);
   readonly isFeedLoading = signal<boolean>(false);
   readonly isShortsLoading = signal<boolean>(false);
@@ -127,6 +128,7 @@ export class WeTubeService {
     this.activeTab.set('home');
     this.searchResults.set([]);
     this.searchQuery.set('');
+    this.searchSp.set('');
   }
 
   forceRefresh(): void {
@@ -187,16 +189,20 @@ export class WeTubeService {
     }
   }
 
-  async search(query: string): Promise<void> {
+  async search(query: string, sp?: string): Promise<void> {
     this.isSearching.set(true);
     this.setSearchQuery(query);
+    if (sp !== undefined) {
+      this.searchSp.set(sp);
+    }
+    
     if (!query.trim()) {
       this.searchResults.set([]);
       this.isSearching.set(false);
       return;
     }
 
-    this.discoveryService.searchYouTube(query).subscribe({
+    this.discoveryService.searchYouTube(query, sp).subscribe({
       next: (videos) => {
         this.searchResults.set(videos);
         this.isSearching.set(false);

@@ -28,6 +28,21 @@ export class WeTubeHomeComponent implements OnInit {
   categories = WETUBE_CATEGORIES;
   showUploadModal = signal(false);
   showOnboardingBanner = signal(false);
+
+  searchFilters = [
+    { label: "الكل", sp: "" },
+    { label: "آخر ساعة", sp: "EgIIAQ%3D%3D" },
+    { label: "اليوم", sp: "EgQIAhAB" },
+    { label: "هذا الأسبوع", sp: "EgQIAxAB" },
+    { label: "قنوات", sp: "EgIQAg%3D%3D" },
+    { label: "قوائم تشغيل", sp: "EgIQAw%3D%3D" },
+    { label: "أفلام", sp: "EgIQBA%3D%3D" },
+    { label: "قصير (<4د)", sp: "EgQYAXAB" },
+    { label: "طويل (>20د)", sp: "EgQYAnAB" },
+  ];
+
+  visibleCount = signal(20);
+  private observer: IntersectionObserver | null = null;
   selectedChannelId = signal<string | null>(null);
 
   Sparkles = Sparkles;
@@ -49,6 +64,12 @@ export class WeTubeHomeComponent implements OnInit {
       this.router.navigate(['/stream/onboarding']);
       return;
     }
+    this.checkOnboardingStatus();
+    
+    // Set up IntersectionObserver for infinite scrolling
+    setTimeout(() => {
+      this.setupIntersectionObserver();
+    }, 1000);
 
     this.route.queryParams.subscribe(params => {
       if (params['channel']) {
@@ -60,8 +81,64 @@ export class WeTubeHomeComponent implements OnInit {
     this.wetube.initialize();
   }
 
+  ngOnDestroy() {
+    if (this.observer) {
+      this.observer.disconnect();
+    }
+  }
+
+  private setupIntersectionObserver() {
+    const options = {
+      root: document.querySelector('.main-content'),
+      rootMargin: '100px',
+      threshold: 0.1
+    };
+
+    this.observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        this.loadMore();
+      }
+    }, options);
+
+    const target = document.querySelector('#infinite-scroll-trigger');
+    if (target) {
+      this.observer.observe(target);
+    }
+  }
+
+  loadMore() {
+    const currentCount = this.visibleCount();
+    const totalItems = this.wetube.allHomeContent().length;
+    
+    if (currentCount < totalItems) {
+      // Simulate slight network delay for smooth UI
+      setTimeout(() => {
+        this.visibleCount.set(currentCount + 20);
+      }, 300);
+    }
+  }
+
+  private checkOnboardingStatus() {
+    if (this.needsOnboarding() && this.wetube.allHomeContent().length === 0) {
+      this.router.navigate(['/stream/onboarding']);
+    }
+  }
+
   onCategoryClick(category: string) {
     this.wetube.setActiveCategory(category);
+    if (category === 'الكل') {
+      this.wetube.setSearchQuery('');
+      this.wetube.searchSp.set('');
+    } else if (category !== 'تريند') {
+      this.wetube.search(category);
+    }
+  }
+
+  onSearchFilterClick(sp: string) {
+    const query = this.wetube.searchQuery();
+    if (query) {
+      this.wetube.search(query, sp);
+    }
   }
 
   openUpload() {

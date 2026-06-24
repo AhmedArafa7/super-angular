@@ -2,7 +2,7 @@ import { Component, inject, ViewChild, ElementRef, ChangeDetectionStrategy, effe
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { VideoStateService } from '../../../../core/services/video-state.service';
-import { LucideAngularModule, Play, Pause, X, Maximize, ExternalLink, PictureInPicture } from 'lucide-angular';
+import { LucideAngularModule, Play, Pause, X, Maximize, ExternalLink, PictureInPicture, Sparkles } from 'lucide-angular';
 import { SafePipe } from '../../../../core/pipes/safe.pipe'; // Need to ensure we have a safe pipe for IFrame URLs
 
 @Component({
@@ -27,6 +27,25 @@ import { SafePipe } from '../../../../core/pipes/safe.pipe'; // Need to ensure w
           <div class="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center z-10">
             <div class="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
             <span class="text-xs text-slate-400 font-bold">جاري تحميل المشغل...</span>
+          </div>
+        }
+
+        <!-- Si-Neuro PRO Optimizer Overlay -->
+        @if (isOptimizing()) {
+          <div class="absolute inset-0 bg-slate-950/95 backdrop-blur-3xl z-50 flex flex-col items-center justify-center transition-opacity duration-500">
+            <div class="relative w-24 h-24 mb-6">
+              <!-- Glowing rings -->
+              <div class="absolute inset-0 border-4 border-indigo-500/20 rounded-full animate-[spin_3s_linear_infinite]"></div>
+              <div class="absolute inset-2 border-4 border-t-indigo-500 border-r-indigo-500 border-b-transparent border-l-transparent rounded-full animate-[spin_1.5s_linear_infinite]"></div>
+              <div class="absolute inset-4 border-4 border-t-transparent border-r-transparent border-b-cyan-400 border-l-cyan-400 rounded-full animate-[spin_1s_linear_infinite_reverse]"></div>
+              <lucide-icon [img]="Sparkles" class="absolute inset-0 m-auto w-8 h-8 text-indigo-400 animate-pulse"></lucide-icon>
+            </div>
+            <h3 class="text-xl font-black text-white mb-2 tracking-tight">Si-Neuro™ PRO</h3>
+            <p class="text-sm text-indigo-400 font-bold mb-4 animate-pulse">جاري تحسين جودة العرض بالذكاء الاصطناعي...</p>
+            
+            <div class="w-48 h-1 bg-white/10 rounded-full overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 w-full origin-left animate-pulse"></div>
+            </div>
           </div>
         }
 
@@ -109,8 +128,21 @@ export class GlobalVideoPlayerComponent {
   Maximize = Maximize;
   ExternalLink = ExternalLink;
   PictureInPicture = PictureInPicture;
+  Sparkles = Sparkles;
+
+  isOptimizing = signal<boolean>(false);
 
   constructor() {
+    effect(() => {
+      // Trigger Si-Neuro optimization overlay on new video
+      const activeVid = this.videoState.activeVideo();
+      if (activeVid) {
+        this.isOptimizing.set(true);
+        setTimeout(() => {
+          this.isOptimizing.set(false);
+        }, 1000);
+      }
+    }, { allowSignalWrites: true });
     effect(() => {
       // Handle programmatic seek commands
       const seekTime = this.videoState.seekCommand();

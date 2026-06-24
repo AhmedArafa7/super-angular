@@ -22,12 +22,26 @@
     @for (category of categories; track category) {
       <button
         class="category-chip px-4 py-1.5 rounded-lg whitespace-nowrap text-sm font-semibold transition-all border"
-        [ngClass]="wetube.activeCategory() === category ? 'bg-white text-slate-950 border-white' : 'bg-slate-900/50 text-slate-300 border-white/10 hover:bg-white/10 hover:text-white'"
+        [ngClass]="wetube.activeCategory() === category ? 'bg-white text-slate-950 border-white shadow-lg scale-105' : 'bg-slate-900/50 text-slate-300 border-white/10 hover:bg-white/10 hover:text-white'"
         (click)="onCategoryClick(category)">
         {{ category }}
       </button>
     }
   </div>
+
+  <!-- Search Filters Bar (Visible when searching) -->
+  @if (wetube.searchResults().length > 0 && wetube.searchQuery()) {
+    <div class="search-filters-bar hide-scrollbar bg-slate-950/90 backdrop-blur-md sticky top-[60px] z-10 py-2 px-6 flex gap-2 border-b border-white/5 overflow-x-auto shadow-sm">
+      @for (filter of searchFilters; track filter.label) {
+        <button
+          class="px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border whitespace-nowrap"
+          [ngClass]="wetube.searchSp() === filter.sp ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-500/20' : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20 hover:text-slate-300'"
+          (click)="onSearchFilterClick(filter.sp)">
+          {{ filter.label }}
+        </button>
+      }
+    </div>
+  }
 
   <div class="home-layout flex flex-1 overflow-hidden p-6 gap-6">
     <!-- Subscriptions Sidebar (Hidden on small screens) -->
@@ -82,7 +96,8 @@
       <!-- Video Grid -->
       @if (!wetube.isFeedLoading() && wetube.allHomeContent().length > 0) {
         <div class="video-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 gap-y-8">
-          @for (video of wetube.allHomeContent(); track video.id) {
+          <!-- Use slice pipe to implement infinite scroll visually -->
+          @for (video of wetube.allHomeContent().slice(0, visibleCount()); track trackByVideoId($index, video)) {
             <div class="video-card group cursor-pointer relative flex flex-col gap-3" [routerLink]="['/stream/watch', video.id]">
               
               <!-- Thumbnail Wrapper -->
@@ -121,6 +136,13 @@
             @if (($index + 1) % 8 === 0) {
               <app-nexus-native-ads adSlot="home-grid" class="col-span-full my-4"></app-nexus-native-ads>
             }
+          }
+        </div>
+
+        <!-- Infinite Scroll Trigger -->
+        <div id="infinite-scroll-trigger" class="h-20 w-full flex items-center justify-center mt-10">
+          @if (visibleCount() < wetube.allHomeContent().length) {
+            <div class="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin opacity-50"></div>
           }
         </div>
       }

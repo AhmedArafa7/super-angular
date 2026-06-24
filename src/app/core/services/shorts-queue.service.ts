@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { WeTubeService } from '../../features/wetube/wetube.service';
 import { IndexedDBService } from './indexed-db.service';
+import { YoutubeDiscoveryService } from './youtube-discovery.service';
 
 export interface ShortVideo {
   id: string;
@@ -16,6 +17,9 @@ export interface ShortVideo {
 export class ShortsQueueService {
   private wetube = inject(WeTubeService);
   private idb = inject(IndexedDBService);
+  private discovery = inject(YoutubeDiscoveryService);
+
+  private isFetchingAPI = false;
 
   // Generate a queue of 20 videos according to the algorithm: 75% new, 20% watched, 5% saved.
   // 75% of 20 = 15 new
@@ -39,8 +43,32 @@ export class ShortsQueueService {
 
     // 1. Get 15 new videos (randomly selected from home content, preferably marked as isShorts)
     let newCandidates = allHomeContent.filter(v => v.isShorts);
+    
+    // Guard Clause & API Fallback
+    if (newCandidates.length < 15 && !this.isFetchingAPI) {
+      try {
+        this.isFetchingAPI = true;
+        console.log('[ShortsQueue] Fetching real shorts from API as fallback...');
+        const apiShorts = await this.discovery.searchYouTube('shorts', 'EgQYAXAB').toPromise();
+        if (apiShorts && apiShorts.length > 0) {
+          const apiCandidates = apiShorts.map((v: any) => ({
+            id: v.id,
+            title: v.title,
+            author: v.author,
+            thumbnail: v.thumbnail || '',
+            isShorts: true
+          }));
+          newCandidates = [...newCandidates, ...apiCandidates];
+        }
+      } catch (e) {
+        console.warn('[ShortsQueue] Fallback API fetch failed', e);
+      } finally {
+        this.isFetchingAPI = false;
+      }
+    }
+
     if (newCandidates.length < 15) {
-      // Fallback to normal videos if not enough shorts
+      // Fallback to normal videos if API failed or still not enough shorts
       newCandidates = [...newCandidates, ...allHomeContent.filter(v => !v.isShorts)];
     }
     this.shuffle(newCandidates);

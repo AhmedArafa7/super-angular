@@ -13,6 +13,7 @@ import { NexusNativeAdsComponent } from '../nexus-native-ads/nexus-native-ads';
 import { WeTubeService } from '../../wetube.service';
 import { SidebarService } from '../../../../core/sidebar.service';
 import { VideoStateService } from '../../../../core/services/video-state.service';
+import { YoutubeDiscoveryService } from '../../../../core/services/youtube-discovery.service';
 
 @Component({
   selector: 'app-wetube-watch-view',
@@ -38,10 +39,10 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
   wetube = inject(WeTubeService);
   router = inject(Router);
   videoState = inject(VideoStateService);
+  discovery = inject(YoutubeDiscoveryService);
 
-  video = computed(() => {
-    return this.wetube.allHomeContent().find(v => v.id === this.id());
-  });
+  video = this.videoState.activeVideo;
+  isLoading = signal(false);
 
   isLiked = signal(false);
   isDisliked = signal(false);
@@ -59,15 +60,18 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
     // Check if the current video is already playing to avoid reloading
     const currentVideo = this.videoState.activeVideo();
     if (!currentVideo || currentVideo.id !== this.id()) {
-      const vid = this.video();
-      if (vid) {
-        this.videoState.playVideo({
-          id: vid.id,
-          title: vid.title,
-          author: vid.author,
-          thumbnail: vid.thumbnail || ''
-        });
-      }
+      // Direct link or new video clicked
+      this.isLoading.set(true);
+      this.discovery.fetchVideoDetails(this.id()).subscribe(details => {
+        if (details) {
+          // Inject into Signals Reactivity Pipeline
+          this.videoState.playVideo(details);
+        } else {
+          console.error('[WeTubeWatchView] Failed to fetch video details.');
+          // Redirect or show error state if API fails
+        }
+        this.isLoading.set(false);
+      });
     } else {
       this.videoState.setPlayerMode('full');
     }
