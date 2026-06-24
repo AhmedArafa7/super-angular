@@ -5,11 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { WeTubeService } from './wetube.service';
 import { WeTubeTab } from './wetube.model';
+import { WeTubeSidebarComponent } from './components/wetube-sidebar/wetube-sidebar';
 
 @Component({
   selector: 'app-wetube',
   standalone: true,
-  imports: [CommonModule, RouterModule, RouterOutlet, FormsModule, LucideDynamicIcon],
+  imports: [CommonModule, RouterModule, RouterOutlet, FormsModule, LucideDynamicIcon, WeTubeSidebarComponent],
   templateUrl: './wetube.component.html',
   styleUrls: ['./wetube.component.scss']
 })

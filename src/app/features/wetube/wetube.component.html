@@ -60,61 +60,9 @@
   <div class="flex-1 flex overflow-hidden">
     
     <!-- Collapsible RTL Sub-Sidebar -->
-    <aside 
-      *ngIf="isSidebarOpen()"
-      class="w-60 border-l border-white/5 bg-slate-900/20 flex flex-col shrink-0 overflow-y-auto p-4 space-y-6 animate-in slide-in-from-right-4 duration-300">
-      
-      <!-- Primary feeds links -->
-      <nav class="space-y-1.5">
-        <button 
-          (click)="selectTab('home')"
-          [ngClass]="wetube.activeTab() === 'home' ? 'bg-white/5 border-white/5 text-white font-black' : 'border-transparent text-slate-400 hover:text-white'"
-          class="w-full h-11 border rounded-xl px-4 flex items-center gap-3 flex-row-reverse text-right text-xs font-bold transition-all">
-          <svg lucideIcon="home" class="size-4.5"></svg>
-          <span>الرئيسية</span>
-        </button>
-        <button 
-          (click)="selectTab('shorts')"
-          [ngClass]="wetube.activeTab() === 'shorts' ? 'bg-white/5 border-white/5 text-white font-black' : 'border-transparent text-slate-400 hover:text-white'"
-          class="w-full h-11 border rounded-xl px-4 flex items-center gap-3 flex-row-reverse text-right text-xs font-bold transition-all">
-          <svg lucideIcon="video" class="size-4.5"></svg>
-          <span>الفيديوهات القصيرة</span>
-        </button>
-        <button 
-          (click)="selectTab('subs')"
-          [ngClass]="wetube.activeTab() === 'subs' ? 'bg-white/5 border-white/5 text-white font-black' : 'border-transparent text-slate-400 hover:text-white'"
-          class="w-full h-11 border rounded-xl px-4 flex items-center gap-3 flex-row-reverse text-right text-xs font-bold transition-all">
-          <svg lucideIcon="library-big" class="size-4.5"></svg>
-          <span>الاشتراكات</span>
-        </button>
-        <button 
-          (click)="selectTab('library')"
-          [ngClass]="wetube.activeTab() === 'library' ? 'bg-white/5 border-white/5 text-white font-black' : 'border-transparent text-slate-400 hover:text-white'"
-          class="w-full h-11 border rounded-xl px-4 flex items-center gap-3 flex-row-reverse text-right text-xs font-bold transition-all">
-          <svg lucideIcon="folder-heart" class="size-4.5"></svg>
-          <span>المكتبة المعرفية</span>
-        </button>
-      </nav>
-
-      <!-- Channels subscriptions list section -->
-      <div class="space-y-3">
-        <h4 class="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none px-3">الاشتراكات المفضلة</h4>
-        <div class="space-y-1">
-          <button 
-            *ngFor="let sub of subscriptionsList()"
-            (click)="wetube.setActiveChannel({ id: sub.channelId, name: sub.channelTitle, avatar: sub.avatarUrl })"
-            class="w-full h-10 hover:bg-white/5 rounded-xl px-3 flex items-center justify-start gap-3 flex-row-reverse text-right text-[11px] font-bold text-slate-350 transition-all">
-            <img 
-              *ngIf="sub.avatarUrl" 
-              [src]="sub.avatarUrl" 
-              class="size-6 rounded-full border border-white/10" 
-            />
-            <span class="truncate">{{ sub.channelTitle }}</span>
-          </button>
-        </div>
-      </div>
-
-    </aside>
+    @if (isSidebarOpen()) {
+      <app-wetube-sidebar class="animate-in slide-in-from-right-4 duration-300"></app-wetube-sidebar>
+    }
 
     <!-- Main Dynamic Content Workspace wrapper -->
     <main class="flex-1 overflow-y-auto bg-slate-950/40 relative">

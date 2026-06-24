@@ -31,7 +31,10 @@ export interface MenuItem {
   imports: [CommonModule, RouterModule, LucideAngularModule],
   templateUrl: './wetube-sidebar.html',
   styleUrls: ['./wetube-sidebar.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    'class': 'contents'
+  }
 })
 export class WeTubeSidebarComponent implements OnInit {
   wetube = inject(WeTubeService);

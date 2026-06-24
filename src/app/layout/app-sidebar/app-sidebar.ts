@@ -25,7 +25,10 @@ import { CustomizationDialogComponent } from './customization-dialog/customizati
     CustomizationDialogComponent
   ],
   templateUrl: './app-sidebar.html',
-  styleUrls: ['./app-sidebar.scss']
+  styleUrls: ['./app-sidebar.scss'],
+  host: {
+    'class': 'contents'
+  }
 })
 export class AppSidebarComponent {
   sidebar = inject(SidebarService);
