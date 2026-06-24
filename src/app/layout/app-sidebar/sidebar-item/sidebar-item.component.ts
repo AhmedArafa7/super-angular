@@ -1,7 +1,7 @@
 import { Component, Input, inject, ViewChild, ElementRef, TemplateRef, ViewContainerRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { LucideDynamicIcon } from '@lucide/angular';
+import { LucideAngularModule } from 'lucide-angular';
 import { Overlay, OverlayModule, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { NavItem } from '../../../core/nav-items';
@@ -10,7 +10,7 @@ import { SidebarService } from '../../../core/sidebar.service';
 @Component({
   selector: 'app-sidebar-item',
   standalone: true,
-  imports: [CommonModule, RouterModule, LucideDynamicIcon, OverlayModule],
+  imports: [CommonModule, RouterModule, LucideAngularModule, OverlayModule],
   templateUrl: './sidebar-item.component.html'
 })
 export class SidebarItemComponent {

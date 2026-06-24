@@ -5,9 +5,9 @@
    [ngClass]="{'justify-center': sidebar.isCollapsed()}"
    dir="rtl">
    
-  <svg [lucideIcon]="item.icon" 
+  <lucide-icon [name]="item.icon" 
         class="w-5 h-5 shrink-0 transition-transform group-hover:scale-110"
-        [ngClass]="iconColorClass"></svg>
+        [ngClass]="iconColorClass"></lucide-icon>
 
   @if (!sidebar.isCollapsed()) {
     <div class="flex items-center gap-2 flex-1 overflow-hidden relative">

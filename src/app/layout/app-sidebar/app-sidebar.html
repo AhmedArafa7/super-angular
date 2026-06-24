@@ -16,7 +16,7 @@
       @if (!sidebar.isCollapsed()) {
         <div class="flex items-center gap-3 w-full" [ngClass]="{'flex-row-reverse': true}">
         <button (click)="sidebar.setPosition('floating')" class="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/50 flex items-center justify-center shrink-0 hover:bg-indigo-500/30 transition-colors cursor-pointer shadow-[0_0_10px_rgba(99,102,241,0.5)]" title="تحويل لدائرة عائمة">
-          <svg lucideIcon="layers" class="text-indigo-400 w-5 h-5"></svg>
+          <lucide-icon name="layers" class="text-indigo-400 w-5 h-5"></lucide-icon>
         </button>
         <div class="flex flex-col items-start leading-none cursor-pointer">
           <span class="font-black text-white text-sm tracking-widest uppercase">Si-Neuro</span>
@@ -25,17 +25,17 @@
           
           <div class="mr-auto flex gap-1">
             <button class="p-1.5 hover:bg-white/10 rounded-lg text-slate-400 transition-colors" title="إعدادات القائمة" (click)="showCustomizationDialog = true">
-              <svg lucideIcon="sliders-horizontal" class="w-4 h-4"></svg>
+              <lucide-icon name="sliders-horizontal" class="w-4 h-4"></lucide-icon>
             </button>
             <button class="p-1.5 hover:bg-white/10 rounded-lg text-slate-400 transition-colors" title="وضع الدائرة العائمة" (click)="sidebar.setPosition('floating')">
-              <svg lucideIcon="minimize-2" class="w-4 h-4"></svg>
+              <lucide-icon name="minimize-2" class="w-4 h-4"></lucide-icon>
             </button>
           </div>
         </div>
       } @else {
         <div class="w-full flex justify-center">
           <button (click)="sidebar.setPosition('floating')" class="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/50 flex items-center justify-center hover:bg-indigo-500/30 transition-colors">
-            <svg lucideIcon="zap" class="text-indigo-400 w-[18px] h-[18px]"></svg>
+            <lucide-icon name="zap" class="text-indigo-400 w-[18px] h-[18px]"></lucide-icon>
           </button>
         </div>
       }
@@ -119,7 +119,7 @@
               </div>
             </div>
             <div class="shrink-0 text-slate-400">
-               <svg lucideIcon="more-vertical" class="w-5 h-5"></svg>
+               <lucide-icon name="more-vertical" class="w-5 h-5"></lucide-icon>
             </div>
           }
         </button>
@@ -169,12 +169,12 @@
            routerLinkActive="bg-white/10 text-white shadow-lg"
            [routerLinkActiveOptions]="{ exact: true }"
            class="flex flex-col items-center justify-center min-w-[64px] h-14 px-2 rounded-xl transition-all text-slate-400 hover:text-white snap-center relative">
-          <svg [lucideIcon]="item.icon" class="w-5 h-5 mb-1"></svg>
+          <lucide-icon [name]="item.icon" class="w-5 h-5 mb-1"></lucide-icon>
           <span class="text-[10px] font-medium truncate w-full text-center">{{ item.label }}</span>
         </a>
       }
       <button (click)="showCustomizationDialog = true" class="flex flex-col items-center justify-center min-w-[64px] h-14 px-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all snap-center">
-         <svg lucideIcon="menu" class="w-5 h-5 mb-1"></svg>
+         <lucide-icon name="menu" class="w-5 h-5 mb-1"></lucide-icon>
          <span class="text-[10px] font-medium truncate w-full text-center">المزيد</span>
       </button>
     </div>

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { SidebarService } from '../../core/sidebar.service';
 import { ALL_NAV_ITEMS, NavItem, getVisibleNavItems } from '../../core/nav-items';
-import { LucideDynamicIcon } from '@lucide/angular';
+
 import { OfflineQueueService } from '../../core/services/offline-queue.service';
 import { FirebaseService } from '../../core/services/firebase.service';
 import { LucideAngularModule, LogOut, User, Settings, LayoutDashboard, CloudUpload, CheckCircle2, XCircle, CloudCog } from 'lucide-angular';
@@ -18,7 +18,6 @@ import { CustomizationDialogComponent } from './customization-dialog/customizati
   imports: [
     CommonModule, 
     RouterModule, 
-    LucideDynamicIcon, 
     LucideAngularModule,
     SidebarItemComponent, 
     FloatingOrbComponent, 
