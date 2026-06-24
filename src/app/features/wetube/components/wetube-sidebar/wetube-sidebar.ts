@@ -2,9 +2,11 @@ import { Component, inject, signal, computed, ChangeDetectionStrategy, OnInit } 
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
-import { LucideAngularModule, Home, Library, Users, Bell, Video, Film, History, Tv, TrendingUp, Music, Gamepad2, Newspaper, GraduationCap, Menu, PlusCircle } from 'lucide-angular';
+import { LucideAngularModule, Home, Library, Users, Bell, Video, Film, History, Tv, TrendingUp, Music, Gamepad2, Newspaper, GraduationCap, Menu, PlusCircle, MoreVertical, Settings, Sparkles, ExternalLink } from 'lucide-angular';
 import { WeTubeService } from '../../wetube.service';
 import { IndexedDBService } from '../../../../core/services/indexed-db.service';
+import { ContextMenuService } from '../../../../shared/components/context-menu/context-menu.service';
+import { ContextMenuItem } from '../../../../shared/components/context-menu/context-menu.model';
 
 export interface SidebarSection {
   title: string;
@@ -35,10 +37,12 @@ export class WeTubeSidebarComponent implements OnInit {
   wetube = inject(WeTubeService);
   router = inject(Router);
   dbService = inject(IndexedDBService);
+  contextMenu = inject(ContextMenuService);
   
   Menu = Menu;
   PlusCircle = PlusCircle;
   Users = Users;
+  MoreVertical = MoreVertical;
   collapsed = signal(false);
   showMobileMenu = signal(false);
   
@@ -139,6 +143,17 @@ export class WeTubeSidebarComponent implements OnInit {
 
   toggleMobileMenu() {
     this.showMobileMenu.update(v => !v);
+  }
+
+  toggleSectionMenu(event: MouseEvent, sectionTitle: string) {
+    event.stopPropagation();
+    const items: ContextMenuItem[] = [
+      { id: 'open', label: 'فتح القسم', icon: ExternalLink, action: () => console.log('Open', sectionTitle) },
+      { id: 'settings', label: 'إعدادات القسم العامة', icon: Settings, action: () => console.log('Settings', sectionTitle) },
+      { id: 'div1', label: '', isDivider: true },
+      { id: 'advanced', label: 'إضافة ميزات متقدمة', icon: Sparkles, action: () => console.log('Advanced', sectionTitle) }
+    ];
+    this.contextMenu.openAttached(event.currentTarget as HTMLElement, items);
   }
 
   onSearchKeydown(event: KeyboardEvent) {

@@ -2,6 +2,8 @@ import { Component, inject, OnInit, OnDestroy, ElementRef, ViewChild, AfterViewI
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { VideoStateService } from '../../../../../core/services/video-state.service';
+import { ContextMenuService } from '../../../../../shared/components/context-menu/context-menu.service';
+import { ContextMenuItem } from '../../../../../shared/components/context-menu/context-menu.model';
 import { LucideAngularModule, MoreVertical, ListPlus, BookmarkPlus, Download, Share2, VideoOff, Loader2 } from 'lucide-angular';
 
 @Component({
@@ -14,6 +16,7 @@ import { LucideAngularModule, MoreVertical, ListPlus, BookmarkPlus, Download, Sh
 export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   videoState = inject(VideoStateService);
   router = inject(Router);
+  contextMenu = inject(ContextMenuService);
 
   // Icons
   MoreVertical = MoreVertical;
@@ -34,9 +37,8 @@ export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   readonly itemsPerPage = 10;
   
   @ViewChild('infiniteScrollTrigger') infiniteScrollTrigger!: ElementRef;
+  @ViewChild('infiniteScrollTrigger') infiniteScrollTrigger!: ElementRef;
   private observer: IntersectionObserver | null = null;
-  
-  activeContextMenu = signal<string | null>(null);
 
   // Computed state for filtered and paginated videos
   filteredVideos = computed(() => {
@@ -115,18 +117,21 @@ export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     this.currentPage.set(1);
   }
 
-  toggleContextMenu(event: Event, videoId: string) {
-    event.preventDefault();
-    event.stopPropagation();
-    if (this.activeContextMenu() === videoId) {
-      this.activeContextMenu.set(null);
-    } else {
-      this.activeContextMenu.set(videoId);
-    }
+  toggleContextMenu(event: MouseEvent, videoId: string) {
+    const items: ContextMenuItem[] = [
+      { id: 'add-queue', label: 'إضافه للقائمة', icon: this.ListPlus, action: () => console.log('Add to queue', videoId) },
+      { id: 'watch-later', label: 'مشاهدة لاحقاً', icon: this.BookmarkPlus, action: () => console.log('Watch later', videoId) },
+      { id: 'div1', label: '', isDivider: true },
+      { id: 'share', label: 'مشاركة', icon: this.Share2, action: () => console.log('Share', videoId) },
+      { id: 'download', label: 'تنزيل', icon: this.Download, action: () => console.log('Download', videoId) },
+      { id: 'div2', label: '', isDivider: true },
+      { id: 'not-interested', label: 'لا يهمني', icon: this.VideoOff, danger: true, action: () => console.log('Not interested', videoId) }
+    ];
+    this.contextMenu.openAttached(event.currentTarget as HTMLElement, items);
   }
 
   closeContextMenu() {
-    this.activeContextMenu.set(null);
+    this.contextMenu.close();
   }
 
   goToChannel(event: Event, channelId: string) {
