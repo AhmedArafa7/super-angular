@@ -17,7 +17,7 @@
 
         <!-- Source Detector -->
         <div class="source-info">
-          <app-video-source-detector [url]="vid.url || ''" [source]="vid.source"></app-video-source-detector>
+          <app-video-source-detector [url]="$any(vid).url || ''" [source]="$any(vid).source || 'youtube'"></app-video-source-detector>
         </div>
 
         <!-- Title -->
@@ -52,12 +52,12 @@
         <app-watch-description
           [description]="'في هذا الفيديو، نستعرض ' + vid.title + ' ضمن سلسلة المحتوى التقني الخاص بنا. نتمنى أن تستفيدوا من هذا الشرح ونرحب بتعليقاتكم واستفساراتكم في الأسفل.'"
           [views]="likes()"
-          [date]="vid.time || ''"
-          [category]="vid.category || ''">
+          [date]="$any(vid).time || ''"
+          [category]="$any(vid).category || ''">
         </app-watch-description>
 
         <!-- Native Ad -->
-        <app-nexus-native-ads adSlot="watch-1" [category]="vid.category || ''"></app-nexus-native-ads>
+        <app-nexus-native-ads adSlot="watch-1" [category]="$any(vid).category || ''"></app-nexus-native-ads>
 
         <!-- Product Shelf -->
         <app-watch-product-shelf

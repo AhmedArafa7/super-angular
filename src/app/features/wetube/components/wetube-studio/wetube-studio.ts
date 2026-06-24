@@ -54,12 +54,12 @@ export class WeTubeStudioComponent implements OnInit {
       const ytAccount = user.linkedAccounts.find((a: any) => a.platform === 'youtube');
       if (ytAccount) {
         youtubeLinked = true;
-        channelId = ytAccount.channelId || ytAccount.id || null;
+        channelId = ytAccount.channelId || null;
       }
-    } else if (user?.linkedYouTubeChannel) {
+    } else if ((user as any)?.linkedYouTubeChannel) {
       // Fallback for old mock structure
       youtubeLinked = true;
-      channelId = user.linkedYouTubeChannel;
+      channelId = (user as any).linkedYouTubeChannel;
     }
 
     if (youtubeLinked) {

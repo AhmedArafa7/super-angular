@@ -1,4 +1,4 @@
-import { Component, inject, ViewChild, ElementRef, ChangeDetectionStrategy, effect } from '@angular/core';
+import { Component, inject, ViewChild, ElementRef, ChangeDetectionStrategy, effect, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { VideoStateService } from '../../../../core/services/video-state.service';

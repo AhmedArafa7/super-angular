@@ -2,6 +2,7 @@ import { Component, input, inject, ElementRef, ViewChild, OnInit, OnDestroy, sig
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, Heart, MessageCircle, Share2, MoreVertical, Volume2, VolumeX, Play } from 'lucide-angular';
 import { PipedApiService } from '../../../../core/services/piped-api.service';
+import { VideoStateService } from '../../../../core/services/video-state.service';
 import { ShortVideo } from '../../../../core/services/shorts-queue.service';
 import { IndexedDBService } from '../../../../core/services/indexed-db.service';
 import { WeTubeService } from '../../wetube.service';
@@ -227,7 +228,7 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
 
   toggleMute(event: Event) {
     event.stopPropagation();
-    this.videoState.isShortsMuted.update(m => !m);
+    this.videoState.isShortsMuted.set(!this.videoState.isShortsMuted());
   }
 
   private playVideo() {
@@ -257,7 +258,7 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
   private async checkLocalInteractions() {
     // Check Subscription
     const subs = await this.idb.getAll('subscriptions');
-    if (subs.some(s => s.channelId === this.video().authorId)) {
+    if (subs.some(s => s.channelId === this.video().author)) {
       this.isSubscribed.set(true);
     }
 
@@ -303,16 +304,16 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
     try {
       if (newState) {
         const newSub = { 
-          id: this.video().authorId, 
-          channelId: this.video().authorId, 
+          id: this.video().author, 
+          channelId: this.video().author, 
           channelTitle: this.video().author, 
-          avatarUrl: this.video().channelAvatar || '', 
+          avatarUrl: this.video().thumbnail || '', 
           subscribedAt: Date.now() 
         };
         await this.idb.put('subscriptions', newSub);
         this.displayToast('تم الاشتراك بالقناة (حفظ محلياً)');
       } else {
-        await this.idb.delete('subscriptions', this.video().authorId);
+        await this.idb.delete('subscriptions', this.video().author);
         this.displayToast('تم إلغاء الاشتراك');
       }
       // Force refresh wetube service subscriptions array if needed

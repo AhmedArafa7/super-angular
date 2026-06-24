@@ -65,7 +65,10 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
       this.discovery.fetchVideoDetails(this.id()).subscribe(details => {
         if (details) {
           // Inject into Signals Reactivity Pipeline
-          this.videoState.playVideo(details);
+          this.videoState.playVideo({
+            ...details,
+            thumbnail: details.thumbnail || '' // map VideoDetails to ActiveVideo
+          });
         } else {
           console.error('[WeTubeWatchView] Failed to fetch video details.');
           // Redirect or show error state if API fails

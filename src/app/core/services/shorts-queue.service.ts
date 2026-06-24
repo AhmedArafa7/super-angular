@@ -56,7 +56,8 @@ export class ShortsQueueService {
             title: v.title,
             author: v.author,
             thumbnail: v.thumbnail || '',
-            isShorts: true
+            isShorts: true,
+            source: 'youtube' as const
           }));
           newCandidates = [...newCandidates, ...apiCandidates];
         }
