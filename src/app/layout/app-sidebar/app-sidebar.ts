@@ -38,6 +38,10 @@ export class AppSidebarComponent {
   showCustomizationDialog = false;
   showUserProfileDropdown = false;
   
+  // Resize State
+  private startX = 0;
+  private startWidth = 0;
+  
   // Icons
   LogOut = LogOut;
   User = User;
@@ -101,7 +105,16 @@ export class AppSidebarComponent {
   onMouseMove(event: MouseEvent) {
     if (!this.sidebar.isResizing()) return;
     
-    let newWidth = event.clientX;
+    const deltaX = event.clientX - this.startX;
+    let newWidth = this.startWidth;
+    
+    // If sidebar is on the left, moving right (positive delta) increases width.
+    // If sidebar is on the right, moving left (negative delta) increases width.
+    if (this.sidebar.position() === 'left') {
+      newWidth = this.startWidth + deltaX;
+    } else if (this.sidebar.position() === 'right') {
+      newWidth = this.startWidth - deltaX;
+    }
     
     if (newWidth < 180) newWidth = 180;
     if (newWidth > 450) newWidth = 450;
@@ -123,6 +136,9 @@ export class AppSidebarComponent {
   startResizing(event: MouseEvent) {
     event.preventDefault();
     this.sidebar.setIsResizing(true);
+    this.startX = event.clientX;
+    this.startWidth = this.sidebar.width();
+    
     if (typeof document !== 'undefined') {
       document.body.style.cursor = 'col-resize';
       document.body.style.userSelect = 'none';
