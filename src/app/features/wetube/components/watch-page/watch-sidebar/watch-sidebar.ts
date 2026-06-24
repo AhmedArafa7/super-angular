@@ -37,7 +37,6 @@ export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   readonly itemsPerPage = 10;
   
   @ViewChild('infiniteScrollTrigger') infiniteScrollTrigger!: ElementRef;
-  @ViewChild('infiniteScrollTrigger') infiniteScrollTrigger!: ElementRef;
   private observer: IntersectionObserver | null = null;
 
   // Computed state for filtered and paginated videos
