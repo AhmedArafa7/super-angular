@@ -56,7 +56,49 @@ export class FirebaseService {
       this.auth = getAuth(this.app);
       this.firestore = getFirestore(this.app);
 
+      let parentSessionReceived = false;
+
+      // Request session from parent Next.js app
+      if (window.parent !== window) {
+        // Use document.referrer if possible, or explicit origins
+        const parentOrigin = document.referrer ? new URL(document.referrer).origin : '*';
+        window.parent.postMessage({ type: 'SI_NEURO_AUTH_REQUEST' }, parentOrigin);
+      }
+
+      window.addEventListener('message', async (event) => {
+        const allowedOrigins = ['http://localhost:3000', 'http://localhost:9002', 'http://localhost:4200'];
+        const isAllowedOrigin = allowedOrigins.includes(event.origin) || 
+                               (document.referrer && document.referrer.startsWith(event.origin)) ||
+                               event.origin === window.location.origin;
+                               
+        if (!isAllowedOrigin) return;
+
+        if (event.data?.type === 'SI_NEURO_AUTH_RESPONSE') {
+          const { user, token } = event.data;
+          if (user) {
+            parentSessionReceived = true;
+            // Instantly update UI Signal for reactivity
+            this.currentUser.set({
+              uid: user.id,
+              email: user.email,
+              displayName: user.name || user.username,
+              photoURL: user.avatar_url,
+              ...user
+            } as any);
+
+            // Store ID token for backend services
+            if (token) localStorage.setItem('si_neuro_id_token', token);
+
+            // Merge local guest data with authenticated session securely
+            await this.mergeAndLoadUserData(user.id);
+            this.isReady.set(true);
+          }
+        }
+      });
+
       onAuthStateChanged(this.auth, (user) => {
+        if (parentSessionReceived) return; // Do not overwrite parent session if synced
+
         this.currentUser.set(user);
         if (user) {
           this.loadUserData(user.uid);
@@ -182,6 +224,49 @@ export class FirebaseService {
     } catch (err) {
       console.error('[FirebaseService] loadUserData failed:', err);
     }
+  }
+
+  private async mergeAndLoadUserData(uid: string): Promise<void> {
+    try {
+      const localData = this.userData();
+      const userRef = doc(this.firestore, 'users', uid);
+      const snap = await getDoc(userRef);
+      let newUserData: UserData;
+
+      if (snap.exists()) {
+        const remoteData = snap.data() as UserData;
+        newUserData = {
+           ...remoteData,
+           watchHistory: this.mergeArrays(remoteData.watchHistory, localData?.watchHistory, 'videoId'),
+           subscriptions: Array.from(new Set([...(remoteData.subscriptions || []), ...(localData?.subscriptions || [])])),
+           searchHistory: Array.from(new Set([...(remoteData.searchHistory || []), ...(localData?.searchHistory || [])]))
+        };
+        await updateDoc(userRef, newUserData as any);
+      } else {
+        newUserData = {
+          uid,
+          createdAt: Date.now(),
+          linkedAccounts: localData?.linkedAccounts || [],
+          subscriptions: localData?.subscriptions || [],
+          watchHistory: localData?.watchHistory || [],
+          interests: localData?.interests || [],
+          searchHistory: localData?.searchHistory || [],
+          onboardingComplete: localData?.onboardingComplete || false
+        };
+        await setDoc(userRef, newUserData);
+      }
+      this.userData.set(newUserData);
+    } catch (err) {
+      console.error('[FirebaseService] mergeAndLoadUserData failed:', err);
+    }
+  }
+
+  private mergeArrays(arr1: any[] = [], arr2: any[] = [], key: string): any[] {
+     const map = new Map();
+     [...arr1, ...arr2].forEach(item => {
+        if (item && item[key]) map.set(item[key], item);
+     });
+     return Array.from(map.values());
   }
 
   getUserId(): string | null {
