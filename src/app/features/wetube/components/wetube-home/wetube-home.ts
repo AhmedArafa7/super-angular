@@ -66,7 +66,6 @@ export class WeTubeHomeComponent implements OnInit {
     }
     this.checkOnboardingStatus();
     
-    // Set up IntersectionObserver for infinite scrolling
     setTimeout(() => {
       this.setupIntersectionObserver();
     }, 1000);
@@ -79,6 +78,13 @@ export class WeTubeHomeComponent implements OnInit {
     });
 
     this.wetube.initialize();
+  }
+
+  getSafeThumbnail(video: any): string {
+    if (video.source === 'youtube' || (video.url && video.url.includes('youtube'))) {
+       return `https://img.youtube.com/vi/${video.id}/hqdefault.jpg`;
+    }
+    return video.thumbnail || 'assets/placeholder.jpg';
   }
 
   ngOnDestroy() {

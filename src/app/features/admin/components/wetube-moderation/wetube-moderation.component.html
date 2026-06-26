@@ -49,7 +49,7 @@
       @for (video of pendingVideos(); track video.id) {
         <div class="video-card bg-slate-900 border border-white/5 rounded-[2rem] overflow-hidden flex flex-col text-right">
           <div class="relative aspect-video">
-            <img [src]="video.thumbnail" class="w-full h-full object-cover">
+            <img [src]="getSafeThumbnail(video)" class="w-full h-full object-cover">
             <span class="absolute top-3 right-3 bg-amber-500 text-black text-[9px] font-black uppercase px-2 py-0.5 rounded-md">Pending Review</span>
           </div>
           <div class="p-5 flex-1 flex flex-col">
@@ -90,7 +90,7 @@
       @for (video of approvedVideos(); track video.id) {
         <div class="video-card bg-slate-900 border border-white/5 rounded-[2rem] overflow-hidden flex flex-col text-right">
           <div class="relative aspect-video">
-            <img [src]="video.thumbnail" class="w-full h-full object-cover">
+            <img [src]="getSafeThumbnail(video)" class="w-full h-full object-cover">
             <span class="absolute top-3 right-3 bg-emerald-500 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-md flex items-center gap-1">
               <lucide-icon [img]="CheckCircle2" class="size-3"></lucide-icon> Published
             </span>
@@ -126,7 +126,7 @@
       @for (video of rejectedVideos(); track video.id) {
         <div class="video-card bg-slate-900 border border-red-500/10 rounded-[2rem] overflow-hidden flex flex-col text-right opacity-70 hover:opacity-100 transition-opacity">
           <div class="relative aspect-video">
-            <img [src]="video.thumbnail" class="w-full h-full object-cover grayscale">
+            <img [src]="getSafeThumbnail(video)" class="w-full h-full object-cover grayscale">
             <span class="absolute top-3 right-3 bg-red-500 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-md flex items-center gap-1">
               <lucide-icon [img]="Trash2" class="size-3"></lucide-icon> Rejected
             </span>

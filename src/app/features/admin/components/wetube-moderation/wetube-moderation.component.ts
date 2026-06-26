@@ -64,6 +64,14 @@ export class WeTubeModerationComponent implements OnInit {
     return false;
   }
 
+  getSafeThumbnail(video: any): string {
+    // Smart fallback mechanism matching the React implementation
+    if (video.source === 'youtube' || (video.externalUrl && video.externalUrl.includes('youtube'))) {
+       return `https://img.youtube.com/vi/${video.id}/hqdefault.jpg`;
+    }
+    return video.thumbnail || 'assets/placeholder.jpg';
+  }
+
   async loadData() {
     if (this.isLoading()) return;
     this.isLoading.set(true);
