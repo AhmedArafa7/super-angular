@@ -438,6 +438,7 @@ export class FirebaseService {
         q = query(
           videosRef,
           where('status', '==', 'published'),
+          orderBy('createdAt', 'desc'),
           startAfter(lastDoc),
           limit(pageSize)
         );
@@ -445,6 +446,7 @@ export class FirebaseService {
         q = query(
           videosRef,
           where('status', '==', 'published'),
+          orderBy('createdAt', 'desc'),
           limit(pageSize)
         );
       }
@@ -469,9 +471,9 @@ export class FirebaseService {
       
       let q;
       if (lastDoc) {
-        q = query(videosRef, where('status', '==', status), startAfter(lastDoc), limit(pageSize));
+        q = query(videosRef, where('status', '==', status), orderBy('createdAt', 'desc'), startAfter(lastDoc), limit(pageSize));
       } else {
-        q = query(videosRef, where('status', '==', status), limit(pageSize));
+        q = query(videosRef, where('status', '==', status), orderBy('createdAt', 'desc'), limit(pageSize));
       }
 
       const snap = await getDocs(q);
