@@ -1,14 +1,12 @@
-<!-- Left Sidebar Mode -->
-@if (sidebar.position() === 'left') {
-  <aside class="flex flex-col shrink-0 h-full border-r border-white/5 bg-[#0B0F19]/90 backdrop-blur-2xl transition-all duration-300 relative z-50"
-         [ngStyle]="{'width': sidebar.isCollapsed() ? '80px' : sidebar.width() + 'px'}"
-         [ngClass]="{'transition-none': sidebar.isResizing()}"
-         (click)="showUserProfileDropdown = false">
-         
+<aside class="flex flex-col shrink-0 h-full border-r border-white/5 bg-[#0B0F19]/90 backdrop-blur-2xl transition-all duration-300 relative z-50"
+       [class.hidden]="sidebar.position() === 'top' || sidebar.position() === 'bottom' || sidebar.position() === 'floating'"
+       [ngClass]="{ 'w-80': sidebar.position() === 'right' }"
+       [ngStyle]="{'width': sidebar.isCollapsed() ? '80px' : sidebar.width() + 'px'}"
+       (click)="showUserProfileDropdown = false">
+          
     <!-- Resize Handle -->
-    @if (!sidebar.isCollapsed()) {
-      <div class="absolute inset-y-0 w-4 cursor-col-resize hover:bg-indigo-500/50 z-[100] transition-colors"
-           [ngClass]="sidebar.position() === 'left' ? '-right-2' : '-left-2'"
+    @if (!sidebar.isCollapsed() && sidebar.position() === 'left') {
+      <div class="absolute inset-y-0 w-4 cursor-col-resize hover:bg-indigo-500/50 z-[100] transition-colors -right-2"
            (mousedown)="startResizing($event)"></div>
     }
 
@@ -152,8 +150,7 @@
         </div>
       }
     </div>
-  </aside>
-}
+</aside>
 
 <!-- Floating Orb Mode -->
 @if (sidebar.position() === 'floating') {

@@ -1,4 +1,5 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { Video, YouTubeSubscription, FeedVideo, HistoryItem, WeTubeTab, ContentItem } from './wetube.model';
 import { FirebaseService } from '../../core/services/firebase.service';
 import { YoutubeDiscoveryService, VideoDetails, YouTubeComment } from '../../core/services/youtube-discovery.service';
@@ -177,7 +178,33 @@ export class WeTubeService {
       this.feedVideos.set(videos);
       this.cacheService.setFeed(videos);
     } catch (err) {
-      console.error('[WeTubeService] loadTrending failed from Piped:', err);
+      console.warn('[WeTubeService] loadTrending failed from Piped. Trying direct YouTube scraping fallback...', err);
+      try {
+        const ytTrending = await firstValueFrom(this.discoveryService.fetchTrending());
+        if (ytTrending && ytTrending.length > 0) {
+          this.trendingVideos.set(ytTrending);
+          this.feedVideos.set(ytTrending);
+          this.cacheService.setFeed(ytTrending);
+          return;
+        }
+      } catch (fallbackErr) {
+        console.error('[WeTubeService] YouTube scraping fallback failed:', fallbackErr);
+      }
+
+      // SECOND FALLBACK: If trending is empty (e.g. due to datacenter IP redirection to "History disabled" nudge page), search for popular topics
+      try {
+        console.log('[WeTubeService] Trending page returned no videos. Fetching popular search results as fallback...');
+        const popularVids = await firstValueFrom(this.discoveryService.searchYouTube('الكل'));
+        if (popularVids && popularVids.length > 0) {
+          this.trendingVideos.set(popularVids);
+          this.feedVideos.set(popularVids);
+          this.cacheService.setFeed(popularVids);
+          return;
+        }
+      } catch (searchFallbackErr) {
+        console.error('[WeTubeService] Search fallback for trending failed:', searchFallbackErr);
+      }
+
       const fallback = this.cacheService.getFeed();
       if (fallback) {
         this.trendingVideos.set(fallback);

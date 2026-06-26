@@ -13,5 +13,11 @@ export const environment = {
   youtube: {
     clientId: 'YOUR_YOUTUBE_CLIENT_ID',
     scopes: 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/userinfo.profile'
-  }
+  },
+  pipedInstances: [
+    'https://pipedapi.kavin.rocks',
+    'https://pipedapi.syncpundit.io',
+    'https://api.piped.projectsegfau.lt'
+  ]
 };
+

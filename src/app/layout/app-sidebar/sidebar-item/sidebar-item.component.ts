@@ -24,7 +24,42 @@ export class SidebarItemComponent {
   private viewContainerRef = inject(ViewContainerRef);
   
   @ViewChild('contextMenu') contextMenuTemplate!: TemplateRef<any>;
+  @ViewChild('subMenuTemplate') subMenuTemplate!: TemplateRef<any>; // إضافة الـ subMenu template
   private overlayRef: OverlayRef | null = null;
+  private subMenuOverlayRef: OverlayRef | null = null;
+
+  // ... (نحتفظ بـ onContextMenu)
+
+  openSubmenu(event: MouseEvent, target: HTMLElement) {
+    event.stopPropagation();
+    this.closeSubmenu();
+
+    const positionStrategy = this.overlay.position()
+      .flexibleConnectedTo(target)
+      .withPositions([{
+        originX: 'end', originY: 'top',
+        overlayX: 'start', overlayY: 'top',
+        offsetX: 8 // مسافة بسيطة بين القائمتين
+      }]);
+
+    this.subMenuOverlayRef = this.overlay.create({
+      positionStrategy,
+      hasBackdrop: true,
+      backdropClass: 'cdk-overlay-transparent-backdrop'
+    });
+
+    this.subMenuOverlayRef.backdropClick().subscribe(() => this.closeSubmenu());
+    
+    const portal = new TemplatePortal(this.subMenuTemplate, this.viewContainerRef);
+    this.subMenuOverlayRef.attach(portal);
+  }
+
+  closeSubmenu() {
+    if (this.subMenuOverlayRef) {
+      this.subMenuOverlayRef.dispose();
+      this.subMenuOverlayRef = null;
+    }
+  }
 
   get badgeValue(): number | undefined {
     if (this.item.id === 'offers') return this.pendingOffersCount;
