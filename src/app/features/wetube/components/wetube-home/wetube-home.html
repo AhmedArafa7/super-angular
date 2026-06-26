@@ -147,39 +147,25 @@
         </div>
       }
 
-      <!-- Empty state / Login Prompt -->
+      <!-- Empty state -->
       @if (!wetube.isFeedLoading() && wetube.allHomeContent().length === 0) {
         <div class="empty-state flex flex-col items-center justify-center py-24 text-center px-4">
-          @if (!firebaseService.getYouTubeAccount()) {
-            <div class="empty-icon w-20 h-20 bg-gradient-to-br from-red-500/20 to-indigo-500/20 rounded-full flex items-center justify-center text-red-500 mb-6 shadow-xl shadow-red-500/10 border border-red-500/20">
-              <lucide-icon [img]="Youtube" class="w-10 h-10"></lucide-icon>
-            </div>
-            <h3 class="text-2xl font-bold text-white mb-3">اربط حسابك بـ YouTube</h3>
-            <p class="text-sm text-slate-400 mb-8 max-w-md leading-relaxed">
-              قم بتسجيل الدخول بحساب Google الخاص بك لتتمكن من تصفح اشتراكاتك الحقيقية، فيديوهاتك المفضلة، وسجل مشاهداتك كما في التطبيق الأصلي تماماً.
-            </p>
-            <button class="bg-white hover:bg-slate-200 text-slate-900 px-6 py-3 rounded-xl font-black text-sm transition-transform hover:scale-105 active:scale-95 flex items-center gap-3 shadow-xl" (click)="wetube.startYouTubeAuth()">
-              <lucide-icon [img]="LogIn" class="w-5 h-5"></lucide-icon>
-              تسجيل الدخول باستخدام Google
+          <div class="empty-icon w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center text-slate-500 mb-6 border border-white/5 shadow-xl">
+            <lucide-icon [img]="TrendingUp" class="w-8 h-8"></lucide-icon>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-2">جاري إعداد محتوى هادف...</h3>
+          <p class="text-sm text-slate-400 mb-8 max-w-sm">المحتوى الهادف والموثوق قيد المراجعة حالياً ليتم إضافته للقائمة البيضاء. يرجى العودة لاحقاً.</p>
+          
+          <div class="empty-actions flex gap-4">
+            <button class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center gap-2" (click)="goToOnboarding()">
+              <lucide-icon [img]="Sparkles" class="w-4 h-4"></lucide-icon>
+              تخصيص اهتماماتك
             </button>
-          } @else {
-            <div class="empty-icon w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center text-slate-500 mb-6">
-              <lucide-icon [img]="TrendingUp" class="w-8 h-8"></lucide-icon>
-            </div>
-            <h3 class="text-xl font-bold text-white mb-2">جاري إعداد محتوى هادف...</h3>
-            <p class="text-sm text-slate-400 mb-8 max-w-sm">المحتوى الإسلامي الموثوق قيد المراجعة حالياً. يرجى العودة لاحقاً لاستكشاف القائمة البيضاء.</p>
-            
-            <div class="empty-actions flex gap-4">
-              <button class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center gap-2" (click)="goToOnboarding()">
-                <lucide-icon [img]="Sparkles" class="w-4 h-4"></lucide-icon>
-                ابدأ رحلتك
-              </button>
-              <button class="bg-white/5 hover:bg-white/10 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center gap-2" (click)="wetube.forceRefresh()">
-                <lucide-icon [img]="RefreshCcw" class="w-4 h-4"></lucide-icon>
-                تحديث
-              </button>
-            </div>
-          }
+            <button class="bg-white/5 hover:bg-white/10 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center gap-2" (click)="wetube.forceRefresh()">
+              <lucide-icon [img]="RefreshCcw" class="w-4 h-4"></lucide-icon>
+              تحديث
+            </button>
+          </div>
         </div>
       }
     </div>
