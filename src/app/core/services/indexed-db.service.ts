@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 })
 export class IndexedDBService {
   private readonly DB_NAME = 'WeTubeDB';
-  private readonly DB_VERSION = 3; // Incremented for new stores
+  private readonly DB_VERSION = 5; // Incremented for new stores
   private db: IDBDatabase | null = null;
 
   constructor() {
@@ -56,6 +56,16 @@ export class IndexedDBService {
         // New stores for Phase 4 (Watch Sidebar)
         if (!db.objectStoreNames.contains('related_videos')) {
           db.createObjectStore('related_videos', { keyPath: 'videoId' }); // TTL 2h
+        }
+        
+        // Whitelist Home Feed caching
+        if (!db.objectStoreNames.contains('whitelist_feed')) {
+          db.createObjectStore('whitelist_feed', { keyPath: 'id' }); // TTL 1h
+        }
+        
+        // Reviewer Blacklist caching
+        if (!db.objectStoreNames.contains('blacklisted_channels')) {
+          db.createObjectStore('blacklisted_channels', { keyPath: 'id' });
         }
       };
     });

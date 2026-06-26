@@ -50,6 +50,14 @@
     </button>
 
     <button 
+      (click)="activeTab.set('moderation')"
+      [ngClass]="activeTab() === 'moderation' ? 'bg-indigo-650 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'"
+      class="h-9 px-4 rounded-xl text-[11px] font-black tracking-wide gap-1.5 flex items-center transition-all flex-row-reverse shrink-0">
+      <svg lucideIcon="video" class="size-3.5"></svg>
+      الرقابة
+    </button>
+
+    <button 
       (click)="activeTab.set('ads')"
       [ngClass]="activeTab() === 'ads' ? 'bg-indigo-650 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'"
       class="h-9 px-4 rounded-xl text-[11px] font-black tracking-wide gap-1.5 flex items-center transition-all flex-row-reverse shrink-0">
@@ -88,6 +96,11 @@
   <!-- 3. MAIN CONTENTS PANELS -->
   <div class="flex-1 p-8 overflow-y-auto space-y-8 bg-slate-950/20">
     <div class="max-w-6xl mx-auto pb-24">
+
+      <!-- ================= TAB: MODERATION ================= -->
+      <div *ngIf="activeTab() === 'moderation'">
+        <app-wetube-moderation></app-wetube-moderation>
+      </div>
 
       <!-- ================= TAB: PENDING PRODUCTS ================= -->
       <div *ngIf="activeTab() === 'products'" class="space-y-6">

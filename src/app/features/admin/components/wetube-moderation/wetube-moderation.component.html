@@ -1,0 +1,197 @@
+<div class="space-y-6 animate-in fade-in duration-500">
+  
+  <!-- Tabs Selector -->
+  <div class="flex items-center gap-3 bg-slate-900/50 p-2 border border-white/5 rounded-2xl flex-row-reverse w-fit">
+    <button 
+      (click)="setTab('pending')"
+      [ngClass]="activeSubTab() === 'pending' ? 'bg-amber-500/20 text-amber-400 font-black' : 'text-slate-400 hover:text-white font-bold hover:bg-white/5'"
+      class="h-10 px-6 rounded-xl text-xs transition-all flex items-center gap-2 flex-row-reverse">
+      <lucide-icon [img]="Clock" class="size-4"></lucide-icon>
+      قيد المراجعة
+      @if (pendingVideos().length > 0) {
+        <span class="size-5 rounded-full bg-amber-500 text-slate-900 flex items-center justify-center text-[10px]">{{ pendingVideos().length }}</span>
+      }
+    </button>
+
+    <button 
+      (click)="setTab('approved')"
+      [ngClass]="activeSubTab() === 'approved' ? 'bg-emerald-500/20 text-emerald-400 font-black' : 'text-slate-400 hover:text-white font-bold hover:bg-white/5'"
+      class="h-10 px-6 rounded-xl text-xs transition-all flex items-center gap-2 flex-row-reverse">
+      <lucide-icon [img]="CheckCircle2" class="size-4"></lucide-icon>
+      تم الاعتماد
+      @if (approvedVideos().length > 0) {
+        <span class="size-5 rounded-full bg-emerald-500 text-slate-900 flex items-center justify-center text-[10px]">{{ approvedVideos().length }}</span>
+      }
+    </button>
+
+    <button 
+      (click)="setTab('rejected')"
+      [ngClass]="activeSubTab() === 'rejected' ? 'bg-red-500/20 text-red-400 font-black' : 'text-slate-400 hover:text-white font-bold hover:bg-white/5'"
+      class="h-10 px-6 rounded-xl text-xs transition-all flex items-center gap-2 flex-row-reverse">
+      <lucide-icon [img]="Trash2" class="size-4"></lucide-icon>
+      سلة المحذوفات
+    </button>
+
+    <button 
+      (click)="setTab('channels')"
+      [ngClass]="activeSubTab() === 'channels' ? 'bg-indigo-500/20 text-indigo-400 font-black' : 'text-slate-400 hover:text-white font-bold hover:bg-white/5'"
+      class="h-10 px-6 rounded-xl text-xs transition-all flex items-center gap-2 flex-row-reverse">
+      <lucide-icon [img]="ShieldCheck" class="size-4"></lucide-icon>
+      القنوات المحظورة
+    </button>
+  </div>
+
+  <!-- Content Areas -->
+
+  <!-- 1. PENDING -->
+  @if (activeSubTab() === 'pending') {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      @for (video of pendingVideos(); track video.id) {
+        <div class="video-card bg-slate-900 border border-white/5 rounded-[2rem] overflow-hidden flex flex-col text-right">
+          <div class="relative aspect-video">
+            <img [src]="video.thumbnail" class="w-full h-full object-cover">
+            <span class="absolute top-3 right-3 bg-amber-500 text-black text-[9px] font-black uppercase px-2 py-0.5 rounded-md">Pending Review</span>
+          </div>
+          <div class="p-5 flex-1 flex flex-col">
+            <h3 class="text-sm font-black text-white leading-snug line-clamp-2 mb-2">{{ video.title }}</h3>
+            <p class="text-xs text-slate-400 font-bold mb-4 flex-1">القناة: {{ video.author }}</p>
+            <div class="flex items-center gap-2 mt-auto">
+              <button 
+                (click)="changeVideoStatus(video, 'pending', 'published')"
+                class="flex-1 h-9 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black transition-all">
+                اعتماد
+              </button>
+              <button 
+                (click)="changeVideoStatus(video, 'pending', 'rejected')"
+                class="flex-1 h-9 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl text-xs font-black transition-all">
+                رفض وحذف
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+    @if (pendingVideos().length === 0 && !isLoading()) {
+      <div class="flex flex-col items-center justify-center py-20 text-slate-500">
+        <lucide-icon [img]="CheckCircle2" class="size-16 mb-4 opacity-30"></lucide-icon>
+        <p class="font-black text-sm">لا توجد فيديوهات قيد المراجعة حالياً.</p>
+      </div>
+    }
+    @if (hasMorePending() && pendingVideos().length > 0) {
+      <div class="flex justify-center pt-8">
+        <button (click)="loadData()" [disabled]="isLoading()" class="h-10 px-8 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50">تحميل المزيد</button>
+      </div>
+    }
+  }
+
+  <!-- 2. APPROVED -->
+  @if (activeSubTab() === 'approved') {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      @for (video of approvedVideos(); track video.id) {
+        <div class="video-card bg-slate-900 border border-white/5 rounded-[2rem] overflow-hidden flex flex-col text-right">
+          <div class="relative aspect-video">
+            <img [src]="video.thumbnail" class="w-full h-full object-cover">
+            <span class="absolute top-3 right-3 bg-emerald-500 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-md flex items-center gap-1">
+              <lucide-icon [img]="CheckCircle2" class="size-3"></lucide-icon> Published
+            </span>
+          </div>
+          <div class="p-5 flex-1 flex flex-col">
+            <h3 class="text-sm font-black text-white leading-snug line-clamp-2 mb-2">{{ video.title }}</h3>
+            <p class="text-xs text-slate-400 font-bold mb-4 flex-1">القناة: {{ video.author }}</p>
+            <div class="flex items-center gap-2 mt-auto">
+              <a [href]="video.externalUrl || ('https://youtube.com/watch?v=' + video.id)" target="_blank"
+                class="flex items-center justify-center size-9 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all">
+                <lucide-icon [img]="PlayCircle" class="size-4"></lucide-icon>
+              </a>
+              <button 
+                (click)="changeVideoStatus(video, 'approved', 'rejected')"
+                class="flex-1 h-9 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl text-xs font-black transition-all">
+                نقل للمحذوفات
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+    @if (hasMoreApproved() && approvedVideos().length > 0) {
+      <div class="flex justify-center pt-8">
+        <button (click)="loadData()" [disabled]="isLoading()" class="h-10 px-8 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50">تحميل المزيد</button>
+      </div>
+    }
+  }
+
+  <!-- 3. REJECTED -->
+  @if (activeSubTab() === 'rejected') {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      @for (video of rejectedVideos(); track video.id) {
+        <div class="video-card bg-slate-900 border border-red-500/10 rounded-[2rem] overflow-hidden flex flex-col text-right opacity-70 hover:opacity-100 transition-opacity">
+          <div class="relative aspect-video">
+            <img [src]="video.thumbnail" class="w-full h-full object-cover grayscale">
+            <span class="absolute top-3 right-3 bg-red-500 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-md flex items-center gap-1">
+              <lucide-icon [img]="Trash2" class="size-3"></lucide-icon> Rejected
+            </span>
+          </div>
+          <div class="p-5 flex-1 flex flex-col">
+            <h3 class="text-sm font-black text-white leading-snug line-clamp-2 mb-2">{{ video.title }}</h3>
+            <p class="text-xs text-slate-400 font-bold mb-4 flex-1">القناة: {{ video.author }}</p>
+            <div class="flex items-center gap-2 mt-auto">
+              <button 
+                (click)="changeVideoStatus(video, 'rejected', 'published')"
+                class="flex-1 h-9 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2">
+                <lucide-icon [img]="RefreshCw" class="size-3.5"></lucide-icon>
+                استعادة للفيديوهات
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+    @if (hasMoreRejected() && rejectedVideos().length > 0) {
+      <div class="flex justify-center pt-8">
+        <button (click)="loadData()" [disabled]="isLoading()" class="h-10 px-8 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50">تحميل المزيد</button>
+      </div>
+    }
+  }
+
+  <!-- 4. CHANNELS -->
+  @if (activeSubTab() === 'channels') {
+    <div class="bg-slate-900/40 border border-white/5 rounded-3xl p-6">
+      <div class="flex items-center justify-between mb-6 flex-row-reverse">
+        <h3 class="text-lg font-black text-white">القنوات المحظورة من الظهور</h3>
+        <span class="text-xs font-bold text-slate-400">لن تظهر فيديوهات هذه القنوات في المنصة إطلاقاً.</span>
+      </div>
+
+      <div class="space-y-3">
+        @for (channel of blacklistedChannels(); track channel.id) {
+          <div class="flex items-center justify-between bg-white/5 p-4 rounded-2xl flex-row-reverse border border-white/5 hover:border-indigo-500/30 transition-all">
+            <div class="text-right">
+              <h4 class="text-sm font-black text-white">{{ channel.channelName || channel.id }}</h4>
+              <p class="text-[10px] text-slate-500 font-mono mt-1">ID: {{ channel.id }}</p>
+            </div>
+            <button 
+              (click)="unbanChannel(channel)"
+              class="h-9 px-4 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold transition-all">
+              فك الحظر وإزالة من القائمة
+            </button>
+          </div>
+        }
+        @if (blacklistedChannels().length === 0 && !isLoading()) {
+          <div class="text-center py-10 text-slate-500 text-xs font-bold">لا توجد قنوات محظورة.</div>
+        }
+      </div>
+
+      @if (hasMoreChannels() && blacklistedChannels().length > 0) {
+        <div class="flex justify-center pt-8">
+          <button (click)="loadData()" [disabled]="isLoading()" class="h-10 px-8 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50">تحميل المزيد</button>
+        </div>
+      }
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="flex justify-center py-12">
+      <div class="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  }
+
+</div>

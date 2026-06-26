@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { getFirestore, Firestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { getFirestore, Firestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, orderBy, limit, startAfter, QueryDocumentSnapshot, documentId } from 'firebase/firestore';
 import { environment } from '../../../environments/environment';
 
 export interface UserData {
@@ -17,7 +17,40 @@ export interface UserData {
   searchHistory?: string[];
   onboardingComplete?: boolean;
   onboardingCompletedAt?: number;
+  role?: 'admin' | 'reviewer' | 'user';
 }
+
+/**
+ * FIRESTORE SECURITY RULES (REQUIRED)
+ * 
+ * rules_version = '2';
+ * service cloud.firestore {
+ *   match /databases/{database}/documents {
+ *     // Helper functions
+ *     function isReviewer() {
+ *       return request.auth != null && 
+ *              (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+ *               get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'reviewer');
+ *     }
+ * 
+ *     // Videos Collection (Whitelist)
+ *     match /videos/{videoId} {
+ *       // Regular users can only read published videos
+ *       allow read: if resource.data.status == 'published' || isReviewer();
+ *       // Only admins/reviewers can create or update videos
+ *       allow create, update, delete: if isReviewer();
+ *     }
+ * 
+ *     // Blacklisted Channels Collection
+ *     match /blacklisted_channels/{channelId} {
+ *       // Only admins/reviewers can read or write to the blacklist
+ *       allow read, write: if isReviewer();
+ *     }
+ *     
+ *     // Other collections...
+ *   }
+ * }
+ */
 
 export interface LinkedAccount {
   platform: 'youtube' | 'whatsapp' | 'telegram' | 'google';
@@ -391,5 +424,191 @@ export class FirebaseService {
 
   isOnboardingComplete(): boolean {
     return this.userData()?.onboardingComplete === true;
+  }
+
+  async getPublishedVideos(lastDoc?: QueryDocumentSnapshot, pageSize: number = 20): Promise<{ videos: any[], lastVisible: QueryDocumentSnapshot | null }> {
+    try {
+      const videosRef = collection(this.firestore, 'videos');
+      
+      let q;
+      if (lastDoc) {
+        q = query(
+          videosRef,
+          where('status', '==', 'published'),
+          orderBy('createdAt', 'desc'),
+          startAfter(lastDoc),
+          limit(pageSize)
+        );
+      } else {
+        q = query(
+          videosRef,
+          where('status', '==', 'published'),
+          orderBy('createdAt', 'desc'),
+          limit(pageSize)
+        );
+      }
+
+      const snap = await getDocs(q);
+      const videos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const lastVisible = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
+
+      return { videos, lastVisible };
+    } catch (err) {
+      console.error('[FirebaseService] getPublishedVideos failed:', err);
+      // Let the caller handle the fallback/empty state or retry logic
+      throw err;
+    }
+  }
+
+  // --- ADMIN MODERATION LOGIC ---
+
+  async getVideosByStatus(status: 'pending_review' | 'published' | 'rejected', lastDoc?: QueryDocumentSnapshot, pageSize: number = 20): Promise<{ videos: any[], lastVisible: QueryDocumentSnapshot | null }> {
+    try {
+      const videosRef = collection(this.firestore, 'videos');
+      
+      let q;
+      if (lastDoc) {
+        q = query(videosRef, where('status', '==', status), orderBy('createdAt', 'desc'), startAfter(lastDoc), limit(pageSize));
+      } else {
+        q = query(videosRef, where('status', '==', status), orderBy('createdAt', 'desc'), limit(pageSize));
+      }
+
+      const snap = await getDocs(q);
+      const videos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const lastVisible = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
+
+      return { videos, lastVisible };
+    } catch (err) {
+      console.error(`[FirebaseService] getVideosByStatus(${status}) failed:`, err);
+      throw err;
+    }
+  }
+
+  async updateVideoStatus(videoId: string, newStatus: string): Promise<void> {
+    try {
+      const docRef = doc(this.firestore, 'videos', videoId);
+      await updateDoc(docRef, { status: newStatus });
+    } catch (err) {
+      console.error(`[FirebaseService] updateVideoStatus failed for ${videoId}:`, err);
+      throw err;
+    }
+  }
+
+  async getBlacklistedChannelsList(lastDoc?: QueryDocumentSnapshot, pageSize: number = 20): Promise<{ channels: any[], lastVisible: QueryDocumentSnapshot | null }> {
+    try {
+      const channelsRef = collection(this.firestore, 'blacklisted_channels');
+      let q;
+      if (lastDoc) {
+        q = query(channelsRef, orderBy('blacklistedAt', 'desc'), startAfter(lastDoc), limit(pageSize));
+      } else {
+        q = query(channelsRef, orderBy('blacklistedAt', 'desc'), limit(pageSize));
+      }
+
+      const snap = await getDocs(q);
+      const channels = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const lastVisible = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
+
+      return { channels, lastVisible };
+    } catch (err) {
+      console.error('[FirebaseService] getBlacklistedChannelsList failed:', err);
+      throw err;
+    }
+  }
+
+  async removeBlacklistedChannel(channelId: string): Promise<void> {
+    try {
+      const { deleteDoc } = await import('firebase/firestore');
+      const docRef = doc(this.firestore, 'blacklisted_channels', channelId);
+      await deleteDoc(docRef);
+    } catch (err) {
+      console.error(`[FirebaseService] removeBlacklistedChannel failed for ${channelId}:`, err);
+      throw err;
+    }
+  }
+
+  // --- REVIEWER DISCOVERY & BLACKLIST LOGIC ---
+
+  async syncBlacklistedChannels(): Promise<string[]> {
+    try {
+      const q = query(collection(this.firestore, 'blacklisted_channels'));
+      const snap = await getDocs(q);
+      return snap.docs.map(doc => doc.id);
+    } catch (err) {
+      console.error('[FirebaseService] syncBlacklistedChannels failed', err);
+      return [];
+    }
+  }
+
+  async blacklistChannel(channelId: string, channelName: string): Promise<void> {
+    try {
+      const docRef = doc(this.firestore, 'blacklisted_channels', channelId);
+      await setDoc(docRef, {
+        channelId,
+        channelName,
+        blacklistedAt: Date.now(),
+        blacklistedBy: this.getUserId()
+      });
+    } catch (err) {
+      console.error('[FirebaseService] blacklistChannel failed', err);
+      throw err;
+    }
+  }
+
+  async addVideoToWhitelist(video: import('../../features/wetube/wetube.model').FeedVideo): Promise<void> {
+    try {
+      // Final security check done on the backend by Firestore Rules
+      const docRef = doc(this.firestore, 'videos', video.id);
+      
+      const videoData = {
+        id: video.id,
+        title: video.title,
+        externalUrl: video.url,
+        thumbnail: video.thumbnail,
+        author: video.author,
+        authorId: video.authorId,
+        channelAvatar: video.channelAvatar || null,
+        status: 'published',
+        createdAt: Date.now(),
+        addedBy: this.getUserId(),
+        isShorts: video.isShorts || false,
+        duration: video.duration || null,
+        views: video.views ? parseInt(video.views.replace(/\D/g,'')) || 0 : 0
+      };
+
+      await setDoc(docRef, videoData);
+    } catch (err) {
+      console.error('[FirebaseService] addVideoToWhitelist failed', err);
+      throw err;
+    }
+  }
+
+  async checkVideosExist(videoIds: string[]): Promise<string[]> {
+    if (!videoIds || videoIds.length === 0) return [];
+    
+    // Firestore `in` queries are limited to 30 items. We chunk them into groups of 25.
+    const chunkSize = 25;
+    const chunks: string[][] = [];
+    for (let i = 0; i < videoIds.length; i += chunkSize) {
+      chunks.push(videoIds.slice(i, i + chunkSize));
+    }
+
+    try {
+      const existingIds: string[] = [];
+      const videosRef = collection(this.firestore, 'videos');
+      
+      const promises = chunks.map(async chunk => {
+        const q = query(videosRef, where(documentId(), 'in', chunk));
+        const snap = await getDocs(q);
+        return snap.docs.map(doc => doc.id);
+      });
+
+      const results = await Promise.all(promises);
+      results.forEach(res => existingIds.push(...res));
+      
+      return existingIds;
+    } catch (err) {
+      console.error('[FirebaseService] checkVideosExist failed', err);
+      return [];
+    }
   }
 }

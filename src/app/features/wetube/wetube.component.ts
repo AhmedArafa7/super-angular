@@ -4,6 +4,7 @@ import { Router, RouterModule, RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { WeTubeService } from './wetube.service';
+import { FirebaseService } from '../../core/services/firebase.service';
 import { WeTubeTab } from './wetube.model';
 import { WeTubeSidebarComponent } from './components/wetube-sidebar/wetube-sidebar';
 
@@ -16,6 +17,7 @@ import { WeTubeSidebarComponent } from './components/wetube-sidebar/wetube-sideb
 })
 export class WeTubeComponent {
   wetube = inject(WeTubeService);
+  firebaseService = inject(FirebaseService);
   router = inject(Router);
 
   // Search input state

@@ -46,6 +46,15 @@
         <svg lucideIcon="external-link" class="size-3.5"></svg>
         ربط السجل المركزي
       </button>
+
+      @if (firebaseService.userData()?.role === 'admin' || firebaseService.userData()?.role === 'reviewer') {
+        <button 
+          routerLink="/stream/discovery"
+          class="h-9 px-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 text-[10px] font-black rounded-xl flex items-center justify-center gap-2 flex-row-reverse transition-all">
+          <svg lucideIcon="search" class="size-3.5"></svg>
+          وضع المراجعة والاستكشاف
+        </button>
+      }
       <button 
         (click)="showUploadModal.set(true)"
         class="h-9 px-4 bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 text-[10px] font-black rounded-xl flex items-center justify-center gap-2 flex-row-reverse transition-all">

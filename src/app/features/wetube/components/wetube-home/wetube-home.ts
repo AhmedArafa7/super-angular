@@ -114,7 +114,11 @@ export class WeTubeHomeComponent implements OnInit {
       // Simulate slight network delay for smooth UI
       setTimeout(() => {
         this.visibleCount.set(currentCount + 20);
-      }, 300);
+      }, 100);
+    } else if (this.wetube.hasMoreFeed() && !this.wetube.isFeedLoading()) {
+      this.wetube.loadMoreTrending().then(() => {
+        this.visibleCount.set(this.wetube.allHomeContent().length);
+      });
     }
   }
 

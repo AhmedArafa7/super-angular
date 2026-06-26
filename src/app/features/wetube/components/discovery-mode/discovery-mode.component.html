@@ -1,0 +1,78 @@
+<div class="h-full flex flex-col bg-slate-950 text-white font-sans p-6 overflow-y-auto" dir="rtl">
+  
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="text-2xl font-black mb-1 flex items-center gap-2">
+        <lucide-icon [img]="Search" class="text-indigo-400 w-6 h-6"></lucide-icon>
+        وضع المراجعة والاستكشاف
+      </h1>
+      <p class="text-slate-400 text-sm">اكتشف محتوى جديد من يوتيوب، وقم بإضافته للقائمة البيضاء أو حظر القنوات السيئة.</p>
+    </div>
+    <div class="flex gap-3 relative">
+      <input 
+        type="text" 
+        [(ngModel)]="searchQuery"
+        (keyup.enter)="searchVideos()"
+        placeholder="ابحث لاكتشاف قنوات..."
+        class="w-64 h-10 bg-slate-900 border border-white/10 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-indigo-500 placeholder-slate-500"
+      />
+      <button 
+        (click)="searchVideos()"
+        class="h-10 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-colors">
+        بحث
+      </button>
+      <button 
+        (click)="fetchTrending()"
+        class="h-10 px-4 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition-colors flex items-center gap-2">
+        <lucide-icon [img]="RefreshCcw" class="w-4 h-4"></lucide-icon>
+        التريند
+      </button>
+    </div>
+  </div>
+
+  @if (isLoading()) {
+    <div class="flex items-center justify-center flex-1">
+      <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  } @else {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
+      @for (video of videos(); track video.id) {
+        <div class="video-card group relative flex flex-col bg-slate-900 border border-white/5 rounded-2xl overflow-hidden hover:border-indigo-500/30 transition-colors">
+          <div class="aspect-video relative">
+            <img [src]="video.thumbnail" class="w-full h-full object-cover">
+            @if (video.duration) {
+              <span class="absolute bottom-2 left-2 bg-black/80 text-white px-1.5 py-0.5 rounded text-[10px] font-bold">{{ video.duration }}</span>
+            }
+          </div>
+          <div class="p-4 flex flex-col flex-1">
+            <h3 class="text-sm font-bold leading-snug line-clamp-2 mb-2">{{ video.title }}</h3>
+            <p class="text-xs text-slate-400 font-medium mb-1">{{ video.author }}</p>
+            <p class="text-[10px] text-slate-500 mb-4">{{ video.views }} مشاهدة • {{ video.time }}</p>
+            
+            <div class="mt-auto flex gap-2">
+              <button 
+                (click)="addToWhitelist(video)"
+                class="flex-1 flex items-center justify-center gap-1.5 h-9 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-xl text-xs font-bold transition-colors">
+                <lucide-icon [img]="CheckCircle2" class="w-3.5 h-3.5"></lucide-icon>
+                إضافة للقائمة
+              </button>
+              <button 
+                (click)="blacklistChannel(video.authorId || '', video.author)"
+                class="flex items-center justify-center gap-1.5 h-9 px-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl text-xs font-bold transition-colors"
+                title="حظر القناة">
+                <lucide-icon [img]="ShieldBan" class="w-4 h-4"></lucide-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (videos().length === 0) {
+        <div class="col-span-full flex flex-col items-center justify-center py-20 text-slate-400">
+          <lucide-icon [img]="Search" class="w-16 h-16 mb-4 opacity-50"></lucide-icon>
+          <p>لا يوجد فيديوهات لعرضها. جرب البحث عن كلمات أخرى.</p>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -6,11 +6,12 @@ import { AdminService, UserNode, CategorySuggestion } from '../../core/admin.ser
 import { AdsService, Ad } from '../../core/ads.service';
 import { MarketService, MarketItem } from '../../core/market.service';
 import { LauncherService, WebProject } from '../../core/launcher.service';
+import { WeTubeModerationComponent } from './components/wetube-moderation/wetube-moderation.component';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideDynamicIcon],
+  imports: [CommonModule, FormsModule, LucideDynamicIcon, WeTubeModerationComponent],
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.scss']
 })
@@ -21,7 +22,7 @@ export class AdminComponent {
   launcherService = inject(LauncherService);
 
   // Active sub-tab state
-  activeTab = signal<'products' | 'categories' | 'ads' | 'apps' | 'users' | 'logs'>('products');
+  activeTab = signal<'products' | 'categories' | 'ads' | 'apps' | 'users' | 'logs' | 'moderation'>('moderation');
 
   // Input states for feedback
   rejectFeedback = signal<Record<string, string>>({});
