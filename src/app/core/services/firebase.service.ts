@@ -241,8 +241,10 @@ export class FirebaseService {
       if (snap.exists()) {
         this.userData.set(snap.data() as UserData);
       } else {
+        const defaultName = `مستخدم ${uid.substring(0, 5).toUpperCase()}`;
         const newUser: UserData = {
           uid,
+          displayName: defaultName,
           createdAt: Date.now(),
           linkedAccounts: [],
           subscriptions: [],
@@ -278,6 +280,7 @@ export class FirebaseService {
       } else {
         newUserData = {
           uid,
+          displayName: localData?.displayName || `مستخدم ${uid.substring(0, 5).toUpperCase()}`,
           createdAt: Date.now(),
           linkedAccounts: localData?.linkedAccounts || [],
           subscriptions: localData?.subscriptions || [],
