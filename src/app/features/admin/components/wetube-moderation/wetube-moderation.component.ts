@@ -1,7 +1,9 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { firstValueFrom } from 'rxjs';
 import { FirebaseService } from '../../../../core/services/firebase.service';
-import { LucideAngularModule, ShieldCheck, Trash2, CheckCircle2, Clock, PlayCircle, Eye, AlertCircle, RefreshCw } from 'lucide-angular';
+import { YoutubeDiscoveryService } from '../../../../core/services/youtube-discovery.service';
+import { LucideAngularModule, ShieldCheck, Trash2, CheckCircle2, Clock, PlayCircle, Eye, AlertCircle, RefreshCw, RefreshCcw } from 'lucide-angular';
 import { QueryDocumentSnapshot } from 'firebase/firestore';
 
 @Component({
@@ -44,6 +46,11 @@ export class WeTubeModerationComponent implements OnInit {
   Eye = Eye;
   AlertCircle = AlertCircle;
   RefreshCw = RefreshCw;
+  RefreshCcw = RefreshCcw;
+
+  isSyncingAvatars = signal<boolean>(false);
+
+  private discoveryService = inject(YoutubeDiscoveryService);
 
   ngOnInit() {
     this.loadData();
@@ -72,12 +79,49 @@ export class WeTubeModerationComponent implements OnInit {
   }
 
   getSafeThumbnail(video: any): string {
-    const isYoutube = video.source === 'youtube' || (video.externalUrl && video.externalUrl.includes('youtube')) || (video.url && video.url.includes('youtube'));
-    if (isYoutube) {
-       const ytId = this.extractYoutubeId(video.externalUrl || video.url || video.id);
-       if (ytId) return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+    if (video.source === 'youtube' || (video.url && video.url.includes('youtube'))) {
+       const id = this.extractYoutubeId(video.url || video.externalUrl || video.id);
+       if (id) return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
     }
     return video.thumbnail || 'assets/placeholder.jpg';
+  }
+
+  async syncMissingAvatars() {
+    this.isSyncingAvatars.set(true);
+    try {
+      // 1. Fetch all videos to find those missing avatars
+      const allVideosSnapshot = await this.firebase.getPublishedVideos(undefined, 1000);
+      const pendingVideosSnapshot = await this.firebase.getVideosByStatus('pending_review', undefined, 1000);
+      
+      const allVideos = [...allVideosSnapshot.videos, ...pendingVideosSnapshot.videos];
+      const missingAvatars = allVideos.filter(v => v.source === 'youtube' && !v.channelAvatar);
+      
+      let updatedCount = 0;
+
+      for (const video of missingAvatars) {
+        const ytId = this.extractYoutubeId(video.externalUrl || video.url || video.id);
+        if (ytId) {
+          try {
+            const details = await firstValueFrom(this.discoveryService.fetchVideoDetails(ytId));
+            if (details && details.channelAvatar) {
+              await this.firebase.updateVideoData(video.id, { channelAvatar: details.channelAvatar });
+              updatedCount++;
+            }
+          } catch (err) {
+            console.error(`Failed to fetch avatar for ${ytId}`, err);
+          }
+        }
+      }
+      
+      alert(`تم مزامنة صور القنوات لـ ${updatedCount} فيديو بنجاح!`);
+      // Reload UI to show the new avatars
+      this.loadData();
+    } catch (err) {
+      console.error('Sync failed', err);
+      alert('حدث خطأ أثناء المزامنة.');
+    } finally {
+      this.isSyncingAvatars.set(false);
+    }
   }
 
   async loadData() {

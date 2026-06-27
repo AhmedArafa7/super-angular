@@ -497,6 +497,16 @@ export class FirebaseService {
     }
   }
 
+  async updateVideoData(videoId: string, data: any): Promise<void> {
+    try {
+      const docRef = doc(this.firestore, 'videos', videoId);
+      await updateDoc(docRef, data);
+    } catch (err) {
+      console.error(`[FirebaseService] updateVideoData failed for ${videoId}:`, err);
+      throw err;
+    }
+  }
+
   async getBlacklistedChannelsList(lastDoc?: QueryDocumentSnapshot, pageSize: number = 20): Promise<{ channels: any[], lastVisible: QueryDocumentSnapshot | null }> {
     try {
       const channelsRef = collection(this.firestore, 'blacklisted_channels');

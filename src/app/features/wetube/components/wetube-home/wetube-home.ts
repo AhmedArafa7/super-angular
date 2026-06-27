@@ -65,25 +65,7 @@ export class WeTubeHomeComponent implements OnInit {
   });
 
   constructor() {
-    effect(() => {
-      const videos = this.wetube.allHomeContent().slice(0, this.visibleCount());
-      videos.forEach(v => {
-        if (!v.channelAvatar && v.source === 'youtube') {
-          const ytId = this.extractYoutubeId(v.url || v.externalUrl || v.id);
-          if (ytId && !this.resolvingAvatars.has(ytId) && !this.resolvedAvatars()[ytId]) {
-            this.resolvingAvatars.add(ytId);
-            this.discoveryService.fetchVideoDetails(ytId).subscribe({
-              next: (details) => {
-                if (details?.channelAvatar) {
-                  this.resolvedAvatars.update(prev => ({ ...prev, [ytId]: details.channelAvatar! }));
-                }
-              },
-              error: () => {}
-            });
-          }
-        }
-      });
-    });
+    // تم إزالة الجلب العشوائي للصور لتوفير استهلاك الباقة والبروكسي
   }
 
   ngOnInit() {

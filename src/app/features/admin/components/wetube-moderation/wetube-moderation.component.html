@@ -1,7 +1,9 @@
 <div class="space-y-6 animate-in fade-in duration-500">
   
-  <!-- Tabs Selector -->
-  <div class="flex items-center gap-3 bg-slate-900/50 p-2 border border-white/5 rounded-2xl flex-row-reverse w-fit">
+  <!-- Header with Tabs and Actions -->
+  <div class="flex items-center justify-between w-full flex-row-reverse">
+    <!-- Tabs Selector -->
+    <div class="flex items-center gap-3 bg-slate-900/50 p-2 border border-white/5 rounded-2xl flex-row-reverse w-fit">
     <button 
       (click)="setTab('pending')"
       [ngClass]="activeSubTab() === 'pending' ? 'bg-amber-500/20 text-amber-400 font-black' : 'text-slate-400 hover:text-white font-bold hover:bg-white/5'"
@@ -38,6 +40,16 @@
       class="h-10 px-6 rounded-xl text-xs transition-all flex items-center gap-2 flex-row-reverse">
       <lucide-icon [img]="ShieldCheck" class="size-4"></lucide-icon>
       القنوات المحظورة
+    </button>
+  </div>
+
+    <!-- Sync Action -->
+    <button 
+      (click)="syncMissingAvatars()"
+      [disabled]="isSyncingAvatars()"
+      class="h-10 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black transition-all flex items-center gap-2 flex-row-reverse disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20">
+      <lucide-icon [img]="RefreshCcw" class="size-4" [class.animate-spin]="isSyncingAvatars()"></lucide-icon>
+      {{ isSyncingAvatars() ? 'جاري المزامنة...' : 'مزامنة صور القنوات' }}
     </button>
   </div>
 
