@@ -1,8 +1,9 @@
-import { Component, inject, signal, OnInit, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, OnInit, computed, ChangeDetectionStrategy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { WeTubeService } from '../../wetube.service';
 import { FirebaseService } from '../../../../core/services/firebase.service';
+import { YoutubeDiscoveryService } from '../../../../core/services/youtube-discovery.service';
 import { WETUBE_CATEGORIES } from '../../wetube.model';
 import { SubscriptionBarComponent } from '../shared/subscription-bar/subscription-bar';
 import { NexusNativeAdsComponent } from '../nexus-native-ads/nexus-native-ads';
@@ -45,6 +46,10 @@ export class WeTubeHomeComponent implements OnInit {
   private observer: IntersectionObserver | null = null;
   selectedChannelId = signal<string | null>(null);
 
+  discoveryService = inject(YoutubeDiscoveryService);
+  resolvedAvatars = signal<Record<string, string>>({});
+  private resolvingAvatars = new Set<string>();
+
   Sparkles = Sparkles;
   TrendingUp = TrendingUp;
   Search = Search;
@@ -58,6 +63,28 @@ export class WeTubeHomeComponent implements OnInit {
     const userData = this.firebaseService.userData();
     return !!(userData && userData.onboardingComplete !== true);
   });
+
+  constructor() {
+    effect(() => {
+      const videos = this.wetube.allHomeContent().slice(0, this.visibleCount());
+      videos.forEach(v => {
+        if (!v.channelAvatar && v.source === 'youtube') {
+          const ytId = this.extractYoutubeId(v.url || v.externalUrl || v.id);
+          if (ytId && !this.resolvingAvatars.has(ytId) && !this.resolvedAvatars()[ytId]) {
+            this.resolvingAvatars.add(ytId);
+            this.discoveryService.fetchVideoDetails(ytId).subscribe({
+              next: (details) => {
+                if (details?.channelAvatar) {
+                  this.resolvedAvatars.update(prev => ({ ...prev, [ytId]: details.channelAvatar! }));
+                }
+              },
+              error: () => {}
+            });
+          }
+        }
+      });
+    });
+  }
 
   ngOnInit() {
     if (this.needsOnboarding() && this.wetube.allHomeContent().length === 0) {

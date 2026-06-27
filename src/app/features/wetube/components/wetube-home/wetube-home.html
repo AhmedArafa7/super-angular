@@ -115,10 +115,12 @@
 
               <!-- Info Section -->
               <div class="video-info flex gap-3 items-start px-1">
-                @if (video.channelAvatar) {
-                  <img [src]="video.channelAvatar" class="w-9 h-9 rounded-full bg-slate-800 border border-white/10 shrink-0 object-cover mt-0.5" [alt]="video.author">
+                @if (video.channelAvatar || (video.source === 'youtube' && resolvedAvatars()[extractYoutubeId(video.url || video.externalUrl || video.id) || ''])) {
+                  <img [src]="video.channelAvatar || resolvedAvatars()[extractYoutubeId(video.url || video.externalUrl || video.id) || '']" class="w-9 h-9 rounded-full bg-slate-800 border border-white/10 shrink-0 object-cover mt-0.5" [alt]="video.author">
                 } @else {
-                  <div class="w-9 h-9 rounded-full bg-slate-800 shrink-0 mt-0.5"></div>
+                  <div class="w-9 h-9 rounded-full bg-slate-800 shrink-0 mt-0.5 flex items-center justify-center overflow-hidden text-white/50 text-[10px]">
+                    {{ video.author ? video.author.charAt(0) : '?' }}
+                  </div>
                 }
                 
                 <div class="info-text flex flex-col min-w-0 flex-1">
