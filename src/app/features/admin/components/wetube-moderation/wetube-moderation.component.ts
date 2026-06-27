@@ -67,7 +67,7 @@ export class WeTubeModerationComponent implements OnInit {
   extractYoutubeId(urlOrId: string): string | null {
     if (!urlOrId) return null;
     if (urlOrId.length === 11 && /^[a-zA-Z0-9_-]{11}$/.test(urlOrId)) return urlOrId;
-    const match = urlOrId.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?\n]+)/);
+    const match = urlOrId.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/|live\/))([^&?\n]+)/);
     return match ? match[1] : null;
   }
 
