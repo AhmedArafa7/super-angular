@@ -80,9 +80,18 @@ export class WeTubeHomeComponent implements OnInit {
     this.wetube.initialize();
   }
 
+  extractYoutubeId(urlOrId: string): string | null {
+    if (!urlOrId) return null;
+    if (urlOrId.length === 11 && /^[a-zA-Z0-9_-]{11}$/.test(urlOrId)) return urlOrId;
+    const match = urlOrId.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?\n]+)/);
+    return match ? match[1] : null;
+  }
+
   getSafeThumbnail(video: any): string {
-    if (video.source === 'youtube' || (video.url && video.url.includes('youtube'))) {
-       return `https://img.youtube.com/vi/${video.id}/hqdefault.jpg`;
+    const isYoutube = video.source === 'youtube' || (video.externalUrl && video.externalUrl.includes('youtube')) || (video.url && video.url.includes('youtube'));
+    if (isYoutube) {
+       const ytId = this.extractYoutubeId(video.externalUrl || video.url || video.id);
+       if (ytId) return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
     }
     return video.thumbnail || 'assets/placeholder.jpg';
   }
