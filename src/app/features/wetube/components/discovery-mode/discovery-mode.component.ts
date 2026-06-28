@@ -6,6 +6,7 @@ import { IndexedDBService } from '../../../../core/services/indexed-db.service';
 import { FeedVideo } from '../../wetube.model';
 import { LucideAngularModule, ShieldBan, CheckCircle2, RefreshCcw, Search } from 'lucide-angular';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-discovery-mode',
@@ -21,6 +22,9 @@ export class DiscoveryModeComponent implements OnInit {
   videos = signal<FeedVideo[]>([]);
   isLoading = signal<boolean>(false);
   searchQuery = signal<string>('');
+  activePlayingId = signal<string | null>(null);
+
+  private sanitizer = inject(DomSanitizer);
 
   // Lucide icons
   ShieldBan = ShieldBan;
@@ -121,5 +125,13 @@ export class DiscoveryModeComponent implements OnInit {
       console.error('Failed to blacklist channel', err);
       alert('حدث خطأ أثناء حظر القناة.');
     }
+  }
+
+  playVideo(id: string) {
+    this.activePlayingId.set(id);
+  }
+
+  getSafeEmbedUrl(id: string): SafeResourceUrl {
+    return this.sanitizer.bypassSecurityTrustResourceUrl(`https://www.youtube.com/embed/${id}?autoplay=1`);
   }
 }
