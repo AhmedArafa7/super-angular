@@ -3,13 +3,14 @@ import { CommonModule } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 import { FirebaseService } from '../../../../core/services/firebase.service';
 import { YoutubeDiscoveryService } from '../../../../core/services/youtube-discovery.service';
-import { LucideAngularModule, ShieldCheck, Trash2, CheckCircle2, Clock, PlayCircle, Eye, AlertCircle, RefreshCw, RefreshCcw } from 'lucide-angular';
+import { LucideAngularModule, ShieldCheck, Trash2, CheckCircle2, Clock, PlayCircle, Eye, AlertCircle, RefreshCw, RefreshCcw, Search } from 'lucide-angular';
+import { RouterModule } from '@angular/router';
 import { QueryDocumentSnapshot } from 'firebase/firestore';
 
 @Component({
   selector: 'app-wetube-moderation',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, LucideAngularModule, RouterModule],
   templateUrl: './wetube-moderation.component.html'
 })
 export class WeTubeModerationComponent implements OnInit {
@@ -47,6 +48,7 @@ export class WeTubeModerationComponent implements OnInit {
   AlertCircle = AlertCircle;
   RefreshCw = RefreshCw;
   RefreshCcw = RefreshCcw;
+  Search = Search;
 
   isSyncingAvatars = signal<boolean>(false);
 

@@ -47,7 +47,7 @@
         ربط السجل المركزي
       </button>
 
-      @if (firebaseService.userData()?.role === 'admin' || firebaseService.userData()?.role === 'reviewer') {
+      @if (firebaseService.userData()?.role && ['admin', 'reviewer', 'founder', 'cofounder', 'management'].includes(firebaseService.userData()?.role || '')) {
         <button 
           routerLink="/stream/discovery"
           class="h-9 px-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 text-[10px] font-black rounded-xl flex items-center justify-center gap-2 flex-row-reverse transition-all">
