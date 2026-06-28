@@ -2,7 +2,7 @@
   
   <!-- Left Side (Logo & Menu) -->
   <div class="flex items-center gap-4">
-    <button class="w-10 h-10 rounded-full hover:bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-all mr-2">
+    <button (click)="wetube.isSidebarCollapsed.update(v => !v)" class="w-10 h-10 rounded-full hover:bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-all mr-2">
       <lucide-icon [img]="Menu" class="w-5 h-5"></lucide-icon>
     </button>
 

@@ -46,7 +46,7 @@ export class WeTubeSidebarComponent implements OnInit {
   PlusCircle = PlusCircle;
   Users = Users;
   MoreVertical = MoreVertical;
-  collapsed = signal(false);
+  collapsed = computed(() => this.wetube.isSidebarCollapsed());
   showMobileMenu = signal(false);
   
   // Dynamic Subscriptions from IndexedDB

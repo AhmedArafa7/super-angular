@@ -31,10 +31,10 @@ export class WeTubeService {
   readonly activeTab = signal<WeTubeTab>('home');
   readonly activeCategory = signal<string>('الكل');
   readonly searchQuery = signal<string>('');
-  readonly searchSp = signal<string>('');
   readonly isSearching = signal<boolean>(false);
   readonly isFeedLoading = signal<boolean>(false);
   readonly isShortsLoading = signal<boolean>(false);
+  readonly isSidebarCollapsed = signal<boolean>(true); // مغلق افتراضياً لتوسيع مساحة المشاهدة
   readonly isUsingCachedData = signal<boolean>(false);
   readonly showUploadModal = signal<boolean>(false);
   
