@@ -141,11 +141,11 @@ export class WeTubeSidebarComponent implements OnInit {
   }
 
   toggleCollapse() {
-    this.collapsed.update(v => !v);
+    this.wetube.isSidebarCollapsed.update((v: boolean) => !v);
   }
 
   toggleMobileMenu() {
-    this.showMobileMenu.update(v => !v);
+    this.showMobileMenu.update((v: boolean) => !v);
   }
 
   toggleSectionMenu(event: MouseEvent, sectionTitle: string) {

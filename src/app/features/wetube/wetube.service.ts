@@ -37,6 +37,7 @@ export class WeTubeService {
   readonly isSidebarCollapsed = signal<boolean>(true); // مغلق افتراضياً لتوسيع مساحة المشاهدة
   readonly isUsingCachedData = signal<boolean>(false);
   readonly showUploadModal = signal<boolean>(false);
+  readonly searchSp = signal<string>('');
   
   // Pagination State for Whitelist
   readonly lastVisibleFeedDoc = signal<QueryDocumentSnapshot | null>(null);
