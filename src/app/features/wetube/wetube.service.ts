@@ -8,6 +8,7 @@ import { YoutubeDataService, YouTubeChannelStats, YouTubeVideo } from '../../cor
 import { YoutubeCacheService } from '../../core/services/youtube-cache.service';
 import { IndexedDBService } from '../../core/services/indexed-db.service';
 import { PipedApiService } from '../../core/services/piped-api.service';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -423,6 +424,54 @@ export class WeTubeService {
     });
   }
 
+  async fetchChannelRssVideos(channelId: string): Promise<FeedVideo[]> {
+    if (!channelId) return [];
+    const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
+    const proxyBase = environment.apiBaseUrl || 'https://super-axd.pages.dev';
+    const proxyUrl = `${proxyBase}/api/proxy?url=${encodeURIComponent(rssUrl)}`;
+
+    try {
+      const response = await fetch(proxyUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const xmlText = await response.text();
+      
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+      
+      const entries = xmlDoc.getElementsByTagName('entry');
+      const videos: FeedVideo[] = [];
+
+      for (let i = 0; i < Math.min(entries.length, 30); i++) {
+        const entry = entries[i];
+        const videoId = entry.getElementsByTagName('yt:videoId')[0]?.textContent || '';
+        const title = entry.getElementsByTagName('title')[0]?.textContent || '';
+        const author = entry.getElementsByTagName('author')[0]?.getElementsByTagName('name')[0]?.textContent || '';
+        const published = entry.getElementsByTagName('published')[0]?.textContent || '';
+        
+        if (videoId) {
+          videos.push({
+            id: videoId,
+            title,
+            url: `https://www.youtube.com/watch?v=${videoId}`,
+            thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+            author,
+            authorId: channelId,
+            time: published,
+            source: 'youtube' as const,
+            isShorts: false
+          });
+        }
+      }
+
+      return videos;
+    } catch (err) {
+      console.error(`[WeTubeService] Failed to fetch RSS feed for channel ${channelId}`, err);
+      return [];
+    }
+  }
+
   async loadSubscriptionsFeed(force = false): Promise<void> {
     if (!force && this.subscriptionsFeed().length > 0) return;
     
@@ -448,34 +497,11 @@ export class WeTubeService {
     try {
       const channelIds = subs.map(s => s.channelId);
       const results: FeedVideo[][] = [];
-      const chunkSize = 3; // Fetch 3 channels at a time to stay lightweight
+      const chunkSize = 3; // Fetch 3 channels at a time
       
       for (let i = 0; i < channelIds.length; i += chunkSize) {
         const chunk = channelIds.slice(i, i + chunkSize);
-        const chunkPromises = chunk.map(async (id) => {
-          try {
-            const data = await this.pipedApiService.getChannelDetails(id);
-            if (!data?.relatedStreams) return [];
-            
-            return data.relatedStreams.map((item: any) => ({
-              id: item.videoId,
-              title: item.title,
-              url: `https://www.youtube.com/watch?v=${item.videoId}`,
-              thumbnail: item.thumbnail || `https://img.youtube.com/vi/${item.videoId}/hqdefault.jpg`,
-              author: data.name,
-              authorId: id,
-              published: item.uploadedDate || 'اليوم',
-              source: 'youtube' as const,
-              isShorts: item.isShorts || false,
-              views: item.views ? String(item.views) : undefined,
-              duration: item.duration ? String(item.duration) : undefined
-            } as FeedVideo));
-          } catch (e) {
-            console.error(`[WeTubeService] Failed to fetch channel feed for ${id}`, e);
-            return [];
-          }
-        });
-        
+        const chunkPromises = chunk.map(id => this.fetchChannelRssVideos(id));
         const chunkResults = await Promise.all(chunkPromises);
         results.push(...chunkResults);
         
@@ -485,9 +511,32 @@ export class WeTubeService {
       }
       
       const allVideos = results.flat();
-      // Piped already returns videos sorted by date, but we can double check or let them display.
-      // To prevent massive lists, we can slice it to top 80 videos
-      this.subscriptionsFeed.set(allVideos.slice(0, 80));
+      
+      // Sort them by published date
+      allVideos.sort((a, b) => {
+        const aTime = new Date(a.time || 0).getTime();
+        const bTime = new Date(b.time || 0).getTime();
+        return bTime - aTime;
+      });
+
+      // Format time display to a friendly format
+      const formattedVideos = allVideos.map(v => {
+        let displayTime = 'حديثاً';
+        if (v.time) {
+          try {
+            const date = new Date(v.time);
+            if (!isNaN(date.getTime())) {
+              displayTime = date.toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
+            }
+          } catch(e) {}
+        }
+        return {
+          ...v,
+          time: displayTime
+        };
+      });
+      
+      this.subscriptionsFeed.set(formattedVideos.slice(0, 80));
     } catch (err) {
       console.error('[WeTubeService] loadSubscriptionsFeed failed:', err);
     } finally {
