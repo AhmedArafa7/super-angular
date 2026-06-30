@@ -14,9 +14,9 @@ export class GlobalStateService {
   readonly userProfile = computed(() => {
     const userData = this.firebaseService.userData();
     return {
-      name: userData?.displayName || 'مستخدم جديد',
-      avatarUrl: userData?.photoURL || 'https://i.pravatar.cc/150?u=a042581f4e29026704d',
-      firstLetter: (userData?.displayName || 'م').charAt(0).toUpperCase()
+      name: userData?.name || userData?.displayName || 'مستخدم جديد',
+      avatarUrl: userData?.avatar_url || userData?.photoURL || 'https://i.pravatar.cc/150?u=a042581f4e29026704d',
+      firstLetter: (userData?.name || userData?.displayName || 'م').charAt(0).toUpperCase()
     };
   });
 

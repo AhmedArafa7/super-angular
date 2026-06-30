@@ -1,14 +1,20 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { getFirestore, Firestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, orderBy, limit, startAfter, QueryDocumentSnapshot, documentId } from 'firebase/firestore';
+import { getFirestore, Firestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, orderBy, limit, startAfter, QueryDocumentSnapshot, documentId, runTransaction } from 'firebase/firestore';
 import { environment } from '../../../environments/environment';
 
 export interface UserData {
   uid: string;
+  id?: string;
   email?: string;
   displayName?: string;
   photoURL?: string;
+  name?: string;
+  username?: string;
+  avatar_url?: string;
+  status?: string;
+  lastSeen?: string;
   linkedAccounts?: LinkedAccount[];
   subscriptions?: string[];
   watchHistory?: WatchHistoryItem[];
@@ -17,7 +23,7 @@ export interface UserData {
   searchHistory?: string[];
   onboardingComplete?: boolean;
   onboardingCompletedAt?: number;
-  role?: 'admin' | 'reviewer' | 'user';
+  role?: 'admin' | 'reviewer' | 'user' | 'founder' | 'cofounder' | 'management' | 'free';
 }
 
 /**
@@ -239,12 +245,46 @@ export class FirebaseService {
       const userRef = doc(this.firestore, 'users', uid);
       const snap = await getDoc(userRef);
       if (snap.exists()) {
-        this.userData.set(snap.data() as UserData);
+        const remoteData = snap.data() as UserData;
+        this.userData.set({
+          ...remoteData,
+          displayName: remoteData.name || remoteData.displayName,
+          photoURL: remoteData.avatar_url || remoteData.photoURL
+        });
       } else {
-        const defaultName = `مستخدم ${uid.substring(0, 5).toUpperCase()}`;
+        let detectedName = `مستخدم ${uid.substring(0, 5).toUpperCase()}`;
+        let detectedUsername = `guest_${uid.substring(0, 5)}`;
+        
+        if (this.auth.currentUser?.isAnonymous) {
+          try {
+            const sysRef = doc(this.firestore, 'system', 'metadata');
+            const finalCount = await runTransaction(this.firestore, async (transaction) => {
+              const sfDoc = await transaction.get(sysRef);
+              let count = 1;
+              if (sfDoc.exists()) {
+                count = (sfDoc.data()['guestCount'] || 0) + 1;
+                transaction.update(sysRef, { guestCount: count });
+              } else {
+                transaction.set(sysRef, { guestCount: count }, { merge: true });
+              }
+              return count;
+            });
+            detectedName = "مستخدم " + finalCount;
+            detectedUsername = "guest_" + finalCount;
+          } catch (err) {
+            console.error("Counter TX Error:", err);
+          }
+        }
+
         const newUser: UserData = {
           uid,
-          displayName: defaultName,
+          id: uid,
+          displayName: detectedName,
+          name: detectedName,
+          username: detectedUsername,
+          avatar_url: `https://picsum.photos/seed/${uid}/100/100`,
+          photoURL: `https://picsum.photos/seed/${uid}/100/100`,
+          role: 'free',
           createdAt: Date.now(),
           linkedAccounts: [],
           subscriptions: [],
@@ -272,6 +312,8 @@ export class FirebaseService {
         const remoteData = snap.data() as UserData;
         newUserData = {
            ...remoteData,
+           displayName: remoteData.name || remoteData.displayName,
+           photoURL: remoteData.avatar_url || remoteData.photoURL,
            watchHistory: this.mergeArrays(remoteData.watchHistory, localData?.watchHistory, 'videoId'),
            subscriptions: Array.from(new Set([...(remoteData.subscriptions || []), ...(localData?.subscriptions || [])])),
            searchHistory: Array.from(new Set([...(remoteData.searchHistory || []), ...(localData?.searchHistory || [])]))
@@ -280,7 +322,13 @@ export class FirebaseService {
       } else {
         newUserData = {
           uid,
-          displayName: localData?.displayName || `مستخدم ${uid.substring(0, 5).toUpperCase()}`,
+          id: uid,
+          displayName: localData?.displayName || localData?.name || `مستخدم ${uid.substring(0, 5).toUpperCase()}`,
+          name: localData?.name || localData?.displayName || `مستخدم ${uid.substring(0, 5).toUpperCase()}`,
+          username: localData?.username || `user_${uid.substring(0, 5)}`,
+          avatar_url: localData?.avatar_url || localData?.photoURL || `https://picsum.photos/seed/${uid}/100/100`,
+          photoURL: localData?.photoURL || localData?.avatar_url || `https://picsum.photos/seed/${uid}/100/100`,
+          role: localData?.role || 'free',
           createdAt: Date.now(),
           linkedAccounts: localData?.linkedAccounts || [],
           subscriptions: localData?.subscriptions || [],
