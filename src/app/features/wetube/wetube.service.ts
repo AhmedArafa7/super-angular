@@ -318,8 +318,12 @@ export class WeTubeService {
     // 1. Load local subscriptions from IndexedDB (Phase 3 Immutability Rule)
     try {
       const localSubs = await this.idb.getAll('subscriptions') || [];
-      if (localSubs.length > 0) {
-        this.subscriptions.set(localSubs);
+      const cleanSubs = localSubs.filter(s => s && s.channelId && s.channelId !== 'undefined' && s.channelTitle);
+      if (cleanSubs.length > 0) {
+        this.subscriptions.set(cleanSubs);
+      }
+      if (localSubs.length !== cleanSubs.length) {
+        force = true;
       }
     } catch (e) {
       console.warn('Failed to load local subscriptions from IndexedDB', e);
@@ -359,16 +363,33 @@ export class WeTubeService {
   }
 
   private mergeSubscriptions(newSubs: YouTubeSubscription[]) {
-    const current = this.subscriptions();
-    const currentIds = new Set(current.map(s => s.channelId));
-    const merged = [...current];
+    const current = this.subscriptions().filter(s => s.channelId && s.channelId !== 'undefined');
+    const subMap = new Map<string, YouTubeSubscription>();
+    current.forEach(s => subMap.set(s.channelId, s));
     
     for (const sub of newSubs) {
-      if (!currentIds.has(sub.channelId)) {
-        merged.push(sub);
+      if (!sub.channelId || sub.channelId === 'undefined') continue;
+      const existing = subMap.get(sub.channelId);
+      if (existing) {
+        subMap.set(sub.channelId, {
+          ...existing,
+          channelTitle: sub.channelTitle || existing.channelTitle,
+          avatarUrl: sub.avatarUrl || existing.avatarUrl
+        });
+      } else {
+        subMap.set(sub.channelId, sub);
       }
     }
+    
+    const merged = Array.from(subMap.values());
     this.subscriptions.set(merged);
+
+    // Save clean subscriptions back to IndexedDB
+    merged.forEach(async (sub) => {
+      try {
+        await this.idb.put('subscriptions', sub);
+      } catch (e) {}
+    });
   }
 
   async toggleSubscription(channelId: string, channelTitle: string, avatarUrl: string): Promise<boolean> {

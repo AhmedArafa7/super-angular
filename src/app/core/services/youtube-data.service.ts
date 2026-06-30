@@ -77,7 +77,14 @@ export class YoutubeDataService {
         ? this.fetchSubscriptionsPage(accessToken, res.nextPageToken)
         : of<any>(null)
       ),
-      map((res: any) => res?.items || []),
+      map((res: any) => {
+        if (!res?.items) return [];
+        return res.items.map((item: any) => ({
+          channelId: item.snippet?.resourceId?.channelId || '',
+          title: item.snippet?.title || '',
+          thumbnail: item.snippet?.thumbnails?.default?.url || item.snippet?.thumbnails?.medium?.url || ''
+        }));
+      }),
       catchError(err => {
         console.error('[YoutubeDataService] fetchMySubscriptions failed:', err);
         return of<YouTubeSubscriptionItem[]>([]);
