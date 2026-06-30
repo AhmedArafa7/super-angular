@@ -26,6 +26,8 @@ export class WeTubeService {
   readonly trendingVideos = signal<FeedVideo[]>([]);
   readonly searchResults = signal<FeedVideo[]>([]);
   readonly shortsFeed = signal<FeedVideo[]>([]);
+  readonly subscriptionsFeed = signal<FeedVideo[]>([]);
+  readonly isSubsFeedLoading = signal<boolean>(false);
 
   // UI State
   readonly activeTab = signal<WeTubeTab>('home');
@@ -419,6 +421,78 @@ export class WeTubeService {
         this.loadMySubscriptions(true);
       }
     });
+  }
+
+  async loadSubscriptionsFeed(force = false): Promise<void> {
+    if (!force && this.subscriptionsFeed().length > 0) return;
+    
+    // Ensure subscriptions are loaded first
+    let subs = this.subscriptions();
+    if (subs.length === 0) {
+      try {
+        const localSubs = await this.idb.getAll('subscriptions') || [];
+        subs = localSubs.filter(s => s && s.channelId && s.channelId !== 'undefined' && s.channelTitle);
+        if (subs.length > 0) {
+          this.subscriptions.set(subs);
+        }
+      } catch (e) {}
+    }
+
+    if (subs.length === 0) {
+      this.subscriptionsFeed.set([]);
+      return;
+    }
+    
+    this.isSubsFeedLoading.set(true);
+    
+    try {
+      const channelIds = subs.map(s => s.channelId);
+      const results: FeedVideo[][] = [];
+      const chunkSize = 3; // Fetch 3 channels at a time to stay lightweight
+      
+      for (let i = 0; i < channelIds.length; i += chunkSize) {
+        const chunk = channelIds.slice(i, i + chunkSize);
+        const chunkPromises = chunk.map(async (id) => {
+          try {
+            const data = await this.pipedApiService.getChannelDetails(id);
+            if (!data?.relatedStreams) return [];
+            
+            return data.relatedStreams.map((item: any) => ({
+              id: item.videoId,
+              title: item.title,
+              url: `https://www.youtube.com/watch?v=${item.videoId}`,
+              thumbnail: item.thumbnail || `https://img.youtube.com/vi/${item.videoId}/hqdefault.jpg`,
+              author: data.name,
+              authorId: id,
+              published: item.uploadedDate || 'اليوم',
+              source: 'youtube' as const,
+              isShorts: item.isShorts || false,
+              views: item.views ? String(item.views) : undefined,
+              duration: item.duration ? String(item.duration) : undefined
+            } as FeedVideo));
+          } catch (e) {
+            console.error(`[WeTubeService] Failed to fetch channel feed for ${id}`, e);
+            return [];
+          }
+        });
+        
+        const chunkResults = await Promise.all(chunkPromises);
+        results.push(...chunkResults);
+        
+        if (i + chunkSize < channelIds.length) {
+          await new Promise(resolve => setTimeout(resolve, 600));
+        }
+      }
+      
+      const allVideos = results.flat();
+      // Piped already returns videos sorted by date, but we can double check or let them display.
+      // To prevent massive lists, we can slice it to top 80 videos
+      this.subscriptionsFeed.set(allVideos.slice(0, 80));
+    } catch (err) {
+      console.error('[WeTubeService] loadSubscriptionsFeed failed:', err);
+    } finally {
+      this.isSubsFeedLoading.set(false);
+    }
   }
 
   // ── Initialization ─────────────────────────────────────────
