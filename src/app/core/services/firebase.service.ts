@@ -672,4 +672,15 @@ export class FirebaseService {
       return [];
     }
   }
+
+  getLoginProvider(): 'google' | 'github' | 'credentials' | 'anonymous' | null {
+    const user = this.auth?.currentUser;
+    if (!user) return null;
+    if (user.isAnonymous) return 'anonymous';
+    const providers = user.providerData.map(p => p.providerId);
+    if (providers.includes('google.com')) return 'google';
+    if (providers.includes('github.com')) return 'github';
+    if (providers.includes('password')) return 'credentials';
+    return null;
+  }
 }

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { SettingsService, PREMIUM_VOICES, VoiceCatalogItem, UsageLog } from '../../core/settings.service';
+import { FirebaseService } from '../../core/services/firebase.service';
 
 @Component({
   selector: 'app-settings',
@@ -13,6 +14,7 @@ import { SettingsService, PREMIUM_VOICES, VoiceCatalogItem, UsageLog } from '../
 })
 export class SettingsComponent implements OnInit, OnDestroy {
   settingsService = inject(SettingsService);
+  firebase = inject(FirebaseService);
   premiumVoices = PREMIUM_VOICES;
 
   // Web Speech Synthesis parameters
@@ -150,5 +152,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
       .map(v => ({ name: `${v.name} (Premium)`, lang: v.lang, isNeural: true }));
 
     return [...neuralList, ...list];
+  }
+
+  getLoginProvider(): 'google' | 'github' | 'credentials' | 'anonymous' | null {
+    return this.firebase.getLoginProvider();
   }
 }
