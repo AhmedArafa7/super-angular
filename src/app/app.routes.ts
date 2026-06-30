@@ -24,6 +24,11 @@ export const routes: Routes = [
     title: 'الصحة والرياضة'
   },
   {
+    path: 'settings',
+    loadComponent: () => import('./features/settings/settings.component').then(c => c.SettingsComponent),
+    title: 'الإعدادات المركزية'
+  },
+  {
     path: 'admin',
     loadComponent: () => import('./features/admin/admin.component').then(c => c.AdminComponent),
     title: 'لوحة الإدارة'

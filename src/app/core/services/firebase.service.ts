@@ -683,4 +683,16 @@ export class FirebaseService {
     if (providers.includes('password')) return 'credentials';
     return null;
   }
+
+  async logout(): Promise<void> {
+    try {
+      const { signOut } = await import('firebase/auth');
+      await signOut(this.auth);
+      localStorage.removeItem('yt_access_token');
+      localStorage.removeItem('yt_token_expiry');
+      localStorage.setItem('manual_logout', 'true');
+    } catch (err) {
+      console.error('[FirebaseService] Logout failed:', err);
+    }
+  }
 }

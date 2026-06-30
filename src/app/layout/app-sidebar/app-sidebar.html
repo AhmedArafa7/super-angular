@@ -136,16 +136,22 @@
             </div>
           </div>
           <div class="flex flex-col py-2">
-            <button class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors w-full text-right">
+            <a [routerLink]="['/stream']" (click)="showUserProfileDropdown = false" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors w-full text-right">
               <lucide-icon [img]="LayoutDashboard" class="w-4 h-4 text-indigo-400"></lucide-icon> لوحة التحكم
-            </button>
-            <button class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors w-full text-right">
+            </a>
+            <a [routerLink]="['/settings']" (click)="showUserProfileDropdown = false" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors w-full text-right">
               <lucide-icon [img]="Settings" class="w-4 h-4 text-slate-400"></lucide-icon> الإعدادات
-            </button>
+            </a>
             <div class="h-px bg-white/10 my-1 mx-4"></div>
-            <button class="flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors w-full text-right">
-              <lucide-icon [img]="LogOut" class="w-4 h-4"></lucide-icon> تسجيل الخروج
-            </button>
+            @if (firebase.currentUser()?.isAnonymous) {
+              <button (click)="loginWithGoogle()" class="flex items-center gap-3 px-4 py-2.5 text-sm text-indigo-400 hover:bg-indigo-500/10 transition-colors w-full text-right">
+                <lucide-icon [img]="Chrome" class="w-4 h-4 text-indigo-400"></lucide-icon> تسجيل الدخول بجوجل
+              </button>
+            } @else {
+              <button (click)="logout()" class="flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors w-full text-right">
+                <lucide-icon [img]="LogOut" class="w-4 h-4"></lucide-icon> تسجيل الخروج
+              </button>
+            }
           </div>
         </div>
       }

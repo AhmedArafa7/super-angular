@@ -6,7 +6,7 @@ import { ALL_NAV_ITEMS, NavItem, getVisibleNavItems } from '../../core/nav-items
 
 import { OfflineQueueService } from '../../core/services/offline-queue.service';
 import { FirebaseService } from '../../core/services/firebase.service';
-import { LucideAngularModule, LogOut, User, Settings, LayoutDashboard, CloudUpload, CheckCircle2, XCircle, CloudCog } from 'lucide-angular';
+import { LucideAngularModule, LogOut, User, Settings, LayoutDashboard, CloudUpload, CheckCircle2, XCircle, CloudCog, Chrome } from 'lucide-angular';
 
 import { SidebarItemComponent } from './sidebar-item/sidebar-item.component';
 import { FloatingOrbComponent } from './floating-orb/floating-orb.component';
@@ -48,6 +48,7 @@ export class AppSidebarComponent {
   Settings = Settings;
   LayoutDashboard = LayoutDashboard;
   CloudUpload = CloudUpload;
+  Chrome = Chrome;
   CheckCircle2 = CheckCircle2;
   XCircle = XCircle;
   CloudCog = CloudCog;
@@ -148,5 +149,15 @@ export class AppSidebarComponent {
   toggleProfileDropdown(event: Event) {
     event.stopPropagation();
     this.showUserProfileDropdown = !this.showUserProfileDropdown;
+  }
+
+  loginWithGoogle() {
+    this.showUserProfileDropdown = false;
+    this.firebase.signInWithGoogle();
+  }
+
+  logout() {
+    this.showUserProfileDropdown = false;
+    this.firebase.logout();
   }
 }
