@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { MarketService, MarketItem } from '../../core/market.service';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-market',
@@ -13,6 +14,7 @@ import { MarketService, MarketItem } from '../../core/market.service';
 })
 export class MarketComponent {
   marketService = inject(MarketService);
+  toast = inject(ToastService);
 
   // Search filter query
   searchQuery = signal<string>('');
@@ -94,22 +96,24 @@ export class MarketComponent {
     this.newItemImage = '';
     this.isModalOpen = false;
 
-    alert("تهانينا! تم إدراج المنتج بنجاح في سوق العقد العصبية.");
+    this.toast.show("تم إدراج المنتج بنجاح في سوق العقد العصبية.", "success");
   }
 
   // Buy item
-  handleAcquire(item: MarketItem): void {
-    const success = this.marketService.acquireItem(item.id);
+  async handleAcquire(item: MarketItem): Promise<void> {
+    const success = await this.marketService.acquireItem(item.id);
     if (success) {
-      alert(`مبروك! لقد استوليت على "${item.title}" بنجاح وتم خصم ${item.price} BKC من محفظتك الذكية.`);
+      this.toast.show(`لقد استوليت على "${item.title}" بنجاح وتم خصم ${item.price} BKC من محفظتك.`, "success");
       this.viewingItem.set(null);
     }
   }
 
   // Delete item (allowed only for owner)
-  handleDelete(id: string): void {
-    if (confirm("هل تريد حذف هذا المنتج المعروض من السوق؟")) {
+  async handleDelete(id: string): Promise<void> {
+    const confirmed = await this.toast.confirm("هل تريد بالتأكيد حذف هذا المنتج المعروض من السوق؟");
+    if (confirmed) {
       this.marketService.deleteItem(id);
+      this.toast.show("تم حذف المنتج بنجاح.", "info");
       this.viewingItem.set(null);
     }
   }

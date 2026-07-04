@@ -1,6 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { WalletService } from './wallet.service';
 import { MarketService } from './market.service';
+import { FirebaseService } from './services/firebase.service';
+import { collection, getDocs, doc, updateDoc, addDoc, query, limit, increment } from 'firebase/firestore';
 
 export interface UserNode {
   id: string;
@@ -29,6 +31,7 @@ export class AdminService {
   private readonly STORAGE_KEY = 'Si-Neuro-admin-store';
   private walletService = inject(WalletService);
   private marketService = inject(MarketService);
+  private firebaseService = inject(FirebaseService);
 
   // Signals
   users = signal<UserNode[]>([]);
@@ -37,6 +40,39 @@ export class AdminService {
 
   constructor() {
     this.loadState();
+    this.syncFromFirebase();
+  }
+
+  async syncFromFirebase() {
+    try {
+      // Fetch users
+      const usersQ = query(collection(this.firebaseService.db, 'users'), limit(100));
+      const usersSnap = await getDocs(usersQ);
+      const fetchedUsers = usersSnap.docs.map(d => {
+        const data = d.data();
+        return {
+          id: d.id,
+          name: data['displayName'] || data['name'] || `مستخدم ${d.id.substring(0, 5)}`,
+          role: data['role'] || 'free',
+          balance: data['balance'] || 0,
+          weightGb: data['weightGb'] || 10,
+          status: data['status'] || 'active',
+          lastActive: data['lastActive'] || new Date().toISOString()
+        } as UserNode;
+      });
+      
+      this.users.set(fetchedUsers);
+
+      // Fetch category suggestions
+      const catsQ = query(collection(this.firebaseService.db, 'category_requests'), limit(100));
+      const catsSnap = await getDocs(catsQ);
+      const fetchedCats = catsSnap.docs.map(d => ({ id: d.id, ...d.data() } as CategorySuggestion));
+      
+      this.categorySuggestions.set(fetchedCats);
+      this.saveState();
+    } catch (e) {
+      console.error("Admin Firebase load error", e);
+    }
   }
 
   private loadState(): void {
@@ -51,84 +87,9 @@ export class AdminService {
         console.error("Admin state load error", e);
       }
     } else {
-      // Seed default user nodes
-      const defaultUsers: UserNode[] = [
-        {
-          id: 'node_1',
-          name: 'المهندس أحمد عرفة',
-          role: 'founder',
-          balance: 25000,
-          weightGb: 100,
-          status: 'active',
-          lastActive: new Date().toISOString()
-        },
-        {
-          id: 'node_2',
-          name: 'د. يوسف النجار',
-          role: 'cofounder',
-          balance: 18000,
-          weightGb: 80,
-          status: 'active',
-          lastActive: new Date(Date.now() - 3600000).toISOString()
-        },
-        {
-          id: 'node_3',
-          name: 'سارة عبد الرحمن',
-          role: 'management',
-          balance: 5200,
-          weightGb: 50,
-          status: 'active',
-          lastActive: new Date(Date.now() - 3600000 * 4).toISOString()
-        },
-        {
-          id: 'node_4',
-          name: 'عمر خالد (مشاريع طلابية)',
-          role: 'member',
-          balance: 850,
-          weightGb: 20,
-          status: 'active',
-          lastActive: new Date(Date.now() - 3600000 * 24).toISOString()
-        },
-        {
-          id: 'node_5',
-          name: 'حساب مجهول (قيد المراجعة)',
-          role: 'member',
-          balance: 0,
-          weightGb: 10,
-          status: 'pending',
-          lastActive: new Date(Date.now() - 3600000 * 48).toISOString()
-        }
-      ];
-
-      // Seed category requests
-      const defaultSuggestions: CategorySuggestion[] = [
-        {
-          id: 'cat_s1',
-          suggestedName: 'إنترنت الأشياء (IoT)',
-          parentCategory: 'مشاريع العتاد',
-          userName: 'المهندس أحمد',
-          userId: 'node_1',
-          status: 'pending'
-        },
-        {
-          id: 'cat_s2',
-          suggestedName: 'الواقع الافتراضي (VR)',
-          parentCategory: 'التطبيقات البرمجية',
-          userName: 'عمر خالد',
-          userId: 'node_4',
-          status: 'pending'
-        }
-      ];
-
-      const defaultLogs = [
-        'SYSTEM: تم تهيئة شبكة العقد بنجاح.',
-        'SECURITY: اتصال آمن مشفر من العقدة المؤسسة.',
-        'DATABASE: تم استيراد 156 معاملة مالية نشطة.'
-      ];
-
-      this.users.set(defaultUsers);
-      this.categorySuggestions.set(defaultSuggestions);
-      this.systemLogs.set(defaultLogs);
+      this.users.set([]);
+      this.categorySuggestions.set([]);
+      this.systemLogs.set([]);
       this.saveState();
     }
   }
@@ -142,20 +103,27 @@ export class AdminService {
   }
 
   // Update user role
-  updateUserRole(userId: string, role: UserNode['role']): void {
+  async updateUserRole(userId: string, role: UserNode['role']): Promise<void> {
     this.users.update(list => 
       list.map(u => u.id === userId ? { ...u, role } : u)
     );
     this.logAction(`ROLE_CHANGE: تغيير صلاحية العقدة ${userId} إلى ${role}`);
     this.saveState();
+
+    try {
+      await updateDoc(doc(this.firebaseService.db, 'users', userId), { role });
+    } catch (e) {
+      console.error("Failed to update user role in Firebase:", e);
+    }
   }
 
   // Toggle suspended status
-  toggleUserStatus(userId: string): void {
+  async toggleUserStatus(userId: string): Promise<void> {
+    let newStatus: UserNode['status'] = 'active';
     this.users.update(list => 
       list.map(u => {
         if (u.id === userId) {
-          const newStatus: UserNode['status'] = u.status === 'active' ? 'suspended' : 'active';
+          newStatus = u.status === 'active' ? 'suspended' : 'active';
           return { ...u, status: newStatus };
         }
         return u;
@@ -163,40 +131,60 @@ export class AdminService {
     );
     this.logAction(`STATUS_CHANGE: تغيير حالة العقدة ${userId}`);
     this.saveState();
+
+    try {
+      await updateDoc(doc(this.firebaseService.db, 'users', userId), { status: newStatus });
+    } catch (e) {
+      console.error("Failed to toggle user status in Firebase:", e);
+    }
   }
 
   // Allocate funds to a user node
-  allocateCredits(userId: string, amount: number): void {
+  async allocateCredits(userId: string, amount: number): Promise<void> {
     this.users.update(list => 
       list.map(u => {
         if (u.id === userId) {
-          return { ...u, balance: u.balance + amount };
+          return { ...u, balance: (u.balance || 0) + amount };
         }
         return u;
       })
     );
     this.logAction(`FUNDS_ALLOCATION: منح العقدة ${userId} رصيد بقيمة ${amount} credits`);
     this.saveState();
+
+    try {
+      await updateDoc(doc(this.firebaseService.db, 'users', userId), { balance: increment(amount) });
+    } catch (e) {
+      console.error("Failed to allocate credits in Firebase:", e);
+    }
   }
 
   // Submit new category suggestion (User facing)
-  suggestCategory(suggestedName: string, parentCategory: string, userName: string, userId: string): void {
-    const newSuggestion: CategorySuggestion = {
-      id: 'cat_s' + Math.random().toString(36).substr(2, 9),
+  async suggestCategory(suggestedName: string, parentCategory: string, userName: string, userId: string): Promise<void> {
+    const newSuggestionData = {
       suggestedName,
       parentCategory,
       userName,
       userId,
-      status: 'pending'
+      status: 'pending' as const
     };
 
-    this.categorySuggestions.update(list => [newSuggestion, ...list]);
-    this.logAction(`CATEGORY_SUGGESTION: اقتراح تصنيف جديد "${suggestedName}" تحت "${parentCategory}"`);
-    this.saveState();
+    try {
+      const docRef = await addDoc(collection(this.firebaseService.db, 'category_requests'), newSuggestionData);
+      const newSuggestion: CategorySuggestion = { id: docRef.id, ...newSuggestionData };
+      this.categorySuggestions.update(list => [newSuggestion, ...list]);
+      this.logAction(`CATEGORY_SUGGESTION: اقتراح تصنيف جديد "${suggestedName}" تحت "${parentCategory}"`);
+      this.saveState();
+    } catch (e) {
+      console.error("Failed to suggest category in Firebase:", e);
+      const newLocalSuggestion: CategorySuggestion = { id: 'cat_s' + Math.random().toString(36).substr(2, 9), ...newSuggestionData };
+      this.categorySuggestions.update(list => [newLocalSuggestion, ...list]);
+      this.saveState();
+    }
   }
 
   // Moderate Category Suggestions
-  moderateCategory(suggestionId: string, status: 'approved' | 'rejected', reason?: string): void {
+  async moderateCategory(suggestionId: string, status: 'approved' | 'rejected', reason?: string): Promise<void> {
     this.categorySuggestions.update(list => 
       list.map(s => {
         if (s.id === suggestionId) {
@@ -207,6 +195,14 @@ export class AdminService {
     );
     this.logAction(`CATEGORY_MODERATION: معالجة تصنيف ${suggestionId} بالـ ${status}`);
     this.saveState();
+
+    try {
+      const updateData: any = { status };
+      if (reason) updateData.rejectionReason = reason;
+      await updateDoc(doc(this.firebaseService.db, 'category_requests', suggestionId), updateData);
+    } catch (e) {
+      console.error("Failed to moderate category in Firebase:", e);
+    }
   }
 
   // Helper log action

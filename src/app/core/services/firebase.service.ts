@@ -89,6 +89,10 @@ export class FirebaseService {
   readonly userData = signal<UserData | null>(null);
   readonly isReady = signal<boolean>(false);
 
+  get db(): Firestore {
+    return this.firestore;
+  }
+
   constructor() {
     try {
       this.app = initializeApp(environment.firebase);

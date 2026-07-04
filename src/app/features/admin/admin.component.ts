@@ -6,6 +6,7 @@ import { AdminService, UserNode, CategorySuggestion } from '../../core/admin.ser
 import { AdsService, Ad } from '../../core/ads.service';
 import { MarketService, MarketItem } from '../../core/market.service';
 import { LauncherService, WebProject } from '../../core/launcher.service';
+import { ToastService } from '../../core/services/toast.service';
 import { WeTubeModerationComponent } from './components/wetube-moderation/wetube-moderation.component';
 
 @Component({
@@ -20,6 +21,7 @@ export class AdminComponent {
   adsService = inject(AdsService);
   marketService = inject(MarketService);
   launcherService = inject(LauncherService);
+  toast = inject(ToastService);
 
   // Active sub-tab state
   activeTab = signal<'products' | 'categories' | 'ads' | 'apps' | 'users' | 'logs' | 'moderation'>('moderation');
@@ -60,20 +62,8 @@ export class AdminComponent {
   moderateProduct(productId: string, status: 'active' | 'rejected'): void {
     const feedback = this.rejectFeedback()[productId] || '';
     
-    // Call market service updates
-    this.marketService.items.update(list => 
-      list.map(item => {
-        if (item.id === productId) {
-          return {
-            ...item,
-            status,
-            adminFeedback: status === 'rejected' ? feedback : undefined
-          };
-        }
-        return item;
-      })
-    );
-    this.marketService.saveState();
+    // Call market service update to sync locally and on Firebase
+    this.marketService.moderateItem(productId, status, status === 'rejected' ? feedback : undefined);
 
     this.adminService.logAction(`PRODUCT_MODERATION: معالجة المنتج ${productId} بالـ ${status}`);
     
@@ -84,7 +74,11 @@ export class AdminComponent {
       return copy;
     });
 
-    alert(status === 'active' ? '✅ تم نشر وتنشيط المنتج في المتجر بنجاح.' : '❌ تم رفض المنتج وإشعار البائع.');
+    if (status === 'active') {
+      this.toast.show('تم نشر وتنشيط المنتج في المتجر بنجاح.', 'success');
+    } else {
+      this.toast.show('تم رفض المنتج وإشعار البائع.', 'error');
+    }
   }
 
   // Action: Approve / Reject Category suggestions
@@ -99,7 +93,11 @@ export class AdminComponent {
       return copy;
     });
 
-    alert(status === 'approved' ? '✅ تم اعتماد وتنشيط التصنيف الجديد.' : '❌ تم رفض المقترح بنجاح.');
+    if (status === 'approved') {
+      this.toast.show('تم اعتماد وتنشيط التصنيف الجديد.', 'success');
+    } else {
+      this.toast.show('تم رفض المقترح بنجاح.', 'info');
+    }
   }
 
   // Action: Approve / Reject Ads Campaigns
@@ -114,7 +112,11 @@ export class AdminComponent {
       return copy;
     });
 
-    alert(status === 'active' ? '✅ تم نشر الحملة الإعلانية على لوحات الشبكة.' : '❌ تم رفض الإعلان.');
+    if (status === 'active') {
+      this.toast.show('تم نشر الحملة الإعلانية على لوحات الشبكة.', 'success');
+    } else {
+      this.toast.show('تم رفض الإعلان.', 'error');
+    }
   }
 
   // Action: Approve / Reject Launcher Applications
@@ -125,7 +127,11 @@ export class AdminComponent {
       this.launcherService.rejectApp(appId);
     }
     this.adminService.logAction(`APP_MODERATION: معالجة التطبيق ${appId} بالـ ${status}`);
-    alert(status === 'approved' ? '✅ تم الموافقة على التطبيق ونشره في المنصة.' : '❌ تم رفض وإرجاع مقترح التطبيق.');
+    if (status === 'approved') {
+      this.toast.show('تم الموافقة على التطبيق ونشره في المنصة.', 'success');
+    } else {
+      this.toast.show('تم رفض وإرجاع مقترح التطبيق.', 'error');
+    }
   }
 
   // Action: Update user node roles
@@ -147,7 +153,7 @@ export class AdminComponent {
       return copy;
     });
 
-    alert(`🎉 تم منح العقدة ${user.name} رصيداً إضافياً بقيمة ${amt} EGC بنجاح.`);
+    this.toast.show(`تم منح العقدة ${user.name} رصيداً إضافياً بقيمة ${amt} EGC بنجاح.`, 'success');
   }
 
   // Action: Toggle suspended state

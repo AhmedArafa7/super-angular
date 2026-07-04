@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/stream', pathMatch: 'full' },
@@ -31,6 +32,7 @@ export const routes: Routes = [
   {
     path: 'admin',
     loadComponent: () => import('./features/admin/admin.component').then(c => c.AdminComponent),
+    canActivate: [adminGuard],
     title: 'لوحة الإدارة'
   },
   { path: '**', redirectTo: '/stream' }

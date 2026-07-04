@@ -1,4 +1,6 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject, effect } from '@angular/core';
+import { doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, orderBy, limit, getFirestore, Firestore } from 'firebase/firestore';
+import { FirebaseService } from './services/firebase.service';
 
 export type RealCurrencyCode = 'EGC' | 'DLC' | 'MDC' | 'GMC' | 'BKC';
 export type SaveCurrencyCode = 'EGC_save' | 'DLC_save' | 'MDC_save' | 'GMC_save' | 'BKC_save';
@@ -61,6 +63,7 @@ export interface UserUnfreezeRule {
   providedIn: 'root'
 })
 export class WalletService {
+  private firebaseService = inject(FirebaseService);
   private readonly STORAGE_KEY = 'Si-Neuro-wallet-registry';
 
   // Real-time reactive signals for wallet state
@@ -75,7 +78,6 @@ export class WalletService {
     const current = this.balances();
     CURRENCIES.forEach(c => {
       if (!c.issave) {
-        // Simple 1:1 equivalency display summation in credits
         sum += current[c.code] || 0;
       }
     });
@@ -103,9 +105,65 @@ export class WalletService {
 
   constructor() {
     this.loadState();
+
+    // Listen to Firebase User changes using Angular Effect
+    effect(() => {
+      const user = this.firebaseService.currentUser();
+      if (user) {
+        this.fetchWalletFromFirebase(user.uid);
+        this.fetchTransactionsFromFirebase(user.uid);
+      }
+    });
   }
 
-  // Load from local storage with mock seed data if empty
+  // Fetch Wallet state from Firebase Firestore
+  private async fetchWalletFromFirebase(userId: string): Promise<void> {
+    try {
+      const firestore = getFirestore();
+      const walletRef = doc(firestore, 'users', userId, 'wallet', 'main');
+      const snap = await getDoc(walletRef);
+
+      if (snap.exists()) {
+        const data = snap.data();
+        this.balances.set(data['balances'] || this.createEmptyBalances());
+        this.frozenBalances.set(data['frozenBalances'] || this.createEmptyBalances());
+        this.saveState();
+      } else {
+        // Initial setup for new user
+        const initial = {
+          balances: this.balances(),
+          frozenBalances: this.frozenBalances()
+        };
+        await setDoc(walletRef, initial);
+      }
+    } catch (err) {
+      console.error('[WalletService] Fetch Wallet from Firebase failed:', err);
+    }
+  }
+
+  // Fetch Transactions list from Firebase Firestore
+  private async fetchTransactionsFromFirebase(userId: string): Promise<void> {
+    try {
+      const firestore = getFirestore();
+      const txRef = collection(firestore, 'users', userId, 'transactions');
+      const q = query(txRef, orderBy('timestamp', 'desc'), limit(50));
+      const snap = await getDocs(q);
+
+      const txs: Transaction[] = snap.docs.map(d => ({
+        id: d.id,
+        ...(d.data() as Omit<Transaction, 'id'>)
+      }));
+
+      if (txs.length > 0) {
+        this.transactions.set(txs);
+        this.saveState();
+      }
+    } catch (err) {
+      console.error('[WalletService] Fetch Transactions from Firebase failed:', err);
+    }
+  }
+
+  // Load from local storage with mock seed data if empty (useful as local cache/offline)
   private loadState(): void {
     const dataStr = localStorage.getItem(this.STORAGE_KEY);
     if (dataStr) {
@@ -184,7 +242,7 @@ export class WalletService {
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
   }
 
-  // Core operations
+  // Core operations (Synchronous for fast UI, Fire-and-forget for Firebase Sync)
   adjustFunds(amount: number, type: TransactionType, currency: CurrencyCode = 'EGC'): boolean {
     const balCopy = { ...this.balances() };
     const frzCopy = { ...this.frozenBalances() };
@@ -218,7 +276,6 @@ export class WalletService {
     this.balances.set(balCopy);
     this.frozenBalances.set(frzCopy);
 
-    // Push standard transaction log
     const newTx: Transaction = {
       id: `tx_${Math.random().toString(36).substr(2, 9)}`,
       amount: (type === 'deposit' || type === 'purchase_refund') ? amount : -amount,
@@ -231,7 +288,41 @@ export class WalletService {
 
     this.transactions.update(txs => [newTx, ...txs]);
     this.saveState();
+
+    // Fire-and-forget sync to Firebase in the background
+    this.syncFundsToFirebase(balCopy, frzCopy, newTx);
+
     return true;
+  }
+
+  private async syncFundsToFirebase(balances: Record<CurrencyCode, number>, frozenBalances: Record<CurrencyCode, number>, transaction: Transaction): Promise<void> {
+    const userId = this.firebaseService.getUserId();
+    if (!userId) return;
+
+    try {
+      const firestore = getFirestore();
+      const walletRef = doc(firestore, 'users', userId, 'wallet', 'main');
+      
+      // Update balances
+      await updateDoc(walletRef, {
+        balances,
+        frozenBalances
+      });
+
+      // Add to transaction log
+      const txCollectionRef = collection(firestore, 'users', userId, 'transactions');
+      await addDoc(txCollectionRef, {
+        amount: transaction.amount,
+        type: transaction.type,
+        currency: transaction.currency,
+        status: transaction.status,
+        description: transaction.description,
+        timestamp: transaction.timestamp
+      });
+
+    } catch (err) {
+      console.error('[WalletService] Background Firebase Sync failed:', err);
+    }
   }
 
   convertCurrency(from: CurrencyCode, to: CurrencyCode, amount: number): boolean {
@@ -263,7 +354,37 @@ export class WalletService {
 
     this.transactions.update(txs => [newTx, ...txs]);
     this.saveState();
+
+    // Fire-and-forget conversion sync to Firebase
+    this.syncConversionToFirebase(balCopy, newTx);
+
     return true;
+  }
+
+  private async syncConversionToFirebase(balances: Record<CurrencyCode, number>, transaction: Transaction): Promise<void> {
+    const userId = this.firebaseService.getUserId();
+    if (!userId) return;
+
+    try {
+      const firestore = getFirestore();
+      const walletRef = doc(firestore, 'users', userId, 'wallet', 'main');
+      
+      await updateDoc(walletRef, { balances });
+
+      await addDoc(collection(firestore, 'users', userId, 'transactions'), {
+        amount: transaction.amount,
+        type: transaction.type,
+        currency: transaction.currency,
+        toCurrency: transaction.toCurrency,
+        toAmount: transaction.toAmount,
+        status: 'completed',
+        description: transaction.description,
+        timestamp: transaction.timestamp
+      });
+
+    } catch (err) {
+      console.error('[WalletService] conversion sync failed:', err);
+    }
   }
 
   // Pending acquisitions actions

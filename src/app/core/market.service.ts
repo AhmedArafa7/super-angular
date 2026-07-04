@@ -1,5 +1,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { WalletService } from './wallet.service';
+import { FirebaseService } from './services/firebase.service';
+import { collection, getDocs, doc, updateDoc, deleteDoc, addDoc, increment, query, limit, arrayUnion } from 'firebase/firestore';
 
 export interface MarketItem {
   id: string;
@@ -23,6 +25,7 @@ export interface MarketItem {
 export class MarketService {
   private readonly STORAGE_KEY = 'Si-Neuro-market-registry';
   walletService = inject(WalletService);
+  private firebaseService = inject(FirebaseService);
 
   // Core signals
   items = signal<MarketItem[]>([]);
@@ -32,6 +35,26 @@ export class MarketService {
 
   constructor() {
     this.loadState();
+    this.syncFromFirebase();
+  }
+
+  async syncFromFirebase() {
+    try {
+      const q = query(collection(this.firebaseService.db, 'products'), limit(200));
+      const snap = await getDocs(q);
+      const fetchedItems = snap.docs.map(d => ({ id: d.id, ...d.data() } as MarketItem));
+      
+      fetchedItems.sort((a, b) => {
+        const dateA = (a as any).createdAt ? new Date((a as any).createdAt).getTime() : 0;
+        const dateB = (b as any).createdAt ? new Date((b as any).createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+      
+      this.items.set(fetchedItems);
+      this.saveState();
+    } catch (e) {
+      console.error("Market Firebase load error", e);
+    }
   }
 
   private loadState(): void {
@@ -46,53 +69,7 @@ export class MarketService {
       }
     }
 
-    // Seed default marketplace assets
-    const seedItems: MarketItem[] = [
-      {
-        id: 'prod_1',
-        title: 'بوابة WeTube Pro',
-        description: 'النسخة الاحترافية من مشغل WeTube بميزات السينما العميقة والتحليل التلقائي عصبياً.',
-        price: 500,
-        currency: 'BKC',
-        mainCategory: 'software',
-        subCategory: 'apps',
-        imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop',
-        sellerId: 'system',
-        purchasedBy: [],
-        stock: 10,
-        status: 'active'
-      },
-      {
-        id: 'prod_2',
-        title: 'حقيبة مستشعرات Arduino Mega',
-        description: 'مجموعة المبتدئين المتكاملة للبرمجة عصبياً مع الألواح والمستشعرات والمحركات.',
-        price: 1500,
-        currency: 'BKC',
-        mainCategory: 'hardware',
-        subCategory: 'mcu',
-        imageUrl: 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48?q=80&w=600&auto=format&fit=crop',
-        sellerId: 'admin_user',
-        purchasedBy: [],
-        stock: 3,
-        status: 'active'
-      },
-      {
-        id: 'prod_3',
-        title: 'AI Script Optimizer Agent',
-        description: 'عميل ذكي مبرمج بالكامل لتحسين كود بايثون البرمجي تلقائياً وزيادة سرعة الأنوية.',
-        price: 250,
-        currency: 'BKC',
-        mainCategory: 'services',
-        subCategory: 'ai_agents',
-        imageUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=600&auto=format&fit=crop',
-        sellerId: 'agent_hub',
-        purchasedBy: [],
-        stock: 20,
-        status: 'active'
-      }
-    ];
-
-    this.items.set(seedItems);
+    this.items.set([]);
     this.saveState();
   }
 
@@ -101,9 +78,8 @@ export class MarketService {
   }
 
   // Add listing item
-  addItem(title: string, desc: string, price: number, cat: 'software' | 'hardware' | 'services' | 'digital', stock: number, img?: string): void {
-    const newItem: MarketItem = {
-      id: `prod_${Math.random().toString(36).substr(2, 9)}`,
+  async addItem(title: string, desc: string, price: number, cat: 'software' | 'hardware' | 'services' | 'digital', stock: number, img?: string): Promise<void> {
+    const newItemData = {
       title: title.trim(),
       description: desc.trim(),
       price,
@@ -111,24 +87,40 @@ export class MarketService {
       mainCategory: cat,
       subCategory: 'general',
       imageUrl: img || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop',
-      sellerId: 'me', // Mock active user ID
+      sellerId: this.firebaseService.getUserId() || 'me',
       purchasedBy: [],
       stock,
-      status: 'active'
+      status: 'active' as const,
+      createdAt: new Date().toISOString()
     };
 
-    this.items.update(list => [...list, newItem]);
-    this.saveState();
+    try {
+      const docRef = await addDoc(collection(this.firebaseService.db, 'products'), newItemData);
+      const newItem: MarketItem = { id: docRef.id, ...newItemData };
+      this.items.update(list => [...list, newItem]);
+      this.saveState();
+    } catch (error) {
+      console.error("Failed to add market item to Firebase:", error);
+      const newItemLocal: MarketItem = { id: `prod_${Math.random().toString(36).substr(2, 9)}`, ...newItemData };
+      this.items.update(list => [...list, newItemLocal]);
+      this.saveState();
+    }
   }
 
   // Delete item
-  deleteItem(id: string): void {
+  async deleteItem(id: string): Promise<void> {
     this.items.update(list => list.filter(i => i.id !== id));
     this.saveState();
+    
+    try {
+      await deleteDoc(doc(this.firebaseService.db, 'products', id));
+    } catch (error) {
+      console.error("Failed to delete market item in Firebase:", error);
+    }
   }
 
   // Buy or acquire item
-  acquireItem(id: string): boolean {
+  async acquireItem(id: string): Promise<boolean> {
     const currentItems = this.items();
     const item = currentItems.find(i => i.id === id);
     if (!item) return false;
@@ -148,16 +140,20 @@ export class MarketService {
     // Deduct funds
     this.walletService.adjustFunds(item.price, 'withdrawal', 'BKC');
     
+    const userId = this.firebaseService.getUserId() || 'me';
+    let newStatus = item.status;
+    let newStock = item.stock - 1;
+
     // Decrement stock & record buyer
     this.items.update(list => {
       return list.map(i => {
         if (i.id === id) {
-          const newStock = i.stock - 1;
-          const purchasedByList = [...(i.purchasedBy || []), 'me'];
+          const purchasedByList = [...(i.purchasedBy || []), userId];
+          newStatus = newStock <= 0 ? 'sold_out' as const : i.status;
           return {
             ...i,
             stock: newStock,
-            status: newStock <= 0 ? 'sold_out' as const : i.status,
+            status: newStatus,
             purchasedBy: purchasedByList
           };
         }
@@ -166,6 +162,39 @@ export class MarketService {
     });
 
     this.saveState();
+
+    try {
+      const itemRef = doc(this.firebaseService.db, 'products', id);
+      await updateDoc(itemRef, { 
+        stock: increment(-1),
+        status: newStatus,
+        purchasedBy: arrayUnion(userId)
+      });
+    } catch (error) {
+      console.error("Failed to acquire item in Firebase:", error);
+    }
+
     return true;
+  }
+
+  // Moderate item (Admin action)
+  async moderateItem(id: string, status: 'active' | 'rejected', adminFeedback?: string): Promise<void> {
+    this.items.update(list => list.map(item => {
+      if (item.id === id) {
+        return { ...item, status, adminFeedback };
+      }
+      return item;
+    }));
+    this.saveState();
+
+    try {
+      const updateData: any = { status };
+      if (adminFeedback) {
+        updateData.adminFeedback = adminFeedback;
+      }
+      await updateDoc(doc(this.firebaseService.db, 'products', id), updateData);
+    } catch (error) {
+      console.error("Failed to update moderate status in Firebase:", error);
+    }
   }
 }
