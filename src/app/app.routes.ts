@@ -40,5 +40,15 @@ export const routes: Routes = [
     loadComponent: () => import('./features/bakery/bakery-home.component').then(c => c.BakeryHomeComponent),
     title: 'مخبز عباد الرحمن'
   },
+  {
+    path: 'arcade',
+    loadComponent: () => import('./features/arcade/arcade-hub.component').then(c => c.ArcadeHubComponent),
+    title: 'الألعاب'
+  },
+  {
+    path: 'arcade/arena/:id',
+    loadComponent: () => import('./features/arcade/arcade-arena.component').then(c => c.ArcadeArenaComponent),
+    title: 'ساحة اللعب'
+  },
   { path: '**', redirectTo: '/stream' }
 ];

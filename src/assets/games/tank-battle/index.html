@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tank Battle</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>TANK BATTLE</h1>
+            <p id="status-text">Select number of players</p>
+        </header>
+
+        <div id="menu">
+            <button class="player-btn" data-players="1" data-ai="1">1 vs 1 Bot</button>
+            <button class="player-btn" data-players="1" data-ai="3">1 vs 3 Bots</button>
+            <button class="player-btn" data-players="2" data-ai="0">2 Players</button>
+            <button class="player-btn" data-players="3" data-ai="0">3 Players</button>
+            <button class="player-btn" data-players="4" data-ai="0">4 Players</button>
+        </div>
+
+        <div id="game-container" class="hidden">
+            <canvas id="game-canvas" width="800" height="600"></canvas>
+            
+            <div id="controls-help">
+                <div class="p1">P1 (Blue): W A S D | Shoot: Space</div>
+                <div class="p2 hidden">P2 (Red): Arrows | Shoot: Enter</div>
+                <div class="p3 hidden">P3 (Green): I J K L | Shoot: P</div>
+                <div class="p4 hidden">P4 (Yellow): Num 8 4 5 6 | Shoot: Num 0</div>
+            </div>
+
+            <div class="controls-buttons">
+                <button id="restart-btn" class="hidden">Play Again</button>
+                <button id="menu-btn" class="hidden">Main Menu</button>
+            </div>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
