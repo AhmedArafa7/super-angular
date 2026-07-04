@@ -30,13 +30,16 @@ export class AppShellComponent {
   sidebar = inject(SidebarService);
   router = inject(Router);
   isWeTubeRoute = signal(false);
+  isBakeryRoute = signal(false);
 
   constructor() {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       this.isWeTubeRoute.set(event.url.includes('/stream'));
+      this.isBakeryRoute.set(event.url.includes('/bakery'));
     });
     this.isWeTubeRoute.set(this.router.url.includes('/stream'));
+    this.isBakeryRoute.set(this.router.url.includes('/bakery'));
   }
 }
