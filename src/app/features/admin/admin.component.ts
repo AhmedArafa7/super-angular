@@ -8,11 +8,12 @@ import { MarketService, MarketItem } from '../../core/market.service';
 import { LauncherService, WebProject } from '../../core/launcher.service';
 import { ToastService } from '../../core/services/toast.service';
 import { WeTubeModerationComponent } from './components/wetube-moderation/wetube-moderation.component';
+import { BakeryAdminComponent } from './components/bakery-admin.component';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideDynamicIcon, WeTubeModerationComponent],
+  imports: [CommonModule, FormsModule, LucideDynamicIcon, WeTubeModerationComponent, BakeryAdminComponent],
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.scss']
 })
@@ -24,7 +25,7 @@ export class AdminComponent {
   toast = inject(ToastService);
 
   // Active sub-tab state
-  activeTab = signal<'products' | 'categories' | 'ads' | 'apps' | 'users' | 'logs' | 'moderation'>('moderation');
+  activeTab = signal<'products' | 'categories' | 'ads' | 'apps' | 'users' | 'logs' | 'moderation' | 'bakery'>('bakery');
 
   // Input states for feedback
   rejectFeedback = signal<Record<string, string>>({});

@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FirebaseService } from '../../../../core/services/firebase.service';
 import { WeTubeService } from '../../wetube.service';
 import { PipedApiService } from '../../../../core/services/piped-api.service';
+import { ToastService } from '../../../../core/services/toast.service';
+import { doc, updateDoc } from 'firebase/firestore';
 import { LucideAngularModule, LayoutDashboard, Eye, Users, Video, Heart, BarChart3, PlusCircle, Youtube, Link2, CheckCircle2, CloudLightning, Lock } from 'lucide-angular';
 
 @Component({
@@ -15,6 +17,7 @@ import { LucideAngularModule, LayoutDashboard, Eye, Users, Video, Heart, BarChar
 export class WeTubeStudioComponent implements OnInit {
   firebase = inject(FirebaseService);
   wetube = inject(WeTubeService);
+  toast = inject(ToastService);
 
   // Icons
   LayoutDashboard = LayoutDashboard;
@@ -100,23 +103,7 @@ export class WeTubeStudioComponent implements OnInit {
   }
 
   togglePreviewMode() {
-    this.isPreviewMode.update(v => !v);
-    if (this.isPreviewMode()) {
-      this.channelStats.set({
-        viewCount: '125430',
-        subscriberCount: '3240',
-        videoCount: '12',
-        name: 'قناة تجريبية'
-      });
-      this.videos.set([
-        { id: '1', title: 'تجربة التصوير السينمائي', thumbnail: 'assets/placeholder.jpg', publishedAt: Date.now() - 86400000 },
-        { id: '2', title: 'مراجعة الكاميرا الجديدة', thumbnail: 'assets/placeholder.jpg', publishedAt: Date.now() - 172800000 }
-      ]);
-    } else {
-      this.channelStats.set(null);
-      this.videos.set([]);
-      this.checkConnections();
-    }
+    this.toast.show('تم إيقاف وضع المعاينة الوهمي. يرجى ربط حساب يوتيوب حقيقي لمشاهدة الإحصائيات.', 'info');
   }
 
   formatNumber(numStr: string): string {
@@ -131,15 +118,31 @@ export class WeTubeStudioComponent implements OnInit {
     this.wetube.showUploadModal.set(true);
   }
 
-  connectPlatform(platformId: string) {
+  async connectPlatform(platformId: string) {
     if (platformId === 'youtube') {
-      alert('يتم تحويلك إلى صفحة ربط يوتيوب...');
-      // Simulated link success
-      setTimeout(() => {
-        this.connectedPlatforms.update(platforms => 
-          platforms.map(p => p.id === 'youtube' ? { ...p, connected: true } : p)
-        );
-      }, 1000);
+      const user = this.firebase.currentUser();
+      if (!user) {
+        this.toast.show('يجب تسجيل الدخول للربط', 'error');
+        return;
+      }
+      
+      const channelId = prompt('الرجاء إدخال معرف القناة (Channel ID) الخاصة بك على يوتيوب:');
+      if (channelId) {
+        try {
+          const userRef = doc(this.firebase.db, 'users', user.uid);
+          await updateDoc(userRef, {
+            linkedYouTubeChannel: channelId
+          });
+          this.toast.show('تم ربط قناتك بنجاح!', 'success');
+          // Update local state implicitly via checkConnections
+          this.checkConnections();
+        } catch (e) {
+          console.error("Failed to link channel", e);
+          this.toast.show('حدث خطأ أثناء الاتصال بقاعدة البيانات', 'error');
+        }
+      }
+    } else {
+      this.toast.show('الربط بهذه المنصة غير مدعوم حالياً', 'warning');
     }
   }
 }

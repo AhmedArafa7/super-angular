@@ -91,6 +91,14 @@
       سجلات ومراقبة الشبكة
     </button>
 
+    <button 
+      (click)="activeTab.set('bakery')"
+      [ngClass]="activeTab() === 'bakery' ? 'bg-indigo-650 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'"
+      class="h-9 px-4 rounded-xl text-[11px] font-black tracking-wide gap-1.5 flex items-center transition-all flex-row-reverse shrink-0">
+      <svg lucideIcon="croissant" class="size-3.5"></svg>
+      مخبز عباد الرحمن
+    </button>
+
   </div>
 
   <!-- 3. MAIN CONTENTS PANELS -->
@@ -100,6 +108,11 @@
       <!-- ================= TAB: MODERATION ================= -->
       <div *ngIf="activeTab() === 'moderation'">
         <app-wetube-moderation></app-wetube-moderation>
+      </div>
+
+      <!-- ================= TAB: BAKERY ADMIN ================= -->
+      <div *ngIf="activeTab() === 'bakery'" class="h-[calc(100vh-16rem)]">
+        <app-bakery-admin></app-bakery-admin>
       </div>
 
       <!-- ================= TAB: PENDING PRODUCTS ================= -->

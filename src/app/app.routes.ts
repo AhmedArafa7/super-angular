@@ -35,5 +35,10 @@ export const routes: Routes = [
     canActivate: [adminGuard],
     title: 'لوحة الإدارة'
   },
+  {
+    path: 'bakery',
+    loadComponent: () => import('./features/bakery/bakery-home.component').then(c => c.BakeryHomeComponent),
+    title: 'مخبز عباد الرحمن'
+  },
   { path: '**', redirectTo: '/stream' }
 ];
