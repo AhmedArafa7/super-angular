@@ -232,6 +232,8 @@ body {
 
 .text-x { color: #f43f5e; text-shadow: 0 0 10px rgba(244, 63, 94, 0.5); }
 .text-o { color: #38bdf8; text-shadow: 0 0 10px rgba(56, 189, 248, 0.5); }
+.text-a { color: #10b981; text-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
+.text-s { color: #f59e0b; text-shadow: 0 0 10px rgba(245, 158, 11, 0.5); }
 .text-tie { color: #94a3b8; }
 
 .game-info {
@@ -312,7 +314,7 @@ body {
 }
 
 /* Big symbol overlay when a mini board is won */
-.mini-board.won-x::after, .mini-board.won-o::after, .mini-board.tie::after {
+.mini-board.won-x::after, .mini-board.won-o::after, .mini-board.won-a::after, .mini-board.won-s::after, .mini-board.tie::after {
     content: '';
     position: absolute;
     top: 0;
@@ -340,6 +342,18 @@ body {
     content: '⭕';
     color: #38bdf8;
     text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+}
+
+.mini-board.won-a::after {
+    content: '▲';
+    color: #10b981;
+    text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+}
+
+.mini-board.won-s::after {
+    content: '■';
+    color: #f59e0b;
+    text-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
 }
 
 .mini-board.tie::after {

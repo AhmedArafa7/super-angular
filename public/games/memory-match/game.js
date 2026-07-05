@@ -1,13 +1,14 @@
 // UI Elements
 const mainMenu = document.getElementById('main-menu');
 const p2pMenu = document.getElementById('p2p-menu');
+const localSetupMenu = document.getElementById('local-setup-menu');
 const gameScreen = document.getElementById('game-screen');
 const gameOverScreen = document.getElementById('game-over-screen');
 
 const modeBtns = document.querySelectorAll('.mode-btn');
 const createRoomBtn = document.getElementById('create-room-btn');
 const joinRoomBtn = document.getElementById('join-room-btn');
-const backToMenuBtn = document.getElementById('back-to-menu-btn');
+const backBtns = document.querySelectorAll('.back-btn');
 const joinRoomIdInput = document.getElementById('join-room-id');
 const roomIdDisplay = document.getElementById('roomIdDisplay');
 const roomInfo = document.getElementById('room-info');
@@ -15,14 +16,16 @@ const joinError = document.getElementById('join-error');
 const toastEl = document.getElementById('toast');
 
 const gameBoard = document.getElementById('game-board');
-const p1ScoreEl = document.getElementById('p1-score');
-const p2ScoreEl = document.getElementById('p2-score');
-const p1Hud = document.getElementById('p1-hud');
-const p2Hud = document.getElementById('p2-hud');
+const mainHud = document.getElementById('main-hud');
 const turnIndicator = document.getElementById('turn-indicator');
 const timerDisplay = document.getElementById('timer-display');
-const p2StatsBox = document.getElementById('p2-stats-box');
 const diffBtns = document.querySelectorAll('.diff-btn');
+const gameOverStats = document.getElementById('game-over-stats');
+
+const decLocalPlayersBtn = document.getElementById('dec-local-players');
+const incLocalPlayersBtn = document.getElementById('inc-local-players');
+const localPlayersCountDisplay = document.getElementById('local-players-count');
+const startLocalBtn = document.getElementById('start-local-btn');
 
 // Game State
 let activeMode = 'single'; // single, local, p2p-host, p2p-join
@@ -32,12 +35,14 @@ let conn = null;
 let isHost = true;
 let myId = 1;
 
+let numPlayers = 1;
+
 let cards = []; // [{emoji, isFlipped, isMatched, id}]
 const EMOJIS_EASY = ['🐶', '🐱', '🍔', '🍕', '🚀', '🛸', '🎸', '⚽'];
 const EMOJIS_MEDIUM = [...EMOJIS_EASY, '🍓', '🏀', '🚗', '🎈'];
 const EMOJIS_HARD = [...EMOJIS_MEDIUM, '👻', '👾', '💎', '👑'];
 let flippedIndices = [];
-let scores = { 1: 0, 2: 0 };
+let scores = {};
 let currentTurn = 1;
 let isProcessing = false;
 let matchCount = 0;
@@ -61,26 +66,55 @@ diffBtns.forEach(btn => btn.addEventListener('click', e => {
 }));
 
 modeBtns.forEach(btn => btn.addEventListener('click', e => {
-    activeMode = e.target.dataset.mode;
-    if (activeMode === 'p2p') {
+    const mode = e.target.dataset.mode;
+    if (mode === 'p2p') {
         showScreen(p2pMenu);
+    } else if (mode === 'local_setup') {
+        numPlayers = 2;
+        localPlayersCountDisplay.innerText = numPlayers;
+        showScreen(localSetupMenu);
     } else {
+        activeMode = 'single';
         isHost = true;
         myId = 1;
+        numPlayers = 1;
         startGame();
     }
 }));
 
-backToMenuBtn.addEventListener('click', () => {
+// Local Setup Logic
+decLocalPlayersBtn.addEventListener('click', () => {
+    if (numPlayers > 2) {
+        numPlayers--;
+        localPlayersCountDisplay.innerText = numPlayers;
+    }
+});
+
+incLocalPlayersBtn.addEventListener('click', () => {
+    if (numPlayers < 6) {
+        numPlayers++;
+        localPlayersCountDisplay.innerText = numPlayers;
+    }
+});
+
+startLocalBtn.addEventListener('click', () => {
+    activeMode = 'local';
+    isHost = true;
+    myId = 1; // Not strictly used for auth in local, but signifies host device
+    startGame();
+});
+
+backBtns.forEach(btn => btn.addEventListener('click', () => {
     if (peer) peer.destroy();
     showScreen(mainMenu);
-});
+}));
 
 // P2P Logic
 createRoomBtn.addEventListener('click', () => {
     activeMode = 'p2p-host';
     isHost = true;
     myId = 1;
+    numPlayers = 2;
     createRoomBtn.classList.add('hidden');
     roomInfo.classList.remove('hidden');
     
@@ -104,6 +138,7 @@ joinRoomBtn.addEventListener('click', () => {
     activeMode = 'p2p-join';
     isHost = false;
     myId = 2;
+    numPlayers = 2;
     joinRoomBtn.disabled = true;
     joinError.classList.add('hidden');
     
@@ -147,8 +182,33 @@ function broadcast(data) {
 }
 
 // Game Logic
+function buildHUD() {
+    mainHud.innerHTML = '';
+    scores = {};
+    
+    for (let i = 1; i <= numPlayers; i++) {
+        scores[i] = 0;
+        const colorClass = `player-color-${i}`;
+        
+        let label = `اللاعب ${i}`;
+        if (activeMode === 'single') label = "أنت";
+        else if (activeMode === 'p2p-host' && i === 1) label = "أنت";
+        else if (activeMode === 'p2p-join' && i === 2) label = "أنت";
+        
+        const div = document.createElement('div');
+        div.className = `player-hud ${i === 1 ? 'active-turn' : ''} ${colorClass}`;
+        div.id = `hud-p${i}`;
+        div.innerHTML = `
+            <h3>${label}</h3>
+            <div class="score-display">النقاط: <span id="score-p${i}">0</span></div>
+        `;
+        mainHud.appendChild(div);
+    }
+}
+
 function startGame() {
     showScreen(gameScreen);
+    buildHUD();
     resetGameState();
     
     if (isHost) {
@@ -165,6 +225,7 @@ function startGame() {
 
 function startGameClient() {
     showScreen(gameScreen);
+    buildHUD();
     resetGameState();
     renderBoard();
     startTimer();
@@ -172,19 +233,15 @@ function startGameClient() {
 }
 
 function resetGameState() {
-    scores = { 1: 0, 2: 0 };
+    for (let i = 1; i <= numPlayers; i++) {
+        scores[i] = 0;
+    }
     currentTurn = 1;
     flippedIndices = [];
     isProcessing = false;
     matchCount = 0;
     elapsedTime = 0;
     clearInterval(timerInterval);
-    
-    if (activeMode === 'single') {
-        p2Hud.classList.add('hidden');
-    } else {
-        p2Hud.classList.remove('hidden');
-    }
 }
 
 function generateCards() {
@@ -278,7 +335,7 @@ function checkMatch() {
         cards[c1.index].isMatched = true;
         cards[c2.index].isMatched = true;
         
-        // Award points to the player who made the SECOND flip (or first, they should be the same player)
+        // Award points to the player
         scores[c1.playerId]++;
         matchCount++;
         
@@ -304,7 +361,10 @@ function checkMatch() {
             
             // Switch turns
             if (activeMode !== 'single') {
-                currentTurn = currentTurn === 1 ? 2 : 1;
+                currentTurn++;
+                if (currentTurn > numPlayers) {
+                    currentTurn = 1;
+                }
             }
             
             isProcessing = false;
@@ -322,21 +382,28 @@ function updateCardElement(index) {
 }
 
 function updateHUD() {
-    p1ScoreEl.innerText = scores[1];
-    p2ScoreEl.innerText = scores[2];
+    for (let i = 1; i <= numPlayers; i++) {
+        const scoreSpan = document.getElementById(`score-p${i}`);
+        if (scoreSpan) scoreSpan.innerText = scores[i];
+        
+        const hudBox = document.getElementById(`hud-p${i}`);
+        if (hudBox) {
+            if (currentTurn === i) {
+                hudBox.classList.add('active-turn');
+            } else {
+                hudBox.classList.remove('active-turn');
+            }
+        }
+    }
     
     if (activeMode !== 'single') {
-        if (currentTurn === 1) {
-            p1Hud.classList.add('active-turn');
-            p2Hud.classList.remove('active-turn');
-            turnIndicator.innerText = (activeMode.startsWith('p2p') && myId === 1) ? "دورك الآن" : "دور اللاعب 1";
-            turnIndicator.style.color = "#38bdf8";
+        const colors = ['#38bdf8', '#a855f7', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
+        if (activeMode.startsWith('p2p') && currentTurn === myId) {
+            turnIndicator.innerText = "دورك الآن";
         } else {
-            p2Hud.classList.add('active-turn');
-            p1Hud.classList.remove('active-turn');
-            turnIndicator.innerText = (activeMode.startsWith('p2p') && myId === 2) ? "دورك الآن" : "دور اللاعب 2";
-            turnIndicator.style.color = "#a855f7"; // purple
+            turnIndicator.innerText = `دور اللاعب ${currentTurn}`;
         }
+        turnIndicator.style.color = colors[currentTurn - 1];
     } else {
         turnIndicator.innerText = "لعب فردي";
     }
@@ -356,29 +423,61 @@ function endGame() {
     clearInterval(timerInterval);
     showScreen(gameOverScreen);
     
-    document.getElementById('final-score-p1').innerText = scores[1];
+    gameOverStats.innerHTML = '';
     
     let m = Math.floor(elapsedTime / 60).toString().padStart(2, '0');
     let s = (elapsedTime % 60).toString().padStart(2, '0');
     document.getElementById('final-time').innerText = `${m}:${s}`;
     
     if (activeMode === 'single') {
-        p2StatsBox.classList.add('hidden');
         document.getElementById('game-over-title').innerText = "تم إكمال اللوحة!";
+        
+        gameOverStats.innerHTML = `
+            <div class="stat-box">
+                <span class="stat-label">نقاطك:</span>
+                <span class="stat-value">${scores[1]}</span>
+            </div>
+        `;
     } else {
-        p2StatsBox.classList.remove('hidden');
-        document.getElementById('final-score-p2').innerText = scores[2];
+        // Find winner(s)
+        let maxScore = -1;
+        let winners = [];
+        
+        for (let i = 1; i <= numPlayers; i++) {
+            const sc = scores[i];
+            if (sc > maxScore) {
+                maxScore = sc;
+                winners = [i];
+            } else if (sc === maxScore) {
+                winners.push(i);
+            }
+            
+            // Append stat box
+            let label = `نقاط اللاعب ${i}:`;
+            if (activeMode.startsWith('p2p') && i === myId) label = "نقاطك:";
+            
+            gameOverStats.innerHTML += `
+                <div class="stat-box player-color-${i}" style="color: inherit; border-color: inherit;">
+                    <span class="stat-label">${label}</span>
+                    <span class="stat-value">${sc}</span>
+                </div>
+            `;
+        }
         
         let title = document.getElementById('game-over-title');
-        if (scores[1] > scores[2]) {
-            title.innerText = (myId === 1) ? "لقد فزت! 🎉" : "فاز اللاعب 1!";
-            title.style.color = "#38bdf8";
-        } else if (scores[2] > scores[1]) {
-            title.innerText = (myId === 2) ? "لقد فزت! 🎉" : "فاز اللاعب 2!";
-            title.style.color = "#a855f7";
-        } else {
+        
+        if (winners.length > 1) {
             title.innerText = "تعادل! 🤝";
             title.style.color = "#facc15";
+        } else {
+            const winner = winners[0];
+            if (activeMode.startsWith('p2p') && winner === myId) {
+                title.innerText = "لقد فزت! 🎉";
+            } else {
+                title.innerText = `فاز اللاعب ${winner}! 🏆`;
+            }
+            const colors = ['#38bdf8', '#a855f7', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
+            title.style.color = colors[winner - 1];
         }
     }
 }

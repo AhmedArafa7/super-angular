@@ -1,5 +1,6 @@
 // UI Elements
 const mainMenu = document.getElementById('main-menu');
+const localSetupMenu = document.getElementById('local-setup-menu');
 const p2pMenu = document.getElementById('p2p-menu');
 const gameScreen = document.getElementById('game-screen');
 const gameOverScreen = document.getElementById('game-over-screen');
@@ -14,9 +15,14 @@ const roomInfo = document.getElementById('room-info');
 const joinError = document.getElementById('join-error');
 const toastEl = document.getElementById('toast');
 
+const decLocalPlayersBtn = document.getElementById('dec-local-players');
+const incLocalPlayersBtn = document.getElementById('inc-local-players');
+const localPlayersCountDisplay = document.getElementById('local-players-count');
+const startLocalBtn = document.getElementById('start-local-btn');
+const backFromLocalBtn = document.getElementById('back-from-local-btn');
+
 const superBoardEl = document.getElementById('super-board');
-const p1Hud = document.getElementById('p1-hud');
-const p2Hud = document.getElementById('p2-hud');
+const mainHud = document.getElementById('main-hud');
 const turnIndicator = document.getElementById('turn-indicator');
 
 // Game State
@@ -26,23 +32,57 @@ let conn = null;
 let isHost = true;
 let myPlayerSymbol = 'X'; // Host is X, Join is O
 
-let superBoardState = Array(9).fill(null); // 'X', 'O', 'T'
+let numPlayers = 2;
+const PLAYERS = [
+    { symbol: 'X', display: '✖', textClass: 'text-x' },
+    { symbol: 'O', display: '⭕', textClass: 'text-o' },
+    { symbol: 'A', display: '▲', textClass: 'text-a' },
+    { symbol: 'S', display: '■', textClass: 'text-s' }
+];
+
+let superBoardState = Array(9).fill(null); 
 let miniBoardsState = Array(9).fill(null).map(() => Array(9).fill(null));
-let currentTurn = 'X';
+let currentTurnIdx = 0;
 let activeMiniBoard = -1; // -1 means any board
 let isGameOver = false;
 
 // Initialize
 modeBtns.forEach(btn => btn.addEventListener('click', e => {
-    activeMode = e.target.dataset.mode;
-    if (activeMode === 'p2p') {
+    const mode = e.target.dataset.mode;
+    if (mode === 'p2p') {
         showScreen(p2pMenu);
-    } else {
-        isHost = true;
-        myPlayerSymbol = 'X';
-        startGame();
+    } else if (mode === 'local_setup') {
+        numPlayers = 2;
+        localPlayersCountDisplay.innerText = numPlayers;
+        showScreen(localSetupMenu);
     }
 }));
+
+// Local Setup Logic
+decLocalPlayersBtn.addEventListener('click', () => {
+    if (numPlayers > 2) {
+        numPlayers--;
+        localPlayersCountDisplay.innerText = numPlayers;
+    }
+});
+
+incLocalPlayersBtn.addEventListener('click', () => {
+    if (numPlayers < 4) {
+        numPlayers++;
+        localPlayersCountDisplay.innerText = numPlayers;
+    }
+});
+
+startLocalBtn.addEventListener('click', () => {
+    activeMode = 'local';
+    isHost = true;
+    myPlayerSymbol = 'X'; 
+    startGame();
+});
+
+backFromLocalBtn.addEventListener('click', () => {
+    showScreen(mainMenu);
+});
 
 backToMenuBtn.addEventListener('click', () => {
     if (peer) peer.destroy();
@@ -54,6 +94,7 @@ createRoomBtn.addEventListener('click', () => {
     activeMode = 'p2p-host';
     isHost = true;
     myPlayerSymbol = 'X';
+    numPlayers = 2;
     createRoomBtn.classList.add('hidden');
     roomInfo.classList.remove('hidden');
     
@@ -77,6 +118,7 @@ joinRoomBtn.addEventListener('click', () => {
     activeMode = 'p2p-join';
     isHost = false;
     myPlayerSymbol = 'O';
+    numPlayers = 2;
     joinRoomBtn.disabled = true;
     joinError.classList.add('hidden');
     
@@ -120,8 +162,29 @@ function broadcast(data) {
 }
 
 // Game Logic
+function buildHUD() {
+    mainHud.innerHTML = '';
+    
+    for (let i = 0; i < numPlayers; i++) {
+        const p = PLAYERS[i];
+        
+        let label = `اللاعب ${i+1}`;
+        if (activeMode.startsWith('p2p') && p.symbol === myPlayerSymbol) label += " (أنت)";
+        
+        const div = document.createElement('div');
+        div.className = `player-hud ${i === 0 ? 'active-turn' : ''}`;
+        div.id = `hud-p${i}`;
+        div.innerHTML = `
+            <h3>${label}</h3>
+            <div class="player-symbol ${p.textClass}">${p.display}</div>
+        `;
+        mainHud.appendChild(div);
+    }
+}
+
 function startGame() {
     showScreen(gameScreen);
+    buildHUD();
     resetGameState();
     renderBoard();
     updateHUD();
@@ -133,6 +196,7 @@ function startGame() {
 
 function startGameClient() {
     showScreen(gameScreen);
+    buildHUD();
     resetGameState();
     renderBoard();
     updateHUD();
@@ -141,7 +205,7 @@ function startGameClient() {
 function resetGameState() {
     superBoardState = Array(9).fill(null);
     miniBoardsState = Array(9).fill(null).map(() => Array(9).fill(null));
-    currentTurn = 'X';
+    currentTurnIdx = 0;
     activeMiniBoard = -1;
     isGameOver = false;
 }
@@ -175,8 +239,10 @@ function renderBoard() {
 function onCellClick(boardIdx, cellIdx) {
     if (isGameOver) return;
     
+    const currSym = PLAYERS[currentTurnIdx].symbol;
+    
     // In P2P, check if it's my turn
-    if ((activeMode === 'p2p-host' || activeMode === 'p2p-join') && currentTurn !== myPlayerSymbol) {
+    if ((activeMode === 'p2p-host' || activeMode === 'p2p-join') && currSym !== myPlayerSymbol) {
         return;
     }
     
@@ -191,14 +257,15 @@ function handleMove(boardIdx, cellIdx, shouldBroadcast) {
     if (miniBoardsState[boardIdx][cellIdx] !== null) return; // Cell already taken
     if (activeMiniBoard !== -1 && activeMiniBoard !== boardIdx) return; // Must play in active board
     
+    const p = PLAYERS[currentTurnIdx];
+    
     // Make Move
-    miniBoardsState[boardIdx][cellIdx] = currentTurn;
+    miniBoardsState[boardIdx][cellIdx] = p.symbol;
     
     const cellEl = document.getElementById(`cell-${boardIdx}-${cellIdx}`);
-    cellEl.innerText = currentTurn === 'X' ? '✖' : '⭕';
+    cellEl.innerText = p.display;
     cellEl.classList.add('taken');
-    if (currentTurn === 'X') cellEl.classList.add('text-x');
-    else cellEl.classList.add('text-o');
+    cellEl.classList.add(p.textClass);
     
     if (shouldBroadcast && (activeMode === 'p2p-host' || activeMode === 'p2p-join')) {
         broadcast({ type: 'move', boardIdx, cellIdx });
@@ -207,7 +274,7 @@ function handleMove(boardIdx, cellIdx, shouldBroadcast) {
     // Check Mini Board Win
     const miniWin = checkWin(miniBoardsState[boardIdx]);
     if (miniWin) {
-        superBoardState[boardIdx] = miniWin; // 'X', 'O', or 'T' (Tie)
+        superBoardState[boardIdx] = miniWin; // 'X', 'O', 'A', 'S', or 'T' (Tie)
     } else {
         // Check tie
         if (!miniBoardsState[boardIdx].includes(null)) {
@@ -224,7 +291,7 @@ function handleMove(boardIdx, cellIdx, shouldBroadcast) {
     }
     
     // Switch Turn
-    currentTurn = currentTurn === 'X' ? 'O' : 'X';
+    currentTurnIdx = (currentTurnIdx + 1) % numPlayers;
     
     updateBoardVisuals();
     updateHUD();
@@ -243,11 +310,13 @@ function updateBoardVisuals() {
         const mbEl = document.getElementById(`mb-${i}`);
         
         // Remove classes
-        mbEl.classList.remove('active-board', 'disabled-board', 'won-x', 'won-o', 'tie');
+        mbEl.classList.remove('active-board', 'disabled-board', 'won-x', 'won-o', 'won-a', 'won-s', 'tie');
         
         // Win overlay
         if (superBoardState[i] === 'X') mbEl.classList.add('won-x');
         else if (superBoardState[i] === 'O') mbEl.classList.add('won-o');
+        else if (superBoardState[i] === 'A') mbEl.classList.add('won-a');
+        else if (superBoardState[i] === 'S') mbEl.classList.add('won-s');
         else if (superBoardState[i] === 'T') mbEl.classList.add('tie');
         
         // Active/Disabled
@@ -280,24 +349,30 @@ function checkWin(board) {
 }
 
 function updateHUD() {
-    if (currentTurn === 'X') {
-        p1Hud.classList.add('active-turn');
-        p2Hud.classList.remove('active-turn');
-        turnIndicator.innerText = "دور اللاعب 1 (✖)";
-        turnIndicator.className = "turn-indicator text-x";
-    } else {
-        p2Hud.classList.add('active-turn');
-        p1Hud.classList.remove('active-turn');
-        turnIndicator.innerText = "دور اللاعب 2 (⭕)";
-        turnIndicator.className = "turn-indicator text-o";
-    }
-    
-    // In P2P, show if it's MY turn explicitly
-    if (activeMode.startsWith('p2p')) {
-        if (currentTurn === myPlayerSymbol) {
-            turnIndicator.innerText = "دورك الآن (" + (myPlayerSymbol === 'X' ? '✖' : '⭕') + ")";
+    for (let i = 0; i < numPlayers; i++) {
+        const hudBox = document.getElementById(`hud-p${i}`);
+        if (hudBox) {
+            if (currentTurnIdx === i) {
+                hudBox.classList.add('active-turn');
+            } else {
+                hudBox.classList.remove('active-turn');
+            }
         }
     }
+    
+    const p = PLAYERS[currentTurnIdx];
+    
+    if (activeMode.startsWith('p2p')) {
+        if (p.symbol === myPlayerSymbol) {
+            turnIndicator.innerText = `دورك الآن (${p.display})`;
+        } else {
+            turnIndicator.innerText = `دور اللاعب ${currentTurnIdx + 1} (${p.display})`;
+        }
+    } else {
+        turnIndicator.innerText = `دور اللاعب ${currentTurnIdx + 1} (${p.display})`;
+    }
+    
+    turnIndicator.className = `turn-indicator ${p.textClass}`;
 }
 
 function endGame(winner) {
@@ -312,14 +387,17 @@ function endGame(winner) {
             titleEl.innerText = "النتيجة: تعادل!";
             titleEl.className = "glow-text text-tie";
         } else {
+            const pIndex = PLAYERS.findIndex(p => p.symbol === winner);
+            const p = PLAYERS[pIndex];
+            
             let winText = "";
             if (activeMode === 'local') {
-                winText = winner === 'X' ? "اللاعب 1 (✖) يفوز!" : "اللاعب 2 (⭕) يفوز!";
+                winText = `اللاعب ${pIndex + 1} (${p.display}) يفوز! 🎉`;
             } else {
                 winText = winner === myPlayerSymbol ? "لقد فزت! 🎉" : "لقد خسرت.. 😔";
             }
             titleEl.innerText = winText;
-            titleEl.className = `glow-text ${winner === 'X' ? 'text-x' : 'text-o'}`;
+            titleEl.className = `glow-text ${p.textClass}`;
         }
     }, 1000);
 }
