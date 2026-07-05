@@ -1,0 +1,601 @@
+// Elements
+function $(id) { return document.getElementById(id); }
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    $(id).classList.add('active');
+}
+
+// Variables
+let myPeer = null;
+let myId = null;
+let myName = '';
+let myRole = ''; // 'blind', 'deaf', 'mute'
+let isHost = false;
+let hostConn = null;
+let guestConns = {}; // { peerId: DataConnection }
+let myStream = null;
+
+let gameState = {
+    phase: 'lobby', // lobby, roles, playing, game-over
+    players: [], // { id, name, role }
+    timeRemaining: 300,
+    strikes: 0,
+    maxStrikes: 3,
+    resultMsg: '',
+    modules: [],
+    recentGesture: ''
+};
+
+let timerInterval = null;
+let audioElements = [];
+
+// --- Init & Lobby ---
+$('host-btn').onclick = () => {
+    myName = $('player-name').value.trim() || 'المضيف';
+    isHost = true;
+    $('host-btn').disabled = true;
+    $('host-btn').innerText = 'جاري الإنشاء...';
+    
+    myPeer = new Peer();
+    myPeer.on('open', id => {
+        myId = id;
+        gameState.players.push({ id: myId, name: myName, role: '' });
+        showScreen('room-screen');
+        $('room-id-box').classList.remove('hidden');
+        $('room-id-display').innerText = id;
+        updateLobbyUI();
+    });
+    
+    myPeer.on('connection', conn => {
+        if (gameState.phase !== 'lobby' && gameState.phase !== 'roles') {
+            conn.close();
+            return;
+        }
+        conn.on('data', data => handleClientData(conn.peer, data));
+        conn.on('open', () => {
+            guestConns[conn.peer] = conn;
+        });
+        conn.on('close', () => {
+            delete guestConns[conn.peer];
+            gameState.players = gameState.players.filter(p => p.id !== conn.peer);
+            broadcastState();
+        });
+    });
+    
+    setupMediaCalls();
+};
+
+$('join-btn').onclick = () => {
+    const hostId = $('join-id').value.trim();
+    myName = $('player-name').value.trim() || 'لاعب';
+    if (!hostId) return;
+    
+    $('join-btn').disabled = true;
+    $('join-btn').innerText = 'جاري الانضمام...';
+    
+    myPeer = new Peer();
+    myPeer.on('open', id => {
+        myId = id;
+        hostConn = myPeer.connect(hostId);
+        hostConn.on('open', () => {
+            showScreen('room-screen');
+            hostConn.send({ type: 'JOIN', name: myName, id: myId });
+        });
+        hostConn.on('data', data => {
+            if (data.type === 'STATE_UPDATE') {
+                gameState = data.state;
+                updateLobbyUI();
+                checkPhaseChange();
+            }
+        });
+        hostConn.on('error', () => alert('خطأ في الاتصال بالمضيف'));
+    });
+    
+    setupMediaCalls();
+};
+
+function setupMediaCalls() {
+    myPeer.on('call', call => {
+        call.on('stream', remoteStream => {
+            addAudioStream(remoteStream);
+        });
+        if (myStream) {
+            call.answer(myStream);
+        } else {
+            call.answer();
+        }
+    });
+}
+
+function broadcastState() {
+    if (!isHost) return;
+    Object.values(guestConns).forEach(conn => {
+        conn.send({ type: 'STATE_UPDATE', state: gameState });
+    });
+    updateLobbyUI();
+    checkPhaseChange();
+}
+
+function handleClientData(peerId, data) {
+    if (data.type === 'JOIN') {
+        if (gameState.players.length >= 3) return; // Room full
+        gameState.players.push({ id: data.id, name: data.name, role: '' });
+        if (gameState.players.length === 3) {
+            gameState.phase = 'roles';
+        }
+        broadcastState();
+    }
+    if (data.type === 'SELECT_ROLE') {
+        const p = gameState.players.find(x => x.id === peerId);
+        if (p) p.role = data.role;
+        broadcastState();
+    }
+    if (data.type === 'ACTION') {
+        handleGameAction(peerId, data.action);
+    }
+}
+
+// --- Lobby UI & Roles ---
+function updateLobbyUI() {
+    if (gameState.phase !== 'lobby' && gameState.phase !== 'roles') return;
+    
+    const list = $('players-list');
+    list.innerHTML = '';
+    gameState.players.forEach(p => {
+        const li = document.createElement('li');
+        li.innerText = `${p.name} ${p.id === myId ? '(أنت)' : ''}`;
+        list.appendChild(li);
+    });
+    
+    if (gameState.phase === 'roles') {
+        $('blind-select').disabled = false;
+        $('deaf-select').disabled = false;
+        $('mute-select').disabled = false;
+        
+        // Update selects
+        ['blind', 'deaf', 'mute'].forEach(role => {
+            const select = $(`${role}-select`);
+            select.innerHTML = '<option value="">-- لم يحدد --</option>';
+            gameState.players.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.innerText = p.name;
+                if (p.role === role) opt.selected = true;
+                select.appendChild(opt);
+            });
+            // Host handles role logic, guests just send requests
+            select.onchange = (e) => {
+                if (isHost) {
+                    // Remove this role from anyone else
+                    gameState.players.forEach(p => { if(p.role === role) p.role = ''; });
+                    const p = gameState.players.find(x => x.id === e.target.value);
+                    if (p) p.role = role;
+                    broadcastState();
+                } else {
+                    hostConn.send({ type: 'SELECT_ROLE', role: role, id: e.target.value });
+                    // Revert UI until host confirms
+                    e.target.value = '';
+                }
+            };
+        });
+        
+        if (isHost) {
+            const hasBlind = gameState.players.find(p => p.role === 'blind');
+            const hasDeaf = gameState.players.find(p => p.role === 'deaf');
+            const hasMute = gameState.players.find(p => p.role === 'mute');
+            
+            if (hasBlind && hasDeaf && hasMute) {
+                $('start-game-btn').disabled = false;
+                $('start-game-btn').classList.remove('hidden');
+            } else {
+                $('start-game-btn').disabled = true;
+            }
+        } else {
+            $('waiting-msg').classList.remove('hidden');
+        }
+    }
+}
+
+$('start-game-btn').onclick = () => {
+    if (!isHost) return;
+    generateBomb();
+    gameState.phase = 'playing';
+    broadcastState();
+    startAudioNetworking();
+};
+
+function checkPhaseChange() {
+    if (gameState.phase === 'playing') {
+        const me = gameState.players.find(p => p.id === myId);
+        myRole = me ? me.role : '';
+        
+        if (!isHost && myStream === null && myRole !== '') { // guest needs to connect audio
+            startAudioNetworking();
+        }
+        
+        renderGameUI();
+    } else if (gameState.phase === 'game-over') {
+        showScreen('game-over-screen');
+        $('end-title').innerText = gameState.resultMsg === 'win' ? 'تم التفكيك بنجاح! 🎉' : 'انفجرت القنبلة! 💥';
+        $('end-title').className = gameState.resultMsg === 'win' ? 'end-title win' : 'end-title danger-text';
+        if(isHost && parent) parent.postMessage({ type: 'ARCADE_GAME_OVER', winner: gameState.resultMsg === 'win' ? 'Victory' : 'Defeat', gameId: 'three-monkeys' }, '*');
+    }
+}
+
+// --- Audio Networking ---
+async function startAudioNetworking() {
+    if (myRole === 'mute') {
+        // Mute monkey doesn't speak. Just receives.
+        callOthers();
+        return;
+    }
+    
+    try {
+        myStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        callOthers();
+    } catch(e) {
+        console.error('Failed to access mic', e);
+        alert('حدث خطأ في الوصول للميكروفون. يرجى السماح به للعب.');
+    }
+}
+
+function callOthers() {
+    gameState.players.forEach(p => {
+        if (p.id !== myId) {
+            const call = myPeer.call(p.id, myStream);
+            if (call) {
+                call.on('stream', remoteStream => {
+                    addAudioStream(remoteStream);
+                });
+            }
+        }
+    });
+}
+
+function addAudioStream(stream) {
+    // Avoid duplicate tracks
+    if (audioElements.find(a => a.srcObject && a.srcObject.id === stream.id)) return;
+    
+    const audioEl = document.createElement('audio');
+    audioEl.srcObject = stream;
+    audioEl.autoplay = true;
+    
+    // IF I AM DEAF, I DO NOT HEAR ANYTHING!
+    if (myRole === 'deaf') {
+        audioEl.muted = true;
+        audioEl.volume = 0;
+    }
+    
+    $('audio-elements').appendChild(audioEl);
+    audioElements.push(audioEl);
+}
+
+// --- Game Logic ---
+function generateBomb() {
+    gameState.timeRemaining = 300;
+    gameState.strikes = 0;
+    gameState.resultMsg = '';
+    
+    // Module 1: Wires
+    const colors = ['red', 'blue', 'yellow', 'green', 'black'];
+    const numWires = Math.floor(Math.random() * 3) + 3; // 3 to 5
+    let wires = [];
+    for(let i=0; i<numWires; i++) wires.push(colors[Math.floor(Math.random() * colors.length)]);
+    
+    let wSol = 0;
+    if (numWires === 3) {
+        if (!wires.includes('red')) wSol = 1; // second
+        else if (wires[2] === 'blue') wSol = 0; // first
+        else wSol = 2; // last
+    } else if (numWires === 4) {
+        if (wires[0] === 'yellow') wSol = 0;
+        else wSol = 2; // third
+    } else {
+        if (wires[4] === 'black') wSol = 3; // fourth
+        else wSol = 1; // second
+    }
+    
+    // Module 2: Numbers
+    let number = Math.floor(Math.random() * 90) + 10;
+    let nSol = '';
+    if (number % 2 === 0) nSol = '<';
+    else nSol = '>';
+    
+    // Module 3: Keypad
+    let buttons = ['red', 'blue', 'yellow', 'green'];
+    buttons.sort(() => 0.5 - Math.random());
+    let sequence = [];
+    if (buttons[1] === 'red') { // Top Right is index 1
+        sequence = ['red', 'blue', 'yellow', 'green'];
+    } else {
+        sequence = ['green', 'yellow', 'blue', 'red'];
+    }
+    
+    gameState.modules = [
+        { type: 'wires', id: 0, wires: wires, cutIndex: -1, defused: false, solutionIndex: wSol },
+        { type: 'numbers', id: 1, number: number, pressed: null, defused: false, solutionBtn: nSol },
+        { type: 'keypad', id: 2, buttons: buttons, pressedSequence: [], defused: false, solutionSeq: sequence }
+    ];
+    
+    startTimer();
+}
+
+function startTimer() {
+    timerInterval = setInterval(() => {
+        gameState.timeRemaining--;
+        if (gameState.timeRemaining <= 0) {
+            triggerGameOver('lose');
+        }
+        broadcastState();
+    }, 1000);
+}
+
+function triggerGameOver(result) {
+    if (timerInterval) clearInterval(timerInterval);
+    gameState.phase = 'game-over';
+    gameState.resultMsg = result;
+    broadcastState();
+}
+
+function handleGameAction(peerId, action) {
+    if (!isHost || gameState.phase !== 'playing') return;
+    
+    if (action.type === 'GESTURE') {
+        gameState.recentGesture = action.value;
+        broadcastState();
+        // clear gesture after 3 secs
+        setTimeout(() => {
+            if (gameState.recentGesture === action.value) {
+                gameState.recentGesture = '';
+                broadcastState();
+            }
+        }, 3000);
+    }
+    
+    if (action.type === 'CUT_WIRE') {
+        let mod = gameState.modules[0];
+        if (mod.defused) return;
+        mod.cutIndex = action.index;
+        if (action.index === mod.solutionIndex) {
+            mod.defused = true;
+            checkWin();
+        } else {
+            addStrike();
+        }
+        broadcastState();
+    }
+    
+    if (action.type === 'PRESS_NUM') {
+        let mod = gameState.modules[1];
+        if (mod.defused) return;
+        mod.pressed = action.value;
+        if (action.value === mod.solutionBtn) {
+            mod.defused = true;
+            checkWin();
+        } else {
+            addStrike();
+            mod.pressed = null; // reset to try again
+        }
+        broadcastState();
+    }
+    
+    if (action.type === 'PRESS_KEY') {
+        let mod = gameState.modules[2];
+        if (mod.defused) return;
+        
+        let expectedColor = mod.solutionSeq[mod.pressedSequence.length];
+        if (action.color === expectedColor) {
+            mod.pressedSequence.push(action.color);
+            if (mod.pressedSequence.length === mod.solutionSeq.length) {
+                mod.defused = true;
+                checkWin();
+            }
+        } else {
+            addStrike();
+            mod.pressedSequence = []; // reset
+        }
+        broadcastState();
+    }
+}
+
+function addStrike() {
+    gameState.strikes++;
+    if (gameState.strikes >= gameState.maxStrikes) {
+        triggerGameOver('lose');
+    }
+}
+
+function checkWin() {
+    let allDefused = gameState.modules.every(m => m.defused);
+    if (allDefused) {
+        triggerGameOver('win');
+    }
+}
+
+function sendAction(action) {
+    if (isHost) handleGameAction(myId, action);
+    else hostConn.send({ type: 'ACTION', action: action });
+}
+
+// --- Rendering ---
+function renderGameUI() {
+    showScreen('game-screen');
+    
+    // Header
+    let m = Math.floor(gameState.timeRemaining / 60).toString().padStart(2, '0');
+    let s = (gameState.timeRemaining % 60).toString().padStart(2, '0');
+    $('timer-display').innerText = `${m}:${s}`;
+    
+    let str = '';
+    for(let i=0; i<gameState.strikes; i++) str += '❌';
+    $('strikes-display').innerText = str;
+    
+    // Hide all views, show mine
+    $('blind-view').classList.add('hidden');
+    $('deaf-view').classList.add('hidden');
+    $('mute-view').classList.add('hidden');
+    
+    if (myRole === 'blind') {
+        $('blind-view').classList.remove('hidden');
+        renderBlindBomb();
+    } else if (myRole === 'deaf') {
+        $('deaf-view').classList.remove('hidden');
+        renderDeafBomb();
+        $('received-gesture').innerText = gameState.recentGesture || '...';
+    } else if (myRole === 'mute') {
+        $('mute-view').classList.remove('hidden');
+        setupMuteGestures();
+    }
+}
+
+function renderBlindBomb() {
+    const container = $('blind-bomb');
+    container.innerHTML = '';
+    
+    gameState.modules.forEach((mod, i) => {
+        let modDiv = document.createElement('div');
+        modDiv.className = 'blind-module';
+        // Position them manually on the "bomb"
+        if (i === 0) { modDiv.style.top = '20px'; modDiv.style.left = '20px'; modDiv.style.width = '150px'; modDiv.style.height = '120px'; }
+        if (i === 1) { modDiv.style.top = '160px'; modDiv.style.left = '20px'; modDiv.style.width = '150px'; modDiv.style.height = '120px'; }
+        if (i === 2) { modDiv.style.top = '20px'; modDiv.style.left = '180px'; modDiv.style.width = '150px'; modDiv.style.height = '150px'; }
+        
+        if (mod.defused) {
+            modDiv.style.opacity = '0.2';
+            modDiv.style.pointerEvents = 'none';
+        }
+        
+        if (mod.type === 'wires') {
+            mod.wires.forEach((w, wIdx) => {
+                let wHit = document.createElement('div');
+                wHit.className = 'blind-item wire-hitbox';
+                wHit.style.top = `${wIdx * 25 + 10}px`;
+                wHit.onclick = () => sendAction({ type: 'CUT_WIRE', index: wIdx });
+                if (mod.cutIndex === wIdx) wHit.style.display = 'none';
+                modDiv.appendChild(wHit);
+            });
+        }
+        
+        if (mod.type === 'numbers') {
+            let leftBtn = document.createElement('div');
+            leftBtn.className = 'blind-item btn-hitbox';
+            leftBtn.style.top = '60px'; leftBtn.style.left = '10px'; leftBtn.style.width = '60px'; leftBtn.style.height = '50px';
+            leftBtn.onclick = () => sendAction({ type: 'PRESS_NUM', value: '<' });
+            
+            let rightBtn = document.createElement('div');
+            rightBtn.className = 'blind-item btn-hitbox';
+            rightBtn.style.top = '60px'; rightBtn.style.right = '10px'; rightBtn.style.width = '60px'; rightBtn.style.height = '50px';
+            rightBtn.onclick = () => sendAction({ type: 'PRESS_NUM', value: '>' });
+            
+            modDiv.appendChild(leftBtn);
+            modDiv.appendChild(rightBtn);
+        }
+        
+        if (mod.type === 'keypad') {
+            mod.buttons.forEach((b, bIdx) => {
+                let btnHit = document.createElement('div');
+                btnHit.className = 'blind-item btn-hitbox';
+                let col = bIdx % 2; let row = Math.floor(bIdx / 2);
+                btnHit.style.top = `${row * 65 + 10}px`;
+                btnHit.style.left = `${col * 65 + 10}px`;
+                btnHit.style.width = '60px'; btnHit.style.height = '60px';
+                btnHit.onclick = () => sendAction({ type: 'PRESS_KEY', color: b });
+                
+                if (mod.pressedSequence.includes(b)) {
+                    btnHit.style.opacity = '0.2';
+                    btnHit.style.pointerEvents = 'none';
+                }
+                modDiv.appendChild(btnHit);
+            });
+        }
+        
+        container.appendChild(modDiv);
+    });
+}
+
+const colorMap = {
+    'red': '#ef4444',
+    'blue': '#3b82f6',
+    'yellow': '#eab308',
+    'green': '#22c55e',
+    'black': '#1f2937'
+};
+
+function renderDeafBomb() {
+    const container = $('deaf-bomb');
+    container.innerHTML = '';
+    
+    gameState.modules.forEach((mod, i) => {
+        let modDiv = document.createElement('div');
+        modDiv.className = 'module';
+        // Same layout as blind bomb
+        if (i === 0) { modDiv.style.top = '20px'; modDiv.style.left = '20px'; modDiv.style.width = '150px'; modDiv.style.height = '120px'; }
+        if (i === 1) { modDiv.style.top = '160px'; modDiv.style.left = '20px'; modDiv.style.width = '150px'; modDiv.style.height = '120px'; }
+        if (i === 2) { modDiv.style.top = '20px'; modDiv.style.left = '180px'; modDiv.style.width = '150px'; modDiv.style.height = '150px'; }
+        
+        if (mod.defused) {
+            modDiv.style.borderColor = '#10b981';
+            let check = document.createElement('div');
+            check.innerText = '✅';
+            check.style.position = 'absolute'; check.style.right = '5px'; check.style.top = '5px';
+            modDiv.appendChild(check);
+        }
+        
+        if (mod.type === 'wires') {
+            mod.wires.forEach((w, wIdx) => {
+                let wireDiv = document.createElement('div');
+                wireDiv.className = 'wire';
+                if (mod.cutIndex === wIdx) wireDiv.classList.add('cut');
+                wireDiv.style.backgroundColor = colorMap[w];
+                modDiv.appendChild(wireDiv);
+            });
+        }
+        
+        if (mod.type === 'numbers') {
+            let numD = document.createElement('div');
+            numD.className = 'num-display';
+            numD.innerText = mod.number;
+            modDiv.appendChild(numD);
+            
+            let btnC = document.createElement('div');
+            btnC.className = 'num-btn-container';
+            btnC.innerHTML = `<button class="num-btn"><</button><button class="num-btn">></button>`;
+            modDiv.appendChild(btnC);
+        }
+        
+        if (mod.type === 'keypad') {
+            let grid = document.createElement('div');
+            grid.className = 'keypad-grid';
+            mod.buttons.forEach((b, bIdx) => {
+                let btn = document.createElement('button');
+                btn.className = 'keypad-btn';
+                btn.style.backgroundColor = colorMap[b];
+                if (mod.pressedSequence.includes(b)) btn.classList.add('pressed');
+                grid.appendChild(btn);
+            });
+            modDiv.appendChild(grid);
+        }
+        
+        container.appendChild(modDiv);
+    });
+}
+
+function setupMuteGestures() {
+    if (window.muteGesturesSetup) return; // run once
+    window.muteGesturesSetup = true;
+    
+    document.querySelectorAll('.btn-gesture').forEach(btn => {
+        btn.onclick = () => {
+            const gesture = btn.getAttribute('data-g');
+            sendAction({ type: 'GESTURE', value: gesture });
+            
+            // Add tiny animation to self
+            btn.style.transform = 'scale(1.2)';
+            setTimeout(() => { btn.style.transform = 'scale(1)'; }, 200);
+        };
+    });
+}
+
+// Initial
+showScreen('lobby-screen');
+if (window.parent) window.parent.postMessage({ type: 'ARCADE_GAME_START', gameId: 'three-monkeys' }, '*');

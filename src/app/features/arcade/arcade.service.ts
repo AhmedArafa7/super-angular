@@ -20,6 +20,16 @@ export class ArcadeService {
   // Local Mock Data representing games until Firebase is integrated
     private games: ArcadeGame[] = [
     {
+      id: 'three-monkeys',
+      title: 'القردة الثلاثة 🙈🙉🙊',
+      description: 'لعبة تفكيك قنابل تعاونية لـ 3 لاعبين. يتواصل الأعمى والأصم والأبكم لتفكيك القنبلة قبل انتهاء الوقت المتبقي! تتطلب استخدام الميكروفون.',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%23111827%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22300%22%20font-size%3D%22120%22%20text-anchor%3D%22middle%22%3E%F0%9F%99%88%F0%9F%99%89%F0%9F%99%8A%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22400%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fbbf24%22%20text-anchor%3D%22middle%22%3ETHE%20THREE%20MONKEYS%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'Co-op',
+      platforms: ['browser', 'pc'],
+      localUrl: '/games/three-monkeys/index.html',
+      status: 'available'
+    },
+    {
       id: 'tank-battle',
       title: 'Tank Battle Classic',
       description: 'لعبة حرب الدبابات الشهيرة. يمكنك اللعب مع أصدقائك في نفس الشاشة أو اللعب ضد الذكاء الاصطناعي في معارك طاحنة.',
