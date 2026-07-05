@@ -45,3 +45,65 @@ code { display: block; background: #111; padding: 10px; font-size: 1.5rem; font-
     50% { opacity: 1; }
     100% { opacity: 0.5; }
 }
+
+/* --- Mobile Controls --- */
+#mobile-controls {
+    display: none; /* Shown via JS if touch detected */
+    width: 100%;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 20px;
+    margin-top: 10px;
+}
+
+#mobile-controls.visible {
+    display: flex !important;
+}
+
+.dpad {
+    position: relative;
+    width: 150px;
+    height: 150px;
+}
+
+.dpad-btn {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 202, 40, 0.5);
+    border: 2px solid #ffca28;
+    color: #fff;
+    font-size: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    touch-action: none; /* Prevent default touch behavior */
+    user-select: none;
+}
+.dpad-btn:active { background: rgba(255, 202, 40, 0.9); }
+
+.dpad-btn.up { top: 0; left: 50px; }
+.dpad-btn.down { bottom: 0; left: 50px; }
+.dpad-btn.left { top: 50px; left: 0; }
+.dpad-btn.right { top: 50px; right: 0; }
+
+.action-buttons {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;
+}
+
+.action-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(239, 83, 80, 0.6);
+    border: 3px solid #ef5350;
+    color: #fff;
+    font-weight: bold;
+    font-size: 1.2rem;
+    touch-action: none;
+    user-select: none;
+}
+.action-btn:active { background: rgba(239, 83, 80, 1); }

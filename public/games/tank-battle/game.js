@@ -62,6 +62,27 @@ document.addEventListener('keyup', e => {
     sendGuestInput();
 });
 
+// --- Mobile Controls ---
+const mobileControls = document.getElementById('mobile-controls');
+const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+if (isTouchDevice) {
+    const mapTouchToKey = (btnId, key) => {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        btn.addEventListener('touchstart', (e) => { e.preventDefault(); keysDown[key] = true; sendGuestInput(); }, {passive: false});
+        btn.addEventListener('touchend', (e) => { e.preventDefault(); keysDown[key] = false; sendGuestInput(); }, {passive: false});
+        // Handle touch cancel/leave
+        btn.addEventListener('touchcancel', (e) => { e.preventDefault(); keysDown[key] = false; sendGuestInput(); }, {passive: false});
+    };
+
+    mapTouchToKey('btn-up', 'w');
+    mapTouchToKey('btn-down', 's');
+    mapTouchToKey('btn-left', 'a');
+    mapTouchToKey('btn-right', 'd');
+    mapTouchToKey('btn-shoot', ' ');
+}
+
 function getGenericLocalInput() {
     return {
         up: keysDown['w'] || keysDown['arrowup'],
@@ -213,6 +234,7 @@ menuBtn.addEventListener('click', () => {
     statusText.style.color = '#eee';
     restartBtn.classList.add('hidden');
     menuBtn.classList.add('hidden');
+    if (mobileControls) mobileControls.classList.remove('visible');
     
     if (peer) {
         peer.destroy();
@@ -243,6 +265,10 @@ function startGame() {
     menuBtn.classList.add('hidden');
     statusText.innerText = 'BATTLE!';
     statusText.style.color = '#eee';
+    
+    if (isTouchDevice && mobileControls) {
+        mobileControls.classList.add('visible');
+    }
 
     // UI Adjustments
     if (activeMode === 'p2p-host') {
