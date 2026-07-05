@@ -63,10 +63,16 @@ document.addEventListener('keyup', e => {
 });
 
 // --- Mobile Controls ---
-const mobileControls = document.getElementById('mobile-controls');
 const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
 if (isTouchDevice) {
+    const pKeys = {
+        1: { up: 'w', down: 's', left: 'a', right: 'd', shoot: ' ' },
+        2: { up: 'arrowup', down: 'arrowdown', left: 'arrowleft', right: 'arrowright', shoot: 'enter' },
+        3: { up: 'i', down: 'k', left: 'j', right: 'l', shoot: 'p' },
+        4: { up: '8', down: '5', left: '4', right: '6', shoot: '0' }
+    };
+
     const mapTouchToKey = (btnId, key) => {
         const btn = document.getElementById(btnId);
         if (!btn) return;
@@ -76,11 +82,13 @@ if (isTouchDevice) {
         btn.addEventListener('touchcancel', (e) => { e.preventDefault(); keysDown[key] = false; sendGuestInput(); }, {passive: false});
     };
 
-    mapTouchToKey('btn-up', 'w');
-    mapTouchToKey('btn-down', 's');
-    mapTouchToKey('btn-left', 'a');
-    mapTouchToKey('btn-right', 'd');
-    mapTouchToKey('btn-shoot', ' ');
+    for(let i=1; i<=4; i++) {
+        mapTouchToKey(`btn-up-${i}`, pKeys[i].up);
+        mapTouchToKey(`btn-down-${i}`, pKeys[i].down);
+        mapTouchToKey(`btn-left-${i}`, pKeys[i].left);
+        mapTouchToKey(`btn-right-${i}`, pKeys[i].right);
+        mapTouchToKey(`btn-shoot-${i}`, pKeys[i].shoot);
+    }
 }
 
 function getGenericLocalInput() {
@@ -234,7 +242,11 @@ menuBtn.addEventListener('click', () => {
     statusText.style.color = '#eee';
     restartBtn.classList.add('hidden');
     menuBtn.classList.add('hidden');
-    if (mobileControls) mobileControls.classList.remove('visible');
+    
+    for(let i=1; i<=4; i++) {
+        const ctrl = document.getElementById(`controls-p${i}`);
+        if(ctrl) ctrl.classList.remove('visible');
+    }
     
     if (peer) {
         peer.destroy();
@@ -266,8 +278,25 @@ function startGame() {
     statusText.innerText = 'BATTLE!';
     statusText.style.color = '#eee';
     
-    if (isTouchDevice && mobileControls) {
-        mobileControls.classList.add('visible');
+    // Hide all mobile controls first
+    for(let i=1; i<=4; i++) {
+        const ctrl = document.getElementById(`controls-p${i}`);
+        if(ctrl) ctrl.classList.remove('visible');
+    }
+
+    if (isTouchDevice) {
+        if (activeMode === 'local') {
+            for(let i=1; i<=numPlayers; i++) {
+                const ctrl = document.getElementById(`controls-p${i}`);
+                if(ctrl) ctrl.classList.add('visible');
+            }
+        } else if (activeMode === 'p2p-host') {
+            const ctrl = document.getElementById(`controls-p1`);
+            if(ctrl) ctrl.classList.add('visible');
+        } else if (activeMode === 'p2p-join') {
+            const ctrl = document.getElementById(`controls-p2`);
+            if(ctrl) ctrl.classList.add('visible');
+        }
     }
 
     // UI Adjustments

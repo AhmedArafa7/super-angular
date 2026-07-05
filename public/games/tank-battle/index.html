@@ -53,7 +53,61 @@
         </div>
 
         <div id="game-container" class="hidden">
-            <canvas id="game-canvas" width="800" height="600"></canvas>
+            <div id="game-wrapper" style="position: relative; width: 100%; max-width: 800px; margin: 0 auto;">
+                <canvas id="game-canvas" width="800" height="600"></canvas>
+                
+                <!-- P1 Controls (Bottom Left) -->
+                <div id="controls-p1" class="mobile-controls p1-controls hidden">
+                    <div class="dpad">
+                        <button id="btn-up-1" class="dpad-btn up p1-btn">▲</button>
+                        <button id="btn-left-1" class="dpad-btn left p1-btn">◀</button>
+                        <button id="btn-right-1" class="dpad-btn right p1-btn">▶</button>
+                        <button id="btn-down-1" class="dpad-btn down p1-btn">▼</button>
+                    </div>
+                    <div class="action-buttons">
+                        <button id="btn-shoot-1" class="action-btn p1-btn">FIRE</button>
+                    </div>
+                </div>
+
+                <!-- P2 Controls (Bottom Right) -->
+                <div id="controls-p2" class="mobile-controls p2-controls hidden">
+                    <div class="dpad">
+                        <button id="btn-up-2" class="dpad-btn up p2-btn">▲</button>
+                        <button id="btn-left-2" class="dpad-btn left p2-btn">◀</button>
+                        <button id="btn-right-2" class="dpad-btn right p2-btn">▶</button>
+                        <button id="btn-down-2" class="dpad-btn down p2-btn">▼</button>
+                    </div>
+                    <div class="action-buttons">
+                        <button id="btn-shoot-2" class="action-btn p2-btn">FIRE</button>
+                    </div>
+                </div>
+
+                <!-- P3 Controls (Top Left) -->
+                <div id="controls-p3" class="mobile-controls p3-controls hidden">
+                    <div class="dpad">
+                        <button id="btn-up-3" class="dpad-btn up p3-btn">▲</button>
+                        <button id="btn-left-3" class="dpad-btn left p3-btn">◀</button>
+                        <button id="btn-right-3" class="dpad-btn right p3-btn">▶</button>
+                        <button id="btn-down-3" class="dpad-btn down p3-btn">▼</button>
+                    </div>
+                    <div class="action-buttons">
+                        <button id="btn-shoot-3" class="action-btn p3-btn">FIRE</button>
+                    </div>
+                </div>
+
+                <!-- P4 Controls (Top Right) -->
+                <div id="controls-p4" class="mobile-controls p4-controls hidden">
+                    <div class="dpad">
+                        <button id="btn-up-4" class="dpad-btn up p4-btn">▲</button>
+                        <button id="btn-left-4" class="dpad-btn left p4-btn">◀</button>
+                        <button id="btn-right-4" class="dpad-btn right p4-btn">▶</button>
+                        <button id="btn-down-4" class="dpad-btn down p4-btn">▼</button>
+                    </div>
+                    <div class="action-buttons">
+                        <button id="btn-shoot-4" class="action-btn p4-btn">FIRE</button>
+                    </div>
+                </div>
+            </div>
             
             <div id="controls-help">
                 <div class="p1">P1 (Blue): W A S D | Shoot: Space</div>
@@ -65,19 +119,6 @@
             <div class="controls-buttons">
                 <button id="restart-btn" class="hidden">Play Again</button>
                 <button id="menu-btn" class="hidden">Main Menu</button>
-            </div>
-
-            <!-- Mobile Touch Controls -->
-            <div id="mobile-controls" class="hidden">
-                <div class="dpad">
-                    <button id="btn-up" class="dpad-btn up">▲</button>
-                    <button id="btn-left" class="dpad-btn left">◀</button>
-                    <button id="btn-right" class="dpad-btn right">▶</button>
-                    <button id="btn-down" class="dpad-btn down">▼</button>
-                </div>
-                <div class="action-buttons">
-                    <button id="btn-shoot" class="action-btn">FIRE</button>
-                </div>
             </div>
         </div>
     </div>

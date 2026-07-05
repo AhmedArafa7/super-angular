@@ -47,63 +47,80 @@ code { display: block; background: #111; padding: 10px; font-size: 1.5rem; font-
 }
 
 /* --- Mobile Controls --- */
-#mobile-controls {
-    display: none; /* Shown via JS if touch detected */
-    width: 100%;
-    justify-content: space-between;
-    align-items: flex-end;
-    padding: 20px;
-    margin-top: 10px;
+.mobile-controls {
+    position: absolute;
+    display: none; /* hidden by default, visible if active */
+    flex-direction: row;
+    gap: 10px;
+    padding: 10px;
+    z-index: 10;
+    pointer-events: none; /* Let touches pass through where there are no buttons */
 }
-
-#mobile-controls.visible {
+.mobile-controls.visible {
     display: flex !important;
 }
+.mobile-controls button {
+    pointer-events: auto; /* Buttons are clickable */
+}
+
+/* Positions */
+.p1-controls { bottom: 0; left: 0; align-items: flex-end; }
+.p2-controls { bottom: 0; right: 0; align-items: flex-end; flex-direction: row-reverse; }
+.p3-controls { top: 0; left: 0; align-items: flex-start; }
+.p4-controls { top: 0; right: 0; align-items: flex-start; flex-direction: row-reverse; }
 
 .dpad {
     position: relative;
-    width: 150px;
-    height: 150px;
+    width: 120px;
+    height: 120px;
 }
 
 .dpad-btn {
     position: absolute;
-    width: 50px;
-    height: 50px;
+    width: 40px;
+    height: 40px;
     background: rgba(255, 202, 40, 0.5);
     border: 2px solid #ffca28;
     color: #fff;
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     display: flex;
     justify-content: center;
     align-items: center;
     border-radius: 8px;
-    touch-action: none; /* Prevent default touch behavior */
+    touch-action: none;
     user-select: none;
 }
-.dpad-btn:active { background: rgba(255, 202, 40, 0.9); }
 
-.dpad-btn.up { top: 0; left: 50px; }
-.dpad-btn.down { bottom: 0; left: 50px; }
-.dpad-btn.left { top: 50px; left: 0; }
-.dpad-btn.right { top: 50px; right: 0; }
+.dpad-btn.up { top: 0; left: 40px; }
+.dpad-btn.down { bottom: 0; left: 40px; }
+.dpad-btn.left { top: 40px; left: 0; }
+.dpad-btn.right { top: 40px; right: 0; }
 
 .action-buttons {
     display: flex;
-    justify-content: flex-end;
-    align-items: flex-end;
 }
 
 .action-btn {
-    width: 80px;
-    height: 80px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     background: rgba(239, 83, 80, 0.6);
     border: 3px solid #ef5350;
     color: #fff;
     font-weight: bold;
-    font-size: 1.2rem;
+    font-size: 1rem;
     touch-action: none;
     user-select: none;
 }
-.action-btn:active { background: rgba(239, 83, 80, 1); }
+
+/* Colors for buttons based on player */
+.p1-btn { border-color: #4fc3f7; background: rgba(79, 195, 247, 0.4); color: #4fc3f7; }
+.p2-btn { border-color: #ef5350; background: rgba(239, 83, 80, 0.4); color: #ef5350; }
+.p3-btn { border-color: #81c784; background: rgba(129, 199, 132, 0.4); color: #81c784; }
+.p4-btn { border-color: #fff176; background: rgba(255, 241, 118, 0.4); color: #fff176; }
+
+/* Active states */
+.p1-btn:active { background: rgba(79, 195, 247, 0.8); color: #fff; }
+.p2-btn:active { background: rgba(239, 83, 80, 0.8); color: #fff; }
+.p3-btn:active { background: rgba(129, 199, 132, 0.8); color: #fff; }
+.p4-btn:active { background: rgba(255, 241, 118, 0.8); color: #fff; }
