@@ -1,0 +1,104 @@
+:root {
+    --bg-dark: #1e293b;
+    --primary: #3b82f6;
+    --danger: #ef4444;
+    --success: #10b981;
+    --text-main: #f8fafc;
+    --font-main: system-ui, -apple-system, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+
+body {
+    font-family: var(--font-main);
+    background-color: #0f172a;
+    color: var(--text-main);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    touch-action: none;
+}
+
+.screen {
+    display: none;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0; left: 0;
+}
+.screen.active { display: flex; }
+
+.card {
+    background: var(--bg-dark);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    border: 2px solid #334155;
+    z-index: 10;
+}
+
+h1 { font-size: 2rem; margin-bottom: 10px; }
+h2 { margin-bottom: 20px; color: #fbbf24; }
+p { color: #94a3b8; margin-bottom: 20px; }
+
+.btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.btn {
+    width: 100%;
+    padding: 15px;
+    border-radius: 8px;
+    border: none;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s;
+    color: #fff;
+}
+.btn.primary { background: var(--primary); }
+.btn.success { background: var(--success); }
+.btn:active { transform: scale(0.95); }
+
+/* Game Screen */
+#game-screen {
+    background: #020617;
+}
+
+.hud {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    opacity: 0.5;
+    z-index: 1;
+}
+
+.player2-score { text-align: center; color: var(--danger); transform: rotate(180deg); }
+.player1-score { text-align: center; color: var(--primary); }
+
+canvas {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    border: 10px solid #334155;
+    border-radius: 20px;
+    background: #e0f2fe; /* Ice color */
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.2) inset;
+    z-index: 2;
+}

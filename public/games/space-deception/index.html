@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>خيانة في الفضاء (Space Deception)</title>
+    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    
+    <!-- شاشة البداية / اللوبي -->
+    <div id="start-screen" class="screen active">
+        <div class="card">
+            <h1>🚀 خيانة في الفضاء</h1>
+            <p>العب مع أصدقائك وابحث عن الخائن بينهم!</p>
+            
+            <div class="input-group">
+                <input type="text" id="player-name" placeholder="اسم اللاعب (أقصى 8 حروف)" maxlength="8">
+            </div>
+            
+            <div class="actions">
+                <button id="host-btn" class="btn primary">إنشاء غرفة (Host)</button>
+                <div class="join-group">
+                    <input type="text" id="join-id" placeholder="كود الغرفة">
+                    <button id="join-btn" class="btn success">انضمام</button>
+                </div>
+            </div>
+            
+            <div id="room-info" class="hidden">
+                <div class="code-box">كود الغرفة: <span id="room-id-display">...</span></div>
+                <div class="players-list">
+                    <h3>اللاعبون في الغرفة:</h3>
+                    <ul id="players-ul"></ul>
+                </div>
+                <button id="start-game-btn" class="btn success hidden">بدء اللعبة</button>
+                <p id="waiting-msg" class="small-text hidden">في انتظار المضيف لبدء اللعبة...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة اللعب (الخريطة 2D) -->
+    <div id="game-screen" class="screen">
+        <canvas id="game-canvas"></canvas>
+        
+        <!-- واجهة المستخدم داخل اللعبة -->
+        <div class="hud-top-left">
+            المهام المنجزة: <span id="task-progress">0%</span>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" id="task-bar-fill"></div></div>
+        </div>
+        <div class="hud-top-right">
+            الدور: <span id="my-role-display">طاقم</span>
+        </div>
+        
+        <!-- أزرار الإجراءات (للموبايل أو يمكن استخدام الماوس) -->
+        <div class="action-buttons">
+            <button id="action-use" class="action-btn" disabled>استخدام (E)</button>
+            <button id="action-report" class="action-btn" disabled>إبلاغ (R)</button>
+            <button id="action-kill" class="action-btn hidden" disabled>قتل (Q)</button>
+            <button id="action-sabotage" class="action-btn hidden">تخريب</button>
+        </div>
+    </div>
+
+    <!-- شاشة الاجتماع (Voting) -->
+    <div id="meeting-screen" class="screen">
+        <div class="meeting-container">
+            <div class="meeting-header">
+                <h2>اجتماع طارئ 🚨</h2>
+                <div class="timer">الوقت المتبقي: <span id="meeting-timer">120</span></div>
+            </div>
+            <div class="meeting-content">
+                <div class="players-grid" id="voting-players-grid">
+                    <!-- سيتم إضافة اللاعبين هنا ديناميكياً -->
+                </div>
+                <div class="chat-section">
+                    <div class="chat-messages" id="chat-messages"></div>
+                    <div class="chat-input-group">
+                        <input type="text" id="chat-input" placeholder="اكتب رسالة...">
+                        <button id="chat-send-btn" class="btn primary">إرسال</button>
+                    </div>
+                </div>
+            </div>
+            <div class="meeting-footer">
+                <button id="skip-vote-btn" class="btn secondary">تخطي التصويت (Skip)</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- شاشة عرض الدور قبل اللعب -->
+    <div id="role-screen" class="screen">
+        <div class="role-card" id="role-card">
+            <h1 id="role-title">أنت ضمن الطاقم</h1>
+            <h3 id="role-subtitle">أنجز المهام وابحث عن المخرب</h3>
+            <p id="role-teammates" class="hidden"></p>
+        </div>
+    </div>
+
+    <!-- شاشة نهاية اللعبة -->
+    <div id="game-over-screen" class="screen">
+        <div class="card">
+            <h1 id="result-title">فاز الطاقم!</h1>
+            <button id="restart-btn" class="btn primary hidden">العودة للوبي (المضيف)</button>
+            <p id="game-over-waiting" class="hidden">في انتظار المضيف...</p>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>

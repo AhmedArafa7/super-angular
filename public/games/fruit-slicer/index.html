@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>تقطيع الفواكه (Fruit Slicer)</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    
+    <div id="start-screen" class="screen active">
+        <div class="card">
+            <h1>🍉 تقطيع الفواكه</h1>
+            <p>مرر إصبعك أو الماوس لتقطيع الفواكه وتجنب القنابل!</p>
+            <button id="start-btn" class="btn primary">ابدأ اللعب</button>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div class="hud">
+            <div class="score-display">النقاط: <span id="score">0</span></div>
+            <div class="lives-display" id="lives">❤️❤️❤️</div>
+        </div>
+        <canvas id="game-canvas"></canvas>
+    </div>
+
+    <div id="game-over-screen" class="screen">
+        <div class="card">
+            <h1 class="danger">انتهت اللعبة! 💥</h1>
+            <h2>نقاطك: <span id="final-score">0</span></h2>
+            <button id="restart-btn" class="btn primary">العب مرة أخرى</button>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>

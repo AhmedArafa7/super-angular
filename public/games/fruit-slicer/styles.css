@@ -1,0 +1,97 @@
+:root {
+    --bg-dark: #27272a;
+    --primary: #f59e0b;
+    --danger: #ef4444;
+    --text-main: #f8fafc;
+    --font-main: system-ui, -apple-system, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+body {
+    font-family: var(--font-main);
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    touch-action: none; /* Prevent scroll on swipe */
+}
+
+.screen {
+    display: none;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.screen.active {
+    display: flex;
+}
+
+.card {
+    background: #3f3f46;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    z-index: 10;
+}
+
+h1 { font-size: 2rem; margin-bottom: 10px; color: #fff; }
+h1.danger { color: var(--danger); }
+h2 { margin-bottom: 20px; color: #fbbf24; }
+p { color: #a1a1aa; margin-bottom: 20px; }
+
+.btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s;
+    color: #fff;
+    background: var(--primary);
+}
+.btn:active { transform: scale(0.95); }
+
+/* Game Screen */
+#game-screen {
+    position: relative;
+    background: url('data:image/svg+xml;utf8,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="%2327272a" /><circle cx="20" cy="20" r="1" fill="%233f3f46" /><circle cx="80" cy="70" r="2" fill="%233f3f46" /></svg>');
+}
+
+.hud {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.5rem;
+    font-weight: bold;
+    z-index: 10;
+    pointer-events: none;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+}
+
+canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: crosshair;
+}

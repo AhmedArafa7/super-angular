@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>غرفة الهروب (Escape Room)</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body>
+    
+    <div id="lobby-screen" class="screen active">
+        <div class="card">
+            <h1>🚪 غرفة الهروب التعاونية</h1>
+            <p>لا يمكنك الهروب وحدك! تواصل مع زميلك لحل الألغاز.</p>
+            
+            <div class="input-group">
+                <input type="text" id="player-name" placeholder="اسمك" maxlength="15">
+            </div>
+            
+            <div class="actions">
+                <button id="host-btn" class="btn primary">إنشاء غرفة (مضيف)</button>
+                <div class="divider">أو</div>
+                <div class="join-group">
+                    <input type="text" id="join-id" placeholder="كود الغرفة">
+                    <button id="join-btn" class="btn secondary">انضمام</button>
+                </div>
+            </div>
+            
+            <div id="room-info" class="hidden">
+                <p>شارك الكود مع صديق واحد (اللعبة تحتاج لاعبين اثنين):</p>
+                <div class="code-box" id="room-id-display">...</div>
+                
+                <div class="players-list">
+                    <h3>اللاعبون المتصلون:</h3>
+                    <ul id="players-ul"></ul>
+                </div>
+                
+                <button id="start-game-btn" class="btn success hidden">بدء اللعبة!</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <header>
+            <div class="timer" id="timer">10:00</div>
+            <div class="progress" id="progress">الأقفال المفتوحة: 0 / 3</div>
+        </header>
+        
+        <div class="room-container">
+            <!-- Wall and Door -->
+            <div class="wall">
+                <div class="door" id="door">
+                    <div class="locks">
+                        <div class="lock" id="lock-1">🔒</div>
+                        <div class="lock" id="lock-2">🔒</div>
+                        <div class="lock" id="lock-3">🔒</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Floor and Interactive Elements -->
+            <div class="floor">
+                <!-- Elements will change based on Role -->
+                
+                <!-- Puzzle 1: Colored Buttons -->
+                <div class="puzzle-station hidden" id="puzzle-1-station">
+                    <h3>لغز الألوان</h3>
+                    <div id="p1-clue" class="clue-box hidden">
+                        <!-- Shows sequence to one player -->
+                    </div>
+                    <div id="p1-controls" class="controls-box hidden">
+                        <button class="color-btn" data-color="red" style="background:red;"></button>
+                        <button class="color-btn" data-color="blue" style="background:blue;"></button>
+                        <button class="color-btn" data-color="green" style="background:green;"></button>
+                        <button class="color-btn" data-color="yellow" style="background:yellow;"></button>
+                    </div>
+                </div>
+
+                <!-- Puzzle 2: Simon Says -->
+                <div class="puzzle-station hidden" id="puzzle-2-station">
+                    <h3>لغز الذاكرة المشتركة</h3>
+                    <div id="p2-display" class="simon-display hidden">
+                        <!-- Flashes to one player -->
+                        <div class="simon-light" id="sl-1"></div>
+                        <div class="simon-light" id="sl-2"></div>
+                        <div class="simon-light" id="sl-3"></div>
+                        <div class="simon-light" id="sl-4"></div>
+                        <button id="p2-start-flash" class="btn secondary">تشغيل الإشارة</button>
+                    </div>
+                    <div id="p2-controls" class="simon-controls hidden">
+                        <!-- Other player clicks -->
+                        <button class="simon-btn" data-idx="1">1</button>
+                        <button class="simon-btn" data-idx="2">2</button>
+                        <button class="simon-btn" data-idx="3">3</button>
+                        <button class="simon-btn" data-idx="4">4</button>
+                    </div>
+                </div>
+
+                <!-- Puzzle 3: Keypad -->
+                <div class="puzzle-station hidden" id="puzzle-3-station">
+                    <h3>لغز الخزنة</h3>
+                    <div class="clue-box" id="p3-clue">
+                        <!-- Partial clue -->
+                    </div>
+                    <div class="keypad">
+                        <div class="keypad-display" id="keypad-display">----</div>
+                        <div class="keypad-grid">
+                            <button class="k-btn">1</button><button class="k-btn">2</button><button class="k-btn">3</button>
+                            <button class="k-btn">4</button><button class="k-btn">5</button><button class="k-btn">6</button>
+                            <button class="k-btn">7</button><button class="k-btn">8</button><button class="k-btn">9</button>
+                            <button class="k-btn k-clear">C</button><button class="k-btn">0</button><button class="k-btn k-enter">E</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="game-over-screen" class="screen">
+        <div class="card">
+            <h1 id="end-title"></h1>
+            <p id="end-msg"></p>
+            <button id="restart-btn" class="btn primary hidden">العب مجدداً</button>
+            <p id="waiting-host-msg" class="hidden">في انتظار المضيف...</p>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>

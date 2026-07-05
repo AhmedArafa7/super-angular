@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>الهوكي الهوائي (Air Hockey)</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    
+    <div id="start-screen" class="screen active">
+        <div class="card">
+            <h1>🏒 الهوكي الهوائي</h1>
+            <p>العب ضد صديقك على نفس الشاشة أو تحدى الذكاء الاصطناعي!</p>
+            <div class="btn-group">
+                <button id="btn-1p" class="btn primary">لاعب ضد الكمبيوتر</button>
+                <button id="btn-2p" class="btn success">لاعب ضد لاعب (نفس الشاشة)</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div class="hud">
+            <div class="player2-score">الخصم: <span id="score2">0</span></div>
+            <div class="player1-score">أنت: <span id="score1">0</span></div>
+        </div>
+        <canvas id="game-canvas"></canvas>
+    </div>
+
+    <div id="game-over-screen" class="screen">
+        <div class="card">
+            <h1 id="result-title">انتهت اللعبة!</h1>
+            <h2><span id="final-score">0 - 0</span></h2>
+            <button id="restart-btn" class="btn primary">العب مرة أخرى</button>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>

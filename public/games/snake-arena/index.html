@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>حرب الثعابين (Snake Arena)</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body>
+    
+    <div id="lobby-screen" class="screen active">
+        <div class="card">
+            <h1>🐍 حرب الثعابين</h1>
+            <p>لعبة الثعبان الجماعية! كن آخر من يبقى حياً.</p>
+            
+            <div class="input-group">
+                <input type="text" id="player-name" placeholder="اسمك (مثل: أحمد)" maxlength="15">
+            </div>
+            
+            <div class="actions">
+                <button id="host-btn" class="btn primary">إنشاء غرفة (مضيف)</button>
+                <div class="divider">أو</div>
+                <div class="join-group">
+                    <input type="text" id="join-id" placeholder="كود الغرفة">
+                    <button id="join-btn" class="btn secondary">انضمام</button>
+                </div>
+            </div>
+            
+            <div id="room-info" class="hidden">
+                <p>شارك هذا الكود مع أصدقائك:</p>
+                <div class="code-box" id="room-id-display">...</div>
+                
+                <div class="players-list">
+                    <h3>اللاعبون المتصلون:</h3>
+                    <ul id="players-ul"></ul>
+                </div>
+                
+                <button id="start-game-btn" class="btn success hidden">بدء اللعبة!</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div class="game-header">
+            <div class="scoreboard" id="scoreboard">
+                <!-- Players scores will appear here -->
+            </div>
+        </div>
+        <div class="canvas-container">
+            <canvas id="game-canvas"></canvas>
+        </div>
+        
+        <div class="mobile-controls">
+            <div class="d-pad">
+                <button class="d-btn up" id="btn-up">⬆️</button>
+                <div class="d-row">
+                    <button class="d-btn left" id="btn-left">⬅️</button>
+                    <button class="d-btn right" id="btn-right">➡️</button>
+                </div>
+                <button class="d-btn down" id="btn-down">⬇️</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-over-screen" class="screen">
+        <div class="card">
+            <h1 id="end-title">انتهت اللعبة!</h1>
+            <h2 id="winner-name"></h2>
+            <p>هل تريد اللعب مرة أخرى؟</p>
+            <button id="restart-btn" class="btn primary hidden">إعادة اللعب</button>
+            <p id="waiting-host-msg" class="hidden">ننتظر المضيف لإعادة اللعب...</p>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>

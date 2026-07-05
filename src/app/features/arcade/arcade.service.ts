@@ -170,6 +170,96 @@ export class ArcadeService {
       status: 'available'
     },
     {
+      id: 'snake-arena',
+      title: 'حرب الثعابين 🐍',
+      description: 'لعبة الثعبان الجماعية الكلاسيكية! العب مع أصدقائك عبر الإنترنت (P2P)، وتجنب الاصطدام بهم لتكون آخر الناجين.',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%23064e3b%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22300%22%20font-size%3D%22120%22%20text-anchor%3D%22middle%22%3E%F0%9F%90%8D%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22450%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3ESNAKE%20ARENA%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'Action',
+      platforms: ['browser', 'pc', 'android'],
+      localUrl: '/games/snake-arena/index.html',
+      status: 'available'
+    },
+    {
+      id: 'arabic-wordle',
+      title: 'خمن الكلمة 🤔',
+      description: 'النسخة العربية من اللعبة الشهيرة Wordle. خمن الكلمة المكونة من 5 حروف في 6 محاولات فقط!',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%23121213%22%2F%3E%3Cg%20transform%3D%22translate(250%2C200)%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%2280%22%20height%3D%2280%22%20fill%3D%22%23538d4e%22%2F%3E%3Crect%20x%3D%22100%22%20y%3D%220%22%20width%3D%2280%22%20height%3D%2280%22%20fill%3D%22%23b59f3b%22%2F%3E%3Crect%20x%3D%22200%22%20y%3D%220%22%20width%3D%2280%22%20height%3D%2280%22%20fill%3D%22%233a3a3c%22%2F%3E%3Ctext%20x%3D%2240%22%20y%3D%2255%22%20font-size%3D%2250%22%20font-family%3D%22sans-serif%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3E%D9%83%3C%2Ftext%3E%3Ctext%20x%3D%22140%22%20y%3D%2255%22%20font-size%3D%2250%22%20font-family%3D%22sans-serif%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3E%D9%84%3C%2Ftext%3E%3Ctext%20x%3D%22240%22%20y%3D%2255%22%20font-size%3D%2250%22%20font-family%3D%22sans-serif%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3E%D9%85%3C%2Ftext%3E%3C%2Fg%3E%3Ctext%20x%3D%22400%22%20y%3D%22450%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3EWORDLE%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'Puzzle',
+      platforms: ['browser', 'pc', 'android'],
+      localUrl: '/games/arabic-wordle/index.html',
+      status: 'available'
+    },
+    {
+      id: 'escape-room',
+      title: 'غرفة الهروب 🚪',
+      description: 'لعبة تعاونية (P2P). تبادلا التلميحات عبر الميكروفون لحل الألغاز وفتح الأقفال والهروب معاً قبل نفاد الوقت!',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%231e1b4b%22%2F%3E%3Cg%20transform%3D%22translate(300%2C150)%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22200%22%20height%3D%22250%22%20fill%3D%22%23475569%22%20stroke%3D%22%23334155%22%20stroke-width%3D%2210%22%2F%3E%3Ccircle%20cx%3D%22160%22%20cy%3D%22125%22%20r%3D%2210%22%20fill%3D%22%23fbbf24%22%2F%3E%3C%2Fg%3E%3Ctext%20x%3D%22400%22%20y%3D%22500%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3EESCAPE%20ROOM%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'Co-op',
+      platforms: ['browser', 'pc'],
+      localUrl: '/games/escape-room/index.html',
+      status: 'available'
+    },
+    {
+      id: 'fruit-slicer',
+      title: 'تقطيع الفواكه 🍉',
+      description: 'مرر إصبعك بسرعة لتقطيع الفواكه المتطايرة وتجنب القنابل لجمع أعلى النقاط. لعبة مسلية مليئة بالحركة!',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%2327272a%22%2F%3E%3Ctext%20x%3D%22300%22%20y%3D%22300%22%20font-size%3D%22100%22%20text-anchor%3D%22middle%22%20transform%3D%22rotate(-20%20300%20300)%22%3E%F0%9F%8D%89%3C%2Ftext%3E%3Ctext%20x%3D%22500%22%20y%3D%22250%22%20font-size%3D%22100%22%20text-anchor%3D%22middle%22%20transform%3D%22rotate(20%20500%20250)%22%3E%F0%9F%8D%8B%3C%2Ftext%3E%3Cpath%20d%3D%22M200%20350%20L600%20150%22%20stroke%3D%22%23fff%22%20stroke-width%3D%228%22%20fill%3D%22none%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22450%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3EFRUIT%20SLICER%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'Action',
+      platforms: ['browser', 'pc', 'android'],
+      localUrl: '/games/fruit-slicer/index.html',
+      status: 'available'
+    },
+    {
+      id: 'typing-defense',
+      title: 'حرب الطباعة ⌨️',
+      description: 'الكلمات تتساقط من السماء! اكتبها بسرعة لتدمرها قبل أن تصل إلى القاعدة وتدمرها.',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%230f172a%22%2F%3E%3Crect%20x%3D%22300%22%20y%3D%22200%22%20width%3D%22200%22%20height%3D%2280%22%20rx%3D%2240%22%20fill%3D%22%231e293b%22%20stroke%3D%22%238b5cf6%22%20stroke-width%3D%224%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22250%22%20font-size%3D%2240%22%20font-family%3D%22sans-serif%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3ESUPER%3C%2Ftext%3E%3Cpath%20d%3D%22M400%20350%20L400%20500%22%20stroke%3D%22%23ef4444%22%20stroke-width%3D%2210%22%20stroke-dasharray%3D%2220%2C20%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22550%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3ETYPING%20DEFENSE%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'Puzzle',
+      platforms: ['browser', 'pc'],
+      localUrl: '/games/typing-defense/index.html',
+      status: 'available'
+    },
+    {
+      id: 'flappy-clone',
+      title: 'الطائر المضحك 🐒',
+      description: 'اضغط على الشاشة للقفز وتفادى الأنابيب في هذه النسخة المضحكة من اللعبة الشهيرة!',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%2338bdf8%22%2F%3E%3Crect%20x%3D%22500%22%20y%3D%220%22%20width%3D%22120%22%20height%3D%22200%22%20fill%3D%22%2322c55e%22%20stroke%3D%22%23166534%22%20stroke-width%3D%228%22%2F%3E%3Crect%20x%3D%22480%22%20y%3D%22160%22%20width%3D%22160%22%20height%3D%2240%22%20fill%3D%22%2322c55e%22%20stroke%3D%22%23166534%22%20stroke-width%3D%228%22%2F%3E%3Ctext%20x%3D%22250%22%20y%3D%22300%22%20font-size%3D%22100%22%20text-anchor%3D%22middle%22%3E%F0%9F%90%92%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22500%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3EFLAPPY%20CLONE%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'Action',
+      platforms: ['browser', 'android'],
+      localUrl: '/games/flappy-clone/index.html',
+      status: 'available'
+    },
+    {
+      id: 'math-racer',
+      title: 'سباق الرياضيات 🏎️',
+      description: 'تسابق ضد الزمن! أجب عن المسائل الحسابية بأسرع ما يمكن لتسبق السيارة الأخرى إلى خط النهاية.',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%231f2937%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22250%22%20font-size%3D%22100%22%20font-family%3D%22sans-serif%22%20fill%3D%22%23facc15%22%20text-anchor%3D%22middle%22%3E5%20%2B%207%20%3D%20%3F%3C%2Ftext%3E%3Ctext%20x%3D%22300%22%20y%3D%22400%22%20font-size%3D%2280%22%20text-anchor%3D%22middle%22%3E%F0%9F%9A%99%3C%2Ftext%3E%3Ctext%20x%3D%22500%22%20y%3D%22400%22%20font-size%3D%2280%22%20text-anchor%3D%22middle%22%3E%F0%9F%8F%8E%EF%B8%8F%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22550%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3EMATH%20RACER%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'Puzzle',
+      platforms: ['browser', 'android', 'pc'],
+      localUrl: '/games/math-racer/index.html',
+      status: 'available'
+    },
+    {
+      id: 'air-hockey',
+      title: 'الهوكي الهوائي 🏒',
+      description: 'لعبة كلاسيكية حماسية! العب ضد صديقك على نفس الشاشة أو تحدى الذكاء الاصطناعي في مباريات سريعة.',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%23e0f2fe%22%2F%3E%3Crect%20x%3D%22300%22%20y%3D%220%22%20width%3D%22200%22%20height%3D%2220%22%20fill%3D%22%23ef4444%22%2F%3E%3Crect%20x%3D%22300%22%20y%3D%22580%22%20width%3D%22200%22%20height%3D%2220%22%20fill%3D%22%233b82f6%22%2F%3E%3Ccircle%20cx%3D%22400%22%20cy%3D%22300%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%2210%22%2F%3E%3Cline%20x1%3D%220%22%20y1%3D%22300%22%20x2%3D%22800%22%20y2%3D%22300%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%2210%22%2F%3E%3Ccircle%20cx%3D%22400%22%20cy%3D%22150%22%20r%3D%2250%22%20fill%3D%22%23ef4444%22%2F%3E%3Ccircle%20cx%3D%22400%22%20cy%3D%22450%22%20r%3D%2250%22%20fill%3D%22%233b82f6%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22320%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%230f172a%22%20text-anchor%3D%22middle%22%3EAIR%20HOCKEY%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'Action',
+      platforms: ['browser', 'android'],
+      localUrl: '/games/air-hockey/index.html',
+      status: 'available'
+    },
+    {
+      id: 'space-deception',
+      title: 'خيانة في الفضاء 🚀',
+      description: 'لعبة خداع واستنتاج (P2P). العب مع أصدقائك! أنجزوا المهام كطاقم، أو قوموا بتخريب السفينة وقتل الطاقم كمخربين دون أن يتم اكتشافكم.',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%23000%22%2F%3E%3Ccircle%20cx%3D%22200%22%20cy%3D%22300%22%20r%3D%2280%22%20fill%3D%22%2338bdf8%22%2F%3E%3Crect%20x%3D%22220%22%20y%3D%22260%22%20width%3D%2260%22%20height%3D%2240%22%20rx%3D%2220%22%20fill%3D%22%2394a3b8%22%2F%3E%3Ccircle%20cx%3D%22600%22%20cy%3D%22300%22%20r%3D%2280%22%20fill%3D%22%23ef4444%22%2F%3E%3Crect%20x%3D%22520%22%20y%3D%22260%22%20width%3D%2260%22%20height%3D%2240%22%20rx%3D%2220%22%20fill%3D%22%2394a3b8%22%2F%3E%3Cpath%20d%3D%22M560%20320%20L520%20350%22%20stroke%3D%22%23fff%22%20stroke-width%3D%2210%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22500%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23ef4444%22%20text-anchor%3D%22middle%22%3ESPACE%20DECEPTION%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'Co-op',
+      platforms: ['browser', 'pc', 'android'],
+      localUrl: '/games/space-deception/index.html',
+      status: 'available'
+    },
+    {
       id: 'mindustry',
       title: 'Mindustry Simulator',
       description: 'لعبة بناء مصانع ودفاع عن الأبراج. ابنِ شبكات التوريد المعقدة لنقل الموارد إلى أبراجك الدفاعية.',
