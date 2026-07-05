@@ -7,6 +7,9 @@ import { ArcadeService, ArcadeGame } from './arcade.service';
   selector: 'app-arcade-hub',
   standalone: true,
   imports: [CommonModule, RouterModule],
+  host: {
+    class: 'block h-full w-full'
+  },
   template: `
     <div class="min-h-full bg-slate-950 p-6 md:p-10 text-right overflow-y-auto custom-scrollbar" dir="rtl">
       

@@ -26,7 +26,7 @@ export class ArcadeService {
       thumbnail: 'assets/images/tank-battle-thumb.jpg', // We can use a placeholder
       genre: 'Action',
       platforms: ['browser'],
-      localUrl: '/games/tank-battle/index.html?v=2',
+      localUrl: '/games/tank-battle/index.html',
       status: 'available'
     },
     {
