@@ -22,7 +22,6 @@
       "resources": {
         "files": [
           "/assets/**",
-          "/games/**",
           "/*.(svg|cur|jpg|jpeg|png|apng|webp|avif|gif|otf|ttf|woff|woff2)"
         ]
       }
@@ -41,7 +40,8 @@
       "urls": [
         "https://www.youtube.com/**",
         "https://www.googleapis.com/**",
-        "https://super-axd.pages.dev/**"
+        "https://super-axd.pages.dev/**",
+        "/games/**"
       ],
       "cacheConfig": {
         "maxSize": 100,
