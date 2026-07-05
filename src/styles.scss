@@ -59,3 +59,16 @@
 .hide-scrollbar::-webkit-scrollbar {
   display: none; /* Chrome, Safari and Opera */
 }
+
+/* --- Global Layout Fix for Router Outlet Children --- */
+main {
+  display: flex;
+  flex-direction: column;
+  
+  > *:not(router-outlet) {
+    flex: 1;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+}
