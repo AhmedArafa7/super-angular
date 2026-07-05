@@ -30,6 +30,20 @@ let currentLevel = 'medium';
 let currentStage = 1;
 const MAX_STAGES = 100;
 
+function loadProgress() {
+    const saved = localStorage.getItem('spotDiffProgress');
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            if (data.currentStage) currentStage = data.currentStage;
+        } catch(e) {}
+    }
+}
+function saveProgress() {
+    localStorage.setItem('spotDiffProgress', JSON.stringify({ currentStage }));
+}
+loadProgress();
+
 const imageSourceSelect = document.getElementById('image-source-select');
 let currentImageSource = 'svg';
 
@@ -476,6 +490,7 @@ function startStage() {
 function nextStage() {
     if (currentStage < MAX_STAGES) {
         currentStage++;
+        saveProgress();
         if (activeMode === 'p2p-host' || activeMode === 'local') {
             startStage();
         }

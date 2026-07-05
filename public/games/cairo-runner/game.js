@@ -134,6 +134,21 @@ let obstacles = [];
 let sidewalkObjects = [];
 let gameSpeed = 5;
 let score = 0;
+let highScore = 0;
+
+function loadProgress() {
+    const saved = localStorage.getItem('cairoRunnerProgress');
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            highScore = data.highScore || 0;
+        } catch(e) {}
+    }
+}
+function saveProgress() {
+    localStorage.setItem('cairoRunnerProgress', JSON.stringify({ highScore }));
+}
+loadProgress();
 let isJumping = false;
 let jumpTimer = 0;
 
@@ -472,7 +487,11 @@ function endGame(isWin, msg) {
         gameOverScreen.classList.remove('hidden');
         resultTitle.innerText = isWin ? 'أنت الفائز! 🏆' : 'انتهت اللعبة! 💥';
         resultDesc.innerText = msg;
-        finalScoreDisplay.innerText = `النقاط: ${Math.floor(score)}`;
+        if (score > highScore) {
+            highScore = score;
+        }
+        saveProgress();
+        finalScoreDisplay.innerHTML = `النقاط: ${Math.floor(score)}<br><span style="font-size:1.2rem; color:#f59e0b">أعلى نتيجة: ${Math.floor(highScore)}</span>`;
         resultTitle.style.color = isWin ? '#10b981' : '#ef4444';
     }, 500);
 }

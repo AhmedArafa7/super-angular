@@ -31,6 +31,23 @@ let localScore = 0;
 let localTimerInterval = null;
 let canTilt = true;
 
+function saveProgress() {
+    localStorage.setItem('headsUpProgress', JSON.stringify({ localScore, onlineScore: gameState ? gameState.score : 0 }));
+}
+function loadProgress() {
+    const saved = localStorage.getItem('headsUpProgress');
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            localScore = data.localScore || 0;
+            if (data.onlineScore && gameState) gameState.score = data.onlineScore;
+        } catch(e) {}
+    }
+}
+function clearProgress() {
+    localStorage.removeItem('headsUpProgress');
+}
+
 function showLocalSetup() {
     playMode = 'local';
     showScreen('local-setup-screen');
@@ -40,6 +57,7 @@ function startLocalGame(cat) {
     playMode = 'local';
     deck = [...categories[cat]].sort(() => 0.5 - Math.random());
     localScore = 0;
+    loadProgress();
     localTimeRemaining = 60;
     
     document.getElementById('local-word').innerText = deck.pop();
@@ -100,6 +118,7 @@ function localVote(vote) {
     
     if (vote === 'correct') {
         localScore++;
+        saveProgress();
         playAudio('correct');
         document.body.style.backgroundColor = '#10b981';
     } else {
@@ -120,6 +139,7 @@ function localVote(vote) {
 function endLocalGame() {
     clearInterval(localTimerInterval);
     window.removeEventListener('deviceorientation', handleOrientation);
+    clearProgress();
     showScreen('result-screen');
     
     document.getElementById('final-score').innerText = localScore;
@@ -283,6 +303,7 @@ function selectCategory(cat) {
         if (gameState.timeRemaining <= 0) {
             clearInterval(timerInterval);
             gameState.phase = 'result';
+            clearProgress();
             broadcastState();
             handleStateUpdate(JSON.parse(JSON.stringify(gameState)));
         }
@@ -294,6 +315,7 @@ function handleVote(vote) {
     
     if (vote === 'correct') {
         gameState.score++;
+        saveProgress();
         playAudio('correct');
     } else {
         playAudio('pass');

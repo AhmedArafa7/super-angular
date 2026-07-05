@@ -43,6 +43,23 @@ const EMOJIS_MEDIUM = [...EMOJIS_EASY, '🍓', '🏀', '🚗', '🎈'];
 const EMOJIS_HARD = [...EMOJIS_MEDIUM, '👻', '👾', '💎', '👑'];
 let flippedIndices = [];
 let scores = {};
+
+function loadProgress() {
+    const saved = localStorage.getItem('memoryMatchProgress');
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            if (data.scores) scores = data.scores;
+        } catch(e) {}
+    }
+}
+function saveProgress() {
+    localStorage.setItem('memoryMatchProgress', JSON.stringify({ scores }));
+}
+function clearProgress() {
+    localStorage.removeItem('memoryMatchProgress');
+}
+loadProgress();
 let currentTurn = 1;
 let isProcessing = false;
 let matchCount = 0;
@@ -187,7 +204,9 @@ function buildHUD() {
     scores = {};
     
     for (let i = 1; i <= numPlayers; i++) {
-        scores[i] = 0;
+        if (scores[i] === undefined) {
+            scores[i] = 0;
+        }
         const colorClass = `player-color-${i}`;
         
         let label = `اللاعب ${i}`;
@@ -234,7 +253,9 @@ function startGameClient() {
 
 function resetGameState() {
     for (let i = 1; i <= numPlayers; i++) {
-        scores[i] = 0;
+        if (scores[i] === undefined) {
+            scores[i] = 0;
+        }
     }
     currentTurn = 1;
     flippedIndices = [];
@@ -338,6 +359,7 @@ function checkMatch() {
         // Award points to the player
         scores[c1.playerId]++;
         matchCount++;
+        saveProgress();
         
         setTimeout(() => {
             updateCardElement(c1.index);
@@ -420,7 +442,9 @@ function startTimer() {
 }
 
 function endGame() {
+    isProcessing = true;
     clearInterval(timerInterval);
+    clearProgress();
     showScreen(gameOverScreen);
     
     gameOverStats.innerHTML = '';
@@ -428,7 +452,6 @@ function endGame() {
     let m = Math.floor(elapsedTime / 60).toString().padStart(2, '0');
     let s = (elapsedTime % 60).toString().padStart(2, '0');
     document.getElementById('final-time').innerText = `${m}:${s}`;
-    
     if (activeMode === 'single') {
         document.getElementById('game-over-title').innerText = "تم إكمال اللوحة!";
         

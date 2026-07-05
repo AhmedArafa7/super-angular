@@ -38,6 +38,31 @@ let localScore = 0;
 let localSecretWord = "";
 let localTimerInterval = null;
 
+function saveProgress() {
+    localStorage.setItem('drawGuessProgress', JSON.stringify({ 
+        localScore, 
+        onlineScores: gameState ? gameState.players.map(p => ({id: p.id, score: p.score})) : null 
+    }));
+}
+function loadProgress() {
+    const saved = localStorage.getItem('drawGuessProgress');
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            localScore = data.localScore || 0;
+            if (data.onlineScores && gameState) {
+                data.onlineScores.forEach(savedP => {
+                    let p = gameState.players.find(x => x.id === savedP.id);
+                    if (p) p.score = savedP.score;
+                });
+            }
+        } catch(e) {}
+    }
+}
+function clearProgress() {
+    localStorage.removeItem('drawGuessProgress');
+}
+
 function showLocalSetup() {
     playMode = 'local';
     showScreen('local-setup-screen');
@@ -53,6 +78,7 @@ function changeLocalRounds(delta) {
 function startLocalGame() {
     localCurrentRound = 1;
     localScore = 0;
+    loadProgress();
     startLocalRound();
 }
 
@@ -111,6 +137,7 @@ function endDrawingPhase(reason) {
             document.getElementById('round-result-title').innerText = "انتهى الوقت! ❌";
             document.getElementById('round-result-title').style.color = "#ef4444";
         }
+        saveProgress();
         
         showScreen('score-screen');
         document.getElementById('round-result-word').innerText = `الكلمة كانت: ${localSecretWord}`;
@@ -129,6 +156,9 @@ function endDrawingPhase(reason) {
         } else {
             document.getElementById('local-next-round-btn').classList.remove('hidden');
             document.getElementById('local-finish-btn').classList.add('hidden');
+        }
+        if (localCurrentRound >= localTotalRounds) {
+            clearProgress();
         }
         
     } else {

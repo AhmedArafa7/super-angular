@@ -73,6 +73,41 @@ let isMapOpen = false;
 let currentWorld = 1;
 let unlockedWorld = 1;
 
+let savedCoins = 0;
+let savedGems = 0;
+let savedShipType = 'defender';
+let savedWeaponType = 'normal';
+
+function loadProgress() {
+    const saved = localStorage.getItem('spaceShooterProgress');
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            savedCoins = data.coins || 0;
+            savedGems = data.gems || 0;
+            unlockedWorld = data.unlockedWorld || 1;
+            savedShipType = data.shipType || 'defender';
+            savedWeaponType = data.weaponType || 'normal';
+        } catch(e) {}
+    }
+}
+function saveProgress() {
+    if (players && players[0]) {
+        savedCoins = players[0].coins;
+        savedGems = players[0].gems;
+        savedShipType = players[0].shipType;
+        savedWeaponType = players[0].weaponType;
+    }
+    localStorage.setItem('spaceShooterProgress', JSON.stringify({
+        coins: savedCoins,
+        gems: savedGems,
+        unlockedWorld: unlockedWorld,
+        shipType: savedShipType,
+        weaponType: savedWeaponType
+    }));
+}
+loadProgress();
+
 // Map UI
 const worldsMapModal = document.getElementById('worlds-map-modal');
 const closeMapBtn = document.getElementById('close-map-btn');
@@ -588,6 +623,7 @@ function toggleShop() {
         updateShopUI();
     } else {
         shopModal.classList.add('hidden');
+        saveProgress();
         // Removed requestAnimationFrame(animate) to prevent duplicate game loops!
     }
 }
@@ -804,7 +840,12 @@ function startGame() {
     isGameOver = false;
     keys = {};
 
-    players.push(new Player(1, canvas.width / 2 - 20, canvas.height - 80, '#3b82f6'));
+    let p1 = new Player(1, canvas.width / 2 - 20, canvas.height - 80, '#3b82f6');
+    p1.coins = savedCoins;
+    p1.gems = savedGems;
+    p1.shipType = savedShipType;
+    p1.weaponType = savedWeaponType;
+    players.push(p1);
     
     if (activeMode === 'local-coop' || activeMode === 'p2p-host' || activeMode === 'p2p-join') {
         p2Hud.classList.remove('hidden');
@@ -1262,6 +1303,7 @@ function syncState(data) {
 
 function endGame() {
     isGameOver = true;
+    saveProgress();
     gameOverScreen.classList.remove('hidden');
     resultDesc.innerText = `وصلت للموجة رقم ${wave}`;
     

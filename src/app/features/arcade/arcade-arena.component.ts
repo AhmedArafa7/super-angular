@@ -141,6 +141,30 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
   onIframeLoad() {
     this.isLoading = false;
     this.gameState = 'Ready';
+
+    // Inject global scroll fix for current and future games
+    try {
+      if (this.iframeRef && this.iframeRef.nativeElement) {
+        const iframeDoc = this.iframeRef.nativeElement.contentDocument || this.iframeRef.nativeElement.contentWindow?.document;
+        if (iframeDoc) {
+          const style = iframeDoc.createElement('style');
+          style.innerHTML = `
+            body, html {
+              overflow-y: auto !important;
+              overflow-x: hidden !important;
+              /* Prevent canvas dragging from scrolling the page accidentally */
+              touch-action: pan-y;
+            }
+            canvas {
+              touch-action: none;
+            }
+          `;
+          iframeDoc.head.appendChild(style);
+        }
+      }
+    } catch (e) {
+      console.warn('Cannot inject styles into game iframe:', e);
+    }
   }
 
   reloadGame() {

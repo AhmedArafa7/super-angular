@@ -48,6 +48,23 @@ let localScoreTop = 0;
 let localScoreBottom = 0;
 let localMaxScore = 10;
 
+function saveProgress() {
+    localStorage.setItem('dobbleProgress', JSON.stringify({ localScoreTop, localScoreBottom }));
+}
+function loadProgress() {
+    const saved = localStorage.getItem('dobbleProgress');
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            localScoreTop = data.localScoreTop || 0;
+            localScoreBottom = data.localScoreBottom || 0;
+        } catch(e) {}
+    }
+}
+function clearProgress() {
+    localStorage.removeItem('dobbleProgress');
+}
+
 function showLocalSetup() {
     playMode = 'local';
     showScreen('local-setup-screen');
@@ -63,6 +80,8 @@ function changeLocalMaxScore(delta) {
 function startLocalGame() {
     localScoreTop = 0;
     localScoreBottom = 0;
+    loadProgress(); // Resume if it exists
+
     localDeck = generateDeck();
     
     localCenterCard = localDeck.pop();
@@ -104,6 +123,7 @@ function handleLocalClick(player, emoji) {
             localScoreBottom++;
             localBottomCard = localCenterCard;
         }
+        saveProgress();
         
         if (localScoreTop >= localMaxScore || localScoreBottom >= localMaxScore) {
             endLocalGame(localScoreTop >= localMaxScore ? 'اللاعب العلوي' : 'اللاعب السفلي');
@@ -118,6 +138,7 @@ function handleLocalClick(player, emoji) {
 }
 
 function endLocalGame(winnerName) {
+    clearProgress();
     showScreen('winner-screen');
     document.getElementById('winner-name').innerText = winnerName;
     document.getElementById('host-restart-controls').classList.add('hidden');

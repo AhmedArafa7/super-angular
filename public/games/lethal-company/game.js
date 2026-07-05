@@ -62,6 +62,24 @@ let myState = { x: 0, y: 1.5, z: 0, rx: 0, ry: 0, scrap: 0, battery: 100, isDead
 let globalCollected = 0;
 let globalQuota = 130;
 let daysLeft = 3; 
+
+function loadProgress() {
+    const saved = localStorage.getItem('lethalCompanyProgress');
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            globalCollected = data.globalCollected ?? 0;
+            globalQuota = data.globalQuota ?? 130;
+            daysLeft = data.daysLeft ?? 3;
+        } catch(e) {}
+    }
+}
+function saveProgress() {
+    localStorage.setItem('lethalCompanyProgress', JSON.stringify({
+        globalCollected, globalQuota, daysLeft
+    }));
+}
+loadProgress();
 let timeRemaining = 360; 
 let lastTime = performance.now();
 let selectedMoon = 'experimentation';
@@ -733,6 +751,7 @@ function endDayHost() {
         conn.send({ type: 'leave_moon', globalCollected, daysLeft, globalQuota });
     }
     
+    saveProgress();
     updateHubUI();
     showScreen(shipHubScreen);
     crosshair.classList.add('hidden');
@@ -749,6 +768,7 @@ function endDayClient(data) {
     daysLeft = data.daysLeft;
     globalQuota = data.globalQuota;
     
+    saveProgress();
     updateHubUI();
     showScreen(shipHubScreen);
     crosshair.classList.add('hidden');
