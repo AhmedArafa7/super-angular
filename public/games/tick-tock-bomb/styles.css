@@ -1,0 +1,215 @@
+body {
+    background-color: #111827;
+    color: #f8fafc;
+    font-family: 'Tajawal', sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    text-align: center;
+    overflow: hidden;
+}
+
+#app {
+    width: 100%;
+    max-width: 500px;
+    padding: 20px;
+}
+
+.screen {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.screen.active {
+    display: block;
+}
+
+.hidden {
+    display: none !important;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.bomb-logo {
+    font-size: 8rem;
+    filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.6));
+    animation: float 2s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+}
+
+.title {
+    font-size: 3rem;
+    color: #fca5a5;
+    margin: 10px 0;
+    text-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    color: #9ca3af;
+    margin-bottom: 30px;
+}
+
+.btn {
+    font-family: 'Tajawal', sans-serif;
+    font-weight: 900;
+    font-size: 1.5rem;
+    border: none;
+    border-radius: 15px;
+    padding: 20px 30px;
+    width: 100%;
+    cursor: pointer;
+    transition: 0.2s;
+    text-transform: uppercase;
+}
+
+.btn:active {
+    transform: scale(0.95);
+}
+
+.btn-primary {
+    background: #10b981;
+    color: white;
+    box-shadow: 0 8px 0 #059669;
+}
+
+.btn-primary:active {
+    box-shadow: 0 0 0 #059669;
+    transform: translateY(8px);
+}
+
+.btn-secondary {
+    background: #4b5563;
+    color: white;
+    box-shadow: 0 8px 0 #374151;
+}
+
+.btn-secondary:active {
+    box-shadow: 0 0 0 #374151;
+    transform: translateY(8px);
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+    box-shadow: 0 8px 0 #b91c1c;
+    font-size: 1.6rem;
+    margin-top: 30px;
+    animation: pulse 1s infinite;
+}
+
+.btn-danger:active {
+    box-shadow: 0 0 0 #b91c1c;
+    transform: translateY(8px);
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); box-shadow: 0 8px 0 #b91c1c, 0 0 20px #ef4444; }
+    100% { transform: scale(1); }
+}
+
+.mt-10 { margin-top: 10px; }
+.mt-30 { margin-top: 30px; }
+
+.rules {
+    background: #1f2937;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: right;
+    border: 1px solid #374151;
+}
+
+.rules h3 {
+    color: #fcd34d;
+    margin-top: 0;
+}
+
+.category-box {
+    background: #1e293b;
+    border: 3px solid #3b82f6;
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+}
+
+#category-text {
+    font-size: 2.5rem;
+    color: #60a5fa;
+    margin: 10px 0 0 0;
+}
+
+.bomb-container {
+    position: relative;
+    display: inline-block;
+}
+
+.bomb-visual {
+    font-size: 10rem;
+    filter: drop-shadow(0 0 30px #ef4444);
+}
+
+.bomb-tick {
+    animation: tick 0.5s infinite alternate;
+}
+
+@keyframes tick {
+    0% { transform: scale(1) rotate(-5deg); filter: drop-shadow(0 0 10px #ef4444); }
+    100% { transform: scale(1.1) rotate(5deg); filter: drop-shadow(0 0 40px #ef4444) hue-rotate(-20deg); }
+}
+
+.spark {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 3rem;
+    animation: sparkAnim 0.2s infinite;
+}
+
+@keyframes sparkAnim {
+    0% { transform: translate(0, 0) scale(1); opacity: 1; }
+    100% { transform: translate(10px, -10px) scale(0.5); opacity: 0; }
+}
+
+.explosion-visual {
+    font-size: 12rem;
+    animation: explode 0.5s ease-out forwards;
+}
+
+@keyframes explode {
+    0% { transform: scale(0.1); opacity: 0; }
+    50% { transform: scale(1.5); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.explosion-title {
+    font-size: 5rem;
+    color: #ef4444;
+    text-shadow: 0 0 20px #ef4444, 0 0 40px #f97316;
+    margin: 0;
+}
+
+.explosion-text {
+    font-size: 1.5rem;
+    color: #fca5a5;
+}
+
+.bg-flash {
+    animation: flashBg 0.1s infinite;
+}
+
+@keyframes flashBg {
+    0% { background-color: #ef4444; }
+    50% { background-color: #111827; }
+    100% { background-color: #ef4444; }
+}

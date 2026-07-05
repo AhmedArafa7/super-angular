@@ -14,7 +14,7 @@ import { ArcadeService, ArcadeGame } from './arcade.service';
       <div class="relative mb-12 rounded-[2.5rem] overflow-hidden border border-white/5 bg-slate-900 shadow-2xl">
         <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent z-10"></div>
         <div class="w-full h-[400px] bg-slate-800 flex items-center justify-center opacity-50 grayscale hover:grayscale-0 transition-all duration-1000">
-           <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.999 3.107c-2.31 0-3.35.334-4.22.951C6.91 4.675 6.444 5.71 6 7.781c-.244 1.135-.558 3.535-1.127 5.253-.594 1.79-1.396 2.378-2.186 2.77C1.517 16.39 1 17.158 1 18.005c0 1.25.918 2.32 2.148 2.473 1.157.144 2.219-.481 2.827-1.465.342-.553.518-1.026.772-1.789.26-.777.625-1.884 1.252-2.224m14.002-11.893c2.31 0 3.35.334 4.22.951.87.617 1.336 1.652 1.78 3.723.244 1.135.558 3.535 1.127 5.253.594 1.79 1.396 2.378 2.186 2.77C22.483 16.39 23 17.158 23 18.005c0 1.25-.918 2.32-2.148 2.473-1.157.144-2.219-.481-2.827-1.465-.342-.553-.518-1.026-.772-1.789-.26-.777-.625-1.884-1.252-2.224m-12.002.5c2.348 0 4.14 1.288 4.764 3.032.22.61.353 1.31.353 2.068 0 .524-.047 1.026-.134 1.5M12 12c-2.348 0-4.14 1.288-4.764 3.032-.22.61-.353 1.31-.353 2.068 0 .524.047 1.026.134 1.5m6.883-9.5V8.5h3v2h-3v3h-2v-3h-3v-2h3v-3h2zm-12 5.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm-3 4a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/></svg>
+           <img src="https://images.unsplash.com/photo-1596515828859-e9ceec5c4839?q=80&w=1000&auto=format&fit=crop" class="w-full h-full object-cover" alt="Tank Battle Feature" />
         </div>
         
         <div class="absolute bottom-0 right-0 p-8 md:p-12 z-20 max-w-2xl">
@@ -49,8 +49,8 @@ import { ArcadeService, ArcadeGame } from './arcade.service';
         <div *ngFor="let game of games" class="group relative">
           <div class="aspect-[4/3] rounded-[2rem] overflow-hidden border border-white/5 bg-slate-900 transition-all duration-500 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-indigo-500/10 flex flex-col">
             <div class="flex-1 bg-slate-800 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity">
-                <svg *ngIf="game.id === 'tank-battle'" xmlns="http://www.w3.org/2000/svg" class="size-20 text-slate-600" viewBox="0 0 24 24" fill="currentColor"><path d="M21.928 11.607c-.202-.488-.635-.605-1.047-.605H18V9c0-1.103-.897-2-2-2H8c-1.103 0-2 .897-2 2v2H3.119c-.412 0-.845.117-1.047.605-.278.67-.044 1.56.592 2.213L4 15.215V17c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-1.785l1.336-1.393c.636-.653.87-1.543.592-2.215zM6 17v-2h12l.002 2H6zm3-7V8h6v2H9z"/></svg>
-                <svg *ngIf="game.id !== 'tank-battle'" xmlns="http://www.w3.org/2000/svg" class="size-20 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                <img *ngIf="game.thumbnail" [src]="game.thumbnail" class="w-full h-full object-cover" [alt]="game.title" />
+                <svg *ngIf="!game.thumbnail" xmlns="http://www.w3.org/2000/svg" class="size-20 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             </div>
             
             <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-6 flex flex-col justify-end text-right">

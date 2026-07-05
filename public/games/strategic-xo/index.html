@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة XO الاستراتيجية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Main Menu -->
+        <div id="main-menu" class="screen">
+            <div class="bg-pattern"></div>
+            <h1 class="glow-text title-large">XO الخارقة ✖️⭕</h1>
+            <p class="subtitle">فكر في كل خطوة، فموقع لعبك يحدد أين سيلعب خصمك!</p>
+            
+            <div class="menu-section">
+                <button class="action-btn primary mode-btn" data-mode="local">لعب محلي (ضد صديق)</button>
+                <div class="divider"><span>أو</span></div>
+                <button class="action-btn secondary mode-btn" data-mode="p2p">تحدي أونلاين (P2P)</button>
+            </div>
+        </div>
+
+        <!-- P2P Menu -->
+        <div id="p2p-menu" class="screen hidden">
+            <div class="bg-pattern"></div>
+            <h1 class="glow-text">تحدي الأصدقاء 🌐</h1>
+            
+            <div class="p2p-box">
+                <h2>إنشاء غرفة تحدي</h2>
+                <button id="create-room-btn" class="action-btn primary">إنشاء غرفة</button>
+                <div id="room-info" class="hidden">
+                    <p>أرسل شفرة الاتصال للمنافس:</p>
+                    <div id="roomIdDisplay" class="room-id">جاري الإنشاء...</div>
+                    <p class="wait-text">في انتظار وصول المنافس...</p>
+                </div>
+
+                <div class="divider"><span>أو</span></div>
+
+                <h2>الانضمام لغرفة تحدي</h2>
+                <div class="join-box">
+                    <input type="text" id="join-room-id" placeholder="أدخل شفرة الاتصال هنا">
+                    <button id="join-room-btn" class="action-btn secondary">دخول التحدي</button>
+                    <p id="join-error" class="error-msg hidden">تعذر الاتصال بالغرفة.</p>
+                </div>
+            </div>
+            
+            <button id="back-to-menu-btn" class="action-btn transparent mt-20">إلغاء التحدي</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen hidden">
+            <div class="hud" id="main-hud">
+                <div class="player-hud active-turn" id="p1-hud">
+                    <h3>اللاعب 1 <span class="controls-hint">(أنت)</span></h3>
+                    <div class="player-symbol text-x">✖</div>
+                </div>
+                
+                <div class="game-info">
+                    <div id="turn-indicator" class="turn-indicator text-x">دور اللاعب 1</div>
+                </div>
+
+                <div class="player-hud" id="p2-hud">
+                    <h3>اللاعب 2</h3>
+                    <div class="player-symbol text-o">⭕</div>
+                </div>
+            </div>
+            
+            <div class="board-container">
+                <div id="super-board" class="super-board">
+                    <!-- 9 Mini Boards will be injected by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="screen hidden">
+            <div class="game-over-box">
+                <h1 id="game-over-title" class="glow-text">انتهت اللعبة!</h1>
+                <p id="game-over-msg" class="subtitle">يا لها من مباراة استراتيجية!</p>
+                
+                <div class="menu-section mt-20">
+                    <button id="restart-btn" class="action-btn primary">العب مرة أخرى</button>
+                    <button id="quit-btn" class="action-btn secondary">العودة للقائمة</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="game.js"></script>
+</body>
+</html>

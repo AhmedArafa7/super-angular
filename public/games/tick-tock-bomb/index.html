@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>القنبلة الموقوتة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        
+        <!-- Menu Screen -->
+        <div id="menu-screen" class="screen active">
+            <div class="bomb-logo">💣</div>
+            <h1 class="title">القنبلة الموقوتة</h1>
+            <p class="subtitle">مررها قبل أن تنفجر!</p>
+            
+            <div class="lobby-box mt-30">
+                <button class="btn btn-primary" onclick="startLocalGame()">🕹️ لعب محلي (جهاز واحد)</button>
+                <button class="btn btn-primary mt-10" onclick="showCreateRoom()" style="background-color: #f59e0b; color: #000;">🌐 إنشاء غرفة (مضيف)</button>
+                <button class="btn btn-secondary mt-10" onclick="showJoinRoom()">🔗 الانضمام لغرفة</button>
+                <button class="btn btn-secondary mt-10" onclick="window.history.back()">العودة للأركيد</button>
+            </div>
+            
+            <div class="rules mt-30">
+                <p>القواعد:</p>
+                <ul>
+                    <li>1. عندما تنفجر القنبلة، اللاعب الذي بيده الهاتف يخسر!</li>
+                    <li>2. قل كلمة تطابق المطلوب ثم اضغط "تمرير".</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Host Screen (Online) -->
+        <div id="host-screen" class="screen">
+            <h2 style="color: #facc15;">أنت المضيف 👑</h2>
+            <p>شارك هذا الكود مع أصدقائك:</p>
+            <h1 id="room-code-display" class="title mt-10" style="letter-spacing: 5px; user-select: all;">...</h1>
+            
+            <div class="players-list-box mt-20">
+                <h3>اللاعبون المتواجدون (<span id="host-players-count">1</span>):</h3>
+                <ul id="host-players-list" style="list-style: none; padding: 0;">
+                    <li>أنت (المضيف)</li>
+                </ul>
+            </div>
+            
+            <button class="btn btn-primary mt-30" id="start-online-btn" onclick="startOnlineGame()" disabled>بدء اللعبة (يتطلب لاعبين على الأقل)</button>
+            <button class="btn btn-secondary mt-10" onclick="leaveRoom()">إلغاء</button>
+        </div>
+
+        <!-- Join Screen (Online) -->
+        <div id="join-screen" class="screen">
+            <h2>الانضمام لغرفة</h2>
+            <p class="mt-20">أدخل اسمك:</p>
+            <input type="text" id="player-name-input" class="form-input mt-10" placeholder="اسمك (مثال: أحمد)">
+            
+            <p class="mt-20">أدخل كود الغرفة:</p>
+            <input type="text" id="room-code-input" class="form-input mt-10" placeholder="مثال: ABCD" style="text-transform: uppercase;" maxlength="4">
+            
+            <p id="join-status" class="mt-10" style="color: #facc15;"></p>
+            
+            <button class="btn btn-primary mt-20" onclick="joinRoom()">انضمام</button>
+            <button class="btn btn-secondary mt-10" onclick="showScreen('menu-screen')">عودة</button>
+        </div>
+
+        <!-- Guest Waiting Screen (Online) -->
+        <div id="guest-waiting-screen" class="screen">
+            <h2>تم الانضمام بنجاح! ✅</h2>
+            <p class="mt-20">أنت في غرفة <span id="guest-room-id" style="color:#fcd34d"></span></p>
+            <p class="mt-10">في انتظار المضيف لبدء اللعبة...</p>
+            
+            <div class="players-list-box mt-20">
+                <h3>اللاعبون المتواجدون:</h3>
+                <ul id="guest-players-list" style="list-style: none; padding: 0;"></ul>
+            </div>
+            
+            <button class="btn btn-secondary mt-30" onclick="leaveRoom()">خروج</button>
+        </div>
+
+        <!-- Game Screen (Shared) -->
+        <div id="game-screen" class="screen">
+            <div id="turn-indicator" class="mt-20" style="font-size: 1.5rem; color: #facc15;">
+                <span id="local-turn-text" class="hidden">مرر الهاتف! 📱</span>
+                <span id="online-turn-text" class="hidden">دور: <span id="current-player-name">...</span></span>
+            </div>
+            
+            <div class="category-box mt-20">
+                <p>المطلوب:</p>
+                <h2 id="category-text">تحميل...</h2>
+            </div>
+            
+            <div class="bomb-container mt-30">
+                <div id="bomb" class="bomb-visual">💣</div>
+            </div>
+            
+            <div id="action-controls" class="mt-30 hidden">
+                <p style="color: #ef4444; font-weight: bold; margin-bottom: 10px;" id="action-prompt">أسرع! انطق كلمة واضغط تمرير!</p>
+                <button class="btn btn-danger" onclick="passBomb()">تمرير! ⏭️</button>
+            </div>
+            <div id="wait-controls" class="mt-30 hidden">
+                <p style="color: #9ca3af;">انتظر دورك...</p>
+            </div>
+        </div>
+
+        <!-- Explosion Screen (Shared) -->
+        <div id="explosion-screen" class="screen">
+            <div class="explosion-visual">💥</div>
+            <h1 class="explosion-title">بووووم!</h1>
+            <p class="explosion-text" id="loser-msg">لقد انفجرت القنبلة في وجه <span id="loser-name" style="color:#ef4444;">...</span>!</p>
+            <p class="explosion-text hidden" id="local-loser-msg">انفجرت القنبلة! اللاعب الذي بيده الهاتف قد خسر! 💀</p>
+            
+            <div id="host-restart-controls" class="hidden mt-30">
+                <button class="btn btn-primary" onclick="startOnlineGame()">لعب جولة أخرى</button>
+            </div>
+            <div id="local-restart-controls" class="hidden mt-30">
+                <button class="btn btn-primary" onclick="startLocalGame()">لعب جولة أخرى</button>
+            </div>
+            
+            <button class="btn btn-secondary mt-10" onclick="leaveRoom()">العودة للقائمة</button>
+        </div>
+
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>

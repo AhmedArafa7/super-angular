@@ -16,6 +16,21 @@
         </header>
 
         <div id="mode-selection" class="menu-section">
+            <div style="margin-bottom: 15px; text-align: center;">
+                <label for="game-mode-select" style="color: #fff; margin-right: 10px; font-weight: bold;">Game Mode:</label>
+                <select id="game-mode-select" style="padding: 5px; border-radius: 5px; background: #334155; color: #fff; border: 1px solid #475569; font-size: 16px;">
+                    <option value="classic">Classic (Deathmatch)</option>
+                    <option value="survival">Survival (Zombies)</option>
+                    <option value="baseDefense">Base Defense</option>
+                    <option value="bossFight">Boss Fight</option>
+                </select>
+            </div>
+            <div style="margin-bottom: 20px; text-align: center;">
+                <label style="color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <input type="checkbox" id="night-mode-toggle" checked style="width: 18px; height: 18px; cursor: pointer;">
+                    Enable Night Mode (Weather)
+                </label>
+            </div>
             <button class="mode-btn" data-mode="local">Local Play</button>
             <button class="mode-btn" data-mode="p2p">P2P Multiplayer (Free)</button>
             <button class="mode-btn disabled" disabled title="Requires Backend Setup">Dedicated Server (Pro)</button>

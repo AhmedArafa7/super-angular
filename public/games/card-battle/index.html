@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Battle</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Mode Selection Screen -->
+        <div id="mode-selection-screen" class="screen">
+            <h1 class="glow-text" style="font-size: 4rem; margin-bottom: 40px;">CARD BATTLE</h1>
+            
+            <div id="main-menu" class="menu-section" style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
+                <button class="action-btn primary mode-btn" data-mode="local" style="width: 300px;">العب ضد الذكاء الاصطناعي</button>
+                <button class="action-btn primary mode-btn" data-mode="local2p" style="width: 300px; background: #8b5cf6;">العب مع صديق (نفس الجهاز)</button>
+                <button class="action-btn secondary mode-btn" data-mode="p2p" style="width: 300px;">العب مع صديق (P2P Multiplayer)</button>
+            </div>
+
+            <div id="p2p-menu" class="menu-section hidden" style="background: rgba(30, 41, 59, 0.9); padding: 30px; border-radius: 15px; border: 2px solid #3b82f6; width: 400px; text-align: center;">
+                <h2 style="margin-bottom: 20px; color: #60a5fa;">غرفة اللعب المتعدد</h2>
+                
+                <button id="create-room-btn" class="action-btn primary" style="width: 100%; margin-bottom: 20px;">إنشاء غرفة جديدة</button>
+                
+                <div id="room-info" class="hidden" style="margin-bottom: 20px; padding: 15px; background: #0f172a; border-radius: 8px;">
+                    <p style="color: #94a3b8; margin-bottom: 10px;">كود الغرفة الخاصة بك:</p>
+                    <h3 id="roomIdDisplay" style="color: #fcd34d; letter-spacing: 2px; user-select: all;">جارِ الإنشاء...</h3>
+                    <p style="color: #10b981; font-size: 0.9rem; margin-top: 10px;">في انتظار انضمام الخصم...</p>
+                </div>
+
+                <div style="margin: 20px 0; border-top: 1px solid #475569; position: relative;">
+                    <span style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #1e293b; padding: 0 10px; color: #94a3b8;">أو</span>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <input type="text" id="join-room-id" placeholder="أدخل كود الغرفة" style="padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; text-align: center; font-size: 1.1rem; letter-spacing: 2px;">
+                    <button id="join-room-btn" class="action-btn secondary" style="width: 100%;">انضمام للغرفة</button>
+                    <p id="join-error" style="color: #ef4444; font-size: 0.9rem;" class="hidden">فشل الانضمام، تأكد من الكود</p>
+                </div>
+
+                <button class="back-to-modes-btn action-btn" style="margin-top: 20px; width: 100%; background: transparent; border: 1px solid #475569;">رجوع</button>
+            </div>
+        </div>
+
+        <!-- Deck Building Phase -->
+        <div id="deck-builder-screen" class="screen hidden">
+            <h1 class="glow-text" id="builder-title">جهز مجموعة أوراقك</h1>
+            <p class="subtitle">كل بطاقة تستهلك نقاط حسب مستواها (المستوى = عدد النقاط)</p>
+            
+            <div class="points-container">
+                <div class="points-circle">
+                    <span id="points-left">100</span>
+                    <small>نقطة متبقية</small>
+                </div>
+            </div>
+
+            <div class="builder-layout">
+                <div class="available-cards card-grid" id="available-cards-container">
+                    <!-- Cards injected by JS -->
+                </div>
+                
+                <div class="deck-preview">
+                    <h2>مجموعتك (<span id="deck-count">0</span>/20)</h2>
+                    <p class="hint">سيتم سحب البطاقات بهذا الترتيب</p>
+                    <div id="my-deck-list" class="deck-list">
+                        <!-- Added cards -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="bottom-actions">
+                <p id="waiting-p2p-msg" class="hidden" style="color: #fcd34d; margin-left: 20px; align-self: center;">في انتظار أن يجهز الخصم...</p>
+                <button id="start-battle-btn" class="action-btn primary" disabled>جاهز للمعركة ⚔️</button>
+            </div>
+        </div>
+
+        <!-- Battle Phase -->
+        <div id="battle-screen" class="screen hidden">
+            <!-- Headers / Stats -->
+            <div class="battle-header">
+                <!-- Player 1 -->
+                <div class="player-hud">
+                    <div class="hud-info">
+                        <h2>أنت</h2>
+                        <span id="p1-hp-text">100/100</span>
+                    </div>
+                    <div class="hp-bar-bg"><div id="p1-hp-bar" class="hp-bar-fill"></div></div>
+                    <div id="p1-status" class="status-tray"></div>
+                </div>
+                
+                <div class="vs-badge">VS</div>
+                
+                <!-- Player 2 (Enemy) -->
+                <div class="player-hud enemy-hud">
+                    <div class="hud-info">
+                        <span id="p2-hp-text">100/100</span>
+                        <h2 id="p2-name-label">الذكاء الاصطناعي</h2>
+                    </div>
+                    <div class="hp-bar-bg"><div id="p2-hp-bar" class="hp-bar-fill enemy-fill"></div></div>
+                    <div id="p2-status" class="status-tray"></div>
+                </div>
+            </div>
+
+            <!-- Board Area -->
+            <div class="board">
+                <!-- P2 Deck Area -->
+                <div class="deck-zone enemy-zone">
+                    <div class="deck-stack">
+                        <div class="card-back"></div>
+                        <span class="deck-count" id="p2-deck-count">10</span>
+                    </div>
+                    <div class="discard-stack" id="p2-discard-stack">
+                        <div class="discard-placeholder"></div>
+                        <span class="deck-count" id="p2-discard-count">0</span>
+                    </div>
+                </div>
+
+                <!-- Play Area (Center) -->
+                <div class="play-zone">
+                    <div id="p2-active-card" class="active-card-slot"></div>
+                    <div id="clash-fx" class="clash-fx"></div>
+                    <div id="p1-active-card" class="active-card-slot"></div>
+                </div>
+
+                <!-- P1 Deck Area -->
+                <div class="deck-zone">
+                    <div class="discard-stack" id="p1-discard-stack">
+                        <div class="discard-placeholder"></div>
+                        <span class="deck-count" id="p1-discard-count">0</span>
+                    </div>
+                    <div class="deck-stack">
+                        <div class="card-back"></div>
+                        <span class="deck-count" id="p1-deck-count">10</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Player 2 Hand (For Local 2P) -->
+            <div class="hand-zone enemy-hand-zone hidden" id="p2-hand-container">
+                <div id="p2-hand" class="hand">
+                    <!-- Cards drawn will appear here -->
+                </div>
+            </div>
+
+            <!-- Player 1 Hand -->
+            <div class="hand-zone">
+                <div id="p1-hand" class="hand">
+                    <!-- Cards drawn will appear here -->
+                </div>
+            </div>
+
+            <!-- Battle Log Overlay (Optional) -->
+            <div id="battle-log" class="battle-log">
+                <ul id="log-list"></ul>
+            </div>
+            
+            <button id="end-turn-btn" class="action-btn hidden">التالي ⏩</button>
+        </div>
+
+        <!-- Game Over -->
+        <div id="game-over-screen" class="screen hidden overlay">
+            <div class="modal">
+                <h1 id="result-title">لقد فزت!</h1>
+                <p id="result-desc">نجحت في هزيمة الخصم ببراعة.</p>
+                <div class="modal-actions">
+                    <button id="rematch-btn" class="action-btn primary">إعادة التحدي</button>
+                    <button id="rebuild-btn" class="action-btn secondary">تغيير الأوراق</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="game.js"></script>
+</body>
+</html>

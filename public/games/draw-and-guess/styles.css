@@ -1,0 +1,239 @@
+body {
+    background-color: #f8fafc;
+    color: #1e293b;
+    font-family: 'Tajawal', sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    text-align: center;
+    overflow: hidden;
+}
+
+#app {
+    width: 100%;
+    max-width: 600px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.screen {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+.screen.active {
+    display: flex;
+}
+
+.hidden {
+    display: none !important;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.title {
+    font-size: 3rem;
+    color: #3b82f6;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    color: #64748b;
+    margin-bottom: 30px;
+}
+
+.settings-box {
+    background: #e2e8f0;
+    padding: 30px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+
+.stepper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.stepper button {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.stepper button:active {
+    transform: scale(0.9);
+}
+
+.stepper span {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.btn {
+    font-family: 'Tajawal', sans-serif;
+    font-weight: 900;
+    font-size: 1.5rem;
+    border: none;
+    border-radius: 15px;
+    padding: 20px 30px;
+    width: 100%;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-primary { background: #3b82f6; color: white; box-shadow: 0 6px 0 #2563eb; }
+.btn-primary:active { transform: translateY(6px); box-shadow: 0 0 0 #2563eb; }
+
+.btn-secondary { background: #94a3b8; color: white; box-shadow: 0 6px 0 #64748b; }
+.btn-secondary:active { transform: translateY(6px); box-shadow: 0 0 0 #64748b; }
+
+.btn-success { background: #10b981; color: white; box-shadow: 0 6px 0 #059669; }
+.btn-success:active { transform: translateY(6px); box-shadow: 0 0 0 #059669; }
+
+.btn-danger { background: #ef4444; color: white; box-shadow: 0 6px 0 #b91c1c; }
+.btn-danger:active { transform: translateY(6px); box-shadow: 0 0 0 #b91c1c; }
+
+.mt-10 { margin-top: 10px; }
+.mt-30 { margin-top: 30px; }
+
+/* Word Reveal */
+.secret-word-box {
+    background: #3b82f6;
+    color: white;
+    padding: 30px;
+    border-radius: 20px;
+    margin: 30px 0;
+    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+}
+
+#secret-word {
+    font-size: 4rem;
+    margin: 0;
+}
+
+/* Drawing Screen */
+#drawing-screen {
+    padding: 0;
+    background: #e2e8f0;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: white;
+    border-bottom: 2px solid #cbd5e1;
+}
+
+.timer {
+    font-size: 2rem;
+    font-weight: 900;
+    color: #ef4444;
+}
+
+.status {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #334155;
+}
+
+.canvas-container {
+    flex: 1;
+    width: 100%;
+    background: white;
+    position: relative;
+    cursor: crosshair;
+    touch-action: none; /* Prevent scrolling while drawing */
+}
+
+#drawing-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: white;
+    border-top: 2px solid #cbd5e1;
+}
+
+.colors {
+    display: flex;
+    gap: 10px;
+}
+
+.color-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.color-btn.active {
+    border-color: #3b82f6;
+    transform: scale(1.2);
+}
+
+.actions {
+    display: flex;
+    gap: 10px;
+}
+
+.action-btn {
+    background: #f1f5f9;
+    border: 2px solid #cbd5e1;
+    padding: 10px 15px;
+    border-radius: 10px;
+    font-family: 'Tajawal', sans-serif;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.action-btn.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #2563eb;
+}
+
+.drawing-controls {
+    display: flex;
+    gap: 10px;
+    padding: 15px 20px;
+    background: white;
+}
+
+/* Score Screen */
+.score-board {
+    background: #e2e8f0;
+    padding: 20px;
+    border-radius: 20px;
+    margin: 20px 0;
+}

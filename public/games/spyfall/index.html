@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>لعبة الجاسوس - Spyfall</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Menu Screen -->
+        <div id="menu-screen" class="screen active">
+            <h1 class="game-title">الجاسوس 🕵️‍♂️</h1>
+            <p class="subtitle">هل يمكنك كشف الخائن بينكم؟</p>
+            
+            <div class="lobby-box mt-30">
+                <button class="primary-btn" onclick="showLocalSetup()">🕹️ لعب محلي (جهاز واحد)</button>
+                <button class="primary-btn mt-10" onclick="showCreateRoom()" style="background-color: #f59e0b; color: #000;">🌐 إنشاء غرفة (مضيف)</button>
+                <button class="secondary-btn mt-10" onclick="showJoinRoom()">🔗 الانضمام لغرفة</button>
+                <button class="secondary-btn mt-10" onclick="window.history.back()">العودة للأركيد</button>
+            </div>
+        </div>
+
+        <!-- Local Setup Screen -->
+        <div id="local-setup-screen" class="screen">
+            <h2>إعداد اللعب المحلي</h2>
+            <div class="settings-box mt-20">
+                <label>عدد اللاعبين:</label>
+                <div class="stepper">
+                    <button onclick="changeLocalPlayers(-1)">-</button>
+                    <span id="local-player-count">4</span>
+                    <button onclick="changeLocalPlayers(1)">+</button>
+                </div>
+                
+                <label class="mt-20" style="display:block;">فئة الكلمات:</label>
+                <select id="local-category-select" class="form-select mt-10">
+                    <option value="random">🎲 عشوائي (كل الفئات)</option>
+                    <option value="places">🏢 أماكن</option>
+                    <option value="countries">🌍 بلدان</option>
+                    <option value="animals">🦁 حيوانات</option>
+                    <option value="actors">🎭 ممثلين</option>
+                </select>
+                
+                <button class="primary-btn mt-30" onclick="startLocalGame()">بدء اللعبة</button>
+                <button class="secondary-btn mt-10" onclick="showScreen('menu-screen')">عودة</button>
+            </div>
+        </div>
+
+        <!-- Local Pass Screen -->
+        <div id="local-pass-screen" class="screen">
+            <h2 id="local-pass-title" class="attention-text">أعطِ الهاتف للاعب رقم <span id="local-current-player-num">1</span></h2>
+            <p class="warning-text">تأكد ألا ينظر أحد إلى شاشتك!</p>
+            
+            <div class="secret-box hidden" id="local-secret-box">
+                <p>دورك هو:</p>
+                <h1 id="local-player-role" class="role-text">طبيعي</h1>
+                <div id="local-secret-word-container">
+                    <p>الكلمة السرية:</p>
+                    <h2 id="local-secret-word" class="word-text">...</h2>
+                </div>
+            </div>
+            
+            <button class="primary-btn mt-30" id="local-show-secret-btn" onclick="localShowSecret()">إظهار دوري 👁️</button>
+            <button class="danger-btn mt-30 hidden" id="local-hide-pass-btn" onclick="localHideAndPass()">إخفاء وتمرير 📱</button>
+        </div>
+
+        <!-- Local Question Screen -->
+        <div id="local-question-screen" class="screen">
+            <h2>مرحلة الأسئلة (الجولة <span id="local-round-number">1</span>)</h2>
+            <div class="turn-box mt-30">
+                <p>الآن:</p>
+                <h1 class="attention-text">اللاعب <span id="local-asker-num">1</span> ⬅️ يسأل ⬅️ اللاعب <span id="local-answerer-num">2</span></h1>
+            </div>
+            <button class="primary-btn mt-30" onclick="localNextTurn()">التالي</button>
+            
+            <div class="reference-list mt-30">
+                <h3>📜 قائمة الكلمات المحتملة</h3>
+                <div id="local-words-list" class="words-grid"></div>
+            </div>
+            <button class="danger-btn mt-20" onclick="localEndRound()">إنهاء الجولة والتصويت</button>
+        </div>
+
+        <!-- Host Screen (Online) -->
+        <div id="host-screen" class="screen">
+            <h2 class="attention-text">أنت المضيف 👑</h2>
+            <p>شارك هذا الكود مع أصدقائك ليدخلوا الغرفة:</p>
+            <h1 id="room-code-display" class="word-text mt-10 tracking-widest" style="user-select: all;">جاري الإنشاء...</h1>
+            
+            <div class="players-list-box mt-20">
+                <h3>اللاعبون في الغرفة (<span id="host-players-count">1</span>):</h3>
+                <ul id="host-players-list">
+                    <!-- populated by js -->
+                </ul>
+            </div>
+            
+            <div class="settings-box mt-30">
+                <label style="display:block;">فئة الكلمات:</label>
+                <select id="category-select" class="form-select mt-10">
+                    <option value="random">🎲 عشوائي (كل الفئات)</option>
+                    <option value="places">🏢 أماكن</option>
+                    <option value="countries">🌍 بلدان</option>
+                    <option value="animals">🦁 حيوانات</option>
+                    <option value="actors">🎭 ممثلين</option>
+                </select>
+                
+                <button class="primary-btn mt-30" id="start-online-btn" onclick="startOnlineGame()" disabled>بدء اللعبة (يتطلب 3 لاعبين)</button>
+                <button class="secondary-btn mt-10" onclick="leaveRoom()">الخروج وإلغاء الغرفة</button>
+            </div>
+        </div>
+
+        <!-- Join Screen (Online) -->
+        <div id="join-screen" class="screen">
+            <h2>الانضمام لغرفة</h2>
+            <p class="mt-20">أدخل اسمك:</p>
+            <input type="text" id="player-name-input" class="form-input mt-10" placeholder="اسمك (مثال: أحمد)">
+            
+            <p class="mt-20">أدخل كود الغرفة المكون من 4 حروف:</p>
+            <input type="text" id="room-code-input" class="form-input mt-10" placeholder="مثال: ABCD" style="text-transform: uppercase;" maxlength="4">
+            
+            <p id="join-status" class="mt-10" style="color: #fcd34d; font-weight: bold;"></p>
+            
+            <button class="primary-btn mt-20" onclick="joinRoom()">انضمام</button>
+            <button class="secondary-btn mt-10" onclick="showScreen('menu-screen')">عودة</button>
+        </div>
+
+        <!-- Guest Waiting Screen (Online) -->
+        <div id="guest-waiting-screen" class="screen">
+            <h2>تم الانضمام بنجاح! ✅</h2>
+            <p class="mt-20">أنت الآن في غرفة <span id="guest-room-id" style="color:#fcd34d"></span></p>
+            <p class="mt-10">في انتظار المضيف لبدء اللعبة...</p>
+            <div class="players-list-box mt-20">
+                <h3>اللاعبون المتواجدون:</h3>
+                <ul id="guest-players-list">
+                    <!-- populated by js -->
+                </ul>
+            </div>
+            <button class="secondary-btn mt-30" onclick="leaveRoom()">الخروج من الغرفة</button>
+        </div>
+
+        <!-- Role Screen (Online) -->
+        <div id="role-screen" class="screen">
+            <h2 class="attention-text">بدأت اللعبة! لا تدع أحداً يرى شاشتك!</h2>
+            
+            <div class="secret-box mt-30" id="secret-box">
+                <p>دورك هو:</p>
+                <h1 id="player-role" class="role-text">طبيعي</h1>
+                <div id="secret-word-container">
+                    <p>الكلمة السرية:</p>
+                    <h2 id="secret-word" class="word-text">المستشفى</h2>
+                </div>
+            </div>
+            
+            <div id="ready-status" class="mt-20" style="color: #fcd34d;"></div>
+            <button class="primary-btn mt-30" id="ready-btn" onclick="markReady()">أنا مستعد للأسئلة</button>
+        </div>
+
+        <!-- Question Screen (Online) -->
+        <div id="question-screen" class="screen">
+            <h2>مرحلة الأسئلة (الجولة <span id="round-number">1</span>)</h2>
+            <div class="turn-box mt-30">
+                <p>الآن:</p>
+                <h1 class="attention-text"><span id="asker-name">أحمد</span> ⬅️ يسأل ⬅️ <span id="answerer-name">محمود</span></h1>
+            </div>
+            
+            <!-- Host Controls -->
+            <div id="host-controls" class="hidden mt-30">
+                <button class="primary-btn" onclick="hostNextTurn()">التالي</button>
+                <button class="danger-btn mt-10" onclick="hostEndRound()">إنهاء الجولة والتصويت</button>
+            </div>
+            
+            <div class="reference-list mt-30">
+                <h3>📜 قائمة الكلمات المحتملة</h3>
+                <div id="words-list" class="words-grid"></div>
+            </div>
+        </div>
+
+        <!-- Voting Screen (Shared) -->
+        <div id="voting-screen" class="screen">
+            <h2 class="danger-text">وقت التصويت!</h2>
+            <p>من هو الجاسوس برأيكم؟ (ناقشوا ثم ليقم المضيف/اللاعبين باختيار المشتبه به)</p>
+            
+            <div id="host-voting-controls" class="hidden mt-20">
+                <p>صوّت باسم المجموعة ضد الجاسوس المشتبه به:</p>
+                <div id="voting-buttons" class="voting-grid mt-10">
+                    <!-- سيتم توليد الأزرار برمجياً -->
+                </div>
+            </div>
+            
+            <div id="guest-voting-wait" class="hidden mt-20">
+                <p class="attention-text">في انتظار المضيف لتقديم التصويت النهائي بناءً على رأي الأغلبية...</p>
+            </div>
+        </div>
+
+        <!-- Result Screen (Shared) -->
+        <div id="result-screen" class="screen">
+            <h1 id="result-title">فاز الجاسوس!</h1>
+            <div class="result-details mt-20">
+                <p>الجاسوس كان: <span id="actual-spy" class="danger-text">أحمد</span></p>
+                <p id="actual-word-container">الكلمة السرية كانت: <span id="actual-word" class="word-text">طائرة</span></p>
+            </div>
+            
+            <!-- Host/Local options to play again -->
+            <div id="host-result-controls" class="hidden mt-30">
+                <button class="primary-btn" onclick="playAgain()">لعب جولة أخرى</button>
+            </div>
+            
+            <button class="secondary-btn mt-30" onclick="leaveRoom()">العودة للقائمة الرئيسية</button>
+        </div>
+    </div>
+    
+    <script src="game.js"></script>
+</body>
+</html>

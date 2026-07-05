@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة الاختلافات الخمسة</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body>
+    <div id="game-ui">
+        <div class="header">
+            <button id="back-btn" onclick="window.history.back()">&larr; رجوع</button>
+            <div class="stats">
+                <div class="stat-box">
+                    <span>المرحلة:</span>
+                    <span id="stage">1 / 100</span>
+                </div>
+                <div class="stat-box">
+                    <span>الوقت:</span>
+                    <span id="timer">60</span>
+                </div>
+                <!-- In local mode: الاختلافات, In P2P mode: نتيجة مضيف / ضيف -->
+                <div class="stat-box" id="local-score-box">
+                    <span>الاختلافات:</span>
+                    <span id="score">0 / 5</span>
+                </div>
+                <div class="stat-box">
+                    <button id="hint-btn" onclick="useHint()" class="hint-btn">
+                        💡 مساعدة (<span id="hints-count">3</span>)
+                    </button>
+                </div>
+                <div class="stat-box hidden" id="p2p-score-box" style="gap: 15px;">
+                    <span style="color: #4fc3f7;">أنت: <span id="p1-score">0</span></span>
+                    <span style="color: #ef5350;">الخصم: <span id="p2-score">0</span></span>
+                </div>
+            </div>
+            <button id="restart-btn" onclick="showMenu()">القائمة الرئيسية</button>
+        </div>
+
+        <div id="main-menu" class="overlay">
+            <h1 style="font-size: 3rem; margin-bottom: 30px;">لعبة الاختلافات الخمسة</h1>
+            
+            <div id="mode-selection" class="menu-section">
+                <div class="level-buttons" style="display: flex; gap: 20px; flex-direction: column;">
+                    <button onclick="selectMode('local')" style="font-size: 1.5rem; padding: 15px 30px; background: #3b82f6;">لعب فردي (محلي)</button>
+                    <button onclick="selectMode('p2p')" style="font-size: 1.5rem; padding: 15px 30px; background: #8b5cf6;">لعب جماعي (تحدي أونلاين)</button>
+                </div>
+                
+                <div style="margin-top: 30px;">
+                    <label style="font-size: 1.2rem; display: block; margin-bottom: 10px;">نوع المراحل (Images Source):</label>
+                    <select id="image-source-select" style="font-size: 1.1rem; padding: 10px; width: 100%; border-radius: 8px; background: #1e293b; color: white; border: 1px solid #475569;" onchange="toggleCustomUpload()">
+                        <option value="svg">رسم تلقائي لا نهائي (SVG Engine)</option>
+                        <option value="static">مجموعة الصور الواقعية (Unsplash)</option>
+                        <option value="custom">رفع صورة جاهزة من جهازك (مزدوجة)</option>
+                    </select>
+                    <input type="file" id="custom-image-upload" accept="image/*" class="hidden" style="margin-top: 15px; width: 100%; color: white;">
+                </div>
+                <button onclick="window.history.back()" style="margin-top: 30px; background: #334155;">العودة للأركيد</button>
+            </div>
+
+            <div id="local-menu" class="menu-section hidden">
+                <h2 style="margin-bottom: 20px;">اختر الصعوبة</h2>
+                <div class="level-buttons" style="display: flex; gap: 20px; flex-direction: column;">
+                    <button onclick="startGame('easy')" style="font-size: 1.5rem; padding: 15px 30px; background: #10b981;">المستوى السهل (عناصر كبيرة)</button>
+                    <button onclick="startGame('medium')" style="font-size: 1.5rem; padding: 15px 30px; background: #f59e0b;">المستوى المتوسط (عناصر عادية)</button>
+                    <button onclick="startGame('hard')" style="font-size: 1.5rem; padding: 15px 30px; background: #ef4444;">المستوى الصعب (تفاصيل دقيقة)</button>
+                </div>
+                <button onclick="backToModeSelection()" style="margin-top: 30px; background: #334155;">رجوع</button>
+            </div>
+
+            <div id="p2p-menu" class="menu-section hidden">
+
+            <div class="menu-section mt-20">
+                    <div class="p2p-card">
+                        <h3>إنشاء غرفة (مضيف)</h3>
+                        <div style="margin: 15px 0;">اختر صعوبة الغرفة:</div>
+                        <div style="display:flex; gap:5px; margin-bottom:15px; justify-content:center;">
+                            <button onclick="setHostDifficulty('easy')" id="btn-diff-easy" style="background:#10b981; font-size:1rem; padding:5px 10px;">سهل</button>
+                            <button onclick="setHostDifficulty('medium')" id="btn-diff-medium" style="background:#f59e0b; font-size:1rem; padding:5px 10px;">متوسط</button>
+                            <button onclick="setHostDifficulty('hard')" id="btn-diff-hard" style="background:#ef4444; font-size:1rem; padding:5px 10px;">صعب</button>
+                        </div>
+                        <button id="create-room-btn" onclick="createRoom()">إنشاء غرفة</button>
+                        <div id="room-info" class="hidden">
+                            <p>شارك هذا الكود مع صديقك:</p>
+                            <code id="room-id-display">جاري التوليد...</code>
+                            <p class="waiting-text" id="status-text-host">في انتظار انضمام اللاعب الآخر...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="p2p-card">
+                        <h3>انضمام لغرفة (ضيف)</h3>
+                        <input type="text" id="join-room-id" placeholder="أدخل كود الغرفة هنا" dir="ltr" />
+                        <button id="join-room-btn" onclick="joinRoom()">انضمام ولعب</button>
+                        <p id="join-error" class="error-text hidden"></p>
+                        <p class="waiting-text hidden" id="status-text-guest">جاري الاتصال...</p>
+                    </div>
+                </div>
+                <button onclick="backToModeSelection()" style="margin-top: 30px; background: #334155;">رجوع</button>
+            </div>
+        </div>
+
+        <div id="loading" class="overlay hidden">
+            <div class="spinner"></div>
+            <p>جاري تجهيز التحدي...</p>
+        </div>
+
+        <div id="game-over" class="overlay hidden">
+            <h1 id="end-message">لقد فزت!</h1>
+            <p id="end-stats">لقد وجدت جميع الاختلافات في وقت قياسي.</p>
+            <div style="display: flex; gap: 15px; margin-top: 10px;">
+                <button id="next-stage-btn" onclick="nextStage()">المرحلة التالية</button>
+                <button onclick="showMenu()" style="background: #334155;">القائمة الرئيسية</button>
+            </div>
+        </div>
+
+        <div class="canvases-container">
+            <div class="canvas-wrapper">
+                <canvas id="canvas-left"></canvas>
+            </div>
+            <div class="canvas-wrapper">
+                <canvas id="canvas-right"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Using a local script for game logic -->
+    <script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>المطابقة السريعة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        /* Online mode styles */
+        #game-screen.online-mode {
+            flex-direction: column;
+            justify-content: center;
+        }
+        #game-screen.online-mode .player-area {
+            height: auto;
+            border: none;
+            padding: 20px;
+        }
+        #game-screen.online-mode .player-top {
+            transform: none;
+        }
+        
+        /* Local mode styles */
+        #game-screen.local-mode {
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        #game-screen.local-mode .player-area {
+            height: 50vh;
+        }
+        #game-screen.local-mode .global-scoreboard {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Menu Screen -->
+        <div id="menu-screen" class="screen active">
+            <h1 class="title">المطابقة السريعة ⚡</h1>
+            <p class="subtitle">ابحث عن الرمز المشترك واضغط عليه قبل أصدقائك!</p>
+            
+            <div class="lobby-box mt-30">
+                <button class="btn btn-primary" onclick="showLocalSetup()">🕹️ لعب محلي (جهاز واحد)</button>
+                <button class="btn btn-primary mt-10" onclick="showCreateRoom()" style="background-color: #f59e0b; color: #000;">🌐 إنشاء غرفة (مضيف)</button>
+                <button class="btn btn-secondary mt-10" onclick="showJoinRoom()">🔗 الانضمام لغرفة</button>
+                <button class="btn btn-secondary mt-10" onclick="window.history.back()">العودة للأركيد</button>
+            </div>
+        </div>
+
+        <!-- Local Setup Screen -->
+        <div id="local-setup-screen" class="screen">
+            <h2>إعداد اللعب المحلي</h2>
+            <div class="settings-box mt-20">
+                <p>نقاط الفوز:</p>
+                <div class="stepper">
+                    <button onclick="changeLocalMaxScore(-1)">-</button>
+                    <span id="local-max-score-display">10</span>
+                    <button onclick="changeLocalMaxScore(1)">+</button>
+                </div>
+            </div>
+            
+            <button class="btn btn-primary mt-30" onclick="startLocalGame()">بدء اللعبة (انقسام الشاشة)</button>
+            <button class="btn btn-secondary mt-10" onclick="showScreen('menu-screen')">العودة</button>
+        </div>
+
+        <!-- Host Screen (Online) -->
+        <div id="host-screen" class="screen">
+            <h2 style="color: #facc15;">أنت المضيف 👑</h2>
+            <p>شارك هذا الكود مع أصدقائك:</p>
+            <h1 id="room-code-display" class="title mt-10" style="letter-spacing: 5px; user-select: all;">...</h1>
+            
+            <div class="players-list-box mt-20">
+                <h3>اللاعبون المتواجدون (<span id="host-players-count">1</span>):</h3>
+                <ul id="host-players-list" style="list-style: none; padding: 0;">
+                    <li>أنت (المضيف)</li>
+                </ul>
+            </div>
+            
+            <div class="settings-box mt-20">
+                <p>نقاط الفوز:</p>
+                <div class="stepper">
+                    <button onclick="changeMaxScore(-1)">-</button>
+                    <span id="max-score-display">10</span>
+                    <button onclick="changeMaxScore(1)">+</button>
+                </div>
+            </div>
+            
+            <button class="btn btn-primary mt-30" id="start-online-btn" onclick="startOnlineGame()" disabled>بدء اللعبة (يتطلب لاعبين على الأقل)</button>
+            <button class="btn btn-secondary mt-10" onclick="leaveRoom()">إلغاء</button>
+        </div>
+
+        <!-- Join Screen (Online) -->
+        <div id="join-screen" class="screen">
+            <h2>الانضمام لغرفة</h2>
+            <p class="mt-20">أدخل اسمك:</p>
+            <input type="text" id="player-name-input" class="form-input mt-10" placeholder="اسمك (مثال: أحمد)">
+            
+            <p class="mt-20">أدخل كود الغرفة:</p>
+            <input type="text" id="room-code-input" class="form-input mt-10" placeholder="مثال: ABCD" style="text-transform: uppercase;" maxlength="4">
+            
+            <p id="join-status" class="mt-10" style="color: #facc15;"></p>
+            
+            <button class="btn btn-primary mt-20" onclick="joinRoom()">انضمام</button>
+            <button class="btn btn-secondary mt-10" onclick="showScreen('menu-screen')">عودة</button>
+        </div>
+
+        <!-- Guest Waiting Screen (Online) -->
+        <div id="guest-waiting-screen" class="screen">
+            <h2>تم الانضمام بنجاح! ✅</h2>
+            <p class="mt-20">أنت في غرفة <span id="guest-room-id" style="color:#fcd34d"></span></p>
+            <p class="mt-10">في انتظار المضيف لبدء اللعبة...</p>
+            
+            <div class="players-list-box mt-20">
+                <h3>اللاعبون المتواجدون:</h3>
+                <ul id="guest-players-list" style="list-style: none; padding: 0;"></ul>
+            </div>
+            
+            <button class="btn btn-secondary mt-30" onclick="leaveRoom()">خروج</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            
+            <!-- Global Scoreboard (Online only) -->
+            <div class="global-scoreboard" style="margin-bottom: 20px; font-size: 1.2rem; color: #facc15;">
+                <ul id="live-scores" style="list-style: none; padding: 0; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                </ul>
+            </div>
+            
+            <!-- Top Player (Local only) -->
+            <div class="player-area player-top hidden" id="top-area">
+                <div class="score-display">اللاعب العلوي: <span id="score-top">0</span></div>
+                <div class="card" id="card-top"></div>
+            </div>
+            
+            <!-- Center Card (Shared, but local has special styling sometimes) -->
+            <div class="player-area hidden" id="local-center-area" style="height: 20vh; display: flex; justify-content: center; align-items: center;">
+                <div class="card" id="local-center-card"></div>
+            </div>
+
+            <!-- Bottom Player (Local) or My Player (Online) -->
+            <div class="player-area" id="my-area">
+                <div class="score-display hidden" id="score-bottom-container">اللاعب السفلي: <span id="score-bottom">0</span></div>
+                
+                <p id="online-card-label" class="hidden">بطاقتي:</p>
+                <div class="card" id="my-card"></div>
+                
+                <p id="online-center-label" class="mt-30 hidden">بطاقة الساحة (الهدف):</p>
+                <div class="card hidden" id="online-center-card"></div>
+            </div>
+        </div>
+
+        <!-- Winner Screen -->
+        <div id="winner-screen" class="screen">
+            <h1 class="title">انتهت اللعبة!</h1>
+            <h2 class="mt-20">الفائز هو: <span id="winner-name" style="color:#facc15;"></span></h2>
+            
+            <div id="host-restart-controls" class="hidden mt-30">
+                <button class="btn btn-primary" onclick="startOnlineGame()">لعب جولة أخرى</button>
+            </div>
+            <div id="guest-restart-wait" class="hidden mt-30">
+                <p style="color: #9ca3af;">في انتظار المضيف لبدء جولة جديدة...</p>
+            </div>
+            <div id="local-restart-controls" class="hidden mt-30">
+                <button class="btn btn-primary" onclick="startLocalGame()">لعب جولة أخرى</button>
+            </div>
+            
+            <button class="btn btn-secondary mt-10" onclick="leaveRoom()">العودة للأركيد</button>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>

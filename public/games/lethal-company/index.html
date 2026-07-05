@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الشركة المميتة - Lethal Company 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- PeerJS for P2P -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- PointerLockControls -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        
+        <!-- 3D Canvas Container -->
+        <div id="game-container"></div>
+        
+        <!-- Crosshair -->
+        <div id="crosshair" class="hidden">+</div>
+
+        <!-- Main Menu -->
+        <div id="main-menu" class="screen ui-layer">
+            <div class="crt-overlay"></div>
+            <h1 class="glow-text title-large text-green">Lethal Company 3D 🔦</h1>
+            <p class="subtitle text-green">استكشف المتاهة 삼ية الأبعاد... واجمع الخردة دون أن تموت!</p>
+            
+            <div class="menu-section">
+                <button class="action-btn primary mode-btn" data-mode="single">مهمة فردية</button>
+                <div class="divider"><span>أو</span></div>
+                <button class="action-btn secondary mode-btn" data-mode="p2p">عقد تعاوني (P2P)</button>
+            </div>
+        </div>
+
+        <!-- P2P Menu -->
+        <div id="p2p-menu" class="screen ui-layer hidden">
+            <div class="crt-overlay"></div>
+            <h1 class="glow-text text-green">تكوين الطاقم 🌐</h1>
+            
+            <div class="p2p-box">
+                <h2 class="text-green">إنشاء سيرفر المضيف</h2>
+                <button id="create-room-btn" class="action-btn primary">استضافة</button>
+                <div id="room-info" class="hidden">
+                    <p class="text-green">أرسل شفرة التردد لطاقمك:</p>
+                    <div id="roomIdDisplay" class="room-id">جاري الإنشاء...</div>
+                    <p class="wait-text">ننتظر وصول الزملاء...</p>
+                    <button id="start-game-btn" class="action-btn primary mt-10 hidden">بدء المهمة!</button>
+                </div>
+
+                <div class="divider"><span>أو</span></div>
+
+                <h2 class="text-green">الانضمام لطاقم</h2>
+                <div class="join-box">
+                    <input type="text" id="join-room-id" placeholder="أدخل التردد هنا">
+                    <button id="join-room-btn" class="action-btn secondary">دخول</button>
+                    <p id="join-error" class="error-msg hidden">التردد غير صحيح أو السيرفر ممتلئ.</p>
+                </div>
+            </div>
+            
+            <button id="back-to-menu-btn" class="action-btn transparent mt-20">إلغاء</button>
+        </div>
+
+        <!-- Ship Hub (Terminal) -->
+        <div id="ship-hub-screen" class="screen ui-layer hidden">
+            <div class="crt-overlay"></div>
+            <div class="terminal-box">
+                <h1 class="terminal-header">=== SYSTEM TERMINAL ===</h1>
+                <div class="terminal-stats">
+                    <p>الحصة المطلوبة (Quota): <span id="hub-quota" class="text-green">130</span>$</p>
+                    <p>الرصيد المجمع: <span id="hub-collected" class="text-green">0</span>$</p>
+                    <p>الأيام المتبقية: <span id="hub-days" class="text-red">3</span> أيام</p>
+                </div>
+                <div class="terminal-moons">
+                    <p>اختر وجهتك (Route):</p>
+                    <button class="action-btn terminal-btn moon-btn" data-moon="experimentation">
+                        > Experimentation (سهل - رؤية واضحة)
+                    </button>
+                    <button class="action-btn terminal-btn moon-btn" data-moon="vow">
+                        > Vow (متوسط - ضباب أخضر كثيف)
+                    </button>
+                    <button class="action-btn terminal-btn moon-btn" data-moon="titan">
+                        > Titan (صعب - ظلام دامس وخردة ثمينة)
+                    </button>
+                </div>
+                <div id="terminal-waiting" class="hidden">
+                    <p class="wait-text">> بانتظار المدير لاختيار الوجهة...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- In-Game HUD -->
+        <div id="game-hud" class="ui-layer hidden pointer-events-none">
+            <div class="crt-overlay pointer-events-none"></div>
+            
+            <div class="hud" id="main-hud">
+                <div class="hud-left">
+                    <div class="quota-box">الهدف: <span id="quota-collected">0</span> / <span id="quota-target">130</span>$</div>
+                    <div class="inventory-box">حمولة الخردة: <span id="scrap-value">0</span>$</div>
+                    <div class="days-box text-red">الأيام المتبقية: <span id="hud-days-left">3</span></div>
+                </div>
+                
+                <div class="game-info">
+                    <div id="time-display" class="timer text-green">الوقت: 08:00 AM</div>
+                </div>
+
+                <div class="hud-right">
+                    <div class="battery-container">
+                        <span>البطارية:</span>
+                        <div class="battery-bg">
+                            <div id="battery-fill" class="battery-fill"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="interaction-hint" class="interaction-hint hidden">اضغط [E] للالتقاط</div>
+            
+            <!-- Pause Overlay -->
+            <div id="pause-overlay" class="pause-overlay hidden">
+                <div class="pause-box">
+                    <h2 class="text-green">متوقف مؤقتاً</h2>
+                    <p>انقر على الشاشة للعودة للعب</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="screen ui-layer hidden">
+            <div class="crt-overlay"></div>
+            <div class="game-over-box">
+                <h1 id="game-over-title" class="glow-text text-red">تم الرفض من الشركة</h1>
+                <p id="game-over-msg" class="subtitle text-green">لم تحقق الحصة المطلوبة أو مُت في الظلام.</p>
+                
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <span class="stat-label">المجموع:</span>
+                        <span id="final-score" class="stat-value text-green">0$</span>
+                    </div>
+                </div>
+
+                <div class="menu-section mt-20">
+                    <button id="restart-btn" class="action-btn primary">عقد جديد</button>
+                    <button id="quit-btn" class="action-btn secondary">العودة للقائمة</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden ui-layer"></div>
+
+    <script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حماية المجرة - Space Shooter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Main Menu -->
+        <div id="main-menu" class="screen">
+            <div class="stars-bg"></div>
+            <h1 class="glow-text title-large">حماية المجرة 🚀</h1>
+            <p class="subtitle">أنقذ كوكبك من الغزو الفضائي!</p>
+            
+            <div class="menu-section">
+                <button class="action-btn primary mode-btn" data-mode="local">لعب فردي</button>
+                <button class="action-btn primary mode-btn" data-mode="local-coop" style="background: #8b5cf6;">تعاون محلي (نفس الجهاز)</button>
+                <div class="divider"><span>أو</span></div>
+                <button class="action-btn secondary mode-btn" data-mode="p2p">تعاون أونلاين (P2P Co-op)</button>
+            </div>
+        </div>
+
+        <!-- P2P Menu -->
+        <div id="p2p-menu" class="screen hidden">
+            <div class="stars-bg"></div>
+            <h1 class="glow-text">التعاون الفضائي 🌐</h1>
+            
+            <div class="p2p-box">
+                <h2>إنشاء غرفة قيادة</h2>
+                <button id="create-room-btn" class="action-btn primary">إنشاء غرفة</button>
+                <div id="room-info" class="hidden">
+                    <p>أرسل شفرة الاتصال لزميلك:</p>
+                    <div id="roomIdDisplay" class="room-id">جاري الإنشاء...</div>
+                    <p class="wait-text">في انتظار وصول الزميل...</p>
+                </div>
+
+                <div class="divider"><span>أو</span></div>
+
+                <h2>الانضمام لغرفة قيادة</h2>
+                <div class="join-box">
+                    <input type="text" id="join-room-id" placeholder="أدخل شفرة الاتصال هنا">
+                    <button id="join-room-btn" class="action-btn secondary">بدء المهمة</button>
+                    <p id="join-error" class="error-msg hidden">تعذر الاتصال بقاعدة الزميل.</p>
+                </div>
+            </div>
+            
+            <button id="back-to-menu-btn" class="action-btn transparent mt-20">إلغاء المهمة</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen hidden">
+            <div class="hud" id="main-hud">
+                <div class="player-hud" id="p1-hud">
+                    <h3>اللاعب 1 <span class="controls-hint">(الأسهم + مسطرة)</span></h3>
+                    <div class="bar-container"><div id="p1-hp" class="hp-fill"></div></div>
+                    <div class="bar-container fuel-bg"><div id="p1-fuel" class="fuel-fill"></div></div>
+                    <div class="score">النقاط: <span id="p1-score">0</span></div>
+                    <div class="economy">💰 <span id="p1-coins">0</span> | 💎 <span id="p1-gems">0</span></div>
+                    <div class="controls-hint" style="margin-top:5px;color:#fcd34d">اضغط B لفتح المتجر</div>
+                </div>
+
+                <div class="center-hud">
+                    <div class="wave-display">الموجة <span id="wave-number">1</span></div>
+                </div>
+
+                <div class="player-hud hidden" id="p2-hud">
+                    <h3>اللاعب 2 <span class="controls-hint" id="p2-controls-hint">(W,A,S,D + F)</span></h3>
+                    <div class="bar-container"><div id="p2-hp" class="hp-fill blue"></div></div>
+                    <div class="bar-container fuel-bg"><div id="p2-fuel" class="fuel-fill"></div></div>
+                    <div class="score">النقاط: <span id="p2-score">0</span></div>
+                    <div class="economy">💰 <span id="p2-coins">0</span> | 💎 <span id="p2-gems">0</span></div>
+                </div>
+            </div>
+
+            <canvas id="game-canvas"></canvas>
+
+            <button id="menu-btn" class="action-btn transparent floating-btn">انسحاب</button>
+        </div>
+
+        <!-- Game Over Modal -->
+        <div id="game-over-screen" class="screen overlay hidden">
+            <div class="modal">
+                <h1 id="result-title">انتهت المهمة!</h1>
+                <p id="result-desc"></p>
+                <div id="final-stats" class="final-score"></div>
+                
+                <div class="modal-actions">
+                    <button id="rematch-btn" class="action-btn primary">إعادة المحاولة</button>
+                    <button onclick="location.reload()" class="action-btn transparent">القائمة الرئيسية</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shop Modal -->
+        <div id="shop-modal" class="hidden">
+                <div class="shop-content">
+                    <div class="shop-header">
+                        <h2>المتجر 🛒</h2>
+                        <button id="close-shop-btn" class="retro-button danger">X</button>
+                    </div>
+                    <div class="shop-economy">
+                        رصيدك: 💰 <span id="shop-coins">0</span> | 💎 <span id="shop-gems">0</span>
+                    </div>
+                    <div class="shop-grid">
+                        <div class="shop-item">
+                            <h3>سلاح التجميد ❄️</h3>
+                            <p>يبطئ الأعداء بنسبة 50%</p>
+                            <button class="retro-button buy-btn" data-type="weapon" data-item="frost" data-cost="5" data-currency="gems">شراء بـ 5 💎</button>
+                        </div>
+                        <div class="shop-item">
+                            <h3>صواريخ متفجرة 💥</h3>
+                            <p>انفجار يضر كل الأعداء القريبين</p>
+                            <button class="retro-button buy-btn" data-type="weapon" data-item="explosive" data-cost="100" data-currency="coins">شراء بـ 100 💰</button>
+                        </div>
+                        <div class="shop-item">
+                            <h3>ليزر الاختراق ☄️</h3>
+                            <p>يخترق الأعداء ولا يتدمر</p>
+                            <button class="retro-button buy-btn" data-type="weapon" data-item="piercing" data-cost="150" data-currency="coins">شراء بـ 150 💰</button>
+                        </div>
+                        <div class="shop-item">
+                            <h3>سفينة النينجا 🥷</h3>
+                            <p>مغناطيس يجذب الفلوس سريعاً</p>
+                            <button class="retro-button buy-btn" data-type="ship" data-item="speedster" data-cost="200" data-currency="coins">شراء بـ 200 💰</button>
+                        </div>
+                        <div class="shop-item">
+                            <h3>السفينة المدرعة 🛡️</h3>
+                            <p>لا تتأثر بالنيازك ودرع قوي</p>
+                            <button class="retro-button buy-btn" data-type="ship" data-item="tank" data-cost="300" data-currency="coins">شراء بـ 300 💰</button>
+                        </div>
+                        <div class="shop-item">
+                            <h3>سفينة الطبيب 💚</h3>
+                            <p>تعالج نفسها تلقائياً</p>
+                            <button class="retro-button buy-btn" data-type="ship" data-item="healer" data-cost="10" data-currency="gems">شراء بـ 10 💎</button>
+                        </div>
+                        <div class="shop-item">
+                            <h3>ترقية البنزين ⛽</h3>
+                            <p>زيادة سعة الوقود بـ 20</p>
+                            <button class="retro-button buy-btn" data-type="upgrade" data-item="maxFuel" data-cost="50" data-currency="coins">شراء بـ 50 💰</button>
+                        </div>
+                        <div class="shop-item">
+                            <h3>إصلاح فوري 🔧</h3>
+                            <p>استرجاع الصحة بالكامل</p>
+                            <button class="retro-button buy-btn" data-type="upgrade" data-item="heal" data-cost="30" data-currency="coins">شراء بـ 30 💰</button>
+                        </div>
+                        <div class="shop-item">
+                            <h3>مصاص الدماء 🦇</h3>
+                            <p>تسترجع صحتها عند قتل الأعداء</p>
+                            <button class="retro-button buy-btn" data-type="ship" data-item="vampire" data-cost="250" data-currency="coins">شراء بـ 250 💰</button>
+                        </div>
+                        <div class="shop-item">
+                            <h3>سفينة الشبح 👻</h3>
+                            <p>تتفادى 20% من ضربات الأعداء</p>
+                            <button class="retro-button buy-btn" data-type="ship" data-item="ghost" data-cost="20" data-currency="gems">شراء بـ 20 💎</button>
+                        </div>
+                        <div class="shop-item">
+                            <h3>القناص 🎯</h3>
+                            <p>طلقات بطيئة، قوية وتخترق</p>
+                            <button class="retro-button buy-btn" data-type="ship" data-item="sniper" data-cost="400" data-currency="coins">شراء بـ 400 💰</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Worlds Map Modal -->
+            <div id="worlds-map-modal" class="hidden">
+                <div class="map-content">
+                    <h2>خريطة العوالم 🌌</h2>
+                    <p>أين تريد السفر؟ (كل عالم يفتح بعد هزيمة زعيم العالم السابق)</p>
+                    <div class="worlds-grid">
+                        <button class="world-btn" id="world-1" data-world="1">
+                            <h3>1. سديم البداية 🔵</h3>
+                            <p>الموجات: 1 - 5</p>
+                        </button>
+                        <button class="world-btn locked" id="world-2" data-world="2" disabled>
+                            <h3>2. حزام الكويكبات 🔴</h3>
+                            <p>الموجات: 6 - 10 🔒</p>
+                        </button>
+                        <button class="world-btn locked" id="world-3" data-world="3" disabled>
+                            <h3>3. الثقب الأسود ⚫</h3>
+                            <p>الموجات: 11 - 15 🔒</p>
+                        </button>
+                        <button class="world-btn locked" id="world-4" data-world="4" disabled>
+                            <h3>4. الكوكب الفضائي 👽</h3>
+                            <p>الموجات: 16 - 20 🔒</p>
+                        </button>
+                    </div>
+                    <button id="close-map-btn" class="action-btn secondary">بدء الرحلة 🚀</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
