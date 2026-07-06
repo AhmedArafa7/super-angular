@@ -44,9 +44,45 @@ let gameState = {
 let timerInterval = null;
 let audioElements = [];
 
+// --- Input Validation ---
+function validateName(name) {
+    const trimmed = name.trim();
+    if (!trimmed) return { valid: false, error: 'الاسم مطلوب' };
+    if (trimmed.length > 20) return { valid: false, error: 'الاسم طويل جداً (20 حرف كحد أقصى)' };
+    if (!/^[\u0600-\u06FFa-zA-Z0-9\s_-]+$/.test(trimmed)) return { valid: false, error: 'الاسم يحتوي على رموز غير مسموحة' };
+    return { valid: true, value: trimmed };
+}
+
+function validateRoomCode(code) {
+    const trimmed = code.trim().toUpperCase();
+    if (!trimmed) return { valid: false, error: 'كود الغرفة مطلوب' };
+    if (!/^[A-Z0-9]{6}$/.test(trimmed)) return { valid: false, error: 'كود الغرفة يجب أن يكون 6 أحرف/أرقام' };
+    return { valid: true, value: trimmed };
+}
+
+function showError(elementId, message) {
+    const el = $(elementId);
+    if (el) {
+        el.innerText = message;
+        el.style.display = 'block';
+        setTimeout(() => { el.style.display = 'none'; }, 5000);
+    }
+}
+
+function clearError(elementId) {
+    const el = $(elementId);
+    if (el) el.style.display = 'none';
+}
+
 // --- Init & Lobby ---
 $('host-btn').onclick = () => {
-    myName = $('player-name').value.trim() || 'المضيف';
+    const validation = validateName($('player-name').value);
+    if (!validation.valid) {
+        showError('join-error', validation.error);
+        return;
+    }
+    myName = validation.value;
+    clearError('join-error');
     isHost = true;
     $('host-btn').disabled = true;
     $('host-btn').innerText = 'جاري الإنشاء...';
@@ -56,14 +92,40 @@ $('host-btn').onclick = () => {
     const peerId = 'SUPMONKEY_' + myRoomCode;
     myPeer = new Peer(peerId);
     
+    let connectionTimeout = null;
+    const CONNECTION_TIMEOUT = 10000;
+    
+    connectionTimeout = setTimeout(() => {
+        if (!myId && isHost) {
+            alert('انتهت مهلة الاتصال. يمكنك إعادة المحاولة.');
+            cleanup();
+            showScreen('lobby-screen');
+            $('host-btn').disabled = false;
+            $('host-btn').innerText = 'إنشاء غرفة (مضيف)';
+        }
+    }, CONNECTION_TIMEOUT);
+    
+    myPeer.on('disconnected', () => {
+        console.warn('تم فقدان الاتصال بالسيرفر. جاري محاولة إعادة الاتصال...');
+        attemptReconnection();
+    });
+    
+    myPeer.on('close', () => {
+        console.warn('تم إغلاق الاتصال.');
+    });
+    
     myPeer.on('error', (err) => {
         console.error('Peer error:', err);
+        if (connectionTimeout) clearTimeout(connectionTimeout);
+        cleanup();
+        showScreen('lobby-screen');
         $('host-btn').disabled = false;
         $('host-btn').innerText = 'إنشاء غرفة (مضيف)';
-        alert('حدث خطأ في الاتصال بالسيرفر، يرجى المحاولة مرة أخرى.');
+        alert('حدث خطأ في الاتصال بالسيرفر: ' + err.message);
     });
     
     myPeer.on('open', id => {
+        if (connectionTimeout) clearTimeout(connectionTimeout);
         myId = id;
         gameState.players.push({ id: myId, name: myName, role: '' });
         showScreen('room-screen');
@@ -91,10 +153,20 @@ $('host-btn').onclick = () => {
     setupMediaCalls();
 };
 
-$('join-btn').onclick = () => {
-    const hostId = $('join-id').value.trim().toUpperCase();
-    myName = $('player-name').value.trim() || 'لاعب';
-    if (!hostId) return;
+ $('join-btn').onclick = () => {
+    const codeValidation = validateRoomCode($('join-id').value);
+    if (!codeValidation.valid) {
+        showError('join-error', codeValidation.error);
+        return;
+    }
+    const hostId = codeValidation.value;
+    const validation = validateName($('player-name').value);
+    if (!validation.valid) {
+        showError('join-error', validation.error);
+        return;
+    }
+    myName = validation.value;
+    clearError('join-error');
     
     $('join-btn').disabled = true;
     $('join-btn').innerText = 'جاري الانضمام...';
@@ -270,6 +342,7 @@ function checkPhaseChange() {
         
         renderGameUI();
     } else if (gameState.phase === 'game-over') {
+        cleanup();
         showScreen('game-over-screen');
         $('end-title').innerText = gameState.resultMsg === 'win' ? 'تم التفكيك بنجاح! 🎉' : 'انفجرت القنبلة! 💥';
         $('end-title').className = gameState.resultMsg === 'win' ? 'end-title win' : 'end-title danger-text';
@@ -358,13 +431,9 @@ function generateBomb() {
     
     // Module 3: Keypad
     let buttons = ['red', 'blue', 'yellow', 'green'];
-    buttons.sort(() => 0.5 - Math.random());
-    let sequence = [];
-    if (buttons[1] === 'red') { // Top Right is index 1
-        sequence = ['red', 'blue', 'yellow', 'green'];
-    } else {
-        sequence = ['green', 'yellow', 'blue', 'red'];
-    }
+    // Solution logic based on colors presence, independent of position
+    let sequence = buttons.includes('red') ? ['red', 'blue', 'yellow', 'green'] : ['green', 'yellow', 'blue', 'red'];
+    buttons.sort(() => 0.5 - Math.random()); // Shuffle for display only
     
     gameState.modules = [
         { type: 'wires', id: 0, wires: wires, cutIndex: -1, defused: false, solutionIndex: wSol },
@@ -398,6 +467,14 @@ function handleGameAction(peerId, action) {
     if (action.type === 'GESTURE') {
         gameState.recentGesture = action.value;
         broadcastState();
+        
+        // Visual indicator: Flash color
+        const gestureDisplay = $('received-gesture');
+        if (gestureDisplay) {
+            gestureDisplay.style.color = '#fbbf24'; // Highlight color
+            setTimeout(() => { gestureDisplay.style.color = 'inherit'; }, 500);
+        }
+        
         // clear gesture after 3 secs
         setTimeout(() => {
             if (gameState.recentGesture === action.value) {
@@ -525,6 +602,7 @@ function renderBlindBomb() {
                 let wHit = document.createElement('div');
                 wHit.className = 'blind-item wire-hitbox';
                 wHit.style.top = `${wIdx * 25 + 10}px`;
+                wHit.addEventListener('touchstart', (e) => { e.preventDefault(); sendAction({ type: 'CUT_WIRE', index: wIdx }); }, {passive: false});
                 wHit.onclick = () => sendAction({ type: 'CUT_WIRE', index: wIdx });
                 if (mod.cutIndex === wIdx) wHit.style.display = 'none';
                 modDiv.appendChild(wHit);
@@ -535,11 +613,13 @@ function renderBlindBomb() {
             let leftBtn = document.createElement('div');
             leftBtn.className = 'blind-item btn-hitbox';
             leftBtn.style.top = '60px'; leftBtn.style.left = '10px'; leftBtn.style.width = '60px'; leftBtn.style.height = '50px';
+            leftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); sendAction({ type: 'PRESS_NUM', value: '<' }); }, {passive: false});
             leftBtn.onclick = () => sendAction({ type: 'PRESS_NUM', value: '<' });
             
             let rightBtn = document.createElement('div');
             rightBtn.className = 'blind-item btn-hitbox';
             rightBtn.style.top = '60px'; rightBtn.style.right = '10px'; rightBtn.style.width = '60px'; rightBtn.style.height = '50px';
+            rightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); sendAction({ type: 'PRESS_NUM', value: '>' }); }, {passive: false});
             rightBtn.onclick = () => sendAction({ type: 'PRESS_NUM', value: '>' });
             
             modDiv.appendChild(leftBtn);
@@ -649,6 +729,47 @@ function setupMuteGestures() {
             setTimeout(() => { btn.style.transform = 'scale(1)'; }, 200);
         };
     });
+}
+
+function cleanup() {
+    console.log('Cleaning up game resources...');
+    
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+    
+    if (myPeer) {
+        myPeer.close();
+        myPeer = null;
+    }
+    
+    if (hostConn) {
+        hostConn.close();
+        hostConn = null;
+    }
+    
+    Object.values(guestConns).forEach(conn => {
+        if (conn) conn.close();
+    });
+    guestConns = {};
+    
+    if (myStream) {
+        myStream.getTracks().forEach(track => track.stop());
+        myStream = null;
+    }
+    
+    audioElements.forEach(audio => {
+        if (audio) {
+            audio.pause();
+            audio.srcObject = null;
+            audio.remove();
+        }
+    });
+    audioElements = [];
+    
+    gameState.phase = 'game-over';
+    gameState.resultMsg = '';
 }
 
 // Initial
