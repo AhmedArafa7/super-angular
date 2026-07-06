@@ -81,6 +81,7 @@ $('host-btn').onclick = () => {
             conn.close();
             return;
         }
+        guestConns[conn.peer] = conn; // Immediately add connection
         conn.on('data', data => handleClientData(conn.peer, data));
         conn.on('open', () => {
             guestConns[conn.peer] = conn;
@@ -140,7 +141,7 @@ $('join-btn').onclick = () => {
 };
 
 let gameState = {
-    phase: 'lobby', // lobby, roles, playing, game-over
+    phase: 'roles', // roles, playing, game-over
     players: [], // { id, name, role }
     timeRemaining: 600,
     powerRestored: false,
@@ -180,9 +181,6 @@ function handleClientData(peerId, data) {
     if (data.type === 'JOIN') {
         if (gameState.players.length >= 3) return; // Room full
         gameState.players.push({ id: data.id, name: data.name, role: '' });
-        if (gameState.players.length === 3) {
-            gameState.phase = 'roles';
-        }
         broadcastState();
     }
     if (data.type === 'SELECT_ROLE') {
@@ -205,7 +203,7 @@ function handleClientData(peerId, data) {
 
 // --- Lobby UI & Roles ---
 function updateLobbyUI() {
-    if (gameState.phase !== 'lobby' && gameState.phase !== 'roles') return;
+    if (gameState.phase !== 'roles') return;
     
     const list = $('players-list');
     if (list) {
