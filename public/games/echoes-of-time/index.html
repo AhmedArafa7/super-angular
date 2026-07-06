@@ -14,8 +14,34 @@
         <!-- Global Mute Button -->
         <button id="global-mute-btn" onclick="toggleGlobalMute()" class="mute-btn">🎵</button>
         
+        <!-- Start Menu Screen -->
+        <div id="start-menu-screen" class="screen active">
+            <h1 class="game-title glow-text">أصداء الزمن ⏳</h1>
+            <p class="subtitle">تعاونوا لربط الماضي بالحاضر والمستقبل!</p>
+            
+            <div class="lobby-controls" style="background: rgba(15, 23, 42, 0.8); padding: 30px; border-radius: 20px; border: 1px solid #334155; max-width: 400px;">
+                <div style="margin-bottom: 20px; width: 100%;">
+                    <label style="display: block; margin-bottom: 5px; color: #94a3b8;">اسم اللاعب:</label>
+                    <input type="text" id="player-name" value="" placeholder="أدخل اسمك" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #3b82f6; background: #0f172a; color: white; font-family: 'Tajawal'; font-size: 1.1rem; box-sizing: border-box;">
+                </div>
+                
+                <button id="host-btn" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 1.2rem; margin-bottom: 20px;">إنشاء غرفة (مضيف)</button>
+                
+                <div style="width: 100%; position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                    <hr style="width: 100%; border-color: #334155;">
+                    <span style="position: absolute; background: #0f172a; padding: 0 10px; color: #94a3b8;">أو</span>
+                </div>
+                
+                <div style="display: flex; gap: 10px; width: 100%;">
+                    <input type="text" id="join-id" placeholder="كود الغرفة" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #a855f7; background: #0f172a; color: white; font-family: 'Orbitron'; font-size: 1.1rem; text-transform: uppercase;">
+                    <button id="join-btn" class="btn btn-secondary" style="padding: 12px 20px; font-size: 1.1rem;">انضمام</button>
+                </div>
+                <p id="join-error" style="color: #ef4444; margin-top: 10px; display: none; font-size: 0.9rem; text-align: center;"></p>
+            </div>
+        </div>
+
         <!-- Lobby Screen -->
-        <div id="lobby-screen" class="screen active">
+        <div id="lobby-screen" class="screen">
             <h1 class="game-title glow-text">أصداء الزمن ⏳</h1>
             <p class="subtitle">تعاونوا لربط الماضي بالحاضر والمستقبل، وافتحوا بوابة الزمن!</p>
             
@@ -174,6 +200,6 @@
         </div>
     </div>
 
-    <script src="game.js?v=1"></script>
+    <script src="game.js?v=3"></script>
 </body>
 </html>

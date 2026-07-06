@@ -16,26 +16,128 @@ window.addEventListener('DOMContentLoaded', () => {
     const nameInput = $('player-name');
     if (nameInput) nameInput.value = myName;
     
-    // Parse URL params for Arcade integration
-    const urlParams = new URLSearchParams(window.location.search);
-    const mode = urlParams.get('mode');
-    
-    if (mode === 'private') {
-        const roomCode = urlParams.get('room');
-        const isHostParam = urlParams.get('isHost') === 'true';
-        if (roomCode) {
-            initGame(roomCode, isHostParam);
-        }
-    }
 });
 
-let myRole = ''; // 'past', 'present', 'future'
-let isHost = false;
-let hostConn = null;
-let guestConns = {}; // { peerId: DataConnection }
-let myStream = null;
+// Start directly in start-menu
+showScreen('start-menu-screen');
 
-showScreen('lobby-screen');
+// --- Input Validation ---
+function validateName(name) {
+    const trimmed = name.trim();
+    if (!trimmed) return { valid: false, error: 'الاسم مطلوب' };
+    if (trimmed.length > 20) return { valid: false, error: 'الاسم طويل جداً (20 حرف كحد أقصى)' };
+    return { valid: true, value: trimmed };
+}
+
+function validateRoomCode(code) {
+    const trimmed = code.trim().toUpperCase();
+    if (!trimmed) return { valid: false, error: 'كود الغرفة مطلوب' };
+    if (!/^[A-Z0-9]{6}$/.test(trimmed)) return { valid: false, error: 'كود الغرفة يجب أن يكون 6 أحرف/أرقام' };
+    return { valid: true, value: trimmed };
+}
+
+function showError(message) {
+    const el = $('join-error');
+    if (el) {
+        el.innerText = message;
+        el.style.display = 'block';
+        setTimeout(() => { el.style.display = 'none'; }, 5000);
+    }
+}
+
+// --- Menu Actions ---
+$('host-btn').onclick = () => {
+    const validation = validateName($('player-name').value);
+    if (!validation.valid) {
+        showError(validation.error);
+        return;
+    }
+    myName = validation.value;
+    isHost = true;
+    $('host-btn').disabled = true;
+    $('host-btn').innerText = 'جاري الإنشاء...';
+    
+    const myRoomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const peerId = 'ECHOTIME_' + myRoomCode;
+    myPeer = new Peer(peerId);
+    
+    myPeer.on('error', (err) => {
+        showError('تعذر إنشاء الغرفة. يرجى المحاولة مرة أخرى.');
+        $('host-btn').disabled = false;
+        $('host-btn').innerText = 'إنشاء غرفة (مضيف)';
+    });
+    
+    myPeer.on('open', id => {
+        myId = id;
+        gameState.players.push({ id: myId, name: myName, role: '' });
+        showScreen('lobby-screen');
+        $('room-id-box').classList.remove('hidden');
+        $('room-id-display').innerText = myRoomCode;
+        updateLobbyUI();
+    });
+    
+    myPeer.on('connection', conn => {
+        if (gameState.phase !== 'lobby' && gameState.phase !== 'roles') {
+            conn.close();
+            return;
+        }
+        conn.on('data', data => handleClientData(conn.peer, data));
+        conn.on('open', () => {
+            guestConns[conn.peer] = conn;
+        });
+        conn.on('close', () => {
+            delete guestConns[conn.peer];
+            gameState.players = gameState.players.filter(p => p.id !== conn.peer);
+            broadcastState();
+        });
+    });
+    
+    setupMediaCalls();
+};
+
+$('join-btn').onclick = () => {
+    const nameVal = validateName($('player-name').value);
+    const roomVal = validateRoomCode($('join-id').value);
+    
+    if (!nameVal.valid) { showError(nameVal.error); return; }
+    if (!roomVal.valid) { showError(roomVal.error); return; }
+    
+    myName = nameVal.value;
+    const hostId = roomVal.value;
+    isHost = false;
+    
+    $('join-btn').disabled = true;
+    $('join-btn').innerText = 'جاري الانضمام...';
+    
+    myPeer = new Peer();
+    
+    myPeer.on('error', (err) => {
+        showError('فشل الاتصال.');
+        $('join-btn').disabled = false;
+        $('join-btn').innerText = 'انضمام';
+    });
+    
+    myPeer.on('open', id => {
+        myId = id;
+        hostConn = myPeer.connect('ECHOTIME_' + hostId);
+        hostConn.on('open', () => {
+            showScreen('lobby-screen');
+            $('room-id-box').classList.remove('hidden');
+            $('room-id-display').innerText = hostId;
+            hostConn.send({ type: 'JOIN', name: myName, id: myId });
+        });
+        hostConn.on('data', data => {
+            if (data.type === 'STATE_UPDATE') {
+                gameState = data.state;
+                updateLobbyUI();
+                checkPhaseChange();
+            }
+        });
+        hostConn.on('error', () => alert('خطأ في الاتصال بالمضيف'));
+    });
+    
+    setupMediaCalls();
+};
 
 let gameState = {
     phase: 'lobby', // lobby, roles, playing, game-over
@@ -50,59 +152,7 @@ let gameState = {
 let timerInterval = null;
 let audioElements = [];
 
-// --- Init & Lobby ---
-function initGame(roomCode, hostFlag) {
-    isHost = hostFlag;
-    
-    if (isHost) {
-        const peerId = 'ECHOTIME_' + roomCode;
-        myPeer = new Peer(peerId);
-        
-        myPeer.on('open', id => {
-            myId = id;
-            gameState.players.push({ id: myId, name: myName, role: '' });
-            $('room-id-box').classList.remove('hidden');
-            $('room-id-display').innerText = roomCode;
-            updateLobbyUI();
-        });
-        
-        myPeer.on('connection', conn => {
-            if (gameState.phase !== 'lobby' && gameState.phase !== 'roles') {
-                conn.close();
-                return;
-            }
-            conn.on('data', data => handleClientData(conn.peer, data));
-            conn.on('open', () => {
-                guestConns[conn.peer] = conn;
-            });
-            conn.on('close', () => {
-                delete guestConns[conn.peer];
-                gameState.players = gameState.players.filter(p => p.id !== conn.peer);
-                broadcastState();
-            });
-        });
-    } else {
-        myPeer = new Peer();
-        myPeer.on('open', id => {
-            myId = id;
-            hostConn = myPeer.connect('ECHOTIME_' + roomCode);
-            hostConn.on('open', () => {
-                $('room-id-box').classList.remove('hidden');
-                $('room-id-display').innerText = roomCode;
-                hostConn.send({ type: 'JOIN', name: myName, id: myId });
-            });
-            hostConn.on('data', data => {
-                if (data.type === 'STATE_UPDATE') {
-                    gameState = data.state;
-                    updateLobbyUI();
-                    checkPhaseChange();
-                }
-            });
-        });
-    }
-    
-    setupMediaCalls();
-}
+// (Old initGame removed since it is now in menu actions)
 
 function setupMediaCalls() {
     myPeer.on('call', call => {

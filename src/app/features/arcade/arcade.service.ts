@@ -30,7 +30,7 @@ export class ArcadeService {
       platforms: ['browser', 'pc'],
       localUrl: '/games/echoes-of-time/index.html',
       status: 'available',
-      hasCustomMenu: false
+      hasCustomMenu: true
     },
     {
       id: 'three-monkeys',

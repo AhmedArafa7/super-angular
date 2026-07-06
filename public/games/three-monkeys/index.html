@@ -511,12 +511,7 @@
         };
 
         function updateBGM() {
-            const musicVol = localStorage.getItem('tm_opt_music') !== null ? parseInt(localStorage.getItem('tm_opt_music')) / 100 : 0.5;
-            if (musicVol > 0 && !isGlobalMuted) {
-                window.parent.postMessage({ type: 'AUDIO_PLAY_BGM', volume: musicVol }, '*');
-            } else {
-                window.parent.postMessage({ type: 'AUDIO_STOP_BGM' }, '*');
-            }
+            window.parent.postMessage({ type: 'AUDIO_STOP_BGM' }, '*');
         }
 
         document.addEventListener('pointerdown', (e) => {
