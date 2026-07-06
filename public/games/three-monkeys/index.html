@@ -78,6 +78,11 @@
                 كود الغرفة: <span id="room-id-display">...</span>
             </div>
             
+            <div class="players-list-container">
+                <h3>اللاعبون المتصلون:</h3>
+                <ul id="players-list"></ul>
+            </div>
+            
             <div class="roles-visual-container">
                 <div class="monkey-card" id="card-deaf">
                     <div class="monkey-name" id="name-deaf">--</div>
@@ -385,7 +390,7 @@
         user-select: none;
     }
     </style>
-    <script src="game.js?v=5"></script>
+    <script src="game.js?v=6"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         // Options Data
