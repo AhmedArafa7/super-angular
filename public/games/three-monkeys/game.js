@@ -15,6 +15,15 @@ let hostConn = null;
 let guestConns = {}; // { peerId: DataConnection }
 let myStream = null;
 
+// Menu navigation
+$('go-lobby-btn').onclick = () => {
+    // Go directly to lobby, skipping the generic Arcade Arena mode selection
+    showScreen('lobby-screen');
+};
+
+// Always show start menu first, bypassing any Arcade Arena URL modes
+showScreen('start-menu-screen');
+
 let gameState = {
     phase: 'lobby', // lobby, roles, playing, game-over
     players: [], // { id, name, role }
@@ -36,13 +45,21 @@ $('host-btn').onclick = () => {
     $('host-btn').disabled = true;
     $('host-btn').innerText = 'جاري الإنشاء...';
     
-    myPeer = new Peer();
+    let myRoomCode = localStorage.getItem('three_monkeys_room_code');
+    if (!myRoomCode) {
+        myRoomCode = Math.random().toString(36).substring(2, 9).toUpperCase();
+        localStorage.setItem('three_monkeys_room_code', myRoomCode);
+    }
+    
+    const peerId = 'SUPMONKEY_' + myRoomCode;
+    myPeer = new Peer(peerId);
+    
     myPeer.on('open', id => {
         myId = id;
         gameState.players.push({ id: myId, name: myName, role: '' });
         showScreen('room-screen');
         $('room-id-box').classList.remove('hidden');
-        $('room-id-display').innerText = id;
+        $('room-id-display').innerText = myRoomCode;
         updateLobbyUI();
     });
     
@@ -66,7 +83,7 @@ $('host-btn').onclick = () => {
 };
 
 $('join-btn').onclick = () => {
-    const hostId = $('join-id').value.trim();
+    const hostId = $('join-id').value.trim().toUpperCase();
     myName = $('player-name').value.trim() || 'لاعب';
     if (!hostId) return;
     
@@ -76,7 +93,7 @@ $('join-btn').onclick = () => {
     myPeer = new Peer();
     myPeer.on('open', id => {
         myId = id;
-        hostConn = myPeer.connect(hostId);
+        hostConn = myPeer.connect('SUPMONKEY_' + hostId);
         hostConn.on('open', () => {
             showScreen('room-screen');
             hostConn.send({ type: 'JOIN', name: myName, id: myId });
@@ -126,9 +143,17 @@ function handleClientData(peerId, data) {
         broadcastState();
     }
     if (data.type === 'SELECT_ROLE') {
-        const p = gameState.players.find(x => x.id === peerId);
-        if (p) p.role = data.role;
-        broadcastState();
+        const p = gameState.players.find(x => x.id === data.id);
+        if (p) {
+            if (p.role === data.role) {
+                p.role = ''; // toggle off
+            } else {
+                gameState.players.forEach(other => { if (other.role === data.role) other.role = ''; });
+                p.role = data.role;
+            }
+            broadcastState();
+            if (isHost) updateLobbyUI();
+        }
     }
     if (data.type === 'ACTION') {
         handleGameAction(peerId, data.action);
@@ -148,35 +173,33 @@ function updateLobbyUI() {
     });
     
     if (gameState.phase === 'roles') {
-        $('blind-select').disabled = false;
-        $('deaf-select').disabled = false;
-        $('mute-select').disabled = false;
-        
-        // Update selects
-        ['blind', 'deaf', 'mute'].forEach(role => {
-            const select = $(`${role}-select`);
-            select.innerHTML = '<option value="">-- لم يحدد --</option>';
-            gameState.players.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p.id;
-                opt.innerText = p.name;
-                if (p.role === role) opt.selected = true;
-                select.appendChild(opt);
-            });
-            // Host handles role logic, guests just send requests
-            select.onchange = (e) => {
-                if (isHost) {
-                    // Remove this role from anyone else
-                    gameState.players.forEach(p => { if(p.role === role) p.role = ''; });
-                    const p = gameState.players.find(x => x.id === e.target.value);
-                    if (p) p.role = role;
-                    broadcastState();
+        ['deaf', 'blind', 'mute'].forEach(role => {
+            const card = $(`card-${role}`);
+            const nameDiv = $(`name-${role}`);
+            const btn = $(`btn-select-${role}`);
+            const readyDiv = $(`ready-${role}`);
+            
+            const p = gameState.players.find(x => x.role === role);
+            if (p) {
+                nameDiv.innerText = p.name;
+                card.classList.add('selected');
+                readyDiv.innerText = '✅ جاهز';
+                if (p.id === myId) {
+                    btn.innerText = 'إلغاء (CANCEL)';
+                    btn.classList.add('my-role');
+                    btn.disabled = false;
                 } else {
-                    hostConn.send({ type: 'SELECT_ROLE', role: role, id: e.target.value });
-                    // Revert UI until host confirms
-                    e.target.value = '';
+                    btn.innerText = 'محجوز (TAKEN)';
+                    btn.classList.remove('my-role');
+                    btn.disabled = true;
                 }
-            };
+            } else {
+                nameDiv.innerText = '--';
+                card.classList.remove('selected');
+                btn.innerText = 'اختيار';
+                btn.classList.remove('my-role');
+                btn.disabled = false;
+            }
         });
         
         if (isHost) {
@@ -186,15 +209,38 @@ function updateLobbyUI() {
             
             if (hasBlind && hasDeaf && hasMute) {
                 $('start-game-btn').disabled = false;
-                $('start-game-btn').classList.remove('hidden');
+                $('start-game-btn').style.display = 'block';
             } else {
                 $('start-game-btn').disabled = true;
+                $('start-game-btn').style.display = 'none';
             }
+            $('waiting-msg').classList.add('hidden');
         } else {
+            $('start-game-btn').style.display = 'none';
             $('waiting-msg').classList.remove('hidden');
         }
     }
 }
+
+window.selectMyRole = function(role) {
+    if (gameState.phase !== 'roles') return;
+    
+    if (isHost) {
+        const me = gameState.players.find(x => x.id === myId);
+        if (me) {
+            if (me.role === role) {
+                me.role = '';
+            } else {
+                gameState.players.forEach(p => { if (p.role === role) p.role = ''; });
+                me.role = role;
+            }
+            broadcastState();
+            updateLobbyUI();
+        }
+    } else {
+        hostConn.send({ type: 'SELECT_ROLE', role: role, id: myId });
+    }
+};
 
 $('start-game-btn').onclick = () => {
     if (!isHost) return;

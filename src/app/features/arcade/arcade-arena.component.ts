@@ -44,7 +44,7 @@ import { ArcadeService, ArcadeGame } from './arcade.service';
       </header>
 
       <!-- Mode Selection Overlay -->
-      <div *ngIf="!selectedMode" class="flex-1 flex flex-col items-center justify-center p-6 md:p-12 animate-in fade-in zoom-in duration-500 relative overflow-y-auto custom-scrollbar">
+      <div *ngIf="showModeOverlay" class="flex-1 flex flex-col items-center justify-center p-6 md:p-12 animate-in fade-in zoom-in duration-500 relative overflow-y-auto custom-scrollbar" [ngClass]="{'absolute inset-0 z-50 bg-black/95 backdrop-blur-md': game?.hasCustomMenu && selectedMode === 'custom'}">
          <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.1)_0%,transparent_70%)] pointer-events-none"></div>
          <h1 class="text-3xl md:text-5xl font-black text-white mb-3 text-center tracking-tight">اختر نمط اللعب</h1>
          <p class="text-slate-400 text-center max-w-lg mb-12 text-sm md:text-base leading-relaxed">كيف تود خوض هذا التحدي؟ اختر النمط الذي يناسبك الآن وابدأ اللعب.</p>
@@ -161,7 +161,8 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
   gameState = 'Waiting...';
   lastWinner = '';
 
-  selectedMode: 'local' | 'private' | 'pro' | null = null;
+  selectedMode: 'local' | 'private' | 'pro' | 'custom' | null = null;
+  showModeOverlay = true;
   showPrivateRoomModal = false;
   generatedRoomCode = '';
 
@@ -204,6 +205,13 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
         this.arcadeService.getGameById(id).subscribe(game => {
           if (game && game.localUrl) {
             this.game = game;
+            if (this.game.hasCustomMenu && !this.selectedMode) {
+              this.showModeOverlay = false;
+              this.selectedMode = 'custom';
+              this.launchGame();
+            } else if (!this.selectedMode) {
+              this.showModeOverlay = true;
+            }
           } else {
             this.goBack();
           }
@@ -215,6 +223,7 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
       const room = params.get('room');
       if (room) {
         this.selectedMode = 'private';
+        this.showModeOverlay = false;
         this.multiplayer.joinRoom(room);
       }
     });
@@ -233,6 +242,7 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
     }
     
     this.selectedMode = mode;
+    this.showModeOverlay = false;
     
     if (mode === 'private') {
       const code = await this.multiplayer.createRoom();
@@ -287,6 +297,8 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
         } else if (data.type === 'ARCADE_GAME_OVER') {
           this.gameState = 'Game Over';
           this.lastWinner = data.winner || 'Draw';
+        } else if (data.type === 'SHOW_MODE_SELECTION') {
+          this.showModeOverlay = true;
         }
       }
 

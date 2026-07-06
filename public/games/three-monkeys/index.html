@@ -10,8 +10,51 @@
 </head>
 <body>
     <div id="app">
+        <!-- Start Menu Screen -->
+        <div id="start-menu-screen" class="screen active">
+
+            <div class="menu-title-container">
+                <h1 class="menu-title-text">القردة الثلاثة!</h1>
+            </div>
+            
+            <div class="menu-device">
+                <div class="menu-device-bulb"></div>
+                <div class="menu-buttons">
+                    <div class="button-track">
+                        <button class="pill-btn pink-btn" id="go-lobby-btn">
+                            <span class="btn-text">PLAY</span>
+                        </button>
+                    </div>
+                    <div class="button-track">
+                        <button class="pill-btn orange-btn" onclick="alert('الخيارات غير متاحة بالنسخة الحالية')">
+                            <span class="btn-text">OPTIONS</span>
+                        </button>
+                    </div>
+                    <div class="button-track">
+                        <button class="pill-btn blue-btn" onclick="alert('أضف اللعبة لقائمة الرغبات!')">
+                            <span class="btn-text">WISHLIST</span>
+                        </button>
+                    </div>
+                    <div class="button-track">
+                        <button class="pill-btn green-btn" onclick="window.parent.postMessage({type: 'CLOSE_GAME'}, '*')">
+                            <span class="btn-text">QUIT</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="side-logo discord-logo" onclick="window.open('https://discord.com', '_blank')">
+                <div class="icon">💬</div>
+                <div>DISCORD</div>
+            </div>
+            <div class="side-logo bug-logo" onclick="alert('الإبلاغ عن خطأ')">
+                <div class="icon">🐞</div>
+                <div>BUG REPORT</div>
+            </div>
+        </div>
+
         <!-- Lobby Screen -->
-        <div id="lobby-screen" class="screen active">
+        <div id="lobby-screen" class="screen">
             <h1 class="game-title">القردة الثلاثة 🙈🙉🙊</h1>
             <p class="subtitle">تعاونوا لتفكيك القنبلة.. ولا تنفجروا!</p>
             
@@ -41,37 +84,36 @@
                 كود الغرفة: <span id="room-id-display">...</span>
             </div>
             
-            <div class="players-list-container">
-                <h3>اللاعبون المتصلون:</h3>
-                <ul id="players-list">
-                    <!-- Players will be listed here -->
-                </ul>
+            <div class="roles-visual-container">
+                <div class="monkey-card" id="card-deaf">
+                    <div class="monkey-name" id="name-deaf">--</div>
+                    <div class="monkey-avatar">🙉</div>
+                    <div class="monkey-role-name">أصم (DEAF)</div>
+                    <button class="btn role-btn" id="btn-select-deaf" onclick="selectMyRole('deaf')">اختيار</button>
+                    <div class="ready-status" id="ready-deaf"></div>
+                </div>
+                
+                <div class="monkey-card" id="card-blind">
+                    <div class="monkey-name" id="name-blind">--</div>
+                    <div class="monkey-avatar">🙈</div>
+                    <div class="monkey-role-name">أعمى (BLIND)</div>
+                    <button class="btn role-btn" id="btn-select-blind" onclick="selectMyRole('blind')">اختيار</button>
+                    <div class="ready-status" id="ready-blind"></div>
+                </div>
+                
+                <div class="monkey-card" id="card-mute">
+                    <div class="monkey-name" id="name-mute">--</div>
+                    <div class="monkey-avatar">🙊</div>
+                    <div class="monkey-role-name">أبكم (MUTE)</div>
+                    <button class="btn role-btn" id="btn-select-mute" onclick="selectMyRole('mute')">اختيار</button>
+                    <div class="ready-status" id="ready-mute"></div>
+                </div>
             </div>
             
-            <div class="roles-section">
-                <h3>توزيع الأدوار:</h3>
-                <div class="role-selector">
-                    <label>🙈 القرد الأعمى (المُنفّذ):</label>
-                    <select id="blind-select" class="role-select" disabled>
-                        <option value="">-- لم يحدد --</option>
-                    </select>
-                </div>
-                <div class="role-selector">
-                    <label>🙉 القرد الأصم (العيون):</label>
-                    <select id="deaf-select" class="role-select" disabled>
-                        <option value="">-- لم يحدد --</option>
-                    </select>
-                </div>
-                <div class="role-selector">
-                    <label>🙊 القرد الأبكم (الخبير):</label>
-                    <select id="mute-select" class="role-select" disabled>
-                        <option value="">-- لم يحدد --</option>
-                    </select>
-                </div>
-                <p class="error-msg" id="role-error"></p>
+            <div style="margin-top: 20px;">
+                <button id="start-game-btn" class="btn btn-primary" style="font-size: 1.5rem; padding: 15px 40px; display: none;">بدء اللعبة (START)</button>
             </div>
             
-            <button id="start-game-btn" class="btn btn-primary hidden" disabled>بدء اللعبة (يجب تحديد 3 أدوار مختلفة)</button>
             <p id="waiting-msg" class="waiting-text hidden">ننتظر المضيف لبدء اللعبة...</p>
             
             <div id="audio-elements" class="hidden">

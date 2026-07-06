@@ -356,6 +356,22 @@ window.addEventListener('keyup', e => {
     if (e.key === 'd') keys.d = false;
 });
 
+function isInsideMap(px, py, radius) {
+    let points = [
+        {x: px - radius + 2, y: py},
+        {x: px + radius - 2, y: py},
+        {x: px, y: py - radius + 2},
+        {x: px, y: py + radius - 2}
+    ];
+    for (let p of points) {
+        let inside = false;
+        for (let r of rooms) if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h) { inside = true; break; }
+        if (!inside) for (let c of corridors) if (p.x >= c.x && p.x <= c.x + c.w && p.y >= c.y && p.y <= c.y + c.h) { inside = true; break; }
+        if (!inside) return false;
+    }
+    return true;
+}
+
 function gameLoopClient() {
     if (gameState !== 'PLAYING') return;
     
@@ -364,26 +380,21 @@ function gameLoopClient() {
     
     // Movement
     if (!me.isDead) {
-        let dx = 0, dy = 0;
-        if (keys.w) dy -= SPEED;
-        if (keys.s) dy += SPEED;
-        if (keys.a) dx -= SPEED;
-        if (keys.d) dx += SPEED;
+        let newX = me.x;
+        let newY = me.y;
         
-        // Very basic bounds checking (Keep within map size)
-        let newX = Math.max(20, Math.min(MAP_WIDTH - 20, me.x + dx));
-        let newY = Math.max(20, Math.min(MAP_HEIGHT - 20, me.y + dy));
+        if (keys.w) newY -= SPEED;
+        if (keys.s) newY += SPEED;
+        if (keys.a) newX -= SPEED;
+        if (keys.d) newX += SPEED;
         
-        // Simple wall collision logic could go here
+        let moved = false;
+        // Check X and Y independently to allow sliding against walls
+        if (newX !== me.x && isInsideMap(newX, me.y, 16)) { me.x = newX; moved = true; }
+        if (newY !== me.y && isInsideMap(me.x, newY, 16)) { me.y = newY; moved = true; }
         
-        if (newX !== me.x || newY !== me.y) {
-            me.x = newX;
-            me.y = newY;
-            if (isHost) {
-                // Host updates directly
-            } else {
-                conn.send({ type: 'MOVE', x: me.x, y: me.y });
-            }
+        if (moved && !isHost) {
+            conn.send({ type: 'MOVE', x: me.x, y: me.y });
         }
     }
     
@@ -499,22 +510,29 @@ function drawMap() {
     ctx.save();
     ctx.translate(-camera.x, -camera.y);
     
-    // Draw Floor
-    ctx.fillStyle = '#020617';
+    // Draw Floor Base (Space)
+    ctx.fillStyle = '#0f172a';
     ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
     
-    // Draw Rooms
+    // Draw Walls (Rendered slightly larger behind rooms/corridors)
+    const wallThickness = 12;
+    ctx.fillStyle = '#38bdf8'; // Glowing blue walls
+    rooms.forEach(r => ctx.fillRect(r.x - wallThickness, r.y - wallThickness, r.w + wallThickness*2, r.h + wallThickness*2));
+    corridors.forEach(c => ctx.fillRect(c.x - wallThickness, c.y - wallThickness, c.w + wallThickness*2, c.h + wallThickness*2));
+    
+    // Draw Rooms (Floors)
     rooms.forEach(r => {
         ctx.fillStyle = r.color;
         ctx.fillRect(r.x, r.y, r.w, r.h);
-        ctx.fillStyle = 'rgba(255,255,255,0.1)';
-        ctx.font = '20px Arial';
-        ctx.fillText(r.name, r.x + 10, r.y + 30);
+        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        ctx.font = 'bold 30px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText(r.name, r.x + r.w/2, r.y + r.h/2);
     });
     
-    // Draw Corridors
-    ctx.fillStyle = '#1e293b';
+    // Draw Corridors (Floors)
     corridors.forEach(c => {
+        ctx.fillStyle = '#1e293b';
         ctx.fillRect(c.x, c.y, c.w, c.h);
     });
     
@@ -536,39 +554,59 @@ function drawMap() {
     bodies.forEach(b => {
         ctx.fillStyle = b.color;
         ctx.beginPath();
-        ctx.arc(b.x, b.y, 20, 0, Math.PI); // Half circle
+        ctx.arc(b.x, b.y + 10, 20, Math.PI, 0); // Half circle body (lying down)
         ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        // Bone
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(b.x, b.y - 5, 8, 0, Math.PI*2);
+        ctx.fill();
     });
     
-    // Draw Players
+    // Draw Players (Astronauts)
     let me = players[myId];
     
     Object.values(players).forEach(p => {
-        if (p.isDead && (!me.isDead)) return; // Alive players can't see ghosts
+        if (p.isDead && (!me.isDead)) return;
         
-        ctx.fillStyle = p.isDead ? 'rgba(255,255,255,0.5)' : p.color;
+        ctx.fillStyle = p.isDead ? 'rgba(255,255,255,0.4)' : p.color;
+        
+        // Backpack
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 20, 0, Math.PI*2);
+        ctx.roundRect(p.x - 22, p.y - 12, 10, 28, 5);
         ctx.fill();
+        
+        // Body (Capsule)
+        ctx.beginPath();
+        ctx.roundRect(p.x - 16, p.y - 22, 32, 44, 16);
+        ctx.fill();
+        
+        // Legs
+        ctx.fillRect(p.x - 12, p.y + 10, 10, 15); // Left leg
+        ctx.fillRect(p.x + 2, p.y + 10, 10, 15);  // Right leg
         
         if (targetPlayer && targetPlayer.id === p.id) {
             ctx.strokeStyle = '#ef4444';
             ctx.lineWidth = 3;
-            ctx.stroke();
+            ctx.strokeRect(p.x - 25, p.y - 25, 50, 55);
         }
         
+        // Visor
+        ctx.fillStyle = '#94a3b8';
+        ctx.beginPath();
+        ctx.roundRect(p.x - 4, p.y - 14, 20, 14, 7);
+        ctx.fill();
+        // Visor Highlight
         ctx.fillStyle = '#fff';
-        ctx.font = '14px Arial';
+        ctx.beginPath();
+        ctx.roundRect(p.x + 4, p.y - 12, 8, 4, 2);
+        ctx.fill();
+        
+        // Player Name
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 14px system-ui';
         ctx.textAlign = 'center';
-        // Only show name if crewmate, or if impostor sees another impostor
-        if (p.id === myId || me.role === 'IMPOSTOR' && p.role === 'IMPOSTOR' || me.isDead) {
-            ctx.fillText(p.name, p.x, p.y - 30);
-        } else {
-            ctx.fillText(p.name, p.x, p.y - 30); // Show all names for MVP
-        }
+        ctx.fillText(p.name, p.x, p.y - 30);
     });
     
     ctx.restore();

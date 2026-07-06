@@ -11,6 +11,7 @@ export interface ArcadeGame {
   localUrl?: string; // Path in assets
   status: 'available' | 'coming_soon' | 'beta';
   localModeType?: 'standard' | 'ai' | 'pass_and_play'; // Determines the first button behavior/UI
+  hasCustomMenu?: boolean; // If true, game handles its own initial menu before mode selection
 }
 
 @Injectable({
@@ -28,7 +29,8 @@ export class ArcadeService {
       genre: 'Co-op',
       platforms: ['browser', 'pc'],
       localUrl: '/games/three-monkeys/index.html',
-      status: 'available'
+      status: 'available',
+      hasCustomMenu: true
     },
     {
       id: 'tank-battle',
