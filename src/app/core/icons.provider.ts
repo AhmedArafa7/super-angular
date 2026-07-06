@@ -8,7 +8,9 @@ import {
   LayoutPanelLeft, ChevronUp, ChevronDown, Layers, Home, Film, History, Tv, 
   TrendingUp, Music, Newspaper, Search, Sparkles, ArrowLeft, ThumbsUp, Play,
   ExternalLink, Settings2, Palette, PlusCircle, Download, Activity, Box,
-  PanelLeft, PanelRight, PanelTop, PanelBottom, Orbit, MoreVertical, ChevronLeft
+  PanelLeft, PanelRight, PanelTop, PanelBottom, Orbit, MoreVertical, ChevronLeft,
+  Flame, Plus, ShoppingBag, Receipt, Minus, Trash2, Loader2, Croissant, Coffee,
+  Monitor, Edit, CheckCircle2, CheckSquare, Check, UploadCloud
 } from 'lucide-angular';
 
 import { 
@@ -21,7 +23,9 @@ import {
   LucideLayoutPanelLeft, LucideChevronUp, LucideChevronDown, LucideLayers, LucideHome, LucideFilm, LucideHistory, LucideTv, 
   LucideTrendingUp, LucideMusic, LucideNewspaper, LucideSearch, LucideSparkles, LucideArrowLeft, LucideThumbsUp, LucidePlay,
   LucideExternalLink, LucideSettings2, LucidePalette, LucidePlusCircle, LucideDownload, LucideActivity, LucideBox,
-  LucidePanelLeft, LucidePanelRight, LucidePanelTop, LucidePanelBottom, LucideOrbit, LucideMoreVertical, LucideChevronLeft
+  LucidePanelLeft, LucidePanelRight, LucidePanelTop, LucidePanelBottom, LucideOrbit, LucideMoreVertical, LucideChevronLeft,
+  LucideFlame, LucidePlus, LucideShoppingBag, LucideReceipt, LucideMinus, LucideTrash2, LucideLoader2, LucideCroissant, LucideCoffee,
+  LucideMonitor, LucideEdit, LucideCheckCircle2, LucideCheckSquare, LucideCheck, LucideUploadCloud
 } from '@lucide/angular';
 
 export const provideLucideIcons = () => {
@@ -94,7 +98,22 @@ export const provideLucideIcons = () => {
         PanelBottom,
         Orbit,
         MoreVertical,
-        ChevronLeft
+        ChevronLeft,
+        Flame,
+        Plus,
+        ShoppingBag,
+        Receipt,
+        Minus,
+        Trash2,
+        Loader2,
+        Croissant,
+        Coffee,
+        Monitor,
+        Edit,
+        CheckCircle2,
+        CheckSquare,
+        Check,
+        UploadCloud
       })
     ),
     provideNewLucideIcons(
@@ -164,7 +183,21 @@ export const provideLucideIcons = () => {
       LucidePanelBottom,
       LucideOrbit,
       LucideMoreVertical,
-      LucideChevronLeft
+      LucideChevronLeft,
+      LucideFlame,
+      LucidePlus,
+      LucideShoppingBag,
+      LucideReceipt,
+      LucideMinus,
+      LucideTrash2,
+      LucideLoader2,
+      LucideCroissant,
+      LucideCoffee,
+      LucideMonitor,
+      LucideEdit,
+      LucideCheckCircle2,
+      LucideCheckSquare,
+      LucideCheck
     )
   ];
 };

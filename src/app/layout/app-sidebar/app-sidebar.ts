@@ -1,12 +1,14 @@
-import { Component, inject, HostListener } from '@angular/core';
+import { Component, inject, HostListener, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { SidebarService } from '../../core/sidebar.service';
 import { ALL_NAV_ITEMS, NavItem, getVisibleNavItems } from '../../core/nav-items';
+import { GlobalStateService } from '../../core/services/global-state.service';
 
 import { OfflineQueueService } from '../../core/services/offline-queue.service';
 import { FirebaseService } from '../../core/services/firebase.service';
-import { LucideAngularModule, LogOut, User, Settings, LayoutDashboard, CloudUpload, CheckCircle2, XCircle, CloudCog, Chrome } from 'lucide-angular';
+import { LucideAngularModule, LogOut, User, Settings, LayoutDashboard, CloudUpload, CheckCircle2, XCircle, CloudCog, Chrome, UserPlus, Users } from 'lucide-angular';
 
 import { SidebarItemComponent } from './sidebar-item/sidebar-item.component';
 import { FloatingOrbComponent } from './floating-orb/floating-orb.component';
@@ -18,6 +20,7 @@ import { CustomizationDialogComponent } from './customization-dialog/customizati
   imports: [
     CommonModule, 
     RouterModule, 
+    FormsModule,
     LucideAngularModule,
     SidebarItemComponent, 
     FloatingOrbComponent, 
@@ -33,6 +36,7 @@ export class AppSidebarComponent {
   sidebar = inject(SidebarService);
   offlineQueue = inject(OfflineQueueService);
   firebase = inject(FirebaseService);
+  globalState = inject(GlobalStateService);
   
   userRole: string | null = 'admin'; 
   showCustomizationDialog = false;
@@ -52,6 +56,8 @@ export class AppSidebarComponent {
   CheckCircle2 = CheckCircle2;
   XCircle = XCircle;
   CloudCog = CloudCog;
+  UserPlus = UserPlus;
+  Users = Users;
   
   get visibleItems(): NavItem[] {
     return getVisibleNavItems(this.userRole, ALL_NAV_ITEMS);

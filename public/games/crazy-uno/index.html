@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أونو المجنونة</title>
+    <style>
+        body { margin: 0; font-family: system-ui, sans-serif; background: #991b1b; color: white; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        .table { flex: 1; position: relative; background: radial-gradient(circle, #b91c1c 0%, #7f1d1d 100%); display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .card { width: 100px; height: 150px; border-radius: 10px; border: 4px solid white; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 900; box-shadow: 0 4px 6px rgba(0,0,0,0.5); cursor: pointer; transition: transform 0.2s; background: white; user-select: none; }
+        .card:hover { transform: translateY(-10px); }
+        .card.red { background: #ef4444; color: white; }
+        .card.blue { background: #3b82f6; color: white; }
+        .card.green { background: #22c55e; color: white; }
+        .card.yellow { background: #eab308; color: white; }
+        .card.wild { background: #000; color: white; }
+        
+        .deck-area { display: flex; gap: 20px; align-items: center; margin-bottom: 40px; }
+        .pile { position: relative; }
+        .deck { cursor: pointer; background: #000; color: #ef4444; border-color: #000; }
+        .deck::after { content: 'UNO'; position: absolute; transform: rotate(-30deg); font-size: 24px; color: #facc15; }
+        
+        .my-hand { display: flex; gap: -30px; justify-content: center; padding: 20px; background: rgba(0,0,0,0.5); min-height: 160px; overflow-x: auto; }
+        .my-hand .card { margin-left: -40px; box-shadow: -5px 0 10px rgba(0,0,0,0.3); }
+        .my-hand .card:first-child { margin-left: 0; }
+        
+        .players { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-around; }
+        .player { background: rgba(0,0,0,0.4); padding: 5px 15px; border-radius: 20px; font-size: 14px; font-weight: bold; border: 2px solid transparent; }
+        .player.active { border-color: #facc15; box-shadow: 0 0 10px rgba(250,204,21,0.5); }
+        
+        #color-picker { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: none; align-items: center; justify-content: center; gap: 20px; }
+        .color-btn { width: 80px; height: 80px; border-radius: 50%; border: 4px solid white; cursor: pointer; }
+        .color-btn:hover { transform: scale(1.1); }
+        
+        #btn-uno { position: absolute; bottom: 200px; right: 20px; background: #facc15; color: black; border: none; padding: 15px 30px; border-radius: 30px; font-size: 24px; font-weight: 900; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: none; }
+        #btn-uno:hover { transform: scale(1.05); }
+        
+        .toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); padding: 20px 40px; border-radius: 20px; font-size: 24px; font-weight: bold; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 200; }
+    </style>
+</head>
+<body>
+    <div class="players" id="players-container"></div>
+    
+    <div class="table">
+        <div class="deck-area">
+            <div class="card deck" onclick="drawCard()"></div>
+            <div class="pile">
+                <div class="card" id="top-card"></div>
+            </div>
+        </div>
+        <div id="current-turn-text" style="font-size: 24px; font-weight: bold; color: #facc15; margin-bottom: 20px;">في انتظار اللاعبين...</div>
+    </div>
+    
+    <button id="btn-uno" onclick="callUno()">أونو!</button>
+    
+    <div class="my-hand" id="hand-container"></div>
+
+    <div id="color-picker">
+        <div class="color-btn" style="background: #ef4444;" onclick="chooseColor('red')"></div>
+        <div class="color-btn" style="background: #3b82f6;" onclick="chooseColor('blue')"></div>
+        <div class="color-btn" style="background: #22c55e;" onclick="chooseColor('green')"></div>
+        <div class="color-btn" style="background: #eab308;" onclick="chooseColor('yellow')"></div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('mode'); // 'local' or 'private'
+        
+        let state = {
+            players: [],
+            turnIndex: 0,
+            direction: 1,
+            topCard: null,
+            deck: [],
+            status: 'waiting' // waiting, playing, over
+        };
+        
+        let myId = 'player_' + Math.floor(Math.random() * 1000);
+        let isHost = false;
+        let myHand = [];
+
+        // Simple deck generation
+        const colors = ['red', 'blue', 'green', 'yellow'];
+        const values = ['0','1','2','3','4','5','6','7','8','9','Skip','Reverse','+2'];
+        
+        function generateDeck() {
+            let deck = [];
+            for (let c of colors) {
+                for (let v of values) {
+                    deck.push({ color: c, value: v });
+                    if (v !== '0') deck.push({ color: c, value: v }); // Two of each except 0
+                }
+            }
+            for (let i = 0; i < 4; i++) {
+                deck.push({ color: 'wild', value: 'Color' });
+                deck.push({ color: 'wild', value: '+4' });
+            }
+            return deck.sort(() => Math.random() - 0.5);
+        }
+
+        // WebRTC Bridge
+        window.addEventListener('message', (event) => {
+            const data = event.data;
+            if (!data || !data.type) return;
+
+            if (data.type === 'SYNC_STATE') {
+                state = data.state;
+                render();
+            } else if (data.type === 'DEAL_CARDS' && data.target === myId) {
+                myHand = data.cards;
+                render();
+            } else if (data.type === 'PLAYER_JOINED' && isHost) {
+                if (!state.players.find(p => p.id === data.playerId)) {
+                    state.players.push({ id: data.playerId, cardCount: 0 });
+                    broadcastState();
+                    if (state.players.length >= 2) startGame(); // Auto start for MVP
+                }
+            } else if (data.type === 'PLAY_CARD' && isHost) {
+                processPlayCard(data.playerId, data.card, data.chosenColor);
+            } else if (data.type === 'DRAW_CARD' && isHost) {
+                processDrawCard(data.playerId);
+            }
+        });
+
+        function broadcastState() {
+            if (!isHost) return;
+            const msg = { type: 'SYNC_STATE', state };
+            window.parent.postMessage(msg, '*');
+            render();
+        }
+
+        function sendToHost(msg) {
+            window.parent.postMessage(msg, '*');
+        }
+
+        // Initialization
+        setTimeout(() => {
+            // For MVP, if we are the first, we act as Host. 
+            // In a real app, the wrapper tells us if we are host.
+            // We'll simulate Host if we receive no state after 1 second, or if we get a specific message.
+            window.parent.postMessage({ type: 'PLAYER_JOINED', playerId: myId }, '*');
+        }, 500);
+        
+        // Let's assume we are host for testing local mode
+        if (mode === 'local') {
+            isHost = true;
+            state.players = [{ id: myId, cardCount: 0 }];
+            startGame();
+        }
+
+        function startGame() {
+            state.deck = generateDeck();
+            state.topCard = state.deck.pop();
+            while(state.topCard.color === 'wild') { // Don't start with wild
+                state.deck.unshift(state.topCard);
+                state.topCard = state.deck.pop();
+            }
+            state.status = 'playing';
+            
+            // Deal 7 cards to each
+            state.players.forEach(p => {
+                const cards = state.deck.splice(0, 7);
+                p.cardCount = 7;
+                if (p.id === myId) myHand = cards;
+                else window.parent.postMessage({ type: 'DEAL_CARDS', target: p.id, cards }, '*');
+            });
+            broadcastState();
+        }
+
+        function render() {
+            // Render Top Card
+            const tc = document.getElementById('top-card');
+            if (state.topCard) {
+                tc.className = `card ${state.topCard.color}`;
+                tc.innerText = state.topCard.value;
+            }
+
+            // Render Hand
+            const hc = document.getElementById('hand-container');
+            hc.innerHTML = '';
+            myHand.forEach((card, idx) => {
+                const div = document.createElement('div');
+                div.className = `card ${card.color}`;
+                div.innerText = card.value;
+                div.onclick = () => tryPlayCard(idx);
+                hc.appendChild(div);
+            });
+
+            // Render Players
+            const pc = document.getElementById('players-container');
+            pc.innerHTML = '';
+            state.players.forEach((p, idx) => {
+                const div = document.createElement('div');
+                div.className = `player ${idx === state.turnIndex ? 'active' : ''}`;
+                div.innerText = `${p.id === myId ? 'أنت' : 'اللاعب'} (${p.cardCount})`;
+                pc.appendChild(div);
+            });
+
+            const currentId = state.players[state.turnIndex]?.id;
+            document.getElementById('current-turn-text').innerText = currentId === myId ? 'دورك الآن!' : 'دور الخصم...';
+        }
+
+        let pendingCardIdx = -1;
+        function tryPlayCard(idx) {
+            const card = myHand[idx];
+            const top = state.topCard;
+            const currentId = state.players[state.turnIndex]?.id;
+            
+            if (currentId !== myId) return showToast('ليس دورك!');
+            
+            if (card.color === 'wild') {
+                pendingCardIdx = idx;
+                document.getElementById('color-picker').style.display = 'flex';
+                return;
+            }
+            
+            if (card.color === top.color || card.value === top.value || top.color === 'wild') {
+                playCardEvent(idx, null);
+            } else {
+                showToast('بطاقة غير صالحة!');
+            }
+        }
+
+        function chooseColor(color) {
+            document.getElementById('color-picker').style.display = 'none';
+            playCardEvent(pendingCardIdx, color);
+            pendingCardIdx = -1;
+        }
+
+        function playCardEvent(idx, chosenColor) {
+            const card = myHand[idx];
+            myHand.splice(idx, 1); // remove from hand optimistically
+            render();
+            
+            if (isHost) {
+                processPlayCard(myId, card, chosenColor);
+            } else {
+                sendToHost({ type: 'PLAY_CARD', playerId: myId, card, chosenColor });
+            }
+        }
+
+        function drawCard() {
+            const currentId = state.players[state.turnIndex]?.id;
+            if (currentId !== myId) return showToast('ليس دورك!');
+            if (isHost) processDrawCard(myId);
+            else sendToHost({ type: 'DRAW_CARD', playerId: myId });
+        }
+
+        function processPlayCard(playerId, card, chosenColor) {
+            state.topCard = card;
+            if (chosenColor) state.topCard.color = chosenColor; // Temporary set for wild
+            
+            const player = state.players.find(p => p.id === playerId);
+            if (player) player.cardCount--;
+
+            if (player.cardCount === 0) {
+                showToast('لقد فاز ' + playerId + '!');
+                state.status = 'over';
+                window.parent.postMessage({ type: 'ARCADE_GAME_OVER', winner: playerId }, '*');
+                return broadcastState();
+            }
+
+            // Next Turn Logic
+            let skip = 1;
+            if (card.value === 'Skip') skip = 2;
+            if (card.value === 'Reverse') { state.direction *= -1; if(state.players.length === 2) skip = 2; }
+            
+            nextTurn(skip);
+            
+            if (card.value === '+2' || card.value === '+4') {
+                let count = card.value === '+2' ? 2 : 4;
+                const nextPlayerId = state.players[state.turnIndex].id;
+                const drawn = state.deck.splice(0, count);
+                state.players[state.turnIndex].cardCount += count;
+                
+                if (nextPlayerId === myId) {
+                    myHand.push(...drawn);
+                } else {
+                    window.parent.postMessage({ type: 'DEAL_CARDS', target: nextPlayerId, cards: drawn }, '*');
+                }
+            }
+
+            broadcastState();
+        }
+
+        function processDrawCard(playerId) {
+            const drawn = state.deck.splice(0, 1);
+            const player = state.players.find(p => p.id === playerId);
+            if (player) player.cardCount++;
+            
+            if (playerId === myId) {
+                myHand.push(...drawn);
+            } else {
+                window.parent.postMessage({ type: 'DEAL_CARDS', target: playerId, cards: drawn }, '*');
+            }
+            
+            nextTurn(1);
+            broadcastState();
+        }
+
+        function nextTurn(steps) {
+            let next = state.turnIndex + (steps * state.direction);
+            while(next < 0) next += state.players.length;
+            state.turnIndex = next % state.players.length;
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.opacity = '1';
+            setTimeout(() => t.style.opacity = '0', 2000);
+        }
+
+        // Initially render empty state
+        render();
+    </script>
+</body>
+</html>

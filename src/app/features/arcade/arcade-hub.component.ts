@@ -1,15 +1,58 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { ArcadeService, ArcadeGame } from './arcade.service';
+import { GlobalStateService } from '../../core/services/global-state.service';
+import { LucideAngularModule, UserPlus } from 'lucide-angular';
 
 @Component({
   selector: 'app-arcade-hub',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule, LucideAngularModule],
   template: `
     <div class="min-h-full bg-slate-950 p-6 md:p-10 text-right overflow-y-auto custom-scrollbar" dir="rtl">
       
+      <!-- Friends Bar -->
+      <div class="mb-6 flex items-center justify-between bg-slate-900/50 border border-white/5 rounded-2xl p-4 backdrop-blur-sm shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
+        <div class="flex items-center gap-4 overflow-x-auto scrollbar-hide flex-1">
+          <div class="flex items-center gap-3">
+             <span class="text-slate-400 text-xs font-bold whitespace-nowrap ml-2">الأصدقاء:</span>
+             <ng-container *ngFor="let friend of globalState.friends()">
+               <div class="relative group cursor-pointer">
+                 <img [src]="friend.avatarUrl" class="w-10 h-10 rounded-full border-2 border-transparent hover:border-indigo-500 object-cover transition-all duration-300" />
+                 <span class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#0B0F19]"
+                       [ngClass]="{
+                         'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]': friend.status === 'online',
+                         'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)] animate-pulse': friend.status === 'in-game',
+                         'bg-slate-500': friend.status === 'offline'
+                       }">
+                 </span>
+                 <div class="absolute -bottom-8 right-1/2 translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl border border-white/10">
+                   {{ friend.name }} <span *ngIf="friend.status === 'in-game'" class="text-indigo-400 block text-[8px]">يلعب: {{ friend.gameName }}</span>
+                 </div>
+               </div>
+             </ng-container>
+          </div>
+        </div>
+        
+        <!-- Add Friend -->
+        <div class="flex items-center gap-2 shrink-0 border-r border-white/10 pr-4 ml-2">
+           <ng-container *ngIf="showAddFriend; else addBtn">
+             <input type="text" [(ngModel)]="newFriendName" (keyup.enter)="addFriend()" [disabled]="isAdding" placeholder="اسم المستخدم..." class="px-3 h-9 bg-black/40 border border-indigo-500/50 rounded-xl text-xs text-white text-right focus:outline-none focus:bg-black/60 w-36 transition-all disabled:opacity-50" />
+             <button (click)="addFriend()" [disabled]="isAdding" class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl px-4 h-9 text-xs font-bold transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50 min-w-[70px]">
+               {{ isAdding ? 'جاري...' : 'إضافة' }}
+             </button>
+           </ng-container>
+           <ng-template #addBtn>
+             <button (click)="showAddFriend = true" class="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl px-4 h-9 text-xs font-bold transition-all hover:scale-105 active:scale-95">
+               <lucide-icon [img]="UserPlus" class="w-4 h-4 text-indigo-400"></lucide-icon>
+               إضافة صديق
+             </button>
+           </ng-template>
+        </div>
+      </div>
+
       <!-- Hero Section -->
       <div class="relative mb-12 rounded-[2.5rem] overflow-hidden border border-white/5 bg-slate-900 shadow-2xl">
         <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent z-10"></div>
@@ -78,11 +121,39 @@ export class ArcadeHubComponent implements OnInit {
   
   private arcadeService = inject(ArcadeService);
   private router = inject(Router);
+  globalState = inject(GlobalStateService);
+
+  UserPlus = UserPlus;
+  showAddFriend = false;
+  newFriendName = '';
+  isAdding = false;
 
   ngOnInit() {
     this.arcadeService.getGames().subscribe(data => {
       this.games = data;
     });
+  }
+
+  async addFriend() {
+    const name = this.newFriendName.trim();
+    if (!name || this.isAdding) return;
+
+    this.isAdding = true;
+    try {
+      const success = await this.globalState.addFriend(name);
+      if (success) {
+        this.newFriendName = '';
+        this.showAddFriend = false;
+        // Optional: show success toast
+        alert('تم إضافة الصديق بنجاح!');
+      } else {
+        alert('لم يتم العثور على مستخدم بهذا الاسم.');
+      }
+    } catch (e) {
+      alert('حدث خطأ أثناء إضافة الصديق.');
+    } finally {
+      this.isAdding = false;
+    }
   }
 
   playGame(id: string) {

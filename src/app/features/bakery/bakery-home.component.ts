@@ -6,11 +6,13 @@ import { ToastService } from '../../core/services/toast.service';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { trigger, transition, style, animate, state } from '@angular/animations';
 import { BakeryOrdersComponent } from './components/bakery-orders.component';
+import { ImageFallbackDirective } from '../../shared/directives/image-fallback.directive';
+import { ImagePreviewDirective } from '../../shared/directives/image-preview.directive';
 
 @Component({
   selector: 'app-bakery-home',
   standalone: true,
-  imports: [CommonModule, LucideDynamicIcon, BakeryOrdersComponent],
+  imports: [CommonModule, LucideDynamicIcon, BakeryOrdersComponent, ImageFallbackDirective, ImagePreviewDirective],
   template: `
     <div class="h-full bg-[#FAFAFA] dark:bg-[#121212] overflow-hidden flex font-sans" dir="rtl">
       
@@ -36,7 +38,7 @@ import { BakeryOrdersComponent } from './components/bakery-orders.component';
         <!-- Categories & Menu -->
         <div class="p-8">
           <div class="flex items-center gap-4 mb-8 overflow-x-auto pb-2 custom-scrollbar">
-            <button *ngFor="let cat of categories" 
+            <button *ngFor="let cat of dynamicCategories()" 
                     (click)="selectedCategory.set(cat)"
                     class="px-5 py-2.5 rounded-2xl font-bold text-sm whitespace-nowrap transition-all shadow-sm border"
                     [ngClass]="selectedCategory() === cat ? 'bg-amber-600 text-white border-amber-600' : 'bg-white dark:bg-surface-container border-surface-container-high text-on-surface-variant hover:bg-amber-50 dark:hover:bg-amber-900/10'">
@@ -49,10 +51,13 @@ import { BakeryOrdersComponent } from './components/bakery-orders.component';
             <div *ngFor="let item of filteredProducts()" class="bg-white dark:bg-surface-container-low rounded-3xl overflow-hidden border border-surface-container-high shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col">
               <!-- Image Container -->
               <div class="relative h-48 overflow-hidden bg-surface-container-high">
-                <img [src]="item.imageUrl" [alt]="item.name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                <img [src]="item.imageUrl" [alt]="item.name" appImageFallback class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                 <div class="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1.5 text-white shadow-lg">
                   <svg lucideIcon="clock" class="w-3.5 h-3.5 text-amber-400"></svg>
                   <span class="text-[10px] font-bold">{{ item.preparationTimeMins }} دقيقة</span>
+                </div>
+                <div *ngIf="item.isPreorderOnly" class="absolute top-3 left-3 bg-amber-600/90 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1.5 text-white shadow-lg border border-amber-500">
+                  <span class="text-[10px] font-bold tracking-wide">بالحجز المسبق</span>
                 </div>
               </div>
               <!-- Content -->
@@ -108,7 +113,7 @@ import { BakeryOrdersComponent } from './components/bakery-orders.component';
             </div>
 
             <div *ngFor="let item of bakery.cart()" class="flex gap-3 bg-surface-container-low p-3 rounded-2xl border border-surface-container-high">
-              <img [src]="item.product.imageUrl" class="w-16 h-16 rounded-xl object-cover">
+              <img [src]="item.product.imageUrl" appImageFallback class="w-16 h-16 rounded-xl object-cover">
               <div class="flex-1 flex flex-col justify-between">
                 <div>
                   <h4 class="text-xs font-bold text-on-surface line-clamp-1">{{ item.product.name }}</h4>
@@ -167,7 +172,7 @@ export class BakeryHomeComponent implements OnInit {
   firebase = inject(FirebaseService);
   toast = inject(ToastService);
 
-  categories = ['الكل', 'كرواسون', 'خبز', 'حلويات', 'مشروبات'];
+  dynamicCategories = computed(() => ['الكل'].concat(this.bakery.categories()));
   selectedCategory = signal<string>('الكل');
   sidebarTab = signal<'cart' | 'orders'>('cart');
   isSubmitting = signal(false);

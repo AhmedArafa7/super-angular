@@ -10,6 +10,7 @@ export interface ArcadeGame {
   platforms: ('browser' | 'android' | 'pc')[];
   localUrl?: string; // Path in assets
   status: 'available' | 'coming_soon' | 'beta';
+  localModeType?: 'standard' | 'ai' | 'pass_and_play'; // Determines the first button behavior/UI
 }
 
 @Injectable({
@@ -257,7 +258,61 @@ export class ArcadeService {
       genre: 'Co-op',
       platforms: ['browser', 'pc', 'android'],
       localUrl: '/games/space-deception/index.html',
-      status: 'available'
+      status: 'available',
+      localModeType: 'ai'
+    },
+    {
+      id: 'ludo-party',
+      title: 'يلا لودو 🎲',
+      description: 'لعبة اللوح الكلاسيكية الممتعة! العب مع 3 من أصدقائك في نفس الشاشة أو عبر الإنترنت، وارمِ النرد لتفوز بالسباق.',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%23fbbf24%22%2F%3E%3Crect%20x%3D%22200%22%20y%3D%22100%22%20width%3D%22400%22%20height%3D%22400%22%20fill%3D%22%23fff%22%20stroke%3D%22%23000%22%20stroke-width%3D%2210%22%2F%3E%3Crect%20x%3D%22200%22%20y%3D%22100%22%20width%3D%22150%22%20height%3D%22150%22%20fill%3D%22%23ef4444%22%2F%3E%3Crect%20x%3D%22450%22%20y%3D%22100%22%20width%3D%22150%22%20height%3D%22150%22%20fill%3D%22%2322c55e%22%2F%3E%3Crect%20x%3D%22200%22%20y%3D%22350%22%20width%3D%22150%22%20height%3D%22150%22%20fill%3D%22%233b82f6%22%2F%3E%3Crect%20x%3D%22450%22%20y%3D%22350%22%20width%3D%22150%22%20height%3D%22150%22%20fill%3D%22%23eab308%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22570%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2250%22%20font-weight%3D%22900%22%20fill%3D%22%23000%22%20text-anchor%3D%22middle%22%3ELUDO%20PARTY%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'Board',
+      platforms: ['browser', 'android'],
+      localUrl: '/games/ludo-party/index.html',
+      status: 'coming_soon'
+    },
+    {
+      id: 'crazy-uno',
+      title: 'أونو المجنونة 🃏',
+      description: 'لعبة البطاقات الأشهر عالمياً! العب مع 3 إلى 8 أصدقاء، استخدم بطاقات السحب والعكس، ولا تنس أن تصرخ "أونو" قبل الفوز!',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%23ef4444%22%2F%3E%3Cg%20transform%3D%22translate(400%2C%20250)%20rotate(-15)%22%3E%3Crect%20x%3D%22-100%22%20y%3D%22-150%22%20width%3D%22200%22%20height%3D%22300%22%20fill%3D%22%23000%22%20rx%3D%2220%22%2F%3E%3Crect%20x%3D%22-90%22%20y%3D%22-140%22%20width%3D%22180%22%20height%3D%22280%22%20fill%3D%22%23fff%22%20rx%3D%2215%22%2F%3E%3Cellipse%20cx%3D%220%22%20cy%3D%220%22%20rx%3D%2260%22%20ry%3D%22100%22%20fill%3D%22%23ef4444%22%20transform%3D%22rotate(30)%22%2F%3E%3Ctext%20x%3D%220%22%20y%3D%2220%22%20font-family%3D%22sans-serif%22%20font-size%3D%2270%22%20font-weight%3D%22900%22%20fill%3D%22%23facc15%22%20text-anchor%3D%22middle%22%3EUNO%3C%2Ftext%3E%3C%2Fg%3E%3Ctext%20x%3D%22400%22%20y%3D%22550%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3ECRAZY%20UNO%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'Card',
+      platforms: ['browser', 'android'],
+      localUrl: '/games/crazy-uno/index.html',
+      status: 'coming_soon',
+      localModeType: 'pass_and_play'
+    },
+    {
+      id: 'werewolf-village',
+      title: 'القرية الملعونة 🐺',
+      description: 'لعبة خداع جماعية (5 إلى 10 لاعبين). هناك مستذئبون يتخفون بين القرويين! حققوا، تناقشوا عبر الميكروفون، واكتشفوا الخونة قبل حلول الليل.',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%230f172a%22%2F%3E%3Ccircle%20cx%3D%22400%22%20cy%3D%22300%22%20r%3D%22150%22%20fill%3D%22%23fef08a%22%2F%3E%3Cpath%20d%3D%22M300%20450%20Q400%20200%20500%20450%20Z%22%20fill%3D%22%23020617%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22550%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23ef4444%22%20text-anchor%3D%22middle%22%3EWEREWOLF%20VILLAGE%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'Social',
+      platforms: ['browser', 'android', 'pc'],
+      localUrl: '/games/werewolf-village/index.html',
+      status: 'coming_soon',
+      localModeType: 'ai'
+    },
+    {
+      id: 'bomb-arena',
+      title: 'حرب القنابل 💣',
+      description: 'لعبة أكشن وحماس لـ 4 إلى 8 لاعبين! ارمِ القنابل، فجّر أصدقاءك، وكن الناجي الأخير في خرائط ديناميكية مدمرة بالكامل.',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%23111827%22%2F%3E%3Ccircle%20cx%3D%22400%22%20cy%3D%22300%22%20r%3D%22120%22%20fill%3D%22%23000%22%20stroke%3D%22%23ef4444%22%20stroke-width%3D%2210%22%2F%3E%3Crect%20x%3D%22380%22%20y%3D%22150%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%234b5563%22%2F%3E%3Cpath%20d%3D%22M400%20150%20Q450%20100%20420%2050%22%20fill%3D%22none%22%20stroke%3D%22%23facc15%22%20stroke-width%3D%228%22%20stroke-dasharray%3D%2210%2C5%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22550%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23ef4444%22%20text-anchor%3D%22middle%22%3EBOMB%20ARENA%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'Action',
+      platforms: ['browser', 'android', 'pc'],
+      localUrl: '/games/bomb-arena/index.html',
+      status: 'coming_soon'
+    },
+    {
+      id: 'funny-answers',
+      title: 'جوابك فخ 🤣',
+      description: 'لعبة حفلات مضحكة لـ 3 إلى 8 لاعبين. املأ الفراغ بأكثر الإجابات إضحاكاً أو عبثية من بطاقاتك، ودع القاضي يختار الفائز!',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%23000%22%2F%3E%3Crect%20x%3D%22200%22%20y%3D%22150%22%20width%3D%22180%22%20height%3D%22260%22%20fill%3D%22%23fff%22%20rx%3D%2215%22%20transform%3D%22rotate(-10%20200%20150)%22%2F%3E%3Crect%20x%3D%22420%22%20y%3D%22150%22%20width%3D%22180%22%20height%3D%22260%22%20fill%3D%22%231e293b%22%20stroke%3D%22%23fff%22%20stroke-width%3D%224%22%20rx%3D%2215%22%20transform%3D%22rotate(10%20420%20150)%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22550%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3EFUNNY%20ANSWERS%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'Party',
+      platforms: ['browser', 'android'],
+      localUrl: '/games/funny-answers/index.html',
+      status: 'coming_soon',
+      localModeType: 'pass_and_play'
     },
     {
       id: 'mindustry',

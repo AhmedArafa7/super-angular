@@ -1,4 +1,7 @@
-<aside class="flex flex-col shrink-0 h-full border-r border-white/5 bg-[#0B0F19]/90 backdrop-blur-2xl transition-all duration-300 relative z-50"
+<aside class="flex flex-col shrink-0 h-full border-r border-white/5 bg-[#0B0F19]/90 backdrop-blur-2xl transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] relative z-50 animate-in fade-in"
+       [class.slide-in-from-left-full]="sidebar.position() === 'left'"
+       [class.slide-in-from-right-full]="sidebar.position() === 'right'"
+       [class.slide-in-from-bottom-full]="sidebar.position() === 'bottom'"
        [class.hidden]="sidebar.position() === 'top' || sidebar.position() === 'bottom' || sidebar.position() === 'floating'"
        [ngClass]="{ 'w-80': sidebar.position() === 'right' }"
        [ngStyle]="{'width': sidebar.isCollapsed() ? '80px' : sidebar.width() + 'px'}"
@@ -39,10 +42,12 @@
       }
     </div>
 
-    <div class="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-hide" dir="rtl">
-      @for (item of pinnedItems; track item.id) {
-        <app-sidebar-item [item]="item"></app-sidebar-item>
-      }
+    <div class="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-hide flex flex-col justify-between" dir="rtl">
+      <div class="space-y-1">
+        @for (item of pinnedItems; track item.id) {
+          <app-sidebar-item [item]="item"></app-sidebar-item>
+        }
+      </div>
     </div>
     
     <!-- Upload Monitor (Only show if there are active syncs or recently completed ones) -->

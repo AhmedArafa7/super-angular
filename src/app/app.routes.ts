@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/stream', pathMatch: 'full' },
+  { path: '', redirectTo: '/bakery', pathMatch: 'full' },
   {
     path: 'stream',
     loadComponent: () => import('./features/wetube/components/wetube-shell/wetube-shell').then(c => c.WeTubeShellComponent),
@@ -39,6 +39,11 @@ export const routes: Routes = [
     path: 'bakery',
     loadComponent: () => import('./features/bakery/bakery-home.component').then(c => c.BakeryHomeComponent),
     title: 'مخبز عباد الرحمن'
+  },
+  {
+    path: 'bakery/admin',
+    loadComponent: () => import('./features/admin/components/bakery-auth.component').then(c => c.BakeryAuthComponent),
+    title: 'إدارة مخبز عباد الرحمن'
   },
   {
     path: 'arcade',

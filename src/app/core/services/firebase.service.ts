@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { getFirestore, Firestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, orderBy, limit, startAfter, QueryDocumentSnapshot, documentId, runTransaction } from 'firebase/firestore';
+import { getFirestore, Firestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, orderBy, limit, startAfter, QueryDocumentSnapshot, documentId, runTransaction, arrayUnion } from 'firebase/firestore';
 import { environment } from '../../../environments/environment';
 
 export interface UserData {
@@ -15,6 +15,8 @@ export interface UserData {
   avatar_url?: string;
   status?: string;
   lastSeen?: string;
+  currentGame?: string;
+  friendIds?: string[];
   linkedAccounts?: LinkedAccount[];
   subscriptions?: string[];
   watchHistory?: WatchHistoryItem[];
@@ -697,6 +699,86 @@ export class FirebaseService {
       localStorage.setItem('manual_logout', 'true');
     } catch (err) {
       console.error('[FirebaseService] Logout failed:', err);
+    }
+  }
+
+  // ==========================================
+  // FRIENDS SYSTEM
+  // ==========================================
+
+  async searchUser(searchQuery: string): Promise<UserData | null> {
+    if (!searchQuery) return null;
+    const usersRef = collection(this.firestore, 'users');
+    
+    // First, search by exact username or exact name
+    try {
+      const q = query(usersRef, where('name', '==', searchQuery), limit(1));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        return snap.docs[0].data() as UserData;
+      }
+
+      // If not found, try username
+      const q2 = query(usersRef, where('username', '==', searchQuery), limit(1));
+      const snap2 = await getDocs(q2);
+      if (!snap2.empty) {
+        return snap2.docs[0].data() as UserData;
+      }
+    } catch (err) {
+      console.error('[FirebaseService] searchUser failed:', err);
+    }
+    return null;
+  }
+
+  async addFriendToCurrentUser(friendUid: string): Promise<void> {
+    const currentUser = this.currentUser();
+    if (!currentUser) throw new Error('No active user');
+    
+    const userRef = doc(this.firestore, 'users', currentUser.uid);
+    try {
+      await updateDoc(userRef, {
+        friendIds: arrayUnion(friendUid)
+      });
+      
+      // Update local state immediately
+      const currentData = this.userData();
+      if (currentData) {
+        const currentFriendIds = currentData.friendIds || [];
+        if (!currentFriendIds.includes(friendUid)) {
+           this.userData.set({ ...currentData, friendIds: [...currentFriendIds, friendUid] });
+        }
+      }
+    } catch (err) {
+      console.error('[FirebaseService] addFriendToCurrentUser failed:', err);
+      throw err;
+    }
+  }
+
+  async getFriendsByUids(uids: string[]): Promise<UserData[]> {
+    if (!uids || uids.length === 0) return [];
+    
+    const chunkSize = 25;
+    const chunks: string[][] = [];
+    for (let i = 0; i < uids.length; i += chunkSize) {
+      chunks.push(uids.slice(i, i + chunkSize));
+    }
+
+    try {
+      const usersRef = collection(this.firestore, 'users');
+      const promises = chunks.map(async chunk => {
+        const q = query(usersRef, where(documentId(), 'in', chunk));
+        const snap = await getDocs(q);
+        return snap.docs.map(doc => doc.data() as UserData);
+      });
+
+      const results = await Promise.all(promises);
+      const allFriends: UserData[] = [];
+      results.forEach(res => allFriends.push(...res));
+      
+      return allFriends;
+    } catch (err) {
+      console.error('[FirebaseService] getFriendsByUids failed', err);
+      return [];
     }
   }
 }
