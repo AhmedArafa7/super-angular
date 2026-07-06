@@ -483,8 +483,8 @@ function checkPhaseChange() {
             $('replay-btn').innerText = 'إعادة اللعب';
         }
         if(isHost && parent) parent.postMessage({ type: 'ARCADE_GAME_OVER', winner: gameState.resultMsg === 'win' ? 'Victory' : 'Defeat', gameId: 'three-monkeys' }, '*');
-    } else if (gameState.phase === 'roles') {
-        showScreen('lobby-screen');
+    } else if (gameState.phase === 'lobby' || gameState.phase === 'roles') {
+        showScreen('room-screen');
         updateLobbyUI();
     }
 }
