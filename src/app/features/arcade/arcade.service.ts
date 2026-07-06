@@ -22,6 +22,17 @@ export class ArcadeService {
   // Local Mock Data representing games until Firebase is integrated
     private games: ArcadeGame[] = [
     {
+      id: 'echoes-of-time',
+      title: 'أصداء الزمن ⏳',
+      description: 'لعبة ألغاز تعاونية لـ 3 لاعبين (الماضي، الحاضر، المستقبل). تواصلوا لتفعيل بوابة الزمن وحل الألغاز المترابطة للنجاة!',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%230f172a%22%2F%3E%3Ccircle%20cx%3D%22400%22%20cy%3D%22300%22%20r%3D%22150%22%20fill%3D%22none%22%20stroke%3D%22%2338bdf8%22%20stroke-width%3D%2210%22%20stroke-dasharray%3D%2220%2010%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22300%22%20font-size%3D%2280%22%20text-anchor%3D%22middle%22%3E%E2%8F%B3%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22420%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2240%22%20font-weight%3D%22900%22%20fill%3D%22%2338bdf8%22%20text-anchor%3D%22middle%22%3EECHOES%20OF%20TIME%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'Puzzle',
+      platforms: ['browser', 'pc'],
+      localUrl: '/games/echoes-of-time/index.html',
+      status: 'available',
+      hasCustomMenu: false
+    },
+    {
       id: 'three-monkeys',
       title: 'القردة الثلاثة 🙈🙉🙊',
       description: 'لعبة تفكيك قنابل تعاونية لـ 3 لاعبين. يتواصل الأعمى والأصم والأبكم لتفكيك القنبلة قبل انتهاء الوقت المتبقي! تتطلب استخدام الميكروفون.',
@@ -315,6 +326,17 @@ export class ArcadeService {
       localUrl: '/games/funny-answers/index.html',
       status: 'available',
       localModeType: 'pass_and_play'
+    },
+    {
+      id: 'temporal-rift',
+      title: 'صدع الزمن ⏳',
+      description: 'لعبة ألغاز تعاونية تفاعلية عبر الزمن لـ 3 لاعبين (الماضي، الحاضر، المستقبل). تحرك بحذر فكل فعل تفعله في الماضي أو الحاضر سيغير مجرى التاريخ واللغز للآخرين!',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%230f172a%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22300%22%20font-size%3D%22120%22%20text-anchor%3D%22middle%22%3E%E2%8F%B3%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22420%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%2322c55e%22%20text-anchor%3D%22middle%22%3ETEMPORAL%20RIFT%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'Co-op',
+      platforms: ['browser', 'pc'],
+      localUrl: '/games/temporal-rift/index.html',
+      status: 'available',
+      hasCustomMenu: true
     },
     {
       id: 'mindustry',
