@@ -59,7 +59,10 @@
             <p class="subtitle">تعاونوا لتفكيك القنبلة.. ولا تنفجروا!</p>
             
             <div class="lobby-controls">
-                <input type="text" id="player-name" placeholder="أدخل اسمك" maxlength="15">
+                <div id="player-name-display" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-center text-lg font-bold mb-4" style="background: rgba(17,24,39,0.9); border: 2px solid #374151; border-radius: 10px; padding: 10px; margin-bottom: 15px; color: #facc15;">
+                    اللاعب: <span id="player-name-text">...</span>
+                </div>
+                <input type="hidden" id="player-name" value="">
                 
                 <div class="host-join-buttons">
                     <button id="host-btn" class="btn btn-primary">إنشاء غرفة (مضيف)</button>

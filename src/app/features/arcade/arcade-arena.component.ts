@@ -199,6 +199,12 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    // Ensure the arcade player name is synced silently
+    if (!localStorage.getItem('arcade_player_name')) {
+      const dbName = this.globalState.userProfile().name;
+      if (dbName) localStorage.setItem('arcade_player_name', dbName);
+    }
+
     this.route.paramMap.subscribe(params => {
       const id = params.get('id');
       if (id) {

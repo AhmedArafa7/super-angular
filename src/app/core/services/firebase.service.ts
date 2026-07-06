@@ -710,19 +710,35 @@ export class FirebaseService {
     if (!searchQuery) return null;
     const usersRef = collection(this.firestore, 'users');
     
-    // First, search by exact username or exact name
+    // First, search by exact displayName
     try {
+      const q0 = query(usersRef, where('displayName', '==', searchQuery), limit(1));
+      const snap0 = await getDocs(q0);
+      if (!snap0.empty) {
+        return { uid: snap0.docs[0].id, ...snap0.docs[0].data() } as UserData;
+      }
+
+      // Then by name
       const q = query(usersRef, where('name', '==', searchQuery), limit(1));
       const snap = await getDocs(q);
       if (!snap.empty) {
-        return snap.docs[0].data() as UserData;
+        return { uid: snap.docs[0].id, ...snap.docs[0].data() } as UserData;
       }
 
       // If not found, try username
       const q2 = query(usersRef, where('username', '==', searchQuery), limit(1));
       const snap2 = await getDocs(q2);
       if (!snap2.empty) {
-        return snap2.docs[0].data() as UserData;
+        return { uid: snap2.docs[0].id, ...snap2.docs[0].data() } as UserData;
+      }
+      
+      // Also try to find by email if they typed an email
+      if (searchQuery.includes('@')) {
+        const qEmail = query(usersRef, where('email', '==', searchQuery), limit(1));
+        const snapEmail = await getDocs(qEmail);
+        if (!snapEmail.empty) {
+          return { uid: snapEmail.docs[0].id, ...snapEmail.docs[0].data() } as UserData;
+        }
       }
     } catch (err) {
       console.error('[FirebaseService] searchUser failed:', err);

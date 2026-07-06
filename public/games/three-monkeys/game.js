@@ -8,7 +8,19 @@ function showScreen(id) {
 // Variables
 let myPeer = null;
 let myId = null;
-let myName = '';
+let myName = localStorage.getItem('arcade_player_name') || 'لاعب الأركيد';
+
+window.addEventListener('DOMContentLoaded', () => {
+    const nameDisplay = $('player-name-text');
+    if (nameDisplay) {
+        nameDisplay.innerText = myName;
+    }
+    const nameInput = $('player-name');
+    if (nameInput) {
+        nameInput.value = myName;
+    }
+});
+
 let myRole = ''; // 'blind', 'deaf', 'mute'
 let isHost = false;
 let hostConn = null;

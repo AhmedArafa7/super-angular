@@ -129,6 +129,12 @@ export class ArcadeHubComponent implements OnInit {
   isAdding = false;
 
   ngOnInit() {
+    // Automatically set the arcade player name from the database user profile
+    const dbName = this.globalState.userProfile().name;
+    if (dbName) {
+      localStorage.setItem('arcade_player_name', dbName);
+    }
+
     this.arcadeService.getGames().subscribe(data => {
       this.games = data;
     });

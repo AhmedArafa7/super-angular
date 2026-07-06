@@ -272,6 +272,96 @@ function init3D() {
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
     document.addEventListener('mousedown', onMouseDown);
+    
+    // Mobile Touch Controls Setup
+    setupMobileControls();
+}
+
+let mobileMove = { x: 0, y: 0 };
+let currentLookTouchId = null;
+let currentMoveTouchId = null;
+let touchLookStart = { x: 0, y: 0 };
+let touchMoveStart = { x: 0, y: 0 };
+
+function setupMobileControls() {
+    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+    if (!isMobile) return;
+
+    document.getElementById('mobile-controls').classList.remove('hidden');
+
+    document.addEventListener('touchstart', e => {
+        if (!isGameRunning) return;
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            let t = e.changedTouches[i];
+            // Check if touch is on action buttons
+            if (t.target.id === 'mobile-interact-btn') {
+                tryPickupScrap();
+                tryLeaveMoon();
+                continue;
+            }
+            if (t.target.id === 'mobile-flashlight-btn') {
+                if (!myState.isDead && myState.battery > 0) {
+                    myState.isFlashlightOn = !myState.isFlashlightOn;
+                    flashlight.intensity = myState.isFlashlightOn ? 1 : 0;
+                }
+                continue;
+            }
+
+            if (t.clientX > window.innerWidth / 2) {
+                // Right side -> Look
+                if (currentLookTouchId === null) {
+                    currentLookTouchId = t.identifier;
+                    touchLookStart = { x: t.clientX, y: t.clientY };
+                }
+            } else {
+                // Left side -> Move
+                if (currentMoveTouchId === null) {
+                    currentMoveTouchId = t.identifier;
+                    touchMoveStart = { x: t.clientX, y: t.clientY };
+                }
+            }
+        }
+    }, { passive: false });
+
+    document.addEventListener('touchmove', e => {
+        if (!isGameRunning) return;
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            let t = e.changedTouches[i];
+            if (t.identifier === currentLookTouchId) {
+                let dx = t.clientX - touchLookStart.x;
+                let dy = t.clientY - touchLookStart.y;
+                touchLookStart = { x: t.clientX, y: t.clientY };
+                
+                // Rotate camera manually since PointerLock doesn't work on mobile
+                let euler = new THREE.Euler(0, 0, 0, 'YXZ');
+                euler.setFromQuaternion(camera.quaternion);
+                euler.y -= dx * 0.005;
+                euler.x -= dy * 0.005;
+                euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x));
+                camera.quaternion.setFromEuler(euler);
+            } else if (t.identifier === currentMoveTouchId) {
+                let dx = t.clientX - touchMoveStart.x;
+                let dy = t.clientY - touchMoveStart.y;
+                
+                // Normalize to -1 to 1 based on a max radius of 50px
+                let radius = 50;
+                mobileMove.x = Math.max(-1, Math.min(1, dx / radius));
+                mobileMove.y = Math.max(-1, Math.min(1, dy / radius));
+            }
+        }
+    }, { passive: false });
+
+    document.addEventListener('touchend', e => {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            let t = e.changedTouches[i];
+            if (t.identifier === currentLookTouchId) {
+                currentLookTouchId = null;
+            } else if (t.identifier === currentMoveTouchId) {
+                currentMoveTouchId = null;
+                mobileMove = { x: 0, y: 0 };
+            }
+        }
+    });
 }
 
 function onWindowResize() {
@@ -626,9 +716,11 @@ function updatePlayer(dt) {
     velocity.x -= velocity.x * 10.0 * dt;
     velocity.z -= velocity.z * 10.0 * dt;
     
-    direction.z = Number(moveForward) - Number(moveBackward);
-    direction.x = Number(moveRight) - Number(moveLeft);
-    direction.normalize(); 
+    direction.z = Number(moveForward) - Number(moveBackward) - mobileMove.y;
+    direction.x = Number(moveRight) - Number(moveLeft) + mobileMove.x;
+    
+    // Clamp to length 1
+    if (direction.lengthSq() > 1) direction.normalize(); 
     
     let speedMult = isSprinting && myState.battery > 0 ? 30.0 : 15.0;
 

@@ -285,14 +285,6 @@ body {
 /* Game HUD */
 .hud {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    width: 100%;
-    padding: 20px 30px;
-    font-size: 1.1rem;
-    pointer-events: none;
-}
-
 .hud-left {
     display: flex;
     flex-direction: column;
@@ -426,4 +418,89 @@ body {
 .stat-value {
     font-size: 2rem;
     font-weight: bold;
+}
+
+/* Game HUD */
+.hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    padding: 20px 30px;
+    font-size: 1.1rem;
+    pointer-events: none;
+}
+
+/* Mobile Controls */
+#mobile-controls {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+#mobile-controls:not(.hidden) {
+    display: block;
+}
+
+.joystick-zone {
+    position: absolute;
+    bottom: 20px;
+    width: 40vw;
+    height: 40vh;
+    pointer-events: auto;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+}
+
+#joystick-left {
+    left: 10px;
+}
+#joystick-left::after {
+    content: "اسحب للتحرك";
+    color: rgba(255,255,255,0.5);
+    font-weight: bold;
+}
+
+#joystick-right {
+    right: 10px;
+}
+.look-hint {
+    color: rgba(255,255,255,0.5);
+    font-weight: bold;
+    pointer-events: none;
+}
+
+.mobile-actions {
+    position: absolute;
+    bottom: 45vh;
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    pointer-events: none;
+}
+
+.mobile-btn {
+    pointer-events: auto;
+    background: rgba(16, 185, 129, 0.6);
+    border: 2px solid #10b981;
+    color: white;
+    padding: 15px;
+    border-radius: 50%;
+    font-size: 1rem;
+    font-weight: bold;
+    backdrop-filter: blur(5px);
+    width: 70px;
+    height: 70px;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+}
+.mobile-btn:active {
+    transform: scale(0.9);
+    background: rgba(16, 185, 129, 0.9);
 }

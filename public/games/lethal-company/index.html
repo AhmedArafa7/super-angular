@@ -122,7 +122,19 @@
             <div id="pause-overlay" class="pause-overlay hidden">
                 <div class="pause-box">
                     <h2 class="text-green">متوقف مؤقتاً</h2>
-                    <p>انقر على الشاشة للعودة للعب</p>
+                    <p style="font-size: 1.2rem; font-weight: bold;">(انقر في أي مكان بالشاشة لتتمكن من التحرك والنظر بالماوس)</p>
+                </div>
+            </div>
+            
+            <!-- Mobile Controls -->
+            <div id="mobile-controls" class="hidden">
+                <div id="joystick-left" class="joystick-zone"></div>
+                <div id="joystick-right" class="joystick-zone">
+                    <div class="look-hint">اسحب للنظر</div>
+                </div>
+                <div class="mobile-actions">
+                    <button id="mobile-interact-btn" class="mobile-btn">E (التقاط)</button>
+                    <button id="mobile-flashlight-btn" class="mobile-btn">🔦 (كشاف)</button>
                 </div>
             </div>
         </div>
