@@ -4,6 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ArcadeService, ArcadeGame } from './arcade.service';
 import { GlobalStateService } from '../../core/services/global-state.service';
+import { FirebaseService } from '../../core/services/firebase.service';
 import { LucideAngularModule, UserPlus } from 'lucide-angular';
 
 @Component({
@@ -13,6 +14,27 @@ import { LucideAngularModule, UserPlus } from 'lucide-angular';
   template: `
     <div class="min-h-full bg-slate-950 p-6 md:p-10 text-right overflow-y-auto custom-scrollbar" dir="rtl">
       
+      <!-- Incoming Game Invites -->
+      <div *ngIf="globalState.activeGameInvites().length > 0" class="fixed top-20 right-6 z-[100] flex flex-col gap-3 max-w-sm w-full">
+         <div *ngFor="let invite of globalState.activeGameInvites()" class="bg-indigo-900/90 backdrop-blur-xl border border-indigo-400/50 rounded-2xl p-4 shadow-2xl animate-in slide-in-from-right fade-in duration-500">
+            <div class="flex items-center gap-3 mb-3">
+               <img [src]="invite.fromAvatar" class="size-10 rounded-full border-2 border-indigo-400" alt="Avatar">
+               <div>
+                  <h4 class="text-white font-black text-sm">{{ invite.fromName }} يدعوك للعب</h4>
+                  <p class="text-indigo-200 text-xs">{{ invite.gameTitle }}</p>
+               </div>
+            </div>
+            <div class="flex gap-2">
+               <button (click)="acceptInvite(invite)" class="flex-1 bg-indigo-500 hover:bg-indigo-400 text-white font-bold py-2 rounded-xl text-xs transition-colors">
+                  قبول وانضمام
+               </button>
+               <button (click)="declineInvite(invite)" class="bg-white/10 hover:bg-white/20 text-white font-bold px-4 py-2 rounded-xl text-xs transition-colors">
+                  رفض
+               </button>
+            </div>
+         </div>
+      </div>
+
       <!-- Friends Bar -->
       <div class="mb-6 flex items-center justify-between bg-slate-900/50 border border-white/5 rounded-2xl p-4 backdrop-blur-sm shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
         <div class="flex items-center gap-4 overflow-x-auto scrollbar-hide flex-1">
@@ -122,6 +144,7 @@ export class ArcadeHubComponent implements OnInit {
   private arcadeService = inject(ArcadeService);
   private router = inject(Router);
   globalState = inject(GlobalStateService);
+  private firebaseService = inject(FirebaseService);
 
   UserPlus = UserPlus;
   showAddFriend = false;
@@ -164,5 +187,14 @@ export class ArcadeHubComponent implements OnInit {
 
   playGame(id: string) {
     this.router.navigate(['/arcade/arena', id]);
+  }
+
+  async acceptInvite(invite: any) {
+    await this.firebaseService.updateGameInviteStatus(invite.id, 'accepted');
+    this.router.navigate(['/arcade/arena', invite.gameId], { queryParams: { room: invite.roomCode } });
+  }
+
+  async declineInvite(invite: any) {
+    await this.firebaseService.updateGameInviteStatus(invite.id, 'declined');
   }
 }

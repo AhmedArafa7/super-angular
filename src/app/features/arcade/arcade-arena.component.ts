@@ -5,6 +5,8 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { GlobalStateService } from '../../core/services/global-state.service';
 import { MultiplayerService } from '../../core/services/multiplayer.service';
 import { ArcadeService, ArcadeGame } from './arcade.service';
+import { FirebaseService } from '../../core/services/firebase.service';
+import { ArcadeAudioService } from '../../core/services/arcade-audio.service';
 
 @Component({
   selector: 'app-arcade-arena',
@@ -13,7 +15,7 @@ import { ArcadeService, ArcadeGame } from './arcade.service';
   template: `
     <div #container class="fixed inset-0 z-[60] bg-black flex flex-col" dir="rtl">
       <!-- Immersive Header -->
-      <header class="h-16 px-6 border-b border-white/5 bg-slate-900/80 backdrop-blur-xl flex items-center justify-between shrink-0">
+      <header [class.hidden]="isImmersive" class="h-16 px-6 border-b border-white/5 bg-slate-900/80 backdrop-blur-xl flex items-center justify-between shrink-0 transition-all duration-300">
         <div class="flex items-center gap-4">
           <button (click)="goBack()" class="text-white/60 hover:text-white hover:bg-white/5 rounded-xl p-2 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
@@ -24,7 +26,7 @@ import { ArcadeService, ArcadeGame } from './arcade.service';
           </div>
         </div>
 
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 md:gap-4">
           <!-- Game Status Indicators -->
            <div class="hidden md:flex items-center gap-6 px-4 py-1.5 bg-white/5 rounded-full border border-white/5">
               <div class="flex items-center gap-2">
@@ -33,66 +35,75 @@ import { ArcadeService, ArcadeGame } from './arcade.service';
               </div>
            </div>
 
-           <button (click)="reloadGame()" class="text-white/40 hover:text-white rounded-lg p-2 transition-colors" title="Reload Game">
-              <svg xmlns="http://www.w3.org/2000/svg" [class.animate-spin]="isLoading" class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+           <!-- Settings: Rotate & Immersive -->
+           <button (click)="isRotated = !isRotated" class="text-white/40 hover:text-white rounded-lg p-2 transition-colors" [class.bg-white_10]="isRotated" title="تدوير الشاشة (Rotate)">
+              <svg xmlns="http://www.w3.org/2000/svg" class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
            </button>
-           <button (click)="toggleFullscreen()" class="text-white/40 hover:text-white rounded-lg p-2 transition-colors" title="Fullscreen">
-              <svg *ngIf="!isFullscreen" xmlns="http://www.w3.org/2000/svg" class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
-              <svg *ngIf="isFullscreen" xmlns="http://www.w3.org/2000/svg" class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8V4m0 0h4M3 4l4 4m8 0V4m0 0h-4m4 0l-4 4m-8 4v4m0 0h4m-4 0l4-4m8 4l-4-4m4 4v-4m0 4h-4" /></svg>
+
+           <button (click)="toggleImmersive()" class="text-white/40 hover:text-white rounded-lg p-2 transition-colors" title="ملء الشاشة (Immersive)">
+              <svg xmlns="http://www.w3.org/2000/svg" class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+           </button>
+
+           <button *ngIf="game" (click)="showGamepad = !showGamepad" class="text-white/40 hover:text-white rounded-lg p-2 transition-colors" [ngClass]="{'text-indigo-400': showGamepad, 'bg-indigo-500/10': showGamepad}" title="Toggle Mobile Gamepad">
+              <svg xmlns="http://www.w3.org/2000/svg" class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" /></svg>
            </button>
         </div>
       </header>
 
-      <!-- Mode Selection Overlay -->
-      <div *ngIf="showModeOverlay" class="flex-1 flex flex-col items-center justify-center p-6 md:p-12 animate-in fade-in zoom-in duration-500 relative overflow-y-auto custom-scrollbar" [ngClass]="{'absolute inset-0 z-50 bg-black/95 backdrop-blur-md': game?.hasCustomMenu && selectedMode === 'custom'}">
-         <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.1)_0%,transparent_70%)] pointer-events-none"></div>
-         <h1 class="text-3xl md:text-5xl font-black text-white mb-3 text-center tracking-tight">اختر نمط اللعب</h1>
-         <p class="text-slate-400 text-center max-w-lg mb-12 text-sm md:text-base leading-relaxed">كيف تود خوض هذا التحدي؟ اختر النمط الذي يناسبك الآن وابدأ اللعب.</p>
-         
-         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl z-10">
+      <!-- Glossy Mode Selection Menu -->
+      <div *ngIf="showModeOverlay" class="absolute inset-0 z-50 bg-[#0a192f]/90 flex flex-col items-center justify-center p-6 animate-in fade-in zoom-in duration-500" style="font-family: 'Fredoka One', 'Comic Sans MS', system-ui, sans-serif;">
+         <div class="relative w-full max-w-sm rounded-[40px] bg-[#3b5998] border-b-[15px] border-[#294176] shadow-[0_20px_50px_rgba(0,0,0,0.8)] p-6 pt-12">
             
-            <!-- Local Mode / AI Mode -->
-            <ng-container *ngIf="game?.localModeType === 'ai'; else standardLocal">
-              <button (click)="selectMode('local')" class="group relative bg-slate-900/50 hover:bg-slate-800 border border-white/10 hover:border-blue-500/50 rounded-3xl p-8 flex flex-col items-center text-center transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(59,130,246,0.3)]">
-                 <div class="size-16 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="size-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                 </div>
-                 <h3 class="text-xl font-black text-white mb-2">ضد الذكاء الاصطناعي</h3>
-                 <p class="text-sm text-slate-400 leading-relaxed">العب وتدرب ضد الذكاء الاصطناعي (AI) لتطوير مهاراتك.</p>
-              </button>
-            </ng-container>
-            <ng-template #standardLocal>
-              <button (click)="selectMode('local')" class="group relative bg-slate-900/50 hover:bg-slate-800 border border-white/10 hover:border-indigo-500/50 rounded-3xl p-8 flex flex-col items-center text-center transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(99,102,241,0.3)]">
-                 <div class="size-16 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="size-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                 </div>
-                 <h3 class="text-xl font-black text-white mb-2">{{ game?.localModeType === 'pass_and_play' ? 'لعب مشترك' : 'لعب محلياً' }}</h3>
-                 <p class="text-sm text-slate-400 leading-relaxed">{{ game?.localModeType === 'pass_and_play' ? 'مرر الهاتف أو العبوا بالدور على نفس الجهاز.' : 'العب مع أصدقائك على نفس الجهاز في وضع الشاشة المشتركة.' }}</p>
-              </button>
-            </ng-template>
-
-            <!-- Private Room Mode -->
-            <button (click)="selectMode('private')" class="group relative bg-slate-900/50 hover:bg-slate-800 border border-white/10 hover:border-emerald-500/50 rounded-3xl p-8 flex flex-col items-center text-center transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(16,185,129,0.3)]">
-               <div class="size-16 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="size-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+            <!-- Top Pink Light/Siren -->
+            <div class="absolute -top-10 left-1/2 -translate-x-1/2">
+               <div class="w-20 h-20 rounded-full bg-[#ff00ff] border-[6px] border-[#1a2b54] shadow-[0_0_40px_#ff00ff,inset_0_-8px_0_rgba(0,0,0,0.3),inset_0_8px_10px_rgba(255,255,255,0.8)] z-10 animate-pulse flex items-center justify-center relative">
+                  <div class="w-6 h-3 bg-white/80 rounded-full absolute top-2"></div>
                </div>
-               <h3 class="text-xl font-black text-white mb-2">إنشاء غرفة</h3>
-               <p class="text-sm text-slate-400 leading-relaxed">قم بإنشاء غرفة خاصة وشارك الكود مع أصدقائك للعب معاً عن بُعد.</p>
-            </button>
+               <div class="w-24 h-8 bg-[#1a2b54] rounded-full absolute -bottom-4 left-1/2 -translate-x-1/2 -z-10 shadow-[0_10px_20px_rgba(0,0,0,0.5)]"></div>
+            </div>
 
-            <!-- Pro Online Mode -->
-            <button (click)="selectMode('pro')" class="group relative bg-slate-900/50 hover:bg-slate-800 border border-white/10 hover:border-amber-500/50 rounded-3xl p-8 flex flex-col items-center text-center transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(245,158,11,0.3)] overflow-hidden">
-               <div *ngIf="!globalState.userProfile().isPro" class="absolute top-4 right-4 bg-black/60 backdrop-blur-sm border border-white/10 rounded-full px-3 py-1 flex items-center gap-1.5">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="size-3.5 text-amber-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C9.243 2 7 4.243 7 7v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V7c0-2.757-2.243-5-5-5zM9 7c0-1.654 1.346-3 3-3s3 1.346 3 3v3H9V7zm4 10.723V19h-2v-1.277a1.993 1.993 0 01.867-3.669A2 2 0 0113 17.723z"/></svg>
-                  <span class="text-[10px] font-bold text-amber-500 uppercase tracking-widest">Pro Only</span>
+            <!-- Buttons List -->
+            <div class="flex flex-col gap-5 relative z-10 mt-6">
+               
+               <!-- Private Room Button (PLAY) -->
+               <div class="bg-[#1a2b54] rounded-full p-2.5 shadow-[inset_0_10px_10px_rgba(0,0,0,0.6)]">
+                  <button (click)="selectMode('private')" class="w-full h-16 rounded-full bg-[#ff0066] border-b-8 border-[#cc0052] shadow-[inset_0_4px_6px_rgba(255,255,255,0.6),0_5px_15px_rgba(255,0,102,0.5)] transition-all hover:-translate-y-1 active:translate-y-2 active:border-b-0 flex items-center justify-center group overflow-hidden relative">
+                     <div class="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/50 to-transparent rounded-t-full"></div>
+                     <span class="text-white font-black text-2xl tracking-widest drop-shadow-[0_4px_3px_rgba(0,0,0,0.6)] relative z-10 flex items-center gap-2">
+                       PLAY (ROOM)
+                       <span class="text-2xl filter drop-shadow-md group-hover:animate-bounce">👉🏼</span>
+                     </span>
+                  </button>
                </div>
-               <div class="size-16 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="size-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
-               </div>
-               <h3 class="text-xl font-black text-white mb-2" [class.text-amber-500]="globalState.userProfile().isPro">لعب أونلاين</h3>
-               <p class="text-sm text-slate-400 leading-relaxed">العب ضد منافسين عشوائيين من جميع أنحاء العالم (خاص بمشتركي Pro).</p>
-            </button>
 
+               <!-- Local Play Button -->
+               <div class="bg-[#1a2b54] rounded-full p-2.5 shadow-[inset_0_10px_10px_rgba(0,0,0,0.6)]">
+                  <button (click)="selectMode('local')" class="w-full h-16 rounded-full bg-[#ff9900] border-b-8 border-[#cc7a00] shadow-[inset_0_4px_6px_rgba(255,255,255,0.6),0_5px_15px_rgba(255,153,0,0.5)] transition-all hover:-translate-y-1 active:translate-y-2 active:border-b-0 flex items-center justify-center relative">
+                     <div class="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/50 to-transparent rounded-t-full"></div>
+                     <span class="text-white font-black text-2xl tracking-widest drop-shadow-[0_4px_3px_rgba(0,0,0,0.6)] relative z-10">LOCAL PLAY</span>
+                  </button>
+               </div>
+
+               <!-- Online Matchmaking Button -->
+               <div class="bg-[#1a2b54] rounded-full p-2.5 shadow-[inset_0_10px_10px_rgba(0,0,0,0.6)] relative overflow-hidden">
+                  <div *ngIf="!globalState.userProfile().isPro" class="absolute inset-0 bg-black/60 z-20 flex items-center justify-center rounded-full backdrop-blur-sm">
+                     <span class="text-amber-400 font-black text-sm tracking-widest drop-shadow-md">PRO ONLY 🔒</span>
+                  </div>
+                  <button (click)="selectMode('pro')" [disabled]="!globalState.userProfile().isPro" class="w-full h-16 rounded-full bg-[#3366ff] border-b-8 border-[#2952cc] shadow-[inset_0_4px_6px_rgba(255,255,255,0.6),0_5px_15px_rgba(51,102,255,0.5)] transition-all hover:-translate-y-1 active:translate-y-2 active:border-b-0 flex items-center justify-center relative">
+                     <div class="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/50 to-transparent rounded-t-full"></div>
+                     <span class="text-white font-black text-2xl tracking-widest drop-shadow-[0_4px_3px_rgba(0,0,0,0.6)] relative z-10">ONLINE MATCH</span>
+                  </button>
+               </div>
+
+               <!-- Quit Button -->
+               <div class="bg-[#1a2b54] rounded-full p-2.5 shadow-[inset_0_10px_10px_rgba(0,0,0,0.6)]">
+                  <button (click)="goBack()" class="w-full h-16 rounded-full bg-[#33cc33] border-b-8 border-[#29a329] shadow-[inset_0_4px_6px_rgba(255,255,255,0.6),0_5px_15px_rgba(51,204,51,0.5)] transition-all hover:-translate-y-1 active:translate-y-2 active:border-b-0 flex items-center justify-center relative">
+                     <div class="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/50 to-transparent rounded-t-full"></div>
+                     <span class="text-white font-black text-3xl tracking-widest drop-shadow-[0_4px_3px_rgba(0,0,0,0.6)] relative z-10">QUIT</span>
+                  </button>
+               </div>
+
+            </div>
          </div>
       </div>
 
@@ -109,11 +120,27 @@ import { ArcadeService, ArcadeGame } from './arcade.service';
                </button>
             </div>
             
-            <div class="flex items-center justify-center gap-3 mt-8">
+            <div class="flex items-center justify-center gap-3 mt-4">
                <svg xmlns="http://www.w3.org/2000/svg" class="size-5 text-indigo-400 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                <span class="text-sm font-bold text-indigo-400 uppercase tracking-widest">Waiting for player...</span>
             </div>
-            <p *ngIf="copied" class="text-xs text-emerald-400 mt-4 animate-in fade-in slide-in-from-bottom-2">تم نسخ الرابط بنجاح!</p>
+            <p *ngIf="copied" class="text-xs text-emerald-400 mt-2 animate-in fade-in slide-in-from-bottom-2">تم نسخ الرابط بنجاح!</p>
+
+            <!-- Friend Invites Section -->
+            <div class="mt-6 border-t border-white/10 pt-4 text-right" *ngIf="globalState.friends().length > 0">
+               <h4 class="text-sm font-bold text-slate-300 mb-3 text-center">أصدقاؤك المتصلون</h4>
+               <div class="flex flex-col gap-2 max-h-40 overflow-y-auto custom-scrollbar px-2">
+                  <div *ngFor="let friend of globalState.friends()" class="flex items-center justify-between bg-black/40 border border-white/5 p-2 rounded-xl">
+                     <div class="flex items-center gap-2">
+                        <img [src]="friend.avatarUrl" class="size-8 rounded-full border border-white/10" alt="Avatar">
+                        <span class="text-sm font-bold text-white">{{ friend.name }}</span>
+                     </div>
+                     <button (click)="inviteFriend(friend.id)" [disabled]="invitedFriends.includes(friend.id)" class="text-xs font-bold px-3 py-1.5 rounded-lg transition-colors" [ngClass]="invitedFriends.includes(friend.id) ? 'bg-slate-800 text-slate-500' : 'bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600 hover:text-white'">
+                        {{ invitedFriends.includes(friend.id) ? 'تم الإرسال' : 'دعوة' }}
+                     </button>
+                  </div>
+               </div>
+            </div>
          </div>
       </div>
 
@@ -126,16 +153,54 @@ import { ArcadeService, ArcadeGame } from './arcade.service';
            <p class="font-black text-white/40 uppercase tracking-[0.3em] animate-pulse">Launching Arena</p>
         </div>
         
-        <iframe *ngIf="safeUrl"
-          #gameIframe
-          [src]="safeUrl"
-          class="w-full h-full border-none transition-opacity duration-1000"
-          [class.opacity-0]="isLoading"
-          [class.opacity-100]="!isLoading"
-          (load)="onIframeLoad()"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-          [title]="game?.title">
-        </iframe>
+        <div class="absolute inset-0 z-0 flex items-center justify-center transition-all duration-500 overflow-hidden" [ngClass]="{'opacity-0': isLoading, 'opacity-100': !isLoading}">
+           <iframe *ngIf="safeUrl"
+             #gameIframe
+             [src]="safeUrl"
+             class="border-none transition-all duration-500 origin-center"
+             [style.width]="isRotated ? '100vh' : '100%'"
+             [style.height]="isRotated ? '100vw' : '100%'"
+             [style.transform]="isRotated ? 'rotate(90deg)' : 'none'"
+             (load)="onIframeLoad()"
+             sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+             [title]="game?.title">
+           </iframe>
+        </div>
+
+        <!-- Exit Immersive Button -->
+        <button *ngIf="isImmersive" (click)="toggleImmersive()" class="absolute top-4 right-4 z-50 bg-black/50 hover:bg-black/80 text-white rounded-full p-3 backdrop-blur-md border border-white/10 transition-all shadow-lg animate-in fade-in">
+           <svg xmlns="http://www.w3.org/2000/svg" class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+
+        <!-- Virtual Gamepad Overlay -->
+        <div *ngIf="showGamepad && !isLoading" class="absolute inset-x-0 bottom-0 pointer-events-none z-50 flex justify-between px-6 pb-6 md:px-12 md:pb-12" dir="ltr">
+           <!-- D-Pad -->
+           <div class="relative size-32 opacity-70 pointer-events-auto">
+              <button (touchstart)="simulateKey('ArrowUp', 'w', true, $event)" (touchend)="simulateKey('ArrowUp', 'w', false, $event)" (touchcancel)="simulateKey('ArrowUp', 'w', false, $event)" class="absolute top-0 left-1/2 -translate-x-1/2 bg-white/20 active:bg-white/40 w-10 h-12 rounded-t-xl backdrop-blur-md border border-white/10 flex items-center justify-center">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="size-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg>
+              </button>
+              <button (touchstart)="simulateKey('ArrowDown', 's', true, $event)" (touchend)="simulateKey('ArrowDown', 's', false, $event)" (touchcancel)="simulateKey('ArrowDown', 's', false, $event)" class="absolute bottom-0 left-1/2 -translate-x-1/2 bg-white/20 active:bg-white/40 w-10 h-12 rounded-b-xl backdrop-blur-md border border-white/10 flex items-center justify-center">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="size-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              <button (touchstart)="simulateKey('ArrowLeft', 'a', true, $event)" (touchend)="simulateKey('ArrowLeft', 'a', false, $event)" (touchcancel)="simulateKey('ArrowLeft', 'a', false, $event)" class="absolute top-1/2 left-0 -translate-y-1/2 bg-white/20 active:bg-white/40 w-12 h-10 rounded-l-xl backdrop-blur-md border border-white/10 flex items-center justify-center">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="size-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+              </button>
+              <button (touchstart)="simulateKey('ArrowRight', 'd', true, $event)" (touchend)="simulateKey('ArrowRight', 'd', false, $event)" (touchcancel)="simulateKey('ArrowRight', 'd', false, $event)" class="absolute top-1/2 right-0 -translate-y-1/2 bg-white/20 active:bg-white/40 w-12 h-10 rounded-r-xl backdrop-blur-md border border-white/10 flex items-center justify-center">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="size-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+              </button>
+              <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/10 w-10 h-10 backdrop-blur-md"></div>
+           </div>
+
+           <!-- Action Buttons -->
+           <div class="flex items-end gap-4 opacity-70 pointer-events-auto pb-4">
+              <button (touchstart)="simulateKey('Enter', 'Enter', true, $event)" (touchend)="simulateKey('Enter', 'Enter', false, $event)" (touchcancel)="simulateKey('Enter', 'Enter', false, $event)" class="bg-emerald-500/50 active:bg-emerald-500 w-14 h-14 rounded-full backdrop-blur-md border border-emerald-400/50 flex items-center justify-center text-white font-black text-lg mb-6 shadow-[0_0_15px_rgba(16,185,129,0.5)] select-none">
+                 B
+              </button>
+              <button (touchstart)="simulateKey(' ', ' ', true, $event)" (touchend)="simulateKey(' ', ' ', false, $event)" (touchcancel)="simulateKey(' ', ' ', false, $event)" class="bg-indigo-500/50 active:bg-indigo-500 w-16 h-16 rounded-full backdrop-blur-md border border-indigo-400/50 flex items-center justify-center text-white font-black text-xl shadow-[0_0_15px_rgba(99,102,241,0.5)] select-none">
+                 A
+              </button>
+           </div>
+        </div>
 
         <!-- HUD -->
         <div class="absolute top-8 right-8 pointer-events-none flex flex-col gap-2 text-left" dir="ltr">
@@ -155,6 +220,8 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
   safeUrl: SafeResourceUrl | null = null;
   isLoading = true;
   isFullscreen = false;
+  isRotated = false;
+  isImmersive = false;
   
   playTime = 0;
   private timer: any;
@@ -165,6 +232,9 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
   showModeOverlay = true;
   showPrivateRoomModal = false;
   generatedRoomCode = '';
+  showGamepad = false;
+
+  private arcadeAudio = inject(ArcadeAudioService);
 
   @ViewChild('container') containerRef!: ElementRef<HTMLDivElement>;
   @ViewChild('gameIframe') iframeRef!: ElementRef<HTMLIFrameElement>;
@@ -175,8 +245,10 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
   private sanitizer = inject(DomSanitizer);
   globalState = inject(GlobalStateService);
   multiplayer = inject(MultiplayerService);
-  
+  private firebaseService = inject(FirebaseService);
+
   copied = false;
+  invitedFriends: string[] = [];
 
   constructor() {
     effect(() => {
@@ -259,7 +331,45 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
     }
   }
 
-  copyRoomLink() {
+  async inviteFriend(friendId: string) {
+    if (!this.game || !this.generatedRoomCode) return;
+    this.invitedFriends.push(friendId);
+    await this.firebaseService.sendGameInvite(
+      friendId,
+      this.game.id,
+      this.game.title,
+      this.generatedRoomCode
+    );
+  }
+
+  async simulateKey(key1: string, key2: string, isDown: boolean, event?: TouchEvent) {
+    if (event) event.preventDefault();
+    
+    const iframeWindow = this.iframeRef?.nativeElement?.contentWindow;
+    const iframeDocument = this.iframeRef?.nativeElement?.contentDocument;
+    
+    if (!iframeWindow && !iframeDocument) return;
+
+    const eventName = isDown ? 'keydown' : 'keyup';
+    
+    // Create and dispatch events for both key1 (e.g. ArrowUp) and key2 (e.g. 'w')
+    const triggerEvent = (k: string) => {
+      const keyboardEvent = new KeyboardEvent(eventName, {
+        key: k,
+        code: k,
+        keyCode: k === ' ' ? 32 : k === 'Enter' ? 13 : 0,
+        bubbles: true,
+        cancelable: true
+      });
+      if (iframeDocument) iframeDocument.dispatchEvent(keyboardEvent);
+      if (iframeWindow) iframeWindow.dispatchEvent(keyboardEvent);
+    };
+
+    triggerEvent(key1);
+    triggerEvent(key2);
+  }
+
+  async copyRoomLink() {
     const url = window.location.origin + this.router.url.split('?')[0] + '?room=' + this.generatedRoomCode;
     navigator.clipboard.writeText(url).then(() => {
       this.copied = true;
@@ -305,6 +415,23 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
           this.lastWinner = data.winner || 'Draw';
         } else if (data.type === 'SHOW_MODE_SELECTION') {
           this.showModeOverlay = true;
+        } else if (data.type === 'ENTER_FULLSCREEN') {
+          this.isImmersive = true;
+        } else if (data.type === 'EXIT_FULLSCREEN') {
+          this.isImmersive = false;
+        } else if (data.type === 'CLOSE_GAME') {
+          this.goBack();
+        }
+      }
+
+      // Audio events from game iframe
+      if (data && data.type) {
+        if (data.type === 'AUDIO_PLAY_SFX') {
+          this.arcadeAudio.playSfx(data.volume !== undefined ? data.volume : 0.8);
+        } else if (data.type === 'AUDIO_PLAY_BGM') {
+          this.arcadeAudio.playBgm(data.volume !== undefined ? data.volume : 0.5);
+        } else if (data.type === 'AUDIO_STOP_BGM') {
+          this.arcadeAudio.stopBgm();
         }
       }
 
@@ -313,6 +440,11 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
         this.multiplayer.sendMessage(data);
       }
     }
+  }
+
+  @HostListener('document:click')
+  onDocumentClick() {
+    this.arcadeAudio.ensureAudioContext();
   }
 
   onIframeLoad() {
@@ -365,6 +497,20 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
       document.exitFullscreen();
       this.isFullscreen = false;
     }
+  }
+
+  toggleImmersive() {
+     this.isImmersive = !this.isImmersive;
+     if (this.isImmersive) {
+        // Also try to trigger native fullscreen for maximum immersion
+        if (!document.fullscreenElement) {
+           this.containerRef.nativeElement.requestFullscreen().catch(() => {});
+        }
+     } else {
+        if (document.fullscreenElement) {
+           document.exitFullscreen().catch(() => {});
+        }
+     }
   }
 
   formatPlayTime(seconds: number): string {

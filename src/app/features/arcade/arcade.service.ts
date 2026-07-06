@@ -271,7 +271,7 @@ export class ArcadeService {
       genre: 'Board',
       platforms: ['browser', 'android'],
       localUrl: '/games/ludo-party/index.html',
-      status: 'coming_soon'
+      status: 'available'
     },
     {
       id: 'crazy-uno',
@@ -281,7 +281,7 @@ export class ArcadeService {
       genre: 'Card',
       platforms: ['browser', 'android'],
       localUrl: '/games/crazy-uno/index.html',
-      status: 'coming_soon',
+      status: 'available',
       localModeType: 'pass_and_play'
     },
     {
@@ -292,7 +292,7 @@ export class ArcadeService {
       genre: 'Social',
       platforms: ['browser', 'android', 'pc'],
       localUrl: '/games/werewolf-village/index.html',
-      status: 'coming_soon',
+      status: 'available',
       localModeType: 'ai'
     },
     {
@@ -303,7 +303,7 @@ export class ArcadeService {
       genre: 'Action',
       platforms: ['browser', 'android', 'pc'],
       localUrl: '/games/bomb-arena/index.html',
-      status: 'coming_soon'
+      status: 'available'
     },
     {
       id: 'funny-answers',
@@ -313,7 +313,7 @@ export class ArcadeService {
       genre: 'Party',
       platforms: ['browser', 'android'],
       localUrl: '/games/funny-answers/index.html',
-      status: 'coming_soon',
+      status: 'available',
       localModeType: 'pass_and_play'
     },
     {

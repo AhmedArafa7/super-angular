@@ -20,6 +20,7 @@ export class GlobalStateService {
   readonly unreadNotificationsCount = signal<number>(3);
   
   readonly friends = signal<Friend[]>([]);
+  readonly activeGameInvites = signal<any[]>([]);
 
   readonly userProfile = computed(() => {
     const userData = this.firebaseService.userData();
@@ -45,6 +46,16 @@ export class GlobalStateService {
         this.friends.set([]);
       }
     });
+
+    // Listen for incoming game invites
+    effect(() => {
+      const isReady = this.firebaseService.isReady();
+      if (isReady && this.firebaseService.currentUser()) {
+        this.firebaseService.listenForGameInvites((invites) => {
+          this.activeGameInvites.set(invites);
+        });
+      }
+    }, { allowSignalWrites: true });
   }
 
   private async fetchFriends(uids: string[]) {

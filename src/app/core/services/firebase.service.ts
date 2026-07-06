@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { getFirestore, Firestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, orderBy, limit, startAfter, QueryDocumentSnapshot, documentId, runTransaction, arrayUnion } from 'firebase/firestore';
+import { getFirestore, Firestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, orderBy, limit, startAfter, QueryDocumentSnapshot, documentId, runTransaction, arrayUnion, addDoc, onSnapshot } from 'firebase/firestore';
 import { environment } from '../../../environments/environment';
 
 export interface UserData {
@@ -795,6 +795,62 @@ export class FirebaseService {
     } catch (err) {
       console.error('[FirebaseService] getFriendsByUids failed', err);
       return [];
+    }
+  }
+
+  // ==========================================
+  // GAME INVITES SYSTEM
+  // ==========================================
+
+  async sendGameInvite(toUid: string, gameId: string, gameTitle: string, roomCode: string): Promise<void> {
+    const user = this.currentUser();
+    if (!user) return;
+    try {
+      const invitesRef = collection(this.firestore, 'game_invites');
+      await addDoc(invitesRef, {
+        fromUid: user.uid,
+        fromName: user.displayName || this.userData()?.name || 'لاعب',
+        fromAvatar: user.photoURL || 'https://ui-avatars.com/api/?name=U',
+        toUid: toUid,
+        gameId: gameId,
+        gameTitle: gameTitle,
+        roomCode: roomCode,
+        status: 'pending',
+        createdAt: Date.now()
+      });
+    } catch (err) {
+      console.error('[FirebaseService] sendGameInvite failed:', err);
+    }
+  }
+
+  listenForGameInvites(callback: (invites: any[]) => void): () => void {
+    const user = this.currentUser();
+    if (!user) return () => {};
+    
+    try {
+      const q = query(
+        collection(this.firestore, 'game_invites'),
+        where('toUid', '==', user.uid),
+        where('status', '==', 'pending')
+      );
+      
+      // onSnapshot is imported from firebase/firestore
+      return onSnapshot(q, (snapshot) => {
+        const invites = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        callback(invites);
+      });
+    } catch (err) {
+      console.error('[FirebaseService] listenForGameInvites failed:', err);
+      return () => {};
+    }
+  }
+
+  async updateGameInviteStatus(inviteId: string, status: 'accepted' | 'declined'): Promise<void> {
+    try {
+      const docRef = doc(this.firestore, 'game_invites', inviteId);
+      await updateDoc(docRef, { status });
+    } catch (err) {
+      console.error('[FirebaseService] updateGameInviteStatus failed:', err);
     }
   }
 }

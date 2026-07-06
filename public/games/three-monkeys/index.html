@@ -10,68 +10,59 @@
 </head>
 <body>
     <div id="app">
-        <!-- Start Menu Screen -->
-        <div id="start-menu-screen" class="screen active">
-
-            <div class="menu-title-container">
-                <h1 class="menu-title-text">القردة الثلاثة!</h1>
-            </div>
-            
-            <div class="menu-device">
-                <div class="menu-device-bulb"></div>
-                <div class="menu-buttons">
-                    <div class="button-track">
-                        <button class="pill-btn pink-btn" id="go-lobby-btn">
-                            <span class="btn-text">PLAY</span>
-                        </button>
-                    </div>
-                    <div class="button-track">
-                        <button class="pill-btn orange-btn" onclick="alert('الخيارات غير متاحة بالنسخة الحالية')">
-                            <span class="btn-text">OPTIONS</span>
-                        </button>
-                    </div>
-                    <div class="button-track">
-                        <button class="pill-btn blue-btn" onclick="alert('أضف اللعبة لقائمة الرغبات!')">
-                            <span class="btn-text">WISHLIST</span>
-                        </button>
-                    </div>
-                    <div class="button-track">
-                        <button class="pill-btn green-btn" onclick="window.parent.postMessage({type: 'CLOSE_GAME'}, '*')">
-                            <span class="btn-text">QUIT</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="side-logo discord-logo" onclick="window.open('https://discord.com', '_blank')">
-                <div class="icon">💬</div>
-                <div>DISCORD</div>
-            </div>
-            <div class="side-logo bug-logo" onclick="alert('الإبلاغ عن خطأ')">
-                <div class="icon">🐞</div>
-                <div>BUG REPORT</div>
-            </div>
-        </div>
+        <button id="global-mute-btn" onclick="toggleGlobalMute()" style="position: absolute; top: 15px; left: 15px; z-index: 1000; background: rgba(0,0,0,0.6); border: 2px solid #444; border-radius: 50%; width: 45px; height: 45px; color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.5); transition: transform 0.2s;" onmousedown="this.style.transform='scale(0.9)';" onmouseup="this.style.transform='scale(1)';">
+            🎵
+        </button>
+        <!-- Start Menu removed as requested, moved inside Lobby -->
 
         <!-- Lobby Screen -->
-        <div id="lobby-screen" class="screen">
+        <div id="lobby-screen" class="screen active">
             <h1 class="game-title">القردة الثلاثة 🙈🙉🙊</h1>
             <p class="subtitle">تعاونوا لتفكيك القنبلة.. ولا تنفجروا!</p>
             
-            <div class="lobby-controls">
-                <div id="player-name-display" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-center text-lg font-bold mb-4" style="background: rgba(17,24,39,0.9); border: 2px solid #374151; border-radius: 10px; padding: 10px; margin-bottom: 15px; color: #facc15;">
+            <div class="lobby-controls" style="position: relative; overflow: visible; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; max-width: 300px; margin: 0 auto;">
+                
+                <!-- Player Name (Always Visible) -->
+                <div id="player-name-display" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-center text-lg font-bold mb-6" style="background: rgba(17,24,39,0.9); border: 2px solid #374151; border-radius: 10px; padding: 10px; color: #facc15; width: 100%;">
                     اللاعب: <span id="player-name-text">...</span>
                 </div>
                 <input type="hidden" id="player-name" value="">
                 
-                <div class="host-join-buttons">
-                    <button id="host-btn" class="btn btn-primary">إنشاء غرفة (مضيف)</button>
+                <!-- Glossy Menu Options -->
+                <div id="glossy-options" style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+                    <!-- Play Button -->
+                    <button onclick="document.getElementById('glossy-options').style.display='none'; document.getElementById('room-actions').style.display='block';" style="width: 100%; height: 48px; border-radius: 50px; background: #ff0066; border: none; border-bottom: 5px solid #cc0052; box-shadow: inset 0 3px 5px rgba(255,255,255,0.6), 0 4px 10px rgba(255,0,102,0.5); color: white; font-weight: 900; font-size: 20px; font-family: 'Tajawal', sans-serif; cursor: pointer; transition: transform 0.1s; letter-spacing: 2px;" onmousedown="this.style.transform='translateY(3px)'; this.style.borderBottomWidth='2px';" onmouseup="this.style.transform='translateY(0)'; this.style.borderBottomWidth='5px';">
+                        PLAY
+                    </button>
+                    <!-- Options Button -->
+                    <button onclick="document.getElementById('options-menu-overlay').style.display='flex';" style="width: 100%; height: 48px; border-radius: 50px; background: #ff9900; border: none; border-bottom: 5px solid #cc7a00; box-shadow: inset 0 3px 5px rgba(255,255,255,0.6), 0 4px 10px rgba(255,153,0,0.5); color: white; font-weight: 900; font-size: 20px; font-family: 'Tajawal', sans-serif; cursor: pointer; transition: transform 0.1s; letter-spacing: 2px;" onmousedown="this.style.transform='translateY(3px)'; this.style.borderBottomWidth='2px';" onmouseup="this.style.transform='translateY(0)'; this.style.borderBottomWidth='5px';">
+                        OPTIONS
+                    </button>
+                    <!-- Wishlist Button -->
+                    <button onclick="alert('أضف اللعبة لقائمة الرغبات!')" style="width: 100%; height: 48px; border-radius: 50px; background: #3366ff; border: none; border-bottom: 5px solid #2952cc; box-shadow: inset 0 3px 5px rgba(255,255,255,0.6), 0 4px 10px rgba(51,102,255,0.5); color: white; font-weight: 900; font-size: 20px; font-family: 'Tajawal', sans-serif; cursor: pointer; transition: transform 0.1s; letter-spacing: 2px;" onmousedown="this.style.transform='translateY(3px)'; this.style.borderBottomWidth='2px';" onmouseup="this.style.transform='translateY(0)'; this.style.borderBottomWidth='5px';">
+                        WISHLIST
+                    </button>
+                    <!-- Quit Button -->
+                    <button onclick="window.parent.postMessage({type: 'CLOSE_GAME'}, '*')" style="width: 100%; height: 48px; border-radius: 50px; background: #33cc33; border: none; border-bottom: 5px solid #29a329; box-shadow: inset 0 3px 5px rgba(255,255,255,0.6), 0 4px 10px rgba(51,204,51,0.5); color: white; font-weight: 900; font-size: 20px; font-family: 'Tajawal', sans-serif; cursor: pointer; transition: transform 0.1s; letter-spacing: 2px;" onmousedown="this.style.transform='translateY(3px)'; this.style.borderBottomWidth='2px';" onmouseup="this.style.transform='translateY(0)'; this.style.borderBottomWidth='5px';">
+                        QUIT
+                    </button>
                 </div>
-                
-                <div class="join-section">
-                    <input type="text" id="join-id" placeholder="كود الغرفة">
-                    <button id="join-btn" class="btn btn-secondary">انضمام</button>
-                    <p id="join-error" class="error-msg"></p>
+
+                <!-- Room Actions (Hidden Initially) -->
+                <div id="room-actions" style="display: none;">
+                    <div class="host-join-buttons">
+                        <button id="host-btn" class="btn btn-primary">إنشاء غرفة (مضيف)</button>
+                    </div>
+                    
+                    <div class="join-section" style="margin-top: 20px;">
+                        <input type="text" id="join-id" placeholder="كود الغرفة">
+                        <button id="join-btn" class="btn btn-secondary">انضمام</button>
+                        <p id="join-error" class="error-msg"></p>
+                    </div>
+                    
+                    <button onclick="document.getElementById('room-actions').style.display='none'; document.getElementById('glossy-options').style.display='flex';" style="margin-top: 15px; background: none; border: none; color: #9ca3af; text-decoration: underline; cursor: pointer; font-family: 'Tajawal', sans-serif;">
+                        العودة للقائمة
+                    </button>
                 </div>
             </div>
             
@@ -216,6 +207,429 @@
         </div>
 
     </div>
+
+    <!-- Options Menu Overlay -->
+    <div id="options-menu-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+        <div style="position: relative; width: 90%; max-width: 800px; aspect-ratio: 16/9; background: #b3c6ff; border: 15px solid #d92626; border-radius: 20px; display: flex; box-shadow: 0 20px 50px rgba(0,0,0,0.8); overflow: visible;" dir="ltr">
+            <!-- Back Button -->
+            <button onclick="document.getElementById('options-menu-overlay').style.display='none';" style="position: absolute; top: -30px; left: -30px; width: 60px; height: 60px; background: #4d4dff; border: 4px solid #1a1a80; border-radius: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 110; transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                <svg viewBox="0 0 24 24" fill="white" style="width: 40px; height: 40px;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
+            </button>
+
+            <!-- Book Spine/Center Fold -->
+            <div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: rgba(0,0,0,0.1); transform: translateX(-50%); box-shadow: 0 0 10px rgba(0,0,0,0.2);"></div>
+
+            <!-- Left Page -->
+            <div style="flex: 1; padding: 20px 40px; display: flex; flex-direction: column; justify-content: space-around; font-family: 'Fredoka One', 'Tajawal', sans-serif; color: #4a148c; text-align: center;">
+                
+                <!-- Graphics -->
+                <div class="option-row">
+                    <div style="font-weight: 900; font-size: 20px; margin-bottom: 5px; text-transform: uppercase;">GRAPHICS</div>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+                        <div class="triangle-left" onclick="changeOption('graphics', -1)"></div>
+                        <span id="opt-val-graphics" style="font-size: 18px; font-weight: bold;">High</span>
+                        <div class="triangle-right" onclick="changeOption('graphics', 1)"></div>
+                    </div>
+                </div>
+
+                <!-- Resolution -->
+                <div class="option-row">
+                    <div style="font-weight: 900; font-size: 20px; margin-bottom: 5px; text-transform: uppercase;">RESOLUTION</div>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+                        <div class="triangle-left" onclick="changeOption('resolution', -1)"></div>
+                        <span id="opt-val-resolution" style="font-size: 18px; font-weight: bold;">1920x1080</span>
+                        <div class="triangle-right" onclick="changeOption('resolution', 1)"></div>
+                    </div>
+                </div>
+
+                <!-- Window Mode -->
+                <div class="option-row">
+                    <div style="font-weight: 900; font-size: 20px; margin-bottom: 5px; text-transform: uppercase;">WINDOW MODE</div>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+                        <div class="triangle-left" onclick="changeOption('windowMode', -1)"></div>
+                        <span id="opt-val-windowMode" style="font-size: 18px; font-weight: bold;">Full Screen</span>
+                        <div class="triangle-right" onclick="changeOption('windowMode', 1)"></div>
+                    </div>
+                </div>
+
+                <!-- Language -->
+                <div class="option-row">
+                    <div style="font-weight: 900; font-size: 20px; margin-bottom: 5px; text-transform: uppercase;">LANGUAGE</div>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+                        <div class="triangle-left" onclick="changeOption('language', -1)"></div>
+                        <span id="opt-val-language" style="font-size: 18px; font-weight: bold; min-width: 120px;">🇬🇧 English</span>
+                        <div class="triangle-right" onclick="changeOption('language', 1)"></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Page -->
+            <div style="flex: 1; padding: 20px 40px; display: flex; flex-direction: column; justify-content: space-around; font-family: 'Fredoka One', 'Tajawal', sans-serif; color: #4a148c; text-align: center;">
+                
+                <!-- Sound -->
+                <div class="option-row">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;">
+                        <div style="font-weight: 900; font-size: 20px; text-transform: uppercase;">SOUND</div>
+                        <div id="val-sound" style="font-weight: bold; font-size: 16px; color: #ff0066;">80</div>
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-track"><div class="slider-fill" style="width: 80%;"></div></div>
+                        <div class="slider-thumb" style="left: 80%;">🍌</div>
+                    </div>
+                </div>
+
+                <!-- Music -->
+                <div class="option-row">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;">
+                        <div style="font-weight: 900; font-size: 20px; text-transform: uppercase;">MUSIC</div>
+                        <div id="val-music" style="font-weight: bold; font-size: 16px; color: #ff0066;">60</div>
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-track"><div class="slider-fill" style="width: 60%;"></div></div>
+                        <div class="slider-thumb" style="left: 60%;">🍌</div>
+                    </div>
+                </div>
+
+                <!-- Mouse -->
+                <div class="option-row">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;">
+                        <div style="font-weight: 900; font-size: 20px; text-transform: uppercase;">MOUSE</div>
+                        <div id="val-mouse" style="font-weight: bold; font-size: 16px; color: #ff0066;">50</div>
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-track"><div class="slider-fill" style="width: 50%;"></div></div>
+                        <div class="slider-thumb" style="left: 50%;">🍌</div>
+                    </div>
+                </div>
+
+                <!-- Microphone Level -->
+                <div class="option-row">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;">
+                        <div style="font-weight: 900; font-size: 20px; text-transform: uppercase;">MICROPHONE LEVEL</div>
+                        <div id="val-mic_level" style="font-weight: bold; font-size: 16px; color: #ff0066;">70</div>
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-track"><div class="slider-fill" style="width: 70%;"></div></div>
+                        <div class="slider-thumb" style="left: 70%;">🍌</div>
+                    </div>
+                </div>
+
+                <!-- Microphone Selection -->
+                <div class="option-row" style="margin-top: 10px;">
+                    <div style="font-weight: 900; font-size: 20px; margin-bottom: 5px; text-transform: uppercase;">MICROPHONE</div>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                        <div class="triangle-left" onclick="changeOption('microphone', -1)"></div>
+                        <span id="opt-val-microphone" style="font-size: 14px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;">Default Mic</span>
+                        <div class="triangle-right" onclick="changeOption('microphone', 1)"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
+    
+    .triangle-left {
+        width: 0;
+        height: 0;
+        border-top: 10px solid transparent;
+        border-bottom: 10px solid transparent;
+        border-right: 15px solid #4a148c;
+        cursor: pointer;
+        transition: transform 0.1s;
+    }
+    .triangle-left:active { transform: scale(0.8); }
+    .triangle-right {
+        width: 0;
+        height: 0;
+        border-top: 10px solid transparent;
+        border-bottom: 10px solid transparent;
+        border-left: 15px solid #4a148c;
+        cursor: pointer;
+        transition: transform 0.1s;
+    }
+    .triangle-right:active { transform: scale(0.8); }
+
+    .slider-container {
+        position: relative;
+        height: 20px;
+        width: 100%;
+        margin-top: 10px;
+    }
+    .slider-track {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 16px;
+        background: #2a0845;
+        border-radius: 8px;
+        transform: translateY(-50%);
+        overflow: hidden;
+        border: 2px solid #4a148c;
+    }
+    .slider-fill {
+        height: 100%;
+        background: #ffcc00;
+    }
+    .slider-thumb {
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 24px;
+        cursor: pointer;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+        user-select: none;
+    }
+    </style>
     <script src="game.js?v=3"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Options Data
+        const optionsData = {
+            graphics: { current: 2, values: ['Low', 'Medium', 'High', 'Ultra'] },
+            resolution: { current: 1, values: ['1280x720', '1920x1080', '2560x1440'] },
+            windowMode: { current: 0, values: ['Full Screen', 'Windowed', 'Borderless'] },
+            language: { current: 0, values: ['🇬🇧 English', '🇸🇦 العربية', '🇪🇸 Español', '🇫🇷 Français'] },
+            microphone: { current: 0, values: ['Default Mic', 'Headset Mic', 'Virtual Audio'] }
+        };
+
+        // Load saved options
+        Object.keys(optionsData).forEach(key => {
+            const saved = localStorage.getItem('tm_opt_' + key);
+            if (saved !== null) {
+                optionsData[key].current = parseInt(saved);
+            }
+            const el = document.getElementById('opt-val-' + key);
+            if (el) el.innerText = optionsData[key].values[optionsData[key].current];
+        });
+
+        window.changeOption = function(key, direction) {
+            let max = optionsData[key].values.length - 1;
+            optionsData[key].current += direction;
+            if (optionsData[key].current < 0) optionsData[key].current = max;
+            if (optionsData[key].current > max) optionsData[key].current = 0;
+            document.getElementById('opt-val-' + key).innerText = optionsData[key].values[optionsData[key].current];
+            localStorage.setItem('tm_opt_' + key, optionsData[key].current);
+            applySettings();
+        };
+
+        function applySettings() {
+            // Graphics Effect
+            const g = optionsData.graphics.current;
+            const lobbyControls = document.querySelector('.lobby-controls');
+            if (lobbyControls) {
+                if (g === 0) lobbyControls.style.boxShadow = 'none';
+                if (g === 1) lobbyControls.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)';
+                if (g === 2) lobbyControls.style.boxShadow = '0 10px 30px rgba(0,0,0,0.8)';
+                if (g === 3) lobbyControls.style.boxShadow = '0 0 50px rgba(255,255,255,0.2)';
+            }
+            
+            // Window Mode
+            const w = optionsData.windowMode.current;
+            if (w === 0) {
+                window.parent.postMessage({type: 'ENTER_FULLSCREEN'}, '*');
+            } else {
+                window.parent.postMessage({type: 'EXIT_FULLSCREEN'}, '*');
+            }
+
+            // Language
+            updateLanguage();
+            
+            // Update BGM volume
+            updateBGM();
+        }
+
+        const translations = {
+            0: { // English
+                play: "PLAY", options: "OPTIONS", wishlist: "WISHLIST", quit: "QUIT",
+                host: "Create Room (Host)", join_placeholder: "Room Code", join: "Join", back: "Back to Menu"
+            },
+            1: { // Arabic
+                play: "العب", options: "الخيارات", wishlist: "قائمة الرغبات", quit: "خروج",
+                host: "إنشاء غرفة (مضيف)", join_placeholder: "كود الغرفة", join: "انضمام", back: "العودة للقائمة"
+            },
+            2: { // Spanish
+                play: "JUGAR", options: "OPCIONES", wishlist: "LISTA", quit: "SALIR",
+                host: "Crear Sala", join_placeholder: "Código", join: "Unirse", back: "Volver"
+            },
+            3: { // French
+                play: "JOUER", options: "OPTIONS", wishlist: "SOUHAITS", quit: "QUITTER",
+                host: "Créer une salle", join_placeholder: "Code", join: "Rejoindre", back: "Retour"
+            }
+        };
+
+        function updateLanguage() {
+            const lang = optionsData.language.current;
+            const t = translations[lang];
+            
+            const glossyBtns = document.getElementById('glossy-options').querySelectorAll('button');
+            if(glossyBtns.length >= 4) {
+                glossyBtns[0].innerText = t.play;
+                glossyBtns[1].innerText = t.options;
+                glossyBtns[2].innerText = t.wishlist;
+                glossyBtns[3].innerText = t.quit;
+            }
+
+            const hostBtn = document.getElementById('host-btn');
+            if(hostBtn) hostBtn.innerText = t.host;
+            const joinBtn = document.getElementById('join-btn');
+            if(joinBtn) joinBtn.innerText = t.join;
+            const joinInput = document.getElementById('join-id');
+            if(joinInput) joinInput.placeholder = t.join_placeholder;
+            
+            const backBtn = document.querySelector('#room-actions > button');
+            if(backBtn) backBtn.innerText = t.back;
+        }
+
+        // --- Audio Delegation to Angular Arcade ---
+        function playClickSound() {
+            const soundVol = localStorage.getItem('tm_opt_sound') !== null ? parseInt(localStorage.getItem('tm_opt_sound')) / 100 : 0.8;
+            window.parent.postMessage({ type: 'AUDIO_PLAY_SFX', volume: soundVol }, '*');
+        }
+
+        let isGlobalMuted = false;
+        window.toggleGlobalMute = function() {
+            isGlobalMuted = !isGlobalMuted;
+            const btn = document.getElementById('global-mute-btn');
+            if (isGlobalMuted) {
+                btn.innerText = '🔇';
+                window.parent.postMessage({ type: 'AUDIO_STOP_BGM' }, '*');
+            } else {
+                btn.innerText = '🎵';
+                updateBGM();
+            }
+            playClickSound();
+        };
+
+        function updateBGM() {
+            const musicVol = localStorage.getItem('tm_opt_music') !== null ? parseInt(localStorage.getItem('tm_opt_music')) / 100 : 0.5;
+            if (musicVol > 0 && !isGlobalMuted) {
+                window.parent.postMessage({ type: 'AUDIO_PLAY_BGM', volume: musicVol }, '*');
+            } else {
+                window.parent.postMessage({ type: 'AUDIO_STOP_BGM' }, '*');
+            }
+        }
+
+        document.addEventListener('pointerdown', (e) => {
+            // Let the Angular parent handle AudioContext initialization
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.classList.contains('triangle-left') || e.target.classList.contains('triangle-right') || e.target.classList.contains('slider-thumb')) {
+                playClickSound();
+            }
+        });
+
+        function updateVolumes() {
+            const soundVol = localStorage.getItem('tm_opt_sound') !== null ? parseInt(localStorage.getItem('tm_opt_sound')) / 100 : 0.8;
+            if (typeof audioElements !== 'undefined') {
+                audioElements.forEach(a => {
+                    if (typeof myRole !== 'undefined' && myRole !== 'deaf') {
+                        a.volume = soundVol;
+                    }
+                });
+            }
+            
+            // Microphone muting logic
+            const micVol = localStorage.getItem('tm_opt_mic_level') !== null ? parseInt(localStorage.getItem('tm_opt_mic_level')) / 100 : 0.7;
+            if (typeof myStream !== 'undefined' && myStream) {
+                myStream.getAudioTracks().forEach(track => {
+                    track.enabled = (micVol > 0);
+                });
+            }
+        }
+
+        // Apply settings initially
+        setTimeout(applySettings, 500);
+
+        // Sliders Logic
+        const sliders = document.querySelectorAll('.slider-container');
+        sliders.forEach((container, index) => {
+            const thumb = container.querySelector('.slider-thumb');
+            const fill = container.querySelector('.slider-fill');
+            const sliderIds = ['sound', 'music', 'mouse', 'mic_level'];
+            const currentId = sliderIds[index];
+            
+            let isDragging = false;
+            let lastSoundTime = 0;
+            let lastValue = -1;
+            
+            // Load saved value
+            const savedVal = localStorage.getItem('tm_opt_' + currentId);
+            if (savedVal !== null) {
+                lastValue = parseInt(savedVal);
+                thumb.style.left = savedVal + '%';
+                fill.style.width = savedVal + '%';
+                const valDisplay = document.getElementById('val-' + currentId);
+                if (valDisplay) valDisplay.innerText = savedVal;
+            }
+
+            const updateSlider = (clientX) => {
+                const rect = container.getBoundingClientRect();
+                let percentage = (clientX - rect.left) / rect.width * 100;
+                if (percentage < 0) percentage = 0;
+                if (percentage > 100) percentage = 100;
+                let rounded = Math.round(percentage);
+                
+                if (rounded === lastValue) return; // Prevent unnecessary CPU load
+                lastValue = rounded;
+                
+                thumb.style.left = percentage + '%';
+                fill.style.width = percentage + '%';
+                
+                const valDisplay = document.getElementById('val-' + currentId);
+                if (valDisplay) valDisplay.innerText = rounded;
+                
+                localStorage.setItem('tm_opt_' + currentId, rounded);
+                if (currentId === 'sound') {
+                    updateVolumes();
+                    let now = performance.now();
+                    if (now - lastSoundTime > 150) {
+                        playClickSound();
+                        lastSoundTime = now;
+                    }
+                } else if (currentId === 'music') {
+                    updateBGM();
+                } else if (currentId === 'mic_level') {
+                    updateVolumes(); // Update mic mute state
+                }
+            };
+
+            thumb.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) updateSlider(e.clientX);
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            container.addEventListener('click', (e) => {
+                if(e.target !== thumb) updateSlider(e.clientX);
+            });
+            
+            // Touch support for mobile
+            thumb.addEventListener('touchstart', (e) => {
+                isDragging = true;
+            }, {passive: true});
+
+            document.addEventListener('touchmove', (e) => {
+                if (isDragging) updateSlider(e.touches[0].clientX);
+            }, {passive: true});
+
+            document.addEventListener('touchend', () => {
+                isDragging = false;
+            });
+        });
+    });
+    </script>
 </body>
 </html>
