@@ -30,6 +30,95 @@ let myStream = null;
 // Start directly in lobby
 showScreen('lobby-screen');
 
+function toBraille(num) {
+    const brailleDigits = {
+        '1': '⠁',
+        '2': '⠃',
+        '3': '⠉',
+        '4': '⠙',
+        '5': '⠑',
+        '6': '⠋',
+        '7': '⠛',
+        '8': '⠓',
+        '9': '⠊',
+        '0': '⠚'
+    };
+    let str = String(num);
+    let brailleStr = '⠼'; // Number sign prefix
+    for(let char of str) {
+        if(brailleDigits[char]) {
+            brailleStr += brailleDigits[char];
+        }
+    }
+    return brailleStr;
+}
+
+const manuals = [
+    // Ruleset 1 (Standard)
+    `<h4>الوحدة 1: الأسلاك ✂️</h4>
+    <ul>
+        <li>- إذا كان هناك 3 أسلاك: إذا لم يكن هناك سلك أحمر، اقطع الثاني. وإلا اقطع الأخير.</li>
+        <li>- إذا كان هناك 4 أسلاك: إذا كان الأول أصفر، اقطع الأول. وإلا اقطع الثالث.</li>
+        <li>- إذا كان هناك 5 أسلاك: إذا كان الأخير أسود، اقطع الرابع. وإلا اقطع الثاني.</li>
+    </ul>
+    <h4>الوحدة 2: الأرقام 🔢</h4>
+    <ul>
+        <li>- إذا كان الرقم زوجياً، اضغط زر "أصغر من (<)".</li>
+        <li>- إذا كان الرقم فردياً، اضغط زر "أكبر من (>)".</li>
+    </ul>
+    <h4>الوحدة 3: لوحة الألوان 🎨</h4>
+    <ul>
+        <li>- إذا كان الزر العلوي الأيمن أحمر، اضغط بترتيب: أحمر، أزرق، أصفر، أخضر.</li>
+        <li>- وإلا، اضغط بترتيب: أخضر، أصفر، أزرق، أحمر.</li>
+        <li><em>ملاحظة: اضغط فقط الأزرار الموجودة في اللوحة (تجاهل اللون غير الموجود).</em></li>
+    </ul>`,
+    
+    // Ruleset 2
+    `<h4>الوحدة 1: الأسلاك ✂️</h4>
+    <ul>
+        <li>- إذا كان هناك 3 أسلاك: إذا كان الأخير أخضر، اقطع الأول. وإلا اقطع الثاني.</li>
+        <li>- إذا كان هناك 4 أسلاك: إذا كان الأزرق موجوداً، اقطع الأخير. وإلا اقطع الثاني.</li>
+        <li>- إذا كان هناك 5 أسلاك: إذا كان الأول أحمر، اقطع الثالث. وإلا اقطع الأخير (الخامس).</li>
+    </ul>
+    <h4>الوحدة 2: الأرقام 🔢</h4>
+    <ul>
+        <li>- إذا كان الرقم يقبل القسمة على 3، اضغط زر "أصغر من (<)".</li>
+        <li>- وإلا، اضغط زر "أكبر من (>)".</li>
+    </ul>
+    <h4>الوحدة 3: لوحة الألوان 🎨</h4>
+    <ul>
+        <li>- إذا كان الزر الأخضر موجوداً، اضغط بترتيب: أخضر، أزرق، أحمر، أصفر.</li>
+        <li>- وإلا، اضغط بترتيب: أصفر، أحمر، أزرق، أخضر.</li>
+        <li><em>ملاحظة: اضغط فقط الأزرار الموجودة في اللوحة.</em></li>
+    </ul>`,
+    
+    // Ruleset 3
+    `<h4>الوحدة 1: الأسلاك ✂️</h4>
+    <ul>
+        <li>- إذا كان هناك 3 أسلاك: إذا كان الأول أزرق، اقطع الأخير. وإلا اقطع الأول.</li>
+        <li>- إذا كان هناك 4 أسلاك: إذا لم يكن هناك سلك أصفر، اقطع الثالث. وإلا اقطع الرابع.</li>
+        <li>- إذا كان هناك 5 أسلاك: إذا كان الأوسط (الثالث) أخضر، اقطع الثاني. وإلا اقطع الأول.</li>
+    </ul>
+    <h4>الوحدة 2: الأرقام 🔢</h4>
+    <ul>
+        <li>- إذا كان الرقم أكبر من 50، اضغط زر "أصغر من (<)".</li>
+        <li>- وإلا، اضغط زر "أكبر من (>)".</li>
+    </ul>
+    <h4>الوحدة 3: لوحة الألوان 🎨</h4>
+    <ul>
+        <li>- إذا كان الزر الأصفر موجوداً، اضغط بترتيب: أصفر، أخضر، أحمر، أزرق.</li>
+        <li>- وإلا، اضغط بترتيب: أزرق، أحمر، أخضر، أصفر.</li>
+        <li><em>ملاحظة: اضغط فقط الأزرار الموجودة في اللوحة.</em></li>
+    </ul>`
+];
+
+function updateManualUI() {
+    const el = $('manual-content');
+    if (el && typeof gameState.rulesetIndex !== 'undefined') {
+        el.innerHTML = manuals[gameState.rulesetIndex] || manuals[0];
+    }
+}
+
 let gameState = {
     phase: 'lobby', // lobby, roles, playing, game-over
     players: [], // { id, name, role }
@@ -38,7 +127,8 @@ let gameState = {
     maxStrikes: 3,
     resultMsg: '',
     modules: [],
-    recentGesture: ''
+    recentGesture: '',
+    rulesetIndex: 0
 };
 
 let timerInterval = null;
@@ -239,6 +329,20 @@ function handleClientData(peerId, data) {
     if (data.type === 'ACTION') {
         handleGameAction(peerId, data.action);
     }
+    if (data.type === 'REPLAY') {
+        if (isHost) {
+            generateBomb();
+            gameState.phase = 'playing';
+            broadcastState();
+        }
+    }
+    if (data.type === 'GO_TO_LOBBY') {
+        if (isHost) {
+            gameState.phase = 'roles';
+            gameState.players.forEach(p => p.role = '');
+            broadcastState();
+        }
+    }
 }
 
 // --- Lobby UI & Roles ---
@@ -331,6 +435,26 @@ $('start-game-btn').onclick = () => {
     startAudioNetworking();
 };
 
+$('replay-btn').onclick = () => {
+    if (isHost) {
+        generateBomb();
+        gameState.phase = 'playing';
+        broadcastState();
+    } else {
+        hostConn.send({ type: 'REPLAY' });
+    }
+};
+
+$('lobby-btn').onclick = () => {
+    if (isHost) {
+        gameState.phase = 'roles';
+        gameState.players.forEach(p => p.role = '');
+        broadcastState();
+    } else {
+        hostConn.send({ type: 'GO_TO_LOBBY' });
+    }
+};
+
 function checkPhaseChange() {
     if (gameState.phase === 'playing') {
         const me = gameState.players.find(p => p.id === myId);
@@ -342,11 +466,26 @@ function checkPhaseChange() {
         
         renderGameUI();
     } else if (gameState.phase === 'game-over') {
-        cleanup();
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
         showScreen('game-over-screen');
-        $('end-title').innerText = gameState.resultMsg === 'win' ? 'تم التفكيك بنجاح! 🎉' : 'انفجرت القنبلة! 💥';
-        $('end-title').className = gameState.resultMsg === 'win' ? 'end-title win' : 'end-title danger-text';
+        if (gameState.resultMsg === 'win') {
+            $('end-title').innerText = 'تهانينا! 🎉';
+            $('end-title').className = 'end-title win';
+            $('end-subtitle').innerText = 'مبروك يمكنكم بدء المهمة التالية';
+            $('replay-btn').innerText = 'بدء المهمة التالية';
+        } else {
+            $('end-title').innerText = 'فشلت المهمة ❌';
+            $('end-title').className = 'end-title danger-text';
+            $('end-subtitle').innerText = 'انفجرت القنبلة أو نفد الوقت.';
+            $('replay-btn').innerText = 'إعادة اللعب';
+        }
         if(isHost && parent) parent.postMessage({ type: 'ARCADE_GAME_OVER', winner: gameState.resultMsg === 'win' ? 'Victory' : 'Defeat', gameId: 'three-monkeys' }, '*');
+    } else if (gameState.phase === 'roles') {
+        showScreen('lobby-screen');
+        updateLobbyUI();
     }
 }
 
@@ -404,6 +543,9 @@ function generateBomb() {
     gameState.strikes = 0;
     gameState.resultMsg = '';
     
+    // Choose a random ruleset (0, 1, or 2)
+    gameState.rulesetIndex = Math.floor(Math.random() * 3);
+    
     // Module 1: Wires
     const colors = ['red', 'blue', 'yellow', 'green', 'black'];
     const numWires = Math.floor(Math.random() * 3) + 3; // 3 to 5
@@ -411,28 +553,57 @@ function generateBomb() {
     for(let i=0; i<numWires; i++) wires.push(colors[Math.floor(Math.random() * colors.length)]);
     
     let wSol = 0;
-    if (numWires === 3) {
-        if (!wires.includes('red')) wSol = 1; // second
-        else if (wires[2] === 'blue') wSol = 0; // first
-        else wSol = 2; // last
-    } else if (numWires === 4) {
-        if (wires[0] === 'yellow') wSol = 0;
-        else wSol = 2; // third
-    } else {
-        if (wires[4] === 'black') wSol = 3; // fourth
-        else wSol = 1; // second
+    if (gameState.rulesetIndex === 0) {
+        if (numWires === 3) {
+            if (!wires.includes('red')) wSol = 1; // second
+            else if (wires[2] === 'blue') wSol = 0; // first
+            else wSol = 2; // last
+        } else if (numWires === 4) {
+            if (wires[0] === 'yellow') wSol = 0;
+            else wSol = 2; // third
+        } else {
+            if (wires[4] === 'black') wSol = 3; // fourth
+            else wSol = 1; // second
+        }
+    } else if (gameState.rulesetIndex === 1) {
+        if (numWires === 3) {
+            wSol = (wires[2] === 'green') ? 0 : 1;
+        } else if (numWires === 4) {
+            wSol = wires.includes('blue') ? 3 : 1;
+        } else {
+            wSol = (wires[0] === 'red') ? 2 : 4;
+        }
+    } else { // Ruleset 2
+        if (numWires === 3) {
+            wSol = (wires[0] === 'blue') ? 2 : 0;
+        } else if (numWires === 4) {
+            wSol = !wires.includes('yellow') ? 2 : 3;
+        } else {
+            wSol = (wires[2] === 'green') ? 1 : 0;
+        }
     }
     
     // Module 2: Numbers
     let number = Math.floor(Math.random() * 90) + 10;
     let nSol = '';
-    if (number % 2 === 0) nSol = '<';
-    else nSol = '>';
+    if (gameState.rulesetIndex === 0) {
+        nSol = (number % 2 === 0) ? '<' : '>';
+    } else if (gameState.rulesetIndex === 1) {
+        nSol = (number % 3 === 0) ? '<' : '>';
+    } else {
+        nSol = (number > 50) ? '<' : '>';
+    }
     
     // Module 3: Keypad
     let buttons = ['red', 'blue', 'yellow', 'green'];
-    // Solution logic based on colors presence, independent of position
-    let sequence = buttons.includes('red') ? ['red', 'blue', 'yellow', 'green'] : ['green', 'yellow', 'blue', 'red'];
+    let sequence = [];
+    if (gameState.rulesetIndex === 0) {
+        sequence = buttons.includes('red') ? ['red', 'blue', 'yellow', 'green'] : ['green', 'yellow', 'blue', 'red'];
+    } else if (gameState.rulesetIndex === 1) {
+        sequence = buttons.includes('green') ? ['green', 'blue', 'red', 'yellow'] : ['yellow', 'red', 'blue', 'green'];
+    } else {
+        sequence = buttons.includes('yellow') ? ['yellow', 'green', 'red', 'blue'] : ['blue', 'red', 'green', 'yellow'];
+    }
     buttons.sort(() => 0.5 - Math.random()); // Shuffle for display only
     
     gameState.modules = [
@@ -552,6 +723,7 @@ function sendAction(action) {
 // --- Rendering ---
 function renderGameUI() {
     showScreen('game-screen');
+    updateManualUI();
     
     // Header
     let m = Math.floor(gameState.timeRemaining / 60).toString().padStart(2, '0');
@@ -622,8 +794,40 @@ function renderBlindBomb() {
             rightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); sendAction({ type: 'PRESS_NUM', value: '>' }); }, {passive: false});
             rightBtn.onclick = () => sendAction({ type: 'PRESS_NUM', value: '>' });
             
+            // Add a hidden number display that shows on hover/touch
+            let numDisplay = document.createElement('div');
+            numDisplay.className = 'blind-item blind-number-display';
+            numDisplay.innerText = mod.number;
+            numDisplay.style.top = '10px';
+            numDisplay.style.left = '45px';
+            numDisplay.style.width = '60px';
+            numDisplay.style.height = '45px';
+            numDisplay.style.display = 'flex';
+            numDisplay.style.alignItems = 'center';
+            numDisplay.style.justifyContent = 'center';
+            numDisplay.style.fontSize = '2.2rem';
+            numDisplay.style.fontWeight = 'bold';
+            numDisplay.style.fontFamily = 'monospace';
+            numDisplay.style.color = 'transparent';
+            numDisplay.style.userSelect = 'none';
+            
+            numDisplay.addEventListener('mouseenter', () => {
+                numDisplay.style.color = '#ef4444';
+            });
+            numDisplay.addEventListener('mouseleave', () => {
+                numDisplay.style.color = 'transparent';
+            });
+            numDisplay.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                numDisplay.style.color = '#ef4444';
+            }, {passive: false});
+            numDisplay.addEventListener('touchend', () => {
+                numDisplay.style.color = 'transparent';
+            });
+            
             modDiv.appendChild(leftBtn);
             modDiv.appendChild(rightBtn);
+            modDiv.appendChild(numDisplay);
         }
         
         if (mod.type === 'keypad') {
@@ -689,7 +893,8 @@ function renderDeafBomb() {
         if (mod.type === 'numbers') {
             let numD = document.createElement('div');
             numD.className = 'num-display';
-            numD.innerText = mod.number;
+            numD.innerText = toBraille(mod.number);
+            numD.style.fontSize = '3rem';
             modDiv.appendChild(numD);
             
             let btnC = document.createElement('div');

@@ -245,6 +245,7 @@ input[type="text"]:focus {
     justify-content: space-between;
     align-items: center;
     padding: 0 30px;
+    padding-right: 100px;
     border-bottom: 1px solid #374151;
     z-index: 50;
 }
@@ -320,11 +321,13 @@ input[type="text"]:focus {
     position: absolute;
     cursor: pointer;
     background: transparent;
-    transition: background 0.2s;
+    border: 2px solid transparent;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
 }
 
 .blind-item:hover {
-    background: rgba(255,255,255,0.1);
+    border-color: rgba(255, 255, 255, 0.8);
 }
 
 /* Deaf UI */

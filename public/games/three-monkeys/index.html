@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Three Monkeys - القردة الثلاثة</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=4">
+    <link rel="stylesheet" href="styles.css?v=6">
     <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
 </head>
 <body>
@@ -164,7 +164,7 @@
                     <div class="mute-layout">
                         <div class="manual-container">
                             <h3>📖 دليل التفكيك السري</h3>
-                            <div class="manual-content">
+                            <div class="manual-content" id="manual-content">
                                 <h4>الوحدة 1: الأسلاك ✂️</h4>
                                 <ul>
                                     <li>- إذا كان هناك 3 أسلاك: إذا لم يكن هناك سلك أحمر، اقطع الثاني. وإلا اقطع الأخير.</li>
@@ -206,9 +206,12 @@
 
         <!-- Game Over Screen -->
         <div id="game-over-screen" class="screen">
-            <h1 id="end-title" class="end-title">انفجرت القنبلة! 💥</h1>
-            <p id="end-subtitle">لقد ارتكبتم الكثير من الأخطاء أو نفد الوقت.</p>
-            <button id="back-to-lobby-btn" class="btn btn-primary mt-4 hidden">العودة للرئيسية</button>
+            <h1 id="end-title" class="end-title">فشلت المهمة ❌</h1>
+            <p id="end-subtitle" style="font-size: 1.5rem; margin-bottom: 30px;">انفجرت القنبلة أو نفد الوقت.</p>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
+                <button id="replay-btn" class="btn btn-primary" style="font-size: 1.3rem; padding: 15px 40px;">إعادة اللعب</button>
+                <button id="lobby-btn" class="btn btn-secondary" style="font-size: 1.3rem; padding: 15px 40px; background: #6b7280;">تغيير الأدوار</button>
+            </div>
         </div>
 
     </div>
@@ -390,7 +393,7 @@
         user-select: none;
     }
     </style>
-    <script src="game.js?v=6"></script>
+    <script src="game.js?v=8"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         // Options Data
