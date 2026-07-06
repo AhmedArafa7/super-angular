@@ -147,13 +147,29 @@ input[type="text"]:focus {
     font-size: 0.9rem;
 }
 
+/* Room Screen Background */
+#room-screen {
+    background-image: url('assets/lobby_bg.jpg');
+    background-size: cover;
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    position: relative;
+    padding-top: 40px;
+}
+
+#room-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: -1;
+}
+
 .hidden {
     display: none !important;
 }
 
 .room-id-box {
-    background: #1f2937;
-    padding: 15px;
     border-radius: 8px;
     font-size: 1.2rem;
     margin-bottom: 20px;

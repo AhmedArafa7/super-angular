@@ -27,14 +27,8 @@ let hostConn = null;
 let guestConns = {}; // { peerId: DataConnection }
 let myStream = null;
 
-// Menu navigation
-$('go-lobby-btn').onclick = () => {
-    // Go directly to lobby, skipping the generic Arcade Arena mode selection
-    showScreen('lobby-screen');
-};
-
-// Always show start menu first, bypassing any Arcade Arena URL modes
-showScreen('start-menu-screen');
+// Start directly in lobby
+showScreen('lobby-screen');
 
 let gameState = {
     phase: 'lobby', // lobby, roles, playing, game-over
@@ -57,14 +51,17 @@ $('host-btn').onclick = () => {
     $('host-btn').disabled = true;
     $('host-btn').innerText = 'جاري الإنشاء...';
     
-    let myRoomCode = localStorage.getItem('three_monkeys_room_code');
-    if (!myRoomCode) {
-        myRoomCode = Math.random().toString(36).substring(2, 9).toUpperCase();
-        localStorage.setItem('three_monkeys_room_code', myRoomCode);
-    }
+    const myRoomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
     
     const peerId = 'SUPMONKEY_' + myRoomCode;
     myPeer = new Peer(peerId);
+    
+    myPeer.on('error', (err) => {
+        console.error('Peer error:', err);
+        $('host-btn').disabled = false;
+        $('host-btn').innerText = 'إنشاء غرفة (مضيف)';
+        alert('حدث خطأ في الاتصال بالسيرفر، يرجى المحاولة مرة أخرى.');
+    });
     
     myPeer.on('open', id => {
         myId = id;

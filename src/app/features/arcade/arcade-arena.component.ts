@@ -319,13 +319,22 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
       return;
     }
     
+    this.arcadeAudio.playSfx(0.8);
     this.selectedMode = mode;
     this.showModeOverlay = false;
     
     if (mode === 'private') {
-      const code = await this.multiplayer.createRoom();
-      this.generatedRoomCode = code;
+      this.generatedRoomCode = 'جاري...';
       this.showPrivateRoomModal = true;
+      try {
+        const code = await this.multiplayer.createRoom();
+        this.generatedRoomCode = code;
+      } catch (err) {
+        console.error('Failed to create room:', err);
+        alert('فشل إنشاء الغرفة. تأكد من اتصالك بالإنترنت أو إعدادات السيرفر.');
+        this.showPrivateRoomModal = false;
+        this.showModeOverlay = true;
+      }
     } else {
       this.launchGame();
     }
