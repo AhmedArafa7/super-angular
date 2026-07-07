@@ -205,16 +205,16 @@ import { ArcadeAudioService } from '../../core/services/arcade-audio.service';
         <div *ngIf="showGamepad && !isLoading" class="absolute inset-x-0 bottom-0 pointer-events-none z-50 flex justify-between px-6 pb-6 md:px-12 md:pb-12" dir="ltr">
            <!-- D-Pad -->
            <div class="relative size-32 opacity-70 pointer-events-auto">
-              <button (touchstart)="simulateKey('ArrowUp', 'w', true, $event)" (touchend)="simulateKey('ArrowUp', 'w', false, $event)" (touchcancel)="simulateKey('ArrowUp', 'w', false, $event)" class="absolute top-0 left-1/2 -translate-x-1/2 bg-white/20 active:bg-white/40 w-10 h-12 rounded-t-xl backdrop-blur-md border border-white/10 flex items-center justify-center">
+              <button (touchstart)="simulateKey(getMovementBindings().up[0], getMovementBindings().up[1] || getMovementBindings().up[0], true, $event)" (touchend)="simulateKey(getMovementBindings().up[0], getMovementBindings().up[1] || getMovementBindings().up[0], false, $event)" (touchcancel)="simulateKey(getMovementBindings().up[0], getMovementBindings().up[1] || getMovementBindings().up[0], false, $event)" class="absolute top-0 left-1/2 -translate-x-1/2 bg-white/20 active:bg-white/40 w-10 h-12 rounded-t-xl backdrop-blur-md border border-white/10 flex items-center justify-center">
                  <svg xmlns="http://www.w3.org/2000/svg" class="size-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg>
               </button>
-              <button (touchstart)="simulateKey('ArrowDown', 's', true, $event)" (touchend)="simulateKey('ArrowDown', 's', false, $event)" (touchcancel)="simulateKey('ArrowDown', 's', false, $event)" class="absolute bottom-0 left-1/2 -translate-x-1/2 bg-white/20 active:bg-white/40 w-10 h-12 rounded-b-xl backdrop-blur-md border border-white/10 flex items-center justify-center">
+              <button (touchstart)="simulateKey(getMovementBindings().down[0], getMovementBindings().down[1] || getMovementBindings().down[0], true, $event)" (touchend)="simulateKey(getMovementBindings().down[0], getMovementBindings().down[1] || getMovementBindings().down[0], false, $event)" (touchcancel)="simulateKey(getMovementBindings().down[0], getMovementBindings().down[1] || getMovementBindings().down[0], false, $event)" class="absolute bottom-0 left-1/2 -translate-x-1/2 bg-white/20 active:bg-white/40 w-10 h-12 rounded-b-xl backdrop-blur-md border border-white/10 flex items-center justify-center">
                  <svg xmlns="http://www.w3.org/2000/svg" class="size-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
               </button>
-              <button (touchstart)="simulateKey('ArrowLeft', 'a', true, $event)" (touchend)="simulateKey('ArrowLeft', 'a', false, $event)" (touchcancel)="simulateKey('ArrowLeft', 'a', false, $event)" class="absolute top-1/2 left-0 -translate-y-1/2 bg-white/20 active:bg-white/40 w-12 h-10 rounded-l-xl backdrop-blur-md border border-white/10 flex items-center justify-center">
+              <button (touchstart)="simulateKey(getMovementBindings().left[0], getMovementBindings().left[1] || getMovementBindings().left[0], true, $event)" (touchend)="simulateKey(getMovementBindings().left[0], getMovementBindings().left[1] || getMovementBindings().left[0], false, $event)" (touchcancel)="simulateKey(getMovementBindings().left[0], getMovementBindings().left[1] || getMovementBindings().left[0], false, $event)" class="absolute top-1/2 left-0 -translate-y-1/2 bg-white/20 active:bg-white/40 w-12 h-10 rounded-l-xl backdrop-blur-md border border-white/10 flex items-center justify-center">
                  <svg xmlns="http://www.w3.org/2000/svg" class="size-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
               </button>
-              <button (touchstart)="simulateKey('ArrowRight', 'd', true, $event)" (touchend)="simulateKey('ArrowRight', 'd', false, $event)" (touchcancel)="simulateKey('ArrowRight', 'd', false, $event)" class="absolute top-1/2 right-0 -translate-y-1/2 bg-white/20 active:bg-white/40 w-12 h-10 rounded-r-xl backdrop-blur-md border border-white/10 flex items-center justify-center">
+              <button (touchstart)="simulateKey(getMovementBindings().right[0], getMovementBindings().right[1] || getMovementBindings().right[0], true, $event)" (touchend)="simulateKey(getMovementBindings().right[0], getMovementBindings().right[1] || getMovementBindings().right[0], false, $event)" (touchcancel)="simulateKey(getMovementBindings().right[0], getMovementBindings().right[1] || getMovementBindings().right[0], false, $event)" class="absolute top-1/2 right-0 -translate-y-1/2 bg-white/20 active:bg-white/40 w-12 h-10 rounded-r-xl backdrop-blur-md border border-white/10 flex items-center justify-center">
                  <svg xmlns="http://www.w3.org/2000/svg" class="size-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
               </button>
               <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/10 w-10 h-10 backdrop-blur-md"></div>
@@ -222,11 +222,14 @@ import { ArcadeAudioService } from '../../core/services/arcade-audio.service';
 
            <!-- Action Buttons -->
            <div class="flex items-end gap-4 opacity-70 pointer-events-auto pb-4">
-              <button (touchstart)="simulateKey('Enter', 'Enter', true, $event)" (touchend)="simulateKey('Enter', 'Enter', false, $event)" (touchcancel)="simulateKey('Enter', 'Enter', false, $event)" class="bg-emerald-500/50 active:bg-emerald-500 w-14 h-14 rounded-full backdrop-blur-md border border-emerald-400/50 flex items-center justify-center text-white font-black text-lg mb-6 shadow-[0_0_15px_rgba(16,185,129,0.5)] select-none">
-                 B
-              </button>
-              <button (touchstart)="simulateKey(' ', ' ', true, $event)" (touchend)="simulateKey(' ', ' ', false, $event)" (touchcancel)="simulateKey(' ', ' ', false, $event)" class="bg-indigo-500/50 active:bg-indigo-500 w-16 h-16 rounded-full backdrop-blur-md border border-indigo-400/50 flex items-center justify-center text-white font-black text-xl shadow-[0_0_15px_rgba(99,102,241,0.5)] select-none">
-                 A
+              <button *ngFor="let action of getActionBindings(); let i = index"
+                (touchstart)="simulateKey(action.keys[0], action.keys[1] || action.keys[0], true, $event)"
+                (touchend)="simulateKey(action.keys[0], action.keys[1] || action.keys[0], false, $event)"
+                (touchcancel)="simulateKey(action.keys[0], action.keys[1] || action.keys[0], false, $event)"
+                class="w-14 h-14 rounded-full backdrop-blur-md border flex items-center justify-center text-white font-black text-sm select-none"
+                [ngClass]="getActionButtonClass(action.style)"
+                [style.marginBottom]="i % 2 === 0 ? '1.5rem' : '0'">
+                 {{ action.label }}
               </button>
            </div>
         </div>
@@ -588,5 +591,35 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+
+  getMovementBindings() {
+    const movement = this.game?.mobileControls?.movement;
+    return movement ?? {
+      up: ['ArrowUp', 'w'],
+      down: ['ArrowDown', 's'],
+      left: ['ArrowLeft', 'a'],
+      right: ['ArrowRight', 'd']
+    };
+  }
+
+  getActionBindings() {
+    return this.game?.mobileControls?.actions ?? [
+      { label: 'B', keys: ['Enter', 'Enter'] as [string, string], style: 'success' as const },
+      { label: 'A', keys: [' ', ' '] as [string, string], style: 'primary' as const }
+    ];
+  }
+
+  getActionButtonClass(style: 'primary' | 'secondary' | 'danger' | 'success' | undefined) {
+    switch (style) {
+      case 'danger':
+        return 'bg-rose-500/50 active:bg-rose-500 border-rose-400/50 shadow-[0_0_15px_rgba(244,63,94,0.5)]';
+      case 'success':
+        return 'bg-emerald-500/50 active:bg-emerald-500 border-emerald-400/50 shadow-[0_0_15px_rgba(16,185,129,0.5)]';
+      case 'secondary':
+        return 'bg-slate-500/50 active:bg-slate-500 border-slate-300/50 shadow-[0_0_15px_rgba(148,163,184,0.45)]';
+      default:
+        return 'bg-indigo-500/50 active:bg-indigo-500 border-indigo-400/50 shadow-[0_0_15px_rgba(99,102,241,0.5)]';
+    }
   }
 }

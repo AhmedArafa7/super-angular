@@ -12,6 +12,21 @@ export interface ArcadeGame {
   status: 'available' | 'coming_soon' | 'beta';
   localModeType?: 'standard' | 'ai' | 'pass_and_play'; // Determines the first button behavior/UI
   hasCustomMenu?: boolean; // If true, game handles its own initial menu before mode selection
+  // General mobile-control contract for all iframe games.
+  // If omitted, arena falls back to a safe default profile.
+  mobileControls?: {
+    movement?: {
+      up: [string, string?];
+      down: [string, string?];
+      left: [string, string?];
+      right: [string, string?];
+    };
+    actions?: Array<{
+      label: string;
+      keys: [string, string?];
+      style?: 'primary' | 'secondary' | 'danger' | 'success';
+    }>;
+  };
 }
 
 @Injectable({
@@ -314,7 +329,18 @@ export class ArcadeService {
       genre: 'Action',
       platforms: ['browser', 'android', 'pc'],
       localUrl: '/games/bomb-arena/index.html',
-      status: 'available'
+      status: 'available',
+      mobileControls: {
+        movement: {
+          up: ['ArrowUp', 'w'],
+          down: ['ArrowDown', 's'],
+          left: ['ArrowLeft', 'a'],
+          right: ['ArrowRight', 'd']
+        },
+        actions: [
+          { label: 'BOMB', keys: [' ', ' '], style: 'danger' }
+        ]
+      }
     },
     {
       id: 'funny-answers',
