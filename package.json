@@ -6,7 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "fix-js": "node -e \"const fs = require('fs'); let c = fs.readFileSync('public/games/three-monkeys/game.js', 'utf8'); c = c.replace(/\\u283c/g, '\\\\\\\\u283c').replace(/\\u2801/g, '\\\\\\\\u2801').replace(/\\u2803/g, '\\\\\\\\u2803').replace(/\\u2809/g, '\\\\\\\\u2809').replace(/\\u2819/g, '\\\\\\\\u2819').replace(/\\u2811/g, '\\\\\\\\u2811').replace(/\\u280b/g, '\\\\\\\\u280b').replace(/\\u281b/g, '\\\\\\\\u281b').replace(/\\u2813/g, '\\\\\\\\u2813').replace(/\\u280a/g, '\\\\\\\\u280a').replace(/\\u281a/g, '\\\\\\\\u281a'); fs.writeFileSync('public/games/three-monkeys/game.js', c, 'utf8');\""
   },
   "private": true,
   "packageManager": "npm@11.12.1",

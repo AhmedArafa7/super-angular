@@ -20,8 +20,10 @@
     
     <div id="setup">
         <h1>BOMB ARENA</h1>
-        <p id="players-count" style="font-size: 20px;">Players: 1/4</p>
-        <button id="start-btn" class="btn" style="display: none;" onclick="startGame()">START GAME</button>
+        <p id="players-count" style="font-size: 20px;">Players: 1/8</p>
+        <p id="host-badge" style="font-size: 14px; color: #fca5a5; margin: 6px 0 0 0;">You are a guest</p>
+        <div id="players-list" style="margin-top: 14px; width: min(90vw, 360px); max-height: 200px; overflow: auto; text-align: left; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 10px;"></div>
+        <button id="start-btn" class="btn" style="display: none;" onclick="startGame()">START (2+ PLAYERS)</button>
     </div>
 
     <canvas id="gameCanvas" width="800" height="600"></canvas>
@@ -38,15 +40,19 @@
         
         let state = {
             status: 'waiting',
-            players: {}, // { id: {x, y, color, alive} }
+            hostId: null,
+            players: {}, // { id: {x, y, color, alive, name} }
             bombs: [], // {x, y, timer, owner}
             explosions: [] // {x, y, timer}
         };
 
         const colors = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#ec4899'];
         let myId = 'p_' + Math.floor(Math.random() * 1000);
+        const myName = (localStorage.getItem('arcade_player_name') || `Player-${myId.slice(-3)}`).slice(0, 24);
         let isHost = false;
-        let myColor = colors[Math.floor(Math.random() * colors.length)];
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('mode');
+        const role = urlParams.get('role');
 
         // Keys
         const keys = {};
@@ -60,6 +66,16 @@
 
             if (data.type === 'SYNC_STATE' && !isHost) { // Host is authority
                 state = data.state;
+                if (!state.players[myId]) {
+                    state.players[myId] = {
+                        x: Math.random() * 700 + 50,
+                        y: Math.random() * 500 + 50,
+                        color: colors[Object.keys(state.players).length % colors.length],
+                        alive: true,
+                        name: myName
+                    };
+                }
+                updateSetupUI();
                 if(state.status === 'playing') document.getElementById('setup').style.display = 'none';
             } else if (data.type === 'PLAYER_JOINED' && isHost) {
                 if (!state.players[data.playerId]) {
@@ -67,7 +83,8 @@
                         x: Math.random() * 700 + 50,
                         y: Math.random() * 500 + 50,
                         color: colors[Object.keys(state.players).length % colors.length],
-                        alive: true
+                        alive: true,
+                        name: data.playerName || `Player-${data.playerId.slice(-3)}`
                     };
                     updateSetupUI();
                 }
@@ -83,25 +100,69 @@
         });
 
         setTimeout(() => {
-            window.parent.postMessage({ type: 'PLAYER_JOINED', playerId: myId }, '*');
+            window.parent.postMessage({ type: 'PLAYER_JOINED', playerId: myId, playerName: myName }, '*');
         }, 500);
 
-        // Local test mode
-        if (new URLSearchParams(window.location.search).get('mode') === 'local') {
+        function ensureSelfPlayer() {
+            if (!state.players[myId]) {
+                state.players[myId] = {
+                    x: Math.random() * 700 + 50,
+                    y: Math.random() * 500 + 50,
+                    color: colors[Object.keys(state.players).length % colors.length],
+                    alive: true,
+                    name: myName
+                };
+            }
+        }
+
+        // Initialize role
+        if (mode === 'local') {
             isHost = true;
-            state.players[myId] = { x: 100, y: 100, color: colors[0], alive: true };
+            state.hostId = myId;
+            ensureSelfPlayer();
             updateSetupUI();
+        } else if (mode === 'private') {
+            isHost = role === 'host';
+            if (isHost) state.hostId = myId;
+            ensureSelfPlayer();
+            updateSetupUI();
+            if (isHost) broadcastState();
         }
 
         function updateSetupUI() {
-            if(!isHost) return;
             const count = Object.keys(state.players).length;
-            document.getElementById('players-count').innerText = `Players: ${count}`;
-            if(count >= 1) document.getElementById('start-btn').style.display = 'block'; // Allow 1 for testing
+            const hostBadge = document.getElementById('host-badge');
+            const startBtn = document.getElementById('start-btn');
+            const playersList = document.getElementById('players-list');
+            document.getElementById('players-count').innerText = `Players: ${count}/8`;
+            hostBadge.textContent = isHost ? 'You are the host' : 'Waiting for host to start';
+
+            const escapeHtml = (value) => String(value)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+
+            playersList.innerHTML = Object.entries(state.players).map(([pid, player], index) => {
+                const marker = pid === myId ? ' (You)' : '';
+                const hostTag = pid === state.hostId ? ' 👑' : '';
+                const safeName = escapeHtml(player.name || `Player-${pid.slice(-3)}`);
+                return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.08);">
+                    <span style="font-weight:600;">${safeName}${marker}${hostTag}</span>
+                    <span style="font-size:12px;opacity:0.8;">${player.alive ? 'Ready' : 'Out'}</span>
+                </div>`;
+            }).join('') || '<div style="opacity:.7;">No players yet...</div>';
+
+            startBtn.style.display = isHost && count >= 2 ? 'block' : 'none';
         }
 
         function startGame() {
             if(!isHost) return;
+            if (Object.keys(state.players).length < 2) {
+                showToast('Need at least 2 players');
+                return;
+            }
             state.status = 'playing';
             document.getElementById('setup').style.display = 'none';
             broadcastState();
@@ -191,6 +252,10 @@
 
                     broadcastState(); // Sync 60fps (in production use lower tick rate)
                 }
+            }
+
+            if (state.status === 'waiting') {
+                updateSetupUI();
             }
 
             // Draw

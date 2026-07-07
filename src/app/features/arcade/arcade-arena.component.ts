@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, HostListener, ElementRef, ViewChild, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { GlobalStateService } from '../../core/services/global-state.service';
@@ -11,7 +12,7 @@ import { ArcadeAudioService } from '../../core/services/arcade-audio.service';
 @Component({
   selector: 'app-arcade-arena',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div #container class="fixed inset-0 z-[60] bg-black flex flex-col" dir="rtl">
       <!-- Immersive Header -->
@@ -75,6 +76,9 @@ import { ArcadeAudioService } from '../../core/services/arcade-audio.service';
                      </span>
                   </button>
                </div>
+               <button (click)="openJoinRoomModal()" class="w-full h-11 rounded-2xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 font-bold tracking-wide hover:bg-emerald-600/30 transition-colors">
+                 JOIN BY CODE
+               </button>
 
                <!-- Local Play Button -->
                <div class="bg-[#1a2b54] rounded-full p-2.5 shadow-[inset_0_10px_10px_rgba(0,0,0,0.6)]">
@@ -144,8 +148,33 @@ import { ArcadeAudioService } from '../../core/services/arcade-audio.service';
          </div>
       </div>
 
+      <!-- Join Room Modal -->
+      <div *ngIf="showJoinRoomModal" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in">
+         <div class="bg-slate-900 border border-white/10 rounded-3xl p-8 w-full max-w-sm text-center shadow-2xl animate-in zoom-in-95">
+            <h3 class="text-2xl font-black text-white mb-2">انضم لغرفة</h3>
+            <p class="text-sm text-slate-400 mb-6">اكتب كود الغرفة المرسل من صاحب الجلسة</p>
+
+            <input
+              type="text"
+              [(ngModel)]="joinRoomCode"
+              maxlength="12"
+              placeholder="مثال: 6REN7S"
+              class="w-full bg-black/50 border border-white/10 rounded-2xl px-4 py-3 text-center text-emerald-400 font-mono font-black tracking-[0.15em] uppercase outline-none focus:border-emerald-500/50 mb-4"
+            />
+
+            <div class="flex gap-3">
+               <button (click)="showJoinRoomModal = false; showModeOverlay = true" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-3 rounded-xl transition-colors">
+                  رجوع
+               </button>
+               <button (click)="joinRoomByCode()" [disabled]="joiningRoom || !joinRoomCode.trim()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black py-3 rounded-xl transition-colors">
+                  {{ joiningRoom ? 'جارٍ الانضمام...' : 'انضم الآن' }}
+               </button>
+            </div>
+         </div>
+      </div>
+
       <!-- Game Stage -->
-      <div *ngIf="selectedMode && !showPrivateRoomModal" class="flex-1 relative bg-black overflow-hidden flex items-center justify-center animate-in fade-in duration-1000">
+      <div *ngIf="selectedMode && !showPrivateRoomModal && !showJoinRoomModal" class="flex-1 relative bg-black overflow-hidden flex items-center justify-center animate-in fade-in duration-1000">
         <div *ngIf="isLoading" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-950">
            <div class="size-20 bg-indigo-500/10 rounded-full flex items-center justify-center mb-6 border border-indigo-500/20 animate-pulse">
               <svg xmlns="http://www.w3.org/2000/svg" class="size-10 text-indigo-500 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
@@ -231,7 +260,11 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
   selectedMode: 'local' | 'private' | 'pro' | 'custom' | null = null;
   showModeOverlay = true;
   showPrivateRoomModal = false;
+  showJoinRoomModal = false;
   generatedRoomCode = '';
+  joinRoomCode = '';
+  joiningRoom = false;
+  privateRoomRole: 'host' | 'guest' | null = null;
   showGamepad = false;
 
   private arcadeAudio = inject(ArcadeAudioService);
@@ -300,9 +333,13 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
     this.route.queryParamMap.subscribe(params => {
       const room = params.get('room');
       if (room) {
+        this.generatedRoomCode = room.trim().toUpperCase();
+        this.privateRoomRole = 'guest';
         this.selectedMode = 'private';
         this.showModeOverlay = false;
-        this.multiplayer.joinRoom(room);
+        this.showPrivateRoomModal = false;
+        this.showJoinRoomModal = false;
+        this.multiplayer.joinRoom(this.generatedRoomCode);
       }
     });
 
@@ -324,6 +361,7 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
     this.showModeOverlay = false;
     
     if (mode === 'private') {
+      this.privateRoomRole = 'host';
       this.generatedRoomCode = 'جاري...';
       this.showPrivateRoomModal = true;
       try {
@@ -386,6 +424,27 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
     });
   }
 
+  openJoinRoomModal() {
+    this.showModeOverlay = false;
+    this.showPrivateRoomModal = false;
+    this.showJoinRoomModal = true;
+    this.joinRoomCode = '';
+    this.joiningRoom = false;
+  }
+
+  joinRoomByCode() {
+    const code = this.joinRoomCode.trim().toUpperCase();
+    if (!code) return;
+
+    this.joiningRoom = true;
+    this.privateRoomRole = 'guest';
+    this.generatedRoomCode = code;
+    this.selectedMode = 'private';
+    this.showJoinRoomModal = false;
+    this.showModeOverlay = false;
+    this.multiplayer.joinRoom(code);
+  }
+
   launchGame() {
     this.showPrivateRoomModal = false;
     this.isLoading = true;
@@ -396,6 +455,9 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
       url += (url.includes('?') ? '&' : '?') + 'mode=' + this.selectedMode;
       if (this.selectedMode === 'private') {
          url += '&room=' + this.generatedRoomCode;
+         if (this.privateRoomRole) {
+           url += '&role=' + this.privateRoomRole;
+         }
       }
       this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
     }
