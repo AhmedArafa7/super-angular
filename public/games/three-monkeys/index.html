@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Three Monkeys - القردة الثلاثة</title>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&family=Fredoka+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=8">
     <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
 </head>
 <body>
@@ -204,13 +204,26 @@
             </div>
         </div>
 
-        <!-- Game Over Screen -->
-        <div id="game-over-screen" class="screen">
-            <h1 id="end-title" class="end-title">فشلت المهمة ❌</h1>
-            <p id="end-subtitle" style="font-size: 1.5rem; margin-bottom: 30px;">انفجرت القنبلة أو نفد الوقت.</p>
-            <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
-                <button id="replay-btn" class="btn btn-primary" style="font-size: 1.3rem; padding: 15px 40px;">إعادة اللعب</button>
-                <button id="lobby-btn" class="btn btn-secondary" style="font-size: 1.3rem; padding: 15px 40px; background: #6b7280;">تغيير الأدوار</button>
+        <!-- Game Over / Report Screen -->
+        <div id="game-over-screen" class="screen report-screen">
+            <div class="report-paper">
+                <div class="report-paper-holes" aria-hidden="true">
+                    <span></span><span></span><span></span><span></span>
+                </div>
+                <div class="report-paper-inner">
+                    <div class="report-monkey-sketch" aria-hidden="true">🙈</div>
+                    <h2 class="report-heading">REPORT</h2>
+                    <div class="report-stats">
+                        <div class="report-stat-row"><span>LEVEL</span><strong id="report-level">1</strong></div>
+                        <div class="report-stat-row"><span>TIME</span><strong id="report-time">0:00</strong></div>
+                        <div class="report-stat-row"><span>MISTAKE</span><strong id="report-mistakes">0</strong></div>
+                    </div>
+                    <div id="report-grade" class="report-grade win">A+</div>
+                </div>
+            </div>
+            <div class="report-actions">
+                <button id="replay-btn" class="report-replay-btn">PLAY AGAIN</button>
+                <button id="lobby-btn" class="report-lobby-btn">RETURN TO LOBBY 👆</button>
             </div>
         </div>
 
@@ -393,7 +406,7 @@
         user-select: none;
     }
     </style>
-    <script src="game.js?v=9"></script>
+    <script src="game.js?v=13"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         // Options Data

@@ -8,7 +8,7 @@ function showScreen(id) {
 // Variables
 let myPeer = null;
 let myId = null;
-let myName = localStorage.getItem('arcade_player_name') || 'لاعب الأركيد';
+let myName = localStorage.getItem('arcade_player_name') || '???? ???????';
 
 window.addEventListener('DOMContentLoaded', () => {
     const nameDisplay = $('player-name-text');
@@ -31,118 +31,66 @@ let myStream = null;
 showScreen('lobby-screen');
 
 function toBraille(num) {
+    // Unicode braille digits (a-j mapping for 1-0)
     const brailleDigits = {
-        '1': '⠁',
-        '2': '⠃',
-        '3': '⠉',
-        '4': '⠙',
-        '5': '⠑',
-        '6': '⠋',
-        '7': '⠛',
-        '8': '⠓',
-        '9': '⠊',
-        '0': '⠚'
+        '1': '\u2801',
+        '2': '\u2803',
+        '3': '\u2809',
+        '4': '\u2819',
+        '5': '\u2811',
+        '6': '\u281b',
+        '7': '\u2813',
+        '8': '\u2817',
+        '9': '\u281a',
+        '0': '\u281d'
     };
     let str = String(num);
-    let brailleSt    for(let char of str) {
-        if(brailleDigits[char]) {
+    let brailleStr = '\u283c'; // Braille number sign prefix
+    for (let char of str) {
+        if (brailleDigits[char]) {
             brailleStr += brailleDigits[char];
         }
     }
     return brailleStr;
 }
 
-const manuals = [
-    // Ruleset 1 (Standard)
-    `<h4>الوحدة 1: الأسلاك ✂️</h4>
-    <ul>
-        <li>- إذا كان هناك 3 أسلاك: إذا لم يكن هناك سلك أحمر، اقطع الثاني. وإلا اقطع الأخير.</li>
-        <li>- إذا كان هناك 4 أسلاك: إذا كان الأول أصفر، اقطع الأول. وإلا اقطع الثالث.</li>
-        <li>- إذا كان هناك 5 أسلاك: إذا كان الأخير أسود، اقطع الرابع. وإلا اقطع الثاني.</li>
-    </ul>
-    <h4>الوحدة 2: الأرقام 🔢</h4>
-    <ul>
-        <li>- إذا كان الرقم زوجياً، اضغط زر "أصغر من (<)".</li>
-        <li>- إذا كان الرقم فردياً، اضغط زر "أكبر من (>)".</li>
-    </ul>
-    <h4>الوحدة 3: لوحة الألوان 🎨</h4>
-    <ul>
-        <li>- إذا كان الزر العلوي الأيمن أحمر، اضغط بترتيب: أحمر، أزرق، أصفر، أخضر.</li>
-        <li>- وإلا، اضغط بترتيب: أخضر، أصفر، أزرق، أحمر.</li>
-        <li><em>ملاحظة: اضغط فقط الأزرار الموجودة في اللوحة (تجاهل اللون غير الموجود).</em></li>
-    </ul>`,
-    
-    // Ruleset 2
-    `<h4>الوحدة 1: الأسلاك ✂️</h4>
-    <ul>
-        <li>- إذا كان هناك 3 أسلاك: إذا كان الأخير أخضر، اقطع الأول. وإلا اقطع الثاني.</li>
-        <li>- إذا كان هناك 4 أسلاك: إذا كان الأزرق موجوداً، اقطع الأخير. وإلا اقطع الثاني.</li>
-        <li>- إذا كان هناك 5 أسلاك: إذا كان الأول أحمر، اقطع الثالث. وإلا اقطع الأخير (الخامس).</li>
-    </ul>
-    <h4>الوحدة 2: الأرقام 🔢</h4>
-    <ul>
-        <li>- إذا كان الرقم يقبل القسمة على 3، اضغط زر "أصغر من (<)".</li>
-        <li>- وإلا، اضغط زر "أكبر من (>)".</li>
-    </ul>
-    <h4>الوحدة 3: لوحة الألوان 🎨</h4>
-    <ul>
-        <li>- إذا كان الزر السفلي الأيسر أخضر، اضغط بترتيب: أخضر، أزرق، أحمر، أصفر.</li>
-        <li>- وإلا، اضغط بترتيب: أصفر، أحمر، أزرق، أخضر.</li>
-        <li><em>ملاحظة: اضغط فقط الأزرار الموجودة في اللوحة.</em></li>
-    </ul>`,
-    
-    // Ruleset 3
-    `<h4>الوحدة 1: الأسلاك ✂️</h4>
-    <ul>
-        <li>- إذا كان هناك 3 أسلاك: إذا كان الأول أزرق، اقطع الأخير. وإلا اقطع الأول.</li>
-        <li>- إذا كان هناك 4 أسلاك: إذا لم يكن هناك سلك أصفر، اقطع الثالث. وإلا اقطع الرابع.</li>
-        <li>- إذا كان هناك 5 أسلاك: إذا كان الأوسط (الثالث) أخضر، اقطع الثاني. وإلا اقطع الأول.</li>
-    </ul>
-    <h4>الوحدة 2: الأرقام 🔢</h4>
-    <ul>
-        <li>- إذا كان الرقم أكبر من 50، اضغط زر "أصغر من (<)".</li>
-        <li>- وإلا، اضغط زر "أكبر من (>)".</li>
-    </ul>
-    <h4>الوحدة 3: لوحة الألوان 🎨</h4>
-    <ul>
-        <li>- إذا كان الزر العلوي الأيسر أصفر، اضغط بترتيب: أصفر، أخضر، أحمر، أزرق.</li>
-        <li>- وإلا، اضغط بترتيب: أزرق، أحمر، أخضر، أصفر.</li>
-        <li><em>ملاحظة: اضغط فقط الأزرار الموجودة في اللوحة.</em></li>
-    </ul>`
-];�وحدة 3: لوحة الألوان 🎨</h4>
-    <ul>
-        <li>- إذا كان الزر العلوي الأيسر أصفر، اضغط بترتيب: أصفر، أخضر، أحمر، أزرق.</li>
-        <li>- وإلا، اضغط بترتيب: أزرق، أحمر، أخضر، أصفر.</li>
-        <li><em>ملاحظة: اضغط فقط الأزرار الموجودة في اللوحة.</em></li>
-    </ul>`
-];موجودة في اللوحة.</em></li>
-    </ul>`,
-    
-    // Ruleset 3
-    `<h4>الوحدة 1: الأسلاك ✂️</h4>
-    <ul>
-        <li>- إذا كان هناك 3 أسلاك: إذا كان الأول أزرق، اقطع الأخير. وإلا اقطع الأول.</li>
-        <li>- إذا كان هناك 4 أسلاك: إذا لم يكن هناك سلك أصفر، اقطع الثالث. وإلا اقطع الرابع.</li>
-        <li>- إذا كان هناك 5 أسلاك: إذا كان الأوسط (الثالث) أخضر، اقطع الثاني. وإلا اقطع الأول.</li>
-    </ul>
-    <h4>الوحدة 2: الأرقام 🔢</h4>
-    <ul>
-        <li>- إذا كان الرقم أكبر من 50، اضغط زر "أصغر من (<)".</li>
-        <li>- وإلا، اضغط زر "أكبر من (>)".</li>
-    </ul>
-    <h4>الوحدة 3: لوحة الألوان 🎨</h4>
-    <ul>
-        <li>- إذا كان الزر الأصفر موجوداً، اضغط بترتيب: أصفر، أخضر، أحمر، أزرق.</li>
-        <li>- وإلا، اضغط بترتيب: أزرق، أحمر، أخضر، أصفر.</li>
-        <li><em>ملاحظة: اضغط فقط الأزرار الموجودة في اللوحة.</em></li>
-    </ul>`
-];
+const LIGHT_COLORS = ['red', 'yellow', 'green', 'blue'];
+const WIRE_COLORS = ['red', 'blue', 'yellow', 'green'];
+
+const CABLE_CUT_TABLE = {
+    4: { red: 'blue', yellow: 'red', green: 'yellow', blue: 'green' },
+    5: { red: 'green', yellow: 'blue', green: 'red', blue: 'yellow' }
+};
+
+const CALC_DIGIT_TABLE = {
+    even: { red: '5', yellow: '0', green: '9', blue: '1' },
+    odd: { red: '3', yellow: '7', green: '2', blue: '0' }
+};
+
+const DIRECTION_TABLE = {
+    '1': { red: 'up', yellow: 'down', green: 'left', blue: 'left' },
+    '4': { red: 'up', yellow: 'down', green: 'left', blue: 'left' },
+    '2': { red: 'right', yellow: 'left', green: 'up', blue: 'up' },
+    '7': { red: 'right', yellow: 'left', green: 'up', blue: 'up' },
+    '5': { red: 'left', yellow: 'right', green: 'down', blue: 'down' },
+    '3': { red: 'left', yellow: 'right', green: 'down', blue: 'down' },
+    '6': { red: 'up', yellow: 'right', green: 'down', blue: 'left' },
+    '9': { red: 'up', yellow: 'right', green: 'down', blue: 'left' }
+};
+
+function pickLightColor() {
+    return LIGHT_COLORS[Math.floor(Math.random() * LIGHT_COLORS.length)];
+}
 
 function updateManualUI() {
     const el = $('manual-content');
-    if (el && typeof gameState.rulesetIndex !== 'undefined') {
-        el.innerHTML = manuals[gameState.rulesetIndex] || manuals[0];
-    }
+    if (!el) return;
+    el.innerHTML = `
+        <div class="manual-pages">
+            <img src="manual-cable.png" alt="Cable Module Manual" class="manual-page-img">
+            <img src="manual-modules.png" alt="Calculation and Direction Manual" class="manual-page-img">
+        </div>
+    `;
 }
 
 let gameState = {
@@ -152,9 +100,10 @@ let gameState = {
     strikes: 0,
     maxStrikes: 3,
     resultMsg: '',
+    loseReason: '',
     modules: [],
     recentGesture: '',
-    rulesetIndex: 0
+    missionLevel: 1
 };
 
 let timerInterval = null;
@@ -163,16 +112,16 @@ let audioElements = [];
 // --- Input Validation ---
 function validateName(name) {
     const trimmed = name.trim();
-    if (!trimmed) return { valid: false, error: 'الاسم مطلوب' };
-    if (trimmed.length > 20) return { valid: false, error: 'الاسم طويل جداً (20 حرف كحد أقصى)' };
-    if (!/^[\u0600-\u06FFa-zA-Z0-9\s_-]+$/.test(trimmed)) return { valid: false, error: 'الاسم يحتوي على رموز غير مسموحة' };
+    if (!trimmed) return { valid: false, error: '????? ?????' };
+    if (trimmed.length > 20) return { valid: false, error: '????? ???? ???? (20 ??? ??? ????)' };
+    if (!/^[\u0600-\u06FFa-zA-Z0-9\s_-]+$/.test(trimmed)) return { valid: false, error: '????? ????? ??? ???? ??? ??????' };
     return { valid: true, value: trimmed };
 }
 
 function validateRoomCode(code) {
     const trimmed = code.trim().toUpperCase();
-    if (!trimmed) return { valid: false, error: 'كود الغرفة مطلوب' };
-    if (!/^[A-Z0-9]{6}$/.test(trimmed)) return { valid: false, error: 'كود الغرفة يجب أن يكون 6 أحرف/أرقام' };
+    if (!trimmed) return { valid: false, error: '??? ?????? ?????' };
+    if (!/^[A-Z0-9]{6}$/.test(trimmed)) return { valid: false, error: '??? ?????? ??? ?? ???? 6 ????/?????' };
     return { valid: true, value: trimmed };
 }
 
@@ -201,7 +150,7 @@ $('host-btn').onclick = () => {
     clearError('join-error');
     isHost = true;
     $('host-btn').disabled = true;
-    $('host-btn').innerText = 'جاري الإنشاء...';
+    $('host-btn').innerText = '???? ???????...';
     
     const myRoomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
     
@@ -213,21 +162,21 @@ $('host-btn').onclick = () => {
     
     connectionTimeout = setTimeout(() => {
         if (!myId && isHost) {
-            alert('انتهت مهلة الاتصال. يمكنك إعادة المحاولة.');
+            alert('????? ???? ???????. ????? ????? ????????.');
             cleanup();
             showScreen('lobby-screen');
             $('host-btn').disabled = false;
-            $('host-btn').innerText = 'إنشاء غرفة (مضيف)';
+            $('host-btn').innerText = '????? ???? (????)';
         }
     }, CONNECTION_TIMEOUT);
     
     myPeer.on('disconnected', () => {
-        console.warn('تم فقدان الاتصال بالسيرفر. جاري محاولة إعادة الاتصال...');
+        console.warn('?? ????? ??????? ????????. ???? ?????? ????? ???????...');
         attemptReconnection();
     });
     
     myPeer.on('close', () => {
-        console.warn('تم إغلاق الاتصال.');
+        console.warn('?? ????? ???????.');
     });
     
     myPeer.on('error', (err) => {
@@ -236,8 +185,8 @@ $('host-btn').onclick = () => {
         cleanup();
         showScreen('lobby-screen');
         $('host-btn').disabled = false;
-        $('host-btn').innerText = 'إنشاء غرفة (مضيف)';
-        alert('حدث خطأ في الاتصال بالسيرفر: ' + err.message);
+        $('host-btn').innerText = '????? ???? (????)';
+        alert('??? ??? ?? ??????? ????????: ' + err.message);
     });
     
     myPeer.on('open', id => {
@@ -285,7 +234,7 @@ $('host-btn').onclick = () => {
     clearError('join-error');
     
     $('join-btn').disabled = true;
-    $('join-btn').innerText = 'جاري الانضمام...';
+    $('join-btn').innerText = '???? ????????...';
     
     myPeer = new Peer();
     myPeer.on('open', id => {
@@ -302,7 +251,7 @@ $('host-btn').onclick = () => {
                 checkPhaseChange();
             }
         });
-        hostConn.on('error', () => alert('خطأ في الاتصال بالمضيف'));
+        hostConn.on('error', () => alert('??? ?? ??????? ???????'));
     });
     
     setupMediaCalls();
@@ -365,6 +314,8 @@ function handleClientData(peerId, data) {
     if (data.type === 'GO_TO_LOBBY') {
         if (isHost) {
             gameState.phase = 'roles';
+            gameState.resultMsg = '';
+            gameState.loseReason = '';
             gameState.players.forEach(p => p.role = '');
             broadcastState();
         }
@@ -379,7 +330,7 @@ function updateLobbyUI() {
     list.innerHTML = '';
     gameState.players.forEach(p => {
         const li = document.createElement('li');
-        li.innerText = `${p.name} ${p.id === myId ? '(أنت)' : ''}`;
+        li.innerText = `${p.name} ${p.id === myId ? '(???)' : ''}`;
         list.appendChild(li);
     });
     
@@ -394,20 +345,20 @@ function updateLobbyUI() {
             if (p) {
                 nameDiv.innerText = p.name;
                 card.classList.add('selected');
-                readyDiv.innerText = '✅ جاهز';
+                readyDiv.innerText = '? ????';
                 if (p.id === myId) {
-                    btn.innerText = 'إلغاء (CANCEL)';
+                    btn.innerText = '????? (CANCEL)';
                     btn.classList.add('my-role');
                     btn.disabled = false;
                 } else {
-                    btn.innerText = 'محجوز (TAKEN)';
+                    btn.innerText = '????? (TAKEN)';
                     btn.classList.remove('my-role');
                     btn.disabled = true;
                 }
             } else {
                 nameDiv.innerText = '--';
                 card.classList.remove('selected');
-                btn.innerText = 'اختيار';
+                btn.innerText = '??????';
                 btn.classList.remove('my-role');
                 btn.disabled = false;
             }
@@ -474,6 +425,8 @@ $('replay-btn').onclick = () => {
 $('lobby-btn').onclick = () => {
     if (isHost) {
         gameState.phase = 'roles';
+        gameState.resultMsg = '';
+        gameState.loseReason = '';
         gameState.players.forEach(p => p.role = '');
         broadcastState();
     } else {
@@ -492,23 +445,7 @@ function checkPhaseChange() {
         
         renderGameUI();
     } else if (gameState.phase === 'game-over') {
-        if (timerInterval) {
-            clearInterval(timerInterval);
-            timerInterval = null;
-        }
-        showScreen('game-over-screen');
-        if (gameState.resultMsg === 'win') {
-            $('end-title').innerText = 'تهانينا! 🎉';
-            $('end-title').className = 'end-title win';
-            $('end-subtitle').innerText = 'مبروك يمكنكم بدء المهمة التالية';
-            $('replay-btn').innerText = 'بدء المهمة التالية';
-        } else {
-            $('end-title').innerText = 'فشلت المهمة ❌';
-            $('end-title').className = 'end-title danger-text';
-            $('end-subtitle').innerText = 'انفجرت القنبلة أو نفد الوقت.';
-            $('replay-btn').innerText = 'إعادة اللعب';
-        }
-        if(isHost && parent) parent.postMessage({ type: 'ARCADE_GAME_OVER', winner: gameState.resultMsg === 'win' ? 'Victory' : 'Defeat', gameId: 'three-monkeys' }, '*');
+        showGameOverScreen();
     } else if (gameState.phase === 'lobby' || gameState.phase === 'roles') {
         showScreen('room-screen');
         updateLobbyUI();
@@ -528,7 +465,7 @@ async function startAudioNetworking() {
         callOthers();
     } catch(e) {
         console.error('Failed to access mic', e);
-        alert('حدث خطأ في الوصول للميكروفون. يرجى السماح به للعب.');
+        alert('??? ??? ?? ?????? ??????????. ???? ?????? ?? ????.');
     }
 }
 
@@ -564,98 +501,168 @@ function addAudioStream(stream) {
 }
 
 // --- Game Logic ---
+function formatElapsedTime(totalSeconds) {
+    const elapsed = Math.max(0, totalSeconds);
+    const m = Math.floor(elapsed / 60);
+    const s = elapsed % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function showGameOverScreen() {
+    if (gameState.phase !== 'game-over') return;
+
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+
+    showScreen('game-over-screen');
+
+    const reportLevel = $('report-level');
+    const reportTime = $('report-time');
+    const reportMistakes = $('report-mistakes');
+    const reportGrade = $('report-grade');
+    const replayBtn = $('replay-btn');
+    const lobbyBtn = $('lobby-btn');
+    const gameOverScreen = $('game-over-screen');
+
+    const elapsed = 300 - gameState.timeRemaining;
+    const isWin = gameState.resultMsg === 'win';
+
+    if (reportLevel) reportLevel.innerText = String(gameState.missionLevel || 1);
+    if (reportTime) reportTime.innerText = formatElapsedTime(elapsed);
+    if (reportMistakes) reportMistakes.innerText = String(gameState.strikes || 0);
+
+    if (reportGrade) {
+        reportGrade.innerText = isWin ? 'A+' : 'F';
+        reportGrade.className = isWin ? 'report-grade win' : 'report-grade fail';
+    }
+
+    if (gameOverScreen) {
+        gameOverScreen.classList.toggle('report-win', isWin);
+        gameOverScreen.classList.toggle('report-fail', !isWin);
+    }
+
+    if (replayBtn) {
+        replayBtn.style.display = 'inline-block';
+        replayBtn.innerText = isWin ? 'PLAY AGAIN' : 'TRY AGAIN';
+    }
+    if (lobbyBtn) {
+        lobbyBtn.style.display = 'inline-block';
+        lobbyBtn.innerText = 'RETURN TO LOBBY \uD83D\uDC46';
+    }
+
+    if (isHost && window.parent) {
+        window.parent.postMessage({
+            type: 'ARCADE_GAME_OVER',
+            winner: isWin ? 'Victory' : 'Defeat',
+            gameId: 'three-monkeys'
+        }, '*');
+    }
+}
+
 function generateBomb() {
     gameState.timeRemaining = 300;
     gameState.strikes = 0;
     gameState.resultMsg = '';
-    
-    // Choose a random ruleset (0, 1, or 2)
-    gameState.rulesetIndex = Math.floor(Math.random() * 3);
-    
-    // Module 1: Wires
-    const colors = ['red', 'blue', 'yellow', 'green', 'black'];
-    const numWires = Math.floor(Math.random() * 3) + 3; // 3 to 5
-    let wires = [];
-    for(let i=0; i<numWires; i++) wires.push(colors[Math.floor(Math.random() * colors.length)]);
-    
-    let wSol = 0;
-    if (gameState.rulesetIndex === 0) {
-        if (numWires === 3) {
-            if (!wires.includes('red')) wSol = 1; // second
-            else if (wires[2] === 'blue') wSol = 0; // first
-            else wSol = 2; // last
-        } else if (numWires === 4) {
-            if (wires[0] === 'yellow') wSol = 0;
-            else wSol = 2; // third
-        } else {
-            if (wires[4] === 'black') wSol = 3; // fourth
-            else wSol = 1; // second
-        }
-    } else if (gameState.rulesetIndex === 1) {
-        if (numWires === 3) {
-            wSol = (wires[2] === 'green') ? 0 : 1;
-        } else if (numWires === 4) {
-            wSol = wires.includes('blue') ? 3 : 1;
-        } else {
-            wSol = (wires[0] === 'red') ? 2 : 4;
-        }
-    } else { // Ruleset 2
-        if (numWires === 3) {
-            wSol = (wires[0] === 'blue') ? 2 : 0;
-        } else if (numWires === 4) {
-            wSol = !wires.includes('yellow') ? 2 : 3;
-        } else {
-            wSol = (wires[2] === 'green') ? 1 : 0;
-        }
+    gameState.loseReason = '';
+
+    // Module 1: Cable module (4 or 5 wires + indicator light)
+    const numCables = Math.random() < 0.5 ? 4 : 5;
+    const wires = [];
+    for (let i = 0; i < numCables; i++) {
+        wires.push(WIRE_COLORS[Math.floor(Math.random() * WIRE_COLORS.length)]);
     }
-    
-    // Module 2: Numbers
-    let number = Math.floor(Math.random() * 90) + 10;
-    let nSol = '';
-    if (gameState.rulesetIndex === 0) {
-        nSol = (number % 2 === 0) ? '<' : '>';
-    } else if (gameState.rulesetIndex === 1) {
-        nSol = (number % 3 === 0) ? '<' : '>';
+    const cableLight = pickLightColor();
+    const cutColor = CABLE_CUT_TABLE[numCables][cableLight];
+    let solutionIndex = wires.indexOf(cutColor);
+    if (solutionIndex === -1) {
+        wires[Math.floor(Math.random() * wires.length)] = cutColor;
+        solutionIndex = wires.indexOf(cutColor);
+    }
+
+    // Module 2: Calculation module (math result + light -> digit)
+    let a = Math.floor(Math.random() * 11) + 2;
+    let b = Math.floor(Math.random() * 11) + 2;
+    const ops = ['+', '-', '?'];
+    const op = ops[Math.floor(Math.random() * ops.length)];
+    let result;
+    if (op === '+') result = a + b;
+    else if (op === '-') {
+        if (a < b) [a, b] = [b, a];
+        result = a - b;
     } else {
-        nSol = (number > 50) ? '<' : '>';
+        result = a * b;
     }
-    
-    // Module 3: Keypad
-    let buttons = ['red', 'blue', 'yellow', 'green'];
-    let sequence = [];
-    if (gameState.rulesetIndex === 0) {
-        sequence = buttons.includes('red') ? ['red', 'blue', 'yellow', 'green'] : ['green', 'yellow', 'blue', 'red'];
-    } else if (gameState.rulesetIndex === 1) {
-        sequence = buttons.includes('green') ? ['green', 'blue', 'red', 'yellow'] : ['yellow', 'red', 'blue', 'green'];
-    } else {
-        sequence = buttons.includes('yellow') ? ['yellow', 'green', 'red', 'blue'] : ['blue', 'red', 'green', 'yellow'];
-    }
-    buttons.sort(() => 0.5 - Math.random()); // Shuffle for display only
-    
+    const calcLight = pickLightColor();
+    const parity = result % 2 === 0 ? 'even' : 'odd';
+    const solutionDigit = CALC_DIGIT_TABLE[parity][calcLight];
+
+    // Module 3: Direction module (braille digit + light -> arrow)
+    const brailleOptions = [1, 2, 3, 4, 5, 6, 7, 9];
+    const brailleDigit = brailleOptions[Math.floor(Math.random() * brailleOptions.length)];
+    const dirLight = pickLightColor();
+    const solutionDir = DIRECTION_TABLE[String(brailleDigit)][dirLight];
+
     gameState.modules = [
-        { type: 'wires', id: 0, wires: wires, cutIndex: -1, defused: false, solutionIndex: wSol },
-        { type: 'numbers', id: 1, number: number, pressed: null, defused: false, solutionBtn: nSol },
-        { type: 'keypad', id: 2, buttons: buttons, pressedSequence: [], defused: false, solutionSeq: sequence }
+        {
+            type: 'cables',
+            id: 0,
+            wires,
+            lightColor: cableLight,
+            cutIndex: -1,
+            defused: false,
+            solutionIndex
+        },
+        {
+            type: 'calculation',
+            id: 1,
+            expression: `${a} ${op} ${b}`,
+            result,
+            lightColor: calcLight,
+            pressed: null,
+            defused: false,
+            solutionDigit
+        },
+        {
+            type: 'direction',
+            id: 2,
+            brailleDigit,
+            lightColor: dirLight,
+            pressed: null,
+            defused: false,
+            solutionDir
+        }
     ];
-    
+
     startTimer();
 }
 
 function startTimer() {
+    if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
+        if (gameState.phase !== 'playing') return;
         gameState.timeRemaining--;
         if (gameState.timeRemaining <= 0) {
-            triggerGameOver('lose');
+            gameState.timeRemaining = 0;
+            triggerGameOver('lose', 'timeout');
+            return;
         }
-        broadcastState();
+        if (isHost) broadcastState();
     }, 1000);
 }
 
-function triggerGameOver(result) {
-    if (timerInterval) clearInterval(timerInterval);
+function triggerGameOver(result, reason = '') {
+    if (gameState.phase === 'game-over') return;
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
     gameState.phase = 'game-over';
     gameState.resultMsg = result;
-    broadcastState();
+    gameState.loseReason = result === 'lose' ? reason : '';
+    if (isHost) broadcastState();
+    showGameOverScreen();
 }
 
 function handleGameAction(peerId, action) {
@@ -682,8 +689,8 @@ function handleGameAction(peerId, action) {
     }
     
     if (action.type === 'CUT_WIRE') {
-        let mod = gameState.modules[0];
-        if (mod.defused) return;
+        let mod = gameState.modules.find(m => m.type === 'cables');
+        if (!mod || mod.defused) return;
         mod.cutIndex = action.index;
         if (action.index === mod.solutionIndex) {
             mod.defused = true;
@@ -693,35 +700,31 @@ function handleGameAction(peerId, action) {
         }
         broadcastState();
     }
-    
-    if (action.type === 'PRESS_NUM') {
-        let mod = gameState.modules[1];
-        if (mod.defused) return;
+
+    if (action.type === 'PRESS_DIGIT') {
+        let mod = gameState.modules.find(m => m.type === 'calculation');
+        if (!mod || mod.defused) return;
         mod.pressed = action.value;
-        if (action.value === mod.solutionBtn) {
+        if (String(action.value) === String(mod.solutionDigit)) {
             mod.defused = true;
             checkWin();
         } else {
             addStrike();
-            mod.pressed = null; // reset to try again
+            mod.pressed = null;
         }
         broadcastState();
     }
-    
-    if (action.type === 'PRESS_KEY') {
-        let mod = gameState.modules[2];
-        if (mod.defused) return;
-        
-        let expectedColor = mod.solutionSeq[mod.pressedSequence.length];
-        if (action.color === expectedColor) {
-            mod.pressedSequence.push(action.color);
-            if (mod.pressedSequence.length === mod.solutionSeq.length) {
-                mod.defused = true;
-                checkWin();
-            }
+
+    if (action.type === 'PRESS_DIR') {
+        let mod = gameState.modules.find(m => m.type === 'direction');
+        if (!mod || mod.defused) return;
+        mod.pressed = action.value;
+        if (action.value === mod.solutionDir) {
+            mod.defused = true;
+            checkWin();
         } else {
             addStrike();
-            mod.pressedSequence = []; // reset
+            mod.pressed = null;
         }
         broadcastState();
     }
@@ -730,7 +733,7 @@ function handleGameAction(peerId, action) {
 function addStrike() {
     gameState.strikes++;
     if (gameState.strikes >= gameState.maxStrikes) {
-        triggerGameOver('lose');
+        triggerGameOver('lose', 'strikes');
     }
 }
 
@@ -757,7 +760,7 @@ function renderGameUI() {
     $('timer-display').innerText = `${m}:${s}`;
     
     let str = '';
-    for(let i=0; i<gameState.strikes; i++) str += '❌';
+    for(let i=0; i<gameState.strikes; i++) str += '?';
     $('strikes-display').innerText = str;
     
     // Hide all views, show mine
@@ -901,7 +904,7 @@ function renderDeafBomb() {
         if (mod.defused) {
             modDiv.style.borderColor = '#10b981';
             let check = document.createElement('div');
-            check.innerText = '✅';
+            check.innerText = '?';
             check.style.position = 'absolute'; check.style.right = '5px'; check.style.top = '5px';
             modDiv.appendChild(check);
         }
@@ -918,9 +921,10 @@ function renderDeafBomb() {
         
         if (mod.type === 'numbers') {
             let numD = document.createElement('div');
-            numD.className = 'num-display';
+            numD.className = 'num-display braille-display';
             numD.innerText = toBraille(mod.number);
-            numD.style.fontSize = '3rem';
+            numD.setAttribute('aria-label', '??? ???? ??????');
+            numD.title = '??? ?????? ? ??? ???? ??????';
             modDiv.appendChild(numD);
             
             let btnC = document.createElement('div');
