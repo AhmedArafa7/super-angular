@@ -282,6 +282,7 @@ import { ArcadeAudioService } from '../../core/services/arcade-audio.service';
 export class ArcadeArenaComponent implements OnInit, OnDestroy {
   game: ArcadeGame | undefined;
   safeUrl: SafeResourceUrl | null = null;
+  gameVersion: string | null = null;
   isLoading = true;
   isFullscreen = false;
   isRotated = false;
@@ -362,6 +363,12 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
 
     this.route.queryParamMap.subscribe(params => {
       const room = params.get('room');
+      const version = params.get('v');
+      
+      if (version) {
+        this.gameVersion = version;
+      }
+      
       if (room) {
         this.generatedRoomCode = room.trim().toUpperCase();
         this.privateRoomRole = 'guest';
@@ -501,6 +508,12 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
     // Here we can append the mode to the localUrl if we want to pass it to the game iframe
     if (this.game && this.game.localUrl) {
       let url = this.game.localUrl;
+      
+      // Handle modified version for OpenTTD
+      if (this.game.id === 'openttd' && this.gameVersion === 'modified') {
+        url = url.replace('index.html', 'index_modified.html');
+      }
+
       url += (url.includes('?') ? '&' : '?') + 'mode=' + this.selectedMode;
       if (this.selectedMode === 'private') {
          url += '&room=' + this.generatedRoomCode;

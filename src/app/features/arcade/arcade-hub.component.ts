@@ -153,6 +153,48 @@ import { LucideAngularModule, UserPlus } from 'lucide-angular';
           <span *ngIf="game.status === 'coming_soon'" class="absolute top-4 right-4 bg-slate-800 text-white text-xs font-bold px-3 py-1 rounded-full border border-white/10">قريباً</span>
         </div>
       </div>
+
+      <!-- OpenTTD Selection Modal -->
+      <div *ngIf="showOpenTTDModal" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6 text-right" dir="rtl">
+        <div class="bg-slate-900 border border-white/10 rounded-3xl p-8 w-full max-w-2xl shadow-2xl relative overflow-hidden">
+           <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent pointer-events-none"></div>
+           <h3 class="text-3xl font-black text-white mb-2">اختر إصدار اللعبة 🚂</h3>
+           <p class="text-slate-400 mb-8">اختر بين الإصدار الأصلي الكلاسيكي، أو الإصدار المعدل الذي يحتوي على إضافات وتحسينات جديدة.</p>
+           
+           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+             <!-- Original Option -->
+             <div (click)="playOpenTTD('original')" class="group cursor-pointer bg-black/40 border border-slate-700 hover:border-slate-500 rounded-2xl p-6 transition-all hover:bg-slate-800">
+                <div class="flex items-center gap-4 mb-4">
+                  <div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center border border-slate-600">
+                     <span class="text-2xl">🏛️</span>
+                  </div>
+                  <h4 class="text-xl font-bold text-white group-hover:text-slate-300">الإصدار الأصلي</h4>
+                </div>
+                <p class="text-sm text-slate-400">لعبة Transport Tycoon Deluxe الكلاسيكية بدون أي تعديلات. استمتع بالتجربة الأصلية لإدارة شبكات النقل.</p>
+             </div>
+
+             <!-- Modified Option -->
+             <div (click)="playOpenTTD('modified')" class="group cursor-pointer bg-indigo-900/20 border border-indigo-500/30 hover:border-indigo-400 rounded-2xl p-6 transition-all hover:bg-indigo-900/40 relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500/20 blur-2xl rounded-full"></div>
+                <div class="flex items-center gap-4 mb-4">
+                  <div class="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                     <span class="text-2xl">🚀</span>
+                  </div>
+                  <h4 class="text-xl font-bold text-white">الإصدار المعدّل</h4>
+                </div>
+                <p class="text-sm text-indigo-200/70">
+                  <span class="block mb-1">✅ دعم أفضل للمس على الشاشات الصغيرة</span>
+                  <span class="block mb-1">✅ أزرار تحكم مخصصة للموبايل</span>
+                  <span class="block">✅ تعديلات في واجهة المستخدم لتناسب الهاتف</span>
+                </p>
+             </div>
+           </div>
+
+           <button (click)="showOpenTTDModal = false" class="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-xl transition-colors border border-white/10">
+             إلغاء
+           </button>
+        </div>
+      </div>
     </div>
   `
 })
@@ -167,6 +209,7 @@ export class ArcadeHubComponent implements OnInit {
   UserPlus = UserPlus;
   showAddFriend = false;
   showSubmitGameModal = false;
+  showOpenTTDModal = false;
   newFriendName = '';
   newGameUrl = '';
   newGameTitle = '';
@@ -221,7 +264,16 @@ export class ArcadeHubComponent implements OnInit {
   }
 
   playGame(id: string) {
-    this.router.navigate(['/arcade/arena', id]);
+    if (id === 'openttd') {
+      this.showOpenTTDModal = true;
+    } else {
+      this.router.navigate(['/arcade/arena', id]);
+    }
+  }
+
+  playOpenTTD(version: 'original' | 'modified') {
+    this.showOpenTTDModal = false;
+    this.router.navigate(['/arcade/arena', 'openttd'], { queryParams: { v: version } });
   }
 
   async acceptInvite(invite: any) {
