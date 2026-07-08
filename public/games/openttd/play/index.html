@@ -1,0 +1,1658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+      <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-31GTGZ1Y7T"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-31GTGZ1Y7T');
+</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OpenTTD Online</title>
+      
+  <!-- Primary SEO Meta Tags -->
+  <meta name="title" content="Play OpenTTD 15.3 - In Game" />
+  <meta name="description" content="Play the full version of OpenTTD 15.3 instantly in your browser. No installation or downloads needed. Import and export your save files, use Online Content, and enjoy the classic Transport Tycoon experience anywhere!" />
+  <meta name="keywords" content="OpenTTD online, play OpenTTD in browser, OpenTTD web version, Transport Tycoon online, OpenTTD no download, play OpenTTD free, open source tycoon game, OpenTTD HTML5, browser transport tycoon, play OpenTTD now" />
+  <meta name="author" content="OpenTTD Online" />
+  <meta name="robots" content="index, follow" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://openttdonline.com/" />
+  <meta property="og:title" content="Play OpenTTD 15.3 - In Game" />
+  <meta property="og:description" content="Play OpenTTD instantly in your browser! Import saves, access Online Content, and experience the full Transport Tycoon game without installing anything." />
+  <meta property="og:image" content="https://openttdonline.com/thumbnail.jpg" />
+  <meta property="og:site_name" content="OpenTTD Online" />
+      
+<link rel="canonical" href="https://openttdonline.com/" />
+
+<!-- CSP: allow OpenTTD endpoints (+ Cloudflare beacon if Pages injects it). -->
+<meta http-equiv="Content-Security-Policy"
+      content="
+        default-src 'self' data: blob:;
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'
+          https://static.cloudflareinsights.com
+          https://accounts.google.com
+          https://apis.google.com;
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data: blob: https://*.googleusercontent.com https://lh3.googleusercontent.com;
+        font-src 'self' data:;
+        object-src 'none';
+        worker-src 'self' blob:;
+        base-uri 'self';
+        frame-src
+          'self'
+          https://drive.google.com
+          https://docs.google.com
+          https://accounts.google.com;
+        connect-src
+          'self'
+          https://cdn.openttd.org
+          https://servers.openttd.org
+          https://bananas.openttd.org
+          wss://bananas-server.openttd.org
+          https://content.openttd.org
+          wss://content.openttd.org:3978
+          https://cloudflareinsights.com
+          https://www.googleapis.com;
+        upgrade-insecure-requests;
+      ">
+
+<link rel="icon" type="image/png" href="favicon.png">
+
+<style>
+  html,body{margin:0;padding:0;height:100%;width:100%;background:#1a1a1a;overflow:hidden}
+  #canvas{width:100%;height:100%;display:block;background:#1a1a1a;cursor:none;z-index:1;position:relative}
+
+  /* Overlay + loading */
+  #overlay{position:fixed;inset:0;display:flex;justify-content:center;align-items:center;transition:opacity .4s ease;pointer-events:none;z-index:2}
+  #box{max-width:720px;text-align:center;color:#eee;font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  #box h2{margin:.2rem 0 .4rem;font-weight:600;font-size:18px;color:#fff}
+  #logo{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);max-width:250px;opacity:0;z-index:2;transition:opacity .6s ease}
+
+  /* Toolbar (compact vertical) */
+  #toolbar{
+    position:fixed;
+    top:54px;left:10px;z-index:3;
+    background:rgba(0,0,0,.55);
+    border:1px solid #333;border-radius:8px;
+    padding:6px 8px;
+    backdrop-filter:blur(2px);
+    display:none;
+    flex-direction:column !important;
+    gap:4px !important;
+    width:160px !important;
+    min-width:160px !important;
+    box-sizing:border-box;
+  }
+  #toolbar button{
+    color:#eee;background:#222;border:1px solid #444;border-radius:6px;
+    padding:5px 8px;cursor:pointer;width:100%;text-align:left;
+    font-size:12.5px;line-height:1.2;transition:background .15s;
+  }
+  #toolbar button:hover{background:#2b2b2b}
+
+  /* Link under buttons */
+  #toolbar a {
+    color:#4fc3f7;text-decoration:none;text-align:center;
+    font-size:12.5px;padding:4px 0;margin-top:4px;
+    border-top:1px solid #333;
+  }
+  #toolbar a:hover { color:#81d4fa;text-decoration:underline; }
+
+  /* On-screen toggle button */
+  #toolbar-toggle{
+    position:fixed;top:10px;left:10px;z-index:4;
+    width:38px;height:38px;border-radius:9999px;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.65);color:#eee;border:1px solid #333;
+    user-select:none;backdrop-filter:blur(2px);
+    opacity:0;animation:fadeIn 0.4s ease forwards 0.3s;
+  }
+  @keyframes fadeIn { to { opacity:1; } }
+  #toolbar-toggle:hover{background:rgba(0,0,0,.78)}
+  #toolbar-toggle .icon{font-size:18px;line-height:1}
+  #toolbar-toggle[aria-pressed="true"]{outline:2px solid #4caf50;outline-offset:1px}
+
+  #filesystem{
+    display:none;position:fixed;bottom:10px;right:10px;
+    background:rgba(0,0,0,.6);padding:8px 10px;border-radius:8px;
+    color:#fff;font-size:13px;border:1px solid #333;z-index:3
+  }
+  .error{color:#ff6b6b}
+
+  /* Hide system cursor over game canvas; show pointer over UI controls */
+  html, body, canvas, #canvas { cursor: none !important; }
+  #toolbar,
+  #toolbar *,
+  #toolbar-toggle,
+  #toolbar-toggle *,
+  .open-music-btn,
+  .open-music-btn *,
+  .ttd-window,
+  .ttd-window *,
+  #footer-links,
+  #footer-links * {
+    cursor: pointer !important;
+  }
+
+  /* Open Button */
+  .open-music-btn {
+    position: fixed;
+    left: 12px;
+    bottom: 32px;
+    padding: 3px 10px;
+    font-size: 11px;
+    border: 1px solid #808080;
+    background: #c0c0c0;
+    box-shadow: inset 1px 1px #fff, inset -1px -1px #404040;
+    cursor: pointer;
+    z-index: 9999;
+  }
+
+  /* Window */
+  .ttd-window {
+    width: 520px;
+    background: #c0c0c0;
+    border: 1px solid #000;
+    box-shadow: 0 0 0 1px #404040;
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 80px;
+    left: 80px;
+    z-index: 9998;
+  }
+
+  .ttd-window-header {
+    background: #a0a0a0;
+    border-bottom: 1px solid #404040;
+    padding: 2px 6px;
+    display: flex;
+    justify-content: space-between;
+    user-select: none;
+    cursor: move;
+  }
+
+  .ttd-window-header .title {
+    margin: 0 auto;
+    color: #f0f0f0;
+    font-weight: bold;
+    font-size: 12px;
+    text-shadow: 1px 1px #404040;
+  }
+
+  .btn-close {
+    width: 14px;
+    height: 14px;
+    border: 1px solid #404040;
+    background: #c0c0c0;
+    box-shadow: inset 1px 1px #fff, inset -1px -1px #808080;
+    text-align: center;
+    font-size: 10px;
+    cursor: pointer;
+  }
+
+  .ttd-window-body {
+    padding: 4px;
+    background: #b0b0b0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+  }
+
+  /* Left side */
+  .current-track-box {
+    border: 1px solid #404040;
+    background: #c0c0c0;
+    padding: 4px;
+    box-shadow: inset 1px 1px #f8f8f8, inset -1px -1px #808080;
+  }
+
+  .button-row-top {
+    display: flex;
+    gap: 4px;
+  }
+
+  .transport-btn {
+    width: 20px;
+    height: 20px;
+    background: #c0c0c0;
+    border: 1px solid #404040;
+    box-shadow: inset 1px 1px #fff, inset -1px -1px #808080;
+    cursor: pointer;
+  }
+
+  .volume-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #e4e4e4;
+    border: 1px solid #808080;
+    padding: 2px 4px;
+  }
+
+  .volume-row input[type="range"] {
+    flex: 1;
+    accent-color: #008000;
+  }
+
+  .track-bar-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+  }
+
+  .track-bar {
+    height: 14px;
+    background: #000;
+    border: 1px solid #404040;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .track-bar-fill {
+    height: 10px;
+    background: #00ff00;
+    margin: 2px;
+  }
+
+  .track-bar-title {
+    position: absolute;
+    top: 0;
+    color: #b8ffb8;
+    font-size: 10px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .time-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+  }
+
+  .shuffle-row {
+    display: flex;
+    gap: 4px;
+  }
+
+  .ttd-btn {
+    padding: 1px 6px;
+    border: 1px solid #404040;
+    background: #c0c0c0;
+    box-shadow: inset 1px 1px #fff, inset -1px -1px #808080;
+    cursor: pointer;
+    font-size: 10px;
+  }
+
+  .ttd-btn.toggle-on {
+    background: #808080;
+    color: #fff;
+  }
+
+  /* Right side */
+  .playlist-box {
+    border: 1px solid #404040;
+    background: #c0c0c0;
+    padding: 4px;
+  }
+
+  .playlist-list {
+    height: 130px;
+    border: 1px solid #404040;
+    overflow-y: auto;
+    background: #b0b0b0;
+  }
+
+  .playlist-item {
+    padding: 1px 4px;
+    font-size: 10px;
+    line-height: 16px;
+    cursor: pointer;
+  }
+
+  .playlist-item.active {
+    background: #000;
+    color: #00ff00;
+  }
+
+  .playlist-footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+  }
+
+  /* File picker modal (for choosing which file to export) */
+  #filePickerModal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 20000;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(2px);
+    -webkit-tap-highlight-color: transparent;
+    pointer-events: auto;
+  }
+  #filePickerCard {
+    width: min(92vw, 420px);
+    background: rgba(20,20,20,0.92);
+    border: 1px solid #333;
+    border-radius: 12px;
+    box-shadow: 0 18px 48px rgba(0,0,0,0.6);
+    padding: 12px;
+    color: #eee;
+    font: 14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  }
+  #filePickerTitle {
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    font-size: 15px;
+  }
+  #filePickerHint {
+    margin: 0 0 10px 0;
+    color: #bbb;
+    font-size: 12.5px;
+  }
+  #filePickerSelect {
+    width: 100%;
+    padding: 10px 10px;
+    border-radius: 10px;
+    border: 1px solid #444;
+    background: #141414;
+    color: #eee;
+    outline: none;
+  }
+  #filePickerActions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  #filePickerActions button{
+    flex: 1;
+    padding: 10px 10px;
+    border-radius: 10px;
+    border: 1px solid #444;
+    background: #222;
+    color: #eee;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  #filePickerActions button:hover{ background:#2b2b2b; }
+
+  /* Show normal mouse cursor over file picker modal */
+  #filePickerModal,
+  #filePickerModal * {
+    cursor: default !important;
+  }
+
+  #filePickerModal select,
+  #filePickerModal button {
+    cursor: pointer !important;
+  }
+</style>
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9145511719373088"
+     crossorigin="anonymous"></script>
+      
+</head>
+
+<!-- Jazz Jukebox script, wrapped in DOMContentLoaded -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const playlist = [
+    { title: "tttheme2", src: "music/tttheme2.mp3" },
+    { title: "5432gone_redfarn", src: "music/5432gone_redfarn.mp3" },
+    { title: "be_sharp_bw_redfarn", src: "music/be_sharp_bw_redfarn.mp3" },
+    { title: "big_man_boogie_redfarn", src: "music/big_man_boogie_redfarn.mp3" },
+    { title: "boogi_marabi_redfarn", src: "music/boogi_marabi_redfarn.mp3" },
+    { title: "busy_schedule", src: "music/busy_schedule.mp3" },
+    { title: "careless_perc_redfarn", src: "music/careless_perc_redfarn.mp3" },
+    { title: "chemistry_lab", src: "music/chemistry_lab.mp3" },
+    { title: "chuggachugga", src: "music/chuggachugga.mp3" },
+    { title: "city_blues_redfarn", src: "music/city_blues_redfarn.mp3" },
+    { title: "coconut_run2", src: "music/coconut_run2.mp3" },
+    { title: "flying_scotsman", src: "music/flying_scotsman.mp3" },
+    { title: "harp_harmony", src: "music/harp_harmony.mp3" },
+    { title: "linns_basket", src: "music/linns_basket.mp3" },
+    { title: "midnight_snow_run", src: "music/midnight_snow_run.mp3" },
+    { title: "mighty_giant_run", src: "music/mighty_giant_run.mp3" },
+    { title: "modern_motion", src: "music/modern_motion.mp3" },
+    { title: "moo_redfarn", src: "music/moo_redfarn.mp3" },
+    { title: "mosey_along_redfarn", src: "music/mosey_along_redfarn.mp3" },
+    { title: "no_work_song_redfarn", src: "music/no_work_song_redfarn.mp3" },
+    { title: "relax_song", src: "music/relax_song.mp3" },
+    { title: "run_for_your_life", src: "music/run_for_your_life.mp3" },
+    { title: "say_what_redfarn", src: "music/say_what_redfarn.mp3" },
+    { title: "slow_neasy_redfarn", src: "music/slow_neasy_redfarn.mp3" },
+    { title: "the_fast_route", src: "music/the_fast_route.mp3" },
+    { title: "the_hobo_redfarn", src: "music/the_hobo_redfarn.mp3" },
+    { title: "train_filled_with_cash", src: "music/train_filled_with_cash.mp3" },
+    { title: "ttsong_iii_imuh3", src: "music/ttsong_iii_imuh3.mp3" },
+    { title: "ttsong_iv_imuh3", src: "music/ttsong_iv_imuh3.mp3" },
+    { title: "ultimate_run", src: "music/ultimate_run.mp3" },
+    { title: "wood_whistles", src: "music/wood_whistles.mp3" }
+  ];
+
+  const audio = document.getElementById("audioElement");
+  const ttdWindow = document.getElementById("ttdWindow");
+  const openMusicBtn = document.getElementById("openMusicBtn");
+
+  const playlistList = document.getElementById("playlistList");
+  const playlistCountLabel = document.getElementById("playlistCountLabel");
+  const playlistModeLabel = document.getElementById("playlistModeLabel");
+
+  const btnPlayPause = document.getElementById("btnPlayPause");
+  const btnPrev = document.getElementById("btnPrev");
+  const btnNext = document.getElementById("btnNext");
+  const btnShuffle = document.getElementById("btnShuffle");
+  const btnRepeat = document.getElementById("btnRepeat");
+
+  const currentTrackTitle = document.getElementById("currentTrackTitle");
+  const progressBarWrap = document.getElementById("progressBarWrap");
+  const progressBarFill = document.getElementById("progressBarFill");
+  const currentTimeLabel = document.getElementById("currentTimeLabel");
+  const durationLabel = document.getElementById("durationLabel");
+  const volumeSlider = document.getElementById("volumeSlider");
+
+  let currentIndex = 0;
+  let isShuffle = false;
+  let isRepeat = false;
+
+  /* First-click autoplay helper (browser gesture requirement) */
+  let firstPlayArmed = true;
+  document.addEventListener("click", function onFirstClick() {
+    if (!firstPlayArmed) return;
+    firstPlayArmed = false;
+    audio.play().catch(()=>{});
+    document.removeEventListener("click", onFirstClick, true);
+  }, { capture: true });
+
+  /* Load track */
+  function loadTrack(index, autoplay = false) {
+    currentIndex = index;
+    const track = playlist[index];
+    audio.src = track.src;
+    currentTrackTitle.textContent = track.title;
+    highlightActive();
+    if (autoplay) audio.play().catch(()=>{});
+  }
+
+  function highlightActive() {
+    document.querySelectorAll(".playlist-item").forEach(el => {
+      el.classList.toggle("active", parseInt(el.dataset.index) === currentIndex);
+    });
+  }
+
+  /* Build playlist */
+  function buildPlaylist() {
+    playlistList.innerHTML = "";
+    playlist.forEach((track, i) => {
+      const item = document.createElement("div");
+      item.className = "playlist-item";
+      item.textContent = track.title;
+      item.dataset.index = i;
+      item.onclick = () => loadTrack(i, true);
+      playlistList.appendChild(item);
+    });
+    playlistCountLabel.textContent = playlist.length + " tracks";
+  }
+
+  /* Next / Prev */
+  function nextTrack(auto=false) {
+    if (isRepeat && auto) {
+      loadTrack(currentIndex, true);
+      return;
+    }
+    if (isShuffle) {
+      let r;
+      do r = Math.floor(Math.random()*playlist.length);
+      while (r===currentIndex);
+      loadTrack(r, true);
+    } else {
+      currentIndex = (currentIndex+1)%playlist.length;
+      loadTrack(currentIndex, true);
+    }
+  }
+
+  function prevTrack() {
+    if (isShuffle) {
+      let r;
+      do r = Math.floor(Math.random()*playlist.length);
+      while (r===currentIndex);
+      loadTrack(r,true);
+    } else {
+      currentIndex = (currentIndex - 1 + playlist.length) % playlist.length;
+      loadTrack(currentIndex, true);
+    }
+  }
+
+  /* Wire up next / previous buttons (mouse + touch) */
+  function bindTransportButton(btn, handler) {
+    if (!btn) return;
+
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      handler();
+    });
+
+    btn.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      handler();
+    }, { passive: false });
+  }
+
+  bindTransportButton(btnNext, () => nextTrack(false));
+  bindTransportButton(btnPrev, prevTrack);
+
+  /* Play/pause button (with dynamic icon) */
+  function updatePlayPauseIcon() {
+    if (!audio) return;
+    btnPlayPause.innerHTML = audio.paused ? "&#9658;" : "&#10074;&#10074;";
+  }
+
+  btnPlayPause.onclick = () => {
+    if (audio.paused) {
+      audio.play().catch(()=>{});
+    } else {
+      audio.pause();
+    }
+  };
+
+  audio.addEventListener("play", updatePlayPauseIcon);
+  audio.addEventListener("pause", updatePlayPauseIcon);
+
+  /* Shuffle / Repeat */
+  btnShuffle.onclick = () => {
+    isShuffle = !isShuffle;
+    btnShuffle.classList.toggle("toggle-on", isShuffle);
+  };
+
+  btnRepeat.onclick = () => {
+    isRepeat = !isRepeat;
+    btnRepeat.classList.toggle("toggle-on", isRepeat);
+  };
+
+  /* Volume */
+  volumeSlider.oninput = () => audio.volume = volumeSlider.value;
+
+  /* Seek */
+  progressBarWrap.onclick = (e) => {
+    const rect = progressBarWrap.getBoundingClientRect();
+    const ratio = (e.clientX - rect.left) / rect.width;
+    if (!isNaN(audio.duration)) {
+      audio.currentTime = ratio * audio.duration;
+    }
+  };
+
+  /* Time update */
+  audio.ontimeupdate = () => {
+    currentTimeLabel.textContent = formatTime(audio.currentTime);
+    durationLabel.textContent = formatTime(audio.duration);
+    if (!isNaN(audio.duration) && audio.duration > 0) {
+      progressBarFill.style.width =
+        (audio.currentTime / audio.duration) * 100 + "%";
+    } else {
+      progressBarFill.style.width = "0%";
+    }
+  };
+
+  audio.onended = () => nextTrack(true);
+
+  function formatTime(s) {
+    if (isNaN(s)) return "0:00";
+    let m = Math.floor(s/60);
+    let sec = Math.floor(s%60).toString().padStart(2,"0");
+    return m+":"+sec;
+  }
+
+  /* Window drag */
+  const header = document.getElementById("ttdWindowHeader");
+  let drag = false, dx = 0, dy = 0;
+
+  header.onmousedown = (e) => {
+    drag = true;
+    dx = e.clientX - ttdWindow.offsetLeft;
+    dy = e.clientY - ttdWindow.offsetTop;
+  };
+  document.onmouseup = () => drag = false;
+  document.onmousemove = (e) => {
+    if (!drag) return;
+    ttdWindow.style.left = (e.clientX - dx) + "px";
+    ttdWindow.style.top = (e.clientY - dy) + "px";
+  };
+
+  /* Open / Close */
+  openMusicBtn.onclick = () => {
+    ttdWindow.style.display = "flex";
+    audio.play().catch(()=>{});
+  };
+
+  document.getElementById("btnClose").onclick = () =>
+    ttdWindow.style.display="none";
+
+  /* Init */
+  buildPlaylist();
+  loadTrack(0, false);
+  audio.volume = 0.6;
+  updatePlayPauseIcon();
+});
+</script>
+      
+<body>
+  <!-- Toggle -->
+  <button id="toolbar-toggle" type="button" aria-label="Toggle tools" aria-pressed="false" title="Tools">
+    <span class="icon">☰</span>
+  </button>
+
+  <!-- Toolbar -->
+  <div id="toolbar">
+    <button type="button" onclick="exportSave()">Export Save</button>
+    <button type="button" onclick="importSave()">Import Save</button>
+    <button type="button" onclick="exportScenario()">Export Scenario</button>
+    <button type="button" onclick="importScenario()">Import Scenario</button>
+    <button type="button" onclick="exportHeightmap()">Export Heightmap</button>
+    <button type="button" onclick="importHeightmap()">Import Heightmap</button>
+
+    <!-- Google Drive (added) -->
+    <button type="button" onclick="exportSaveToDrive()">Export Save to Drive</button>
+    <button type="button" onclick="importSaveFromDrive()">Import Save from Drive</button>
+    <button type="button" onclick="exportScenarioToDrive()">Export Scenario to Drive</button>
+    <button type="button" onclick="importScenarioFromDrive()">Import Scenario from Drive</button>
+    <button type="button" onclick="exportHeightmapToDrive()">Export Heightmap to Drive</button>
+    <button type="button" onclick="importHeightmapFromDrive()">Import Heightmap from Drive</button>
+
+    <a href="https://embed.openttdonline.com/" target="_blank" rel="noopener">Embed to page</a>
+  </div>
+
+  <canvas id="canvas" tabindex="-1"></canvas>
+
+  <div id="overlay">
+    <div id="box">
+      <h2 id="title">(0 / 42) Loading ...</h2>
+      <p id="message">Preparing game ...</p>
+    </div>
+  </div>
+
+  <img id="logo" src="overgrown.png" alt="Overgrown logo">
+  <div id="filesystem">Saving files…</div>
+
+  <div id="filePickerModal" role="dialog" aria-modal="true" aria-labelledby="filePickerTitle">
+    <div id="filePickerCard">
+      <div id="filePickerTitle">Choose a file</div>
+      <div id="filePickerHint">Select which file you want to export.</div>
+      <select id="filePickerSelect"></select>
+      <div id="filePickerActions">
+        <button type="button" id="filePickerCancel">Cancel</button>
+        <button type="button" id="filePickerConfirm">Export</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FULL SCRIPT (original logic + Drive additions appended) -->
+  <script>
+    const LIVE_ROOT  = '/home/web_user/.openttd';
+    const SAVE_DIR   = LIVE_ROOT + '/save/';
+    const SCEN_DIR   = LIVE_ROOT + '/scenario/';
+    const HEIGHT_DIR = LIVE_ROOT + '/scenario/heightmap/';
+
+    const IDB_ROOT   = '/idb';
+    const IDB_MIRROR = IDB_ROOT + LIVE_ROOT;
+
+    const BUILD_ID  = "15.3";
+    const BUILD_KEY = "openttd_build_id";
+
+    const toolbar   = document.getElementById('toolbar');
+    const toggleBtn = document.getElementById('toolbar-toggle');
+    const logo      = document.getElementById('logo');
+
+    const TOOLBAR_KEY = 'openttd_toolbar_visible';
+    function setToolbar(visible, {persist=true} = {}){
+      toolbar.style.display = visible ? 'flex' : 'none';
+      toggleBtn.setAttribute('aria-pressed', visible ? 'true' : 'false');
+      if (persist) { try{ localStorage.setItem(TOOLBAR_KEY, visible ? '1' : '0'); }catch(_){} }
+    }
+    toggleBtn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      setToolbar(toolbar.style.display !== 'flex');
+    });
+    try{ setToolbar(localStorage.getItem(TOOLBAR_KEY) === '1', {persist:false}); }catch(_){ setToolbar(false,{persist:false}); }
+
+    function clickOutsideHandler(e){
+      const isOutside = !toolbar.contains(e.target) && !toggleBtn.contains(e.target);
+      if (toolbar.style.display === 'flex' && isOutside) setToolbar(false);
+    }
+    document.addEventListener('mousedown', clickOutsideHandler);
+    document.addEventListener('touchstart', clickOutsideHandler, {passive:true});
+    document.addEventListener('keydown', (e)=>{
+      if (e.key === 'Escape' && toolbar.style.display === 'flex') setToolbar(false);
+    });
+
+    function showGameUI(){
+      const ov=document.getElementById('overlay');
+      ov.style.opacity=0;
+      setTimeout(()=>{ov.style.display='none';},400);
+      logo.style.opacity=0;
+      setTimeout(()=>logo.style.display='none',600);
+    }
+    function showOverlay(title,msg){
+      const ov=document.getElementById('overlay');
+      ov.style.display='flex'; ov.style.opacity=1;
+      if(title)document.getElementById('title').textContent=title;
+      if(msg)document.getElementById('message').innerHTML=msg;
+      logo.style.opacity=1;
+    }
+
+    let __idbReady = false;
+
+    function mkdirp(path){
+      const parts = path.replace(/\/+$/,'').split('/').filter(Boolean);
+      let cur=''; for(const p of parts){ cur+='/'+p; try{ FS.mkdir(cur); }catch(_){ } }
+    }
+    function exists(path){
+      try{ FS.stat(path); return true; }catch(_){ return false; }
+    }
+    function readdirSafe(dir){
+      try { return FS.readdir(dir).filter(f=>f!=='.'&&f!=='..'); } catch(_) { return []; }
+    }
+    function copyFile(src, dst){
+      const data = FS.readFile(src);
+      mkdirp(dst.substring(0, dst.lastIndexOf('/')));
+      FS.writeFile(dst, data);
+    }
+    function copyTree(srcDir, dstDir){
+      mkdirp(dstDir);
+      for(const name of readdirSafe(srcDir)){
+        const s = srcDir + '/' + name;
+        const d = dstDir + '/' + name;
+        const st = FS.stat(s);
+        if (st.mode && (st.mode & 0x4000)) {
+          copyTree(s, d);
+        } else {
+          copyFile(s, d);
+        }
+      }
+    }
+
+    function ensureIDBMounted() {
+      return new Promise((resolve, reject) => {
+        try {
+
+          const prev = (() => { try { return localStorage.getItem(BUILD_KEY); } catch(_) { return null; } })();
+          const changed = prev && prev !== BUILD_ID;
+
+          if (changed) {
+            try {
+              indexedDB.databases?.().then(dbs => dbs.forEach(db => indexedDB.deleteDatabase(db.name)));
+            } catch(_) {}
+            try { localStorage.setItem(BUILD_KEY, BUILD_ID); } catch(_) {}
+          }
+          if (!prev) { try { localStorage.setItem(BUILD_KEY, BUILD_ID); } catch(_) {} }
+
+          if (__idbReady) return resolve();
+          mkdirp(IDB_ROOT);
+          let mounted = false;
+          try { mounted = !!FS.lookupPath(IDB_ROOT).node.mounted; } catch(_) {}
+          if (!mounted) {
+            FS.mount(IDBFS, {}, IDB_ROOT);
+          }
+          FS.syncfs(true, (err) => {
+            if (err) { console.error('IDBFS initial sync failed', err); reject(err); return; }
+            __idbReady = true;
+            if (exists(IDB_MIRROR)) {
+              mkdirp(LIVE_ROOT);
+              copyTree(IDB_MIRROR, LIVE_ROOT);
+            }
+            resolve();
+          });
+        } catch (e) {
+          console.error('IDBFS mount error', e);
+          reject(e);
+        }
+      });
+    }
+
+    function persistToIDB() {
+      return new Promise((resolve, reject) => {
+        try {
+          mkdirp(IDB_MIRROR);
+          copyTree(LIVE_ROOT, IDB_MIRROR);
+          FS.syncfs(false, (err) => err ? reject(err) : resolve());
+        } catch (e) { reject(e); }
+      });
+    }
+
+    window.addEventListener('beforeunload', () => {
+      try { FS && FS.syncfs && FS.syncfs(false, ()=>{}); } catch(_) {}
+    });
+
+    setInterval(() => {
+      if (__idbReady) {
+        try { persistToIDB().catch(()=>{}); } catch(_) {}
+      }
+    }, 10000);
+
+    function newestByMtime(dir, exts){
+      try{
+        const items = FS.readdir(dir)
+          .filter(f=>f!=='.'&&f!=='..')
+          .filter(f=>{
+            const low=f.toLowerCase();
+            return (Array.isArray(exts)? exts : [exts]).some(ext=>low.endsWith(ext));
+          });
+        if(!items.length) return null;
+        let best = items[0], t = 0;
+        for(const f of items){ const st=FS.stat(dir+f); if(st && st.mtime>t){ best=f; t=st.mtime; } }
+        return best;
+      }catch(_){ return null; }
+    }
+
+    const filePickerModal   = document.getElementById('filePickerModal');
+    const filePickerSelect  = document.getElementById('filePickerSelect');
+    const filePickerCancel  = document.getElementById('filePickerCancel');
+    const filePickerConfirm = document.getElementById('filePickerConfirm');
+    const filePickerTitle   = document.getElementById('filePickerTitle');
+    const filePickerHint    = document.getElementById('filePickerHint');
+
+    let __filePickerResolve = null;
+
+    function showFilePicker({ title, hint, files }) {
+      return new Promise((resolve) => {
+        __filePickerResolve = resolve;
+
+        filePickerTitle.textContent = title || 'Choose a file';
+        filePickerHint.textContent  = hint  || 'Select which file you want to export.';
+
+        filePickerSelect.innerHTML = '';
+        for (const f of files) {
+          const opt = document.createElement('option');
+          opt.value = f;
+          opt.textContent = f;
+          filePickerSelect.appendChild(opt);
+        }
+
+        filePickerModal.style.display = 'flex';
+
+        setTimeout(() => {
+          try { filePickerSelect.focus(); } catch(_) {}
+        }, 0);
+      });
+    }
+
+    function hideFilePicker() {
+      filePickerModal.style.display = 'none';
+    }
+
+    function finishPicker(val) {
+      hideFilePicker();
+      const r = __filePickerResolve;
+      __filePickerResolve = null;
+      if (r) r(val);
+    }
+
+    filePickerCancel.addEventListener('click', () => finishPicker(null));
+    filePickerConfirm.addEventListener('click', () => finishPicker(filePickerSelect.value || null));
+
+    filePickerModal.addEventListener('click', (e) => {
+      if (e.target === filePickerModal) finishPicker(null);
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (filePickerModal.style.display === 'flex' && e.key === 'Escape') finishPicker(null);
+    });
+
+    function listFilesWithExts(dir, exts) {
+      try {
+        const items = FS.readdir(dir).filter(f => f !== '.' && f !== '..');
+        const out = [];
+        for (const f of items) {
+          const low = f.toLowerCase();
+          if ((Array.isArray(exts) ? exts : [exts]).some(ext => low.endsWith(ext))) out.push(f);
+        }
+        return out.sort((a,b) => a.localeCompare(b));
+      } catch (_) {
+        return [];
+      }
+    }
+
+    var Module = window.Module || {};
+    Module.preRun=[]; Module.postRun=[]; Module.arguments=[];
+    Module.totalDependencies=42; Module.doneDependencies=0; Module.lastDependencies=1;
+
+    Module.preRun.push(function(){
+      return ensureIDBMounted().catch(()=>{ });
+    });
+
+    Module.print  = (...a)=>console.log(a.join(' '));
+    Module.printErr = (...a)=>console.error(a.join(' '));
+
+    Module.canvas = (()=>{
+      var e=document.getElementById("canvas");
+      e.addEventListener("webglcontextlost",ev=>{
+        alert("WebGL context lost. Reload the page."); ev.preventDefault();
+      },false);
+      return e;
+    })();
+
+    Module.setStatus = function(e){
+      const n=e&&e.match&&e.match(/^([^(]+)\((\d+(\.\d+)?)\/(\d+)\)$/);
+      if(n) e = `(${n[2]} / ${n[4]}) ${n[1]}`;
+      document.getElementById("message").innerHTML = e || '';
+      if(e==='Running...') showGameUI();
+    };
+    Module.monitorRunDependencies = function(e){
+      if(e<Module.lastDependencies) Module.doneDependencies++;
+      Module.lastDependencies=e;
+      const total=Module.totalDependencies, doing=Math.min(Module.doneDependencies+1,total);
+      document.getElementById("title").textContent = `(${doing} / ${total}) Loading ...`;
+      document.getElementById("message").textContent = "Preparing game ...";
+    };
+
+    Module.onBootstrap=(bytes,total)=>{
+      document.getElementById("canvas").style.display="none";
+      showOverlay("Missing base graphics",`OpenTTD is downloading base graphics.<br><br>${bytes} / ${total} bytes downloaded.`);
+    };
+    Module.onBootstrapFailed=()=>{
+      document.getElementById("canvas").style.display="none";
+      showOverlay("Missing base graphics","Failed to download base graphics.<br>The game cannot start without them.<br><br>Check your connection and reload.");
+    };
+    Module.onBootstrapReload=()=>{
+      document.getElementById("canvas").style.display="none";
+      showOverlay("Missing base graphics","Download complete.<br>Your browser will reload shortly.");
+    };
+    Module.onExit=()=>{
+      document.getElementById("canvas").style.display="none";
+      showOverlay("Thank you for playing!","Reload your browser to restart.");
+    };
+    Module.onAbort=()=>{
+      document.getElementById("canvas").style.display="none";
+      document.getElementById("box").className="error";
+      showOverlay("Crash :(","The game crashed! Reload to restart.");
+    };
+
+    const _onWarningFsImpl=()=>{
+      const fsEl=document.getElementById('filesystem');
+      fsEl.style.display='inline-block';
+      const ov=document.getElementById('overlay');
+      ov.style.opacity=1;
+      setTimeout(()=>{ ov.style.opacity=0; setTimeout(()=>fsEl.style.display='none',300); }, 3000);
+    };
+    Module.onWarningFs=_onWarningFsImpl;
+    Module.onRuntimeInitialized=()=>showGameUI();
+    Module.postRun.push(showGameUI);
+    Module.locateFile=p=>p;
+    window.onerror=()=>Module.onAbort();
+
+    function downloadBinary(name, data, type='application/octet-stream'){
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(new Blob([data],{type}));
+      a.download=name; a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),100);
+    }
+
+    async function exportSave(){
+      try{
+        const files = listFilesWithExts(SAVE_DIR, ['.sav']);
+        if(!files.length){ alert('No .sav found in ' + SAVE_DIR); return; }
+
+        let chosen = files[0];
+        if (files.length > 1) {
+          chosen = await showFilePicker({
+            title: 'Export Save',
+            hint: 'Choose which .sav file to export from /save/',
+            files
+          });
+          if (!chosen) return;
+        }
+
+        const data = FS.readFile(SAVE_DIR + chosen);
+        downloadBinary(chosen, data);
+      }catch(e){alert('Export failed: '+e.message);}
+    }
+
+    async function importSave(){
+      const input=document.createElement('input'); input.type='file'; input.accept='.sav';
+      input.onchange=async e=>{
+        const f=e.target.files[0]; if(!f)return;
+        const buf=await f.arrayBuffer();
+        try{
+          await ensureIDBMounted();
+          mkdirp(SAVE_DIR); mkdirp(IDB_MIRROR + '/save/');
+          FS.writeFile(SAVE_DIR + f.name, new Uint8Array(buf));
+          FS.writeFile(IDB_MIRROR + '/save/' + f.name, new Uint8Array(buf));
+          await new Promise((res,rej)=>FS.syncfs(false,(err)=>err?rej(err):res()));
+          alert('Imported & saved to browser storage:\n' + SAVE_DIR+f.name);
+        }catch(err){console.error(err); alert('Import failed: '+err.message);}
+      };
+      input.click();
+    }
+
+    async function exportScenario(){
+      try{
+        const files = listFilesWithExts(SCEN_DIR, ['.scn']);
+        if(!files.length){ alert('No .scn found in ' + SCEN_DIR); return; }
+
+        let chosen = files[0];
+        if (files.length > 1) {
+          chosen = await showFilePicker({
+            title: 'Export Scenario',
+            hint: 'Choose which .scn file to export from /scenario/',
+            files
+          });
+          if (!chosen) return;
+        }
+
+        const data = FS.readFile(SCEN_DIR + chosen);
+        downloadBinary(chosen, data);
+      }catch(e){alert('Export failed: '+e.message);}
+    }
+
+    async function importScenario(){
+      const input=document.createElement('input'); input.type='file'; input.accept='.scn';
+      input.onchange=async e=>{
+        const f=e.target.files[0]; if(!f)return;
+        const buf=await f.arrayBuffer();
+        try{
+          await ensureIDBMounted();
+          mkdirp(SCEN_DIR); mkdirp(IDB_MIRROR + '/scenario/');
+          FS.writeFile(SCEN_DIR + f.name, new Uint8Array(buf));
+          FS.writeFile(IDB_MIRROR + '/scenario/' + f.name, new Uint8Array(buf));
+          await new Promise((res,rej)=>FS.syncfs(false,(err)=>err?rej(err):res()));
+          alert('Imported & saved to browser storage:\n' + SCEN_DIR+f.name);
+        }catch(err){console.error(err); alert('Import failed: '+err.message);}
+      };
+      input.click();
+    }
+
+    async function exportHeightmap(){
+      try{
+        const files = listFilesWithExts(HEIGHT_DIR, ['.png','.bmp']);
+        if(!files.length){ alert('No heightmap (.png or .bmp) found in ' + HEIGHT_DIR); return; }
+
+        let chosen = files[0];
+        if (files.length > 1) {
+          chosen = await showFilePicker({
+            title: 'Export Heightmap',
+            hint: 'Choose which heightmap to export from /scenario/heightmap/',
+            files
+          });
+          if (!chosen) return;
+        }
+
+        const data = FS.readFile(HEIGHT_DIR + chosen);
+        const type = chosen.toLowerCase().endsWith('.png') ? 'image/png'
+                   : chosen.toLowerCase().endsWith('.bmp') ? 'image/bmp'
+                   : 'application/octet-stream';
+        downloadBinary(chosen, data, type);
+      }catch(e){alert('Export failed: '+e.message);}
+    }
+
+    async function importHeightmap(){
+      const input=document.createElement('input'); input.type='file'; input.accept='.png,.bmp';
+      input.onchange=async e=>{
+        const f=e.target.files[0]; if(!f)return;
+        const buf=await f.arrayBuffer();
+        try{
+          await ensureIDBMounted();
+          mkdirp(HEIGHT_DIR); mkdirp(IDB_MIRROR + '/scenario/heightmap/');
+          FS.writeFile(HEIGHT_DIR + f.name, new Uint8Array(buf));
+          FS.writeFile(IDB_MIRROR + '/scenario/heightmap/' + f.name, new Uint8Array(buf));
+          await new Promise((res,rej)=>FS.syncfs(false,(err)=>err?rej(err):res()));
+          alert('Imported heightmap & saved to browser storage:\n' + HEIGHT_DIR+f.name + '\n\nLoad via Scenario Editor → Heightmap.');
+        }catch(err){console.error(err); alert('Import failed: '+err.message);}
+      };
+      input.click();
+    }
+
+    /* ============================================================
+       Google Drive Picker + OAuth (added; does not change existing logic)
+    ============================================================ */
+
+    const DRIVE_CLIENT_ID = '581025654151-jo5frdt1seff1dqninacnm0ib5l9f886.apps.googleusercontent.com';
+    const DRIVE_API_KEY   = 'AIzaSyDT7GTwgqfsuN9kzSkOMhdbZnOkPrEpuQ0';
+    const DRIVE_APP_ID    = '581025654151';
+    const DRIVE_SCOPES    = 'https://www.googleapis.com/auth/drive.file';
+
+    let __driveInitPromise = null;
+    let __tokenClient = null;
+    let __accessToken = null;
+    let __tokenExpiryMs = 0;
+
+    function __loadScriptOnce(src){
+      return new Promise((resolve, reject) => {
+        const existing = Array.from(document.getElementsByTagName('script')).find(s => s.src === src);
+        if (existing && existing.dataset.loaded === '1') return resolve();
+        if (existing && existing.dataset.loading === '1') {
+          existing.addEventListener('load', () => resolve(), { once: true });
+          existing.addEventListener('error', () => reject(new Error('Failed to load ' + src)), { once: true });
+          return;
+        }
+        const s = existing || document.createElement('script');
+        if (!existing) {
+          s.src = src;
+          s.async = true;
+          document.head.appendChild(s);
+        }
+        s.dataset.loading = '1';
+        s.addEventListener('load', () => { s.dataset.loaded = '1'; resolve(); }, { once: true });
+        s.addEventListener('error', () => reject(new Error('Failed to load ' + src)), { once: true });
+      });
+    }
+
+    function __ensureDriveInit(){
+      if (__driveInitPromise) return __driveInitPromise;
+
+      __driveInitPromise = (async () => {
+        await __loadScriptOnce('https://accounts.google.com/gsi/client');
+        await __loadScriptOnce('https://apis.google.com/js/api.js');
+
+        __tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: DRIVE_CLIENT_ID,
+          scope: DRIVE_SCOPES,
+          callback: () => {}
+        });
+
+        await new Promise((resolve) => {
+          gapi.load('picker', { callback: resolve });
+        });
+
+        return true;
+      })();
+
+      return __driveInitPromise;
+    }
+
+    function __getAccessToken({ prompt } = { prompt: '' }){
+      return new Promise(async (resolve, reject) => {
+        try{
+          await __ensureDriveInit();
+
+          const now = Date.now();
+          if (__accessToken && now < (__tokenExpiryMs - 30_000)) {
+            resolve(__accessToken);
+            return;
+          }
+
+          __tokenClient.callback = (resp) => {
+            if (resp && resp.access_token) {
+              __accessToken = resp.access_token;
+              const expiresIn = Number(resp.expires_in || 3600);
+              __tokenExpiryMs = Date.now() + expiresIn * 1000;
+              resolve(__accessToken);
+            } else {
+              reject(new Error(resp && resp.error ? resp.error : 'No access token returned'));
+            }
+          };
+
+          __tokenClient.requestAccessToken({ prompt: prompt ?? '' });
+        }catch(e){ reject(e); }
+      });
+    }
+
+    function __pickSingleFile(){
+      return new Promise(async (resolve, reject) => {
+        try{
+          const token = await __getAccessToken({ prompt: '' });
+
+          const view = new google.picker.DocsView(google.picker.ViewId.DOCS)
+            .setIncludeFolders(false);
+
+          const origin = window.location.origin;
+
+          const picker = new google.picker.PickerBuilder()
+            .setAppId(DRIVE_APP_ID)
+            .setDeveloperKey(DRIVE_API_KEY)
+            .setOAuthToken(token)
+            .setOrigin(origin)
+            .addView(view)
+            .enableFeature(google.picker.Feature.NAV_HIDDEN)
+            .setCallback((data) => {
+              if (data.action === google.picker.Action.CANCEL) return resolve(null);
+              if (data.action === google.picker.Action.PICKED) {
+                const doc = (data.docs && data.docs[0]) ? data.docs[0] : null;
+                if (!doc) return resolve(null);
+                resolve({ id: doc.id, name: doc.name, mimeType: doc.mimeType });
+              }
+            })
+            .build();
+
+          picker.setVisible(true);
+        }catch(e){ reject(e); }
+      });
+    }
+
+    function __pickFolder(){
+      return new Promise(async (resolve, reject) => {
+        try{
+          const token = await __getAccessToken({ prompt: '' });
+
+          const view = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
+            .setIncludeFolders(true)
+            .setSelectFolderEnabled(true);
+
+          const origin = window.location.origin;
+
+          const picker = new google.picker.PickerBuilder()
+            .setAppId(DRIVE_APP_ID)
+            .setDeveloperKey(DRIVE_API_KEY)
+            .setOAuthToken(token)
+            .setOrigin(origin)
+            .addView(view)
+            .enableFeature(google.picker.Feature.NAV_HIDDEN)
+            .setCallback((data) => {
+              if (data.action === google.picker.Action.CANCEL) return resolve(null);
+              if (data.action === google.picker.Action.PICKED) {
+                const doc = (data.docs && data.docs[0]) ? data.docs[0] : null;
+                if (!doc) return resolve(null);
+                resolve({ id: doc.id, name: doc.name });
+              }
+            })
+            .build();
+
+          picker.setVisible(true);
+        }catch(e){ reject(e); }
+      });
+    }
+
+    async function __driveDownloadBytes(fileId){
+      const token = await __getAccessToken({ prompt: '' });
+      const url = 'https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(fileId) + '?alt=media';
+      const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
+      if (!res.ok) {
+        const txt = await res.text().catch(()=> '');
+        throw new Error('Drive download failed (' + res.status + '): ' + (txt || res.statusText));
+      }
+      return new Uint8Array(await res.arrayBuffer());
+    }
+
+    async function __driveUploadBytes({ name, bytes, mimeType, parentId }){
+      const token = await __getAccessToken({ prompt: '' });
+
+      const metadata = { name: name || 'file.bin' };
+      if (parentId) metadata.parents = [parentId];
+
+      const boundary = '-------openttdonline' + Math.random().toString(16).slice(2);
+      const delimiter = '\r\n--' + boundary + '\r\n';
+      const closeDelim = '\r\n--' + boundary + '--';
+
+      const metaPart =
+        delimiter +
+        'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+        JSON.stringify(metadata);
+
+      const filePartHeader =
+        delimiter +
+        'Content-Type: ' + (mimeType || 'application/octet-stream') + '\r\n\r\n';
+
+      const body = new Blob([metaPart, filePartHeader, bytes, closeDelim], {
+        type: 'multipart/related; boundary=' + boundary
+      });
+
+      const uploadUrl = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+      const res = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token },
+        body
+      });
+
+      if (!res.ok) {
+        const txt = await res.text().catch(()=> '');
+        throw new Error('Drive upload failed (' + res.status + '): ' + (txt || res.statusText));
+      }
+      return await res.json().catch(()=> ({}));
+    }
+
+    function __ensureExt(name, exts){
+      const low = (name || '').toLowerCase();
+      return (Array.isArray(exts) ? exts : [exts]).some(ext => low.endsWith(ext));
+    }
+
+    // ----- Save (.sav) -----
+    async function exportSaveToDrive(){
+      try{
+        const files = listFilesWithExts(SAVE_DIR, ['.sav']);
+        if(!files.length){ alert('No .sav found in ' + SAVE_DIR); return; }
+
+        let chosen = files[0];
+        if (files.length > 1) {
+          chosen = await showFilePicker({
+            title: 'Export Save to Google Drive',
+            hint: 'Choose which .sav file to export from /save/',
+            files
+          });
+          if (!chosen) return;
+        }
+
+        const folder = await __pickFolder();
+        if (!folder) return;
+
+        const data = FS.readFile(SAVE_DIR + chosen);
+        await __driveUploadBytes({
+          name: chosen,
+          bytes: data,
+          mimeType: 'application/octet-stream',
+          parentId: folder.id
+        });
+
+        alert('Uploaded to Google Drive:\n' + chosen + '\n\nFolder: ' + folder.name);
+      }catch(e){
+        console.error(e);
+        alert('Google Drive export failed: ' + (e && e.message ? e.message : e));
+      }
+    }
+
+    async function importSaveFromDrive(){
+      try{
+        const picked = await __pickSingleFile();
+        if (!picked) return;
+        if (!__ensureExt(picked.name, ['.sav'])) {
+          alert('That file does not look like an OpenTTD save (.sav):\n' + picked.name);
+          return;
+        }
+
+        const bytes = await __driveDownloadBytes(picked.id);
+
+        await ensureIDBMounted();
+        mkdirp(SAVE_DIR); mkdirp(IDB_MIRROR + '/save/');
+        FS.writeFile(SAVE_DIR + picked.name, bytes);
+        FS.writeFile(IDB_MIRROR + '/save/' + picked.name, bytes);
+        await new Promise((res,rej)=>FS.syncfs(false,(err)=>err?rej(err):res()));
+
+        alert('Imported from Google Drive & saved to browser storage:\n' + SAVE_DIR + picked.name);
+      }catch(e){
+        console.error(e);
+        alert('Google Drive import failed: ' + (e && e.message ? e.message : e));
+      }
+    }
+
+    // ----- Scenario (.scn) -----
+    async function exportScenarioToDrive(){
+      try{
+        const files = listFilesWithExts(SCEN_DIR, ['.scn']);
+        if(!files.length){ alert('No .scn found in ' + SCEN_DIR); return; }
+
+        let chosen = files[0];
+        if (files.length > 1) {
+          chosen = await showFilePicker({
+            title: 'Export Scenario to Google Drive',
+            hint: 'Choose which .scn file to export from /scenario/',
+            files
+          });
+          if (!chosen) return;
+        }
+
+        const folder = await __pickFolder();
+        if (!folder) return;
+
+        const data = FS.readFile(SCEN_DIR + chosen);
+        await __driveUploadBytes({
+          name: chosen,
+          bytes: data,
+          mimeType: 'application/octet-stream',
+          parentId: folder.id
+        });
+
+        alert('Uploaded to Google Drive:\n' + chosen + '\n\nFolder: ' + folder.name);
+      }catch(e){
+        console.error(e);
+        alert('Google Drive export failed: ' + (e && e.message ? e.message : e));
+      }
+    }
+
+    async function importScenarioFromDrive(){
+      try{
+        const picked = await __pickSingleFile();
+        if (!picked) return;
+        if (!__ensureExt(picked.name, ['.scn'])) {
+          alert('That file does not look like an OpenTTD scenario (.scn):\n' + picked.name);
+          return;
+        }
+
+        const bytes = await __driveDownloadBytes(picked.id);
+
+        await ensureIDBMounted();
+        mkdirp(SCEN_DIR); mkdirp(IDB_MIRROR + '/scenario/');
+        FS.writeFile(SCEN_DIR + picked.name, bytes);
+        FS.writeFile(IDB_MIRROR + '/scenario/' + picked.name, bytes);
+        await new Promise((res,rej)=>FS.syncfs(false,(err)=>err?rej(err):res()));
+
+        alert('Imported from Google Drive & saved to browser storage:\n' + SCEN_DIR + picked.name);
+      }catch(e){
+        console.error(e);
+        alert('Google Drive import failed: ' + (e && e.message ? e.message : e));
+      }
+    }
+
+    // ----- Heightmap (.png/.bmp) -----
+    async function exportHeightmapToDrive(){
+      try{
+        const files = listFilesWithExts(HEIGHT_DIR, ['.png','.bmp']);
+        if(!files.length){ alert('No heightmap (.png or .bmp) found in ' + HEIGHT_DIR); return; }
+
+        let chosen = files[0];
+        if (files.length > 1) {
+          chosen = await showFilePicker({
+            title: 'Export Heightmap to Google Drive',
+            hint: 'Choose which heightmap to export from /scenario/heightmap/',
+            files
+          });
+          if (!chosen) return;
+        }
+
+        const folder = await __pickFolder();
+        if (!folder) return;
+
+        const data = FS.readFile(HEIGHT_DIR + chosen);
+        const type = chosen.toLowerCase().endsWith('.png') ? 'image/png'
+                   : chosen.toLowerCase().endsWith('.bmp') ? 'image/bmp'
+                   : 'application/octet-stream';
+
+        await __driveUploadBytes({
+          name: chosen,
+          bytes: data,
+          mimeType: type,
+          parentId: folder.id
+        });
+
+        alert('Uploaded to Google Drive:\n' + chosen + '\n\nFolder: ' + folder.name);
+      }catch(e){
+        console.error(e);
+        alert('Google Drive export failed: ' + (e && e.message ? e.message : e));
+      }
+    }
+
+    async function importHeightmapFromDrive(){
+      try{
+        const picked = await __pickSingleFile();
+        if (!picked) return;
+        if (!__ensureExt(picked.name, ['.png','.bmp'])) {
+          alert('That file does not look like a heightmap (.png or .bmp):\n' + picked.name);
+          return;
+        }
+
+        const bytes = await __driveDownloadBytes(picked.id);
+
+        await ensureIDBMounted();
+        mkdirp(HEIGHT_DIR); mkdirp(IDB_MIRROR + '/scenario/heightmap/');
+        FS.writeFile(HEIGHT_DIR + picked.name, bytes);
+        FS.writeFile(IDB_MIRROR + '/scenario/heightmap/' + picked.name, bytes);
+        await new Promise((res,rej)=>FS.syncfs(false,(err)=>err?rej(err):res()));
+
+        alert('Imported heightmap from Google Drive & saved to browser storage:\n' + HEIGHT_DIR + picked.name + '\n\nLoad via Scenario Editor → Heightmap.');
+      }catch(e){
+        console.error(e);
+        alert('Google Drive import failed: ' + (e && e.message ? e.message : e));
+      }
+    }
+  </script>
+
+  <script src="openttd.js?v=15.3"></script>
+
+  <script>
+  (function(){
+  const SENSITIVITY = 0.2;
+
+  function attach(){
+    const canvas = (window.Module && Module.canvas) || document.getElementById('canvas');
+    if (!canvas) return false;
+
+    canvas.style.touchAction = 'none';
+    canvas.style.cursor = 'none';
+
+    let pA = null, pB = null;
+    let lastDist = 0;
+
+    function pinchDist(t1, t2){
+      return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+    }
+
+    canvas.addEventListener('touchstart', e => {
+      if (e.touches.length === 2){
+        e.preventDefault();
+        pA = e.touches[0];
+        pB = e.touches[1];
+        lastDist = pinchDist(pA, pB);
+      }
+    }, {passive:false});
+
+    canvas.addEventListener('touchmove', e => {
+      if (e.touches.length !== 2) return;
+      e.preventDefault();
+
+      const t1 = e.touches[0], t2 = e.touches[1];
+      const dist = pinchDist(t1, t2);
+      const scale = dist / lastDist;
+
+      if (Math.abs(scale - 1) > 0.01) {
+        const cx = (t1.clientX + t2.clientX) / 2;
+        const cy = (t1.clientY + t2.clientY) / 2;
+
+        const delta = (Math.log(scale) / Math.log(1.05)) * 120 * SENSITIVITY;
+        canvas.dispatchEvent(new WheelEvent('wheel', {
+          deltaY: -delta,
+          clientX: cx,
+          clientY: cy,
+          bubbles: true
+        }));
+        lastDist = dist;
+      }
+    }, {passive:false});
+
+    canvas.addEventListener('touchend', e => {
+      if (e.touches.length < 2) pA = pB = null;
+    }, {passive:false});
+
+    canvas.addEventListener('touchcancel', () => { pA = pB = null; }, {passive:false});
+
+    return true;
+  }
+
+  if (!attach()){
+    const prev = (window.Module && Module.onRuntimeInitialized) || null;
+    window.Module = window.Module || {};
+    Module.onRuntimeInitialized = function(){
+      if (prev) prev();
+      attach();
+    };
+    window.addEventListener('load', () => setTimeout(attach, 0));
+    }
+  })();
+  </script>
+
+  <script>
+    document.addEventListener('contextmenu', event => event.preventDefault());
+  </script>
+
+  <button class="open-music-btn" id="openMusicBtn">Jazz Jukebox</button>
+
+  <div class="ttd-window" id="ttdWindow" style="display:none;">
+    <div class="ttd-window-header" id="ttdWindowHeader">
+      <span></span>
+      <div class="title">Jazz Jukebox</div>
+      <div class="btn-close" id="btnClose">X</div>
+    </div>
+
+    <div class="ttd-window-body">
+      <div class="current-track-box">
+
+        <div class="button-row-top">
+          <button class="transport-btn" id="btnPrev">&#9664;</button>
+          <button class="transport-btn" id="btnNext">&#9654;</button>
+          <button class="transport-btn" id="btnPlayPause">&#9658;</button>
+        </div>
+
+        <div class="volume-row">
+          <span class="vol-label">Music Volume</span>
+          <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.6">
+        </div>
+
+        <div class="track-bar-labels">
+          <span>Track</span>
+        </div>
+
+        <div class="track-bar" id="progressBarWrap">
+          <div class="track-bar-fill" id="progressBarFill"></div>
+          <div class="track-bar-title" id="currentTrackTitle">---</div>
+        </div>
+
+        <div class="time-row">
+          <span id="currentTimeLabel">0:00</span>
+          <span id="durationLabel">0:00</span>
+        </div>
+
+        <div class="shuffle-row">
+          <button class="ttd-btn" id="btnShuffle">Shuffle</button>
+          <button class="ttd-btn" id="btnRepeat">Rep</button>
+        </div>
+
+      </div>
+
+      <div class="playlist-box">
+        <div class="playlist-header">Track List</div>
+        <div class="playlist-list" id="playlistList"></div>
+
+        <div class="playlist-footer">
+          <span id="playlistCountLabel">0 tracks</span>
+          <span id="playlistModeLabel"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <audio id="audioElement"></audio>
+
+  <div id="footer-links" style="
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    z-index: 3;
+    font-size: 13px;
+    color: #4fc3f7;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  ">
+    <a href="https://openttdonline.com/" target="_blank" rel="noopener" style="color:#4fc3f7; text-decoration:none;">
+      OpenTTD Online
+    </a>
+    <span>•</span>
+    <a href="https://overgrownstudio.com" target="_blank" rel="noopener" style="color:#4fc3f7; text-decoration:none;">
+      Overgrown Studio
+    </a>
+    <span>•</span>
+    <a href="https://openttdonline.com/#reviews" target="_blank" rel="noopener" style="color:#4fc3f7; text-decoration:none;">
+      Leave a Review
+    </a>
+    <span>•</span>
+    <a href="https://openttdonline.com/donate" target="_blank" rel="noopener" style="color:#4fc3f7; text-decoration:none; margin-right:12px;">
+      Donate
+    </a>
+  </div>
+
+</body>
+</html>
