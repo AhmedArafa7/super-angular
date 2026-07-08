@@ -57,7 +57,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             <p class="text-sm font-bold">السلة فارغة</p>
           </div>
 
-          <div *ngFor="let item of bakery.posCart()" class="flex items-center gap-3 bg-white dark:bg-surface-container p-2 rounded-xl border border-surface-container-high">
+          <div *ngFor="let item of bakery.posCart()" class="flex items-center gap-3 bg-white text-black dark:bg-surface-container p-2 rounded-xl border border-surface-container-high">
             <div class="flex-1 overflow-hidden">
               <h4 class="text-xs font-bold text-on-surface truncate">{{ item.product.name }}</h4>
               <div class="text-amber-600 font-black text-xs mt-0.5">{{ item.product.price * item.quantity }} EGC</div>

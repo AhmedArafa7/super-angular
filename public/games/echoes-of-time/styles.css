@@ -6,6 +6,11 @@ body, html {
     height: 100%;
     width: 100%;
     background-color: #0f172a;
+    background-image: url('time_portal_bg.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
     overflow-x: hidden;
     overflow-y: auto;
 }

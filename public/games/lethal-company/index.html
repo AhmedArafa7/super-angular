@@ -66,27 +66,86 @@
         <!-- Ship Hub (Terminal) -->
         <div id="ship-hub-screen" class="screen ui-layer hidden">
             <div class="crt-overlay"></div>
-            <div class="terminal-box">
-                <h1 class="terminal-header">=== SYSTEM TERMINAL ===</h1>
-                <div class="terminal-stats">
-                    <p>الحصة المطلوبة (Quota): <span id="hub-quota" class="text-green">130</span>$</p>
-                    <p>الرصيد المجمع: <span id="hub-collected" class="text-green">0</span>$</p>
-                    <p>الأيام المتبقية: <span id="hub-days" class="text-red">3</span> أيام</p>
+            <div class="sub-hub-layout">
+                <!-- Left Control: Shop & Assets -->
+                <div class="terminal-panel sub-left-panel">
+                    <h2 class="panel-title text-green">> مخزن المعدات (STORE)</h2>
+                    <p class="credits-display text-green">الرصيد المتاح: <span id="terminal-credits">60</span>$</p>
+                    <div class="shop-list">
+                        <div class="shop-item">
+                            <span>🔦 كشاف يدوي ($15)</span>
+                            <button class="shop-buy-btn" data-item="flashlight">شراء</button>
+                        </div>
+                        <div class="shop-item">
+                            <span>📻 جهاز لاسلكي ($10)</span>
+                            <button class="shop-buy-btn" data-item="walkie">شراء</button>
+                        </div>
+                        <div class="shop-item">
+                            <span>💨 أنبوبة أكسجين ($25)</span>
+                            <button class="shop-buy-btn" data-item="oxygen">شراء</button>
+                        </div>
+                        <div class="shop-item">
+                            <span>⚡ صعق كهربائي ($30)</span>
+                            <button class="shop-buy-btn" data-item="taser">شراء</button>
+                        </div>
+                    </div>
+                    <div class="inventory-status text-green mt-10">
+                        <p>> المعدات المملوكة:</p>
+                        <div id="owned-items" class="owned-items-grid">- لا يوجد -</div>
+                    </div>
                 </div>
-                <div class="terminal-moons">
-                    <p>اختر وجهتك (Route):</p>
-                    <button class="action-btn terminal-btn moon-btn" data-moon="experimentation">
-                        > Experimentation (سهل - رؤية واضحة)
-                    </button>
-                    <button class="action-btn terminal-btn moon-btn" data-moon="vow">
-                        > Vow (متوسط - ضباب أخضر كثيف)
-                    </button>
-                    <button class="action-btn terminal-btn moon-btn" data-moon="titan">
-                        > Titan (صعب - ظلام دامس وخردة ثمينة)
-                    </button>
+
+                <!-- Center Control: Route & Flight -->
+                <div class="terminal-panel sub-center-panel">
+                    <h1 class="terminal-header text-green">=== غواصة التحكم (SUB-HUB) ===</h1>
+                    <div class="terminal-stats">
+                        <p>الحصة المطلوبة (Quota): <span id="hub-quota" class="text-green">130</span>$</p>
+                        <p>الرصيد المجمع للشركة: <span id="hub-collected" class="text-green">0</span>$</p>
+                        <p>الأيام المتبقية: <span id="hub-days" class="text-red">3</span> أيام</p>
+                    </div>
+                    
+                    <div class="terminal-moons">
+                        <p class="text-green">> اختر المنشأة المستهدفة:</p>
+                        <button class="action-btn terminal-btn moon-btn selected" data-moon="experimentation">
+                            > منشأة الاختبار الغارقة (سهل - خطورة 10%)
+                        </button>
+                        <button class="action-btn terminal-btn moon-btn" data-moon="vow">
+                            > ممرات الطحالب الكثيفة (متوسط - خطورة 40%)
+                        </button>
+                        <button class="action-btn terminal-btn moon-btn" data-moon="titan">
+                            > هاوية تيتان العميقة (صعب - خطورة 80%)
+                        </button>
+                    </div>
+
+                    <!-- Lever Section -->
+                    <div class="lever-section mt-20">
+                        <button id="launch-lever-btn" class="action-btn primary pulse-btn">
+                            🕹️ اسحب الرافعة لبدء الهبوط
+                        </button>
+                        <div id="descent-loader" class="descent-loader hidden">
+                            <div class="descending-text animate-pulse">جاري الهبوط لأسفل المحيط...</div>
+                            <div class="descent-progress-bar"><div id="descent-progress-fill"></div></div>
+                        </div>
+                    </div>
+
+                    <div id="terminal-waiting" class="hidden">
+                        <p class="wait-text">> بانتظار المضيف لسحب الرافعة والبدء...</p>
+                    </div>
                 </div>
-                <div id="terminal-waiting" class="hidden">
-                    <p class="wait-text">> بانتظار المدير لاختيار الوجهة...</p>
+
+                <!-- Right Control: Engineer Radar View -->
+                <div class="terminal-panel sub-right-panel">
+                    <h2 class="panel-title text-green">> شاشة رادار المهندس (RADAR)</h2>
+                    <div class="radar-console-box">
+                        <canvas id="engineer-radar-canvas" width="200" height="200"></canvas>
+                        <div class="radar-sweeper"></div>
+                    </div>
+                    <div class="engineer-controls mt-10">
+                        <button id="radar-door-btn" class="action-btn secondary text-xs" style="padding:5px;">فتح/إغلاق الباب الإلكتروني [R]</button>
+                        <div class="text-[10px] text-green-500 mt-5">
+                            * المهندس يقدر يساعد الطاقم من هنا لرؤية الوحوش (أحمر) والأصدقاء (أبيض) والتحكم بالأبواب!
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -104,6 +163,17 @@
                 
                 <div class="game-info">
                     <div id="time-display" class="timer text-green">الوقت: 08:00 AM</div>
+                    <!-- Oxygen & Weight Overlay -->
+                    <div class="indicators-box">
+                        <div class="hud-indicator oxygen-ind">
+                            <span>الأكسجين:</span>
+                            <div class="ind-bar-bg"><div id="oxygen-bar-fill" class="ind-bar-fill oxygen-fill"></div></div>
+                        </div>
+                        <div class="hud-indicator weight-ind">
+                            <span>الوزن:</span>
+                            <div class="ind-bar-bg"><div id="weight-bar-fill" class="ind-bar-fill weight-fill"></div></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="hud-right">
@@ -112,6 +182,12 @@
                         <div class="battery-bg">
                             <div id="battery-fill" class="battery-fill"></div>
                         </div>
+                    </div>
+                    <!-- Walkie Talkie overlay -->
+                    <div id="walkie-overlay" class="walkie-overlay hidden mt-10">
+                        <span class="text-xs text-green">📻 اللاسلكي نشط</span>
+                        <div id="walkie-messages" class="walkie-log"></div>
+                        <input type="text" id="walkie-input" class="walkie-input" placeholder="اكتب رسالة اللاسلكي...">
                     </div>
                 </div>
             </div>

@@ -108,10 +108,14 @@ export class BakeryService {
 
   constructor() {
     this.loadProducts();
-    // Load local cart
+    // Load local carts
     const savedCart = localStorage.getItem('ibad_rahman_cart');
     if (savedCart) {
       try { this.cart.set(JSON.parse(savedCart)); } catch (e) {}
+    }
+    const savedPosCart = localStorage.getItem('ibad_rahman_pos_cart');
+    if (savedPosCart) {
+      try { this.posCart.set(JSON.parse(savedPosCart)); } catch (e) {}
     }
   }
 
@@ -132,12 +136,68 @@ export class BakeryService {
   }
 
   private async seedInitialProducts(): Promise<BakeryProduct[]> {
-    // TODO: قم بإضافة البيانات الحقيقية الثابتة هنا لاحقاً
     const initialProducts: Omit<BakeryProduct, 'id'>[] = [
-      // { name: 'اسم المنتج', description: 'وصف', price: 20, imageUrl: '...', category: 'خبز', isAvailable: true, preparationTimeMins: 15 },
+      {
+        name: 'فطير مشلتت فلاحي بالمرتة',
+        description: 'فطير فلاحي مورق ومخبوز بالسمن البلدي الصافي على الطريقة المصرية الأصيلة، يقدم ساخناً ومقرمشاً.',
+        price: 85,
+        imageUrl: 'https://images.unsplash.com/photo-1590301157890-4810ed352733?q=80&w=600&auto=format',
+        category: 'فطير فلاحي',
+        isAvailable: true,
+        isPreorderOnly: false,
+        preparationTimeMins: 30
+      },
+      {
+        name: 'خبز بلدي بالردة (طازج 5 أرغفة)',
+        description: 'خبز بر طازج بالردة مخبوز في فرن الحجر الساخن، مثالي لجميع الوجبات اليومية.',
+        price: 10,
+        imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=600&auto=format',
+        category: 'مخبوزات رئيسية',
+        isAvailable: true,
+        isPreorderOnly: false,
+        preparationTimeMins: 15
+      },
+      {
+        name: 'كيلو بسبوسة مرملة بالسمن البلدي',
+        description: 'بسبوسة مصرية فاخرة غنية بشراب العسل الخفيف والسمن البلدي وتشكيلة من اللوز الطازج.',
+        price: 120,
+        imageUrl: 'https://images.unsplash.com/photo-1601004890684-d8cbf643f5f2?q=80&w=600&auto=format',
+        category: 'حلويات شرقية',
+        isAvailable: true,
+        isPreorderOnly: false,
+        preparationTimeMins: 20
+      },
+      {
+        name: 'كرواسون زبدة فرنسي فاخر',
+        description: 'كرواسون هش ومورق مصنوع بالزبدة الطبيعية 100% ويُخبز طازجاً كل صباح.',
+        price: 35,
+        imageUrl: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=600&auto=format',
+        category: 'معجنات غربية',
+        isAvailable: true,
+        isPreorderOnly: false,
+        preparationTimeMins: 15
+      },
+      {
+        name: 'كيلو كعك العيد السادة الناعم',
+        description: 'كعك ناعم يذوب في الفم، مصنوع بالخلطة السرية والسمن البلدي المقدوح والسكر البودرة ناصع البياض.',
+        price: 160,
+        imageUrl: 'https://images.unsplash.com/photo-1517433670267-08bbd4be890f?q=80&w=600&auto=format',
+        category: 'حلويات شرقية',
+        isAvailable: true,
+        isPreorderOnly: true,
+        preparationTimeMins: 45
+      },
+      {
+        name: 'رغيف حواوشي بلدي باللحم المفروم',
+        description: 'لحم بلدي طازج متبل بالبصل والبهارات والفلفل الحار داخل رغيف خبز بلدي مخبوز في الفرن بالدهن الضأن.',
+        price: 65,
+        imageUrl: 'https://images.unsplash.com/photo-1541518763669-27fef04b14ea?q=80&w=600&auto=format',
+        category: 'معجنات حادقة',
+        isAvailable: true,
+        isPreorderOnly: false,
+        preparationTimeMins: 25
+      }
     ];
-
-    if (initialProducts.length === 0) return [];
 
     const seeded: BakeryProduct[] = [];
     for (const p of initialProducts) {
@@ -197,8 +257,11 @@ export class BakeryService {
   }
 
   removeFromCart(productId: string) {
-    this.cart.update(items => items.filter(i => i.product.id !== productId));
-    this.saveCart();
+    if (confirm('هل أنت متأكد من حذف هذا المنتج من السلة؟')) {
+      this.cart.update(items => items.filter(i => i.product.id !== productId));
+      this.saveCart();
+      this.toast.show('تم حذف المنتج', 'success');
+    }
   }
 
   updateQuantity(productId: string, delta: number) {
@@ -213,8 +276,11 @@ export class BakeryService {
   }
 
   clearCart() {
-    this.cart.set([]);
-    this.saveCart();
+    if (confirm('هل أنت متأكد من مسح السلة بالكامل؟')) {
+      this.cart.set([]);
+      this.saveCart();
+      this.toast.show('تم مسح السلة', 'success');
+    }
   }
 
   private saveCart() {
@@ -230,6 +296,7 @@ export class BakeryService {
       }
       return [...items, { product, quantity: 1 }];
     });
+    this.savePosCart();
   }
 
   updatePosQuantity(productId: string, delta: number) {
@@ -239,14 +306,21 @@ export class BakeryService {
       }
       return i;
     }));
+    this.savePosCart();
   }
 
   removePosCartItem(productId: string) {
     this.posCart.update(items => items.filter(i => i.product.id !== productId));
+    this.savePosCart();
   }
 
   clearPosCart() {
     this.posCart.set([]);
+    this.savePosCart();
+  }
+
+  private savePosCart() {
+    localStorage.setItem('ibad_rahman_pos_cart', JSON.stringify(this.posCart()));
   }
 
   async placePOSOrder(userName: string, paymentMethod: 'cash' | 'wallet' = 'cash', immediateComplete = false) {

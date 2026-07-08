@@ -60,6 +60,11 @@ import { LucideAngularModule, UserPlus } from 'lucide-angular';
         
         <!-- Add Friend -->
         <div class="flex items-center gap-2 shrink-0 border-r border-white/10 pr-4 ml-2">
+           <button (click)="showSubmitGameModal = true" class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl px-4 h-9 text-xs font-bold transition-all flex items-center gap-2">
+             <lucide-icon [img]="UserPlus" class="w-4 h-4"></lucide-icon>
+             أضف لعبتك
+           </button>
+           
            <ng-container *ngIf="showAddFriend; else addBtn">
              <input type="text" [(ngModel)]="newFriendName" (keyup.enter)="addFriend()" [disabled]="isAdding" placeholder="اسم المستخدم..." class="px-3 h-9 bg-black/40 border border-indigo-500/50 rounded-xl text-xs text-white text-right focus:outline-none focus:bg-black/60 w-36 transition-all disabled:opacity-50" />
              <button (click)="addFriend()" [disabled]="isAdding" class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl px-4 h-9 text-xs font-bold transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50 min-w-[70px]">
@@ -72,6 +77,19 @@ import { LucideAngularModule, UserPlus } from 'lucide-angular';
                إضافة صديق
              </button>
            </ng-template>
+        </div>
+      </div>
+
+      <!-- Add Game Modal -->
+      <div *ngIf="showSubmitGameModal" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
+        <div class="bg-slate-900 border border-white/10 rounded-3xl p-8 w-full max-w-md shadow-2xl">
+           <h3 class="text-2xl font-black text-white mb-6">أضف لعبتك الخاصة</h3>
+           <input type="text" [(ngModel)]="newGameUrl" placeholder="رابط اللعبة (URL)..." class="w-full h-12 bg-black/40 border border-indigo-500/50 rounded-2xl text-sm text-white px-4 mb-4" />
+           <input type="text" [(ngModel)]="newGameTitle" placeholder="اسم اللعبة..." class="w-full h-12 bg-black/40 border border-indigo-500/50 rounded-2xl text-sm text-white px-4 mb-6" />
+           <div class="flex gap-4">
+             <button (click)="showSubmitGameModal = false" class="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl">إلغاء</button>
+             <button (click)="submitGame()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl">إرسال</button>
+           </div>
         </div>
       </div>
 
@@ -148,8 +166,25 @@ export class ArcadeHubComponent implements OnInit {
 
   UserPlus = UserPlus;
   showAddFriend = false;
+  showSubmitGameModal = false;
   newFriendName = '';
+  newGameUrl = '';
+  newGameTitle = '';
   isAdding = false;
+
+  submitGame() {
+    const title = this.newGameTitle.trim();
+    const url = this.newGameUrl.trim();
+    if (!title || !url) {
+      alert('الرجاء إدخال اسم ورابط اللعبة');
+      return;
+    }
+    // هنا يجب إضافة المنطق لحفظ اللعبة في Firebase
+    alert('تم إرسال اللعبة للمراجعة!');
+    this.showSubmitGameModal = false;
+    this.newGameTitle = '';
+    this.newGameUrl = '';
+  }
 
   ngOnInit() {
     // Automatically set the arcade player name from the database user profile

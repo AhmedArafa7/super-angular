@@ -93,6 +93,15 @@ function updateManualUI() {
     `;
 }
 
+const LEVELS = [
+    { time: 300, strikes: 3, numModules: 1 }, // Level 1
+    { time: 240, strikes: 3, numModules: 2 }, // Level 2
+    { time: 300, strikes: 3, numModules: 3 }, // Level 3
+    { time: 240, strikes: 2, numModules: 3 }, // Level 4
+    { time: 180, strikes: 2, numModules: 3 }, // Level 5
+    { time: 120, strikes: 1, numModules: 3 }  // Level 6 (Sudden Death)
+];
+
 let gameState = {
     phase: 'lobby', // lobby, roles, playing, game-over
     players: [], // { id, name, role }
@@ -103,7 +112,7 @@ let gameState = {
     loseReason: '',
     modules: [],
     recentGesture: '',
-    missionLevel: 1
+    missionLevel: parseInt(localStorage.getItem('tm_current_level')) || 1
 };
 
 let timerInterval = null;
@@ -382,6 +391,12 @@ function updateLobbyUI() {
             $('waiting-msg').classList.remove('hidden');
         }
     }
+    
+    // Update Lobby Level Display
+    const lobbyLevelEl = $('lobby-level-display');
+    if (lobbyLevelEl) {
+        lobbyLevelEl.innerText = gameState.missionLevel;
+    }
 }
 
 window.selectMyRole = function(role) {
@@ -562,7 +577,12 @@ function showGameOverScreen() {
 }
 
 function generateBomb() {
-    gameState.timeRemaining = 300;
+    let currentLevel = parseInt(localStorage.getItem('tm_current_level')) || 1;
+    gameState.missionLevel = currentLevel;
+    
+    let lData = LEVELS[Math.min(currentLevel - 1, LEVELS.length - 1)];
+    gameState.timeRemaining = lData.time;
+    gameState.maxStrikes = lData.strikes;
     gameState.strikes = 0;
     gameState.resultMsg = '';
     gameState.loseReason = '';
@@ -584,7 +604,7 @@ function generateBomb() {
     // Module 2: Calculation module (math result + light -> digit)
     let a = Math.floor(Math.random() * 11) + 2;
     let b = Math.floor(Math.random() * 11) + 2;
-    const ops = ['+', '-', '?'];
+    const ops = ['+', '-', '*'];
     const op = ops[Math.floor(Math.random() * ops.length)];
     let result;
     if (op === '+') result = a + b;
@@ -604,7 +624,7 @@ function generateBomb() {
     const dirLight = pickLightColor();
     const solutionDir = DIRECTION_TABLE[String(brailleDigit)][dirLight];
 
-    gameState.modules = [
+    let allModules = [
         {
             type: 'cables',
             id: 0,
@@ -634,6 +654,8 @@ function generateBomb() {
             solutionDir
         }
     ];
+    
+    gameState.modules = allModules.slice(0, lData.numModules);
 
     startTimer();
 }
@@ -662,6 +684,34 @@ function triggerGameOver(result, reason = '') {
     gameState.resultMsg = result;
     gameState.loseReason = result === 'lose' ? reason : '';
     if (isHost) broadcastState();
+    
+    // Update Missions
+    let played = parseInt(localStorage.getItem('tm_games_played')) || 0;
+    localStorage.setItem('tm_games_played', played + 1);
+    if (result === 'win') {
+        let won = parseInt(localStorage.getItem('tm_games_won')) || 0;
+        localStorage.setItem('tm_games_won', won + 1);
+        if (gameState.strikes === 0) {
+            let perfect = parseInt(localStorage.getItem('tm_perfect_win')) || 0;
+            localStorage.setItem('tm_perfect_win', perfect + 1);
+        }
+        if (isHost) {
+            let nextLvl = gameState.missionLevel + 1;
+            localStorage.setItem('tm_current_level', nextLvl);
+            gameState.missionLevel = nextLvl;
+        }
+    }
+    if (myRole === 'deaf') {
+        let deafPlayed = parseInt(localStorage.getItem('tm_played_deaf')) || 0;
+        localStorage.setItem('tm_played_deaf', deafPlayed + 1);
+    } else if (myRole === 'blind') {
+        let blindPlayed = parseInt(localStorage.getItem('tm_played_blind')) || 0;
+        localStorage.setItem('tm_played_blind', blindPlayed + 1);
+    } else if (myRole === 'mute') {
+        let mutePlayed = parseInt(localStorage.getItem('tm_played_mute')) || 0;
+        localStorage.setItem('tm_played_mute', mutePlayed + 1);
+    }
+    
     showGameOverScreen();
 }
 

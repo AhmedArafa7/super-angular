@@ -37,6 +37,23 @@ import { ImagePreviewDirective } from '../../shared/directives/image-preview.dir
 
         <!-- Categories & Menu -->
         <div class="p-8">
+          <!-- Search Bar -->
+          <div class="relative w-full max-w-md mb-8">
+            <input type="text" 
+                   [value]="searchQuery()" 
+                   (input)="onSearchInput($event)"
+                   placeholder="ابحث عن مخبوزات لذيذة..." 
+                   class="w-full pr-11 pl-4 h-12 bg-white dark:bg-surface-container border border-surface-container-high rounded-2xl text-sm text-on-surface focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-600 shadow-sm transition-all" />
+            <div class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant">
+              <svg lucideIcon="search" class="w-5 h-5 text-slate-400"></svg>
+            </div>
+            <button *ngIf="searchQuery()" 
+                    (click)="searchQuery.set('')" 
+                    class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-black/5 transition-all">
+              <svg lucideIcon="x" class="w-4 h-4"></svg>
+            </button>
+          </div>
+
           <div class="flex items-center gap-4 mb-8 overflow-x-auto pb-2 custom-scrollbar">
             <button *ngFor="let cat of dynamicCategories()" 
                     (click)="selectedCategory.set(cat)"
@@ -174,13 +191,29 @@ export class BakeryHomeComponent implements OnInit {
 
   dynamicCategories = computed(() => ['الكل'].concat(this.bakery.categories()));
   selectedCategory = signal<string>('الكل');
+  searchQuery = signal<string>('');
   sidebarTab = signal<'cart' | 'orders'>('cart');
   isSubmitting = signal(false);
 
   filteredProducts = computed(() => {
-    if (this.selectedCategory() === 'الكل') return this.bakery.products();
-    return this.bakery.products().filter(p => p.category === this.selectedCategory());
+    let list = this.bakery.products();
+    if (this.selectedCategory() !== 'الكل') {
+      list = list.filter(p => p.category === this.selectedCategory());
+    }
+    const q = this.searchQuery().trim().toLowerCase();
+    if (q) {
+      list = list.filter(p => 
+        p.name.toLowerCase().includes(q) || 
+        p.description.toLowerCase().includes(q)
+      );
+    }
+    return list;
   });
+
+  onSearchInput(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this.searchQuery.set(value);
+  }
 
   ngOnInit() {
     const user = this.firebase.currentUser();

@@ -38,9 +38,9 @@
                     <button onclick="document.getElementById('options-menu-overlay').style.display='flex';" style="width: 100%; height: 48px; border-radius: 50px; background: #ff9900; border: none; border-bottom: 5px solid #cc7a00; box-shadow: inset 0 3px 5px rgba(255,255,255,0.6), 0 4px 10px rgba(255,153,0,0.5); color: white; font-weight: 900; font-size: 20px; font-family: 'Tajawal', sans-serif; cursor: pointer; transition: transform 0.1s; letter-spacing: 2px;" onmousedown="this.style.transform='translateY(3px)'; this.style.borderBottomWidth='2px';" onmouseup="this.style.transform='translateY(0)'; this.style.borderBottomWidth='5px';">
                         OPTIONS
                     </button>
-                    <!-- Wishlist Button -->
-                    <button onclick="alert('أضف اللعبة لقائمة الرغبات!')" style="width: 100%; height: 48px; border-radius: 50px; background: #3366ff; border: none; border-bottom: 5px solid #2952cc; box-shadow: inset 0 3px 5px rgba(255,255,255,0.6), 0 4px 10px rgba(51,102,255,0.5); color: white; font-weight: 900; font-size: 20px; font-family: 'Tajawal', sans-serif; cursor: pointer; transition: transform 0.1s; letter-spacing: 2px;" onmousedown="this.style.transform='translateY(3px)'; this.style.borderBottomWidth='2px';" onmouseup="this.style.transform='translateY(0)'; this.style.borderBottomWidth='5px';">
-                        WISHLIST
+                    <!-- Achievements Button -->
+                    <button onclick="showMissions()" style="width: 100%; height: 48px; border-radius: 50px; background: #3366ff; border: none; border-bottom: 5px solid #2952cc; box-shadow: inset 0 3px 5px rgba(255,255,255,0.6), 0 4px 10px rgba(51,102,255,0.5); color: white; font-weight: 900; font-size: 20px; font-family: 'Tajawal', sans-serif; cursor: pointer; transition: transform 0.1s; letter-spacing: 2px;" onmousedown="this.style.transform='translateY(3px)'; this.style.borderBottomWidth='2px';" onmouseup="this.style.transform='translateY(0)'; this.style.borderBottomWidth='5px';">
+                        ACHIEVEMENTS
                     </button>
                     <!-- Quit Button -->
                     <button onclick="window.parent.postMessage({type: 'CLOSE_GAME'}, '*')" style="width: 100%; height: 48px; border-radius: 50px; background: #33cc33; border: none; border-bottom: 5px solid #29a329; box-shadow: inset 0 3px 5px rgba(255,255,255,0.6), 0 4px 10px rgba(51,204,51,0.5); color: white; font-weight: 900; font-size: 20px; font-family: 'Tajawal', sans-serif; cursor: pointer; transition: transform 0.1s; letter-spacing: 2px;" onmousedown="this.style.transform='translateY(3px)'; this.style.borderBottomWidth='2px';" onmouseup="this.style.transform='translateY(0)'; this.style.borderBottomWidth='5px';">
@@ -74,6 +74,11 @@
         <!-- Room Screen -->
         <div id="room-screen" class="screen">
             <h2>غرفة الانتظار</h2>
+            <div style="text-align: center; margin-bottom: 10px;">
+                <span style="background: #f59e0b; color: #000; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-family: 'Fredoka One', 'Tajawal', sans-serif;">
+                    المستوى: <span id="lobby-level-display">1</span>
+                </span>
+            </div>
             <div class="room-id-box hidden" id="room-id-box">
                 كود الغرفة: <span id="room-id-display">...</span>
             </div>
@@ -443,10 +448,92 @@
         user-select: none;
     }
     </style>
-    <script src="game.js?v=13"></script>
+    <!-- Missions Menu Overlay -->
+    <div id="missions-menu-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+        <div style="position: relative; width: 90%; max-width: 600px; background: #1e293b; border: 4px solid #3b82f6; border-radius: 20px; display: flex; flex-direction: column; padding: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+            
+            <!-- Back Button -->
+            <button onclick="document.getElementById('missions-menu-overlay').style.display='none';" style="position: absolute; top: -20px; right: -20px; width: 50px; height: 50px; background: #ef4444; border: 3px solid #991b1b; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 110; transition: transform 0.1s; color: white; font-weight: bold; font-size: 24px;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                X
+            </button>
+
+            <h2 style="color: #facc15; font-family: 'Fredoka One', 'Tajawal', sans-serif; text-align: center; margin-bottom: 20px; font-size: 2rem;">الإنجازات 🏆</h2>
+
+            <div id="missions-list" style="display: flex; flex-direction: column; gap: 15px; overflow-y: auto; max-height: 400px; padding-right: 10px;">
+                <!-- Missions injected by JS -->
+            </div>
+            
+        </div>
+    </div>
+
+    <script src="game.js?v=14"></script>
     <script>
+    const MISSIONS = [
+        { id: 'm1', title: 'العب 3 أدوار', target: 3, key: 'tm_games_played', reward: '100 🍌', rewardTitle: '100 موزة' },
+        { id: 'm2', title: 'العب 10 أدوار', target: 10, key: 'tm_games_played', reward: '300 🍌', rewardTitle: '300 موزة' },
+        { id: 'm3', title: 'فز في اللعبة', target: 1, key: 'tm_games_won', reward: 'لقب: مبتدئ تفكيك', rewardTitle: 'لقب: مبتدئ تفكيك' },
+        { id: 'm4', title: 'فز في 5 أدوار', target: 5, key: 'tm_games_won', reward: 'لقب: خبير تفكيك', rewardTitle: 'لقب: خبير تفكيك' },
+        { id: 'm5', title: 'العب دور الأصم (DEAF)', target: 1, key: 'tm_played_deaf', reward: '50 🍌', rewardTitle: '50 موزة' },
+        { id: 'm6', title: 'العب دور الأعمى (BLIND)', target: 1, key: 'tm_played_blind', reward: '50 🍌', rewardTitle: '50 موزة' },
+        { id: 'm7', title: 'العب دور الأبكم (MUTE)', target: 1, key: 'tm_played_mute', reward: '50 🍌', rewardTitle: '50 موزة' },
+        { id: 'm8', title: 'فوز مثالي (بدون أخطاء)', target: 1, key: 'tm_perfect_win', reward: '250 🍌', rewardTitle: '250 موزة' }
+    ];
+
+    function showMissions() {
+        document.getElementById('missions-menu-overlay').style.display = 'flex';
+        renderMissions();
+    }
+
+    function renderMissions() {
+        const list = document.getElementById('missions-list');
+        list.innerHTML = '';
+        
+        MISSIONS.forEach(mission => {
+            const currentStr = localStorage.getItem(mission.key) || '0';
+            const current = parseInt(currentStr) || 0;
+            const isCompleted = current >= mission.target;
+            const isClaimed = localStorage.getItem('tm_mission_claimed_' + mission.id) === 'true';
+            
+            const div = document.createElement('div');
+            div.style.background = isClaimed ? 'rgba(34, 197, 94, 0.2)' : 'rgba(51, 65, 85, 0.8)';
+            div.style.border = isClaimed ? '2px solid #22c55e' : '2px solid #475569';
+            div.style.borderRadius = '12px';
+            div.style.padding = '15px';
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
+            
+            let btnHTML = '';
+            if (isClaimed) {
+                btnHTML = `<button disabled style="background: transparent; color: #22c55e; border: none; font-weight: bold; font-family: inherit;">تم الاستلام ✔️</button>`;
+            } else if (isCompleted) {
+                btnHTML = `<button onclick="claimMission('${mission.id}')" style="background: #eab308; color: #000; border: none; border-radius: 8px; padding: 8px 15px; font-weight: bold; font-family: inherit; cursor: pointer; box-shadow: 0 4px 0 #a16207;">استلام الجائزة</button>`;
+            } else {
+                btnHTML = `<div style="color: #94a3b8; font-weight: bold;">${current} / ${mission.target}</div>`;
+            }
+            
+            div.innerHTML = `
+                <div>
+                    <h3 style="margin: 0 0 5px 0; color: #f8fafc;">${mission.title}</h3>
+                    <div style="color: #cbd5e1; font-size: 0.9rem;">الجائزة: <span style="color: #facc15; font-weight: bold;">${mission.reward}</span></div>
+                </div>
+                <div>${btnHTML}</div>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    window.claimMission = function(id) {
+        localStorage.setItem('tm_mission_claimed_' + id, 'true');
+        const m = MISSIONS.find(x => x.id === id);
+        if (m) alert('🎉 مبروك! حصلت على: ' + m.rewardTitle);
+        if (typeof playClickSound === 'function') playClickSound();
+        renderMissions();
+    };
+
     document.addEventListener('DOMContentLoaded', () => {
-        // Options Data
+        // Options Data ...
+
         const optionsData = {
             graphics: { current: 2, values: ['Low', 'Medium', 'High', 'Ultra'] },
             resolution: { current: 1, values: ['1280x720', '1920x1080', '2560x1440'] },
@@ -503,19 +590,19 @@
 
         const translations = {
             0: { // English
-                play: "PLAY", options: "OPTIONS", wishlist: "WISHLIST", quit: "QUIT",
+                play: "PLAY", options: "OPTIONS", wishlist: "ACHIEVEMENTS", quit: "QUIT",
                 host: "Create Room (Host)", join_placeholder: "Room Code", join: "Join", back: "Back to Menu"
             },
             1: { // Arabic
-                play: "العب", options: "الخيارات", wishlist: "قائمة الرغبات", quit: "خروج",
+                play: "العب", options: "الخيارات", wishlist: "الإنجازات 🏆", quit: "خروج",
                 host: "إنشاء غرفة (مضيف)", join_placeholder: "كود الغرفة", join: "انضمام", back: "العودة للقائمة"
             },
             2: { // Spanish
-                play: "JUGAR", options: "OPCIONES", wishlist: "LISTA", quit: "SALIR",
+                play: "JUGAR", options: "OPCIONES", wishlist: "LOGROS", quit: "SALIR",
                 host: "Crear Sala", join_placeholder: "Código", join: "Unirse", back: "Volver"
             },
             3: { // French
-                play: "JOUER", options: "OPTIONS", wishlist: "SOUHAITS", quit: "QUITTER",
+                play: "JOUER", options: "OPTIONS", wishlist: "SUCCÈS", quit: "QUITTER",
                 host: "Créer une salle", join_placeholder: "Code", join: "Rejoindre", back: "Retour"
             }
         };

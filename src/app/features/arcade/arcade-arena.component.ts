@@ -51,63 +51,42 @@ import { ArcadeAudioService } from '../../core/services/arcade-audio.service';
         </div>
       </header>
 
-      <!-- Glossy Mode Selection Menu -->
-      <div *ngIf="showModeOverlay" class="absolute inset-0 z-50 bg-[#0a192f]/90 flex flex-col items-center justify-center p-6 animate-in fade-in zoom-in duration-500" style="font-family: 'Fredoka One', 'Comic Sans MS', system-ui, sans-serif;">
-         <div class="relative w-full max-w-sm rounded-[40px] bg-[#3b5998] border-b-[15px] border-[#294176] shadow-[0_20px_50px_rgba(0,0,0,0.8)] p-6 pt-12">
+      <!-- Dynamic Mode Selection Menu -->
+      <div *ngIf="showModeOverlay" id="arena-menu-overlay" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-6 animate-in fade-in zoom-in duration-500" 
+           [style.background-image]="game ? 'url(/games/' + game.id + '/bg.png)' : 'none'">
+         
+         <!-- Dynamic Menu Container -->
+         <div id="arena-menu-container" class="relative w-full max-w-sm flex flex-col gap-5 z-10">
             
-            <!-- Top Pink Light/Siren -->
-            <div class="absolute -top-10 left-1/2 -translate-x-1/2">
-               <div class="w-20 h-20 rounded-full bg-[#ff00ff] border-[6px] border-[#1a2b54] shadow-[0_0_40px_#ff00ff,inset_0_-8px_0_rgba(0,0,0,0.3),inset_0_8px_10px_rgba(255,255,255,0.8)] z-10 animate-pulse flex items-center justify-center relative">
-                  <div class="w-6 h-3 bg-white/80 rounded-full absolute top-2"></div>
-               </div>
-               <div class="w-24 h-8 bg-[#1a2b54] rounded-full absolute -bottom-4 left-1/2 -translate-x-1/2 -z-10 shadow-[0_10px_20px_rgba(0,0,0,0.5)]"></div>
-            </div>
+            <!-- Private Room Button (PLAY) -->
+            <button (click)="selectMode('private')" class="arena-btn btn-play group">
+               <span>PLAY (ROOM)</span>
+               <span class="pointer-icon group-hover:animate-bounce">👉🏼</span>
+            </button>
+            <button (click)="openJoinRoomModal()" class="arena-btn btn-join">
+              JOIN BY CODE
+            </button>
 
-            <!-- Buttons List -->
-            <div class="flex flex-col gap-5 relative z-10 mt-6">
-               
-               <!-- Private Room Button (PLAY) -->
-               <div class="bg-[#1a2b54] rounded-full p-2.5 shadow-[inset_0_10px_10px_rgba(0,0,0,0.6)]">
-                  <button (click)="selectMode('private')" class="w-full h-16 rounded-full bg-[#ff0066] border-b-8 border-[#cc0052] shadow-[inset_0_4px_6px_rgba(255,255,255,0.6),0_5px_15px_rgba(255,0,102,0.5)] transition-all hover:-translate-y-1 active:translate-y-2 active:border-b-0 flex items-center justify-center group overflow-hidden relative">
-                     <div class="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/50 to-transparent rounded-t-full"></div>
-                     <span class="text-white font-black text-2xl tracking-widest drop-shadow-[0_4px_3px_rgba(0,0,0,0.6)] relative z-10 flex items-center gap-2">
-                       PLAY (ROOM)
-                       <span class="text-2xl filter drop-shadow-md group-hover:animate-bounce">👉🏼</span>
-                     </span>
-                  </button>
+            <!-- Local Play Button -->
+            <button (click)="selectMode('local')" class="arena-btn btn-local">
+               <span>LOCAL PLAY</span>
+            </button>
+
+            <!-- Online Matchmaking Button -->
+            <div class="pro-btn-wrapper relative">
+               <div *ngIf="!globalState.userProfile().isPro" class="pro-lock-overlay">
+                  <span>PRO ONLY 🔒</span>
                </div>
-               <button (click)="openJoinRoomModal()" class="w-full h-11 rounded-2xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 font-bold tracking-wide hover:bg-emerald-600/30 transition-colors">
-                 JOIN BY CODE
+               <button (click)="selectMode('pro')" [disabled]="!globalState.userProfile().isPro" class="arena-btn btn-online">
+                  <span>ONLINE MATCH</span>
                </button>
-
-               <!-- Local Play Button -->
-               <div class="bg-[#1a2b54] rounded-full p-2.5 shadow-[inset_0_10px_10px_rgba(0,0,0,0.6)]">
-                  <button (click)="selectMode('local')" class="w-full h-16 rounded-full bg-[#ff9900] border-b-8 border-[#cc7a00] shadow-[inset_0_4px_6px_rgba(255,255,255,0.6),0_5px_15px_rgba(255,153,0,0.5)] transition-all hover:-translate-y-1 active:translate-y-2 active:border-b-0 flex items-center justify-center relative">
-                     <div class="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/50 to-transparent rounded-t-full"></div>
-                     <span class="text-white font-black text-2xl tracking-widest drop-shadow-[0_4px_3px_rgba(0,0,0,0.6)] relative z-10">LOCAL PLAY</span>
-                  </button>
-               </div>
-
-               <!-- Online Matchmaking Button -->
-               <div class="bg-[#1a2b54] rounded-full p-2.5 shadow-[inset_0_10px_10px_rgba(0,0,0,0.6)] relative overflow-hidden">
-                  <div *ngIf="!globalState.userProfile().isPro" class="absolute inset-0 bg-black/60 z-20 flex items-center justify-center rounded-full backdrop-blur-sm">
-                     <span class="text-amber-400 font-black text-sm tracking-widest drop-shadow-md">PRO ONLY 🔒</span>
-                  </div>
-                  <button (click)="selectMode('pro')" [disabled]="!globalState.userProfile().isPro" class="w-full h-16 rounded-full bg-[#3366ff] border-b-8 border-[#2952cc] shadow-[inset_0_4px_6px_rgba(255,255,255,0.6),0_5px_15px_rgba(51,102,255,0.5)] transition-all hover:-translate-y-1 active:translate-y-2 active:border-b-0 flex items-center justify-center relative">
-                     <div class="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/50 to-transparent rounded-t-full"></div>
-                     <span class="text-white font-black text-2xl tracking-widest drop-shadow-[0_4px_3px_rgba(0,0,0,0.6)] relative z-10">ONLINE MATCH</span>
-                  </button>
-               </div>
-
-               <!-- Quit Button -->
-               <div class="bg-[#1a2b54] rounded-full p-2.5 shadow-[inset_0_10px_10px_rgba(0,0,0,0.6)]">
-                  <button (click)="goBack()" class="w-full h-16 rounded-full bg-[#33cc33] border-b-8 border-[#29a329] shadow-[inset_0_4px_6px_rgba(255,255,255,0.6),0_5px_15px_rgba(51,204,51,0.5)] transition-all hover:-translate-y-1 active:translate-y-2 active:border-b-0 flex items-center justify-center relative">
-                     <div class="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/50 to-transparent rounded-t-full"></div>
-                     <span class="text-white font-black text-3xl tracking-widest drop-shadow-[0_4px_3px_rgba(0,0,0,0.6)] relative z-10">QUIT</span>
-                  </button>
-               </div>
-
             </div>
+
+            <!-- Quit Button -->
+            <button (click)="goBack()" class="arena-btn btn-quit">
+               <span>QUIT</span>
+            </button>
+
          </div>
       </div>
 
@@ -245,7 +224,60 @@ import { ArcadeAudioService } from '../../core/services/arcade-audio.service';
         </div>
       </div>
     </div>
-  `
+  `,
+  styles: [`
+    #arena-menu-overlay { font-family: 'Fredoka One', system-ui, sans-serif; }
+    #arena-menu-container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 40px;
+      padding: 2rem 1.5rem;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+    .arena-btn {
+      width: 100%;
+      height: 4rem;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-weight: 900;
+      font-size: 1.5rem;
+      letter-spacing: 0.1em;
+      color: white;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .arena-btn:hover { transform: translateY(-4px); filter: brightness(1.1); }
+    .arena-btn:active { transform: translateY(4px); }
+    
+    .btn-play { background: #ff0066; border-bottom: 6px solid #cc0052; box-shadow: 0 5px 15px rgba(255,0,102,0.4); }
+    .btn-join { background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); height: 3rem; font-size: 1.2rem; }
+    .btn-local { background: #ff9900; border-bottom: 6px solid #cc7a00; box-shadow: 0 5px 15px rgba(255,153,0,0.4); }
+    .btn-online { background: #3366ff; border-bottom: 6px solid #2952cc; box-shadow: 0 5px 15px rgba(51,102,255,0.4); }
+    .btn-quit { background: #33cc33; border-bottom: 6px solid #29a329; box-shadow: 0 5px 15px rgba(51,204,51,0.4); }
+
+    .pro-lock-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      border-radius: 9999px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fbbf24;
+      font-weight: 900;
+      font-size: 0.875rem;
+      letter-spacing: 0.1em;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+  `]
 })
 export class ArcadeArenaComponent implements OnInit, OnDestroy {
   game: ArcadeGame | undefined;
@@ -307,18 +339,13 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    // Ensure the arcade player name is synced silently
-    if (!localStorage.getItem('arcade_player_name')) {
-      const dbName = this.globalState.userProfile().name;
-      if (dbName) localStorage.setItem('arcade_player_name', dbName);
-    }
-
     this.route.paramMap.subscribe(params => {
-      const id = params.get('id');
-      if (id) {
-        this.arcadeService.getGameById(id).subscribe(game => {
+      const gameId = params.get('id');
+      if (gameId) {
+        this.arcadeService.getGameById(gameId).subscribe(game => {
           if (game && game.localUrl) {
             this.game = game;
+            this.loadGameMenuTheme(gameId);
             if (this.game.hasCustomMenu && !this.selectedMode) {
               this.showModeOverlay = false;
               this.selectedMode = 'custom';
@@ -351,6 +378,25 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
         this.playTime++;
       }
     }, 1000);
+  }
+
+  loadGameMenuTheme(gameId: string) {
+    const head = document.getElementsByTagName('head')[0];
+    let themeLink = document.getElementById('game-menu-theme') as HTMLLinkElement;
+    if (!themeLink) {
+      themeLink = document.createElement('link');
+      themeLink.id = 'game-menu-theme';
+      themeLink.rel = 'stylesheet';
+      head.appendChild(themeLink);
+    }
+    themeLink.href = `/games/${gameId}/menu-theme.css`;
+  }
+
+  removeGameMenuTheme() {
+    const themeLink = document.getElementById('game-menu-theme');
+    if (themeLink) {
+      themeLink.remove();
+    }
   }
 
   async selectMode(mode: 'local' | 'private' | 'pro') {
@@ -467,7 +513,10 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    if (this.timer) clearInterval(this.timer);
+    this.removeGameMenuTheme();
+    if (this.timer) {
+      clearInterval(this.timer);
+    }
     if (document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
     }
