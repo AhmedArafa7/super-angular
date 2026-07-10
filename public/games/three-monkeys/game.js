@@ -848,11 +848,15 @@ function renderBlindBomb() {
             modDiv.style.pointerEvents = 'none';
         }
         
-        if (mod.type === 'wires') {
+        if (mod.type === 'cables') {
             mod.wires.forEach((w, wIdx) => {
                 let wHit = document.createElement('div');
                 wHit.className = 'blind-item wire-hitbox';
-                wHit.style.top = `${wIdx * 25 + 10}px`;
+                wHit.style.top = `${wIdx * 20 + 15}px`;
+                wHit.style.height = '15px';
+                wHit.style.width = '90%';
+                wHit.style.left = '5%';
+                wHit.style.border = '1px dashed #333';
                 wHit.addEventListener('touchstart', (e) => { e.preventDefault(); sendAction({ type: 'CUT_WIRE', index: wIdx }); }, {passive: false});
                 wHit.onclick = () => sendAction({ type: 'CUT_WIRE', index: wIdx });
                 if (mod.cutIndex === wIdx) wHit.style.display = 'none';
@@ -860,69 +864,68 @@ function renderBlindBomb() {
             });
         }
         
-        if (mod.type === 'numbers') {
-            let leftBtn = document.createElement('div');
-            leftBtn.className = 'blind-item btn-hitbox';
-            leftBtn.style.top = '60px'; leftBtn.style.left = '10px'; leftBtn.style.width = '60px'; leftBtn.style.height = '50px';
-            leftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); sendAction({ type: 'PRESS_NUM', value: '<' }); }, {passive: false});
-            leftBtn.onclick = () => sendAction({ type: 'PRESS_NUM', value: '<' });
-            
-            let rightBtn = document.createElement('div');
-            rightBtn.className = 'blind-item btn-hitbox';
-            rightBtn.style.top = '60px'; rightBtn.style.right = '10px'; rightBtn.style.width = '60px'; rightBtn.style.height = '50px';
-            rightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); sendAction({ type: 'PRESS_NUM', value: '>' }); }, {passive: false});
-            rightBtn.onclick = () => sendAction({ type: 'PRESS_NUM', value: '>' });
-            
-            // Add a hidden number display that shows on hover/touch
-            let numDisplay = document.createElement('div');
-            numDisplay.className = 'blind-item blind-number-display';
-            numDisplay.innerText = mod.number;
-            numDisplay.style.top = '10px';
-            numDisplay.style.left = '45px';
-            numDisplay.style.width = '60px';
-            numDisplay.style.height = '45px';
-            numDisplay.style.display = 'flex';
-            numDisplay.style.alignItems = 'center';
-            numDisplay.style.justifyContent = 'center';
-            numDisplay.style.fontSize = '2.2rem';
-            numDisplay.style.fontWeight = 'bold';
-            numDisplay.style.fontFamily = 'monospace';
-            numDisplay.style.color = 'transparent';
-            numDisplay.style.userSelect = 'none';
-            
-            numDisplay.addEventListener('mouseenter', () => {
-                numDisplay.style.color = '#ef4444';
-            });
-            numDisplay.addEventListener('mouseleave', () => {
-                numDisplay.style.color = 'transparent';
-            });
-            numDisplay.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                numDisplay.style.color = '#ef4444';
-            }, {passive: false});
-            numDisplay.addEventListener('touchend', () => {
-                numDisplay.style.color = 'transparent';
-            });
-            
-            modDiv.appendChild(leftBtn);
-            modDiv.appendChild(rightBtn);
-            modDiv.appendChild(numDisplay);
-        }
-        
-        if (mod.type === 'keypad') {
-            mod.buttons.forEach((b, bIdx) => {
+        if (mod.type === 'calculation') {
+            const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
+            digits.forEach((digit, dIdx) => {
                 let btnHit = document.createElement('div');
                 btnHit.className = 'blind-item btn-hitbox';
-                let col = bIdx % 2; let row = Math.floor(bIdx / 2);
-                btnHit.style.top = `${row * 65 + 10}px`;
-                btnHit.style.left = `${col * 65 + 10}px`;
-                btnHit.style.width = '60px'; btnHit.style.height = '60px';
-                btnHit.onclick = () => sendAction({ type: 'PRESS_KEY', color: b });
+                let col = dIdx % 5;
+                let row = Math.floor(dIdx / 5);
+                btnHit.style.top = `${row * 40 + 20}px`;
+                btnHit.style.left = `${col * 26 + 10}px`;
+                btnHit.style.width = '22px';
+                btnHit.style.height = '30px';
+                btnHit.style.border = '1px dashed #333';
+                btnHit.style.display = 'flex';
+                btnHit.style.alignItems = 'center';
+                btnHit.style.justifyContent = 'center';
+                btnHit.style.fontSize = '0.8rem';
+                btnHit.style.color = 'transparent';
                 
-                if (mod.pressedSequence.includes(b)) {
-                    btnHit.style.opacity = '0.2';
-                    btnHit.style.pointerEvents = 'none';
-                }
+                const showDigit = () => { btnHit.style.color = '#ef4444'; };
+                const hideDigit = () => { btnHit.style.color = 'transparent'; };
+                btnHit.addEventListener('mouseenter', showDigit);
+                btnHit.addEventListener('mouseleave', hideDigit);
+                btnHit.addEventListener('touchstart', (e) => { e.preventDefault(); showDigit(); sendAction({ type: 'PRESS_DIGIT', value: digit }); }, {passive: false});
+                btnHit.addEventListener('touchend', hideDigit);
+                btnHit.onclick = () => sendAction({ type: 'PRESS_DIGIT', value: digit });
+                
+                btnHit.innerText = digit;
+                modDiv.appendChild(btnHit);
+            });
+        }
+        
+        if (mod.type === 'direction') {
+            const dirs = [
+                { dir: 'up', label: '▲', top: '15px', left: '55px' },
+                { dir: 'down', label: '▼', top: '95px', left: '55px' },
+                { dir: 'left', label: '◀', top: '55px', left: '15px' },
+                { dir: 'right', label: '▶', top: '55px', left: '95px' }
+            ];
+            
+            dirs.forEach(d => {
+                let btnHit = document.createElement('div');
+                btnHit.className = 'blind-item btn-hitbox';
+                btnHit.style.top = d.top;
+                btnHit.style.left = d.left;
+                btnHit.style.width = '40px';
+                btnHit.style.height = '40px';
+                btnHit.style.border = '1px dashed #333';
+                btnHit.style.display = 'flex';
+                btnHit.style.alignItems = 'center';
+                btnHit.style.justifyContent = 'center';
+                btnHit.style.fontSize = '1.2rem';
+                btnHit.style.color = 'transparent';
+                
+                const showLabel = () => { btnHit.style.color = '#ef4444'; };
+                const hideLabel = () => { btnHit.style.color = 'transparent'; };
+                btnHit.addEventListener('mouseenter', showLabel);
+                btnHit.addEventListener('mouseleave', hideLabel);
+                btnHit.addEventListener('touchstart', (e) => { e.preventDefault(); showLabel(); sendAction({ type: 'PRESS_DIR', value: d.dir }); }, {passive: false});
+                btnHit.addEventListener('touchend', hideLabel);
+                btnHit.onclick = () => sendAction({ type: 'PRESS_DIR', value: d.dir });
+                
+                btnHit.innerText = d.label;
                 modDiv.appendChild(btnHit);
             });
         }
@@ -954,12 +957,27 @@ function renderDeafBomb() {
         if (mod.defused) {
             modDiv.style.borderColor = '#10b981';
             let check = document.createElement('div');
-            check.innerText = '?';
-            check.style.position = 'absolute'; check.style.right = '5px'; check.style.top = '5px';
+            check.innerText = '✔️';
+            check.style.position = 'absolute'; check.style.right = '5px'; check.style.top = '5px'; check.style.color = '#10b981'; check.style.fontSize = '1.5rem';
             modDiv.appendChild(check);
         }
         
-        if (mod.type === 'wires') {
+        // Indicator light
+        if (mod.lightColor) {
+            let light = document.createElement('div');
+            light.className = 'module-light';
+            light.style.position = 'absolute';
+            light.style.top = '5px';
+            light.style.left = '5px';
+            light.style.width = '15px';
+            light.style.height = '15px';
+            light.style.borderRadius = '50%';
+            light.style.backgroundColor = colorMap[mod.lightColor];
+            light.style.boxShadow = `0 0 10px ${colorMap[mod.lightColor]}`;
+            modDiv.appendChild(light);
+        }
+        
+        if (mod.type === 'cables') {
             mod.wires.forEach((w, wIdx) => {
                 let wireDiv = document.createElement('div');
                 wireDiv.className = 'wire';
@@ -969,31 +987,25 @@ function renderDeafBomb() {
             });
         }
         
-        if (mod.type === 'numbers') {
-            let numD = document.createElement('div');
-            numD.className = 'num-display braille-display';
-            numD.innerText = toBraille(mod.number);
-            numD.setAttribute('aria-label', '??? ???? ??????');
-            numD.title = '??? ?????? ? ??? ???? ??????';
-            modDiv.appendChild(numD);
-            
-            let btnC = document.createElement('div');
-            btnC.className = 'num-btn-container';
-            btnC.innerHTML = `<button class="num-btn"><</button><button class="num-btn">></button>`;
-            modDiv.appendChild(btnC);
+        if (mod.type === 'calculation') {
+            let exprDiv = document.createElement('div');
+            exprDiv.style.textAlign = 'center';
+            exprDiv.style.marginTop = '25px';
+            exprDiv.style.fontSize = '1.5rem';
+            exprDiv.style.fontWeight = 'bold';
+            exprDiv.style.color = '#1e293b';
+            exprDiv.innerText = mod.expression;
+            modDiv.appendChild(exprDiv);
         }
         
-        if (mod.type === 'keypad') {
-            let grid = document.createElement('div');
-            grid.className = 'keypad-grid';
-            mod.buttons.forEach((b, bIdx) => {
-                let btn = document.createElement('button');
-                btn.className = 'keypad-btn';
-                btn.style.backgroundColor = colorMap[b];
-                if (mod.pressedSequence.includes(b)) btn.classList.add('pressed');
-                grid.appendChild(btn);
-            });
-            modDiv.appendChild(grid);
+        if (mod.type === 'direction') {
+            let brailleDiv = document.createElement('div');
+            brailleDiv.style.textAlign = 'center';
+            brailleDiv.style.marginTop = '25px';
+            brailleDiv.style.fontSize = '2.5rem';
+            brailleDiv.style.color = '#1e293b';
+            brailleDiv.innerText = toBraille(mod.brailleDigit);
+            modDiv.appendChild(brailleDiv);
         }
         
         container.appendChild(modDiv);

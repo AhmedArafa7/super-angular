@@ -2,7 +2,7 @@ import { Component, inject, Inject, OnInit } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
-import { AppShellComponent } from './layout/app-shell/app-shell';
+import { RouterOutlet } from '@angular/router';
 import { SyncService } from './core/services/sync.service';
 import { GlobalVideoPlayerComponent } from './features/wetube/components/global-video-player/global-video-player.component';
 import { ToastComponent } from './shared/components/toast/toast.component';
@@ -11,7 +11,7 @@ import { LightboxComponent } from './shared/components/lightbox/lightbox.compone
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [AppShellComponent, GlobalVideoPlayerComponent, ToastComponent, LightboxComponent],
+  imports: [RouterOutlet, GlobalVideoPlayerComponent, ToastComponent, LightboxComponent],
   templateUrl: './app.html',
   styleUrls: ['./app.scss']
 })

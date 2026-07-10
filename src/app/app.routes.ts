@@ -1,45 +1,23 @@
 import { Routes } from '@angular/router';
 import { adminGuard } from './core/guards/admin.guard';
+import { AppShellComponent } from './layout/app-shell/app-shell';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/launcher', pathMatch: 'full' },
+  // 1. المسارات التي تعمل داخل الـ Shell (لوحة التحكم، الألعاب، Wetube)
   {
-    path: 'launcher',
-    loadComponent: () => import('./features/launcher/launcher.component').then(c => c.LauncherComponent),
-    title: 'لوحة التحكم المركزية'
-  },
-  {
-    path: 'stream',
-    loadComponent: () => import('./features/wetube/components/wetube-shell/wetube-shell').then(c => c.WeTubeShellComponent),
+    path: '',
+    component: AppShellComponent,
     children: [
-      { path: 'onboarding', loadComponent: () => import('./features/wetube/components/wetube-onboarding/wetube-onboarding').then(c => c.WeTubeOnboardingComponent), title: 'WeTube - مرحباً' },
-      { path: '', loadComponent: () => import('./features/wetube/components/wetube-home/wetube-home').then(c => c.WeTubeHomeComponent), title: 'WeTube - Stream' },
-      { path: 'watch/:id', loadComponent: () => import('./features/wetube/components/wetube-watch-view/wetube-watch-view').then(c => c.WeTubeWatchViewComponent), title: 'WeTube - Watch' },
-      { path: 'channel/:id', loadComponent: () => import('./features/wetube/components/wetube-channel/wetube-channel.component').then(c => c.WeTubeChannelComponent), title: 'WeTube - Channel' },
-      { path: 'shorts', loadComponent: () => import('./features/wetube/components/wetube-shorts/wetube-shorts').then(c => c.WeTubeShortsComponent), title: 'WeTube - Shorts' },
-      { path: 'studio', loadComponent: () => import('./features/wetube/components/wetube-studio/wetube-studio').then(c => c.WeTubeStudioComponent), title: 'WeTube - Studio' },
-      { path: 'library', loadComponent: () => import('./features/wetube/components/wetube-library/wetube-library').then(c => c.WeTubeLibraryComponent), title: 'WeTube - Library' },
-      { path: 'subscriptions', loadComponent: () => import('./features/wetube/components/wetube-subscriptions/wetube-subscriptions').then(c => c.WeTubeSubscriptionsComponent), title: 'WeTube - Subscriptions' },
-      { path: 'notifications', loadComponent: () => import('./features/wetube/components/wetube-notifications/wetube-notifications').then(c => c.WeTubeNotificationsComponent), title: 'WeTube - Notifications' },
-      { path: 'discovery', loadComponent: () => import('./features/wetube/components/discovery-mode/discovery-mode.component').then(c => c.DiscoveryModeComponent), title: 'WeTube - Discovery' }
+      { path: 'launcher', loadComponent: () => import('./features/launcher/launcher.component').then(c => c.LauncherComponent), title: 'لوحة التحكم المركزية' },
+      { path: 'stream', loadComponent: () => import('./features/wetube/components/wetube-shell/wetube-shell').then(c => c.WeTubeShellComponent), children: [] }, // ملاحظة: سأترك المسارات الفرعية في ملفها
+      { path: 'arcade', loadComponent: () => import('./features/arcade/arcade-hub.component').then(c => c.ArcadeHubComponent), title: 'الألعاب' },
+      { path: 'arcade/arena/:id', loadComponent: () => import('./features/arcade/arcade-arena.component').then(c => c.ArcadeArenaComponent) },
+      { path: 'settings', loadComponent: () => import('./features/settings/settings.component').then(c => c.SettingsComponent) },
+      { path: 'admin', loadComponent: () => import('./features/admin/admin.component').then(c => c.AdminComponent), canActivate: [adminGuard] }
     ]
   },
-  {
-    path: 'health',
-    loadComponent: () => import('./features/health/health.component').then(c => c.HealthComponent),
-    title: 'الصحة والرياضة'
-  },
-  {
-    path: 'settings',
-    loadComponent: () => import('./features/settings/settings.component').then(c => c.SettingsComponent),
-    title: 'الإعدادات المركزية'
-  },
-  {
-    path: 'admin',
-    loadComponent: () => import('./features/admin/admin.component').then(c => c.AdminComponent),
-    canActivate: [adminGuard],
-    title: 'لوحة الإدارة'
-  },
+
+  // 2. المسارات المستقلة (المخبز وأي متجر مستقبلي)
   {
     path: 'bakery',
     loadComponent: () => import('./features/bakery/bakery-home.component').then(c => c.BakeryHomeComponent),
@@ -47,18 +25,8 @@ export const routes: Routes = [
   },
   {
     path: 'bakery/admin',
-    loadComponent: () => import('./features/admin/components/bakery-auth.component').then(c => c.BakeryAuthComponent),
-    title: 'إدارة مخبز عباد الرحمن'
+    loadComponent: () => import('./features/admin/components/bakery-auth.component').then(c => c.BakeryAuthComponent)
   },
-  {
-    path: 'arcade',
-    loadComponent: () => import('./features/arcade/arcade-hub.component').then(c => c.ArcadeHubComponent),
-    title: 'الألعاب'
-  },
-  {
-    path: 'arcade/arena/:id',
-    loadComponent: () => import('./features/arcade/arcade-arena.component').then(c => c.ArcadeArenaComponent),
-    title: 'ساحة اللعب'
-  },
-  { path: '**', redirectTo: '/stream' }
+
+  { path: '**', redirectTo: '/launcher' }
 ];

@@ -21,12 +21,12 @@ export class WeTubeComponent {
   router = inject(Router);
 
   // Search input state
-  searchQuery = signal<string>('');
+  searchQuery = '';
 
   // Floating upload modal simulator
-  newVideoTitle = signal<string>('');
-  newVideoAuthor = signal<string>('');
-  newVideoCategory = signal<string>('تكنولوجيا');
+  newVideoTitle = '';
+  newVideoAuthor = '';
+  newVideoCategory = 'تكنولوجيا';
 
   // Sidebar visibility
   isSidebarOpen = signal<boolean>(true);
@@ -35,13 +35,13 @@ export class WeTubeComponent {
   subscriptionsList = computed(() => this.wetube.subscriptions());
 
   handleSearch(): void {
-    const q = this.searchQuery().trim();
+    const q = this.searchQuery.trim();
     if (!q) return;
     this.wetube.search(q);
   }
 
   onLogoClick(): void {
-    this.searchQuery.set('');
+    this.searchQuery = '';
     this.wetube.setSearchQuery('');
     this.wetube.setActiveCategory('الكل');
     this.wetube.setActiveTab('home');
@@ -56,21 +56,21 @@ export class WeTubeComponent {
   }
 
   async submitVideo(): Promise<void> {
-    const title = this.newVideoTitle().trim();
-    const author = this.newVideoAuthor().trim();
+    const title = this.newVideoTitle.trim();
+    const author = this.newVideoAuthor.trim();
     if (!title || !author) return;
 
     try {
       await this.firebaseService.addVideoForReview({
         title,
         author,
-        category: this.newVideoCategory(),
+        category: this.newVideoCategory,
         thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800', // Default thumbnail for now
         source: 'user_submission'
       });
       alert('تم إرسال الفيديو للمراجعة بنجاح!');
-      this.newVideoTitle.set('');
-      this.newVideoAuthor.set('');
+      this.newVideoTitle = '';
+      this.newVideoAuthor = '';
       this.wetube.showUploadModal.set(false);
     } catch (e) {
       console.error('Failed to submit video', e);

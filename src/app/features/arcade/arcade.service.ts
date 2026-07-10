@@ -376,6 +376,16 @@ export class ArcadeService {
       hasCustomMenu: true
     },
     {
+      id: 'number-hunt',
+      title: 'صيد الأرقام 🎯',
+      description: 'لعبة سرعة بديهة جماعية! ابحث عن الرقم المطلوب وسط شبكة من الأرقام العشوائية واضغط عليه قبل منافسيك لجمع النقاط!',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%231e3a8a%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%230d1b2a%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22url(%23bg)%22%2F%3E%3Ccircle%20cx%3D%22400%22%20cy%3D%22300%22%20r%3D%22120%22%20fill%3D%22none%22%20stroke%3D%22%233b82f6%22%20stroke-width%3D%228%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22325%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2290%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3E42%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22500%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2255%22%20font-weight%3D%22900%22%20fill%3D%22%23facc15%22%20text-anchor%3D%22middle%22%3ENUMBER%20HUNT%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'Party',
+      platforms: ['browser', 'pc', 'android'],
+      localUrl: '/games/number-hunt/index.html',
+      status: 'available'
+    },
+    {
       id: 'mindustry',
       title: 'Mindustry Simulator',
       description: 'لعبة بناء مصانع ودفاع عن الأبراج. ابنِ شبكات التوريد المعقدة لنقل الموارد إلى أبراجك الدفاعية.',
