@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { getFirestore, Firestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, orderBy, limit, startAfter, QueryDocumentSnapshot, documentId, runTransaction, arrayUnion, addDoc, onSnapshot } from 'firebase/firestore';
+import { getFirestore, Firestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, orderBy, limit, startAfter, QueryDocumentSnapshot, documentId, runTransaction, arrayUnion, addDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { environment } from '../../../environments/environment';
 
 export interface UserData {
@@ -518,6 +518,20 @@ export class FirebaseService {
   }
 
   // --- ADMIN MODERATION LOGIC ---
+
+  async addVideoForReview(videoData: any): Promise<void> {
+    try {
+      const videosRef = collection(this.firestore, 'videos');
+      await addDoc(videosRef, {
+        ...videoData,
+        status: 'pending_review',
+        createdAt: serverTimestamp()
+      });
+    } catch (err) {
+      console.error('[FirebaseService] addVideoForReview failed:', err);
+      throw err;
+    }
+  }
 
   async getVideosByStatus(status: 'pending_review' | 'published' | 'rejected', lastDoc?: QueryDocumentSnapshot, pageSize: number = 20): Promise<{ videos: any[], lastVisible: QueryDocumentSnapshot | null }> {
     try {

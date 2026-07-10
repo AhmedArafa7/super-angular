@@ -24,7 +24,6 @@ export class WeTubeComponent {
   searchQuery = signal<string>('');
 
   // Floating upload modal simulator
-  showUploadModal = signal<boolean>(false);
   newVideoTitle = signal<string>('');
   newVideoAuthor = signal<string>('');
   newVideoCategory = signal<string>('تكنولوجيا');
@@ -56,29 +55,27 @@ export class WeTubeComponent {
     }
   }
 
-  simulateUpload(): void {
+  async submitVideo(): Promise<void> {
     const title = this.newVideoTitle().trim();
     const author = this.newVideoAuthor().trim();
     if (!title || !author) return;
 
-    this.wetube.videos.update(list => [
-      {
-        id: (list.length + 1).toString(),
+    try {
+      await this.firebaseService.addVideoForReview({
         title,
         author,
-        source: 'platform',
-        time: 'منذ ثوانٍ',
-        thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800',
-        channelAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=User',
         category: this.newVideoCategory(),
-        status: 'published'
-      },
-      ...list
-    ]);
-
-    this.newVideoTitle.set('');
-    this.newVideoAuthor.set('');
-    this.showUploadModal.set(false);
+        thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800', // Default thumbnail for now
+        source: 'user_submission'
+      });
+      alert('تم إرسال الفيديو للمراجعة بنجاح!');
+      this.newVideoTitle.set('');
+      this.newVideoAuthor.set('');
+      this.wetube.showUploadModal.set(false);
+    } catch (e) {
+      console.error('Failed to submit video', e);
+      alert('حدث خطأ أثناء إرسال الفيديو. تأكد من أن لديك صلاحيات المراجعة.');
+    }
   }
 
   connectVault(): void {

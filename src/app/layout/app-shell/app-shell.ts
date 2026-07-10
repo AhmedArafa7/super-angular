@@ -30,7 +30,6 @@ export class AppShellComponent {
   sidebar = inject(SidebarService);
   router = inject(Router);
   isWeTubeRoute = signal(false);
-  isBakeryRoute = signal(false);
   isInitialized = signal(false);
 
   constructor() {
@@ -38,13 +37,11 @@ export class AppShellComponent {
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       this.isWeTubeRoute.set(event.url.includes('/stream'));
-      this.isBakeryRoute.set(event.url.includes('/bakery'));
       this.isInitialized.set(true);
     });
     
     if (this.router.navigated) {
       this.isWeTubeRoute.set(this.router.url.includes('/stream'));
-      this.isBakeryRoute.set(this.router.url.includes('/bakery'));
       this.isInitialized.set(true);
     }
   }

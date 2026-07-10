@@ -2,7 +2,12 @@ import { Routes } from '@angular/router';
 import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/bakery', pathMatch: 'full' },
+  { path: '', redirectTo: '/launcher', pathMatch: 'full' },
+  {
+    path: 'launcher',
+    loadComponent: () => import('./features/launcher/launcher.component').then(c => c.LauncherComponent),
+    title: 'لوحة التحكم المركزية'
+  },
   {
     path: 'stream',
     loadComponent: () => import('./features/wetube/components/wetube-shell/wetube-shell').then(c => c.WeTubeShellComponent),

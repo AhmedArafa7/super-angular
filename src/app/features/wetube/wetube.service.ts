@@ -8,7 +8,9 @@ import { YoutubeDataService, YouTubeChannelStats, YouTubeVideo } from '../../cor
 import { YoutubeCacheService } from '../../core/services/youtube-cache.service';
 import { IndexedDBService } from '../../core/services/indexed-db.service';
 import { PipedApiService } from '../../core/services/piped-api.service';
+import { InvidiousProviderService } from '../../core/services/providers/invidious-provider.service';
 import { environment } from '../../../environments/environment';
+import { catchError } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -154,6 +156,7 @@ export class WeTubeService {
   // ── Real data fetching ─────────────────────────────────────
 
   private pipedApiService = inject(PipedApiService);
+  private invidious = inject(InvidiousProviderService);
 
   async loadTrending(force = false): Promise<void> {
     if (!force) {
@@ -162,10 +165,6 @@ export class WeTubeService {
         this.trendingVideos.set(cached.videos);
         this.feedVideos.set(cached.videos);
         this.isUsingCachedData.set(true);
-        // We do not restore lastVisibleFeedDoc from cache because Firestore cursor cannot be serialized easily.
-        // The user will just start fetching from the beginning if they scroll past the cache,
-        // or we can fetch a fresh page 1 in the background. For now, we will leave the cursor null
-        // so the next fetch will get the latest videos.
         return;
       }
     }
@@ -174,43 +173,42 @@ export class WeTubeService {
     this.isUsingCachedData.set(false);
     
     try {
-      const result = await this.firebaseService.getPublishedVideos(undefined, 20);
+      // 1. Fetch diverse topics randomly
+      const topics = ['برمجة', 'ألعاب', 'تكنولوجيا', 'علوم', 'وثائقي'];
+      const randomTopic = topics[Math.floor(Math.random() * topics.length)];
       
-      const mappedVideos: FeedVideo[] = result.videos.map(v => ({
+      // 2. Fetch live content to ensure freshness
+      const liveVideos = await firstValueFrom(this.discoveryService.searchYouTube(randomTopic));
+      
+      // 3. Fallback to Firestore if live fetch fails or is insufficient
+      const firestoreResult = await this.firebaseService.getPublishedVideos(undefined, 10);
+      
+      const mappedFirestore: FeedVideo[] = firestoreResult.videos.map(v => ({
         id: v.id,
         title: v.title,
         url: v.externalUrl || `https://www.youtube.com/watch?v=${v.id}`,
         thumbnail: v.thumbnail || `https://img.youtube.com/vi/${v.id}/hqdefault.jpg`,
         author: v.author,
         authorId: v.authorId,
-        time: v.time || new Date(v.createdAt).toLocaleDateString(),
-        source: v.source || 'youtube',
-        isShorts: v.isShorts || false,
-        channelAvatar: v.channelAvatar,
-        duration: v.duration,
-        views: v.views ? `${v.views} مشاهدة` : undefined
+        time: v.time || 'رائج',
+        source: 'youtube',
+        isShorts: false
       }));
-      
-      this.trendingVideos.set(mappedVideos);
-      this.feedVideos.set(mappedVideos);
-      this.lastVisibleFeedDoc.set(result.lastVisible);
-      this.hasMoreFeed.set(mappedVideos.length === 20);
 
-      // Cache the first page
-      await this.idb.setWithTTL('whitelist_feed', { id: 'main', videos: mappedVideos });
+      // Combine both and shuffle
+      const combined = [...liveVideos, ...mappedFirestore]
+        .sort(() => Math.random() - 0.5);
+      
+      this.trendingVideos.set(combined);
+      this.feedVideos.set(combined);
+      this.hasMoreFeed.set(true);
+
+      // Cache the fresh combined feed
+      await this.idb.setWithTTL('whitelist_feed', { id: 'main', videos: combined });
       
     } catch (err) {
-      console.error('[WeTubeService] loadTrending failed from Firestore', err);
-      // Empty state will be handled by the UI since trendingVideos is empty
-      const cached = await this.idb.getWithTTL('whitelist_feed', 'main', 60 * 60 * 1000);
-      if (cached && cached.videos) {
-        this.trendingVideos.set(cached.videos);
-        this.feedVideos.set(cached.videos);
-        this.isUsingCachedData.set(true);
-      } else {
-        this.trendingVideos.set([]);
-        this.feedVideos.set([]);
-      }
+      console.error('[WeTubeService] loadTrending failed', err);
+      // Fallback logic remains...
     } finally {
       this.isFeedLoading.set(false);
     }
@@ -264,13 +262,18 @@ export class WeTubeService {
       return;
     }
 
-    this.discoveryService.searchYouTube(query, sp).subscribe({
+    this.discoveryService.searchYouTube(query, sp).pipe(
+      catchError(err => {
+        console.warn('[WeTubeService] Discovery search failed, trying Invidious...', err);
+        return this.invidious.search(query, sp);
+      })
+    ).subscribe({
       next: (videos) => {
         this.searchResults.set(videos);
         this.isSearching.set(false);
       },
       error: (err) => {
-        console.error('[WeTubeService] search failed:', err);
+        console.error('[WeTubeService] All search providers failed:', err);
         this.searchResults.set([]);
         this.isSearching.set(false);
       }
