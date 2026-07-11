@@ -12,15 +12,16 @@ import { SafePipe } from '../../../../core/pipes/safe.pipe'; // Need to ensure w
   template: `
     @if (videoState.playerMode() !== 'hidden' && videoState.activeVideo()) {
       <div 
-        class="global-player-wrapper transition-all duration-300"
-        [ngClass]="{
-          'fixed bottom-6 left-6 w-80 h-48 rounded-2xl shadow-2xl overflow-hidden border border-white/10 bg-slate-950 z-[60]': videoState.playerMode() === 'floating',
-          'fixed z-[40] bg-black': videoState.playerMode() === 'full'
-        }"
-        [style.top.px]="videoState.playerMode() === 'full' ? videoState.playerRect()?.top : null"
-        [style.left.px]="videoState.playerMode() === 'full' ? videoState.playerRect()?.left : null"
-        [style.width.px]="videoState.playerMode() === 'full' ? videoState.playerRect()?.width : null"
-        [style.height.px]="videoState.playerMode() === 'full' ? videoState.playerRect()?.height : null"
+        class="global-player-wrapper transition-all duration-300 rounded-2xl shadow-2xl overflow-hidden border border-white/10 bg-slate-950"
+        [style.position]="'fixed'"
+        [style.z-index]="videoState.playerMode() === 'floating' ? '9999' : '40'"
+        [style.background]="'black'"
+        [style.top]="videoState.playerMode() === 'full' ? (videoState.playerRect()?.top + 'px') : 'auto'"
+        [style.bottom]="videoState.playerMode() === 'floating' ? '24px' : 'auto'"
+        [style.left]="videoState.playerMode() === 'full' ? (videoState.playerRect()?.left + 'px') : 'auto'"
+        [style.right]="videoState.playerMode() === 'floating' ? '24px' : 'auto'"
+        [style.width]="videoState.playerMode() === 'full' ? (videoState.playerRect()?.width + 'px') : '320px'"
+        [style.height]="videoState.playerMode() === 'full' ? (videoState.playerRect()?.height + 'px') : '180px'"
       >
         <!-- Loading State -->
         @if (videoState.isLoading()) {

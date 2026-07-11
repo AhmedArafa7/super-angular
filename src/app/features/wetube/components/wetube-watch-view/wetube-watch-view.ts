@@ -14,6 +14,7 @@ import { WeTubeService } from '../../wetube.service';
 import { SidebarService } from '../../../../core/sidebar.service';
 import { VideoStateService } from '../../../../core/services/video-state.service';
 import { YoutubeDiscoveryService } from '../../../../core/services/youtube-discovery.service';
+import { LucideAngularModule, Flag, CheckCircle2, AlertTriangle } from 'lucide-angular';
 
 @Component({
   selector: 'app-wetube-watch-view',
@@ -27,7 +28,8 @@ import { YoutubeDiscoveryService } from '../../../../core/services/youtube-disco
     WatchProductShelfComponent,
     VideoProductSelectorComponent,
     VideoSourceDetectorComponent,
-    NexusNativeAdsComponent
+    NexusNativeAdsComponent,
+    LucideAngularModule
   ],
   templateUrl: './wetube-watch-view.html',
   styleUrls: ['./wetube-watch-view.scss']
@@ -49,6 +51,24 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
   isSubscribed = signal(false);
   likes = signal(12500);
   
+  // Report Modal State
+  showReportModal = signal(false);
+  reportSubmitted = signal(false);
+  reportReasons = [
+    'محتوى غير لائق / عنيف',
+    'معلومات مضللة أو كاذبة',
+    'محتوى لا يستحق القائمة البيضاء (مستوى متدني)',
+    'انتهاك حقوق الملكية الفكرية',
+    'أخرى'
+  ];
+  selectedReason = signal<string>('محتوى لا يستحق القائمة البيضاء (مستوى متدني)');
+  reportComments = signal<string>('');
+
+  // Report Icons
+  Flag = Flag;
+  CheckCircle2 = CheckCircle2;
+  AlertTriangle = AlertTriangle;
+  
   showProductSelector = signal(false);
   
   selectedProducts = signal<string[]>([]);
@@ -62,18 +82,24 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
     if (!currentVideo || currentVideo.id !== this.id()) {
       // Direct link or new video clicked
       this.isLoading.set(true);
-      this.discovery.fetchVideoDetails(this.id()).subscribe(details => {
-        if (details) {
-          // Inject into Signals Reactivity Pipeline
-          this.videoState.playVideo({
-            ...details,
-            thumbnail: details.thumbnail || '' // map VideoDetails to ActiveVideo
-          });
-        } else {
-          console.error('[WeTubeWatchView] Failed to fetch video details.');
-          // Redirect or show error state if API fails
+      this.discovery.fetchVideoDetails(this.id()).subscribe({
+        next: (details) => {
+          if (details) {
+            // Inject into Signals Reactivity Pipeline
+            this.videoState.playVideo({
+              ...details,
+              thumbnail: details.thumbnail || '' // map VideoDetails to ActiveVideo
+            });
+          } else {
+            this.playFallbackVideo();
+          }
+          this.isLoading.set(false);
+        },
+        error: (err) => {
+          console.warn('[WeTubeWatchView] API failed, using fallback mock video.', err);
+          this.playFallbackVideo();
+          this.isLoading.set(false);
         }
-        this.isLoading.set(false);
       });
     } else {
       this.videoState.setPlayerMode('full');
@@ -81,6 +107,29 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
 
     // Small delay to allow DOM to render placeholder before measuring
     setTimeout(() => this.updatePlayerRect(), 100);
+  }
+
+  playFallbackVideo() {
+    const videoId = this.id();
+    const knownVideo = this.wetube.feedVideos().find(v => v.id === videoId) || 
+                       this.wetube.trendingVideos().find(v => v.id === videoId) ||
+                       this.wetube.videos().find(v => v.id === videoId);
+                       
+    if (knownVideo) {
+      this.videoState.playVideo({
+        id: knownVideo.id,
+        title: knownVideo.title,
+        author: knownVideo.author,
+        thumbnail: knownVideo.thumbnail || ''
+      });
+    } else {
+      this.videoState.playVideo({
+        id: videoId,
+        title: 'مقطع فيديو من منصة WeTube',
+        author: 'Si-Neuro Creator',
+        thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800'
+      });
+    }
   }
 
   ngOnDestroy() {
@@ -146,5 +195,55 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
     this.selectedProducts.set(data.productIds);
     this.productDisplayMode.set(data.mode as any);
     this.showProductSelector.set(false);
+  }
+
+  onReport() {
+    this.showReportModal.set(true);
+    // Pause video playback when opening the report modal
+    this.videoState.isPlaying.set(false);
+  }
+
+  closeReportModal() {
+    this.showReportModal.set(false);
+    this.reportSubmitted.set(false);
+    this.reportComments.set('');
+  }
+
+  onReasonChange(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    if (select) {
+      this.selectedReason.set(select.value);
+    }
+  }
+
+  onCommentsChange(event: Event) {
+    const textarea = event.target as HTMLTextAreaElement;
+    if (textarea) {
+      this.reportComments.set(textarea.value);
+    }
+  }
+
+  async onSubmitReport() {
+    const vid = this.video();
+    if (!vid) return;
+
+    try {
+      // 1. Submit report to database and add to local block list
+      await this.wetube.reportVideo(vid.id, vid.title, this.selectedReason(), this.reportComments());
+      
+      // 2. Change modal view to success
+      this.reportSubmitted.set(true);
+      
+      // 3. Stop player playback instantly
+      this.videoState.closePlayer();
+      
+      // 4. Redirect after 2.5s to Home Page (where reported video is now hidden!)
+      setTimeout(() => {
+        this.closeReportModal();
+        this.router.navigate(['/stream']);
+      }, 2500);
+    } catch (e) {
+      alert('حدث خطأ أثناء إرسال الإبلاغ. الرجاء المحاولة مرة أخرى.');
+    }
   }
 }

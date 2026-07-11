@@ -1,3 +1,76 @@
 .subscriptions-container {
   min-height: 100vh;
 }
+
+.channels-horizontal-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 80px; /* Width of each channel item column */
+  overflow-x: auto;
+  gap: 1.25rem 0.75rem; /* Vertical and horizontal gap */
+  padding-bottom: 0.75rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  direction: rtl; /* For RTL horizontal scrolling */
+
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 99px;
+  }
+}
+
+.channel-circle-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  text-decoration: none;
+  width: 80px;
+
+  .channel-circle-avatar {
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 9999px;
+    border: 2px solid rgba(255, 255, 255, 0.08);
+    background-color: #1e293b;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #ffffff;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .channel-circle-name {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #94a3b8;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.2s ease;
+  }
+
+  &:hover {
+    .channel-circle-avatar {
+      border-color: #6366f1;
+      transform: scale(1.05);
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
+    }
+    .channel-circle-name {
+      color: #ffffff;
+    }
+  }
+}

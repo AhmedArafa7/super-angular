@@ -12,6 +12,14 @@ import { InvidiousProviderService } from '../../core/services/providers/invidiou
 import { environment } from '../../../environments/environment';
 import { catchError } from 'rxjs';
 
+export interface AlgorithmConfig {
+  subscriptionWeight: number;
+  hideWatched: boolean;
+  categoryWeights: { [category: string]: number };
+  dataSaverEnabled: boolean;
+  targetUpscaleQuality: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -47,6 +55,7 @@ export class WeTubeService {
   // Pagination State for Whitelist
   readonly lastVisibleFeedDoc = signal<QueryDocumentSnapshot | null>(null);
   readonly hasMoreFeed = signal<boolean>(true);
+  readonly reportedVideoIds = signal<Set<string>>(new Set());
 
   // Active Content Context
   readonly activeChannel = signal<{ id: string, name: string, avatar?: string } | null>(null);
@@ -63,6 +72,26 @@ export class WeTubeService {
   // Channel stats (for the authenticated YouTube channel)
   readonly myChannelStats = signal<YouTubeChannelStats | null>(null);
   readonly myVideos = signal<YouTubeVideo[]>([]);
+  
+  readonly algoConfig = signal<AlgorithmConfig>({
+    subscriptionWeight: 50,
+    hideWatched: false,
+    dataSaverEnabled: false,
+    targetUpscaleQuality: '720p',
+    categoryWeights: {
+      'موسيقى': 5,
+      'ألعاب': 5,
+      'مباشر': 5,
+      'رياضة': 5,
+      'أخبار': 5,
+      'بودكاست': 5,
+      'برمجة': 5,
+      'طبخ': 5,
+      'تكنولوجيا': 5,
+      'كوميديا': 5,
+      'اقتصاد': 5
+    }
+  });
 
   // Computed State: allHomeContent
   readonly allHomeContent = computed(() => {
@@ -85,40 +114,101 @@ export class WeTubeService {
       });
     }
 
-    const feedVids = this.feedVideos().map(v => ({
+    // Map public/Firestore whitelist videos
+    const dbVids = this.feedVideos().map(v => ({
       ...v,
       source: 'youtube' as const,
       time: 'حديثاً',
+      category: v.category || 'تكنولوجيا',
       channelAvatar: v.channelAvatar || subs.find(s => s.channelId === v.authorId)?.avatarUrl
     }));
 
-    const trendingVids = this.trendingVideos().map(v => ({
+    // Map Subscribed Channels RSS feed videos
+    const subVids = this.subscriptionsFeed().map(v => ({
       ...v,
       source: 'youtube' as const,
-      time: 'رائج',
+      time: 'جديد المشتركين',
+      category: v.category || 'تكنولوجيا',
       channelAvatar: v.channelAvatar || subs.find(s => s.channelId === v.authorId)?.avatarUrl
     }));
 
     let combined: ContentItem[] = [];
     const tab = this.activeTab();
 
-    if (tab === 'home') combined = [...feedVids, ...trendingVids];
-    else if (tab === 'explore') combined = trendingVids;
-    else combined = [...feedVids, ...trendingVids];
+    if (tab === 'home') {
+      const config = this.algoConfig();
+      const subWeight = config.subscriptionWeight / 100;
+      
+      if (subVids.length === 0) {
+        // Fallback to Whitelist only if they are not logged in or have no subscriptions
+        combined = [...dbVids];
+      } else {
+        // Advanced Recommendation interleaving based on subscriptionWeight
+        let subIdx = 0;
+        let dbIdx = 0;
+        const totalTarget = 100;
+        
+        while (combined.length < totalTarget && (subIdx < subVids.length || dbIdx < dbVids.length)) {
+          // Weighted choice: pull from subscriptions feed vs whitelist feed
+          if (subIdx < subVids.length && (dbIdx >= dbVids.length || Math.random() < subWeight)) {
+            combined.push(subVids[subIdx++]);
+          } else if (dbIdx < dbVids.length) {
+            combined.push(dbVids[dbIdx++]);
+          } else {
+            break;
+          }
+        }
+      }
+    } else if (tab === 'explore') {
+      combined = [...dbVids];
+    } else {
+      combined = [...subVids, ...dbVids];
+    }
 
     const category = this.activeCategory();
-    if (category === 'تريند') combined = trendingVids;
-    else if (category !== 'الكل') {
+    if (category !== 'الكل' && category !== 'تريند') {
       combined = combined.filter(v =>
         v.title.toLowerCase().includes(category.toLowerCase()) ||
         v.category === category
       );
     }
 
+    // Filter out reported videos instantly from feed
+    const reported = this.reportedVideoIds();
+    combined = combined.filter(v => !reported.has(v.id));
+
+    // Filter out previously watched videos if configured
+    const config = this.algoConfig();
+    if (config.hideWatched) {
+      const watchHistory = this.firebaseService.userData()?.watchHistory || [];
+      const watchedIds = new Set(watchHistory.map(h => h.videoId));
+      combined = combined.filter(v => !watchedIds.has(v.id));
+    }
+
+    // Deduplicate by video ID to prevent duplicate items in Angular rendering loops
+    const uniqueCombined: ContentItem[] = [];
+    const seenIds = new Set<string>();
+    for (const item of combined) {
+      if (item && item.id && !seenIds.has(item.id)) {
+        seenIds.add(item.id);
+        uniqueCombined.push(item);
+      }
+    }
+    combined = uniqueCombined;
+
+    // Recommendation Sorting: prioritizing user's favorite categories, then sorting by date
+    const catWeights = config.categoryWeights || {};
     return combined.sort((a, b) => {
+      const weightA = catWeights[a.category || ''] || 5;
+      const weightB = catWeights[b.category || ''] || 5;
+      
+      if (weightA !== weightB) {
+        return weightB - weightA; // Higher weight comes first
+      }
+
       const aTime = (a as any).fetchedAt || new Date(a.time || 0).getTime();
       const bTime = (b as any).fetchedAt || new Date(b.time || 0).getTime();
-      return bTime - aTime;
+      return bTime - aTime; // Newer comes first
     });
   });
 
@@ -173,15 +263,17 @@ export class WeTubeService {
     this.isUsingCachedData.set(false);
     
     try {
-      // 1. Fetch diverse topics randomly
-      const topics = ['برمجة', 'ألعاب', 'تكنولوجيا', 'علوم', 'وثائقي'];
-      const randomTopic = topics[Math.floor(Math.random() * topics.length)];
-      
-      // 2. Fetch live content to ensure freshness
-      const liveVideos = await firstValueFrom(this.discoveryService.searchYouTube(randomTopic));
-      
-      // 3. Fallback to Firestore if live fetch fails or is insufficient
-      const firestoreResult = await this.firebaseService.getPublishedVideos(undefined, 10);
+      // Make sure subscriptions are loaded first to enable subscription feed mixing
+      if (this.subscriptions().length === 0) {
+        await this.loadMySubscriptions();
+      }
+
+      // Load subscription RSS feeds
+      await this.loadSubscriptionsFeed(force);
+      const subVideos = this.subscriptionsFeed();
+
+      // Fetch published videos from Firestore
+      const firestoreResult = await this.firebaseService.getPublishedVideos(undefined, 50);
       
       const mappedFirestore: FeedVideo[] = firestoreResult.videos.map(v => ({
         id: v.id,
@@ -190,25 +282,38 @@ export class WeTubeService {
         thumbnail: v.thumbnail || `https://img.youtube.com/vi/${v.id}/hqdefault.jpg`,
         author: v.author,
         authorId: v.authorId,
-        time: v.time || 'رائج',
+        time: v.time || 'حديثاً',
         source: 'youtube',
-        isShorts: false
+        isShorts: v.isShorts || false
       }));
 
-      // Combine both and shuffle
-      const combined = [...liveVideos, ...mappedFirestore]
-        .sort(() => Math.random() - 0.5);
+      // Combine personalized subscription videos and published Firestore videos
+      let combined = [...subVideos, ...mappedFirestore];
+
+      // Fallback to safe YouTube content ONLY if both are empty
+      if (combined.length === 0) {
+        const topics = ['برمجة', 'تكنولوجيا', 'علوم', 'وثائقي'];
+        const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+        const liveVideos = await firstValueFrom(this.discoveryService.searchYouTube(randomTopic));
+        combined = liveVideos;
+      }
       
       this.trendingVideos.set(combined);
       this.feedVideos.set(combined);
-      this.hasMoreFeed.set(true);
+      this.lastVisibleFeedDoc.set(firestoreResult.lastVisible);
+      this.hasMoreFeed.set(firestoreResult.videos.length >= 50);
 
       // Cache the fresh combined feed
       await this.idb.setWithTTL('whitelist_feed', { id: 'main', videos: combined });
       
     } catch (err) {
       console.error('[WeTubeService] loadTrending failed', err);
-      // Fallback logic remains...
+      // Absolute fallback
+      try {
+        const fallbackVids = await firstValueFrom(this.discoveryService.searchYouTube('برمجة'));
+        this.trendingVideos.set(fallbackVids);
+        this.feedVideos.set(fallbackVids);
+      } catch (e) {}
     } finally {
       this.isFeedLoading.set(false);
     }
@@ -454,6 +559,7 @@ export class WeTubeService {
         const published = entry.getElementsByTagName('published')[0]?.textContent || '';
         
         if (videoId) {
+          const isShorts = title.toLowerCase().includes('#shorts') || title.toLowerCase().includes('shorts');
           videos.push({
             id: videoId,
             title,
@@ -463,7 +569,7 @@ export class WeTubeService {
             authorId: channelId,
             time: published,
             source: 'youtube' as const,
-            isShorts: false
+            isShorts: isShorts
           });
         }
       }
@@ -498,7 +604,10 @@ export class WeTubeService {
     this.isSubsFeedLoading.set(true);
     
     try {
-      const channelIds = subs.map(s => s.channelId);
+      // Sort favorite subscriptions first, then limit to a maximum of 15 channels to avoid proxy throttling and excessive network usage
+      const sortedSubs = [...subs].sort((a, b) => (b.isFavorite ? 1 : 0) - (a.isFavorite ? 1 : 0));
+      const channelIds = sortedSubs.map(s => s.channelId).slice(0, 15);
+      
       const results: FeedVideo[][] = [];
       const chunkSize = 3; // Fetch 3 channels at a time
       
@@ -539,7 +648,17 @@ export class WeTubeService {
         };
       });
       
-      this.subscriptionsFeed.set(formattedVideos.slice(0, 80));
+      // Deduplicate videos by ID to prevent duplicate tracking keys in Angular rendering loops
+      const uniqueVideos: FeedVideo[] = [];
+      const seenIds = new Set<string>();
+      for (const video of formattedVideos) {
+        if (!seenIds.has(video.id)) {
+          seenIds.add(video.id);
+          uniqueVideos.push(video);
+        }
+      }
+      
+      this.subscriptionsFeed.set(uniqueVideos.slice(0, 80));
     } catch (err) {
       console.error('[WeTubeService] loadSubscriptionsFeed failed:', err);
     } finally {
@@ -550,8 +669,55 @@ export class WeTubeService {
   // ── Initialization ─────────────────────────────────────────
 
   initialize(): void {
+    // Load algorithm configuration from local storage
+    try {
+      const savedAlgo = localStorage.getItem('wetube_algo_config');
+      if (savedAlgo) {
+        const parsed = JSON.parse(savedAlgo);
+        if (parsed && typeof parsed.subscriptionWeight === 'number') {
+          this.algoConfig.set({
+            ...this.algoConfig(),
+            ...parsed
+          });
+        }
+      }
+    } catch (e) {}
+
+    // Load reported video IDs from local storage (to hide them persistently)
+    try {
+      const saved = localStorage.getItem('wetube_reported_videos');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          this.reportedVideoIds.set(new Set(parsed));
+        }
+      }
+    } catch (e) {}
+
     this.loadTrending();
     this.loadMyYouTubeData();
     this.loadMySubscriptions();
+  }
+
+  async reportVideo(videoId: string, videoTitle: string, reason: string, comments: string): Promise<void> {
+    // 1. Report to Firestore backend
+    await this.firebaseService.reportVideo(videoId, videoTitle, reason, comments);
+    
+    // 2. Add to local reported set to hide instantly
+    this.reportedVideoIds.update(current => {
+      const next = new Set(current);
+      next.add(videoId);
+      try {
+        localStorage.setItem('wetube_reported_videos', JSON.stringify(Array.from(next)));
+      } catch (e) {}
+      return next;
+    });
+  }
+
+  updateAlgoConfig(config: AlgorithmConfig): void {
+    this.algoConfig.set(config);
+    try {
+      localStorage.setItem('wetube_algo_config', JSON.stringify(config));
+    } catch (e) {}
   }
 }

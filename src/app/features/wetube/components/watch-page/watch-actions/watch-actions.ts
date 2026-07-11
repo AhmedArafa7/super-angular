@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, ThumbsUp, ThumbsDown, Share2, Download, Plus, Scissors } from 'lucide-angular';
+import { LucideAngularModule, ThumbsUp, ThumbsDown, Share2, Download, Plus, Scissors, Flag } from 'lucide-angular';
 
 @Component({
   selector: 'app-watch-actions',
@@ -23,6 +23,7 @@ export class WatchActionsComponent {
   @Output() download = new EventEmitter<void>();
   @Output() clip = new EventEmitter<void>();
   @Output() save = new EventEmitter<void>();
+  @Output() report = new EventEmitter<void>();
   
   ThumbsUp = ThumbsUp;
   ThumbsDown = ThumbsDown;
@@ -30,4 +31,5 @@ export class WatchActionsComponent {
   Download = Download;
   Plus = Plus;
   Scissors = Scissors;
+  Flag = Flag;
 }

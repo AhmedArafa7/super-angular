@@ -85,7 +85,7 @@ export class WeTubeSidebarComponent implements OnInit {
     
     const subItems: MenuItem[] = subs.map(sub => ({
       label: sub.name,
-      icon: null,
+      icon: Users,
       route: `/stream/channel/${sub.channelId}`,
       active: () => this.router.url.includes(sub.channelId),
       section: 'subs',

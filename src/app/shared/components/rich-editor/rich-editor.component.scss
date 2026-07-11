@@ -1,0 +1,219 @@
+.rich-editor-wrapper {
+  font-family: 'Tajawal', sans-serif;
+}
+
+/* Toolbar controls */
+.editor-toolbar {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0 6px;
+  align-self: center;
+}
+
+.tool-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: #94a3b8;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+  cursor: pointer;
+  
+  &:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.tool-select {
+  background: rgba(0, 0, 0, 0.25);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+  }
+}
+
+.tool-color-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  input {
+    transform: scale(1.4);
+  }
+}
+
+/* Editor Page Simulation */
+.editor-page-sheet {
+  background-color: #101726;
+  font-size: 15px;
+  line-height: 1.8;
+  min-height: 1050px;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7);
+  box-sizing: border-box;
+  color: #e2e8f0;
+  
+  &:focus {
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(99, 102, 241, 0.2);
+  }
+  
+  /* Standard content tags */
+  p {
+    margin: 0 0 1em 0;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    
+    td, th {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 10px;
+      text-align: right;
+    }
+    
+    th {
+      background: rgba(255, 255, 255, 0.03);
+      font-weight: bold;
+    }
+  }
+  
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+  }
+  
+  a {
+    color: #6366f1;
+    text-decoration: underline;
+    
+    &:hover {
+      color: #818cf8;
+    }
+  }
+}
+
+/* AI Dialog modal specific buttons */
+.ai-btn {
+  width: 100%;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 12px;
+  color: #e9d5ff;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: right;
+  transition: all 0.2s;
+  cursor: pointer;
+  
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15));
+    border-color: rgba(168, 85, 247, 0.4);
+    color: #ffffff;
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.15);
+  }
+  
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar {
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 99px;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+  }
+}
+
+/* Print CSS Stylesheet */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  
+  aside, 
+  header, 
+  .editor-toolbar {
+    display: none !important;
+  }
+  
+  .rich-editor-wrapper {
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  .editor-page-sheet {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: none !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    
+    table, td, th {
+      border-color: #333333 !important;
+      color: #000000 !important;
+    }
+    
+    a {
+      color: #0000ee !important;
+    }
+  }
+}

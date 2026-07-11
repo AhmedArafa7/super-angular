@@ -18,15 +18,25 @@
   }
 
   <!-- Categories Bar -->
-  <div class="categories-bar hide-scrollbar bg-slate-950/80 backdrop-blur-md sticky top-0 z-20 py-3 px-6 flex gap-2 border-b border-white/5 overflow-x-auto shadow-sm">
-    @for (category of categories; track category) {
-      <button
-        class="category-chip px-4 py-1.5 rounded-lg whitespace-nowrap text-sm font-semibold transition-all border"
-        [ngClass]="wetube.activeCategory() === category ? 'bg-white text-slate-950 border-white shadow-lg scale-105' : 'bg-slate-900/50 text-slate-300 border-white/10 hover:bg-white/10 hover:text-white'"
-        (click)="onCategoryClick(category)">
-        {{ category }}
-      </button>
-    }
+  <div class="categories-bar hide-scrollbar bg-slate-950/80 backdrop-blur-md sticky top-0 z-20 py-3 px-6 flex items-center justify-between border-b border-white/5 shadow-sm" style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+    <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar" style="display: flex; gap: 8px; flex-grow: 1; overflow-x: auto;">
+      @for (category of categories; track category) {
+        <button
+          class="category-chip px-4 py-1.5 rounded-lg whitespace-nowrap text-sm font-semibold transition-all border"
+          [ngClass]="wetube.activeCategory() === category ? 'bg-white text-slate-950 border-white shadow-lg scale-105' : 'bg-slate-900/50 text-slate-300 border-white/10 hover:bg-white/10 hover:text-white'"
+          (click)="onCategoryClick(category)">
+          {{ category }}
+        </button>
+      }
+    </div>
+    
+    <button 
+      (click)="toggleAlgoModal()"
+      class="px-3 py-1.5 bg-slate-900 border border-white/10 hover:border-indigo-500/50 text-indigo-400 hover:text-indigo-300 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 shadow-md shadow-indigo-950/20 whitespace-nowrap"
+      style="border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; display: flex; align-items: center; gap: 6px;">
+      <lucide-icon [img]="Sliders" class="w-3.5 h-3.5 text-indigo-400"></lucide-icon>
+      <span>ضبط الخوارزمية</span>
+    </button>
   </div>
 
   <!-- Search Filters Bar (Visible when searching) -->
@@ -93,11 +103,67 @@
         </div>
       }
 
+      <!-- Premium Shorts Shelf Section -->
+      @if (!wetube.isFeedLoading() && shortsList().length > 0) {
+        <div class="bg-slate-900/40 border border-white/5 rounded-3xl p-5 space-y-4 text-right mb-8 animate-in fade-in duration-300">
+          <div class="flex flex-row-reverse justify-between items-center" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="flex items-center gap-2" style="display: flex; align-items: center; gap: 8px;">
+              <h3 class="text-sm font-black text-slate-300">شورتس WeTube</h3>
+              <lucide-icon [img]="Video" class="w-4 h-4 text-red-500"></lucide-icon>
+            </div>
+            
+            <!-- Rows Controller -->
+            <div class="flex items-center gap-2" style="display: flex; align-items: center; gap: 8px;">
+              <span class="text-xs text-slate-500 font-bold">تنسيق الصفوف:</span>
+              <div class="flex items-center bg-slate-950 border border-white/10 rounded-xl p-1" style="display: flex; align-items: center; border-radius: 12px; background: #020617; border: 1px solid rgba(255, 255, 255, 0.1); padding: 4px;">
+                <button 
+                  (click)="decreaseShortsRows()" 
+                  [disabled]="shortsRows() <= 1"
+                  class="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition disabled:opacity-40 disabled:hover:bg-transparent"
+                  style="width: 28px; height: 28px; border: none; background: transparent; cursor: pointer; color: #94a3b8;">
+                  -
+                </button>
+                <span class="w-8 text-center text-xs font-black text-white" style="width: 32px; text-align: center; font-weight: 900;">{{ shortsRows() }}</span>
+                <button 
+                  (click)="increaseShortsRows()" 
+                  [disabled]="shortsRows() >= 3"
+                  class="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition disabled:opacity-40 disabled:hover:bg-transparent"
+                  style="width: 28px; height: 28px; border: none; background: transparent; cursor: pointer; color: #94a3b8;">
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Horizontal Grid of Shorts -->
+          <div 
+            class="shorts-horizontal-grid"
+            [style.grid-template-rows]="'repeat(' + shortsRows() + ', minmax(0, auto))'">
+            
+            <a 
+              *ngFor="let video of shortsList()"
+              [routerLink]="['/stream/watch', video.id]"
+              class="short-card-item group"
+              [title]="video.title">
+              
+              <div class="short-card-thumbnail">
+                <img [src]="getSafeThumbnail(video)" [alt]="video.title" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105" loading="lazy">
+                <span class="absolute top-2 right-2 bg-gradient-to-br from-red-600 to-red-800 text-white px-2 py-0.5 rounded text-[8px] font-black uppercase shadow-lg">SHORTS</span>
+              </div>
+              
+              <span class="short-card-title">{{ video.title }}</span>
+              <span class="short-card-views" *ngIf="video.views">{{ video.views }}</span>
+            </a>
+
+          </div>
+        </div>
+      }
+
       <!-- Video Grid -->
-      @if (!wetube.isFeedLoading() && wetube.allHomeContent().length > 0) {
+      @if (!wetube.isFeedLoading() && standardVideosList().length > 0) {
         <div class="video-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 gap-y-8">
           <!-- Use slice pipe to implement infinite scroll visually -->
-          @for (video of wetube.allHomeContent().slice(0, visibleCount()); track trackByVideoId($index, video)) {
+          @for (video of standardVideosList().slice(0, visibleCount()); track trackByVideoId($index, video)) {
             <div class="video-card group cursor-pointer relative flex flex-col gap-3" [routerLink]="['/stream/watch', video.id]">
               
               <!-- Thumbnail Wrapper -->
@@ -172,4 +238,142 @@
       }
     </div>
   </div>
+
+  <!-- Premium Glassmorphic Recommendation Algorithm Control Panel -->
+  @if (showAlgoModal()) {
+    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[99999] flex items-center justify-center p-4 transition-all duration-300 animate-in fade-in" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; z-index: 99999;">
+      
+      <div class="bg-slate-900/90 border border-white/10 rounded-3xl w-full max-w-xl p-6 md:p-8 space-y-6 text-right shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] transition-all duration-300 transform scale-100 animate-in zoom-in-95 duration-200">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-white/5 pb-4" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 16px;">
+          <button 
+            (click)="toggleAlgoModal()"
+            class="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition"
+            style="border: none; cursor: pointer; color: white;">
+            ✕
+          </button>
+          <div class="flex items-center gap-2" style="display: flex; align-items: center; gap: 8px;">
+            <h2 class="text-lg md:text-xl font-black text-white">خوارزمية اقتراح الفيديو الذكية ⚙️</h2>
+            <lucide-icon [img]="Sliders" class="text-indigo-400 w-5 h-5"></lucide-icon>
+          </div>
+        </div>
+
+        <!-- Body Scrollable -->
+        <div class="space-y-6 max-h-[60vh] overflow-y-auto pr-1 hide-scrollbar" style="max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column; gap: 24px;">
+          
+          <!-- Mix Ratio Option -->
+          <div class="space-y-3 bg-slate-950/40 border border-white/5 rounded-2xl p-4" style="background: rgba(2, 6, 23, 0.4); padding: 16px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05); display: flex; flex-direction: column; gap: 12px;">
+            <div class="flex items-center justify-between" style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="text-xs font-black text-indigo-400">{{ wetube.algoConfig().subscriptionWeight }}% قنواتي</span>
+              <label class="text-xs font-bold text-white block">نسبة خلط المحتوى بالخلاصة:</label>
+              <span class="text-xs font-black text-slate-400">{{ 100 - wetube.algoConfig().subscriptionWeight }}% القائمة البيضاء</span>
+            </div>
+            <input 
+              type="range" 
+              min="0" 
+              max="100" 
+              [value]="wetube.algoConfig().subscriptionWeight"
+              (input)="updateSubscriptionWeight($event)"
+              class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+              style="width: 100%; cursor: pointer;"
+            />
+            <p class="text-[10px] text-slate-400 leading-relaxed font-semibold">
+              اسحب لتحديد نسبة خلط الفيديوهات المرفوعة حديثاً من قنواتك المشترك بها مقابل فيديوهات القائمة البيضاء العامة المعتمدة من المشرفين.
+            </p>
+          </div>
+
+          <!-- History Filter Option -->
+          <div class="bg-slate-950/40 border border-white/5 rounded-2xl p-4 flex items-center justify-between" style="background: rgba(2, 6, 23, 0.4); padding: 16px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05); display: flex; justify-content: space-between; align-items: center;">
+            <div class="text-right flex-grow pr-4">
+              <label class="text-xs font-bold text-white block mb-1">تصفية الفيديوهات المشاهدة سابقاً:</label>
+              <span class="text-[10px] text-slate-400 font-semibold block">عند تفعيلها، لن تظهر في تغذيتك أي فيديوهات قمت بمشاهدتها من قبل.</span>
+            </div>
+            
+            <button 
+              (click)="toggleHideWatched()"
+              class="w-12 h-6 rounded-full p-1 transition-all duration-300 flex items-center"
+              [ngClass]="wetube.algoConfig().hideWatched ? 'bg-indigo-650 justify-end bg-indigo-650' : 'bg-slate-800 justify-start'"
+              style="border: none; cursor: pointer; width: 48px; height: 24px; border-radius: 9999px; display: flex; align-items: center; padding: 4px; background: #312e81;">
+              <span class="w-4 h-4 rounded-full bg-white shadow-md transition-all block" style="width: 16px; height: 16px; border-radius: 9999px; background: white;"></span>
+            </button>
+          </div>
+
+          <!-- Data Saver Mode Option -->
+          <div class="bg-slate-950/40 border border-white/5 rounded-2xl p-4 flex flex-col gap-4" style="background: rgba(2, 6, 23, 0.4); padding: 16px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05); display: flex; flex-direction: column; gap: 16px;">
+            <div class="flex items-center justify-between" style="display: flex; justify-content: space-between; align-items: center;">
+              <div class="text-right flex-grow pr-4">
+                <label class="text-xs font-bold text-white block mb-1">وضع توفير الباقة وترقية الجودة (Data Saver):</label>
+                <span class="text-[10px] text-slate-400 font-semibold block">عند تفعيله، سيتم تحميل الفيديوهات بجودة منخفضة (144p) أولاً لتوفير الباقة، ثم ترقيتها عصبياً للمستهدفة.</span>
+              </div>
+              
+              <button 
+                (click)="toggleDataSaver()"
+                class="w-12 h-6 rounded-full p-1 transition-all duration-300 flex items-center"
+                [ngClass]="wetube.algoConfig().dataSaverEnabled ? 'bg-indigo-650 justify-end bg-indigo-650' : 'bg-slate-800 justify-start'"
+                style="border: none; cursor: pointer; width: 48px; height: 24px; border-radius: 9999px; display: flex; align-items: center; padding: 4px; background: #312e81;">
+                <span class="w-4 h-4 rounded-full bg-white shadow-md transition-all block" style="width: 16px; height: 16px; border-radius: 9999px; background: white;"></span>
+              </button>
+            </div>
+
+            @if (wetube.algoConfig().dataSaverEnabled) {
+              <div class="space-y-1.5 p-3 bg-slate-950/60 rounded-xl border border-white/5 flex items-center justify-between" style="display: flex; justify-content: space-between; align-items: center; background: rgba(2, 6, 23, 0.6); padding: 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                <select 
+                  [value]="wetube.algoConfig().targetUpscaleQuality"
+                  (change)="updateTargetUpscaleQuality($event)"
+                  class="bg-slate-950 border border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold text-white focus:outline-none focus:border-indigo-500 transition"
+                  style="background: #020617; color: white; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); padding: 6px 12px; font-weight: 700; direction: rtl;">
+                  <option value="360p">360p (توفير متوسط)</option>
+                  <option value="480p">480p (جودة جيدة)</option>
+                  <option value="720p">720p (جودة عالية HD)</option>
+                  <option value="1080p">1080p (جودة فائقة Full HD)</option>
+                </select>
+                <label class="text-xs font-bold text-slate-300 block">الجودة المستهدفة بعد الترقية:</label>
+              </div>
+            }
+          </div>
+
+          <!-- Category Preference Weights Option -->
+          <div class="space-y-4 bg-slate-950/40 border border-white/5 rounded-2xl p-4" style="background: rgba(2, 6, 23, 0.4); padding: 16px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05); display: flex; flex-direction: column; gap: 16px;">
+            <label class="text-xs font-black text-white block border-b border-white/5 pb-2" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 8px;">تخصيص ثقل اقتراح التصنيفات (Category Weights):</label>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-right" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">
+              @for (cat of ['برمجة', 'تكنولوجيا', 'علوم', 'وثائقي', 'ألعاب', 'موسيقى', 'أخبار', 'كوميديا', 'اقتصاد']; track cat) {
+                <div class="space-y-1.5 p-2 bg-slate-950/50 rounded-xl border border-white/5" style="background: rgba(2, 6, 23, 0.5); border-radius: 12px; padding: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                  <div class="flex items-center justify-between mb-1" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="text-[10px] font-black text-indigo-400">{{ wetube.algoConfig().categoryWeights[cat] || 5 }}/10</span>
+                    <span class="text-xs font-bold text-slate-300">{{ cat }}</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="10" 
+                    [value]="wetube.algoConfig().categoryWeights[cat] || 5"
+                    (input)="updateCategoryWeight(cat, $event)"
+                    class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                    style="width: 100%; cursor: pointer;"
+                  />
+                </div>
+              }
+            </div>
+            <p class="text-[10px] text-slate-400 leading-relaxed font-semibold">
+              قم بزيادة ثقل التصنيفات التي تفضلها ليقوم محرك التوصيات بتقديمها وترتيبها في صدارة التغذية الرئيسية تلقائياً.
+            </p>
+          </div>
+
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="flex justify-start pt-2 border-t border-white/5" style="display: flex; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 16px;">
+          <button 
+            (click)="toggleAlgoModal()"
+            class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow-lg shadow-indigo-650/20"
+            style="border: none; cursor: pointer; background: #4f46e5; color: white;">
+            حفظ وتطبيق الخوارزمية ⚡
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
 </div>

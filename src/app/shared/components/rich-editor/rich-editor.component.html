@@ -1,0 +1,160 @@
+<div class="rich-editor-wrapper flex flex-col flex-1 min-w-0 bg-[#0b0f19] h-full w-full relative">
+  <!-- Editor Toolbar (MS Word Ribbon Toolbar) -->
+  <div class="editor-toolbar px-6 py-2 bg-slate-900/40 border-b border-white/5 flex flex-wrap gap-1.5 items-center">
+    <!-- Text Styling Group -->
+    <button (click)="executeFormat('bold')" class="tool-btn" title="عريض (Bold)">
+      <span class="font-bold text-sm">B</span>
+    </button>
+    <button (click)="executeFormat('italic')" class="tool-btn" title="مائل (Italic)">
+      <span class="italic text-sm">I</span>
+    </button>
+    <button (click)="executeFormat('underline')" class="tool-btn" title="تسطير (Underline)">
+      <span class="underline text-sm">U</span>
+    </button>
+    <button (click)="executeFormat('strikeThrough')" class="tool-btn" title="يتوسطه خط (Strike)">
+      <span class="line-through text-sm">S</span>
+    </button>
+
+    <div class="divider"></div>
+
+    <!-- Fonts and Sizes -->
+    <select (change)="executeFormat('fontName', $any($event.target).value)" class="tool-select font-sans" title="نوع الخط">
+      <option value="Arial">Arial</option>
+      <option value="Tajawal" selected>Tajawal</option>
+      <option value="Times New Roman">Times New Roman</option>
+      <option value="Courier New">Courier New</option>
+      <option value="Georgia">Georgia</option>
+    </select>
+
+    <select (change)="executeFormat('fontSize', $any($event.target).value)" class="tool-select" title="حجم الخط">
+      <option value="3">عادي (14px)</option>
+      <option value="1">صغير جداً</option>
+      <option value="2">صغير</option>
+      <option value="4">كبير</option>
+      <option value="5">كبير جداً</option>
+      <option value="6">عنوان فرعي</option>
+      <option value="7">عنوان رئيسي</option>
+    </select>
+
+    <div class="divider"></div>
+
+    <!-- Color pickers -->
+    <div class="relative tool-color-container" title="لون النص">
+      <span class="text-[10px] absolute bottom-0.5 right-0.5 pointer-events-none text-white/60">A</span>
+      <input type="color" (input)="changeFontColor($event)" value="#ffffff" class="w-7 h-7 bg-transparent border-none cursor-pointer" />
+    </div>
+    <div class="relative tool-color-container" title="لون تمييز النص (Highlight)">
+      <span class="text-[10px] absolute bottom-0.5 right-0.5 pointer-events-none text-white/60">✏️</span>
+      <input type="color" (input)="changeBgColor($event)" value="#ffff00" class="w-7 h-7 bg-transparent border-none cursor-pointer" />
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Alignments -->
+    <button (click)="executeFormat('justifyRight')" class="tool-btn" title="محاذاة لليمين">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+    </button>
+    <button (click)="executeFormat('justifyCenter')" class="tool-btn" title="محاذاة للوسط">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M7 12h10M4 18h16" /></svg>
+    </button>
+    <button (click)="executeFormat('justifyLeft')" class="tool-btn" title="محاذاة لليسار">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M10 12h10M4 18h16" /></svg>
+    </button>
+    <button (click)="executeFormat('justifyFull')" class="tool-btn" title="ضبط الهوامش (Justify)">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+    </button>
+
+    <div class="divider"></div>
+
+    <!-- Lists -->
+    <button (click)="executeFormat('insertUnorderedList')" class="tool-btn" title="قائمة نقطية">
+      <span>•𝌸</span>
+    </button>
+    <button (click)="executeFormat('insertOrderedList')" class="tool-btn" title="قائمة رقمية">
+      <span>1𝌸</span>
+    </button>
+
+    <div class="divider"></div>
+
+    <!-- Insertion Group -->
+    <button (click)="insertTable()" class="tool-btn" title="إدراج جدول">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+    </button>
+    <button (click)="insertImage()" class="tool-btn" title="إدراج صورة من جهازك">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+    </button>
+    <button (click)="insertLink()" class="tool-btn" title="إدراج ارتباط تشعبي">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+    </button>
+    <button (click)="executeFormat('insertHorizontalRule')" class="tool-btn" title="خط فاصل">
+      <span>➖</span>
+    </button>
+    <button (click)="executeFormat('removeFormat')" class="tool-btn" title="مسح التنسيقات">
+      <span>🧹</span>
+    </button>
+  </div>
+
+  <!-- Editor Sheet Workspace -->
+  <div class="flex-1 overflow-y-auto p-8 flex justify-center custom-scrollbar bg-slate-950/20">
+    <div 
+      #editor 
+      contenteditable="true" 
+      (input)="onEditorInput()" 
+      class="editor-page-sheet w-full max-w-[800px] min-h-[1050px] p-12 bg-slate-900 border border-white/5 rounded-3xl shadow-2xl focus:outline-none text-white overflow-y-auto"
+    >
+      <!-- Initial Content loaded by component TS -->
+    </div>
+  </div>
+
+  <!-- AI Helper Modal Dialog -->
+  @if (showAiModal) {
+    <div class="fixed inset-0 z-[150] bg-black/85 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in">
+      <div class="bg-slate-900 border border-white/10 rounded-3xl p-6 w-full max-w-md text-right shadow-2xl relative animate-in zoom-in-95">
+        <button (click)="showAiModal = false" class="absolute top-4 left-4 text-slate-400 hover:text-white transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+
+        <h3 class="text-xl font-black text-white mb-2">
+          {{ aiActionType === 'rewrite' ? 'إعادة صياغة احترافية ✨' : aiActionType === 'summarize' ? 'تلخيص ذكي للمستند 📝' : 'تدقيق نحوي وإملائي ✅' }}
+        </h3>
+        
+        <p class="text-sm text-slate-400 mb-4">
+          اكتب النص المراد معالجته بالذكاء الاصطناعي أدناه:
+        </p>
+
+        <textarea 
+          [(ngModel)]="aiPromptText" 
+          rows="4" 
+          placeholder="مثال: يرجى تحسين كتابة هذه الجملة لتصبح واضحة ومناسبة..." 
+          class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors mb-4"
+        ></textarea>
+
+        @if (isAiLoading) {
+          <div class="flex flex-col items-center justify-center py-6 gap-3">
+            <div class="w-8 h-8 border-4 border-indigo-500/20 border-top-4 border-indigo-500 rounded-full animate-spin"></div>
+            <span class="text-xs text-indigo-400 animate-pulse font-bold">جاري تشغيل محرك NeuroAI...</span>
+          </div>
+        } @else if (aiResultText) {
+          <div class="bg-black/30 border border-indigo-500/20 rounded-2xl p-4 mb-4 text-slate-200 text-sm max-h-48 overflow-y-auto custom-scrollbar">
+            {{ aiResultText }}
+          </div>
+        }
+
+        <div class="flex gap-3">
+          @if (aiResultText) {
+            <button (click)="insertAiResult()" class="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black transition-all active:scale-95">
+              إدراج في المستند 📥
+            </button>
+          } @else {
+            <button (click)="generateAiResponse()" [disabled]="isAiLoading" class="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-black transition-all active:scale-95">
+              تشغيل المعالجة 🪄
+            </button>
+          }
+          <button (click)="showAiModal = false" class="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition-all">
+            إغلاق
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

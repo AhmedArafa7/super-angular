@@ -22,17 +22,16 @@ export const adminGuard: CanActivateFn = async () => {
     return router.createUrlTree(['/stream']);
   }
 
-  // Admin access check based on role (Assuming user has a role property fetched from DB)
-  // Since UserNode is stored in adminService, but we can check a generic claim or email
-  // Here we allow specific super admins or check user role.
-  const role = (user as any).role || 'user'; // If you have a custom User type with role
-  if (role === 'admin' || role === 'super_admin') {
+  // Admin access check based on Firestore UserData role
+  const role = firebaseService.userData()?.role || 'user';
+  const allowedRoles = ['admin', 'super_admin', 'founder', 'cofounder', 'management'];
+  
+  if (allowedRoles.includes(role)) {
     return true;
   }
 
-  // If we only have basic firebase user without custom claims in currentUser, 
-  // we can mock the check or rely on a specific admin email for demonstration:
-  if (user.email === 'admin@sineuro.com' || user.email?.includes('admin')) {
+  // Fallback for specific admin/founder emails
+  if (user.email === 'admin@sineuro.com' || user.email?.includes('admin') || user.email === 'mo1999382@gmail.com') {
     return true;
   }
 

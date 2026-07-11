@@ -17,6 +17,61 @@
       </div>
     </div>
 
+    <!-- Subscribed Channels Grid Section -->
+    <div class="bg-slate-900/40 border border-white/5 rounded-3xl p-5 space-y-4 text-right">
+      <div class="flex flex-row-reverse justify-between items-center" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="text-sm font-black text-slate-300">قنواتك المشترك بها</h3>
+        
+        <!-- Rows Controller -->
+        <div class="flex items-center gap-2" style="display: flex; align-items: center; gap: 8px;">
+          <span class="text-xs text-slate-500 font-bold">تنسيق الصفوف:</span>
+          <div class="flex items-center bg-slate-950 border border-white/10 rounded-xl p-1" style="display: flex; align-items: center; border-radius: 12px; background: #020617; border: 1px solid rgba(255, 255, 255, 0.1); padding: 4px;">
+            <button 
+              (click)="decreaseRows()" 
+              [disabled]="numRows() <= 1"
+              class="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition disabled:opacity-40 disabled:hover:bg-transparent"
+              style="width: 28px; height: 28px; border: none; background: transparent; cursor: pointer; color: #94a3b8;">
+              -
+            </button>
+            <span class="w-8 text-center text-xs font-black text-white" style="width: 32px; text-align: center; font-weight: 900;">{{ numRows() }}</span>
+            <button 
+              (click)="increaseRows()" 
+              [disabled]="numRows() >= 5"
+              class="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition disabled:opacity-40 disabled:hover:bg-transparent"
+              style="width: 28px; height: 28px; border: none; background: transparent; cursor: pointer; color: #94a3b8;">
+              +
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Horizontal Channels Grid -->
+      <div 
+        class="channels-horizontal-grid"
+        [style.grid-template-rows]="'repeat(' + numRows() + ', minmax(0, auto))'">
+        
+        <div *ngIf="wetube.subscriptions().length === 0" class="w-full text-center py-6 text-slate-500 text-xs font-bold col-span-full" style="grid-column: 1 / -1; width: 100%; text-align: center; padding: 24px 0; color: #64748b; font-size: 12px;">
+          لا توجد قنوات مشترك بها حالياً.
+        </div>
+
+        <a 
+          *ngFor="let sub of wetube.subscriptions()"
+          [routerLink]="['/stream/channel', sub.channelId]"
+          class="channel-circle-item group"
+          [title]="sub.channelTitle">
+          
+          <div 
+            class="channel-circle-avatar"
+            [style.background-image]="sub.avatarUrl ? 'url(' + sub.avatarUrl + ')' : 'none'">
+            <span *ngIf="!sub.avatarUrl">{{ trackSubAvatar(sub.channelTitle) }}</span>
+          </div>
+          
+          <span class="channel-circle-name">{{ sub.channelTitle }}</span>
+        </a>
+
+      </div>
+    </div>
+
     <!-- Feed Content -->
     @if (wetube.isSubsFeedLoading()) {
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

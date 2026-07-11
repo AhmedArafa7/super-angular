@@ -151,6 +151,12 @@ export class YoutubeDiscoveryService {
       const published = renderer.publishedTimeText?.simpleText || renderer.videoInfo?.runs?.[0]?.text || '';
       const views = renderer.viewCountText?.simpleText || renderer.shortViewCountText?.simpleText || '';
       const channelAvatar = renderer.channelThumbnail?.thumbnails?.[0]?.url;
+      const duration = renderer.lengthText?.simpleText || renderer.lengthText?.runs?.[0]?.text || '';
+
+      const isShorts = 
+        title.toLowerCase().includes('#shorts') || 
+        title.toLowerCase().includes('shorts') ||
+        (duration && (duration.startsWith('0:') || duration === '1:00'));
 
       return {
         id: videoId,
@@ -161,8 +167,9 @@ export class YoutubeDiscoveryService {
         authorId,
         time: published || views,
         source: 'youtube',
-        isShorts: false,
-        channelAvatar
+        isShorts: !!isShorts,
+        channelAvatar,
+        duration: duration || undefined
       };
     } catch (e) {
       return null;

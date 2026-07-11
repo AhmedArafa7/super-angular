@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, catchError, map, expand } from 'rxjs';
+import { Observable, of, catchError, map, expand, EMPTY } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface YouTubeChannelMetadata {
@@ -73,9 +73,9 @@ export class YoutubeDataService {
 
   fetchMySubscriptions(accessToken: string): Observable<YouTubeSubscriptionItem[]> {
     return this.fetchSubscriptionsPage(accessToken, undefined).pipe(
-      expand((res: any) => res.nextPageToken
+      expand((res: any) => res && res.nextPageToken
         ? this.fetchSubscriptionsPage(accessToken, res.nextPageToken)
-        : of<any>(null)
+        : EMPTY
       ),
       map((res: any) => {
         if (!res?.items) return [];

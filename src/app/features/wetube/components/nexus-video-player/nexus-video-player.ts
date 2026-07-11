@@ -1,7 +1,8 @@
-import { Component, ElementRef, Input, ViewChild, signal, computed, effect, OnDestroy, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, Input, ViewChild, signal, computed, effect, OnDestroy, AfterViewInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideDynamicIcon } from '@lucide/angular';
-import { SafePipe } from '../../../../shared/pipes/safe.pipe'; // Will need this for iframe bypassSecurityTrustResourceUrl
+import { SafePipe } from '../../../../shared/pipes/safe.pipe';
+import { WeTubeService } from '../../wetube.service';
 
 export interface NeuralMetadata {
   introStart?: number;
@@ -38,6 +39,8 @@ export class SiNeuroVideoPlayerComponent implements AfterViewInit, OnDestroy {
   @ViewChild('playerContainer') containerRef!: ElementRef<HTMLDivElement>;
   @ViewChild('frameCanvas') canvasRef!: ElementRef<HTMLCanvasElement>;
 
+  private wetube = inject(WeTubeService);
+
   isPlaying = signal(false);
   progress = signal(0);
   currentTime = signal('0:00');
@@ -48,31 +51,113 @@ export class SiNeuroVideoPlayerComponent implements AfterViewInit, OnDestroy {
   showSkipIntro = signal(false);
   isCaching = signal(false);
 
+  // Neural Upscaler State
+  isUpscaling = signal(false);
+  upscaleProgress = signal(0);
+  upscaleStep = signal<'idle' | 'loading_144' | 'processing' | 'completed'>('idle');
+  upscaleQuality = signal('144p');
+
   private rafRef: number | null = null;
   private hideControlsTimeout: any = null;
+  private upscaleInterval: any = null;
 
   constructor() {
     effect(() => {
-      // If quality changes, we could emit an event here
+      // Trigger upscale whenever videoId or src changes
+      const id = this.videoId;
+      const source = this.src;
+      this.startUpscaleEngine();
     });
   }
 
   ngAfterViewInit() {
     this.quality.set(this.defaultQuality);
-    if (this.autoPlay && this.videoRef?.nativeElement) {
-      this.videoRef.nativeElement.play().catch(e => console.error(e));
-      this.isPlaying.set(true);
-    }
+    this.startUpscaleEngine();
   }
 
   ngOnDestroy() {
     if (this.rafRef) cancelAnimationFrame(this.rafRef);
     if (this.hideControlsTimeout) clearTimeout(this.hideControlsTimeout);
+    if (this.upscaleInterval) {
+      clearInterval(this.upscaleInterval);
+      this.upscaleInterval = null;
+    }
   }
 
   get youtubeIframeUrl() {
-    const qualityParam = this.quality().replace(/\D/g, '');
-    return `https://www.youtube-nocookie.com/embed/${this.videoId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1&vq=hd${qualityParam}`;
+    const config = this.wetube.algoConfig();
+    const isSaving = config.dataSaverEnabled;
+    const isDone = this.upscaleStep() === 'completed';
+    // If saving and not completed, load 144p (vq=tiny)
+    const qualityParam = isSaving && !isDone ? 'tiny' : config.targetUpscaleQuality.replace(/\D/g, '');
+    const vqValue = qualityParam === 'tiny' ? 'tiny' : `hd${qualityParam}`;
+    return `https://www.youtube-nocookie.com/embed/${this.videoId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1&vq=${vqValue}`;
+  }
+
+  startUpscaleEngine() {
+    if (this.upscaleInterval) {
+      clearInterval(this.upscaleInterval);
+      this.upscaleInterval = null;
+    }
+
+    const config = this.wetube.algoConfig();
+    if (!config.dataSaverEnabled) {
+      this.isUpscaling.set(false);
+      this.upscaleStep.set('idle');
+      this.upscaleQuality.set(this.defaultQuality);
+      
+      // Auto play if data saver is disabled
+      setTimeout(() => {
+        if (this.videoRef?.nativeElement) {
+          this.videoRef.nativeElement.play().catch(() => {});
+          this.isPlaying.set(true);
+        }
+      }, 200);
+      return;
+    }
+
+    // Initialize Data Saver Upscaling Sequence
+    this.isUpscaling.set(true);
+    this.upscaleProgress.set(0);
+    this.upscaleStep.set('loading_144');
+    this.upscaleQuality.set('144p');
+
+    // Pause player initially if playing
+    if (this.videoRef?.nativeElement) {
+      this.videoRef.nativeElement.pause();
+      this.isPlaying.set(false);
+    }
+
+    // Start background upscaling progress simulation
+    this.upscaleInterval = setInterval(() => {
+      const nextProgress = this.upscaleProgress() + 5;
+      this.upscaleProgress.set(nextProgress);
+
+      if (nextProgress === 50) {
+        // Start playback at 50% upscaled (in low quality 144p while upscaling continues in background)
+        this.upscaleStep.set('processing');
+        if (this.videoRef?.nativeElement) {
+          this.videoRef.nativeElement.play().catch(() => {});
+          this.isPlaying.set(true);
+        }
+      }
+
+      if (nextProgress >= 100) {
+        clearInterval(this.upscaleInterval);
+        this.upscaleInterval = null;
+        this.upscaleProgress.set(100);
+        this.upscaleStep.set('completed');
+        
+        // Upgrade quality to user-selected target
+        const targetQ = config.targetUpscaleQuality || '720p';
+        this.upscaleQuality.set(targetQ);
+
+        // Hide overlay after showing 100% completed state for 1.5 seconds
+        setTimeout(() => {
+          this.isUpscaling.set(false);
+        }, 1500);
+      }
+    }, 150); // 20 steps * 150ms = 3.0s total upscale delay. Playback starts at 1.5s (50% progress)
   }
 
   handleMouseMove() {

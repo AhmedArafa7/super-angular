@@ -37,7 +37,7 @@
             @if (item.isSubscription && item.avatar) {
               <img [src]="item.avatar" [alt]="item.label" class="size-6 rounded-full border border-white/10 shrink-0 group-hover:scale-110 transition-transform">
             } @else {
-              <lucide-icon [img]="item.icon" class="size-4.5 shrink-0 group-hover:scale-110 transition-transform"></lucide-icon>
+              <lucide-icon [img]="item.icon || Users" class="size-4.5 shrink-0 group-hover:scale-110 transition-transform"></lucide-icon>
             }
             
             @if (!collapsed()) {

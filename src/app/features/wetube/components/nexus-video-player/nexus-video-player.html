@@ -57,6 +57,59 @@
     </video>
   }
 
+  <!-- Neural Upscaler Data Saver Overlay -->
+  @if (isUpscaling()) {
+    <div class="absolute inset-0 bg-slate-950/90 z-40 flex flex-col items-center justify-center p-6 text-center space-y-4 transition-all duration-300 animate-in fade-in" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(2, 6, 23, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 40; pointer-events: none;" dir="rtl">
+      
+      <!-- Status Icon -->
+      <div class="w-12 h-12 rounded-full flex items-center justify-center border transition"
+           [ngClass]="upscaleStep() === 'completed' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'">
+        @if (upscaleStep() === 'completed') {
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        } @else {
+          <svg class="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.247 8H18" />
+          </svg>
+        }
+      </div>
+
+      <!-- Messages -->
+      <div class="space-y-1">
+        <h3 class="text-white font-black text-sm md:text-base">
+          @if (upscaleStep() === 'loading_144') {
+            توفير الباقة نشط: جاري تحميل البث الاقتصادي (144p)...
+          } @else if (upscaleStep() === 'processing') {
+            جاري ترقية جودة الفيديو عصبياً إلى [{{ upscaleQuality() }}]...
+          } @else if (upscaleStep() === 'completed') {
+            تمت ترقية جودة الفيديو بنجاح إلى [{{ upscaleQuality() }}] ⚡
+          }
+        </h3>
+        <p class="text-[10px] text-slate-400 font-bold">
+          @if (upscaleStep() === 'loading_144') {
+            نقوم ببدء الفيديو بأقل جودة ممكنة لتقليل استهلاك الإنترنت بنسبة 85%.
+          } @else if (upscaleStep() === 'processing') {
+            تم بدء عرض الفيديو لتوفير وقت الانتظار بينما تستمر المعالجة في الخلفية.
+          } @else if (upscaleStep() === 'completed') {
+            تمت مضاعفة بكسلات الفيديو محلياً وتحسين حدة التفاصيل.
+          }
+        </p>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="flex items-center gap-3" style="display: flex; align-items: center; gap: 12px;">
+        <span class="text-xs font-black text-indigo-400 min-w-[32px]">{{ upscaleProgress() }}%</span>
+        <div class="w-48 h-2 bg-white/10 rounded-full overflow-hidden" style="width: 192px; height: 8px; border-radius: 9999px; background: rgba(255, 255, 255, 0.1); overflow: hidden;">
+          <div class="h-full bg-indigo-500 transition-all duration-150" 
+               [style.width.%]="upscaleProgress()"
+               style="height: 100%; background: #4f46e5; border-radius: 9999px;">
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
   <!-- Controls Overlay -->
   <div class="video-controls absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 pb-2 pt-16 transition-opacity duration-300"
        [ngClass]="(showControls() || !isPlaying()) && ((proSettings && proSettings !== null) || sourceType !== 'youtube') ? 'opacity-100' : 'opacity-0 pointer-events-none'"

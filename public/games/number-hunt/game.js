@@ -8,6 +8,22 @@ function playSound(type) {
     }
 }
 
+// Touch and click helper to eliminate mobile click delays
+function bindInteraction(element, callback) {
+    let triggered = false;
+    element.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        triggered = true;
+        callback();
+        setTimeout(() => { triggered = false; }, 300);
+    }, { passive: false });
+    
+    element.addEventListener('click', (e) => {
+        if (triggered) return;
+        callback();
+    });
+}
+
 // Read URL Parameters
 const urlParams = new URLSearchParams(window.location.search);
 const gameMode = urlParams.get('mode') || 'local'; // 'local', 'private', 'pro'
@@ -140,7 +156,7 @@ function setupLocalBuzzers(count) {
         const btn = document.createElement('div');
         btn.className = `buzzer-btn buzzer-${p.id}`;
         btn.innerHTML = `<span class="buzzer-icon">${p.icon}</span><span>${names[p.id]}</span>`;
-        btn.onclick = () => handleLocalBuzzer(p.id);
+        bindInteraction(btn, () => handleLocalBuzzer(p.id));
         container.appendChild(btn);
     });
 }
@@ -219,7 +235,7 @@ function renderGridUI() {
         const cell = document.createElement('div');
         cell.className = 'grid-cell';
         cell.innerText = num;
-        cell.onclick = () => handleCellClick(num, cell);
+        bindInteraction(cell, () => handleCellClick(num, cell));
         grid.appendChild(cell);
     });
 }

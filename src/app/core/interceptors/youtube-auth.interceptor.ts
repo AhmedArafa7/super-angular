@@ -1,10 +1,7 @@
-import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpEvent, HttpErrorResponse } from '@angular/common/http';
+import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpEvent } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Observable, from, throwError, BehaviorSubject, switchMap, catchError, filter, take } from 'rxjs';
+import { Observable } from 'rxjs';
 import { FirebaseService } from '../services/firebase.service';
-
-let isRefreshing = false;
-let refreshTokenSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
 
 export const youtubeAuthInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn): Observable<HttpEvent<unknown>> => {
   const firebaseService = inject(FirebaseService);
@@ -24,52 +21,10 @@ export const youtubeAuthInterceptor: HttpInterceptorFn = (req: HttpRequest<unkno
         Authorization: `Bearer ${token}`
       }
     });
-    return next(cloned).pipe(
-      catchError(error => {
-        if (error instanceof HttpErrorResponse && error.status === 401) {
-          return handle401Error(req, next, firebaseService);
-        } else {
-          return throwError(() => error);
-        }
-      })
-    );
+    return next(cloned);
   } else {
-    // Token is missing or expired, attempt refresh
-    return handle401Error(req, next, firebaseService);
+    // If the token is missing or expired, proceed without the header.
+    // This avoids opening intrusive popups automatically on page load.
+    return next(req);
   }
 };
-
-function handle401Error(request: HttpRequest<any>, next: HttpHandlerFn, firebaseService: FirebaseService): Observable<HttpEvent<any>> {
-  if (!isRefreshing) {
-    isRefreshing = true;
-    refreshTokenSubject.next(null);
-
-    return from(firebaseService.refreshGoogleToken()).pipe(
-      switchMap((token) => {
-        isRefreshing = false;
-        refreshTokenSubject.next(token);
-        
-        if (token) {
-          return next(request.clone({
-            setHeaders: { Authorization: `Bearer ${token}` }
-          }));
-        }
-        return throwError(() => new Error('Failed to refresh token'));
-      }),
-      catchError((err) => {
-        isRefreshing = false;
-        return throwError(() => err);
-      })
-    );
-  } else {
-    return refreshTokenSubject.pipe(
-      filter(token => token != null),
-      take(1),
-      switchMap(token => {
-        return next(request.clone({
-          setHeaders: { Authorization: `Bearer ${token}` }
-        }));
-      })
-    );
-  }
-}

@@ -1,13 +1,13 @@
 import { Component, inject, signal, OnInit, computed, ChangeDetectionStrategy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
-import { WeTubeService } from '../../wetube.service';
+import { WeTubeService, AlgorithmConfig } from '../../wetube.service';
 import { FirebaseService } from '../../../../core/services/firebase.service';
 import { YoutubeDiscoveryService } from '../../../../core/services/youtube-discovery.service';
 import { WETUBE_CATEGORIES } from '../../wetube.model';
 import { SubscriptionBarComponent } from '../shared/subscription-bar/subscription-bar';
 import { NexusNativeAdsComponent } from '../nexus-native-ads/nexus-native-ads';
-import { LucideAngularModule, Sparkles, TrendingUp, Search, ArrowLeft, Youtube, RefreshCcw, LogIn, Video } from 'lucide-angular';
+import { LucideAngularModule, Sparkles, TrendingUp, Search, ArrowLeft, Youtube, RefreshCcw, LogIn, Video, Sliders, Check } from 'lucide-angular';
 
 @Component({
   selector: 'app-wetube-home',
@@ -58,6 +58,71 @@ export class WeTubeHomeComponent implements OnInit {
   RefreshCcw = RefreshCcw;
   LogIn = LogIn;
   Video = Video;
+  Sliders = Sliders;
+  Check = Check;
+
+  showAlgoModal = signal(false);
+
+  toggleAlgoModal() {
+    this.showAlgoModal.update(v => !v);
+  }
+
+  updateSubscriptionWeight(event: Event) {
+    const val = parseInt((event.target as HTMLInputElement).value, 10);
+    const current = this.wetube.algoConfig();
+    this.wetube.updateAlgoConfig({
+      ...current,
+      subscriptionWeight: val
+    });
+  }
+
+  toggleHideWatched() {
+    const current = this.wetube.algoConfig();
+    this.wetube.updateAlgoConfig({
+      ...current,
+      hideWatched: !current.hideWatched
+    });
+  }
+
+  updateCategoryWeight(category: string, event: Event) {
+    const val = parseInt((event.target as HTMLInputElement).value, 10);
+    const current = this.wetube.algoConfig();
+    const nextWeights = { ...current.categoryWeights, [category]: val };
+    this.wetube.updateAlgoConfig({
+      ...current,
+      categoryWeights: nextWeights
+    });
+  }
+
+  toggleDataSaver() {
+    const current = this.wetube.algoConfig();
+    this.wetube.updateAlgoConfig({
+      ...current,
+      dataSaverEnabled: !current.dataSaverEnabled
+    });
+  }
+
+  updateTargetUpscaleQuality(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    if (select) {
+      const current = this.wetube.algoConfig();
+      this.wetube.updateAlgoConfig({
+        ...current,
+        targetUpscaleQuality: select.value
+      });
+    }
+  }
+
+  // Shorts Dynamic Row Configuration (saved locally per requirements)
+  shortsRows = signal<number>(1);
+
+  shortsList = computed(() => {
+    return this.wetube.allHomeContent().filter(v => v.isShorts);
+  });
+
+  standardVideosList = computed(() => {
+    return this.wetube.allHomeContent().filter(v => !v.isShorts);
+  });
 
   needsOnboarding = computed(() => {
     const userData = this.firebaseService.userData();
@@ -75,6 +140,15 @@ export class WeTubeHomeComponent implements OnInit {
     }
     this.checkOnboardingStatus();
     
+    // Load shorts rows from local storage
+    const savedShortsRows = localStorage.getItem('wetube-shorts-rows');
+    if (savedShortsRows) {
+      const parsed = parseInt(savedShortsRows, 10);
+      if (!isNaN(parsed) && parsed >= 1 && parsed <= 3) {
+        this.shortsRows.set(parsed);
+      }
+    }
+
     setTimeout(() => {
       this.setupIntersectionObserver();
     }, 1000);
@@ -87,6 +161,22 @@ export class WeTubeHomeComponent implements OnInit {
     });
 
     this.wetube.initialize();
+  }
+
+  increaseShortsRows() {
+    this.shortsRows.update(r => {
+      const val = Math.min(r + 1, 3);
+      localStorage.setItem('wetube-shorts-rows', val.toString());
+      return val;
+    });
+  }
+
+  decreaseShortsRows() {
+    this.shortsRows.update(r => {
+      const val = Math.max(r - 1, 1);
+      localStorage.setItem('wetube-shorts-rows', val.toString());
+      return val;
+    });
   }
 
   extractYoutubeId(urlOrId: string): string | null {

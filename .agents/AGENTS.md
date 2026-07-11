@@ -16,3 +16,4 @@ Every game must implement **exactly three** play modes. The UI should clearly pr
 3. **لعب أونلاين (Online Matchmaking / Pro Mode)**: 
    - Public online matchmaking against random opponents.
    - **Restriction**: This mode is strictly reserved for subscribed "Pro" users. Non-pro users should see a premium lock/prompt to upgrade.
+

@@ -41,5 +41,10 @@
     <button class="action-btn" (click)="save.emit()">
       <span>حفظ</span>
     </button>
+    
+    <button class="action-btn text-red-500 hover:text-red-400" (click)="report.emit()" title="إبلاغ عن الفيديو">
+      <lucide-icon [img]="Flag" class="text-red-500"></lucide-icon>
+      <span class="text-red-500">إبلاغ</span>
+    </button>
   </div>
 </div>

@@ -257,6 +257,15 @@ export class FirebaseService {
           displayName: remoteData.name || remoteData.displayName,
           photoURL: remoteData.avatar_url || remoteData.photoURL
         });
+
+        // Sync YouTube credentials from remote DB to local storage if they exist
+        const yt = remoteData.linkedAccounts?.find(a => a.platform === 'youtube');
+        if (yt && yt.accessToken) {
+          localStorage.setItem('yt_access_token', yt.accessToken);
+          if (yt.expiresAt) {
+            localStorage.setItem('yt_token_expiry', yt.expiresAt.toString());
+          }
+        }
       } else {
         let detectedName = `مستخدم ${uid.substring(0, 5).toUpperCase()}`;
         let detectedUsername = `guest_${uid.substring(0, 5)}`;
@@ -865,6 +874,25 @@ export class FirebaseService {
       await updateDoc(docRef, { status });
     } catch (err) {
       console.error('[FirebaseService] updateGameInviteStatus failed:', err);
+    }
+  }
+
+  async reportVideo(videoId: string, videoTitle: string, reason: string, comments: string): Promise<void> {
+    const uid = this.getUserId() || 'anonymous';
+    try {
+      const reportsCol = collection(this.firestore, 'reports');
+      await addDoc(reportsCol, {
+        videoId,
+        videoTitle,
+        reason,
+        comments,
+        reporterId: uid,
+        timestamp: Date.now()
+      });
+      console.log(`[FirebaseService] Video ${videoId} reported successfully.`);
+    } catch (err) {
+      console.error('[FirebaseService] reportVideo failed:', err);
+      throw err;
     }
   }
 }

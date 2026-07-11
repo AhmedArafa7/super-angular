@@ -1,0 +1,186 @@
+<div class="docs-container h-full w-full flex overflow-hidden bg-slate-950" dir="rtl">
+  
+  <!-- Left Panel: Documents List Sidebar -->
+  <aside class="w-80 border-l border-white/5 bg-slate-900/60 backdrop-blur-xl flex flex-col shrink-0">
+    <!-- Header -->
+    <div class="p-4 border-b border-white/5 flex flex-col gap-3">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-black text-white">مستندات سوبر 📑</h2>
+        <button (click)="createNewDoc()" class="w-10 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center transition-all shadow-lg hover:shadow-indigo-500/20 active:scale-95" title="مستند جديد">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+        </button>
+      </div>
+
+      <!-- Search -->
+      <div class="relative">
+        <input 
+          type="text" 
+          [(ngModel)]="searchQuery" 
+          placeholder="ابحث عن مستند..." 
+          class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 pr-10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+        />
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-500 absolute left-3 top-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+      </div>
+    </div>
+
+    <!-- Documents List -->
+    <div class="flex-1 overflow-y-auto p-3 space-y-1.5 custom-scrollbar">
+      @if (filteredDocs.length === 0) {
+        <div class="text-center py-8 text-slate-500 text-sm">
+          لا توجد مستندات بعد.
+        </div>
+      } @else {
+        @for (doc of filteredDocs; track doc.id) {
+          <div 
+            (click)="selectDoc(doc)" 
+            [class.active]="selectedDoc?.id === doc.id"
+            class="doc-item group w-full flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border border-transparent"
+          >
+            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+              <span class="text-lg shrink-0">📄</span>
+              <div class="flex flex-col items-start gap-0.5 min-w-0 flex-1">
+                <span class="font-bold text-sm text-slate-200 group-hover:text-white truncate w-full">{{ doc.title || 'مستند بدون عنوان' }}</span>
+                <span class="text-[9px] text-slate-500">{{ doc.updatedAt | date:'mediumDate' }}</span>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <!-- Sync badge status -->
+              @if (isPro && doc.isSynced) {
+                <span class="text-emerald-400 text-xs" title="تمت المزامنة سحابياً">☁️</span>
+              } @else {
+                <span class="text-slate-500 text-xs" title="محلي فقط">💾</span>
+              }
+
+              <!-- Delete Button -->
+              <button (click)="deleteDoc(doc.id, $event)" class="text-slate-500 hover:text-red-400 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              </button>
+            </div>
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Storage Security Banner at bottom -->
+    <div class="p-4 border-t border-white/5">
+      @if (isPro) {
+        <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-3 flex items-start gap-2.5">
+          <span class="text-emerald-400 mt-0.5">✔️</span>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-xs font-bold text-emerald-400">المزامنة النشطة نشطة ☁️</span>
+            <span class="text-[10px] text-slate-400">جميع مستنداتك محفوظة بأمان على حسابك السحابي الاحترافي!</span>
+          </div>
+        </div>
+      } @else {
+        <div class="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-3 flex flex-col gap-2">
+          <div class="flex items-start gap-2.5">
+            <span class="text-amber-400 mt-0.5">💾</span>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs font-bold text-amber-400">تخزين محلي آمن</span>
+              <span class="text-[10px] text-slate-400">مستنداتك محفوظة على هذا المتصفح فقط. الترقية لـ Pro تضمن مزامنتها السحابية وحمايتها من الفقدان.</span>
+            </div>
+          </div>
+          <button class="w-full py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 text-black font-black text-xs hover:brightness-110 active:scale-95 transition-all">
+            ترقية الحساب لـ PRO 🔒
+          </button>
+        </div>
+      }
+    </div>
+  </aside>
+
+  <!-- Center Panel: Word Workspace -->
+  <div class="docs-workspace flex-1 flex flex-col min-w-0 bg-[#0b0f19]">
+    @if (!selectedDoc) {
+      <div class="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-slate-700 mb-4 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+        <h3 class="text-lg font-bold text-slate-300 mb-1">لا يوجد مستند نشط</h3>
+        <p class="text-sm">اختر مستنداً من القائمة الجانبية أو قم بإنشاء مستند جديد للبدء في تحريره.</p>
+      </div>
+    } @else {
+      <!-- Editor Header & Title -->
+      <div class="px-6 py-3 border-b border-white/5 bg-slate-900/10 flex items-center justify-between gap-4">
+        <div class="flex-1 min-w-0 flex items-center gap-2">
+          <span class="text-xl shrink-0">📄</span>
+          <input 
+            type="text" 
+            [(ngModel)]="selectedDoc.title" 
+            (input)="onTitleInput()"
+            class="w-full bg-transparent text-lg font-black text-white focus:outline-none border-b border-transparent focus:border-indigo-500/50 pb-0.5" 
+            placeholder="عنوان المستند"
+          />
+        </div>
+
+        <div class="flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/5 rounded-full shrink-0">
+          @if (isSaving) {
+            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping"></span>
+            <span class="text-[10px] font-bold text-indigo-400">جاري الحفظ...</span>
+          } @else if (isPro && selectedDoc.isSynced) {
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span class="text-[10px] font-bold text-emerald-400">محفوظ سحابياً</span>
+          } @else {
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+            <span class="text-[10px] font-bold text-amber-400">محفوظ محلياً</span>
+          }
+        </div>
+      </div>
+
+      <!-- Reusable Rich Text Editor Component -->
+      <app-rich-editor
+        [content]="selectedDoc.content"
+        [isPro]="isPro"
+        (contentChange)="onContentChange($event)"
+        (statsChange)="onStatsChange($event)"
+      ></app-rich-editor>
+    }
+  </div>
+
+  <!-- Right Panel: Info & Exports -->
+  @if (selectedDoc) {
+    <aside class="w-64 border-r border-white/5 bg-slate-900/60 backdrop-blur-xl flex flex-col shrink-0 p-4 justify-between">
+      <!-- Top actions & Stats -->
+      <div class="space-y-6">
+        <!-- Section: Exports -->
+        <div>
+          <h4 class="text-xs font-black text-indigo-400 tracking-wider uppercase mb-3">تصدير وحفظ المستند</h4>
+          <div class="flex flex-col gap-2">
+            <button (click)="exportTxt()" class="export-btn">
+              <span>💾 تحميل بصيغة نص (TXT)</span>
+            </button>
+            <button (click)="exportHtml()" class="export-btn">
+              <span>🌐 تحميل بصيغة صفحة (HTML)</span>
+            </button>
+            <button (click)="exportPdf()" class="export-btn">
+              <span>🖨️ طباعة وتصدير لـ PDF</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="border-t border-white/5 pt-4">
+          <h4 class="text-xs font-black text-indigo-400 tracking-wider uppercase mb-3">تحليلات المستند</h4>
+          <div class="bg-black/30 border border-white/5 rounded-2xl p-3 space-y-2.5">
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">عدد الكلمات:</span>
+              <span class="font-bold text-white font-mono">{{ wordCount }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">عدد الحروف:</span>
+              <span class="font-bold text-white font-mono">{{ charCount }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">زمن القراءة المتوقع:</span>
+              <span class="font-bold text-white font-mono">{{ readTime }} دقيقة</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- User footer information -->
+      <div class="border-t border-white/5 pt-4 text-center">
+        <span class="text-[9px] text-slate-500 block uppercase font-bold tracking-widest leading-none mb-1">Si-Neuro Engine</span>
+        <span class="text-[10px] text-slate-400 block font-medium">البيانات آمنة ومحفوظة بالكامل.</span>
+      </div>
+    </aside>
+  }
+
+</div>
