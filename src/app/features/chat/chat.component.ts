@@ -1,17 +1,18 @@
-import { Component, inject, signal, ElementRef, ViewChild, AfterViewChecked } from '@angular/core';
+import { Component, inject, signal, ElementRef, ViewChild, AfterViewChecked, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { LucideAngularModule, Sparkles, Send, Trash2, Volume2, VolumeX, Settings, Plus, Eye, EyeOff, CheckCircle2, AlertTriangle, RefreshCw, Cpu, Layers } from 'lucide-angular';
 import { LucideDynamicIcon } from '@lucide/angular';
-import { ChatService, ChatMessage } from '../../core/chat.service';
+import { ChatService, ChatMessage, AIProviderModel } from '../../core/chat.service';
 
 @Component({
   selector: 'app-ai-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideDynamicIcon],
+  imports: [CommonModule, FormsModule, LucideAngularModule, LucideDynamicIcon],
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.scss']
 })
-export class ChatComponent implements AfterViewChecked {
+export class ChatComponent implements OnInit, AfterViewChecked {
   chatService = inject(ChatService);
 
   @ViewChild('chatScrollContainer') private scrollContainer!: ElementRef;
@@ -20,6 +21,24 @@ export class ChatComponent implements AfterViewChecked {
   inputText = '';
   isThinking = false;
   editingMsgId: string | null = null;
+
+  // Settings Panel state
+  showSettings = signal<boolean>(false);
+  selectedProvider: 'google' | 'openai' | 'groq' | 'emulated' = 'emulated';
+  apiKeyInput = '';
+  showApiKey = false;
+
+  providersList: { id: 'google' | 'openai' | 'groq' | 'emulated'; label: string }[] = [
+    { id: 'emulated', label: 'المحاكي المجاني (Si-Neuro)' },
+    { id: 'google', label: 'Google Gemini 🌐' },
+    { id: 'openai', label: 'OpenAI GPT 🤖' },
+    { id: 'groq', label: 'Groq Llama ⚡' }
+  ];
+  
+  // Connection states
+  isConnecting = false;
+  connectionError = '';
+  connectionSuccess = false;
 
   // Attachment upload simulation state
   uploadedAttachment: { name: string; type: string; url: string } | null = null;
@@ -35,6 +54,11 @@ export class ChatComponent implements AfterViewChecked {
     { label: 'توليد لوحة فنية عصبية', icon: 'sparkles', query: '/imagine مدينة مستقبلية نيون عائمة تحت المطر الكوني' }
   ];
 
+  ngOnInit(): void {
+    this.selectedProvider = this.chatService.provider();
+    this.apiKeyInput = this.chatService.apiKey();
+  }
+
   ngAfterViewChecked() {
     this.scrollToBottom();
   }
@@ -43,6 +67,53 @@ export class ChatComponent implements AfterViewChecked {
     try {
       this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
     } catch (err) {}
+  }
+
+  // Get metadata details of selected model
+  get selectedModelDetails(): AIProviderModel | undefined {
+    const activeId = this.chatService.selectedModel();
+    return this.chatService.activeModelsList.find(m => m.id === activeId);
+  }
+
+  // Connect to custom provider & fetch models
+  async handleConnect(): Promise<void> {
+    if (this.selectedProvider === 'emulated') {
+      this.chatService.saveConfig('emulated', '', []);
+      this.connectionSuccess = true;
+      this.connectionError = '';
+      setTimeout(() => {
+        this.showSettings.set(false);
+        this.connectionSuccess = false;
+      }, 1000);
+      return;
+    }
+
+    if (!this.apiKeyInput.trim()) {
+      this.connectionError = 'يرجى إدخال مفتاح API أولاً!';
+      return;
+    }
+
+    this.isConnecting = true;
+    this.connectionError = '';
+    this.connectionSuccess = false;
+
+    try {
+      const fetched = await this.chatService.fetchModels(this.selectedProvider, this.apiKeyInput.trim());
+      if (fetched.length === 0) {
+        throw new Error('لم يتم العثور على نماذج حوارية مدعومة لهذا الحساب.');
+      }
+      this.chatService.saveConfig(this.selectedProvider, this.apiKeyInput.trim(), fetched);
+      this.connectionSuccess = true;
+      setTimeout(() => {
+        this.showSettings.set(false);
+        this.connectionSuccess = false;
+      }, 1500);
+    } catch (e: any) {
+      console.error(e);
+      this.connectionError = e.message || 'فشل الاتصال بالمزود، تأكد من صحة المفتاح وجودة شبكة الإنترنت.';
+    } finally {
+      this.isConnecting = false;
+    }
   }
 
   // Trigger quick prompt preset
@@ -65,7 +136,6 @@ export class ChatComponent implements AfterViewChecked {
     this.uploadedAttachment = null;
 
     if (this.editingMsgId) {
-      // Editing mode
       this.chatService.deleteMessage(this.editingMsgId);
       this.editingMsgId = null;
     }
@@ -82,7 +152,6 @@ export class ChatComponent implements AfterViewChecked {
     if (input.files && input.files[0]) {
       const file = input.files[0];
       
-      // Simulate small file reader
       const reader = new FileReader();
       reader.onload = (e) => {
         this.uploadedAttachment = {
@@ -104,7 +173,6 @@ export class ChatComponent implements AfterViewChecked {
 
     this.playingMessageId.set(msg.id);
 
-    // Simulated speech duration based on word count
     const words = msg.text.split(' ').length;
     const duration = Math.min(8000, Math.max(2000, words * 150));
 

@@ -1,20 +1,30 @@
 <div class="p-8 max-w-7xl mx-auto flex flex-col min-h-screen animate-in fade-in duration-700 font-sans text-right" dir="rtl">
   <!-- Header -->
-  <header class="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
+  <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 gap-6 flex-row-reverse">
     <div class="space-y-2">
-      <div class="inline-flex items-center gap-2 px-4 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full mb-2">
-        <svg lucideIcon="zap" class="size-3 text-indigo-400 animate-pulse"></svg>
-        <span class="text-[10px] uppercase font-bold text-indigo-400 tracking-widest">Faith Protocol Active</span>
-      </div>
-      <h1 class="text-5xl font-headline font-bold text-white tracking-tight flex items-center gap-4">
+      <h1 class="text-4xl md:text-5xl font-bold text-white tracking-tight flex items-center gap-3 flex-row-reverse">
+        <svg lucideIcon="book-open" class="text-indigo-400 size-10"></svg>
         حصن المسلم
-        <svg lucideIcon="book-open" class="text-indigo-400 size-10 animate-bounce"></svg>
       </h1>
-      <p class="text-muted-foreground text-lg max-w-2xl">
-        تواصل روحي عميق عبر بوابات الأذكار الموثقة، أسماء الله الحسنى، والتسبيح اليومي المنظم.
+      <p class="text-slate-400 text-lg max-w-2xl leading-relaxed">
+        تواصل روحي عميق عبر بوابات الأذكار الموثقة، أسماء الله الحسنى، التسبيح اليومي، والأوراد المنظمة.
       </p>
     </div>
-  </header>
+
+    <!-- Local Storage Indicator -->
+    <div class="glass border-white/10 p-4 rounded-[2rem] flex flex-col gap-3 min-w-[260px]">
+      <div class="flex items-center justify-between flex-row-reverse">
+        <div class="flex items-center gap-2 flex-row-reverse">
+          <svg lucideIcon="database" class="size-4 text-indigo-400"></svg>
+          <span class="text-[10px] uppercase font-bold text-white">التخزين المحلي</span>
+        </div>
+        <span class="text-[10px] font-mono text-indigo-400">{{ calculateStorageUsed() }} KB</span>
+      </div>
+      <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+        <div class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500" [style.width.%]="calculateStoragePercent()"></div>
+      </div>
+    </div>
+  </div>
 
   <!-- Custom Floating Toast -->
   <div *ngIf="showToast" class="fixed bottom-6 right-6 z-50 p-5 bg-emerald-600/90 border border-emerald-500/30 text-white rounded-[2rem] shadow-2xl backdrop-blur-md flex items-center gap-3 animate-in slide-in-from-bottom-5 duration-300">
@@ -30,45 +40,63 @@
       <button 
         (click)="activeTab = 'quran'"
         [class]="activeTab === 'quran' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'"
-        class="rounded-xl px-8 py-3 flex-1 font-bold transition-all text-center">
+        class="rounded-xl px-6 py-3 flex-1 sm:flex-none font-bold transition-all text-center text-sm">
         القرآن الكريم
+      </button>
+      <button 
+        (click)="activeTab = 'prayers'"
+        [class]="activeTab === 'prayers' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'"
+        class="rounded-xl px-6 py-3 flex-1 sm:flex-none font-bold transition-all text-center text-sm">
+        مواقيت الصلاة
       </button>
       <button 
         (click)="activeTab = 'azkar'"
         [class]="activeTab === 'azkar' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'"
-        class="rounded-xl px-8 py-3 flex-1 font-bold transition-all text-center">
+        class="rounded-xl px-6 py-3 flex-1 sm:flex-none font-bold transition-all text-center text-sm">
         الأذكار اليومية
+      </button>
+      <button 
+        (click)="activeTab = 'wird'"
+        [class]="activeTab === 'wird' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'"
+        class="rounded-xl px-6 py-3 flex-1 sm:flex-none font-bold transition-all text-center text-sm">
+        الأوراد
       </button>
       <button 
         (click)="activeTab = 'names'"
         [class]="activeTab === 'names' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'"
-        class="rounded-xl px-8 py-3 flex-1 font-bold transition-all text-center">
+        class="rounded-xl px-6 py-3 flex-1 sm:flex-none font-bold transition-all text-center text-sm">
         أسماء الله الحسنى
       </button>
       <button 
         (click)="activeTab = 'tasbih'"
         [class]="activeTab === 'tasbih' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'"
-        class="rounded-xl px-8 py-3 flex-1 font-bold transition-all text-center">
+        class="rounded-xl px-6 py-3 flex-1 sm:flex-none font-bold transition-all text-center text-sm">
         المسبحة الإلكترونية
+      </button>
+      <button 
+        (click)="activeTab = 'storage'"
+        [class]="activeTab === 'storage' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'"
+        class="rounded-xl px-6 py-3 flex-1 sm:flex-none font-bold transition-all text-center text-sm">
+        إدارة الذاكرة
       </button>
     </div>
 
     <!-- Active Content Area -->
     <div [ngSwitch]="activeTab" class="w-full">
-      
+
       <!-- 0. Quran Tab -->
       <div *ngSwitchCase="'quran'" class="space-y-8 animate-in slide-in-from-left-4 duration-500">
-        <div class="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 text-center">
+        <div class="glass border-white/5 rounded-[2.5rem] p-10 text-center">
             <h2 class="text-4xl font-black text-white mb-4">سورة الْفَاتِحَة</h2>
             <p class="text-indigo-300 font-bold mb-8">برمج عقلك وروحك بالقرآن اليوم. ابدأ وردك المخصص الآن لتسجيل إنجازك اليومي.</p>
             
             <div class="w-full max-w-lg mx-auto mb-8">
                 <div class="flex justify-between text-sm font-bold text-white mb-2">
                     <span>التقدم</span>
-                    <span>67%</span>
+                    <span>{{ quranProgress()?.verseId ? 'جاري...' : '0%' }}</span>
                 </div>
                 <div class="w-full h-4 bg-indigo-950 rounded-full overflow-hidden">
-                    <div class="h-full bg-indigo-500" style="width: 67%;"></div>
+                    <div class="h-full bg-indigo-500 rounded-full transition-all duration-500" [style.width.%]="quranProgress()?.verseId ? 25 : 0"></div>
                 </div>
             </div>
             
@@ -78,7 +106,22 @@
         </div>
       </div>
 
-      <!-- 1. Azkar Tab -->
+      <!-- 1. Prayer Times Tab -->
+      <div *ngSwitchCase="'prayers'" class="space-y-8 animate-in fade-in duration-700">
+        <div class="glass border-white/5 rounded-[2.5rem] p-10 text-center">
+          <h3 class="text-2xl font-bold text-white mb-6">مواقيت الصلاة</h3>
+          <p class="text-slate-400 mb-8">قيد التطوير - سيتم ربطها بـ Aladhan API مع طرق حساب متعددة</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div *ngFor="let prayer of ['الفجر', 'الظهر', 'العصر', 'المغرب', 'العشاء']" 
+                 class="glass border-white/5 rounded-2xl p-6 text-center">
+              <p class="text-slate-400 text-sm mb-2">{{ prayer }}</p>
+              <p class="text-2xl font-black text-white">--:--</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Azkar Tab -->
       <div *ngSwitchCase="'azkar'" class="space-y-6">
         
         <!-- Categories List -->
@@ -90,11 +133,17 @@
             <div class="absolute top-0 right-0 size-32 bg-indigo-500/5 blur-3xl -mr-16 -mt-16 group-hover:bg-indigo-500/10 transition-all"></div>
             
             <div class="size-20 bg-white/5 rounded-[2rem] flex items-center justify-center mb-8 border border-white/10 group-hover:scale-110 transition-all shadow-inner">
-              <svg [lucideIcon]="cat.icon" class="size-10" [ngClass]="cat.id === 'morning' ? 'text-amber-400' : cat.id === 'evening' ? 'text-indigo-400' : 'text-emerald-400'"></svg>
+              <svg [lucideIcon]="cat.icon" class="size-10" 
+                [ngClass]="cat.id === 'morning' ? 'text-amber-400' : cat.id === 'evening' ? 'text-indigo-400' : 
+                            cat.id === 'sleep' ? 'text-purple-400' : cat.id === 'after_prayer' ? 'text-emerald-400' :
+                            cat.id === 'situations' ? 'text-cyan-400' : 'text-rose-400'"></svg>
             </div>
             
             <h3 class="text-3xl font-black text-white mb-3">{{ cat.title }}</h3>
             <p class="text-slate-400 text-sm leading-relaxed">{{ cat.description }}</p>
+            <span class="inline-block mt-6 text-indigo-400 font-bold text-[10px] uppercase tracking-widest">
+              {{ cat.items.length }} أذكار
+            </span>
             
             <div class="mt-8 flex items-center justify-end gap-2 text-indigo-400 font-bold text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all">
               فتح القسم <svg lucideIcon="arrow-left" class="size-3"></svg>
@@ -120,21 +169,20 @@
           </div>
 
           <!-- Progress bar & Reset actions -->
-          <div class="bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 mb-8 text-right">
+          <div class="glass border-white/10 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 mb-8 text-right">
             <div class="space-y-2 flex-1 w-full">
               <div class="flex justify-between items-center text-sm font-bold text-slate-300">
                 <span>التقدم في قراءة أذكار القسم:</span>
                 <span class="text-indigo-400">{{ getCategoryProgress() }}%</span>
               </div>
-              <div class="w-full h-2.5 bg-slate-950/60 border border-white/5 rounded-full overflow-hidden" style="width: 100%; height: 10px; border-radius: 9999px; background: rgba(2, 6, 23, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); overflow: hidden;">
-                <div class="h-full bg-indigo-500 transition-all duration-500 rounded-full" [style.width.%]="getCategoryProgress()" style="height: 100%; background: #4f46e5; border-radius: 9999px;"></div>
+              <div class="w-full h-2.5 bg-slate-950/60 border border-white/5 rounded-full overflow-hidden">
+                <div class="h-full bg-indigo-500 transition-all duration-500 rounded-full" [style.width.%]="getCategoryProgress()"></div>
               </div>
             </div>
             
             <button 
               (click)="resetAllSelectedZikr()"
-              class="px-5 py-2.5 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 font-bold rounded-2xl text-xs transition flex items-center gap-2"
-              style="border: 1px solid rgba(239, 68, 68, 0.2); cursor: pointer; color: #f87171;">
+              class="px-5 py-2.5 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 font-bold rounded-2xl text-xs transition flex items-center gap-2">
               <svg lucideIcon="rotate-ccw" class="size-3.5"></svg>
               <span>إعادة ضبط جميع عدادات القسم</span>
             </button>
@@ -144,120 +192,444 @@
             <div 
               *ngFor="let item of selectedCategory.items" 
               [ngClass]="(counts[item.id] || 0) >= item.count ? 'bg-emerald-950/10 border-emerald-500/30' : 'glass border-white/5'"
-              class="rounded-[2.5rem] p-8 text-right space-y-6 shadow-2xl hover:border-indigo-500/20 transition-all relative overflow-hidden"
-              style="border-radius: 40px; border: 1px solid rgba(255, 255, 255, 0.05); padding: 32px; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 24px;">
+              class="rounded-[2.5rem] p-8 text-right space-y-6 shadow-2xl hover:border-indigo-500/20 transition-all relative overflow-hidden">
               
               <!-- Completion indicator ribbon -->
-              <div *ngIf="(counts[item.id] || 0) >= item.count" class="absolute top-0 left-0 bg-emerald-500 text-slate-950 px-4 py-1 text-[10px] font-black uppercase tracking-wider rounded-br-2xl shadow-md" style="position: absolute; top: 0; left: 0; background: #10b981; color: #020617; padding: 4px 16px; font-size: 10px; font-weight: 900; border-bottom-right-radius: 16px;">
+              <div *ngIf="(counts[item.id] || 0) >= item.count" 
+                   class="absolute top-0 right-0 bg-emerald-500 text-slate-950 px-4 py-1 text-[10px] font-black uppercase tracking-wider rounded-bl-2xl shadow-md">
                 مكتمل ✓
               </div>
 
-              <div class="flex justify-between items-start gap-4 flex-row-reverse" style="display: flex; justify-content: space-between; align-items: start; gap: 16px; width: 100%;">
-                <p [style.fontSize.px]="fontSize" class="text-white leading-loose font-medium font-serif flex-1 select-none pr-2 text-right" style="margin: 0;">{{ item.text }}</p>
+              <div class="flex justify-between items-start gap-4 flex-row-reverse">
+                <p [style.fontSize.px]="fontSize()" class="text-white leading-loose font-medium font-serif flex-1 select-none pr-2 text-right">{{ item.text }}</p>
                 
-                <button 
-                  (click)="speakZikr(item)"
-                  [ngClass]="isSpeaking[item.id] ? 'bg-indigo-600 text-white animate-pulse' : 'bg-white/5 border border-white/10 text-slate-400 hover:text-white'"
-                  class="size-10 rounded-xl flex items-center justify-center transition-all shadow-md"
-                  style="border-radius: 12px; cursor: pointer; flex-shrink: 0;"
-                  title="استماع للذكر">
-                  <svg [lucideIcon]="isSpeaking[item.id] ? 'volume-x' : 'volume-2'" class="size-5"></svg>
-                </button>
-              </div>
-              
-              <p *ngIf="item.description" class="text-xs text-indigo-300 bg-indigo-500/10 p-4 rounded-2xl border border-indigo-500/20 italic text-right" style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); padding: 16px; border-radius: 16px; margin: 0; color: #a5b4fc;">
-                "{{ item.description }}"
-              </p>
-              
-              <div class="flex items-center justify-between pt-6 border-t border-white/5 flex-row-reverse" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 24px; width: 100%;">
-                <div class="flex items-center gap-4 flex-row-reverse" style="display: flex; gap: 16px; align-items: center;">
+                <div class="flex flex-col items-end gap-3 flex-shrink-0">
+                  <button 
+                    (click)="speakZikr(item)"
+                    [class]="isSpeaking[item.id] ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/10 text-white/60 hover:text-indigo-400 hover:bg-indigo-500/10'"
+                    class="size-12 rounded-2xl border flex items-center justify-center transition-all"
+                    [title]="isSpeaking[item.id] ? 'إيقاف القراءة' : 'قراءة الذكر'">
+                    <svg [lucideIcon]="isSpeaking[item.id] ? 'volume-x' : 'volume-2'" class="size-5"></svg>
+                  </button>
+                  
                   <button 
                     (click)="incrementZikr(item)"
-                    [ngClass]="(counts[item.id] || 0) >= item.count ? 'bg-emerald-600 shadow-emerald-900/20' : 'bg-indigo-600 hover:bg-indigo-500'"
-                    class="h-14 px-8 rounded-2xl font-black text-xl text-white transition-all shadow-xl flex items-center justify-center min-w-32"
-                    style="height: 56px; border-radius: 16px; cursor: pointer; color: white; font-weight: 900; font-size: 20px; border: none; min-width: 128px;">
-                    {{ (counts[item.id] || 0) }} / {{ item.count }}
+                    [disabled]="(counts[item.id] || 0) >= item.count"
+                    [class]="(counts[item.id] || 0) >= item.count ? 'bg-emerald-600 text-white cursor-default' : 'bg-indigo-600 hover:bg-indigo-500'"
+                    class="h-14 px-8 rounded-2xl font-black text-xl transition-all shadow-xl flex flex-col items-center justify-center min-w-[80px]">
+                    <span>{{ (counts[item.id] || 0) }} / {{ item.count }}</span>
+                    <span *ngIf="(counts[item.id] || 0) >= item.count" class="text-xs font-bold">مكتمل</span>
                   </button>
+                  
                   <button 
                     (click)="resetZikr(item)"
-                    class="size-14 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center hover:bg-red-500/10 hover:border-red-500/20 group transition-colors"
-                    style="width: 56px; height: 56px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.05); cursor: pointer; display: flex; align-items: center; justify-content: center;">
-                    <svg lucideIcon="rotate-ccw" class="size-6 text-slate-400 group-hover:text-red-400 transition-colors"></svg>
+                    class="size-14 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all flex items-center justify-center">
+                    <svg lucideIcon="rotate-ccw" class="size-6 text-slate-400"></svg>
                   </button>
                 </div>
-                <span *ngIf="item.reference" class="border border-white/5 text-[10px] text-slate-500 px-3 py-1 rounded-full bg-white/5 uppercase" style="border: 1px solid rgba(255, 255, 255, 0.05); font-size: 10px; color: #64748b; padding: 4px 12px; border-radius: 9999px; background: rgba(255, 255, 255, 0.05);">
-                  {{ item.reference }}
-                </span>
+              </div>
+              
+              <div *ngIf="item.description" class="text-xs text-indigo-300 bg-indigo-500/10 p-4 rounded-2xl border border-indigo-500/20 italic">"{{ item.description }}"</div>
+              
+              <div *ngIf="item.reference" class="flex justify-end">
+                <span class="border border-white/5 text-[10px] opacity-40 uppercase px-3 py-1 rounded-xl">{{ item.reference }}</span>
               </div>
             </div>
           </div>
         </div>
-
       </div>
 
-      <!-- 2. Names of Allah Tab -->
-      <div *ngSwitchCase="'names'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div 
-          *ngFor="let item of namesOfAllah"
-          class="group glass border-white/5 rounded-[2.5rem] p-8 text-right hover:border-indigo-500/40 transition-all duration-500 shadow-2xl relative overflow-hidden">
-          <div class="absolute top-0 right-0 size-24 bg-indigo-500/5 blur-2xl -mr-12 -mt-12 group-hover:bg-indigo-500/10 transition-all"></div>
-          
-          <div class="flex justify-between items-center mb-6 flex-row-reverse">
-            <div class="size-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400 font-black text-2xl shadow-inner border border-indigo-500/10 group-hover:scale-110 transition-transform">
-              {{ item.name }}
-            </div>
-            <span class="border border-white/5 text-[10px] text-slate-500 font-mono px-3 py-1 rounded-full bg-white/5">#{{ item.id }}</span>
+      <!-- 3. Wird Tab (NEW) -->
+      <div *ngSwitchCase="'wird'" class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <!-- Add New Wird Form -->
+        <div class="glass border-white/5 rounded-[2.5rem] p-6">
+          <div class="flex items-center justify-between mb-6 flex-row-reverse">
+            <h2 class="text-xl font-black text-white flex items-center gap-2 flex-row-reverse">
+              <svg lucideIcon="target" class="size-6 text-indigo-400"></svg>
+              أورادك اليومية
+            </h2>
+            <button 
+              (click)="showAddWird = !showAddWird"
+              class="px-4 py-2 bg-white/5 border border-white/10 hover:bg-white/10 rounded-xl font-bold text-sm transition flex items-center gap-2">
+              <svg [lucideIcon]="showAddWird ? 'x' : 'plus'" class="size-4"></svg>
+              {{ showAddWird ? 'إخفاء' : 'إضافة ورد جديد' }}
+            </button>
           </div>
 
+          <div *ngIf="showAddWird" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 animate-in slide-in-from-top-2 duration-300">
+            <div class="md:col-span-2">
+              <label class="text-sm font-bold text-white/80 mb-2 block">اسم الورد</label>
+              <input 
+                [(ngModel)]="newWirdName" 
+                placeholder="مثال: قراءة سورة الكهف"
+                class="w-full bg-white/5 border-white/10 text-white rounded-xl h-12 px-4 focus:outline-none focus:border-indigo-500/50"
+              />
+            </div>
+            <div>
+              <label class="text-sm font-bold text-white/80 mb-2 block">الهدف (عدد المرات)</label>
+              <input 
+                type="number" 
+                [(ngModel)]="newWirdTarget" 
+                min="1" 
+                max="10000"
+                class="w-full bg-white/5 border-white/10 text-white rounded-xl h-12 px-4 focus:outline-none focus:border-indigo-500/50"
+              />
+            </div>
+            <div class="flex items-end">
+              <button 
+                (click)="addWird()" 
+                [disabled]="!newWirdName.trim()"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 rounded-xl h-12 font-bold transition-all disabled:opacity-50">
+                <svg lucideIcon="plus" class="size-4 mr-2"></svg> إضافة
+              </button>
+            </div>
+          </div>
+
+          <!-- Wird List -->
           <div class="space-y-4">
-            <div class="flex items-center gap-2 justify-end text-indigo-400">
-              <span class="text-[10px] uppercase font-bold tracking-widest">الدلالة والمعنى</span>
-              <svg lucideIcon="lightbulb" class="size-3.5"></svg>
-            </div>
-            <p class="text-slate-300 leading-loose text-sm font-medium">
-              {{ item.meaning }}
-            </p>
-          </div>
+            <div *ngFor="let wird of wirdItems()" class="group relative overflow-hidden" [ngClass]="wird.progress >= wird.target ? 'ring-1 ring-emerald-500/30' : ''">
+              <div *ngIf="wird.progress >= wird.target" class="absolute inset-0 bg-emerald-500/5 animate-pulse pointer-events-none"></div>
 
-          <div class="mt-8 pt-6 border-t border-white/5 flex items-center justify-end gap-2 text-indigo-400 font-bold text-[9px] uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-all">
-            <svg lucideIcon="zap" class="size-3 animate-spin"></svg> تأمل في الصفة
+              <div class="glass border-white/5 rounded-[2rem] p-6 space-y-4 hover:border-indigo-500/20 transition-all">
+                <div class="flex items-center justify-between flex-row-reverse">
+                  <div class="flex items-center gap-4 flex-row-reverse">
+                    <div [class]="wird.progress >= wird.target ? 
+                      'size-12 rounded-2xl flex items-center justify-center font-black text-xl shadow-inner border bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 
+                      'size-12 rounded-2xl flex items-center justify-center font-black text-xl shadow-inner border bg-white/5 border-white/10 text-white group-hover:scale-110 transition-transform'">
+                      <svg [lucideIcon]="wird.progress >= wird.target ? 'check-circle-2' : 'target'" class="size-6"></svg>
+                    </div>
+                    <div class="text-right">
+                      <h3 class="font-bold text-white text-lg">{{ wird.name }}</h3>
+                      <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">الهدف: {{ wird.target }} مرة</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2 flex-row-reverse">
+                    <button
+                      (click)="updateProgress(wird.id, wird.progress, wird.target)"
+                      [disabled]="wird.progress >= wird.target"
+                      [class]="wird.progress >= wird.target ? 'bg-emerald-600 text-white' : 'bg-indigo-600 hover:bg-indigo-500'"
+                      class="h-14 px-8 rounded-2xl font-black text-xl transition-all shadow-xl flex items-center gap-2 flex-row-reverse">
+                      <span *ngIf="wird.progress >= wird.target">
+                        <svg lucideIcon="check-circle-2" class="size-4"></svg> مكتمل
+                      </span>
+                      <span *ngIf="wird.progress < wird.target">
+                        <svg lucideIcon="plus" class="size-4"></svg> {{ wird.progress }} / {{ wird.target }}
+                      </span>
+                    </button>
+                    <button (click)="startWird(wird.id)" class="size-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all flex items-center justify-center" title="إعادة البدء">
+                      <svg lucideIcon="rotate-ccw" class="size-5 text-slate-400"></svg>
+                    </button>
+                    <button (click)="deleteWird(wird.id)" class="size-10 rounded-xl border border-white/10 bg-white/5 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all flex items-center justify-center">
+                      <svg lucideIcon="trash-2" class="size-5"></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full transition-all duration-500" 
+                    [style.width.%]="Math.min(100, Math.round((wird.progress / wird.target) * 100))"
+                    [ngClass]="wird.progress >= wird.target ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-indigo-500 to-purple-500'">
+                  </div>
+                </div>
+                <div class="flex items-center justify-between text-[10px] font-mono text-white/60 uppercase tracking-widest">
+                  <span>{{ Math.min(100, Math.round((wird.progress / wird.target) * 100)) }}%</span>
+                  <span>{{ wird.progress }} / {{ wird.target }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="wirdItems().length === 0" class="flex flex-col items-center justify-center py-12 bg-white/5 rounded-2xl border-2 border-dashed border-white/10 text-slate-500">
+              <svg lucideIcon="target" class="size-12 mb-4 opacity-20"></svg>
+              <p class="font-bold">لا توجد أوراد مضافة</p>
+              <p class="text-sm">اضغط على "إضافة ورد جديد" للبدء</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats Summary -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div class="glass border-white/5 rounded-[2rem] p-6 text-center">
+            <svg lucideIcon="flame" class="size-10 text-amber-400 mx-auto mb-3"></svg>
+            <p class="text-3xl font-black text-white">{{ wirdItems().filter(w => w.progress >= w.target).length }}</p>
+            <p class="text-xs text-slate-400 uppercase tracking-widest">أوراد مكتملة</p>
+          </div>
+          <div class="glass border-white/5 rounded-[2rem] p-6 text-center">
+            <svg lucideIcon="target" class="size-10 text-indigo-400 mx-auto mb-3"></svg>
+            <p class="text-3xl font-black text-white">{{ wirdItems().reduce((sum, w) => sum + w.progress, 0) }}</p>
+            <p class="text-xs text-slate-400 uppercase tracking-widest">إجمالي العدادات</p>
+          </div>
+          <div class="glass border-white/5 rounded-[2rem] p-6 text-center">
+            <svg lucideIcon="clock" class="size-10 text-blue-400 mx-auto mb-3"></svg>
+            <p class="text-3xl font-black text-white">{{ wirdItems().length }}</p>
+            <p class="text-xs text-slate-400 uppercase tracking-widest">أوراد نشطة</p>
+          </div>
+          <div class="glass border-white/5 rounded-[2rem] p-6 text-center">
+            <svg lucideIcon="check-circle-2" class="size-10 text-emerald-400 mx-auto mb-3"></svg>
+            <p class="text-3xl font-black text-white">
+              {{ wirdItems().length > 0 ? Math.round(wirdItems().reduce((sum, w) => sum + (w.progress / w.target) * 100, 0) / wirdItems().length) : 0 }}%
+            </p>
+            <p class="text-xs text-slate-400 uppercase tracking-widest">معدل الإنجاز</p>
           </div>
         </div>
       </div>
 
-      <!-- 3. Tasbih Tab -->
-      <div *ngSwitchCase="'tasbih'" class="flex flex-col items-center py-12 outline-none animate-in zoom-in duration-500">
-        
-        <!-- Large Interactive Circle -->
+      <!-- 4. Names of Allah Tab (Enhanced with Search) -->
+      <div *ngSwitchCase="'names'" class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <!-- Search Bar -->
+        <div class="relative max-w-xl">
+          <svg lucideIcon="search" class="absolute right-4 top-1/2 -translate-y-1/2 size-5 text-slate-500"></svg>
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            placeholder="ابحث في أسماء الله الحسنى..."
+            class="w-full pr-12 bg-white/5 border-white/10 text-white placeholder:text-slate-500 rounded-xl h-12 px-4 focus:outline-none focus:border-indigo-500/50"
+          />
+        </div>
+
+        <!-- Stats -->
+        <div class="flex items-center justify-between flex-row-reverse text-sm text-slate-400">
+          <span>إجمالي الأسماء: <span class="font-black text-white ml-2">{{ namesOfAllah.length }}</span></span>
+          <span>نتائج البحث: <span class="font-black text-indigo-400 ml-2">{{ filteredNames.length }}</span></span>
+        </div>
+
+        <!-- Names Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div *ngFor="let item of filteredNames" 
+               class="group glass border-white/5 rounded-[2.5rem] p-8 text-right hover:border-indigo-500/40 transition-all duration-500 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 size-24 bg-indigo-500/5 blur-2xl -mr-12 -mt-12 group-hover:bg-indigo-500/10 transition-all"></div>
+            
+            <div class="flex justify-between items-center mb-6 flex-row-reverse relative z-10">
+              <div class="size-14 bg-indigo-10 rounded-2xl flex items-center justify-center text-primary font-black text-2xl shadow-inner border border-indigo-500/10 group-hover:scale-110 transition-transform">
+                {{ item.name }}
+              </div>
+              <span class="border border-white/5 text-[10px] opacity-40 font-mono px-2 py-1 rounded-xl">#{{ item.id.toString().padStart(2, '0') }}</span>
+            </div>
+
+            <div class="space-y-4 relative z-10">
+              <div class="flex items-center gap-2 justify-end text-indigo-400">
+                <span class="text-[10px] uppercase font-bold tracking-widest">المعنى</span>
+                <svg lucideIcon="info" class="size-3"></svg>
+              </div>
+              <p class="text-slate-300 leading-loose text-sm font-medium line-clamp-3">
+                {{ item.meaning }}
+              </p>
+            </div>
+
+            <div class="mt-8 pt-6 border-t border-white/5 flex items-center justify-end gap-2 text-indigo-400 font-bold text-[9px] uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-all">
+              <svg lucideIcon="sparkles" class="size-3"></svg> تأمل في الصفة
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="filteredNames.length === 0" class="flex flex-col items-center justify-center py-12 bg-white/5 rounded-2xl border-2 border-dashed border-white/10 text-slate-500">
+          <svg lucideIcon="sparkles" class="size-12 mb-4 opacity-20"></svg>
+          <p class="font-bold">لا توجد نتائج للبحث</p>
+          <p class="text-sm">جرب كلمات مختلفة</p>
+        </div>
+      </div>
+
+<!-- 5. Tasbih Tab (Enhanced) -->
+      <div *ngSwitchCase="'tasbih'" class="flex flex-col items-center py-12 outline-none">
+        <!-- Main Tasbih Circle -->
         <div class="relative size-80 flex items-center justify-center mb-16">
           <div class="absolute inset-0 bg-indigo-500/10 rounded-full blur-[80px] animate-pulse"></div>
+          
+          <!-- Progress Ring SVG -->
+          <svg class="absolute size-full -rotate-90" viewBox="0 0 280 280" style="width: 100%; height: 100%;">
+            <circle cx="140" cy="140" r="120" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="12" />
+            <circle 
+              cx="140" cy="140" r="120" 
+              fill="none" 
+              stroke="url(#tasbih-gradient)" 
+              stroke-width="12" 
+              stroke-dasharray="754" 
+              [attr.stroke-dashoffset]="754 * (1 - tasbihProgressPercent / 100)"
+              stroke-linecap="round"
+              class="transition-all duration-300 ease-out">
+            </circle>
+            <defs>
+              <linearGradient id="tasbih-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#6366f1" />
+                <stop offset="50%" stop-color="#8b5cf6" />
+                <stop offset="100%" stop-color="#ec4899" />
+              </linearGradient>
+            </defs>
+          </svg>
+
           <button 
             (click)="incrementTasbih()"
-            class="relative size-64 bg-slate-950 border-4 border-indigo-500/20 rounded-full flex flex-col items-center justify-center shadow-[0_0_100px_rgba(99,102,241,0.15)] active:scale-95 transition-all group focus:outline-none">
-            <span class="text-7xl font-black text-white tracking-tighter mb-2 tabular-nums">{{ tasbihCount }}</span>
-            <span class="text-[10px] uppercase font-bold text-indigo-400 tracking-[0.3em] group-hover:tracking-[0.5em] transition-all">انقر للتسبيح</span>
+            class="relative size-64 bg-slate-950 border-4 border-indigo-500/20 rounded-full flex flex-col items-center justify-center shadow-[0_0_100px_rgba(99,102,241,0.2)] active:scale-95 transition-all group">
+            <span class="text-7xl font-black text-white tracking-tighter mb-2">{{ tasbihCount() | number }}</span>
+            <span class="text-[10px] uppercase font-bold text-indigo-400 tracking-[0.3em] group-hover:tracking-[0.5em] transition-all">سبّح الآن</span>
           </button>
+
+          <!-- Floating decorative elements -->
+          <div *ngFor="let i of [0,1,2,3,4,5,6,7]" 
+               class="absolute size-3 bg-indigo-500/20 rounded-full animate-pulse"
+               [style.transform]="'translate(-50%, -50%) rotate(' + (i * 45) + 'deg) translateY(-160px) rotate(' + (-i * 45) + 'deg)'"
+               [style.animationDelay]="(i * 100) + 'ms'"
+               style="top: 50%; left: 50%;"></div>
         </div>
-        
-        <!-- Target Goal Selection -->
-        <div class="grid grid-cols-3 gap-4 w-full max-w-sm mb-12">
-          <button 
-            *ngFor="let val of [33, 100, 1000]"
-            (click)="setTasbihTarget(val)"
-            [class]="tasbihTarget === val ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 border border-white/5 hover:bg-white/10'"
-            class="rounded-xl h-12 font-bold transition-all text-center flex items-center justify-center">
-            {{ val }}
-          </button>
+
+        <!-- Target Selection Card -->
+        <div class="w-full max-w-sm mb-12 glass border-white/5 rounded-[2rem] p-6">
+          <div class="flex items-center justify-between mb-4 flex-row-reverse">
+            <h4 class="font-bold text-white flex items-center gap-2 flex-row-reverse">
+              <svg lucideIcon="target" class="size-5 text-indigo-400"></svg>
+              هدف التسبيح
+            </h4>
+            <span class="text-[10px] font-mono text-indigo-400">{{ tasbihTarget() }}</span>
+          </div>
+          <div class="grid grid-cols-3 gap-4">
+            <button 
+              *ngFor="let val of [33, 100, 1000]"
+              (click)="setTasbihTarget(val)"
+              [class]="tasbihTarget() === val ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/5 border-white/10 text-white hover:bg-white/10'"
+              class="rounded-xl h-12 font-bold border transition-all hover:scale-105">
+              {{ val }}
+            </button>
+          </div>
+          
+          <!-- Custom target input -->
+          <div class="mt-6 flex items-center gap-4 flex-row-reverse">
+            <label class="text-xs text-slate-400 font-bold uppercase tracking-widest">مخصص:</label>
+            <input
+              type="number"
+              [(ngModel)]="customTasbihTarget"
+              (change)="setTasbihTarget(customTasbihTarget)"
+              min="1"
+              max="10000"
+              step="1"
+              class="flex-1 bg-white/5 border-white/10 text-white rounded-xl h-10 px-4 text-center focus:outline-none focus:border-indigo-500/50"
+            />
+          </div>
         </div>
-        
-        <!-- Reset Counter -->
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-4xl mb-12">
+          <div class="glass border-white/5 rounded-[2rem] p-5 text-center group">
+            <div class="flex items-center justify-center gap-2 mb-2 flex-row-reverse">
+              <span class="size-10 bg-amber-500/20 rounded-xl flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+                <svg lucideIcon="flame" class="size-5"></svg>
+              </span>
+            </div>
+            <p class="text-3xl font-black text-white">{{ tasbihTotal() | number }}</p>
+            <p class="text-xs text-slate-400 uppercase tracking-widest font-bold">إجمالي التسبيحات</p>
+          </div>
+
+          <div class="glass border-white/5 rounded-[2rem] p-5 text-center group">
+            <div class="flex items-center justify-center gap-2 mb-2 flex-row-reverse">
+              <span class="size-10 bg-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+                <svg lucideIcon="check-circle-2" class="size-5"></svg>
+              </span>
+            </div>
+            <p class="text-3xl font-black text-white">{{ tasbihCompletedCycles() }}</p>
+            <p class="text-xs text-slate-400 uppercase tracking-widest font-bold">دورات مكتملة</p>
+          </div>
+
+          <div class="glass border-white/5 rounded-[2rem] p-5 text-center group">
+            <div class="flex items-center justify-center gap-2 mb-2 flex-row-reverse">
+              <span class="size-10 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+                <svg lucideIcon="zap" class="size-5"></svg>
+              </span>
+            </div>
+            <p class="text-3xl font-black text-white">{{ tasbihSessionCount() }}</p>
+            <p class="text-xs text-slate-400 uppercase tracking-widest font-bold">الجلسة الحالية</p>
+          </div>
+
+          <div class="glass border-white/5 rounded-[2rem] p-5 text-center group">
+            <div class="flex items-center justify-center gap-2 mb-2 flex-row-reverse">
+              <span class="size-10 bg-purple-500/20 rounded-xl flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                <svg lucideIcon="award" class="size-5"></svg>
+              </span>
+            </div>
+            <p class="text-3xl font-black text-white">{{ totalTasbihCycles }}</p>
+            <p class="text-xs text-slate-400 uppercase tracking-widest font-bold">إجمالي الدورات</p>
+          </div>
+        </div>
+
+        <!-- Progress to next milestone -->
+        <div class="w-full max-w-sm glass border-white/5 rounded-[2rem] p-6">
+          <div class="flex items-center justify-between mb-4 flex-row-reverse">
+            <h4 class="font-bold text-white flex items-center gap-2 flex-row-reverse">
+              <svg lucideIcon="target" class="size-5 text-indigo-400"></svg>
+              التقدم للدورة القادمة
+            </h4>
+            <span class="text-[10px] font-mono text-indigo-400">{{ tasbihCount() }} / {{ tasbihTarget() }}</span>
+          </div>
+          <div class="h-3 bg-white/5 rounded-full overflow-hidden">
+            <div class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-300" [style.width.%]="tasbihProgressPercent"></div>
+          </div>
+          <div class="flex items-center justify-between mt-3 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+            <span>{{ tasbihProgressPercent }}%</span>
+            <span>باقي {{ Math.max(0, tasbihTarget() - tasbihCount()) }}</span>
+          </div>
+        </div>
+
+        <!-- Reset Button -->
         <button 
-          (click)="resetTasbih()" 
-          class="flex items-center gap-2 text-slate-400 hover:text-white uppercase text-[10px] font-bold tracking-widest transition-colors py-2 px-4 bg-white/5 border border-white/5 hover:border-white/10 rounded-xl">
-          <svg lucideIcon="rotate-ccw" class="size-3.5"></svg> إعادة تصفير العداد
+          (click)="resetTasbih()"
+          class="mt-8 text-slate-400 hover:text-white uppercase text-[10px] font-bold tracking-widest gap-2 flex items-center justify-center">
+          <svg lucideIcon="rotate-ccw" class="size-3"></svg> إعادة تصفير العداد
         </button>
+
+        <!-- Quick Dhikr Shortcuts -->
+        <div class="mt-12 w-full max-w-sm space-y-3">
+          <p class="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">أذكار سريعة</p>
+          <div class="grid grid-cols-4 gap-2">
+            <button 
+              (click)="setTasbihTarget(33)"
+              class="rounded-xl h-12 font-bold text-sm bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-opacity-100 transition-all">
+              سبحان الله
+            </button>
+            <button 
+              (click)="setTasbihTarget(33)"
+              class="rounded-xl h-12 font-bold text-sm bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-opacity-100 transition-all">
+              الحمد لله
+            </button>
+            <button 
+              (click)="setTasbihTarget(34)"
+              class="rounded-xl h-12 font-bold text-sm bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-opacity-100 transition-all">
+              الله أكبر
+            </button>
+            <button 
+              (click)="setTasbihTarget(100)"
+              class="rounded-xl h-12 font-bold text-sm bg-purple-500/20 text-purple-400 border border-purple-500/30 hover:bg-opacity-100 transition-all">
+              لا إله إلا الله
+            </button>
+          </div>
+        </div>
       </div>
 
+      <!-- 6. Storage Tab -->
+      <div *ngSwitchCase="'storage'" class="space-y-8 animate-in fade-in duration-700">
+        <div class="glass border-white/5 rounded-[2.5rem] p-10 text-center">
+          <h3 class="text-2xl font-bold text-white mb-6">إدارة الذاكرة</h3>
+          <p class="text-slate-400 mb-8">قيد التطوير - إدارة التخزين المحلي، النسخ الاحتياطي، والمزامنة</p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="glass border-white/5 rounded-2xl p-6">
+              <h4 class="font-bold text-white mb-2">الأذكار</h4>
+              <p class="text-3xl font-black text-indigo-400">{{ getTotalAzkarCounts() }}</p>
+              <p class="text-xs text-slate-400">عدادات محفوظة</p>
+            </div>
+            <div class="glass border-white/5 rounded-2xl p-6">
+              <h4 class="font-bold text-white mb-2">التسبيح</h4>
+              <p class="text-3xl font-black text-emerald-400">{{ tasbihTotal() }}</p>
+              <p class="text-xs text-slate-400">إجمالي التسبيحات</p>
+            </div>
+            <div class="glass border-white/5 rounded-2xl p-6">
+              <h4 class="font-bold text-white mb-2">الأوراد</h4>
+              <p class="text-3xl font-black text-amber-400">{{ wirdItems().length }}</p>
+              <p class="text-xs text-slate-400">أوراد نشطة</p>
+            </div>
+          </div>
+
+          <button class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 px-12 rounded-2xl transition-all shadow-lg shadow-indigo-600/20">
+            تصدير نسخة احتياطية
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </div>

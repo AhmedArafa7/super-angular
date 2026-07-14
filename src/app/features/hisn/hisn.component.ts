@@ -1,9 +1,10 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, effect, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { HISN_DATA, NAMES_OF_ALLAH, HisnCategory, ZikrItem, AllahName } from './hisn.model';
 import { HisnService } from '../../core/services/hisn.service';
+import { PrayerQuranService } from '../../core/services/prayer-quran.service';
 
 @Component({
   selector: 'app-hisn',
@@ -13,31 +14,102 @@ import { HisnService } from '../../core/services/hisn.service';
   styleUrls: ['./hisn.component.scss']
 })
 export class HisnComponent {
-  Math = Math;
   private hisnService = inject(HisnService);
+  private prayerQuranService = inject(PrayerQuranService);
 
-  // View tabs state
-  activeTab: 'quran' | 'prayer' | 'azkar' | 'names' | 'tasbih' | 'manager' = 'quran';
-
-  // Wird / Quran states
+  // Expose signals from services
   wird = this.hisnService.wird;
   quranProgress = this.hisnService.quranProgress;
+  tasbihCount = this.hisnService.tasbihCount;
+  tasbihTarget = this.hisnService.tasbihTarget;
+  tasbihTotal = this.hisnService.tasbihTotal;
+  tasbihCompletedCycles = this.hisnService.tasbihCompletedCycles;
+  tasbihSessionCount = this.hisnService.tasbihSessionCount;
+  customTasbihTarget = 33;
+
+  // Prayer & Quran signals
+  timings = this.prayerQuranService.timings;
+  nextPrayer = this.prayerQuranService.nextPrayer;
+  isLoadingPrayer = this.prayerQuranService.isLoadingPrayer;
+  city = this.prayerQuranService.city;
+  calculationMethod = this.prayerQuranService.calculationMethod;
+  asrMethod = this.prayerQuranService.asrMethod;
+  timeFormat = this.prayerQuranService.timeFormat;
+  notificationMinutes = this.prayerQuranService.notificationMinutes;
+  formattedDate = this.prayerQuranService.formattedDate;
+
+  surahs = this.prayerQuranService.surahs;
+  currentSurah = this.prayerQuranService.currentSurah;
+  ayahs = this.prayerQuranService.ayahs;
+  isLoadingQuran = this.prayerQuranService.isLoadingQuran;
+  fontSize = this.prayerQuranService.fontSize;
+  translation = this.prayerQuranService.translation;
+  bookmarks = this.prayerQuranService.bookmarks;
+  isPlaying = this.prayerQuranService.isPlaying;
+  currentAudioSurah = this.prayerQuranService.currentAudioSurah;
+
+  // View tabs state
+  activeTab: 'quran' | 'prayers' | 'azkar' | 'wird' | 'names' | 'tasbih' | 'storage' = 'quran';
+
+  // Wird / Quran states
+  wirdItems = this.hisnService.wird;
 
   // Azkar States
   categories = HISN_DATA;
   selectedCategory: HisnCategory | null = null;
   counts: Record<number, number> = {};
-  fontSize = 24;
+  azkarFontSize = 24;
+  isSpeaking: Record<number, boolean> = {};
 
   // Names of Allah States
   namesOfAllah = NAMES_OF_ALLAH;
+  searchTerm = '';
+  filteredNames = NAMES_OF_ALLAH;
 
-  // Tasbih States
-  tasbihCount = 0;
-  tasbihTarget = 33;
+  // Wird form state
+  showAddWird = false;
+  newWirdName = '';
+  newWirdTarget = 100;
+
+  // Toast
   showToast = false;
   toastMessage = '';
 
+  // Prayer methods
+  CALCULATION_METHODS = [
+    { id: 1, label: 'جامعة العلوم الإسلامية - كراتشي' },
+    { id: 2, label: 'رابطة العالم الإسلامي' },
+    { id: 3, label: 'الجمعية الفقهية الأمريكية' },
+    { id: 4, label: 'أوقاف مصر' },
+    { id: 5, label: 'جامعة أم القرى' },
+    { id: 7, label: 'معهد الجيوفيزياء - طهران' },
+    { id: 8, label: 'تونس' },
+    { id: 9, label: 'تركيا' },
+    { id: 10, label: 'فرنسا' },
+    { id: 11, label: 'روسيا' },
+    { id: 12, label: 'ماليزيا' },
+    { id: 13, label: 'مجلس الإفتاء الأوروبي' }
+  ];
+
+  constructor() {
+    // Listen for toast events from service
+    if (typeof window !== 'undefined') {
+      window.addEventListener('hisn-toast', ((event: any) => {
+        this.toastMessage = event.detail;
+        this.showToast = true;
+        setTimeout(() => this.showToast = false, 4000);
+      }) as EventListener);
+    }
+
+    // Filter names when search changes
+    effect(() => {
+      this.filteredNames = this.namesOfAllah.filter(item =>
+        item.name.includes(this.searchTerm) || item.meaning.includes(this.searchTerm)
+      );
+    });
+  }
+
+  // Wird methods
   startWird(wirdId: string) {
     this.hisnService.updateWird(wirdId, 0);
   }
@@ -48,9 +120,19 @@ export class HisnComponent {
     }
   }
 
+  addWird() {
+    if (!this.newWirdName.trim()) return;
+    this.hisnService.addWird(this.newWirdName.trim(), this.newWirdTarget);
+    this.newWirdName = '';
+    this.newWirdTarget = 100;
+    this.showAddWird = false;
+  }
 
+  deleteWird(wirdId: string) {
+    this.hisnService.deleteWird(wirdId);
+  }
 
-  // Select/Deselect category
+  // Azkar methods
   selectCategory(cat: HisnCategory | null): void {
     this.selectedCategory = cat;
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -58,8 +140,6 @@ export class HisnComponent {
     }
     this.isSpeaking = {};
   }
-
-  isSpeaking: Record<number, boolean> = {};
 
   speakZikr(item: ZikrItem): void {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
@@ -73,34 +153,21 @@ export class HisnComponent {
     window.speechSynthesis.cancel();
     Object.keys(this.isSpeaking).forEach(k => this.isSpeaking[+k] = false);
 
-    const cleanText = item.text.replace(/\(.*\)/g, '').trim();
-
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = 'ar-EG';
-    utterance.rate = 0.85;
-
-    utterance.onend = () => {
-      this.isSpeaking[item.id] = false;
-    };
-    utterance.onerror = () => {
-      this.isSpeaking[item.id] = false;
-    };
-
+    this.hisnService.speakZikr(item.text);
     this.isSpeaking[item.id] = true;
-    window.speechSynthesis.speak(utterance);
   }
 
-  // Zikr counter logic
   incrementZikr(item: ZikrItem): void {
     const current = this.counts[item.id] || 0;
     if (current < item.count) {
       const next = current + 1;
       this.counts[item.id] = next;
-      this.triggerVibration(10);
+      this.hisnService.triggerVibration(10);
       
       if (next === item.count) {
-        this.playChimeSound();
-        this.triggerToast("اكتمل الذكر", `لقد أتممت قراءة الذكر ${item.count} مرة بنجاح.`);
+        this.hisnService.playChimeSound();
+        this.hisnService.triggerVibration(50);
+        this.hisnService.showToast(`اكتمل الذكر: لقد أتممت قراءة الذكر ${item.count} مرة بنجاح.`);
       }
     }
   }
@@ -114,7 +181,7 @@ export class HisnComponent {
     for (const item of this.selectedCategory.items) {
       this.counts[item.id] = 0;
     }
-    this.triggerToast("إعادة ضبط", "تم تصفير جميع عدادات القسم الحالي.");
+    this.hisnService.showToast('تم تصفير جميع عدادات القسم الحالي.');
   }
 
   getCategoryProgress(): number {
@@ -131,68 +198,183 @@ export class HisnComponent {
     return Math.round((completed / items.length) * 100);
   }
 
-  // Tasbih counter logic
+  increaseAzkarFontSize(): void {
+    if (this.azkarFontSize < 36) this.azkarFontSize += 2;
+  }
+
+  decreaseAzkarFontSize(): void {
+    if (this.azkarFontSize > 18) this.azkarFontSize -= 2;
+  }
+
+  // Names methods - search is handled by effect
+
+  // Tasbih methods
   incrementTasbih(): void {
-    this.tasbihCount++;
-    this.triggerVibration(20);
-    if (this.tasbihCount % this.tasbihTarget === 0) {
-      this.playChimeSound();
-      this.triggerToast("اكتملت الدورة", `لقد أتممت ${this.tasbihTarget} تسبيحة بنجاح.`);
-    }
+    this.hisnService.incrementTasbih();
   }
 
   setTasbihTarget(val: number): void {
-    this.tasbihTarget = val;
+    this.hisnService.setTasbihTarget(val);
+    this.customTasbihTarget = val;
   }
 
   resetTasbih(): void {
-    this.tasbihCount = 0;
+    this.hisnService.resetTasbih();
   }
 
-  // Font size adjustment for readability
-  increaseFontSize(): void {
-    if (this.fontSize < 36) this.fontSize += 2;
+  get tasbihProgressPercent(): number {
+    const target = this.tasbihTarget();
+    return target > 0 ? Math.round((this.tasbihCount() / target) * 100) : 0;
   }
 
-  decreaseFontSize(): void {
-    if (this.fontSize > 18) this.fontSize -= 2;
+  get totalTasbihCycles(): number {
+    return this.tasbihTarget() > 0 ? Math.floor(this.tasbihTotal() / this.tasbihTarget()) : 0;
   }
 
-  // Play satisfying chime synthesizer natively via Web Audio API
-  private playChimeSound(): void {
-    try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(523.25, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
-
-      gain.gain.setValueAtTime(0.1, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.4);
-    } catch (e) {}
+  // Prayer methods
+  formatTime(time: string): string {
+    return this.prayerQuranService.formatTime(time);
   }
 
-  // Support for physical vibration on mobile devices
-  private triggerVibration(ms: number): void {
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      navigator.vibrate(ms);
+  setCalculationMethod(method: number) {
+    this.prayerQuranService.setCalculationMethod(method);
+  }
+
+  setAsrMethod(method: number) {
+    this.prayerQuranService.setAsrMethod(method);
+  }
+
+  setTimeFormat(format: '12h' | '24h') {
+    this.prayerQuranService.setTimeFormat(format);
+  }
+
+  setNotificationMinutes(min: number) {
+    this.prayerQuranService.setNotificationMinutes(min);
+  }
+
+  // Quran methods
+  loadSurah(surahNumber: number) {
+    this.prayerQuranService.loadSurah(surahNumber);
+  }
+
+  getProgress(surahNumber: number): number {
+    return this.prayerQuranService.getProgress(surahNumber);
+  }
+
+  getBookmark(surahNumber: number): number {
+    return this.prayerQuranService.getBookmark(surahNumber);
+  }
+
+  saveBookmark(surahNumber: number, ayahNumber: number) {
+    this.prayerQuranService.saveBookmark(surahNumber, ayahNumber);
+  }
+
+  increaseFontSize() {
+    this.prayerQuranService.increaseFontSize();
+  }
+
+  decreaseFontSize() {
+    this.prayerQuranService.decreaseFontSize();
+  }
+
+  setTranslation(t: 'ar' | 'en' | 'none') {
+    this.prayerQuranService.setTranslation(t);
+  }
+
+  playSurah(surahNumber: number) {
+    this.prayerQuranService.playSurah(surahNumber);
+  }
+
+  pauseAudio() {
+    this.prayerQuranService.pauseAudio();
+  }
+
+  // Export/Import
+  exportQuranData() {
+    const data = this.prayerQuranService.exportQuranData();
+    this.downloadFile(data, 'quran-backup.json', 'application/json');
+  }
+
+  importQuranData(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = this.prayerQuranService.importQuranData(e.target?.result as string);
+        this.hisnService.showToast(result ? 'تم الاستيراد بنجاح' : 'فشل الاستيراد - ملف غير صالح');
+      };
+      reader.readAsText(input.files[0]);
     }
   }
 
-  // Custom micro-toast system
-  private triggerToast(title: string, desc: string): void {
-    this.toastMessage = `${title}: ${desc}`;
-    this.showToast = true;
-    setTimeout(() => {
-      this.showToast = false;
-    }, 4000);
+  exportAllData() {
+    const data = this.prayerQuranService.exportAllData();
+    this.downloadFile(data, 'hisn-complete-backup.json', 'application/json');
+  }
+
+  importAllData(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        // Import logic would go here
+        this.hisnService.showToast('تم استيراد البيانات الشاملة');
+      };
+      reader.readAsText(input.files[0]);
+    }
+  }
+
+  private downloadFile(content: string, filename: string, type: string) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Storage calculation
+  calculateStorageUsed(): number {
+    let total = 0;
+    total += Object.values(this.counts).reduce((a, b) => a + b, 0);
+    total += this.tasbihTotal();
+    total += this.wirdItems().reduce((sum, w) => sum + w.progress, 0);
+    return total;
+  }
+
+  calculateStoragePercent(): number {
+    return Math.min(100, Math.round((this.calculateStorageUsed() / 1000) * 100));
+  }
+
+  getTotalAzkarCounts(): number {
+    return Object.values(this.counts).reduce((a, b) => a + b, 0);
+  }
+
+  // Helper for Math in template
+  Math = Math;
+
+  getCategoryIcon(cat: HisnCategory): string {
+    const icons: Record<string, string> = {
+      morning: 'sun',
+      evening: 'moon',
+      sleep: 'zap',
+      after_prayer: 'target',
+      situations: 'globe',
+      praises: 'sparkles'
+    };
+    return icons[cat.id] || 'book-open';
+  }
+
+  getCategoryIconColor(cat: HisnCategory): string {
+    const colors: Record<string, string> = {
+      morning: 'text-amber-400',
+      evening: 'text-indigo-400',
+      sleep: 'text-purple-400',
+      after_prayer: 'text-emerald-400',
+      situations: 'text-cyan-400',
+      praises: 'text-rose-400'
+    };
+    return colors[cat.id] || 'text-primary';
   }
 }

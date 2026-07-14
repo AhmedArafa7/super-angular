@@ -7,6 +7,7 @@ const gameOverScreen = document.getElementById('game-over-screen');
 // Shop UI
 const shopModal = document.getElementById('shop-modal');
 const closeShopBtn = document.getElementById('close-shop-btn');
+const mobileShopBtn = document.getElementById('mobile-shop-btn');
 const shopCoinsEl = document.getElementById('shop-coins');
 const shopGemsEl = document.getElementById('shop-gems');
 const buyBtns = document.querySelectorAll('.buy-btn');
@@ -26,6 +27,14 @@ const rematchBtn = document.getElementById('rematch-btn');
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 
+// Player HUDs (supports up to 6 players)
+const playerHuds = [1,2,3,4,5,6].map(i => document.getElementById(`p${i}-hud`));
+const playerHps = [1,2,3,4,5,6].map(i => document.getElementById(`p${i}-hp`));
+const playerFuels = [1,2,3,4,5,6].map(i => document.getElementById(`p${i}-fuel`));
+const playerCoins = [1,2,3,4,5,6].map(i => document.getElementById(`p${i}-coins`));
+const playerGems = [1,2,3,4,5,6].map(i => document.getElementById(`p${i}-gems`));
+const playerScores = [1,2,3,4,5,6].map(i => document.getElementById(`p${i}-score`));
+// Keep legacy refs for P2P compatibility
 const p2Hud = document.getElementById('p2-hud');
 const p1Hp = document.getElementById('p1-hp');
 const p2Hp = document.getElementById('p2-hp');
@@ -42,6 +51,14 @@ const resultTitle = document.getElementById('result-title');
 const resultDesc = document.getElementById('result-desc');
 const finalStats = document.getElementById('final-stats');
 const p2ControlsHint = document.getElementById('p2-controls-hint');
+// Player count modal
+const playerCountModal = document.getElementById('player-count-modal');
+const closeCountBtn = document.getElementById('close-count-btn');
+const countBtns = document.querySelectorAll('.count-btn');
+
+// Resource Transfer
+const transferTargetSelect = document.getElementById('transfer-target-select');
+const transferBtns = document.querySelectorAll('.transfer-btn');
 
 // Game State
 let activeMode = 'local'; // local, local-coop, p2p-host, p2p-join
@@ -51,6 +68,8 @@ let lastTime = 0;
 let wave = 1;
 let waveTimer = 0;
 let keys = {};
+let warningText = "";
+let warningTimer = 0;
 
 // P2P State
 let peer = null;
@@ -73,37 +92,40 @@ let isMapOpen = false;
 let currentWorld = 1;
 let unlockedWorld = 1;
 
-let savedCoins = 0;
-let savedGems = 0;
-let savedShipType = 'defender';
-let savedWeaponType = 'normal';
+// Game State
+let playersData = []; // تخزين بيانات جميع اللاعبين
 
 function loadProgress() {
     const saved = localStorage.getItem('spaceShooterProgress');
     if (saved) {
         try {
             const data = JSON.parse(saved);
-            savedCoins = data.coins || 0;
-            savedGems = data.gems || 0;
+            playersData = data.players || [];
             unlockedWorld = data.unlockedWorld || 1;
-            savedShipType = data.shipType || 'defender';
-            savedWeaponType = data.weaponType || 'normal';
-        } catch(e) {}
+        } catch(e) { console.error("Error loading progress", e); }
     }
 }
+
 function saveProgress() {
-    if (players && players[0]) {
-        savedCoins = players[0].coins;
-        savedGems = players[0].gems;
-        savedShipType = players[0].shipType;
-        savedWeaponType = players[0].weaponType;
-    }
+    playersData = players.map(p => ({
+        coins: p.coins,
+        gems: p.gems,
+        shipType: p.shipType,
+        weaponType: p.weaponType,
+        hasDroneHeal: p.hasDroneHeal,
+        hasDroneFuel: p.hasDroneFuel,
+        hasDroneMagnet: p.hasDroneMagnet,
+        droneHealLevel: p.droneHealLevel,
+        droneFuelLevel: p.droneFuelLevel,
+        droneMagnetLevel: p.droneMagnetLevel,
+        ownedWeapons: p.ownedWeapons || ['normal'],
+        ownedShips: p.ownedShips || ['defender'],
+        hasReflectiveShield: p.hasReflectiveShield
+    }));
+    
     localStorage.setItem('spaceShooterProgress', JSON.stringify({
-        coins: savedCoins,
-        gems: savedGems,
-        unlockedWorld: unlockedWorld,
-        shipType: savedShipType,
-        weaponType: savedWeaponType
+        players: playersData,
+        unlockedWorld: unlockedWorld
     }));
 }
 loadProgress();
@@ -118,10 +140,10 @@ class Player {
         this.id = id; // 1 or 2
         this.x = x;
         this.y = y;
-        this.width = 40;
-        this.height = 40;
+        this.width = 64;
+        this.height = 64;
         this.color = color;
-        this.speed = 500; // pixels per sec
+        this.speed = 350; // pixels per sec (slower for better control)
         this.maxHp = 100;
         this.hp = 100;
         this.maxFuel = 100;
@@ -136,6 +158,31 @@ class Player {
         this.isAlive = true;
         this.isHost = (id === 1);
         this.reviveTimer = 0;
+        
+        // Drone companions
+        this.hasDroneHeal = false;
+        this.hasDroneFuel = false;
+        this.hasDroneMagnet = false;
+        this.droneHealLevel = 0;
+        this.droneFuelLevel = 0;
+        this.droneMagnetLevel = 0;
+        this.lastDroneHealShot = 0;
+        this.lastDroneFuelShot = 0;
+        this.lastDroneHealAction = 0;
+        this.lastDroneFuelAction = 0;
+        this.lastDroneMagnetAction = 0;
+
+        // Inventory ownership
+        this.ownedShips = ['defender'];
+        this.ownedWeapons = ['normal'];
+        this.hasReflectiveShield = false;
+        this.isShieldActive = false;
+
+        // Consumables per run
+        this.selfReviveKits = 0;
+        this.secondLifes = 0;
+        this.boughtSelfReviveThisRun = false;
+        this.boughtSecondLifeThisRun = false;
     }
     draw() {
         if (!this.isAlive) {
@@ -224,6 +271,135 @@ class Player {
         ctx.fillRect(88, 163, 24, 4);
 
         ctx.restore();
+
+        // Draw Drone 1 (Medical Drone - Left side)
+        if (this.hasDroneHeal) {
+            let angle = Date.now() / 300;
+            let dx = this.x - 20 + Math.sin(angle) * 5;
+            let dy = this.y + this.height/2 - 10 + Math.cos(angle) * 5;
+            
+            ctx.save();
+            ctx.translate(dx, dy);
+            
+            // Glow
+            ctx.beginPath();
+            ctx.arc(10, 10, 12, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(16, 185, 129, 0.3)';
+            ctx.fill();
+            
+            // Core
+            ctx.beginPath();
+            ctx.arc(10, 10, 8, 0, Math.PI * 2);
+            ctx.fillStyle = '#10b981';
+            ctx.fill();
+            
+            // Plus Sign
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(9, 5, 2, 10);
+            ctx.fillRect(5, 9, 10, 2);
+            
+            ctx.restore();
+        }
+
+        // Draw Drone 2 (Fuel Drone - Right side)
+        if (this.hasDroneFuel) {
+            let angle = Date.now() / 300 + Math.PI; // Opposite phase
+            let dx = this.x + this.width + 10 + Math.sin(angle) * 5;
+            let dy = this.y + this.height/2 - 10 + Math.cos(angle) * 5;
+            
+            ctx.save();
+            ctx.translate(dx, dy);
+            
+            // Glow
+            ctx.beginPath();
+            ctx.arc(10, 10, 12, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(245, 158, 11, 0.3)';
+            ctx.fill();
+            
+            // Core
+            ctx.beginPath();
+            ctx.arc(10, 10, 8, 0, Math.PI * 2);
+            ctx.fillStyle = '#f59e0b';
+            ctx.fill();
+            
+            // Fuel shape indicator
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(8, 6, 4, 8);
+            ctx.fillRect(7, 4, 6, 2);
+            
+            ctx.restore();
+        }
+
+        // Draw Drone 3 (Magnet Drone - Orbiting above)
+        if (this.hasDroneMagnet) {
+            let angle = Date.now() / 400 + Math.PI / 2;
+            let dx = this.x + this.width/2 - 10 + Math.sin(angle) * 35;
+            let dy = this.y - 25 + Math.cos(angle) * 10;
+            
+            ctx.save();
+            ctx.translate(dx, dy);
+            
+            // Glow
+            ctx.beginPath();
+            ctx.arc(10, 10, 12, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(6, 182, 212, 0.3)';
+            ctx.fill();
+            
+            // Core
+            ctx.beginPath();
+            ctx.arc(10, 10, 8, 0, Math.PI * 2);
+            ctx.fillStyle = '#06b6d4';
+            ctx.fill();
+            
+            // Draw a tiny U-shape magnet symbol
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#ef4444'; // Red half of magnet
+            ctx.beginPath();
+            ctx.arc(10, 8, 4, 0, Math.PI, false);
+            ctx.stroke();
+            
+            ctx.strokeStyle = '#3b82f6'; // Blue tips of magnet
+            ctx.beginPath();
+            ctx.moveTo(6, 8); ctx.lineTo(6, 12);
+            ctx.moveTo(14, 8); ctx.lineTo(14, 12);
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+
+        // Draw reflective shield bubble
+        if (this.isShieldActive) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width * 0.8, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(6, 182, 212, 0.8)';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(6, 182, 212, 0.15)';
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+    
+    triggerDeathOrResurrection() {
+        if (this.secondLifes > 0) {
+            this.secondLifes--;
+            this.hp = this.maxHp;
+            this.fuel = this.maxFuel;
+            createParticles(this.x + this.width/2, this.y + this.height/2, '#eab308', 45, 2.5);
+            alert(`تم تفعيل الفرصة الثانية الفائقة للاعب ${this.id}! 🌟`);
+            return;
+        }
+        if (this.selfReviveKits > 0) {
+            this.selfReviveKits--;
+            this.hp = this.maxHp / 2;
+            this.fuel = this.maxFuel / 2;
+            createParticles(this.x + this.width/2, this.y + this.height/2, '#10b981', 35, 2);
+            alert(`تم تفعيل حقنة الإنعاش الذاتي للاعب ${this.id}! 💉`);
+            return;
+        }
+        this.isAlive = false;
+        createParticles(this.x + this.width/2, this.y + this.height/2, this.color, 30, 2);
     }
     
     getBulletColor() {
@@ -239,34 +415,70 @@ class Player {
         let dx = 0;
         let dy = 0;
 
-        let canMoveP1 = (this.id === 1 && (activeMode === 'local' || activeMode === 'local-coop' || activeMode === 'p2p-host'));
-        let canMoveP2Local = (this.id === 2 && activeMode === 'local-coop');
-        let canMoveP2P2P = (this.id === 2 && activeMode === 'p2p-join');
+        const isLocal = (activeMode === 'local' || activeMode === 'local-coop');
+        const isP2PJoin = (activeMode === 'p2p-join');
 
-        if (canMoveP1 || canMoveP2P2P) {
-            // Main controls (Arrows + Space)
+        if (this.id === 1 && (activeMode === 'local' || activeMode === 'local-coop' || activeMode === 'p2p-host')) {
+            // P1: Arrow keys + Space
             if (keys['ArrowLeft']) dx = -1;
             if (keys['ArrowRight']) dx = 1;
             if (keys['ArrowUp']) dy = -1;
             if (keys['ArrowDown']) dy = 1;
-            if (keys[' '] && Date.now() - this.lastShot > this.fireRate) {
-                this.shoot();
-            }
-        } else if (canMoveP2Local) {
-            // Secondary controls (WASD + F)
+            if (keys[' '] && Date.now() - this.lastShot > this.fireRate) this.shoot();
+
+        } else if (this.id === 2 && isP2PJoin) {
+            // P2 remote (P2P): Arrow keys + Space
+            if (keys['ArrowLeft']) dx = -1;
+            if (keys['ArrowRight']) dx = 1;
+            if (keys['ArrowUp']) dy = -1;
+            if (keys['ArrowDown']) dy = 1;
+            if (keys[' '] && Date.now() - this.lastShot > this.fireRate) this.shoot();
+
+        } else if (this.id === 2 && isLocal) {
+            // P2: WASD + Q
             if (keys['a'] || keys['A']) dx = -1;
             if (keys['d'] || keys['D']) dx = 1;
             if (keys['w'] || keys['W']) dy = -1;
             if (keys['s'] || keys['S']) dy = 1;
-            if ((keys['f'] || keys['F']) && Date.now() - this.lastShot > this.fireRate) {
-                this.shoot();
-            }
+            if ((keys['q'] || keys['Q']) && Date.now() - this.lastShot > this.fireRate) this.shoot();
+
+        } else if (this.id === 3 && isLocal) {
+            // P3: IJKL + U
+            if (keys['j'] || keys['J']) dx = -1;
+            if (keys['l'] || keys['L']) dx = 1;
+            if (keys['i'] || keys['I']) dy = -1;
+            if (keys['k'] || keys['K']) dy = 1;
+            if ((keys['u'] || keys['U']) && Date.now() - this.lastShot > this.fireRate) this.shoot();
+
+        } else if (this.id === 4 && isLocal) {
+            // P4: TFGH + R
+            if (keys['f'] || keys['F']) dx = -1;
+            if (keys['h'] || keys['H']) dx = 1;
+            if (keys['t'] || keys['T']) dy = -1;
+            if (keys['g'] || keys['G']) dy = 1;
+            if ((keys['r'] || keys['R']) && Date.now() - this.lastShot > this.fireRate) this.shoot();
+
+        } else if (this.id === 5 && isLocal) {
+            // P5: Numpad 8,4,6,2 + 0
+            if (keys['Numpad4'] || keys['4']) dx = -1;
+            if (keys['Numpad6'] || keys['6']) dx = 1;
+            if (keys['Numpad8'] || keys['8']) dy = -1;
+            if (keys['Numpad2'] || keys['2']) dy = 1;
+            if ((keys['Numpad0'] || keys['0']) && Date.now() - this.lastShot > this.fireRate) this.shoot();
+
+        } else if (this.id === 6 && isLocal) {
+            // P6: Home/End/PgUp/PgDn + Ins
+            if (keys['End']) dx = -1;
+            if (keys['Home']) dx = 1;
+            if (keys['PageUp']) dy = -1;
+            if (keys['PageDown']) dy = 1;
+            if (keys['Insert'] && Date.now() - this.lastShot > this.fireRate) this.shoot();
         }
         
         let currentSpeed = this.speed;
-        if(this.shipType === 'speedster') currentSpeed = 750;
-        else if(this.shipType === 'tank') currentSpeed = 300;
-        else if(this.shipType === 'sniper') currentSpeed = 250;
+        if(this.shipType === 'speedster') currentSpeed = 500;
+        else if(this.shipType === 'tank') currentSpeed = 240;
+        else if(this.shipType === 'sniper') currentSpeed = 200;
 
         this.x += dx * currentSpeed * dt;
         this.y += dy * currentSpeed * dt;
@@ -281,8 +493,7 @@ class Player {
             if (this.fuel <= 0) {
                 this.hp -= 5 * dt; // Take damage if out of fuel
                 if(this.hp <= 0 && this.isAlive) {
-                    this.isAlive = false;
-                    createParticles(this.x + this.width/2, this.y + this.height/2, this.color, 30, 2);
+                    this.triggerDeathOrResurrection();
                 }
             }
             // Healer passive
@@ -304,12 +515,99 @@ class Player {
                 gems.forEach(pull);
                 fuelItems.forEach(pull);
             }
+            
+            // Magnet Drone passive (Drone 3)
+            if(this.hasDroneMagnet && this.isAlive) {
+                const magnetRadius = 150 + this.droneMagnetLevel * 60;
+                const magnetSpeed = 250 + this.droneMagnetLevel * 75;
+                let pull = (item) => {
+                    let dist = Math.hypot(item.x - this.x, item.y - this.y);
+                    if(dist < magnetRadius) {
+                        let angle = Math.atan2(this.y + this.height/2 - item.y, this.x + this.width/2 - item.x);
+                        item.x += Math.cos(angle) * magnetSpeed * dt;
+                        item.y += Math.sin(angle) * magnetSpeed * dt;
+                        
+                        if(Math.random() > 0.95) {
+                            createParticles(item.x, item.y, '#06b6d4', 1, 0.5);
+                        }
+                    }
+                };
+                coins.forEach(pull);
+                gems.forEach(pull);
+                fuelItems.forEach(pull);
+            }
+            
+            // Reflective Shield Active Cycle
+            if (this.hasReflectiveShield && this.isAlive) {
+                let cycle = (Date.now() % 15000);
+                this.isShieldActive = (cycle < 3000); // Active for 3 seconds every 15 seconds
+            } else {
+                this.isShieldActive = false;
+            }
+        }
+
+        // Auto shoot on mobile drag
+        if (this.id === 1 && typeof isDragging !== 'undefined' && isDragging && this.isAlive) {
+            this.shoot();
         }
 
         if(this.reviveTimer > 0 && !this.isBeingRevived) {
             this.reviveTimer = Math.max(0, this.reviveTimer - dt);
         }
         this.isBeingRevived = false;
+
+        // Update Drone Actions and Autoshot
+        if (this.isAlive) {
+            // Drone 1: Medical
+            if (this.hasDroneHeal) {
+                // Heal action
+                let healCooldown = Math.max(1000, 5000 - this.droneHealLevel * 500);
+                if (Date.now() - this.lastDroneHealAction > healCooldown) {
+                    if (this.hp < this.maxHp) {
+                        this.hp = Math.min(this.maxHp, this.hp + 5 + this.droneHealLevel * 3);
+                        createParticles(this.x + this.width/2, this.y + this.height/2, '#10b981', 12, 1);
+                        this.lastDroneHealAction = Date.now();
+                    }
+                }
+                
+                // Shoot action if enemy is in front (x difference < 80px)
+                let d1x = this.x - 10;
+                let d1y = this.y + this.height/2;
+                let shotCooldown = Math.max(400, 1000 - this.droneHealLevel * 80);
+                if (Date.now() - this.lastDroneHealShot > shotCooldown) {
+                    let enemyInFront = enemies.some(e => Math.abs(e.x + e.width/2 - d1x) < 80 && e.y < d1y) || (bosses.length > 0);
+                    if (enemyInFront) {
+                        bullets.push(new Bullet(d1x + 7, d1y, -550, '#10b981', this.id, 'normal'));
+                        this.lastDroneHealShot = Date.now();
+                    }
+                }
+            }
+            
+            // Drone 2: Fuel
+            if (this.hasDroneFuel) {
+                // Fuel action
+                let fuelCooldown = Math.max(1000, 5000 - this.droneFuelLevel * 500);
+                if (Date.now() - this.lastDroneFuelAction > fuelCooldown) {
+                    if (this.fuel < this.maxFuel) {
+                        this.fuel = Math.min(this.maxFuel, this.fuel + 6 + this.droneFuelLevel * 4);
+                        createParticles(this.x + this.width/2, this.y + this.height/2, '#f59e0b', 8, 1);
+                        this.lastDroneFuelAction = Date.now();
+                    }
+                }
+                
+                // Shoot action if enemy is in front
+                let d2x = this.x + this.width + 10;
+                let d2y = this.y + this.height/2;
+                let shotCooldown = Math.max(400, 1000 - this.droneFuelLevel * 80);
+                if (Date.now() - this.lastDroneFuelShot > shotCooldown) {
+                    let enemyInFront = enemies.some(e => Math.abs(e.x + e.width/2 - d2x) < 80 && e.y < d2y) || (bosses.length > 0);
+                    if (enemyInFront) {
+                        bullets.push(new Bullet(d2x + 7, d2y, -550, '#f59e0b', this.id, 'normal'));
+                        this.lastDroneFuelShot = Date.now();
+                    }
+                }
+            }
+        }
     }
     shoot() {
         let currentFireRate = this.fireRate;
@@ -327,6 +625,8 @@ class Player {
             bullets.push(new Bullet(this.x + this.width / 2 - 2, this.y, -1000, '#fcd34d', this.id, 'piercing'));
             bullets[bullets.length-1].height = 30;
             if (this.shipType === 'sniper') bullets[bullets.length-1].isSniper = true;
+        } else if (this.weaponType === 'blackhole') {
+            bullets.push(new Bullet(this.x + this.width / 2 - 16, this.y, -180, '#7c3aed', this.id, 'blackhole'));
         } else {
             // Normal
             bullets.push(new Bullet(this.x + this.width / 2 - 3, this.y, -700, this.color, this.id, 'normal'));
@@ -344,22 +644,94 @@ class Bullet {
     constructor(x, y, vy, color, ownerId, type = 'normal') {
         this.x = x;
         this.y = y;
-        this.width = 6;
-        this.height = 15;
-        this.vy = vy;
+        this.width = type === 'blackhole' ? 32 : 6;
+        this.height = type === 'blackhole' ? 32 : 15;
+        this.vy = type === 'blackhole' ? -180 : vy;
         this.color = color;
         this.ownerId = ownerId; // 1, 2, or 'enemy'
-        this.type = type; // normal, frost, explosive, piercing
+        this.type = type; // normal, frost, explosive, piercing, blackhole
         this.markedForDeletion = false;
+        if (type === 'blackhole') {
+            this.life = 2.5; // lasts 2.5 seconds
+        }
     }
     draw() {
-        ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
+        if (this.type === 'blackhole') {
+            ctx.save();
+            let angle = Date.now() / 150;
+            ctx.translate(this.x + 16, this.y + 16);
+            ctx.rotate(angle);
+            
+            // Radial black hole gradient
+            let grad = ctx.createRadialGradient(0, 0, 2, 0, 0, 18);
+            grad.addColorStop(0, '#000000');
+            grad.addColorStop(0.3, '#7c3aed');
+            grad.addColorStop(0.8, 'rgba(147, 51, 234, 0.4)');
+            grad.addColorStop(1, 'rgba(147, 51, 234, 0)');
+            
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(0, 0, 18, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Tiny white core
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(0, 0, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        } else {
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
     }
     update(dt) {
         this.y += this.vy * dt;
         if(this.vx) this.x += this.vx * dt; // Support diagonal boss bullets
-        if (this.y < -50 || this.y > canvas.height + 50 || this.x < -50 || this.x > canvas.width + 50) this.markedForDeletion = true;
+        if (this.isScythe) {
+            this.x += Math.sin(Date.now() / 80) * 150 * dt;
+        }
+
+        if (this.type === 'blackhole') {
+            this.life -= dt;
+            if (this.life <= 0) {
+                this.markedForDeletion = true;
+            }
+            
+            // Pull enemies
+            enemies.forEach(e => {
+                let dx = (this.x + 16) - (e.x + e.width / 2);
+                let dy = (this.y + 16) - (e.y + e.height / 2);
+                let dist = Math.hypot(dx, dy);
+                if (dist < 180) {
+                    let force = (180 - dist) * 1.5;
+                    let angle = Math.atan2(dy, dx);
+                    e.x += Math.cos(angle) * force * dt;
+                    e.y += Math.sin(angle) * force * dt;
+                }
+            });
+
+            // Pull items (coins, gems, fuels)
+            let pullItem = (item) => {
+                let dx = (this.x + 16) - item.x;
+                let dy = (this.y + 16) - item.y;
+                let dist = Math.hypot(dx, dy);
+                if (dist < 180) {
+                    let force = (180 - dist) * 2;
+                    let angle = Math.atan2(dy, dx);
+                    item.x += Math.cos(angle) * force * dt;
+                    item.y += Math.sin(angle) * force * dt;
+                }
+            };
+            coins.forEach(pullItem);
+            gems.forEach(pullItem);
+            fuelItems.forEach(pullItem);
+        }
+
+        if (this.y < -100 || this.y > canvas.height + 100 || this.x < -100 || this.x > canvas.width + 100) {
+            this.markedForDeletion = true;
+        }
     }
 }
 
@@ -367,16 +739,54 @@ class Enemy {
     constructor(x, y, type) {
         this.x = x;
         this.y = y;
-        this.type = type; // 1 = basic, 2 = fast, 3 = tank
-        this.width = type === 3 ? 60 : 40;
-        this.height = type === 3 ? 60 : 40;
-        this.hp = type === 3 ? 50 : type * 10;
+        this.type = type; // 1 = basic, 2 = fast, 3 = tank, 4 = healer
+        
+        // Scale stats by wave progression (8% HP scaling per wave, 2% speed scaling)
+        const scaling = 1.0 + (wave - 1) * 0.08;
+        
+        if (type === 3) {
+            this.width = 60;
+            this.height = 60;
+            this.hp = Math.floor(50 * scaling);
+            this.speed = Math.floor(80 * (1.0 + (wave - 1) * 0.02));
+            this.color = '#ef4444';
+            this.fireRate = Math.max(800, 1500 - (wave - 1) * 50);
+        } else if (type === 2) {
+            this.width = 40;
+            this.height = 40;
+            this.hp = Math.floor(20 * scaling);
+            this.speed = Math.floor(150 * (1.0 + (wave - 1) * 0.02));
+            this.color = '#f59e0b';
+            this.fireRate = 3000;
+        } else if (type === 4) {
+            this.width = 45;
+            this.height = 45;
+            this.hp = Math.floor(35 * scaling);
+            this.speed = Math.floor(70 * (1.0 + (wave - 1) * 0.01));
+            this.color = '#10b981';
+            this.fireRate = Math.max(1000, 2500 - (wave - 1) * 80);
+            this.lastHeal = Date.now() + Math.random() * 1000;
+        } else if (type === 5) {
+            // Type 5 (Kamikaze)
+            this.width = 40;
+            this.height = 40;
+            this.hp = Math.floor(12 * scaling);
+            this.speed = Math.floor(210 * (1.0 + (wave - 1) * 0.025));
+            this.color = '#ef4444';
+            this.fireRate = 99999999; // Doesn't shoot
+        } else {
+            // Type 1 (Basic)
+            this.width = 40;
+            this.height = 40;
+            this.hp = Math.floor(10 * scaling);
+            this.speed = Math.floor(80 * (1.0 + (wave - 1) * 0.02));
+            this.color = '#22d3ee';
+            this.fireRate = Math.max(1200, 3000 - (wave - 1) * 100);
+        }
+        
         this.maxHp = this.hp;
-        this.speed = type === 2 ? 150 : 80;
-        this.color = type === 1 ? '#10b981' : (type === 2 ? '#f59e0b' : '#ef4444');
         this.markedForDeletion = false;
         this.lastShot = Date.now() + Math.random() * 2000;
-        this.fireRate = type === 3 ? 1500 : 3000;
         this.id = Math.random().toString(36).substr(2, 9);
     }
     draw() {
@@ -385,18 +795,80 @@ class Enemy {
         ctx.font = this.type === 3 ? '50px "Segoe UI Emoji", Arial' : '35px "Segoe UI Emoji", Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        let emoji = this.type === 1 ? '👾' : (this.type === 2 ? '👽' : '👹');
+        
+        let emoji = '👾';
+        if (this.type === 2) emoji = '👽';
+        else if (this.type === 3) emoji = '👹';
+        else if (this.type === 4) emoji = '🛸';
+        else if (this.type === 5) emoji = '💥';
+        
+        // Draw red pulsing indicator for kamikaze
+        if (this.type === 5) {
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#ef4444';
+        }
+        
         ctx.fillText(emoji, this.width/2, this.height/2);
+        
+        // Green medic cross overlay for healer
+        if (this.type === 4) {
+            ctx.fillStyle = '#10b981';
+            ctx.font = 'bold 16px Arial';
+            ctx.fillText('✚', this.width/2 + 16, this.height/2 - 16);
+        }
         ctx.restore();
     }
     update(dt) {
+        if (this.type === 5) {
+            // Track the nearest player's x coordinate
+            let targetX = canvas.width / 2;
+            if (players.length > 0) {
+                let closestP = null;
+                let minDist = Infinity;
+                players.forEach(p => {
+                    if (p.isAlive) {
+                        let d = Math.hypot(p.x - this.x, p.y - this.y);
+                        if (d < minDist) {
+                            minDist = d;
+                            closestP = p;
+                        }
+                    }
+                });
+                if (closestP) {
+                    targetX = closestP.x + closestP.width / 2;
+                }
+            }
+            // Move horizontally towards player target coordinate
+            this.x += (targetX - (this.x + this.width / 2)) * dt * 2.2;
+        }
+        
         this.y += this.speed * dt;
         
-        // Host controls enemy shooting
         if (activeMode !== 'p2p-join') {
-            if (this.type !== 2 && Date.now() - this.lastShot > this.fireRate) {
+            // Healer aura healing action
+            if (this.type === 4 && Date.now() - this.lastHeal > this.fireRate) {
+                this.lastHeal = Date.now();
+                let healedAny = false;
+                enemies.forEach(other => {
+                    if (other !== this && other.hp < other.maxHp) {
+                        let dist = Math.hypot(other.x - this.x, other.y - this.y);
+                        if (dist < 250) {
+                            other.hp = Math.min(other.maxHp, other.hp + 15);
+                            createParticles(other.x + other.width/2, other.y + other.height/2, '#10b981', 8, 1);
+                            healedAny = true;
+                        }
+                    }
+                });
+                if (healedAny) {
+                    createParticles(this.x + this.width/2, this.y + this.height/2, '#10b981', 15, 1.5);
+                }
+            }
+            
+            // Host controls enemy shooting (Fast 2 and Kamikaze 5 do not shoot)
+            if (this.type !== 2 && this.type !== 5 && Date.now() - this.lastShot > (this.type === 4 ? 3000 : this.fireRate)) {
                 this.lastShot = Date.now();
-                bullets.push(new Bullet(this.x + this.width / 2 - 3, this.y + this.height, 300, '#ef4444', 'enemy'));
+                let bColor = this.type === 4 ? '#10b981' : '#ef4444';
+                bullets.push(new Bullet(this.x + this.width / 2 - 3, this.y + this.height, 300, bColor, 'enemy'));
                 if (activeMode === 'p2p-host') broadcast({ type: 'enemy_shoot', x: this.x, y: this.y, w: this.width, h: this.height });
             }
         }
@@ -503,14 +975,73 @@ class Boss {
         this.y = y;
         this.width = 150;
         this.height = 100;
-        this.hp = 1500;
-        this.maxHp = 1500;
-        this.speed = 100;
         this.dir = 1;
         this.markedForDeletion = false;
         this.id = 'boss_1';
         this.lastShot = Date.now();
         this.phase = 1;
+
+        // Choose boss configuration based on currentWorld
+        const w = currentWorld || 1;
+        if (w === 1) {
+            this.emoji = '😈';
+            this.name = 'زعيم السديم';
+            this.maxHp = 600;
+            this.speed = 80;
+            this.fireRate = 1600;
+            this.bulletColor = '#f59e0b';
+        } else if (w === 2) {
+            this.emoji = '🤖';
+            this.name = 'حارس الكويكبات';
+            this.maxHp = 900;
+            this.speed = 100;
+            this.fireRate = 1400;
+            this.bulletColor = '#fb923c';
+        } else if (w === 3) {
+            this.emoji = '👽';
+            this.name = 'سيد الثقب الأسود';
+            this.maxHp = 1200;
+            this.speed = 120;
+            this.fireRate = 1200;
+            this.bulletColor = '#a855f7';
+        } else if (w === 4) {
+            this.emoji = '👹';
+            this.name = 'غول الكوكب الفضائي';
+            this.maxHp = 1650;
+            this.speed = 140;
+            this.fireRate = 1100;
+            this.bulletColor = '#ef4444';
+        } else if (w === 5) {
+            this.emoji = '🐉';
+            this.name = 'تنين النجوم المشتعلة';
+            this.maxHp = 2200;
+            this.speed = 160;
+            this.fireRate = 1000;
+            this.bulletColor = '#10b981';
+        } else if (w === 6) {
+            this.emoji = '🐙';
+            this.name = 'كراكن الطاقة المظلمة';
+            this.maxHp = 2800;
+            this.speed = 180;
+            this.fireRate = 900;
+            this.bulletColor = '#6366f1';
+        } else if (w === 7) {
+            this.emoji = '💀';
+            this.name = 'حاصد الأرواح الكوني';
+            this.maxHp = 3500;
+            this.speed = 200;
+            this.fireRate = 800;
+            this.bulletColor = '#ec4899';
+        } else {
+            this.emoji = '👑';
+            this.name = 'إمبراطور الأبعاد الكبرى';
+            this.maxHp = 4500;
+            this.speed = 220;
+            this.fireRate = 700;
+            this.bulletColor = '#06b6d4';
+        }
+
+        this.hp = this.maxHp;
     }
     draw() {
         ctx.save();
@@ -518,13 +1049,19 @@ class Boss {
         ctx.font = '100px "Segoe UI Emoji", Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('😈', this.width/2, this.height/2);
+        ctx.fillText(this.emoji, this.width/2, this.height/2);
+
+        // Draw Boss Name text
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 16px "Cairo", Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(this.name, this.width/2, -22);
         
         // Boss HP Bar
         ctx.fillStyle = '#000';
-        ctx.fillRect(0, -15, this.width, 10);
-        ctx.fillStyle = '#ef4444';
-        ctx.fillRect(0, -15, this.width * (this.hp / this.maxHp), 10);
+        ctx.fillRect(0, -12, this.width, 8);
+        ctx.fillStyle = this.bulletColor;
+        ctx.fillRect(0, -12, this.width * (this.hp / this.maxHp), 8);
         
         ctx.restore();
     }
@@ -542,15 +1079,91 @@ class Boss {
 
         // Host controls shooting
         if (activeMode !== 'p2p-join') {
-            if (Date.now() - this.lastShot > 1000) {
+            if (Date.now() - this.lastShot > this.fireRate) {
                 this.lastShot = Date.now();
-                // Spread shot
-                for(let i=-2; i<=2; i++) {
-                    bullets.push(new Bullet(this.x + this.width/2, this.y + this.height, 300 + Math.abs(i)*50, '#f59e0b', 'enemy'));
-                    // Need vx for bullet if diagonal, but we'll just keep it simple straight down for now, or add small dx in bullet?
-                    // Actually, let's keep it simple.
-                    let b = bullets[bullets.length-1];
-                    b.vx = i * 100; // Adding custom property dynamically
+                const w = currentWorld || 1;
+
+                if (w === 1) {
+                    // Spread shot
+                    for(let i=-2; i<=2; i++) {
+                        bullets.push(new Bullet(this.x + this.width/2, this.y + this.height, 250 + Math.abs(i)*50, this.bulletColor, 'enemy'));
+                        let b = bullets[bullets.length-1];
+                        b.vx = i * 80;
+                    }
+                } else if (w === 2) {
+                    // Spread + central fast bullet
+                    for(let i=-2; i<=2; i++) {
+                        bullets.push(new Bullet(this.x + this.width/2, this.y + this.height, 260 + Math.abs(i)*50, this.bulletColor, 'enemy'));
+                        let b = bullets[bullets.length-1];
+                        b.vx = i * 90;
+                    }
+                    bullets.push(new Bullet(this.x + this.width/2 - 6, this.y + this.height, 380, '#ef4444', 'enemy', 'explosive'));
+                    bullets[bullets.length-1].width = 12;
+                    bullets[bullets.length-1].height = 20;
+                } else if (w === 3) {
+                    // Spread tracking players
+                    let closestP = players[0];
+                    if (players[1] && players[0]) {
+                        let dist1 = Math.hypot(players[0].x - this.x, players[0].y - this.y);
+                        let dist2 = Math.hypot(players[1].x - this.x, players[1].y - this.y);
+                        if(dist2 < dist1) closestP = players[1];
+                    }
+                    let targetX = closestP ? closestP.x + closestP.width/2 : canvas.width/2;
+                    let dx = targetX - (this.x + this.width/2);
+                    for(let i=-2; i<=2; i++) {
+                        bullets.push(new Bullet(this.x + this.width/2, this.y + this.height, 300, this.bulletColor, 'enemy'));
+                        let b = bullets[bullets.length-1];
+                        b.vx = (dx / canvas.height) * 250 + i * 40;
+                    }
+                } else if (w === 4) {
+                    // Spiral pattern fire
+                    let time = Date.now() / 1000;
+                    for (let i = 0; i < 6; i++) {
+                        let angle = (i * Math.PI / 3) + time;
+                        bullets.push(new Bullet(this.x + this.width/2, this.y + this.height, 250, this.bulletColor, 'enemy'));
+                        let b = bullets[bullets.length-1];
+                        b.vx = Math.sin(angle) * 150;
+                        b.vy = Math.cos(angle) * 150 + 200;
+                    }
+                } else if (w === 5) {
+                    // Star shape / 8 directions spray
+                    for(let i=0; i<8; i++) {
+                        let angle = (i * Math.PI / 4);
+                        bullets.push(new Bullet(this.x + this.width/2, this.y + this.height, 200, this.bulletColor, 'enemy'));
+                        let b = bullets[bullets.length-1];
+                        b.vx = Math.sin(angle) * 180;
+                        b.vy = Math.cos(angle) * 180 + 150;
+                    }
+                } else if (w === 6) {
+                    // Wave pattern
+                    for(let i=-3; i<=3; i++) {
+                        bullets.push(new Bullet(this.x + this.width/2, this.y + this.height, 320, this.bulletColor, 'enemy'));
+                        let b = bullets[bullets.length-1];
+                        b.vx = i * 110;
+                    }
+                } else if (w === 7) {
+                    // Oscillating scythe attacks
+                    for(let i=-3; i<=3; i++) {
+                        bullets.push(new Bullet(this.x + this.width/2, this.y + this.height, 330, this.bulletColor, 'enemy'));
+                        let b = bullets[bullets.length-1];
+                        b.vx = i * 120;
+                        b.isScythe = true;
+                    }
+                } else {
+                    // Dimensional Emperor: spiral spray + track combinations
+                    let time = Date.now() / 1000;
+                    for (let i = 0; i < 8; i++) {
+                        let angle = (i * Math.PI / 4) + time;
+                        bullets.push(new Bullet(this.x + this.width/2, this.y + this.height, 200, this.bulletColor, 'enemy'));
+                        let b = bullets[bullets.length-1];
+                        b.vx = Math.sin(angle) * 200;
+                        b.vy = Math.cos(angle) * 200 + 250;
+                    }
+                    // Additional fast tracking bullet
+                    let targetX = players[0] ? players[0].x + players[0].width/2 : canvas.width/2;
+                    let dx = targetX - (this.x + this.width/2);
+                    bullets.push(new Bullet(this.x + this.width/2, this.y + this.height, 420, '#ff0000', 'enemy'));
+                    bullets[bullets.length-1].vx = (dx / canvas.height) * 420;
                 }
             }
         }
@@ -600,57 +1213,272 @@ window.addEventListener('resize', resize);
 resize();
 
 // Input
+let localPlayerCount = 1;
+let activeShopPlayerIndex = 0;
+
 // Key Listeners
 window.addEventListener('keydown', e => {
     keys[e.key] = true;
-    if (e.key === 'b' || e.key === 'B') {
-        toggleShop();
+    
+    if (activeMode === 'local' || activeMode === 'local-coop') {
+        if ((e.key === 'b' || e.key === 'B') && players[0] && players[0].isAlive) toggleShop(0);
+        else if ((e.key === 'e' || e.key === 'E') && players[1] && players[1].isAlive) toggleShop(1);
+        else if ((e.key === 'o' || e.key === 'O') && players[2] && players[2].isAlive) toggleShop(2);
+        else if ((e.key === 'y' || e.key === 'Y') && players[3] && players[3].isAlive) toggleShop(3);
+        else if ((e.key === 'NumpadAdd' || e.key === '+') && players[4] && players[4].isAlive) toggleShop(4);
+        else if ((e.key === 'Delete') && players[5] && players[5].isAlive) toggleShop(5);
+    } else {
+        if (e.key === 'b' || e.key === 'B') {
+            toggleShop(0);
+        }
     }
 });
 window.addEventListener('keyup', e => {
     keys[e.key] = false;
 });
 
+// Mobile Touch & Mouse Drag controls
+let isDragging = false;
+let dragOffset = { x: 0, y: 0 };
+
+// Auto-display floating mobile shop button on load
+if (mobileShopBtn) {
+    mobileShopBtn.classList.remove('hidden');
+    mobileShopBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        let p = players[0] || (players.length > 0 ? players[0] : null);
+        if (p && p.isAlive) {
+            toggleShop(0);
+        } else {
+            alert("يجب أن تكون على قيد الحياة لفتح المتجر!");
+        }
+    });
+}
+
+// Touch listeners on canvas
+canvas.addEventListener('touchstart', e => {
+    if (isGameOver || isShopOpen || isMapOpen) return;
+    let touch = e.touches[0];
+    let rect = canvas.getBoundingClientRect();
+    let touchX = (touch.clientX - rect.left) * (canvas.width / rect.width);
+    let touchY = (touch.clientY - rect.top) * (canvas.height / rect.height);
+    
+    let p = players[0];
+    if (p && p.isAlive) {
+        isDragging = true;
+        dragOffset.x = p.x - touchX;
+        dragOffset.y = p.y - touchY;
+    }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+    if (!isDragging) return;
+    let touch = e.touches[0];
+    let rect = canvas.getBoundingClientRect();
+    let touchX = (touch.clientX - rect.left) * (canvas.width / rect.width);
+    let touchY = (touch.clientY - rect.top) * (canvas.height / rect.height);
+    
+    let p = players[0];
+    if (p && p.isAlive) {
+        p.x = touchX + dragOffset.x;
+        p.y = touchY + dragOffset.y;
+        
+        p.x = Math.max(0, Math.min(canvas.width - p.width, p.x));
+        p.y = Math.max(0, Math.min(canvas.height - p.height, p.y));
+    }
+    e.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener('touchend', () => {
+    isDragging = false;
+});
+
 // Shop Logic
-function toggleShop() {
+function toggleShop(playerIndex = 0) {
     if (activeMode === 'p2p-join') {
         alert("فقط الـ Host يمكنه إيقاف اللعبة لفتح المتجر الآن!");
-        return; // Alternatively, allow local shop without pausing the whole game if async
+        return; 
     }
     isShopOpen = !isShopOpen;
     if (isShopOpen) {
+        activeShopPlayerIndex = playerIndex;
         shopModal.classList.remove('hidden');
+        const shopTitle = shopModal.querySelector('h2');
+        if (shopTitle) {
+            shopTitle.innerText = `متجر اللاعب ${playerIndex + 1} 🛒`;
+        }
+
+        // Dynamically load target teammates for resource transfer
+        if (transferTargetSelect) {
+            transferTargetSelect.innerHTML = '';
+            players.forEach((p, idx) => {
+                if (idx !== playerIndex && p.isAlive) {
+                    let opt = document.createElement('option');
+                    opt.value = idx;
+                    opt.innerText = `اللاعب ${idx + 1}`;
+                    transferTargetSelect.appendChild(opt);
+                }
+            });
+            const transferSection = document.querySelector('.shop-transfer-section');
+            if (transferSection) {
+                if (transferTargetSelect.children.length === 0) {
+                    transferSection.style.display = 'none';
+                } else {
+                    transferSection.style.display = 'block';
+                }
+            }
+        }
+
         updateShopUI();
     } else {
         shopModal.classList.add('hidden');
         saveProgress();
-        // Removed requestAnimationFrame(animate) to prevent duplicate game loops!
     }
 }
 
 function updateShopUI() {
-    let p = players[0]; // For local or host, player 0 is main. In proper P2P, each buys for themselves.
-    // Assuming local player uses player[0] wallet for now (or local coop shared wallet).
+    let p = players[activeShopPlayerIndex] || players[0];
     shopCoinsEl.innerText = p.coins;
     shopGemsEl.innerText = p.gems;
+
+    if (!p.ownedShips) p.ownedShips = ['defender'];
+    if (!p.ownedWeapons) p.ownedWeapons = ['normal'];
+
+    // Update all buy buttons dynamically based on ownership
+    buyBtns.forEach(btn => {
+        let type = btn.getAttribute('data-type');
+        let item = btn.getAttribute('data-item');
+        let cost = btn.getAttribute('data-cost');
+        let currency = btn.getAttribute('data-currency') === 'gems' ? '💎' : '💰';
+
+        if (type === 'weapon') {
+            if (p.ownedWeapons.includes(item)) {
+                if (p.weaponType === item) {
+                    btn.innerText = 'مجهز الحصان 🎖️';
+                    btn.style.background = 'linear-gradient(to bottom, #4b5563, #374151)';
+                    btn.disabled = true;
+                } else {
+                    btn.innerText = 'تجهيز 🔄';
+                    btn.style.background = 'linear-gradient(to bottom, #3b82f6, #1d4ed8)';
+                    btn.disabled = false;
+                }
+            } else {
+                btn.innerText = `شراء بـ ${cost} ${currency}`;
+                btn.style.background = '';
+                btn.disabled = false;
+            }
+        } else if (type === 'ship') {
+            if (p.ownedShips.includes(item)) {
+                if (p.shipType === item) {
+                    btn.innerText = 'مجهز الحصان 🎖️';
+                    btn.style.background = 'linear-gradient(to bottom, #4b5563, #374151)';
+                    btn.disabled = true;
+                } else {
+                    btn.innerText = 'تجهيز 🔄';
+                    btn.style.background = 'linear-gradient(to bottom, #3b82f6, #1d4ed8)';
+                    btn.disabled = false;
+                }
+            } else {
+                btn.innerText = `شراء بـ ${cost} ${currency}`;
+                btn.style.background = '';
+                btn.disabled = false;
+            }
+        } else if (type === 'drone') {
+            if (item === 'heal' && p.hasDroneHeal) {
+                btn.innerText = 'مقتناة 🏥';
+                btn.disabled = true;
+                btn.style.background = '#4b5563';
+            } else if (item === 'fuel' && p.hasDroneFuel) {
+                btn.innerText = 'مقتناة ⛽';
+                btn.disabled = true;
+                btn.style.background = '#4b5563';
+            } else if (item === 'magnet' && p.hasDroneMagnet) {
+                btn.innerText = 'مقتناة 🧲';
+                btn.disabled = true;
+                btn.style.background = '#4b5563';
+            } else {
+                btn.innerText = `شراء بـ ${cost} ${currency}`;
+                btn.style.background = '';
+                btn.disabled = false;
+            }
+        } else if (type === 'drone-upgrade') {
+            let currentLvl = 0;
+            if (item === 'heal') currentLvl = p.droneHealLevel;
+            else if (item === 'fuel') currentLvl = p.droneFuelLevel;
+            else if (item === 'magnet') currentLvl = p.droneMagnetLevel;
+            btn.innerText = `ترقية لـ ${currentLvl + 1} (${cost} 💰)`;
+            btn.style.background = '';
+            btn.disabled = false;
+        } else if (type === 'upgrade') {
+            if (item === 'reflectiveShield') {
+                if (p.hasReflectiveShield) {
+                    btn.innerText = 'ممتلكة 🛡️';
+                    btn.disabled = true;
+                    btn.style.background = '#4b5563';
+                } else {
+                    btn.innerText = `شراء بـ ${cost} ${currency}`;
+                    btn.style.background = '';
+                    btn.disabled = false;
+                }
+            }
+        } else if (type === 'consumable') {
+            if (item === 'selfRevive') {
+                if (p.boughtSelfReviveThisRun) {
+                    btn.innerText = 'مباعة 🔒';
+                    btn.disabled = true;
+                    btn.style.background = '#4b5563';
+                } else {
+                    btn.innerText = `شراء بـ ${cost} ${currency}`;
+                    btn.style.background = '';
+                    btn.disabled = false;
+                }
+            } else if (item === 'secondLife') {
+                if (p.boughtSecondLifeThisRun) {
+                    btn.innerText = 'مباعة 🔒';
+                    btn.disabled = true;
+                    btn.style.background = '#4b5563';
+                } else {
+                    btn.innerText = `شراء بـ ${cost} ${currency}`;
+                    btn.style.background = '';
+                    btn.disabled = false;
+                }
+            }
+        }
+    });
 }
 
-closeShopBtn.addEventListener('click', toggleShop);
+closeShopBtn.addEventListener('click', () => toggleShop(activeShopPlayerIndex));
 
 buyBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
-        let p = players[0];
+        let p = players[activeShopPlayerIndex] || players[0];
         let type = btn.getAttribute('data-type');
         let item = btn.getAttribute('data-item');
         let cost = parseInt(btn.getAttribute('data-cost'));
         let currency = btn.getAttribute('data-currency');
 
+        if (!p.ownedShips) p.ownedShips = ['defender'];
+        if (!p.ownedWeapons) p.ownedWeapons = ['normal'];
+
+        // If the ship/weapon is already owned, equip it for free
+        let isOwned = false;
+        if (type === 'weapon' && p.ownedWeapons.includes(item)) isOwned = true;
+        if (type === 'ship' && p.ownedShips.includes(item)) isOwned = true;
+
+        if (isOwned) {
+            applyPurchase(p, type, item);
+            updateShopUI();
+            return;
+        }
+
         if (currency === 'coins' && p.coins >= cost) {
-            p.coins -= cost;
-            applyPurchase(p, type, item);
+            if (applyPurchase(p, type, item)) {
+                p.coins -= cost;
+            }
         } else if (currency === 'gems' && p.gems >= cost) {
-            p.gems -= cost;
-            applyPurchase(p, type, item);
+            if (applyPurchase(p, type, item)) {
+                p.gems -= cost;
+            }
         } else {
             alert("رصيد غير كافٍ!");
         }
@@ -658,19 +1486,182 @@ buyBtns.forEach(btn => {
     });
 });
 
+// Resource Transfer Listeners
+if (transferBtns) {
+    transferBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            let sender = players[activeShopPlayerIndex] || players[0];
+            if (!transferTargetSelect.value) {
+                alert("لم يتم اختيار أي لاعب لإرسال الموارد إليه!");
+                return;
+            }
+            let targetIdx = parseInt(transferTargetSelect.value);
+            let target = players[targetIdx];
+            if (!target || !target.isAlive) {
+                alert("اللاعب المستهدف غير متوفر أو غير حي!");
+                return;
+            }
+            
+            let type = btn.getAttribute('data-type');
+            let amount = parseInt(btn.getAttribute('data-amount'));
+            
+            if (type === 'coins') {
+                if (sender.coins >= amount) {
+                    sender.coins -= amount;
+                    target.coins += amount;
+                    createParticles(target.x + target.width/2, target.y + target.height/2, '#eab308', 15, 1);
+                    alert(`تم إرسال ${amount} 💰 إلى اللاعب ${targetIdx + 1}!`);
+                } else {
+                    alert("لا تملك رصيد كافٍ من الذهب!");
+                }
+            } else if (type === 'gems') {
+                if (sender.gems >= amount) {
+                    sender.gems -= amount;
+                    target.gems += amount;
+                    createParticles(target.x + target.width/2, target.y + target.height/2, '#06b6d4', 15, 1);
+                    alert(`تم إرسال ${amount} 💎 إلى اللاعب ${targetIdx + 1}!`);
+                } else {
+                    alert("لا تملك رصيد كافٍ من الجواهر!");
+                }
+            } else if (type === 'fuel') {
+                if (sender.fuel >= amount) {
+                    sender.fuel = Math.max(0, sender.fuel - amount);
+                    target.fuel = Math.min(target.maxFuel, target.fuel + amount);
+                    createParticles(target.x + target.width/2, target.y + target.height/2, '#10b981', 15, 1);
+                    alert(`تم إرسال ${amount} ⛽ وقود إلى اللاعب ${targetIdx + 1}!`);
+                } else {
+                    alert("لا تملك وقوداً كافياً للإرسال!");
+                }
+            }
+            
+            updateShopUI();
+            
+            // P2P Sync
+            if (activeMode === 'p2p-host' || activeMode === 'p2p-join') {
+                broadcast({
+                    type: 'transfer',
+                    senderId: sender.id,
+                    targetId: target.id,
+                    resourceType: type,
+                    amount: amount
+                });
+            }
+        });
+    });
+}
+
 function applyPurchase(p, type, item) {
+    if (!p.ownedShips) p.ownedShips = ['defender'];
+    if (!p.ownedWeapons) p.ownedWeapons = ['normal'];
+
     if (type === 'weapon') {
         p.weaponType = item;
+        if (!p.ownedWeapons.includes(item)) p.ownedWeapons.push(item);
+        return true;
     } else if (type === 'ship') {
         p.shipType = item;
+        if (!p.ownedShips.includes(item)) p.ownedShips.push(item);
+        return true;
     } else if (type === 'upgrade') {
         if (item === 'maxFuel') {
             p.maxFuel += 20;
             p.fuel += 20;
+            return true;
         } else if (item === 'heal') {
+            if (p.hp >= p.maxHp) {
+                alert("صحتك كاملة بالفعل!");
+                return false;
+            }
             p.hp = p.maxHp;
+            return true;
+        } else if (item === 'reflectiveShield') {
+            if (p.hasReflectiveShield) {
+                alert("تمتلك الدرع العاكس بالفعل!");
+                return false;
+            }
+            p.hasReflectiveShield = true;
+            alert("تم شراء الدرع العاكس المغناطيسي بنجاح! 🛡️⚡ (سيفعل تلقائياً كل 15 ثانية)");
+            return true;
+        }
+    } else if (type === 'drone') {
+        if (item === 'heal') {
+            if (p.hasDroneHeal) {
+                alert("تمتلك درون الهيل بالفعل!");
+                return false;
+            }
+            p.hasDroneHeal = true;
+            p.droneHealLevel = 1;
+            p.lastDroneHealAction = Date.now();
+            p.lastDroneHealShot = Date.now();
+            return true;
+        } else if (item === 'fuel') {
+            if (p.hasDroneFuel) {
+                alert("تمتلك درون الوقود بالفعل!");
+                return false;
+            }
+            p.hasDroneFuel = true;
+            p.droneFuelLevel = 1;
+            p.lastDroneFuelAction = Date.now();
+            p.lastDroneFuelShot = Date.now();
+            return true;
+        } else if (item === 'magnet') {
+            if (p.hasDroneMagnet) {
+                alert("تمتلك درون المغناطيس بالفعل!");
+                return false;
+            }
+            p.hasDroneMagnet = true;
+            p.droneMagnetLevel = 1;
+            p.lastDroneMagnetAction = Date.now();
+            return true;
+        }
+    } else if (type === 'drone-upgrade') {
+        if (item === 'heal') {
+            if (!p.hasDroneHeal) {
+                alert("يجب شراء درون الهيل أولاً!");
+                return false;
+            }
+            p.droneHealLevel++;
+            alert(`تم ترقية درون الهيل للمستوى ${p.droneHealLevel}!`);
+            return true;
+        } else if (item === 'fuel') {
+            if (!p.hasDroneFuel) {
+                alert("يجب شراء درون الوقود أولاً!");
+                return false;
+            }
+            p.droneFuelLevel++;
+            alert(`تم ترقية درون الوقود للمستوى ${p.droneFuelLevel}!`);
+            return true;
+        } else if (item === 'magnet') {
+            if (!p.hasDroneMagnet) {
+                alert("يجب شراء درون المغناطيس أولاً!");
+                return false;
+            }
+            p.droneMagnetLevel++;
+            alert(`تم ترقية درون المغناطيس للمستوى ${p.droneMagnetLevel}!`);
+            return true;
+        }
+    } else if (type === 'consumable') {
+        if (item === 'selfRevive') {
+            if (p.boughtSelfReviveThisRun) {
+                alert("لقد اشتريت حقنة الإنعاش بالفعل هذه الجولة!");
+                return false;
+            }
+            p.selfReviveKits = 1;
+            p.boughtSelfReviveThisRun = true;
+            alert("تم شراء حقنة الإنعاش الذاتي بنجاح! 💉 (ستفعل تلقائياً عند الموت)");
+            return true;
+        } else if (item === 'secondLife') {
+            if (p.boughtSecondLifeThisRun) {
+                alert("لقد اشتريت الفرصة الثانية بالفعل هذه الجولة!");
+                return false;
+            }
+            p.secondLifes = 1;
+            p.boughtSecondLifeThisRun = true;
+            alert("تم شراء الفرصة الثانية الفائقة بنجاح! 🌟 (ستفعل تلقائياً عند حافة الموت)");
+            return true;
         }
     }
+    return false;
 }
 
 function toggleMap() {
@@ -726,13 +1717,36 @@ closeMapBtn.addEventListener('click', toggleMap);
 // UI Handlers
 modeBtns.forEach(btn => btn.addEventListener('click', e => {
     activeMode = e.currentTarget.dataset.mode;
-    if (activeMode === 'local' || activeMode === 'local-coop') {
+    if (activeMode === 'local') {
+        localPlayerCount = 1;
         startGame();
+    } else if (activeMode === 'local-coop') {
+        // Show player count selector modal
+        mainMenu.classList.add('hidden');
+        if (playerCountModal) {
+            playerCountModal.style.display = 'flex';
+        }
     } else {
         mainMenu.classList.add('hidden');
         p2pMenu.classList.remove('hidden');
     }
 }));
+
+// Player count modal handlers
+if (countBtns) {
+    countBtns.forEach(btn => btn.addEventListener('click', () => {
+        localPlayerCount = parseInt(btn.getAttribute('data-count')) || 2;
+        activeMode = 'local-coop';
+        if (playerCountModal) playerCountModal.style.display = 'none';
+        startGame();
+    }));
+}
+if (closeCountBtn) {
+    closeCountBtn.addEventListener('click', () => {
+        if (playerCountModal) playerCountModal.style.display = 'none';
+        mainMenu.classList.remove('hidden');
+    });
+}
 
 backToMenuBtn.addEventListener('click', () => {
     p2pMenu.classList.add('hidden');
@@ -795,8 +1809,8 @@ function setupConnection() {
         } else if (data.type === 'rematch') {
             startGame();
         } else if (data.type === 'shoot') {
-            bullets.push(new Bullet(data.x + 17, data.y, -700, data.id === 1 ? '#3b82f6' : '#8b5cf6', data.id));
-            createParticles(data.x + 20, data.y, data.id === 1 ? '#3b82f6' : '#8b5cf6', 3, 2);
+            bullets.push(new Bullet(data.x + 29, data.y, -700, data.id === 1 ? '#3b82f6' : '#8b5cf6', data.id));
+            createParticles(data.x + 32, data.y, data.id === 1 ? '#3b82f6' : '#8b5cf6', 3, 2);
         } else if (data.type === 'enemy_shoot') {
             bullets.push(new Bullet(data.x + data.w / 2 - 3, data.y + data.h, 300, '#ef4444', 'enemy'));
         } else if (data.type === 'player_input') {
@@ -804,6 +1818,25 @@ function setupConnection() {
             if(p) {
                 p.x = data.x;
                 p.y = data.y;
+            }
+        } else if (data.type === 'transfer') {
+            const sender = players.find(p => p.id === data.senderId);
+            const target = players.find(p => p.id === data.targetId);
+            if (sender && target) {
+                if (data.resourceType === 'coins') {
+                    sender.coins -= data.amount;
+                    target.coins += data.amount;
+                    createParticles(target.x + target.width/2, target.y + target.height/2, '#eab308', 15, 1);
+                } else if (data.resourceType === 'gems') {
+                    sender.gems -= data.amount;
+                    target.gems += data.amount;
+                    createParticles(target.x + target.width/2, target.y + target.height/2, '#06b6d4', 15, 1);
+                } else if (data.resourceType === 'fuel') {
+                    sender.fuel = Math.max(0, sender.fuel - data.amount);
+                    target.fuel = Math.min(target.maxFuel, target.fuel + data.amount);
+                    createParticles(target.x + target.width/2, target.y + target.height/2, '#10b981', 15, 1);
+                }
+                updateShopUI();
             }
         }
     });
@@ -821,9 +1854,22 @@ function broadcast(data) {
 }
 
 // Game Logic
+const PLAYER_COLORS = ['#3b82f6', '#8b5cf6', '#a855f7', '#10b981', '#f59e0b', '#06b6d4'];
+
+function getSpawnPositions(count) {
+    // Distribute players evenly along the bottom
+    const positions = [];
+    const spacing = canvas.width / (count + 1);
+    for (let i = 0; i < count; i++) {
+        positions.push({ x: spacing * (i + 1) - 32, y: canvas.height - 100 });
+    }
+    return positions;
+}
+
 function startGame() {
     mainMenu.classList.add('hidden');
     p2pMenu.classList.add('hidden');
+    if (playerCountModal) playerCountModal.style.display = 'none';
     gameOverScreen.classList.add('hidden');
     gameScreen.classList.remove('hidden');
 
@@ -834,28 +1880,52 @@ function startGame() {
     fuelItems = [];
     meteorites = [];
     bosses = [];
+    coins = [];
+    gems = [];
     isBossWave = false;
     wave = 1;
     waveTimer = 0;
     isGameOver = false;
     keys = {};
 
-    let p1 = new Player(1, canvas.width / 2 - 20, canvas.height - 80, '#3b82f6');
-    p1.coins = savedCoins;
-    p1.gems = savedGems;
-    p1.shipType = savedShipType;
-    p1.weaponType = savedWeaponType;
-    players.push(p1);
-    
-    if (activeMode === 'local-coop' || activeMode === 'p2p-host' || activeMode === 'p2p-join') {
-        p2Hud.classList.remove('hidden');
-        let p2X = activeMode === 'local-coop' ? canvas.width / 2 + 60 : canvas.width / 2 - 100;
-        players.push(new Player(2, p2X, canvas.height - 80, '#8b5cf6'));
-        if(activeMode === 'p2p-join' || activeMode === 'p2p-host') {
-            p2ControlsHint.innerText = '(الزميل)';
+    // Hide all player HUDs first
+    playerHuds.forEach(h => { if (h) h.classList.add('hidden'); });
+
+    if (activeMode === 'p2p-host' || activeMode === 'p2p-join') {
+        // P2P: exactly 2 players
+        localPlayerCount = 2;
+    }
+
+    const spawnPositions = getSpawnPositions(localPlayerCount);
+
+    for (let i = 0; i < localPlayerCount; i++) {
+        const pos = spawnPositions[i];
+        const p = new Player(i + 1, pos.x, pos.y, PLAYER_COLORS[i]);
+        
+        // استرجاع بيانات اللاعب إذا توفرت
+        if (playersData[i]) {
+            p.coins = playersData[i].coins || 0;
+            p.gems = playersData[i].gems || 0;
+            p.shipType = playersData[i].shipType || 'defender';
+            p.weaponType = playersData[i].weaponType || 'normal';
+            p.hasDroneHeal = playersData[i].hasDroneHeal || false;
+            p.hasDroneFuel = playersData[i].hasDroneFuel || false;
+            p.hasDroneMagnet = playersData[i].hasDroneMagnet || false;
+            p.droneHealLevel = playersData[i].droneHealLevel || 0;
+            p.droneFuelLevel = playersData[i].droneFuelLevel || 0;
+            p.droneMagnetLevel = playersData[i].droneMagnetLevel || 0;
+            p.ownedWeapons = playersData[i].ownedWeapons || ['normal'];
+            p.ownedShips = playersData[i].ownedShips || ['defender'];
+            p.hasReflectiveShield = playersData[i].hasReflectiveShield || false;
         }
-    } else {
-        p2Hud.classList.add('hidden');
+        
+        players.push(p);
+        // Show HUD for this player
+        if (playerHuds[i]) playerHuds[i].classList.remove('hidden');
+    }
+
+    if (activeMode === 'p2p-join' || activeMode === 'p2p-host') {
+        if (p2ControlsHint) p2ControlsHint.innerText = '(الزميل)';
     }
 
     updateHUD();
@@ -865,20 +1935,13 @@ function startGame() {
 }
 
 function updateHUD() {
-    if(players[0]) {
-        p1Hp.style.width = `${Math.max(0, players[0].hp / players[0].maxHp * 100)}%`;
-        p1Fuel.style.width = `${Math.max(0, players[0].fuel / players[0].maxFuel * 100)}%`;
-        p1ScoreEl.innerText = players[0].score;
-        p1CoinsEl.innerText = players[0].coins;
-        p1GemsEl.innerText = players[0].gems;
-    }
-    if(players[1]) {
-        p2Hp.style.width = `${Math.max(0, players[1].hp / players[1].maxHp * 100)}%`;
-        p2Fuel.style.width = `${Math.max(0, players[1].fuel / players[1].maxFuel * 100)}%`;
-        p2ScoreEl.innerText = players[1].score;
-        p2CoinsEl.innerText = players[1].coins;
-        p2GemsEl.innerText = players[1].gems;
-    }
+    players.forEach((p, i) => {
+        if (playerHps[i]) playerHps[i].style.width = `${Math.max(0, p.hp / p.maxHp * 100)}%`;
+        if (playerFuels[i]) playerFuels[i].style.width = `${Math.max(0, p.fuel / p.maxFuel * 100)}%`;
+        if (playerScores[i]) playerScores[i].innerText = p.score;
+        if (playerCoins[i]) playerCoins[i].innerText = p.coins;
+        if (playerGems[i]) playerGems[i].innerText = p.gems;
+    });
     waveNumberEl.innerText = wave;
 }
 
@@ -887,24 +1950,39 @@ function checkCollisions() {
     bullets.forEach(b => {
         if (b.ownerId === 'enemy') {
             players.forEach(p => {
-                if (p.isAlive && rectIntersect(b.x, b.y, b.width, b.height, p.x, p.y, p.width, p.height)) {
-                    b.markedForDeletion = true;
-                    if(activeMode !== 'p2p-join') { // Host handles logic
-                        p.hp -= 10;
-                        createParticles(p.x + p.width/2, p.y + p.height/2, '#3b82f6', 10);
-                        if(p.hp <= 0) p.isAlive = false;
+                if (p.isAlive) {
+                    // Check shield collision first if active
+                    if (p.isShieldActive && rectIntersect(b.x, b.y, b.width, b.height, p.x - p.width * 0.3, p.y - p.height * 0.3, p.width * 1.6, p.height * 1.6)) {
+                        b.vy = -Math.abs(b.vy);
+                        b.vx = (Math.random() - 0.5) * 200;
+                        b.ownerId = p.id;
+                        b.color = '#06b6d4';
+                        createParticles(b.x, b.y, '#06b6d4', 8, 1.5);
+                        return;
+                    }
+                    
+                    // Normal player body collision
+                    if (rectIntersect(b.x, b.y, b.width, b.height, p.x, p.y, p.width, p.height)) {
+                        b.markedForDeletion = true;
+                        if(activeMode !== 'p2p-join') {
+                            p.hp -= 10;
+                            createParticles(p.x + p.width/2, p.y + p.height/2, '#3b82f6', 10);
+                            if(p.hp <= 0) p.triggerDeathOrResurrection();
+                        }
                     }
                 }
             });
         } else {
             enemies.forEach(e => {
                 if (rectIntersect(b.x, b.y, b.width, b.height, e.x, e.y, e.width, e.height) && !b.markedForDeletion) {
-                    if (b.type !== 'piercing') b.markedForDeletion = true;
+                    if (b.type !== 'piercing' && b.type !== 'blackhole') b.markedForDeletion = true;
                     if(activeMode !== 'p2p-join') {
                         if(b.type === 'frost') e.slowTimer = 3;
                         
-                        let damage = b.type === 'explosive' ? 30 : 10;
-                        if(b.isSniper) damage = 40;
+                        let damage = 10;
+                        if (b.type === 'explosive') damage = 30;
+                        else if (b.type === 'blackhole') damage = 15;
+                        else if (b.isSniper) damage = 40;
                         
                         e.hp -= damage;
                         createParticles(b.x, b.y, e.color, 5);
@@ -942,9 +2020,11 @@ function checkCollisions() {
             });
             bosses.forEach(boss => {
                 if (rectIntersect(b.x, b.y, b.width, b.height, boss.x, boss.y, boss.width, boss.height) && !b.markedForDeletion) {
-                    if (b.type !== 'piercing') b.markedForDeletion = true;
+                    if (b.type !== 'piercing' && b.type !== 'blackhole') b.markedForDeletion = true;
                     if(activeMode !== 'p2p-join') {
-                        let damage = b.type === 'explosive' ? 30 : 10;
+                        let damage = 10;
+                        if (b.type === 'explosive') damage = 30;
+                        else if (b.type === 'blackhole') damage = 15;
                         boss.hp -= damage;
                         createParticles(b.x, b.y, '#9333ea', 5);
                         if(b.type === 'explosive') createParticles(b.x, b.y, '#ef4444', 40, 3);
@@ -981,22 +2061,34 @@ function checkCollisions() {
                         createParticles(p.x + p.width/2, p.y + p.height/2, '#ffffff', 10, 1);
                         return; // Evade
                     }
-                    p.hp -= p.shipType === 'tank' ? 10 : 20;
-                    createParticles(p.x + p.width/2, p.y + p.height/2, '#ef4444', 20, 2);
-                    if(p.hp <= 0) p.isAlive = false;
+                    let damage = 20;
+                    if (e.type === 5) {
+                        damage = 30;
+                        createParticles(p.x + p.width/2, p.y + p.height/2, '#f97316', 30, 2.5); // larger explosion
+                    } else {
+                        createParticles(p.x + p.width/2, p.y + p.height/2, '#ef4444', 20, 2);
+                    }
+                    p.hp -= p.shipType === 'tank' ? (damage / 2) : damage;
+                    if(p.hp <= 0) p.triggerDeathOrResurrection();
                 }
             });
             // Vs Meteorites
             meteorites.forEach(m => {
                 if (rectIntersect(p.x, p.y, p.width, p.height, m.x, m.y, m.width, m.height)) {
                     m.markedForDeletion = true;
+                    if (m.isGolden) {
+                        p.coins += 10;
+                        p.gems += 2;
+                        createParticles(m.x + m.width/2, m.y + m.height/2, '#fbbf24', 20, 2.0); // gold explosion
+                        return; // No damage to player!
+                    }
                     if (p.shipType === 'ghost' && Math.random() < 0.2) {
                         createParticles(p.x + p.width/2, p.y + p.height/2, '#ffffff', 10, 1);
                         return; // Evade
                     }
                     p.hp -= p.shipType === 'tank' ? 0 : 50; // Heavy damage unless tank
                     createParticles(p.x + p.width/2, p.y + p.height/2, '#78716c', 30, 3);
-                    if(p.hp <= 0) p.isAlive = false;
+                    if(p.hp <= 0) p.triggerDeathOrResurrection();
                 }
             });
             // Vs Fuel
@@ -1025,42 +2117,34 @@ function checkCollisions() {
     }
 
     // Player vs Player (Healing and Reviving)
-    if (activeMode !== 'p2p-join' && players.length === 2) {
-        let p1 = players[0];
-        let p2 = players[1];
-        if (rectIntersect(p1.x, p1.y, p1.width, p1.height, p2.x, p2.y, p2.width, p2.height)) {
-            // Revive Logic
-            if (!p1.isAlive && p2.isAlive) {
-                p1.isBeingRevived = true;
-                p1.reviveTimer += 1/60; // Approximate dt
-                if(Math.random() > 0.8) createParticles(p1.x + p1.width/2, p1.y + p1.height/2, '#10b981', 1);
-                if (p1.reviveTimer >= 2.0) {
-                    p1.isAlive = true;
-                    p1.hp = 50;
-                    p1.reviveTimer = 0;
-                    createParticles(p1.x + p1.width/2, p1.y + p1.height/2, '#10b981', 30, 2);
-                }
-            } else if (!p2.isAlive && p1.isAlive) {
-                p2.isBeingRevived = true;
-                p2.reviveTimer += 1/60;
-                if(Math.random() > 0.8) createParticles(p2.x + p2.width/2, p2.y + p2.height/2, '#10b981', 1);
-                if (p2.reviveTimer >= 2.0) {
-                    p2.isAlive = true;
-                    p2.hp = 50;
-                    p2.reviveTimer = 0;
-                    createParticles(p2.x + p2.width/2, p2.y + p2.height/2, '#10b981', 30, 2);
-                }
-            }
-            // Heal Logic (Health Sharing)
-            else if (p1.isAlive && p2.isAlive) {
-                if (p1.hp > p2.hp + 2) {
-                    p1.hp -= 0.5;
-                    p2.hp += 0.5;
-                    if(Math.random() > 0.7) createParticles(p2.x + p2.width/2, p2.y + p2.height/2, '#10b981', 1);
-                } else if (p2.hp > p1.hp + 2) {
-                    p2.hp -= 0.5;
-                    p1.hp += 0.5;
-                    if(Math.random() > 0.7) createParticles(p1.x + p1.width/2, p1.y + p1.height/2, '#10b981', 1);
+    if (activeMode !== 'p2p-join' && players.length >= 2) {
+        for (let i = 0; i < players.length; i++) {
+            let p1 = players[i];
+            for (let j = 0; j < players.length; j++) {
+                if (i === j) continue;
+                let p2 = players[j];
+                
+                if (rectIntersect(p1.x, p1.y, p1.width, p1.height, p2.x, p2.y, p2.width, p2.height)) {
+                    // Revive Logic
+                    if (!p1.isAlive && p2.isAlive) {
+                        p1.isBeingRevived = true;
+                        p1.reviveTimer += 1/60; // Approximate dt
+                        if(Math.random() > 0.8) createParticles(p1.x + p1.width/2, p1.y + p1.height/2, '#10b981', 1);
+                        if (p1.reviveTimer >= 2.0) {
+                            p1.isAlive = true;
+                            p1.hp = 50;
+                            p1.reviveTimer = 0;
+                            createParticles(p1.x + p1.width/2, p1.y + p1.height/2, '#10b981', 30, 2);
+                        }
+                    }
+                    // Heal Logic (Health Sharing)
+                    else if (p1.isAlive && p2.isAlive) {
+                        if (p1.hp > p2.hp + 2) {
+                            p1.hp -= 0.5;
+                            p2.hp += 0.5;
+                            if(Math.random() > 0.7) createParticles(p2.x + p2.width/2, p2.y + p2.height/2, '#10b981', 1);
+                        }
+                    }
                 }
             }
         }
@@ -1081,18 +2165,41 @@ function spawnWave() {
         return; // Don't spawn normal enemies
     }
 
-    let count = wave * 3 + 2;
+    // Escalated enemy count: more enemies in higher waves
+    let count = wave * 4 + 4;
     for (let i = 0; i < count; i++) {
-        let type = Math.random() > 0.8 ? 3 : (Math.random() > 0.5 ? 2 : 1);
+        let rand = Math.random();
+        let type = 1;
+        
+        // Introduce Type 4 (Healer) at wave 4+ and Type 5 (Kamikaze) at wave 2+
+        if (wave >= 4 && rand < 0.12) {
+            type = 4; // healer spawn rate
+        } else if (wave >= 2 && rand < 0.26) {
+            type = 5; // Kamikaze spawn rate
+        } else if (rand < 0.52) {
+            type = 1; // Basic
+        } else if (rand < 0.77) {
+            type = 2; // Fast
+        } else {
+            type = 3; // Tank
+        }
+        
         let x = Math.random() * (canvas.width - 60);
         let y = -Math.random() * 500 - 100;
         enemies.push(new Enemy(x, y, type));
     }
 
-    // Spawn Meteorites occasionally
-    if(Math.random() > 0.5) {
-        for(let j=0; j<wave; j++) {
-            meteorites.push(new Meteorite(Math.random() * canvas.width, -100, (Math.random() - 0.5) * 100, Math.random() * 100 + 100, Math.random() * 40 + 30));
+    // Spawn Meteorites occasionally or trigger a Golden Meteor Shower!
+    let isGoldenShower = (wave % 4 === 3);
+    if (isGoldenShower) {
+        warningText = "⚠️ عاصفة نيازك ذهبية تقترب! 🌌✨";
+        warningTimer = 4.0; // 4 seconds warning display on screen
+        for (let j = 0; j < wave + 3; j++) {
+            meteorites.push(new Meteorite(Math.random() * canvas.width, -100 - Math.random() * 300, (Math.random() - 0.5) * 100, Math.random() * 80 + 80, Math.random() * 40 + 35, true));
+        }
+    } else if (Math.random() > 0.5) {
+        for (let j = 0; j < wave; j++) {
+            meteorites.push(new Meteorite(Math.random() * canvas.width, -100, (Math.random() - 0.5) * 100, Math.random() * 100 + 100, Math.random() * 40 + 30, false));
         }
     }
     
@@ -1120,6 +2227,20 @@ function animate(time) {
     });
     
     ctx.globalAlpha = 1.0;
+
+    // Draw Event Warning notification
+    if (warningTimer > 0) {
+        warningTimer -= dt;
+        ctx.save();
+        ctx.fillStyle = '#fcd34d';
+        ctx.font = 'bold 30px "Cairo", Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#f59e0b';
+        ctx.fillText(warningText, canvas.width / 2, canvas.height / 3);
+        ctx.restore();
+    }
 
     if (isShopOpen || isMapOpen) {
         requestAnimationFrame(animate);

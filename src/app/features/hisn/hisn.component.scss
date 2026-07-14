@@ -31,3 +31,140 @@
 .animate-pulse {
   animation: pulse-ring 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* Tasbih specific styles */
+.tasbih-ring {
+  transition: stroke-dashoffset 0.3s ease-out;
+}
+
+.tasbih-button:active {
+  transform: scale(0.95);
+  transition: transform 0.1s ease;
+}
+
+/* Completion ribbon */
+.completion-ribbon {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 80%);
+}
+
+/* Progress bars */
+.progress-bar {
+  background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899);
+  background-size: 200% 100%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Category card hover effects */
+.category-card {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.category-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+}
+
+/* Zikr item completion */
+.zikr-complete {
+  background: rgba(16, 185, 129, 0.05);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.zikr-complete .increment-btn {
+  background: #059669 !important;
+}
+
+/* Speech synthesis active state */
+.speaking-active {
+  background: rgba(99, 102, 241, 0.2) !important;
+  border-color: rgba(99, 102, 241, 0.3) !important;
+  color: #a5b4fc !important;
+  animation: pulse-speak 1s ease-in-out infinite;
+}
+
+@keyframes pulse-speak {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* Wird form animations */
+.wird-form-enter {
+  animation: slide-down 0.3s ease-out;
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Toast animation */
+.toast-enter {
+  animation: slide-up 0.3s ease-out;
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar styling */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #6366f1, #8b5cf6);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #818cf8, #a78bfa);
+}
+
+/* Focus visible styles */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+  .no-print { display: none !important; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .glass {
+    border-width: 2px;
+    border-color: #fff;
+  }
+}
+
+/* Dark mode refinements */
+@media (prefers-color-scheme: dark) {
+  .glass {
+    background: rgba(2, 6, 23, 0.5);
+  }
+}

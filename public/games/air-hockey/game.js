@@ -27,11 +27,12 @@ const WIN_SCORE = 7;
 
 // Physics bodies
 let puck = { x: cw/2, y: ch/2, vx: 0, vy: 0, r: 15, mass: 1 };
-let p1 = { x: cw/2, y: ch - 100, vx: 0, vy: 0, r: 35, mass: 5, color: '#3b82f6' };
-let p2 = { x: cw/2, y: 100, vx: 0, vy: 0, r: 35, mass: 5, color: '#ef4444' };
+let p1 = { x: cw/2, y: ch - 100, vx: 0, vy: 0, r: 35, mass: 5, color: '#3b82f6', targetX: cw/2, targetY: ch - 100 };
+let p2 = { x: cw/2, y: 100, vx: 0, vy: 0, r: 35, mass: 5, color: '#ef4444', targetX: cw/2, targetY: 100 };
 
 const GOAL_WIDTH = 140;
 const FRICTION = 0.99;
+const MAX_MALLET_SPEED = 12; // NEW: Speed limit for mallets
 
 // Inputs
 let touches = {};
@@ -46,8 +47,8 @@ function startGame(selectedMode) {
     score2 = 0;
     updateScoreUI();
     resetPuck();
-    p1.x = cw/2; p1.y = ch - 100;
-    p2.x = cw/2; p2.y = 100;
+    p1.x = cw/2; p1.y = ch - 100; p1.targetX = p1.x; p1.targetY = p1.y; p1.vx = 0; p1.vy = 0;
+    p2.x = cw/2; p2.y = 100; p2.targetX = p2.x; p2.targetY = p2.y; p2.vx = 0; p2.vy = 0;
     isPlaying = true;
     showScreen('game-screen');
     
@@ -64,10 +65,10 @@ function resetPuck(scorer) {
 }
 
 // Touch Handling (Multi-touch support)
-canvas.addEventListener('touchstart', handleTouch);
-canvas.addEventListener('touchmove', handleTouch);
-canvas.addEventListener('touchend', handleTouchEnd);
-canvas.addEventListener('touchcancel', handleTouchEnd);
+canvas.addEventListener('touchstart', handleTouch, {passive: false});
+canvas.addEventListener('touchmove', handleTouch, {passive: false});
+canvas.addEventListener('touchend', handleTouchEnd, {passive: false});
+canvas.addEventListener('touchcancel', handleTouchEnd, {passive: false});
 
 // Mouse fallback for 1 player
 let isMouseDown = false;
@@ -81,17 +82,11 @@ function handleMouse(e) {
     const y = e.clientY - rect.top;
     
     if (y > ch/2) {
-        // Bottom half (P1)
-        p1.vx = x - p1.x;
-        p1.vy = y - p1.y;
-        p1.x = x;
-        p1.y = y;
+        p1.targetX = x;
+        p1.targetY = y;
     } else if (mode === '2p' && y < ch/2) {
-        // Top half (P2)
-        p2.vx = x - p2.x;
-        p2.vy = y - p2.y;
-        p2.x = x;
-        p2.y = y;
+        p2.targetX = x;
+        p2.targetY = y;
     }
 }
 
@@ -99,26 +94,16 @@ function handleTouch(e) {
     e.preventDefault();
     const rect = canvas.getBoundingClientRect();
     
-    // Reset velocities if no movement
-    p1.vx = 0; p1.vy = 0;
-    if (mode === '2p') { p2.vx = 0; p2.vy = 0; }
-    
     for (let i = 0; i < e.touches.length; i++) {
         const x = e.touches[i].clientX - rect.left;
         const y = e.touches[i].clientY - rect.top;
         
         if (y > ch/2) {
-            // Player 1 Area
-            p1.vx = x - p1.x;
-            p1.vy = y - p1.y;
-            p1.x = x;
-            p1.y = y;
+            p1.targetX = x;
+            p1.targetY = y;
         } else if (mode === '2p' && y < ch/2) {
-            // Player 2 Area
-            p2.vx = x - p2.x;
-            p2.vy = y - p2.y;
-            p2.x = x;
-            p2.y = y;
+            p2.targetX = x;
+            p2.targetY = y;
         }
     }
 }
@@ -157,10 +142,29 @@ function resolveCollision(mallet, puck) {
         
         // Cap speed
         const speed = Math.hypot(puck.vx, puck.vy);
-        if (speed > 25) {
-            puck.vx = (puck.vx / speed) * 25;
-            puck.vy = (puck.vy / speed) * 25;
+        if (speed > 20) {
+            puck.vx = (puck.vx / speed) * 20;
+            puck.vy = (puck.vy / speed) * 20;
         }
+    }
+}
+
+function updateMalletPosition(mallet) {
+    const dx = mallet.targetX - mallet.x;
+    const dy = mallet.targetY - mallet.y;
+    const dist = Math.hypot(dx, dy);
+    
+    if (dist > 0) {
+        // Limit speed
+        const speed = Math.min(dist, MAX_MALLET_SPEED);
+        mallet.vx = (dx / dist) * speed;
+        mallet.vy = (dy / dist) * speed;
+        
+        mallet.x += mallet.vx;
+        mallet.y += mallet.vy;
+    } else {
+        mallet.vx = 0;
+        mallet.vy = 0;
     }
 }
 
@@ -169,15 +173,56 @@ function gameLoop() {
     
     // AI Logic
     if (mode === 'ai') {
-        const targetX = puck.y < ch/2 ? puck.x : cw/2;
-        const targetY = puck.y < ch/2 ? Math.min(puck.y - 20, ch/2 - p2.r) : 100;
+        if (puck.y < ch/2) {
+            // Prevent trapping the puck against the top wall
+            if (puck.y < 70 && Math.hypot(puck.x - p2.x, puck.y - p2.y) < 60) {
+                p2.targetX = cw / 2;
+                p2.targetY = 150; // Retreat towards center to let puck bounce out
+            } else {
+                // Predict puck's x position slightly ahead in time
+                let predictedX = puck.x + (puck.vx * 8); 
+                
+                // Add a small randomized offset (sine wave based on time)
+                const offset = Math.sin(Date.now() / 250) * 15;
+                
+                p2.targetX = Math.max(p2.r, Math.min(cw - p2.r, predictedX + offset));
+
+                // Determine target Y based on puck's vertical velocity
+                if (puck.vy < 0) {
+                    // Puck moving towards AI goal - try to stay between puck and goal (above it)
+                    p2.targetY = Math.max(p2.r, puck.y - 35);
+                } else {
+                    // Puck moving towards player - try to get behind it to push
+                    p2.targetY = Math.min(puck.y - 15, ch / 2 - p2.r);
+                }
+            }
+        } else {
+            // Return to defensive position with slight movement to avoid jittering
+            p2.targetX = cw / 2 + Math.sin(Date.now() / 500) * 20;
+            p2.targetY = 100;
+        }
         
-        // Ease towards target
-        p2.vx = (targetX - p2.x) * 0.1;
-        p2.vy = (targetY - p2.y) * 0.1;
-        p2.x += p2.vx;
-        p2.y += p2.vy;
+        // Slightly slower max speed for AI to make it beatable
+        const dx = p2.targetX - p2.x;
+        const dy = p2.targetY - p2.y;
+        const dist = Math.hypot(dx, dy);
+        
+        if (dist > 0) {
+            const aiSpeed = Math.min(dist, MAX_MALLET_SPEED * 0.6); // AI is a bit slower
+            p2.vx = (dx / dist) * aiSpeed;
+            p2.vy = (dy / dist) * aiSpeed;
+            
+            p2.x += p2.vx;
+            p2.y += p2.vy;
+        } else {
+            p2.vx = 0;
+            p2.vy = 0;
+        }
+    } else {
+        updateMalletPosition(p2);
     }
+    
+    updateMalletPosition(p1);
     
     constrainMallet(p1, false);
     constrainMallet(p2, true);
