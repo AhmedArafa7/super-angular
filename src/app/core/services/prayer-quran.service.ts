@@ -1,6 +1,6 @@
-import { Injectable, signal, computed, effect, inject } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { catchError, map, of } from 'rxjs';
+import { catchError, of } from 'rxjs';
 
 export interface PrayerTimings {
   Fajr: string;
@@ -13,12 +13,6 @@ export interface PrayerTimings {
   Midnight: string;
   Firstthird: string;
   Lastthird: string;
-}
-
-export interface CalculationMethod {
-  id: number;
-  name: string;
-  params: any;
 }
 
 export interface Surah {
@@ -40,27 +34,51 @@ export interface Ayah {
   ruku: number;
   hizbQuarter: number;
   sajda: boolean | { id: number; recommended: boolean; obligatory: boolean };
+  translation?: string;
+  tafsir?: string;
 }
+
+export interface TafsirAyah {
+  ayahNumber: number;
+  text: string;
+}
+
+export type ReadingMode = 'normal' | 'mushaf' | 'translation' | 'large';
+export type ReciterId = 'alafasy' | 'abdulbasit' | 'minshawi' | 'husary' | 'shaatree';
+
+export interface Reciter {
+  id: ReciterId;
+  name: string;
+  url: string;
+}
+
+export const RECITERS: Reciter[] = [
+  { id: 'alafasy', name: 'مشاري العفاسي', url: 'https://server7.mp3quran.net/afs/' },
+  { id: 'abdulbasit', name: 'عبدالباسط عبدالصمد', url: 'https://server8.mp3quran.net/abdulbasit-mujawwad/' },
+  { id: 'minshawi', name: 'محمد صديق المنشاوي', url: 'https://server10.mp3quran.net/minshawi-mujawwad/' },
+  { id: 'husary', name: 'محمود خليل الحصري', url: 'https://server13.mp3quran.net/husary/' },
+  { id: 'shaatree', name: 'أبوبكر الشاطري', url: 'https://server16.mp3quran.net/shaatree/' }
+];
 
 @Injectable({ providedIn: 'root' })
 export class PrayerQuranService {
   private http = inject(HttpClient);
-  
+
   // Prayer state
   timings = signal<PrayerTimings | null>(null);
   nextPrayer = signal<{ name: string; remaining: string } | null>(null);
   isLoadingPrayer = signal(false);
-  calculationMethod = signal(3); // Muslim World League
-  asrMethod = signal(0); // Shafi
+  calculationMethod = signal(3);
+  asrMethod = signal(0);
   timeFormat = signal<'12h' | '24h'>('12h');
   notificationMinutes = signal(10);
   lastUpdated = signal<number | null>(null);
-  
+
   // Location
   latitude = signal<number | null>(null);
   longitude = signal<number | null>(null);
   city = signal<string>('جاري التحديد...');
-  
+
   // Quran state
   surahs = signal<Surah[]>([]);
   currentSurah = signal<Surah | null>(null);
@@ -70,16 +88,33 @@ export class PrayerQuranService {
   readingProgress = signal<Record<number, number>>({});
   fontSize = signal(24);
   translation = signal<'ar' | 'en' | 'none'>('ar');
-  audioPlayer: HTMLAudioElement | null = null;
   currentAudioSurah = signal<number | null>(null);
   isPlaying = signal(false);
-  
+
+  // Audio
+  private audioPlayer: HTMLAudioElement | null = null;
+  audioProgress = signal(0);
+  audioDuration = signal(0);
+
+  // Reciter
+  selectedReciter = signal<ReciterId>('alafasy');
+  reciters = RECITERS;
+
+  // Reading mode
+  readingMode = signal<ReadingMode>('normal');
+
+  // Tafsir
+  tafsirData = signal<TafsirAyah[]>([]);
+  isLoadingTafsir = signal(false);
+  showTafsir = signal(false);
+  selectedTafsir = signal<'ibnkathir' | 'jalalayn' | 'saadi'>('ibnkathir');
+
   // Computed
   formattedDate = computed(() => {
     const ts = this.lastUpdated();
     if (!ts) return '';
-    return new Intl.DateTimeFormat('ar-EG', { 
-      month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' 
+    return new Intl.DateTimeFormat('ar-EG', {
+      month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric'
     }).format(new Date(ts));
   });
 
@@ -91,8 +126,7 @@ export class PrayerQuranService {
 
   private loadPersistedData() {
     if (typeof window === 'undefined') return;
-    
-    // Prayer settings
+
     const prayerSettings = localStorage.getItem('prayer_settings');
     if (prayerSettings) {
       try {
@@ -103,8 +137,13 @@ export class PrayerQuranService {
         this.notificationMinutes.set(s.notifications ?? 10);
       } catch {}
     }
-    
-    // Quran data
+
+    const reciter = localStorage.getItem('quran_reciter') as ReciterId | null;
+    if (reciter) this.selectedReciter.set(reciter);
+
+    const mode = localStorage.getItem('quran_reading_mode') as ReadingMode | null;
+    if (mode) this.readingMode.set(mode);
+
     this.loadBookmarks();
     this.loadReadingProgress();
     this.loadQuranSettings();
@@ -129,20 +168,16 @@ export class PrayerQuranService {
   }
 
   // ==================== PRAYER TIMES ====================
-  
+
   private async initLocationAndPrayer() {
     this.isLoadingPrayer.set(true);
-    
     try {
-      // Try to get location
       const position = await this.getCurrentPosition();
       this.latitude.set(position.coords.latitude);
       this.longitude.set(position.coords.longitude);
       await this.fetchPrayerTimes(position.coords.latitude, position.coords.longitude);
       this.reverseGeocode(position.coords.latitude, position.coords.longitude);
-    } catch (e) {
-      // Fallback to IP-based location or default (Makkah)
-      console.warn('Location denied, using IP fallback');
+    } catch {
       await this.fetchByIP();
     } finally {
       this.isLoadingPrayer.set(false);
@@ -168,7 +203,7 @@ export class PrayerQuranService {
       const res = await this.http.get<any>('https://ipapi.co/json/').pipe(
         catchError(() => of({ latitude: 21.3891, longitude: 39.8579, city: 'Makkah' }))
       ).toPromise();
-      
+
       if (res) {
         this.latitude.set(res.latitude);
         this.longitude.set(res.longitude);
@@ -176,7 +211,6 @@ export class PrayerQuranService {
         await this.fetchPrayerTimes(res.latitude, res.longitude);
       }
     } catch {
-      // Ultimate fallback - Makkah
       this.latitude.set(21.3891);
       this.longitude.set(39.8579);
       this.city.set('مكة المكرمة');
@@ -191,7 +225,7 @@ export class PrayerQuranService {
       const day = date.getDate();
       const month = date.getMonth() + 1;
       const year = date.getFullYear();
-      
+
       const url = `https://api.aladhan.com/v1/timings/${day}-${month}-${year}`;
       const params = {
         latitude: lat.toString(),
@@ -200,11 +234,11 @@ export class PrayerQuranService {
         school: this.asrMethod().toString(),
         timezonestring: 'auto'
       };
-      
+
       const res = await this.http.get<any>(url, { params }).pipe(
         catchError(() => of(null))
       ).toPromise();
-      
+
       if (res?.data?.timings) {
         this.timings.set(res.data.timings);
         this.lastUpdated.set(Date.now());
@@ -221,10 +255,10 @@ export class PrayerQuranService {
   private calculateNextPrayer() {
     const timings = this.timings();
     if (!timings) return;
-    
+
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    
+
     const prayers = [
       { name: 'الفجر', time: timings.Fajr },
       { name: 'الشروق', time: timings.Sunrise },
@@ -233,7 +267,7 @@ export class PrayerQuranService {
       { name: 'المغرب', time: timings.Maghrib },
       { name: 'العشاء', time: timings.Isha }
     ];
-    
+
     for (const prayer of prayers) {
       const [h, m] = prayer.time.split(':').map(Number);
       const prayerMinutes = h * 60 + m;
@@ -248,8 +282,7 @@ export class PrayerQuranService {
         return;
       }
     }
-    
-    // Next day Fajr
+
     const [h, m] = timings.Fajr.split(':').map(Number);
     const fajrMinutes = h * 60 + m + 1440;
     const diff = fajrMinutes - currentMinutes;
@@ -266,7 +299,7 @@ export class PrayerQuranService {
       const res = await this.http.get<any>(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=ar`).pipe(
         catchError(() => of(null))
       ).toPromise();
-      
+
       if (res) {
         this.city.set(res.city || res.locality || res.principalSubdivision || 'موقع غير معروف');
       }
@@ -314,7 +347,7 @@ export class PrayerQuranService {
   formatTime(time: string): string {
     if (!time) return '--:--';
     if (this.timeFormat() === '24h') return time;
-    
+
     const [hours, minutes] = time.split(':').map(Number);
     const ampm = hours >= 12 ? 'م' : 'ص';
     const h12 = hours % 12 || 12;
@@ -328,7 +361,7 @@ export class PrayerQuranService {
       const res = await this.http.get<any>('https://api.alquran.cloud/v1/surah').pipe(
         catchError(() => of({ data: [] }))
       ).toPromise();
-      
+
       if (res?.data) {
         this.surahs.set(res.data.map((s: any) => ({
           number: s.number,
@@ -348,7 +381,9 @@ export class PrayerQuranService {
     this.isLoadingQuran.set(true);
     this.currentAudioSurah.set(null);
     this.isPlaying.set(false);
-    
+    this.tafsirData.set([]);
+    this.showTafsir.set(false);
+
     try {
       const surah = this.surahs().find(s => s.number === surahNumber);
       if (surah) this.currentSurah.set(surah);
@@ -357,7 +392,7 @@ export class PrayerQuranService {
       const arabicRes = await this.http.get<any>(`https://api.alquran.cloud/v1/surah/${surahNumber}/ar.alafasy`).pipe(
         catchError(() => of(null))
       ).toPromise();
-      
+
       if (arabicRes?.data?.ayahs) {
         this.ayahs.set(arabicRes.data.ayahs.map((a: any) => ({
           number: a.number,
@@ -373,11 +408,12 @@ export class PrayerQuranService {
       }
 
       // Load translation if needed
-      if (this.translation() !== 'ar') {
-        const transRes = await this.http.get<any>(`https://api.alquran.cloud/v1/surah/${surahNumber}/en.asad`).pipe(
+      if (this.translation() !== 'none') {
+        const transLang = this.translation() === 'en' ? 'en.asad' : 'ar.muyassar';
+        const transRes = await this.http.get<any>(`https://api.alquran.cloud/v1/surah/${surahNumber}/${transLang}`).pipe(
           catchError(() => of(null))
         ).toPromise();
-        
+
         if (transRes?.data?.ayahs) {
           this.ayahs.update(ayahs => ayahs.map((a, i) => ({
             ...a,
@@ -386,15 +422,68 @@ export class PrayerQuranService {
         }
       }
 
-      // Restore bookmark
-      const bookmark = this.getBookmark(surahNumber);
-      if (bookmark > 1) {
-        // Scroll to bookmarked ayah (handled in component)
+      // Load tafsir if enabled
+      if (this.showTafsir()) {
+        this.loadTafsir(surahNumber);
       }
     } catch (e) {
       console.error('Failed to load surah', e);
     } finally {
       this.isLoadingQuran.set(false);
+    }
+  }
+
+  async loadTafsir(surahNumber: number) {
+    this.isLoadingTafsir.set(true);
+    try {
+      const tafsirIds: Record<string, number> = {
+        'ibnkathir': 3,
+        'jalalayn': 2,
+        'saadi': 4
+      };
+      const tafsirId = tafsirIds[this.selectedTafsir()] ?? 3;
+
+      const res = await this.http.get<any>(
+        `https://api.quran.com/api/v4/tafsirs/${tafsirId}?surah_number=${surahNumber}&language=ar`
+      ).pipe(catchError(() => of(null))).toPromise();
+
+      if (res?.tafsirs) {
+        this.tafsirData.set(res.tafsirs.map((t: any) => ({
+          ayahNumber: t.verse_key ? parseInt(t.verse_key.split(':')[1]) : t.id,
+          text: t.text.replace(/<[^>]*>/g, '').trim()
+        })));
+      }
+    } catch (e) {
+      console.error('Failed to load tafsir', e);
+    } finally {
+      this.isLoadingTafsir.set(false);
+    }
+  }
+
+  setReciter(id: ReciterId) {
+    this.selectedReciter.set(id);
+    localStorage.setItem('quran_reciter', id);
+    if (this.currentAudioSurah()) {
+      this.playSurah(this.currentAudioSurah()!);
+    }
+  }
+
+  setReadingMode(mode: ReadingMode) {
+    this.readingMode.set(mode);
+    localStorage.setItem('quran_reading_mode', mode);
+  }
+
+  setSelectedTafsir(tafsir: 'ibnkathir' | 'jalalayn' | 'saadi') {
+    this.selectedTafsir.set(tafsir);
+    if (this.currentSurah()) {
+      this.loadTafsir(this.currentSurah()!.number);
+    }
+  }
+
+  toggleTafsir() {
+    this.showTafsir.update(v => !v);
+    if (this.showTafsir() && this.currentSurah()) {
+      this.loadTafsir(this.currentSurah()!.number);
     }
   }
 
@@ -433,16 +522,16 @@ export class PrayerQuranService {
     return Math.round((progress / surah.numberOfAyahs) * 100);
   }
 
-  increaseFontSize() { 
-    if (this.fontSize() < 42) { 
-      this.fontSize.update(v => v + 2); 
+  increaseFontSize() {
+    if (this.fontSize() < 48) {
+      this.fontSize.update(v => v + 2);
       this.saveQuranSettings();
     }
   }
 
-  decreaseFontSize() { 
-    if (this.fontSize() > 16) { 
-      this.fontSize.update(v => v - 2); 
+  decreaseFontSize() {
+    if (this.fontSize() > 16) {
+      this.fontSize.update(v => v - 2);
       this.saveQuranSettings();
     }
   }
@@ -455,34 +544,47 @@ export class PrayerQuranService {
     }
   }
 
-  // Audio playback
+  // ==================== AUDIO ====================
+
   playSurah(surahNumber: number) {
     if (this.currentAudioSurah() === surahNumber && this.isPlaying()) {
       this.pauseAudio();
       return;
     }
-    
-    if (this.audioPlayer) {
-      this.audioPlayer.pause();
-    }
-    
-    this.audioPlayer = new Audio(`https://verses.quran.com/${surahNumber}.mp3`);
+
+    this.stopAudio();
+
+    const reciter = this.reciters.find(r => r.id === this.selectedReciter()) ?? this.reciters[0];
+    const padded = surahNumber.toString().padStart(3, '0');
+    const audioUrl = `${reciter.url}${padded}.mp3`;
+
+    this.audioPlayer = new Audio(audioUrl);
     this.currentAudioSurah.set(surahNumber);
     this.isPlaying.set(true);
-    
-    this.audioPlayer.onended = () => {
+
+    this.audioPlayer.addEventListener('timeupdate', () => {
+      if (this.audioPlayer) {
+        this.audioProgress.set(this.audioPlayer.currentTime);
+        this.audioDuration.set(this.audioPlayer.duration || 0);
+      }
+    });
+
+    this.audioPlayer.addEventListener('ended', () => {
       this.isPlaying.set(false);
       this.currentAudioSurah.set(null);
-    };
-    
-    this.audioPlayer.onerror = () => {
+      this.audioProgress.set(0);
+      this.audioDuration.set(0);
+    });
+
+    this.audioPlayer.addEventListener('error', () => {
       this.isPlaying.set(false);
       this.currentAudioSurah.set(null);
-    };
-    
+    });
+
     this.audioPlayer.play().catch(e => {
       console.error('Audio play failed', e);
       this.isPlaying.set(false);
+      this.currentAudioSurah.set(null);
     });
   }
 
@@ -493,14 +595,36 @@ export class PrayerQuranService {
     }
   }
 
-  // Export/Import
+  stopAudio() {
+    if (this.audioPlayer) {
+      this.audioPlayer.pause();
+      this.audioPlayer.currentTime = 0;
+      this.audioPlayer = null;
+    }
+    this.isPlaying.set(false);
+    this.currentAudioSurah.set(null);
+    this.audioProgress.set(0);
+    this.audioDuration.set(0);
+  }
+
+  seekAudio(time: number) {
+    if (this.audioPlayer) {
+      this.audioPlayer.currentTime = time;
+      this.audioProgress.set(time);
+    }
+  }
+
+  // ==================== EXPORT/IMPORT ====================
+
   exportQuranData(): string {
     return JSON.stringify({
       bookmarks: this.bookmarks(),
       progress: this.readingProgress(),
       settings: {
         fontSize: this.fontSize(),
-        translation: this.translation()
+        translation: this.translation(),
+        reciter: this.selectedReciter(),
+        readingMode: this.readingMode()
       },
       timestamp: Date.now()
     }, null, 2);
@@ -520,6 +644,8 @@ export class PrayerQuranService {
       if (data.settings) {
         this.fontSize.set(data.settings.fontSize ?? 24);
         this.translation.set(data.settings.translation ?? 'ar');
+        if (data.settings.reciter) this.selectedReciter.set(data.settings.reciter);
+        if (data.settings.readingMode) this.readingMode.set(data.settings.readingMode);
         this.saveQuranSettings();
       }
       return true;
@@ -528,16 +654,8 @@ export class PrayerQuranService {
     }
   }
 
-  // Export all Hisn data
   exportAllData(): string {
     return JSON.stringify({
-      azkarCounts: this.azkarCounts(),
-      tasbih: {
-        total: this.tasbihTotal(),
-        cycles: this.tasbihCompletedCycles(),
-        session: this.tasbihSessionCount()
-      },
-      wird: this.wirdItems(),
       quran: {
         bookmarks: this.bookmarks(),
         progress: this.readingProgress()
@@ -548,18 +666,21 @@ export class PrayerQuranService {
         format: this.timeFormat(),
         notifications: this.notificationMinutes()
       },
+      settings: {
+        reciter: this.selectedReciter(),
+        readingMode: this.readingMode()
+      },
       timestamp: Date.now()
     }, null, 2);
   }
 
-  // For compatibility with existing HisnComponent
+  // For compatibility with HisnComponent
   azkarCounts = signal<Record<number, number>>({});
   tasbihTotal = signal(0);
   tasbihCompletedCycles = signal(0);
   tasbihSessionCount = signal(0);
   wirdItems = signal<WirdItem[]>([]);
 
-  // Wird methods
   updateWird(wirdId: string, progress: number) {
     this.wirdItems.update(items => {
       const exists = items.find(w => w.id === wirdId);

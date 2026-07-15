@@ -2,9 +2,9 @@ import { Component, inject, effect, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideDynamicIcon } from '@lucide/angular';
-import { HISN_DATA, NAMES_OF_ALLAH, HisnCategory, ZikrItem, AllahName } from './hisn.model';
+import { HISN_DATA, NAMES_OF_ALLAH, HisnCategory, ZikrItem } from './hisn.model';
 import { HisnService } from '../../core/services/hisn.service';
-import { PrayerQuranService } from '../../core/services/prayer-quran.service';
+import { PrayerQuranService, ReadingMode, ReciterId, RECITERS } from '../../core/services/prayer-quran.service';
 
 @Component({
   selector: 'app-hisn',
@@ -47,6 +47,22 @@ export class HisnComponent {
   bookmarks = this.prayerQuranService.bookmarks;
   isPlaying = this.prayerQuranService.isPlaying;
   currentAudioSurah = this.prayerQuranService.currentAudioSurah;
+  audioProgress = this.prayerQuranService.audioProgress;
+  audioDuration = this.prayerQuranService.audioDuration;
+
+  // Reciter & reading mode
+  selectedReciter = this.prayerQuranService.selectedReciter;
+  reciters = RECITERS;
+  readingMode = this.prayerQuranService.readingMode;
+
+  // Tafsir
+  tafsirData = this.prayerQuranService.tafsirData;
+  isLoadingTafsir = this.prayerQuranService.isLoadingTafsir;
+  showTafsir = this.prayerQuranService.showTafsir;
+  selectedTafsir = this.prayerQuranService.selectedTafsir;
+
+  // Quran search
+  surahSearchTerm = '';
 
   // View tabs state
   activeTab: 'quran' | 'prayers' | 'azkar' | 'wird' | 'names' | 'tasbih' | 'storage' = 'quran';
@@ -91,8 +107,19 @@ export class HisnComponent {
     { id: 13, label: 'مجلس الإفتاء الأوروبي' }
   ];
 
+  // Computed for filtered surahs
+  get filteredSurahs() {
+    if (!this.surahSearchTerm.trim()) return this.surahs();
+    const term = this.surahSearchTerm.trim();
+    return this.surahs().filter(s =>
+      s.name.includes(term) ||
+      s.englishName.toLowerCase().includes(term.toLowerCase()) ||
+      s.englishNameTranslation.includes(term) ||
+      s.number.toString() === term
+    );
+  }
+
   constructor() {
-    // Listen for toast events from service
     if (typeof window !== 'undefined') {
       window.addEventListener('hisn-toast', ((event: any) => {
         this.toastMessage = event.detail;
@@ -101,7 +128,6 @@ export class HisnComponent {
       }) as EventListener);
     }
 
-    // Filter names when search changes
     effect(() => {
       this.filteredNames = this.namesOfAllah.filter(item =>
         item.name.includes(this.searchTerm) || item.meaning.includes(this.searchTerm)
@@ -163,7 +189,7 @@ export class HisnComponent {
       const next = current + 1;
       this.counts[item.id] = next;
       this.hisnService.triggerVibration(10);
-      
+
       if (next === item.count) {
         this.hisnService.playChimeSound();
         this.hisnService.triggerVibration(50);
@@ -206,8 +232,6 @@ export class HisnComponent {
     if (this.azkarFontSize > 18) this.azkarFontSize -= 2;
   }
 
-  // Names methods - search is handled by effect
-
   // Tasbih methods
   incrementTasbih(): void {
     this.hisnService.incrementTasbih();
@@ -234,6 +258,13 @@ export class HisnComponent {
   // Prayer methods
   formatTime(time: string): string {
     return this.prayerQuranService.formatTime(time);
+  }
+
+  latitude = this.prayerQuranService.latitude;
+  longitude = this.prayerQuranService.longitude;
+
+  fetchPrayerTimes(lat: number, lng: number) {
+    this.prayerQuranService.fetchPrayerTimes(lat, lng);
   }
 
   setCalculationMethod(method: number) {
@@ -289,6 +320,45 @@ export class HisnComponent {
     this.prayerQuranService.pauseAudio();
   }
 
+  stopAudio() {
+    this.prayerQuranService.stopAudio();
+  }
+
+  setReciter(id: ReciterId) {
+    this.prayerQuranService.setReciter(id);
+  }
+
+  setReadingMode(mode: ReadingMode) {
+    this.prayerQuranService.setReadingMode(mode);
+  }
+
+  setSelectedTafsir(tafsir: 'ibnkathir' | 'jalalayn' | 'saadi') {
+    this.prayerQuranService.setSelectedTafsir(tafsir);
+  }
+
+  toggleTafsir() {
+    this.prayerQuranService.toggleTafsir();
+  }
+
+  seekAudio(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.prayerQuranService.seekAudio(parseFloat(input.value));
+  }
+
+  formatAudioTime(seconds: number): string {
+    if (!seconds || isNaN(seconds)) return '0:00';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  goBackToSurahList() {
+    this.prayerQuranService.currentSurah.set(null);
+    this.prayerQuranService.ayahs.set([]);
+    this.prayerQuranService.tafsirData.set([]);
+    this.prayerQuranService.stopAudio();
+  }
+
   // Export/Import
   exportQuranData() {
     const data = this.prayerQuranService.exportQuranData();
@@ -316,8 +386,7 @@ export class HisnComponent {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        // Import logic would go here
+      reader.onload = () => {
         this.hisnService.showToast('تم استيراد البيانات الشاملة');
       };
       reader.readAsText(input.files[0]);
@@ -351,29 +420,21 @@ export class HisnComponent {
     return Object.values(this.counts).reduce((a, b) => a + b, 0);
   }
 
-  // Helper for Math in template
   Math = Math;
 
   getCategoryIcon(cat: HisnCategory): string {
     const icons: Record<string, string> = {
-      morning: 'sun',
-      evening: 'moon',
-      sleep: 'zap',
-      after_prayer: 'target',
-      situations: 'globe',
-      praises: 'sparkles'
+      morning: 'sun', evening: 'moon', sleep: 'zap',
+      after_prayer: 'target', situations: 'globe', praises: 'sparkles'
     };
     return icons[cat.id] || 'book-open';
   }
 
   getCategoryIconColor(cat: HisnCategory): string {
     const colors: Record<string, string> = {
-      morning: 'text-amber-400',
-      evening: 'text-indigo-400',
-      sleep: 'text-purple-400',
-      after_prayer: 'text-emerald-400',
-      situations: 'text-cyan-400',
-      praises: 'text-rose-400'
+      morning: 'text-amber-400', evening: 'text-indigo-400',
+      sleep: 'text-purple-400', after_prayer: 'text-emerald-400',
+      situations: 'text-cyan-400', praises: 'text-rose-400'
     };
     return colors[cat.id] || 'text-primary';
   }
