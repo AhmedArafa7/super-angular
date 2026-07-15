@@ -19,6 +19,13 @@
             <div class="menu-section">
                 <button class="action-btn primary mode-btn" data-mode="local">لعب فردي</button>
                 <button class="action-btn primary mode-btn" data-mode="local-coop" style="background: #8b5cf6;">تعاون محلي (نفس الجهاز)</button>
+                <button id="menu-fusion-btn" class="action-btn secondary" style="background: linear-gradient(135deg, #a855f7, #6b21a8); border: 2px solid #d8b4fe; margin-top: 10px;">ورشة الدمج الفضائية 🧪</button>
+                
+                <div style="margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <input type="checkbox" id="boss-rush-toggle" style="width: 18px; height: 18px; cursor: pointer;">
+                    <label for="boss-rush-toggle" style="color: #f87171; font-weight: bold; font-size: 0.95rem; cursor: pointer; text-shadow: 0 0 10px rgba(239,68,68,0.4);">طور تحدي الزعماء المتتالي (Boss Rush) 👹🔥</label>
+                </div>
+
                 <div class="divider"><span>أو</span></div>
                 <button class="action-btn secondary mode-btn" data-mode="p2p">تعاون أونلاين (P2P Co-op)</button>
             </div>
@@ -59,25 +66,79 @@
                     <h3>اللاعب 1 <span class="controls-hint">(الأسهم + مسطرة)</span></h3>
                     <div class="bar-container"><div id="p1-hp" class="hp-fill red"></div></div>
                     <div class="bar-container fuel-bg"><div id="p1-fuel" class="fuel-fill"></div></div>
+                    <div class="bar-container ult-bg" style="background: rgba(168,85,247,0.15); border: 1px solid rgba(168,85,247,0.35); height: 12px; margin-bottom: 5px; border-radius: 4px; overflow: hidden; position: relative; cursor: pointer;" title="انقر لتفعيل القدرة الخارقة!">
+                        <div id="p1-ult" class="ult-fill" style="width: 0%; height: 100%; background: linear-gradient(to right, #a855f7, #ec4899); transition: width 0.2s;"></div>
+                        <span style="position: absolute; width: 100%; text-align: center; left: 0; top: 0; font-size: 0.65rem; color: #fff; font-weight: bold; line-height: 12px;">القدرة الخارقة ⚡</span>
+                    </div>
                     <div class="score">النقاط: <span id="p1-score">0</span></div>
                     <div class="economy">💰 <span id="p1-coins">0</span> | 💎 <span id="p1-gems">0</span></div>
                     <div class="controls-hint" style="margin-top:2px;color:#fcd34d">اضغط B لفتح المتجر</div>
+                    <div class="inventory" style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <button class="inv-btn" data-player="0" data-item="heal" style="background: rgba(16,185,129,0.25); border: 1px solid rgba(16,185,129,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            🔧 <span class="count">0</span>
+                        </button>
+                        <button class="inv-btn" data-player="0" data-item="selfRevive" style="background: rgba(239,68,68,0.25); border: 1px solid rgba(239,68,68,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            💉 <span class="count">0</span>
+                        </button>
+                        <button class="inv-btn" data-player="0" data-item="secondLife" style="background: rgba(234,179,8,0.25); border: 1px solid rgba(234,179,8,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            🌟 <span class="count">0</span>
+                        </button>
+                        <button class="inv-btn" data-player="0" data-item="tempShield" style="background: rgba(56,189,248,0.25); border: 1px solid rgba(56,189,248,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            🛡️ <span class="count">0</span>
+                        </button>
+                    </div>
                 </div>
                 <div class="player-hud hidden" id="p3-hud">
                     <h3>اللاعب 3 <span class="controls-hint">(I,J,K,L + U)</span></h3>
                     <div class="bar-container"><div id="p3-hp" class="hp-fill purple"></div></div>
                     <div class="bar-container fuel-bg"><div id="p3-fuel" class="fuel-fill"></div></div>
+                    <div class="bar-container ult-bg" style="background: rgba(168,85,247,0.15); border: 1px solid rgba(168,85,247,0.35); height: 12px; margin-bottom: 5px; border-radius: 4px; overflow: hidden; position: relative; cursor: pointer;" title="انقر لتفعيل القدرة الخارقة!">
+                        <div id="p3-ult" class="ult-fill" style="width: 0%; height: 100%; background: linear-gradient(to right, #a855f7, #ec4899); transition: width 0.2s;"></div>
+                        <span style="position: absolute; width: 100%; text-align: center; left: 0; top: 0; font-size: 0.65rem; color: #fff; font-weight: bold; line-height: 12px;">القدرة الخارقة ⚡</span>
+                    </div>
                     <div class="score">النقاط: <span id="p3-score">0</span></div>
                     <div class="economy">💰 <span id="p3-coins">0</span> | 💎 <span id="p3-gems">0</span></div>
                     <div class="controls-hint" style="margin-top:2px;color:#fcd34d">اضغط O لفتح المتجر</div>
+                    <div class="inventory" style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <button class="inv-btn" data-player="2" data-item="heal" style="background: rgba(16,185,129,0.25); border: 1px solid rgba(16,185,129,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            🔧 <span class="count">0</span>
+                        </button>
+                        <button class="inv-btn" data-player="2" data-item="selfRevive" style="background: rgba(239,68,68,0.25); border: 1px solid rgba(239,68,68,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            💉 <span class="count">0</span>
+                        </button>
+                        <button class="inv-btn" data-player="2" data-item="secondLife" style="background: rgba(234,179,8,0.25); border: 1px solid rgba(234,179,8,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            🌟 <span class="count">0</span>
+                        </button>
+                        <button class="inv-btn" data-player="2" data-item="tempShield" style="background: rgba(56,189,248,0.25); border: 1px solid rgba(56,189,248,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            🛡️ <span class="count">0</span>
+                        </button>
+                    </div>
                 </div>
                 <div class="player-hud hidden" id="p5-hud">
                     <h3>اللاعب 5 <span class="controls-hint">(Num 8,4,6,2 + 0)</span></h3>
                     <div class="bar-container"><div id="p5-hp" class="hp-fill orange"></div></div>
                     <div class="bar-container fuel-bg"><div id="p5-fuel" class="fuel-fill"></div></div>
+                    <div class="bar-container ult-bg" style="background: rgba(168,85,247,0.15); border: 1px solid rgba(168,85,247,0.35); height: 12px; margin-bottom: 5px; border-radius: 4px; overflow: hidden; position: relative; cursor: pointer;" title="انقر لتفعيل القدرة الخارقة!">
+                        <div id="p5-ult" class="ult-fill" style="width: 0%; height: 100%; background: linear-gradient(to right, #a855f7, #ec4899); transition: width 0.2s;"></div>
+                        <span style="position: absolute; width: 100%; text-align: center; left: 0; top: 0; font-size: 0.65rem; color: #fff; font-weight: bold; line-height: 12px;">القدرة الخارقة ⚡</span>
+                    </div>
                     <div class="score">النقاط: <span id="p5-score">0</span></div>
                     <div class="economy">💰 <span id="p5-coins">0</span> | 💎 <span id="p5-gems">0</span></div>
                     <div class="controls-hint" style="margin-top:2px;color:#fcd34d">اضغط + لفتح المتجر</div>
+                    <div class="inventory" style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <button class="inv-btn" data-player="4" data-item="heal" style="background: rgba(16,185,129,0.25); border: 1px solid rgba(16,185,129,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            🔧 <span class="count">0</span>
+                        </button>
+                        <button class="inv-btn" data-player="4" data-item="selfRevive" style="background: rgba(239,68,68,0.25); border: 1px solid rgba(239,68,68,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            💉 <span class="count">0</span>
+                        </button>
+                        <button class="inv-btn" data-player="4" data-item="secondLife" style="background: rgba(234,179,8,0.25); border: 1px solid rgba(234,179,8,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            🌟 <span class="count">0</span>
+                        </button>
+                        <button class="inv-btn" data-player="4" data-item="tempShield" style="background: rgba(56,189,248,0.25); border: 1px solid rgba(56,189,248,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            🛡️ <span class="count">0</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -92,25 +153,79 @@
                     <h3>اللاعب 2 <span class="controls-hint" id="p2-controls-hint">(W,A,S,D + Q)</span></h3>
                     <div class="bar-container"><div id="p2-hp" class="hp-fill blue"></div></div>
                     <div class="bar-container fuel-bg"><div id="p2-fuel" class="fuel-fill"></div></div>
+                    <div class="bar-container ult-bg" style="background: rgba(168,85,247,0.15); border: 1px solid rgba(168,85,247,0.35); height: 12px; margin-bottom: 5px; border-radius: 4px; overflow: hidden; position: relative; cursor: pointer;" title="انقر لتفعيل القدرة الخارقة!">
+                        <div id="p2-ult" class="ult-fill" style="width: 0%; height: 100%; background: linear-gradient(to right, #a855f7, #ec4899); transition: width 0.2s;"></div>
+                        <span style="position: absolute; width: 100%; text-align: center; left: 0; top: 0; font-size: 0.65rem; color: #fff; font-weight: bold; line-height: 12px;">القدرة الخارقة ⚡</span>
+                    </div>
                     <div class="score">النقاط: <span id="p2-score">0</span></div>
                     <div class="economy">💰 <span id="p2-coins">0</span> | 💎 <span id="p2-gems">0</span></div>
                     <div class="controls-hint" style="margin-top:2px;color:#fcd34d">اضغط E لفتح المتجر</div>
+                    <div class="inventory" style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <button class="inv-btn" data-player="1" data-item="heal" style="background: rgba(16,185,129,0.25); border: 1px solid rgba(16,185,129,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            🔧 <span class="count">0</span>
+                        </button>
+                        <button class="inv-btn" data-player="1" data-item="selfRevive" style="background: rgba(239,68,68,0.25); border: 1px solid rgba(239,68,68,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            💉 <span class="count">0</span>
+                        </button>
+                        <button class="inv-btn" data-player="1" data-item="secondLife" style="background: rgba(234,179,8,0.25); border: 1px solid rgba(234,179,8,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            🌟 <span class="count">0</span>
+                        </button>
+                        <button class="inv-btn" data-player="1" data-item="tempShield" style="background: rgba(56,189,248,0.25); border: 1px solid rgba(56,189,248,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            🛡️ <span class="count">0</span>
+                        </button>
+                    </div>
                 </div>
                 <div class="player-hud hidden" id="p4-hud">
                     <h3>اللاعب 4 <span class="controls-hint">(T,F,G,H + R)</span></h3>
                     <div class="bar-container"><div id="p4-hp" class="hp-fill green"></div></div>
                     <div class="bar-container fuel-bg"><div id="p4-fuel" class="fuel-fill"></div></div>
+                    <div class="bar-container ult-bg" style="background: rgba(168,85,247,0.15); border: 1px solid rgba(168,85,247,0.35); height: 12px; margin-bottom: 5px; border-radius: 4px; overflow: hidden; position: relative; cursor: pointer;" title="انقر لتفعيل القدرة الخارقة!">
+                        <div id="p4-ult" class="ult-fill" style="width: 0%; height: 100%; background: linear-gradient(to right, #a855f7, #ec4899); transition: width 0.2s;"></div>
+                        <span style="position: absolute; width: 100%; text-align: center; left: 0; top: 0; font-size: 0.65rem; color: #fff; font-weight: bold; line-height: 12px;">القدرة الخارقة ⚡</span>
+                    </div>
                     <div class="score">النقاط: <span id="p4-score">0</span></div>
                     <div class="economy">💰 <span id="p4-coins">0</span> | 💎 <span id="p4-gems">0</span></div>
                     <div class="controls-hint" style="margin-top:2px;color:#fcd34d">اضغط Y لفتح المتجر</div>
+                    <div class="inventory" style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <button class="inv-btn" data-player="3" data-item="heal" style="background: rgba(16,185,129,0.25); border: 1px solid rgba(16,185,129,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            🔧 <span class="count">0</span>
+                        </button>
+                        <button class="inv-btn" data-player="3" data-item="selfRevive" style="background: rgba(239,68,68,0.25); border: 1px solid rgba(239,68,68,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            💉 <span class="count">0</span>
+                        </button>
+                        <button class="inv-btn" data-player="3" data-item="secondLife" style="background: rgba(234,179,8,0.25); border: 1px solid rgba(234,179,8,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            🌟 <span class="count">0</span>
+                        </button>
+                        <button class="inv-btn" data-player="3" data-item="tempShield" style="background: rgba(56,189,248,0.25); border: 1px solid rgba(56,189,248,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            🛡️ <span class="count">0</span>
+                        </button>
+                    </div>
                 </div>
                 <div class="player-hud hidden" id="p6-hud">
                     <h3>اللاعب 6 <span class="controls-hint">(Home,End,PgUp,PgDn+Ins)</span></h3>
                     <div class="bar-container"><div id="p6-hp" class="hp-fill cyan"></div></div>
                     <div class="bar-container fuel-bg"><div id="p6-fuel" class="fuel-fill"></div></div>
+                    <div class="bar-container ult-bg" style="background: rgba(168,85,247,0.15); border: 1px solid rgba(168,85,247,0.35); height: 12px; margin-bottom: 5px; border-radius: 4px; overflow: hidden; position: relative; cursor: pointer;" title="انقر لتفعيل القدرة الخارقة!">
+                        <div id="p6-ult" class="ult-fill" style="width: 0%; height: 100%; background: linear-gradient(to right, #a855f7, #ec4899); transition: width 0.2s;"></div>
+                        <span style="position: absolute; width: 100%; text-align: center; left: 0; top: 0; font-size: 0.65rem; color: #fff; font-weight: bold; line-height: 12px;">القدرة الخارقة ⚡</span>
+                    </div>
                     <div class="score">النقاط: <span id="p6-score">0</span></div>
                     <div class="economy">💰 <span id="p6-coins">0</span> | 💎 <span id="p6-gems">0</span></div>
                     <div class="controls-hint" style="margin-top:2px;color:#fcd34d">اضغط Del لفتح المتجر</div>
+                    <div class="inventory" style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <button class="inv-btn" data-player="5" data-item="heal" style="background: rgba(16,185,129,0.25); border: 1px solid rgba(16,185,129,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            🔧 <span class="count">0</span>
+                        </button>
+                        <button class="inv-btn" data-player="5" data-item="selfRevive" style="background: rgba(239,68,68,0.25); border: 1px solid rgba(239,68,68,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            💉 <span class="count">0</span>
+                        </button>
+                        <button class="inv-btn" data-player="5" data-item="secondLife" style="background: rgba(234,179,8,0.25); border: 1px solid rgba(234,179,8,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            🌟 <span class="count">0</span>
+                        </button>
+                        <button class="inv-btn" data-player="5" data-item="tempShield" style="background: rgba(56,189,248,0.25); border: 1px solid rgba(56,189,248,0.6); border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                            🛡️ <span class="count">0</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -189,8 +304,33 @@
                         <button class="retro-button buy-btn" data-type="upgrade" data-item="maxFuel" data-cost="50" data-currency="coins">شراء بـ 50 💰</button>
                     </div>
                     <div class="shop-item">
+                        <h3>زيادة الصحة القصوى 🩸</h3>
+                        <p>زيادة الطاقة القصوى بـ 25</p>
+                        <button class="retro-button buy-btn" data-type="upgrade" data-item="upgradeMaxHp" data-cost="100" data-currency="coins">ترقية بـ 100 💰</button>
+                    </div>
+                    <div class="shop-item">
+                        <h3>زيادة قوة الطلقة ⚡</h3>
+                        <p>زيادة ضرر المقذوف بـ 25%</p>
+                        <button class="retro-button buy-btn" data-type="upgrade" data-item="upgradeDamage" data-cost="120" data-currency="coins">ترقية بـ 120 💰</button>
+                    </div>
+                    <div class="shop-item">
+                        <h3>أثر محرك قوس قزح 🌈</h3>
+                        <p>تغيير لون هالة دفع المحرك لقوس قزح</p>
+                        <button class="retro-button buy-btn" data-type="trail" data-item="rainbow" data-cost="15" data-currency="gems">تفعيل بـ 15 💎</button>
+                    </div>
+                    <div class="shop-item">
+                        <h3>أثر محرك نيون أزرق 🟦</h3>
+                        <p>تغيير لون هالة دفع المحرك للأزرق النيوني</p>
+                        <button class="retro-button buy-btn" data-type="trail" data-item="neon-blue" data-cost="10" data-currency="gems">تفعيل بـ 10 💎</button>
+                    </div>
+                    <div class="shop-item">
+                        <h3>أثر محرك الماتريكس الرقمي 🟢</h3>
+                        <p>تغيير لون هالة دفع المحرك للماتريكس الأخضر</p>
+                        <button class="retro-button buy-btn" data-type="trail" data-item="matrix" data-cost="10" data-currency="gems">تفعيل بـ 10 💎</button>
+                    </div>
+                    <div class="shop-item">
                         <h3>إصلاح فوري 🔧</h3>
-                        <p>استرجاع الصحة بالكامل</p>
+                        <p>شراء عدة إصلاح للمخزن الجانبي</p>
                         <button class="retro-button buy-btn" data-type="upgrade" data-item="heal" data-cost="30" data-currency="coins">شراء بـ 30 💰</button>
                     </div>
                     <div class="shop-item">
@@ -247,6 +387,11 @@
                         <h3>الفرصة الثانية الفائقة 🌟</h3>
                         <p>تمنع الموت وتستعيد كامل طاقتك فوراً (مرة باللعبة)</p>
                         <button class="retro-button buy-btn" data-type="consumable" data-item="secondLife" data-cost="50" data-currency="gems">شراء بـ 50 💎</button>
+                    </div>
+                    <div class="shop-item">
+                        <h3>درع الخمس ثوانٍ 🛡️</h3>
+                        <p>درع حماية كامل لا يقهر لمدة 5 ثوانٍ فور الشراء</p>
+                        <button class="retro-button buy-btn" data-type="consumable" data-item="tempShield" data-cost="80" data-currency="coins">شراء بـ 80 💰</button>
                     </div>
                 </div>
                 <!-- Transfer Resources Section -->
@@ -306,6 +451,70 @@
                     </button>
                 </div>
                 <button id="close-map-btn" class="action-btn secondary" style="margin-top: 15px;">بدء الرحلة 🚀</button>
+            </div>
+        </div>
+
+        <!-- Fusion Workshop Modal -->
+        <div id="fusion-modal" class="hidden">
+            <div class="fusion-content" style="max-height: 95vh; overflow-y: auto;">
+                <h2>ورشة الدمج الفضائية 🧪⚡</h2>
+                <p class="subtitle">اصنع سفناً وأسلحة هجينة فائقة الجودة لتعزيز قدراتك الهجومية والدفاعية!</p>
+                
+                <div class="fusion-body" style="text-align: right; direction: rtl;">
+                    <!-- Player Select -->
+                    <div style="margin-bottom: 20px;">
+                        <label for="fusion-player-select" style="color: #cbd5e1; font-weight: bold; display: block; margin-bottom: 8px;">اختر اللاعب:</label>
+                        <select id="fusion-player-select" style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 8px; padding: 10px 16px; font-family: 'Cairo', sans-serif;">
+                            <option value="0">اللاعب 1</option>
+                            <option value="1">اللاعب 2</option>
+                            <option value="2">اللاعب 3</option>
+                            <option value="3">اللاعب 4</option>
+                            <option value="4">اللاعب 5</option>
+                            <option value="5">اللاعب 6</option>
+                        </select>
+                    </div>
+
+                    <!-- Category Tab Select -->
+                    <div class="fusion-tabs" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <button id="tab-fuse-ships" class="action-btn primary" style="flex: 1; font-weight: bold;">دمج المركبات 🛸</button>
+                        <button id="tab-fuse-weapons" class="action-btn secondary" style="flex: 1; font-weight: bold;">دمج الأسلحة 🔫</button>
+                    </div>
+
+                    <!-- Fusion Slots Grid -->
+                    <div class="slots-container" style="display: flex; gap: 15px; align-items: center; justify-content: center; margin-bottom: 25px;">
+                        <!-- Slot 1 -->
+                        <div class="fusion-slot" style="flex: 1; background: rgba(0,0,0,0.4); border: 2px dashed rgba(168,85,247,0.4); border-radius: 16px; padding: 15px; text-align: center; min-height: 120px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                            <span class="slot-label" style="font-size: 0.85rem; color: #a78bfa; margin-bottom: 8px; font-weight: bold;">المكون الأول</span>
+                            <select id="fuse-slot-1" style="width: 100%; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 8px; font-family: 'Cairo', sans-serif; font-size: 0.85rem;"></select>
+                        </div>
+                        
+                        <!-- Pulse Symbol -->
+                        <div style="font-size: 2rem; color: #a855f7; animation: pulse 1.5s infinite; font-weight: bold;">➕</div>
+                        
+                        <!-- Slot 2 -->
+                        <div class="fusion-slot" style="flex: 1; background: rgba(0,0,0,0.4); border: 2px dashed rgba(168,85,247,0.4); border-radius: 16px; padding: 15px; text-align: center; min-height: 120px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                            <span class="slot-label" style="font-size: 0.85rem; color: #a78bfa; margin-bottom: 8px; font-weight: bold;">المكون الثاني</span>
+                            <select id="fuse-slot-2" style="width: 100%; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 8px; font-family: 'Cairo', sans-serif; font-size: 0.85rem;"></select>
+                        </div>
+                    </div>
+
+                    <!-- Cost Information -->
+                    <div style="background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.3); padding: 15px; border-radius: 12px; margin-bottom: 25px; text-align: center;">
+                        <div style="font-size: 0.95rem; font-weight: bold; color: #ddd;">تكلفة الدمج المطلوبة: <span style="color: #06b6d4; font-size: 1.15rem; font-weight: 900;">15 جوهرة 💎</span></div>
+                        <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 4px;">سيتم سحب الجواهر من رصيد اللاعب المختار وصناعة عنصر هجين دائم!</p>
+                    </div>
+
+                    <!-- Result Showcase area -->
+                    <div id="fusion-result-showcase" class="hidden" style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center; animation: fadeIn 0.5s;">
+                        <span style="font-size: 0.8rem; color: #10b981; font-weight: bold; display: block;">🎉 تم الدمج بنجاح!</span>
+                        <div id="fusion-result-text" style="font-size: 1.2rem; font-weight: bold; color: #fff; margin-top: 5px;"></div>
+                    </div>
+                </div>
+
+                <div class="fusion-actions" style="display: flex; gap: 10px;">
+                    <button id="close-fusion-btn" class="action-btn secondary" style="flex: 1;">إغلاق الورشة ↩</button>
+                    <button id="execute-fusion-btn" class="action-btn primary" style="flex: 2; background: linear-gradient(to right, #a855f7, #7c3aed); font-weight: bold; box-shadow: 0 0 15px rgba(168,85,247,0.5);">بدء دمج المكونات ⚡</button>
+                </div>
             </div>
         </div>
 

@@ -12,6 +12,19 @@ const shopCoinsEl = document.getElementById('shop-coins');
 const shopGemsEl = document.getElementById('shop-gems');
 const buyBtns = document.querySelectorAll('.buy-btn');
 
+// Fusion UI Bindings
+const fusionModal = document.getElementById('fusion-modal');
+const menuFusionBtn = document.getElementById('menu-fusion-btn');
+const closeFusionBtn = document.getElementById('close-fusion-btn');
+const executeFusionBtn = document.getElementById('execute-fusion-btn');
+const fusionPlayerSelect = document.getElementById('fusion-player-select');
+const tabFuseShips = document.getElementById('tab-fuse-ships');
+const tabFuseWeapons = document.getElementById('tab-fuse-weapons');
+const fuseSlot1 = document.getElementById('fuse-slot-1');
+const fuseSlot2 = document.getElementById('fuse-slot-2');
+const fusionResultShowcase = document.getElementById('fusion-result-showcase');
+const fusionResultText = document.getElementById('fusion-result-text');
+
 const modeBtns = document.querySelectorAll('.mode-btn');
 
 const createRoomBtn = document.getElementById('create-room-btn');
@@ -70,6 +83,8 @@ let waveTimer = 0;
 let keys = {};
 let warningText = "";
 let warningTimer = 0;
+let isBossRushMode = false;
+let bulletTimeLeft = 0;
 
 // P2P State
 let peer = null;
@@ -107,21 +122,29 @@ function loadProgress() {
 }
 
 function saveProgress() {
-    playersData = players.map(p => ({
-        coins: p.coins,
-        gems: p.gems,
-        shipType: p.shipType,
-        weaponType: p.weaponType,
-        hasDroneHeal: p.hasDroneHeal,
-        hasDroneFuel: p.hasDroneFuel,
-        hasDroneMagnet: p.hasDroneMagnet,
-        droneHealLevel: p.droneHealLevel,
-        droneFuelLevel: p.droneFuelLevel,
-        droneMagnetLevel: p.droneMagnetLevel,
-        ownedWeapons: p.ownedWeapons || ['normal'],
-        ownedShips: p.ownedShips || ['defender'],
-        hasReflectiveShield: p.hasReflectiveShield
-    }));
+    if (players && players.length > 0) {
+        playersData = players.map(p => ({
+            coins: p.coins,
+            gems: p.gems,
+            shipType: p.shipType,
+            weaponType: p.weaponType,
+            hasDroneHeal: p.hasDroneHeal,
+            hasDroneFuel: p.hasDroneFuel,
+            hasDroneMagnet: p.hasDroneMagnet,
+            droneHealLevel: p.droneHealLevel,
+            droneFuelLevel: p.droneFuelLevel,
+            droneMagnetLevel: p.droneMagnetLevel,
+            ownedWeapons: p.ownedWeapons || ['normal'],
+            ownedShips: p.ownedShips || ['defender'],
+            hasReflectiveShield: p.hasReflectiveShield,
+            healsCount: p.healsCount || 0,
+            selfReviveKits: p.selfReviveKits || 0,
+            secondLifes: p.secondLifes || 0,
+            tempShieldsCount: p.tempShieldsCount || 0,
+            bulletDamageModifier: p.bulletDamageModifier || 1.0,
+            maxHp: p.maxHp || 100
+        }));
+    }
     
     localStorage.setItem('spaceShooterProgress', JSON.stringify({
         players: playersData,
@@ -178,11 +201,18 @@ class Player {
         this.hasReflectiveShield = false;
         this.isShieldActive = false;
 
-        // Consumables per run
+        this.bulletDamageModifier = 1.0;
+
+        this.ultCharge = 0;
+        this.tankUltTimeLeft = 0;
+        this.trailType = 'none';
+
+        // Consumables inventory count
+        this.healsCount = 0;
         this.selfReviveKits = 0;
         this.secondLifes = 0;
-        this.boughtSelfReviveThisRun = false;
-        this.boughtSecondLifeThisRun = false;
+        this.tempShieldsCount = 0;
+        this.tempShieldTimeLeft = 0;
     }
     draw() {
         if (!this.isAlive) {
@@ -379,6 +409,19 @@ class Player {
             ctx.fill();
             ctx.restore();
         }
+
+        // Draw temporary invincibility shield bubble (5-second shield)
+        if (this.tempShieldTimeLeft && this.tempShieldTimeLeft > 0) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width * 0.85, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
+            ctx.fill();
+            ctx.restore();
+        }
     }
     
     triggerDeathOrResurrection() {
@@ -476,9 +519,9 @@ class Player {
         }
         
         let currentSpeed = this.speed;
-        if(this.shipType === 'speedster') currentSpeed = 500;
-        else if(this.shipType === 'tank') currentSpeed = 240;
-        else if(this.shipType === 'sniper') currentSpeed = 200;
+        if(this.shipType.includes('speedster')) currentSpeed = 500;
+        else if(this.shipType.includes('tank')) currentSpeed = 240;
+        else if(this.shipType.includes('sniper')) currentSpeed = 200;
 
         this.x += dx * currentSpeed * dt;
         this.y += dy * currentSpeed * dt;
@@ -497,11 +540,11 @@ class Player {
                 }
             }
             // Healer passive
-            if(this.shipType === 'healer' && this.isAlive && this.hp > 0 && this.hp < this.maxHp) {
+            if(this.shipType.includes('healer') && this.isAlive && this.hp > 0 && this.hp < this.maxHp) {
                 this.hp = Math.min(this.maxHp, this.hp + 2 * dt);
             }
             // Magnet passive
-            if(this.shipType === 'speedster' && this.isAlive) {
+            if(this.shipType.includes('speedster') && this.isAlive) {
                 const magnetRadius = 250;
                 let pull = (item) => {
                     let dist = Math.hypot(item.x - this.x, item.y - this.y);
@@ -543,6 +586,22 @@ class Player {
                 this.isShieldActive = (cycle < 3000); // Active for 3 seconds every 15 seconds
             } else {
                 this.isShieldActive = false;
+            }
+            
+            // Temp Shield Decrement
+            if (this.tempShieldTimeLeft && this.tempShieldTimeLeft > 0) {
+                this.tempShieldTimeLeft = Math.max(0, this.tempShieldTimeLeft - dt);
+            }
+            
+            // Tank Ultimate timer
+            if (this.tankUltTimeLeft && this.tankUltTimeLeft > 0) {
+                this.tankUltTimeLeft = Math.max(0, this.tankUltTimeLeft - dt);
+                this.width = 110;
+                this.height = 110;
+                if (this.tankUltTimeLeft === 0) {
+                    this.width = 64;
+                    this.height = 64;
+                }
             }
         }
 
@@ -616,7 +675,33 @@ class Player {
         if (Date.now() - this.lastShot < currentFireRate) return;
         this.lastShot = Date.now();
         
-        if (this.weaponType === 'frost') {
+        if (this.weaponType.startsWith('hybrid-')) {
+            let type = this.weaponType;
+            let color = '#a855f7';
+            let vy = -600;
+            if (type.includes('piercing')) vy = -1000;
+            else if (type.includes('explosive')) vy = -400;
+            else if (type.includes('blackhole')) vy = -180;
+            else if (type.includes('frost')) vy = -600;
+            
+            if (type.includes('blackhole')) color = '#7c3aed';
+            else if (type.includes('piercing')) color = '#fcd34d';
+            else if (type.includes('explosive')) color = '#ef4444';
+            else if (type.includes('frost')) color = '#60a5fa';
+            
+            bullets.push(new Bullet(this.x + this.width / 2 - 3, this.y, vy, color, this.id, type));
+            let b = bullets[bullets.length - 1];
+            if (type.includes('blackhole')) {
+                b.width = 32;
+                b.height = 32;
+                b.life = 2.5;
+            } else if (type.includes('piercing')) {
+                b.width = 4;
+                b.height = 30;
+            } else if (type.includes('explosive')) {
+                b.width = 12;
+            }
+        } else if (this.weaponType === 'frost') {
             bullets.push(new Bullet(this.x + this.width / 2 - 4, this.y, -600, '#60a5fa', this.id, 'frost'));
         } else if (this.weaponType === 'explosive') {
             bullets.push(new Bullet(this.x + this.width / 2 - 6, this.y, -400, '#ef4444', this.id, 'explosive'));
@@ -630,6 +715,10 @@ class Player {
         } else {
             // Normal
             bullets.push(new Bullet(this.x + this.width / 2 - 3, this.y, -700, this.color, this.id, 'normal'));
+        }
+
+        if (bullets.length > 0) {
+            bullets[bullets.length - 1].damageMultiplier = this.bulletDamageModifier || 1.0;
         }
 
         createParticles(this.x + this.width / 2, this.y, this.color, 3, 2);
@@ -651,12 +740,13 @@ class Bullet {
         this.ownerId = ownerId; // 1, 2, or 'enemy'
         this.type = type; // normal, frost, explosive, piercing, blackhole
         this.markedForDeletion = false;
+        this.damageMultiplier = 1.0;
         if (type === 'blackhole') {
             this.life = 2.5; // lasts 2.5 seconds
         }
     }
     draw() {
-        if (this.type === 'blackhole') {
+        if (this.type.includes('blackhole')) {
             ctx.save();
             let angle = Date.now() / 150;
             ctx.translate(this.x + 16, this.y + 16);
@@ -687,13 +777,14 @@ class Bullet {
         }
     }
     update(dt) {
-        this.y += this.vy * dt;
-        if(this.vx) this.x += this.vx * dt; // Support diagonal boss bullets
+        let speedMult = (typeof bulletTimeLeft !== 'undefined' && bulletTimeLeft > 0 && this.ownerId === 'enemy') ? 0.2 : 1.0;
+        this.y += this.vy * speedMult * dt;
+        if(this.vx) this.x += this.vx * speedMult * dt;
         if (this.isScythe) {
             this.x += Math.sin(Date.now() / 80) * 150 * dt;
         }
 
-        if (this.type === 'blackhole') {
+        if (this.type.includes('blackhole')) {
             this.life -= dt;
             if (this.life <= 0) {
                 this.markedForDeletion = true;
@@ -741,8 +832,8 @@ class Enemy {
         this.y = y;
         this.type = type; // 1 = basic, 2 = fast, 3 = tank, 4 = healer
         
-        // Scale stats by wave progression (8% HP scaling per wave, 2% speed scaling)
-        const scaling = 1.0 + (wave - 1) * 0.08;
+        // Scale stats by wave progression (20% HP scaling per wave, 3% speed scaling)
+        const scaling = 1.0 + (wave - 1) * 0.20;
         
         if (type === 3) {
             this.width = 60;
@@ -839,10 +930,12 @@ class Enemy {
                 }
             }
             // Move horizontally towards player target coordinate
-            this.x += (targetX - (this.x + this.width / 2)) * dt * 2.2;
+            let horizMult = (typeof bulletTimeLeft !== 'undefined' && bulletTimeLeft > 0) ? 0.2 : 1.0;
+            this.x += (targetX - (this.x + this.width / 2)) * dt * 2.2 * horizMult;
         }
         
-        this.y += this.speed * dt;
+        let speedMult = (typeof bulletTimeLeft !== 'undefined' && bulletTimeLeft > 0) ? 0.2 : 1.0;
+        this.y += this.speed * speedMult * dt;
         
         if (activeMode !== 'p2p-join') {
             // Healer aura healing action
@@ -944,21 +1037,31 @@ class Gem {
 }
 
 class Meteorite {
-    constructor(x, y, vx, vy, size) {
+    constructor(x, y, vx, vy, size, isGolden = false) {
         this.x = x;
         this.y = y;
         this.vx = vx;
         this.vy = vy;
         this.width = size;
         this.height = size;
+        this.isGolden = isGolden;
+        this.hp = isGolden ? 25 : Math.max(1, Math.ceil(size / 8));
         this.markedForDeletion = false;
         this.id = Math.random().toString(36).substr(2, 9);
     }
     draw() {
+        ctx.save();
         ctx.font = this.width + 'px "Segoe UI Emoji", Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('🪨', this.x + this.width/2, this.y + this.height/2);
+        if (this.isGolden) {
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = '#fbbf24';
+            ctx.fillText('☄️', this.x + this.width/2, this.y + this.height/2);
+        } else {
+            ctx.fillText('🪨', this.x + this.width/2, this.y + this.height/2);
+        }
+        ctx.restore();
     }
     update(dt) {
         this.x += this.vx * dt;
@@ -1041,6 +1144,8 @@ class Boss {
             this.bulletColor = '#06b6d4';
         }
 
+        const bossScaling = 1.0 + (wave - 5) * 0.15;
+        this.maxHp = Math.floor(this.maxHp * Math.max(1.0, bossScaling));
         this.hp = this.maxHp;
     }
     draw() {
@@ -1066,11 +1171,12 @@ class Boss {
         ctx.restore();
     }
     update(dt) {
+        let speedMult = (typeof bulletTimeLeft !== 'undefined' && bulletTimeLeft > 0) ? 0.2 : 1.0;
         if (this.y < 50) {
-            this.y += 50 * dt; // Boss enters the screen!
+            this.y += 50 * speedMult * dt; // Boss enters the screen!
         } else {
             // Move side to side
-            this.x += this.speed * this.dir * dt;
+            this.x += this.speed * this.dir * speedMult * dt;
             if (this.x <= 0 || this.x + this.width >= canvas.width) {
                 this.dir *= -1;
                 this.x = Math.max(0, Math.min(canvas.width - this.width, this.x));
@@ -1220,6 +1326,14 @@ let activeShopPlayerIndex = 0;
 window.addEventListener('keydown', e => {
     keys[e.key] = true;
     
+    // Ultimate keys
+    if (e.key === 'Shift' && players[0]) triggerUltimate(0);
+    else if ((e.key === 'f' || e.key === 'F') && players[1]) triggerUltimate(1);
+    else if ((e.key === 'h' || e.key === 'H') && players[2]) triggerUltimate(2);
+    else if ((e.key === 'j' || e.key === 'J') && players[3]) triggerUltimate(3);
+    else if ((e.key === 'k' || e.key === 'K') && players[4]) triggerUltimate(4);
+    else if ((e.key === 'l' || e.key === 'L') && players[5]) triggerUltimate(5);
+
     if (activeMode === 'local' || activeMode === 'local-coop') {
         if ((e.key === 'b' || e.key === 'B') && players[0] && players[0].isAlive) toggleShop(0);
         else if ((e.key === 'e' || e.key === 'E') && players[1] && players[1].isAlive) toggleShop(1);
@@ -1291,6 +1405,86 @@ canvas.addEventListener('touchmove', e => {
 
 canvas.addEventListener('touchend', () => {
     isDragging = false;
+});
+
+// Bind manual clicks to HUD inventory icons
+document.querySelectorAll('.inv-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        let playerIdx = parseInt(btn.getAttribute('data-player'));
+        let item = btn.getAttribute('data-item');
+        
+        let p = players[playerIdx];
+        if (!p) return;
+        
+        if (item === 'heal') {
+            if (!p.isAlive) {
+                alert("يجب أن تكون السفينة حية لاستخدام عدة الإصلاح!");
+                return;
+            }
+            if (p.hp >= p.maxHp) {
+                alert("الطاقة كاملة بالفعل!");
+                return;
+            }
+            if (p.healsCount > 0) {
+                p.healsCount--;
+                p.hp = p.maxHp;
+                createParticles(p.x + p.width/2, p.y + p.height/2, '#10b981', 20, 2);
+                alert("🔧 تم إصلاح السفينة بالكامل!");
+            } else {
+                alert("لا تملك أي عدة إصلاح! اشتريها من المتجر أولاً.");
+            }
+        }
+        else if (item === 'selfRevive') {
+            if (p.isAlive) {
+                alert("السفينة حية بالفعل ولا تحتاج إنعاش!");
+                return;
+            }
+            if (p.selfReviveKits > 0) {
+                p.selfReviveKits--;
+                p.isAlive = true;
+                p.hp = p.maxHp / 2;
+                p.fuel = Math.max(30, p.fuel); // Give starting fuel
+                createParticles(p.x + p.width/2, p.y + p.height/2, '#ef4444', 35, 2);
+                alert("💉 تم إنعاش السفينة بنجاح بنصف الطاقة!");
+            } else {
+                alert("لا تملك أي حقن إنعاش! اشتريها من المتجر أولاً.");
+            }
+        }
+        else if (item === 'secondLife') {
+            if (p.secondLifes > 0) {
+                p.secondLifes--;
+                p.isAlive = true;
+                p.hp = p.maxHp;
+                p.fuel = p.maxFuel;
+                createParticles(p.x + p.width/2, p.y + p.height/2, '#eab308', 50, 3);
+                alert("🌟 تم تفعيل الفرصة الثانية الفائقة واستعادة كامل الطاقة والوقود!");
+            } else {
+                alert("لا تملك أي فرصة ثانية فائقة! اشتريها من المتجر أولاً.");
+            }
+        }
+        else if (item === 'tempShield') {
+            if (!p.isAlive) {
+                alert("يجب أن تكون السفينة حية لتفعيل درع الحماية!");
+                return;
+            }
+            if (p.tempShieldTimeLeft > 0) {
+                alert("درع الحماية نشط بالفعل حالياً!");
+                return;
+            }
+            if (p.tempShieldsCount > 0) {
+                p.tempShieldsCount--;
+                p.tempShieldTimeLeft = 5;
+                createParticles(p.x + p.width/2, p.y + p.height/2, '#38bdf8', 15, 1.5);
+                alert("🛡️ تم تفعيل درع الحماية المؤقت لمدة 5 ثوانٍ!");
+            } else {
+                alert("لا تملك أي درع حماية مؤقت! اشتره من المتجر أولاً.");
+            }
+        }
+        
+        saveProgress();
+        updateHUD();
+    });
 });
 
 // Shop Logic
@@ -1567,12 +1761,19 @@ function applyPurchase(p, type, item) {
             p.maxFuel += 20;
             p.fuel += 20;
             return true;
+        } else if (item === 'upgradeMaxHp') {
+            p.maxHp += 25;
+            p.hp = Math.min(p.maxHp, p.hp + 25);
+            alert(`تمت ترقية الطاقة القصوى بنجاح! الطاقة القصوى الآن: ${p.maxHp} 🩸`);
+            return true;
+        } else if (item === 'upgradeDamage') {
+            p.bulletDamageModifier = (p.bulletDamageModifier || 1.0) + 0.25;
+            let currentPercentage = Math.round((p.bulletDamageModifier - 1.0) * 100);
+            alert(`تمت ترقية قوة المقذوف بنجاح! زيادة الضرر الحالية: +${currentPercentage}% ⚡`);
+            return true;
         } else if (item === 'heal') {
-            if (p.hp >= p.maxHp) {
-                alert("صحتك كاملة بالفعل!");
-                return false;
-            }
-            p.hp = p.maxHp;
+            p.healsCount = (p.healsCount || 0) + 1;
+            alert("تم شراء عدة الإصلاح بنجاح! 🔧 (تمت إضافتها للمخزن على الجنب)");
             return true;
         } else if (item === 'reflectiveShield') {
             if (p.hasReflectiveShield) {
@@ -1642,26 +1843,242 @@ function applyPurchase(p, type, item) {
         }
     } else if (type === 'consumable') {
         if (item === 'selfRevive') {
-            if (p.boughtSelfReviveThisRun) {
-                alert("لقد اشتريت حقنة الإنعاش بالفعل هذه الجولة!");
-                return false;
-            }
-            p.selfReviveKits = 1;
-            p.boughtSelfReviveThisRun = true;
-            alert("تم شراء حقنة الإنعاش الذاتي بنجاح! 💉 (ستفعل تلقائياً عند الموت)");
+            p.selfReviveKits = (p.selfReviveKits || 0) + 1;
+            alert("تم شراء حقنة الإنعاش الذاتي بنجاح! 💉 (تمت إضافتها للمخزن على الجنب)");
             return true;
         } else if (item === 'secondLife') {
-            if (p.boughtSecondLifeThisRun) {
-                alert("لقد اشتريت الفرصة الثانية بالفعل هذه الجولة!");
-                return false;
-            }
-            p.secondLifes = 1;
-            p.boughtSecondLifeThisRun = true;
-            alert("تم شراء الفرصة الثانية الفائقة بنجاح! 🌟 (ستفعل تلقائياً عند حافة الموت)");
+            p.secondLifes = (p.secondLifes || 0) + 1;
+            alert("تم شراء الفرصة الثانية الفائقة بنجاح! 🌟 (تمت إضافتها للمخزن على الجنب)");
+            return true;
+        } else if (item === 'tempShield') {
+            p.tempShieldsCount = (p.tempShieldsCount || 0) + 1;
+            alert("تم شراء درع الخمس ثوانٍ بنجاح! 🛡️ (تمت إضافته للمخزن على الجنب)");
             return true;
         }
     }
     return false;
+}
+
+// --- Fusion Workshop State & Logic ---
+let isFusionOpen = false;
+let activeFusionTab = 'ships'; // 'ships' or 'weapons'
+let activeFusionPlayerIndex = 0;
+
+const SHIP_NAMES_AR = {
+    'defender': 'السفينة المدافعة 🛡️',
+    'speedster': 'السفينة السريعة ⚡',
+    'tank': 'السفينة المدرعة 🧱',
+    'healer': 'السفينة المعالجة ✚',
+    'ghost': 'السفينة الشبحية 👻',
+    'vampire': 'السفينة الخفاشية 🦇'
+};
+
+const WEAPON_NAMES_AR = {
+    'normal': 'السلاح الأساسي 🔫',
+    'frost': 'سلاح الجليد المبطئ ❄️',
+    'explosive': 'سلاح المتفجرات المدمر 💥',
+    'piercing': 'سلاح الليزر المخترق ⚡',
+    'blackhole': 'سلاح الجاذبية الكونية 🕳️'
+};
+
+function translateItemName(id) {
+    if (!id) return '';
+    if (id.startsWith('hybrid-')) {
+        let parts = id.replace('hybrid-', '').split('-');
+        let n1 = SHIP_NAMES_AR[parts[0]] || WEAPON_NAMES_AR[parts[0]] || parts[0];
+        let n2 = SHIP_NAMES_AR[parts[1]] || WEAPON_NAMES_AR[parts[1]] || parts[1];
+        // Strip emojis to clean label
+        n1 = n1.replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '').trim();
+        n2 = n2.replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '').trim();
+        return `هجين: ${n1} + ${n2} 🧪`;
+    }
+    return SHIP_NAMES_AR[id] || WEAPON_NAMES_AR[id] || id;
+}
+
+function getPlayerFusionInfo() {
+    let p = null;
+    if (players && players[activeFusionPlayerIndex]) {
+        p = players[activeFusionPlayerIndex];
+    } else if (playersData && playersData[activeFusionPlayerIndex]) {
+        p = playersData[activeFusionPlayerIndex];
+    }
+    return {
+        coins: p ? p.coins : 0,
+        gems: p ? p.gems : 0,
+        ownedShips: p ? (p.ownedShips || ['defender']) : ['defender'],
+        ownedWeapons: p ? (p.ownedWeapons || ['normal']) : ['normal']
+    };
+}
+
+function populateFusionSlots() {
+    fuseSlot1.innerHTML = '';
+    fuseSlot2.innerHTML = '';
+    
+    let info = getPlayerFusionInfo();
+    let list = activeFusionTab === 'ships' ? info.ownedShips : info.ownedWeapons;
+    
+    if (list.length < 2) {
+        let opt = document.createElement('option');
+        opt.value = "";
+        opt.innerText = activeFusionTab === 'ships' ? "تحتاج لشراء سفن أكثر لدمجها!" : "تحتاج لشراء أسلحة أكثر لدمجها!";
+        fuseSlot1.appendChild(opt);
+        
+        let opt2 = document.createElement('option');
+        opt2.value = "";
+        opt2.innerText = activeFusionTab === 'ships' ? "شاهد المتجر لشراء سفن" : "شاهد المتجر لشراء أسلحة";
+        fuseSlot2.appendChild(opt2);
+        executeFusionBtn.disabled = true;
+        return;
+    }
+    
+    executeFusionBtn.disabled = false;
+    
+    list.forEach(item => {
+        let opt = document.createElement('option');
+        opt.value = item;
+        opt.innerText = translateItemName(item);
+        fuseSlot1.appendChild(opt);
+        
+        let opt2 = document.createElement('option');
+        opt2.value = item;
+        opt2.innerText = translateItemName(item);
+        fuseSlot2.appendChild(opt2);
+    });
+    
+    if (fuseSlot2.options.length > 1) {
+        fuseSlot2.selectedIndex = 1;
+    }
+}
+
+function toggleFusion() {
+    isFusionOpen = !isFusionOpen;
+    if (isFusionOpen) {
+        fusionModal.classList.remove('hidden');
+        fusionResultShowcase.classList.add('hidden');
+        
+        // Populate players select
+        fusionPlayerSelect.innerHTML = '';
+        const maxPlayers = players.length > 0 ? players.length : Math.max(1, playersData.length);
+        for (let i = 0; i < maxPlayers; i++) {
+            let opt = document.createElement('option');
+            opt.value = i;
+            opt.innerText = `اللاعب ${i + 1}`;
+            fusionPlayerSelect.appendChild(opt);
+        }
+        activeFusionPlayerIndex = parseInt(fusionPlayerSelect.value) || 0;
+        populateFusionSlots();
+    } else {
+        fusionModal.classList.add('hidden');
+    }
+}
+
+// Listeners
+if (menuFusionBtn) menuFusionBtn.addEventListener('click', toggleFusion);
+if (closeFusionBtn) closeFusionBtn.addEventListener('click', toggleFusion);
+
+if (fusionPlayerSelect) {
+    fusionPlayerSelect.addEventListener('change', () => {
+        activeFusionPlayerIndex = parseInt(fusionPlayerSelect.value) || 0;
+        populateFusionSlots();
+    });
+}
+
+if (tabFuseShips) {
+    tabFuseShips.addEventListener('click', () => {
+        activeFusionTab = 'ships';
+        tabFuseShips.classList.add('primary');
+        tabFuseShips.classList.remove('secondary');
+        tabFuseWeapons.classList.add('secondary');
+        tabFuseWeapons.classList.remove('primary');
+        populateFusionSlots();
+    });
+}
+
+if (tabFuseWeapons) {
+    tabFuseWeapons.addEventListener('click', () => {
+        activeFusionTab = 'weapons';
+        tabFuseWeapons.classList.add('primary');
+        tabFuseWeapons.classList.remove('secondary');
+        tabFuseShips.classList.add('secondary');
+        tabFuseShips.classList.remove('primary');
+        populateFusionSlots();
+    });
+}
+
+if (executeFusionBtn) {
+    executeFusionBtn.addEventListener('click', () => {
+        let item1 = fuseSlot1.value;
+        let item2 = fuseSlot2.value;
+        
+        if (!item1 || !item2) {
+            alert("يرجى اختيار المكونات المُراد دمجها أولاً!");
+            return;
+        }
+        
+        if (item1 === item2) {
+            alert("لا يمكن دمج العنصر مع نفسه! اختر مكونين مختلفين.");
+            return;
+        }
+        
+        let info = getPlayerFusionInfo();
+        if (info.gems < 15) {
+            alert("لا تملك جواهر كافية! تكلفة الدمج هي 15 جوهرة 💎.");
+            return;
+        }
+        
+        // Deduct gems & perform fusion
+        let p = null;
+        let isGameInstance = false;
+        if (players && players[activeFusionPlayerIndex]) {
+            p = players[activeFusionPlayerIndex];
+            isGameInstance = true;
+        } else if (playersData && playersData[activeFusionPlayerIndex]) {
+            p = playersData[activeFusionPlayerIndex];
+        }
+        
+        if (!p) return;
+        
+        p.gems -= 15;
+        
+        // Clean prefix if any
+        let clean1 = item1.replace('hybrid-', '');
+        let clean2 = item2.replace('hybrid-', '');
+        // Combine clean parts
+        let combinedParts = Array.from(new Set([...clean1.split('-'), ...clean2.split('-')]));
+        let hybridId = `hybrid-${combinedParts.join('-')}`;
+        
+        let resultText = '';
+        if (activeFusionTab === 'ships') {
+            if (!p.ownedShips.includes(hybridId)) {
+                p.ownedShips.push(hybridId);
+            }
+            p.shipType = hybridId;
+            resultText = translateItemName(hybridId);
+        } else {
+            if (!p.ownedWeapons.includes(hybridId)) {
+                p.ownedWeapons.push(hybridId);
+            }
+            p.weaponType = hybridId;
+            resultText = translateItemName(hybridId);
+        }
+        
+        // Show result display
+        fusionResultText.innerText = resultText;
+        fusionResultShowcase.classList.remove('hidden');
+        
+        // Save progress immediately
+        saveProgress();
+        
+        // Update UI
+        populateFusionSlots();
+        updateHUD();
+        
+        // Play particles if in game instance
+        if (isGameInstance) {
+            createParticles(canvas.width / 2, canvas.height / 2, '#a855f7', 80, 3);
+        }
+        alert(`🎉 تم دمج وصياغة: ${resultText}`);
+    });
 }
 
 function toggleMap() {
@@ -1804,6 +2221,41 @@ function setupConnection() {
     conn.on('data', data => {
         if (data.type === 'start') {
             startGame();
+        } else if (data.type === 'ultimate_triggered') {
+            const p = players[data.playerIdx];
+            if (p && p.isAlive) {
+                p.ultCharge = 0;
+                let baseShip = data.shipType;
+                if (baseShip.includes('defender')) {
+                    for (let angle = 0; angle < Math.PI * 2; angle += (Math.PI * 2 / 24)) {
+                        let vx = Math.cos(angle) * 500;
+                        let vy = Math.sin(angle) * 500;
+                        bullets.push(new Bullet(p.x + p.width/2 - 3, p.y + p.height/2, vy, '#a855f7', p.id, 'explosive'));
+                        bullets[bullets.length - 1].vx = vx;
+                        bullets[bullets.length - 1].damageMultiplier = p.bulletDamageModifier || 1.0;
+                    }
+                    createParticles(p.x + p.width/2, p.y + p.height/2, '#a855f7', 40, 3);
+                } else if (baseShip.includes('speedster')) {
+                    bulletTimeLeft = 5.0;
+                    createParticles(p.x + p.width/2, p.y + p.height/2, '#38bdf8', 40, 3);
+                } else if (baseShip.includes('tank')) {
+                    p.tankUltTimeLeft = 5.0;
+                    p.tempShieldTimeLeft = 5.0;
+                    createParticles(p.x + p.width/2, p.y + p.height/2, '#e11d48', 40, 3);
+                } else if (baseShip.includes('healer') || baseShip.includes('hybrid')) {
+                    players.forEach(other => {
+                        if (other.isAlive) {
+                            other.hp = other.maxHp;
+                            createParticles(other.x + other.width/2, other.y + other.height/2, '#10b981', 30, 2);
+                        } else {
+                            other.isAlive = true;
+                            other.hp = other.maxHp / 2;
+                            other.fuel = Math.max(40, other.fuel);
+                            createParticles(other.x + other.width/2, other.y + other.height/2, '#10b981', 40, 3);
+                        }
+                    });
+                }
+            }
         } else if (data.type === 'sync') {
             syncState(data);
         } else if (data.type === 'rematch') {
@@ -1917,6 +2369,13 @@ function startGame() {
             p.ownedWeapons = playersData[i].ownedWeapons || ['normal'];
             p.ownedShips = playersData[i].ownedShips || ['defender'];
             p.hasReflectiveShield = playersData[i].hasReflectiveShield || false;
+            p.healsCount = playersData[i].healsCount || 0;
+            p.selfReviveKits = playersData[i].selfReviveKits || 0;
+            p.secondLifes = playersData[i].secondLifes || 0;
+            p.tempShieldsCount = playersData[i].tempShieldsCount || 0;
+            p.bulletDamageModifier = playersData[i].bulletDamageModifier || 1.0;
+            p.maxHp = playersData[i].maxHp || 100;
+            p.hp = p.maxHp;
         }
         
         players.push(p);
@@ -1941,6 +2400,37 @@ function updateHUD() {
         if (playerScores[i]) playerScores[i].innerText = p.score;
         if (playerCoins[i]) playerCoins[i].innerText = p.coins;
         if (playerGems[i]) playerGems[i].innerText = p.gems;
+
+        // Update Ultimate Bar
+        let ultBar = document.getElementById(`p${i+1}-ult`);
+        if (ultBar) {
+            let charge = p.ultCharge || 0;
+            ultBar.style.width = `${charge}%`;
+            let barBg = ultBar.parentElement;
+            if (charge >= 100) {
+                barBg.classList.add('charged');
+                ultBar.classList.add('charged');
+            } else {
+                barBg.classList.remove('charged');
+                ultBar.classList.remove('charged');
+            }
+        }
+        
+        // Update inventory counts
+        let hudEl = document.getElementById(`p${i+1}-hud`);
+        if (hudEl) {
+            let btns = hudEl.querySelectorAll('.inv-btn');
+            btns.forEach(btn => {
+                let item = btn.getAttribute('data-item');
+                let countEl = btn.querySelector('.count');
+                if (countEl) {
+                    if (item === 'heal') countEl.innerText = p.healsCount || 0;
+                    else if (item === 'selfRevive') countEl.innerText = p.selfReviveKits || 0;
+                    else if (item === 'secondLife') countEl.innerText = p.secondLifes || 0;
+                    else if (item === 'tempShield') countEl.innerText = p.tempShieldsCount || 0;
+                }
+            });
+        }
     });
     waveNumberEl.innerText = wave;
 }
@@ -1965,7 +2455,12 @@ function checkCollisions() {
                     if (rectIntersect(b.x, b.y, b.width, b.height, p.x, p.y, p.width, p.height)) {
                         b.markedForDeletion = true;
                         if(activeMode !== 'p2p-join') {
-                            p.hp -= 10;
+                            if (p.tempShieldTimeLeft && p.tempShieldTimeLeft > 0) {
+                                createParticles(b.x, b.y, '#38bdf8', 5);
+                                return;
+                            }
+                            let enemyDmg = Math.round(10 * (1.0 + (wave - 1) * 0.12));
+                            p.hp -= enemyDmg;
                             createParticles(p.x + p.width/2, p.y + p.height/2, '#3b82f6', 10);
                             if(p.hp <= 0) p.triggerDeathOrResurrection();
                         }
@@ -1975,19 +2470,20 @@ function checkCollisions() {
         } else {
             enemies.forEach(e => {
                 if (rectIntersect(b.x, b.y, b.width, b.height, e.x, e.y, e.width, e.height) && !b.markedForDeletion) {
-                    if (b.type !== 'piercing' && b.type !== 'blackhole') b.markedForDeletion = true;
+                    if (!b.type.includes('piercing') && !b.type.includes('blackhole')) b.markedForDeletion = true;
                     if(activeMode !== 'p2p-join') {
-                        if(b.type === 'frost') e.slowTimer = 3;
+                        if(b.type.includes('frost')) e.slowTimer = 3;
                         
                         let damage = 10;
-                        if (b.type === 'explosive') damage = 30;
-                        else if (b.type === 'blackhole') damage = 15;
+                        if (b.type.includes('explosive')) damage = 30;
+                        else if (b.type.includes('blackhole')) damage = 15;
                         else if (b.isSniper) damage = 40;
                         
+                        damage = Math.round(damage * (b.damageMultiplier || 1.0));
                         e.hp -= damage;
                         createParticles(b.x, b.y, e.color, 5);
 
-                        if(b.type === 'explosive') {
+                        if(b.type.includes('explosive')) {
                             createParticles(b.x, b.y, '#ef4444', 40, 3);
                             // Area of effect damage
                             enemies.forEach(otherE => {
@@ -2003,7 +2499,8 @@ function checkCollisions() {
                             const owner = players.find(p => p.id === b.ownerId);
                             if(owner) {
                                 owner.score += e.maxHp;
-                                if(owner.shipType === 'vampire' && owner.hp < owner.maxHp) {
+                                owner.ultCharge = Math.min(100, (owner.ultCharge || 0) + 8);
+                                if(owner.shipType.includes('vampire') && owner.hp < owner.maxHp) {
                                     owner.hp = Math.min(owner.maxHp, owner.hp + 5);
                                     createParticles(owner.x + owner.width/2, owner.y + owner.height/2, '#7f1d1d', 10, 2);
                                 }
@@ -2020,27 +2517,70 @@ function checkCollisions() {
             });
             bosses.forEach(boss => {
                 if (rectIntersect(b.x, b.y, b.width, b.height, boss.x, boss.y, boss.width, boss.height) && !b.markedForDeletion) {
-                    if (b.type !== 'piercing' && b.type !== 'blackhole') b.markedForDeletion = true;
+                    if (!b.type.includes('piercing') && !b.type.includes('blackhole')) b.markedForDeletion = true;
                     if(activeMode !== 'p2p-join') {
                         let damage = 10;
-                        if (b.type === 'explosive') damage = 30;
-                        else if (b.type === 'blackhole') damage = 15;
+                        if (b.type.includes('explosive')) damage = 30;
+                        else if (b.type.includes('blackhole')) damage = 15;
+                        damage = Math.round(damage * (b.damageMultiplier || 1.0));
                         boss.hp -= damage;
                         createParticles(b.x, b.y, '#9333ea', 5);
-                        if(b.type === 'explosive') createParticles(b.x, b.y, '#ef4444', 40, 3);
+                        if(b.type.includes('explosive')) createParticles(b.x, b.y, '#ef4444', 40, 3);
                         if(boss.hp <= 0) {
                             boss.markedForDeletion = true;
                             createParticles(boss.x + boss.width/2, boss.y + boss.height/2, '#9333ea', 100, 3);
                             isBossWave = false; // Boss dead, proceed
                             wave++; // Increment wave so we don't spawn boss again
                             const owner = players.find(p => p.id === b.ownerId);
-                            if(owner) { owner.score += boss.maxHp; owner.gems += 5; owner.coins += 50; }
+                            if(owner) { 
+                                owner.score += boss.maxHp; 
+                                owner.gems += 5; 
+                                owner.coins += 50; 
+                                owner.ultCharge = Math.min(100, (owner.ultCharge || 0) + 40);
+                            }
                             
                             // Check world unlock
                             if (currentWorld * 5 < wave) {
                                 unlockedWorld = Math.max(unlockedWorld, currentWorld + 1);
                                 if (activeMode !== 'p2p-join') {
                                     toggleMap(); // Open map to choose next world
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            meteorites.forEach(m => {
+                if (rectIntersect(b.x, b.y, b.width, b.height, m.x, m.y, m.width, m.height) && !b.markedForDeletion && !m.markedForDeletion) {
+                    if (!b.type.includes('piercing') && !b.type.includes('blackhole')) b.markedForDeletion = true;
+                    if (activeMode !== 'p2p-join') {
+                        let damage = 10;
+                        if (b.type.includes('explosive')) damage = 30;
+                        else if (b.type.includes('blackhole')) damage = 15;
+                        
+                        m.hp -= damage;
+                        createParticles(b.x, b.y, '#78716c', 5);
+                        
+                        if (b.type.includes('explosive')) {
+                            createParticles(b.x, b.y, '#ef4444', 30, 2);
+                        }
+                        
+                        if (m.hp <= 0) {
+                            m.markedForDeletion = true;
+                            createParticles(m.x + m.width/2, m.y + m.height/2, m.isGolden ? '#fbbf24' : '#78716c', 20, 2.0);
+                            
+                            const owner = players.find(p => p.id === b.ownerId);
+                            if (owner) {
+                                owner.score += m.isGolden ? 100 : Math.round(m.width);
+                                // Drops
+                                let dropRoll = Math.random();
+                                if (m.isGolden) {
+                                    coins.push(new Coin(m.x, m.y));
+                                    gems.push(new Gem(m.x, m.y));
+                                } else {
+                                    if (dropRoll < 0.08) gems.push(new Gem(m.x, m.y));
+                                    else if (dropRoll < 0.25) coins.push(new Coin(m.x, m.y));
+                                    else if (dropRoll < 0.4) fuelItems.push(new FuelItem(m.x, m.y));
                                 }
                             }
                         }
@@ -2057,18 +2597,27 @@ function checkCollisions() {
             enemies.forEach(e => {
                 if (rectIntersect(p.x, p.y, p.width, p.height, e.x, e.y, e.width, e.height)) {
                     e.markedForDeletion = true;
-                    if (p.shipType === 'ghost' && Math.random() < 0.2) {
+                    if (p.tankUltTimeLeft && p.tankUltTimeLeft > 0) {
+                        createParticles(e.x + e.width/2, e.y + e.height/2, '#e11d48', 25, 2.0);
+                        p.score += e.maxHp;
+                        return;
+                    }
+                    if (p.tempShieldTimeLeft && p.tempShieldTimeLeft > 0) {
+                        createParticles(p.x + p.width/2, p.y + p.height/2, '#38bdf8', 15, 1.5);
+                        return;
+                    }
+                    if (p.shipType.includes('ghost') && Math.random() < 0.2) {
                         createParticles(p.x + p.width/2, p.y + p.height/2, '#ffffff', 10, 1);
                         return; // Evade
                     }
-                    let damage = 20;
+                    let damage = e.type === 5 ? 30 : 20;
+                    damage = Math.round(damage * (1.0 + (wave - 1) * 0.12));
                     if (e.type === 5) {
-                        damage = 30;
                         createParticles(p.x + p.width/2, p.y + p.height/2, '#f97316', 30, 2.5); // larger explosion
                     } else {
                         createParticles(p.x + p.width/2, p.y + p.height/2, '#ef4444', 20, 2);
                     }
-                    p.hp -= p.shipType === 'tank' ? (damage / 2) : damage;
+                    p.hp -= p.shipType.includes('tank') ? Math.round(damage / 2) : damage;
                     if(p.hp <= 0) p.triggerDeathOrResurrection();
                 }
             });
@@ -2082,11 +2631,16 @@ function checkCollisions() {
                         createParticles(m.x + m.width/2, m.y + m.height/2, '#fbbf24', 20, 2.0); // gold explosion
                         return; // No damage to player!
                     }
-                    if (p.shipType === 'ghost' && Math.random() < 0.2) {
+                    if (p.tempShieldTimeLeft && p.tempShieldTimeLeft > 0) {
+                        createParticles(p.x + p.width/2, p.y + p.height/2, '#38bdf8', 15, 1.5);
+                        return;
+                    }
+                    if (p.shipType.includes('ghost') && Math.random() < 0.2) {
                         createParticles(p.x + p.width/2, p.y + p.height/2, '#ffffff', 10, 1);
                         return; // Evade
                     }
-                    p.hp -= p.shipType === 'tank' ? 0 : 50; // Heavy damage unless tank
+                    let metDmg = Math.round((p.shipType.includes('tank') ? 0 : 50) * (1.0 + (wave - 1) * 0.10));
+                    p.hp -= metDmg;
                     createParticles(p.x + p.width/2, p.y + p.height/2, '#78716c', 30, 3);
                     if(p.hp <= 0) p.triggerDeathOrResurrection();
                 }
@@ -2446,4 +3000,85 @@ for(let i=0; i<100; i++) {
         speed: Math.random() * 50 + 20,
         alpha: Math.random() * 0.8 + 0.2
     });
+}
+
+function triggerUltimate(playerIdx) {
+    let p = players[playerIdx];
+    if (!p || !p.isAlive || isGameOver) return;
+    
+    if (p.ultCharge < 100) {
+        alert("القدرة الخارقة لم تشحن بالكامل بعد!");
+        return;
+    }
+    
+    p.ultCharge = 0;
+    
+    let baseShip = p.shipType;
+    if (baseShip.includes('defender')) {
+        for (let angle = 0; angle < Math.PI * 2; angle += (Math.PI * 2 / 24)) {
+            let vx = Math.cos(angle) * 500;
+            let vy = Math.sin(angle) * 500;
+            bullets.push(new Bullet(p.x + p.width/2 - 3, p.y + p.height/2, vy, '#a855f7', p.id, 'explosive'));
+            bullets[bullets.length - 1].vx = vx;
+            bullets[bullets.length - 1].damageMultiplier = p.bulletDamageModifier || 1.0;
+        }
+        createParticles(p.x + p.width/2, p.y + p.height/2, '#a855f7', 40, 3);
+        alert("⚡ تم إطلاق إعصار البلازما الخارق!");
+    }
+    else if (baseShip.includes('speedster')) {
+        bulletTimeLeft = 5.0;
+        createParticles(p.x + p.width/2, p.y + p.height/2, '#38bdf8', 40, 3);
+        alert("⏰ تم إبطاء الوقت بنسبة 80% لجميع الأعداء والمقذوفات!");
+    }
+    else if (baseShip.includes('tank')) {
+        p.tankUltTimeLeft = 5.0;
+        p.tempShieldTimeLeft = 5.0;
+        createParticles(p.x + p.width/2, p.y + p.height/2, '#e11d48', 40, 3);
+        alert("👹 طور المدرعة العملاقة نشط! اصطدم بالأعداء لتدميرهم!");
+    }
+    else if (baseShip.includes('healer') || baseShip.includes('hybrid')) {
+        players.forEach(other => {
+            if (other.isAlive) {
+                other.hp = other.maxHp;
+                createParticles(other.x + other.width/2, other.y + other.height/2, '#10b981', 30, 2);
+            } else {
+                other.isAlive = true;
+                other.hp = other.maxHp / 2;
+                other.fuel = Math.max(40, other.fuel);
+                createParticles(other.x + other.width/2, other.y + other.height/2, '#10b981', 40, 3);
+            }
+        });
+        alert("💉 تم إطلاق موجة الشفاء الكبرى وإحياء جميع الزملاء الموتى!");
+    } else {
+        for (let angle = 0; angle < Math.PI * 2; angle += (Math.PI * 2 / 12)) {
+            let vx = Math.cos(angle) * 450;
+            let vy = Math.sin(angle) * 450;
+            bullets.push(new Bullet(p.x + p.width/2 - 3, p.y + p.height/2, vy, '#06b6d4', p.id, 'normal'));
+            bullets[bullets.length - 1].vx = vx;
+            bullets[bullets.length - 1].damageMultiplier = p.bulletDamageModifier || 1.0;
+        }
+        createParticles(p.x + p.width/2, p.y + p.height/2, '#06b6d4', 30, 2.5);
+        alert("⚡ تم إطلاق انفجار الطاقة الموجي!");
+    }
+    
+    if (activeMode === 'p2p-host' || activeMode === 'p2p-join') {
+        broadcast({
+            type: 'ultimate_triggered',
+            playerIdx: playerIdx,
+            shipType: p.shipType
+        });
+    }
+    
+    saveProgress();
+    updateHUD();
+}
+
+// Bind manual clicks to HUD ultimate bars
+for (let i = 1; i <= 6; i++) {
+    let ultBar = document.getElementById(`p${i}-ult`);
+    if (ultBar) {
+        ultBar.parentElement.addEventListener('click', () => {
+            triggerUltimate(i - 1);
+        });
+    }
 }

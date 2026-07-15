@@ -263,6 +263,7 @@ canvas {
     border: 1px solid rgba(255,255,255,0.1);
     backdrop-filter: blur(5px);
     width: 210px;
+    pointer-events: auto;
 }
 
 .player-hud h3 {
@@ -539,3 +540,117 @@ canvas {
     background: rgba(0,0,0,0.5);
 }
 .world-btn.locked h3 { color: #64748b; }
+
+#fusion-modal {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.fusion-content {
+    background: rgba(15, 23, 42, 0.95);
+    border: 3px solid #a855f7;
+    border-radius: 24px;
+    padding: 30px;
+    width: 90%;
+    max-width: 500px;
+    color: white;
+    box-shadow: 0 0 40px rgba(168, 85, 247, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.fusion-content h2 {
+    margin: 0 0 5px;
+    color: #c084fc;
+    font-size: 28px;
+    text-align: center;
+    font-weight: 900;
+    text-shadow: 0 0 10px rgba(168, 85, 247, 0.6);
+}
+
+.fusion-content .subtitle {
+    margin: 0 0 20px;
+    color: #94a3b8;
+    font-size: 14px;
+    text-align: center;
+}
+
+.fusion-slot select:focus {
+    outline: none;
+    border-color: #a855f7;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.15); opacity: 0.7; }
+}
+
+/* Ultimate Bar & Glowing Title Styles */
+.ult-bg.charged {
+    animation: ult-pulse 1s infinite alternate !important;
+    border-color: #ec4899 !important;
+}
+
+@keyframes ult-pulse {
+    0% { box-shadow: 0 0 4px rgba(168, 85, 247, 0.4); }
+    100% { box-shadow: 0 0 15px rgba(236, 72, 153, 0.9); }
+}
+
+/* Glowing text gradients for achievements */
+.glowing-title {
+    font-size: 0.78rem;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 800;
+    margin-right: 6px;
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: glow-gradient-shift 2.5s linear infinite;
+    text-shadow: 0 0 5px rgba(255,255,255,0.1);
+}
+
+.title-hunter {
+    background-image: linear-gradient(to right, #f43f5e, #f97316, #ef4444);
+}
+.title-slayer {
+    background-image: linear-gradient(to right, #a855f7, #6366f1, #d946ef);
+}
+.title-angel {
+    background-image: linear-gradient(to right, #10b981, #eab308, #34d399);
+}
+.title-billionaire {
+    background-image: linear-gradient(to right, #fbbf24, #f59e0b, #ca8a04);
+}
+.title-guardian {
+    background-image: linear-gradient(to right, #38bdf8, #ec4899, #60a5fa);
+}
+
+@keyframes glow-gradient-shift {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+}
+
+/* Time Slow (Bullet Time) Overlay */
+.time-slow-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    box-shadow: inset 0 0 80px rgba(56, 189, 248, 0.3);
+    border: 3px inset rgba(56, 189, 248, 0.4);
+    animation: slow-pulse 2s infinite alternate;
+    z-index: 1000;
+}
+
+@keyframes slow-pulse {
+    0% { opacity: 0.5; }
+    100% { opacity: 0.9; }
+}
+
