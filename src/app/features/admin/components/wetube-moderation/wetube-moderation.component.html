@@ -41,6 +41,18 @@
       <lucide-icon [img]="ShieldCheck" class="size-4"></lucide-icon>
       القنوات المحظورة
     </button>
+
+    <!-- Founder Debug Tab -->
+    <button 
+      (click)="setTab('local_storage')"
+      [ngClass]="activeSubTab() === 'local_storage' ? 'bg-fuchsia-500/20 text-fuchsia-400 font-black' : 'text-slate-400 hover:text-white font-bold hover:bg-white/5'"
+      class="h-10 px-6 rounded-xl text-xs transition-all flex items-center gap-2 flex-row-reverse">
+      <lucide-icon [img]="Database" class="size-4"></lucide-icon>
+      تخزين الجهاز (للمؤسس)
+      @if (localStoredVideos().length > 0) {
+        <span class="size-5 rounded-full bg-fuchsia-500 text-slate-900 flex items-center justify-center text-[10px]">{{ localStoredVideos().length }}</span>
+      }
+    </button>
   </div>
 
     <!-- Actions Container -->

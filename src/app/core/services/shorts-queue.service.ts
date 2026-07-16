@@ -7,6 +7,7 @@ export interface ShortVideo {
   id: string;
   title: string;
   author: string;
+  authorId?: string;
   thumbnail: string;
   type: 'new' | 'watched' | 'saved';
 }
@@ -77,6 +78,7 @@ export class ShortsQueueService {
       id: v.id,
       title: v.title,
       author: v.author,
+      authorId: v.authorId,
       thumbnail: v.thumbnail || '',
       type: 'new' as const
     }));
@@ -89,6 +91,7 @@ export class ShortsQueueService {
         id: v.videoId,
         title: v.title || 'Watched Video',
         author: v.author || 'Unknown',
+        authorId: v.authorId,
         thumbnail: v.thumbnail || '',
         type: 'watched' as const
       }));
@@ -102,6 +105,7 @@ export class ShortsQueueService {
         id: v.videoId,
         title: v.title || 'Saved Video',
         author: v.author || 'Unknown',
+        authorId: v.authorId,
         thumbnail: v.thumbnail || '',
         type: 'saved' as const
       }));
@@ -115,6 +119,7 @@ export class ShortsQueueService {
         id: v.id,
         title: v.title,
         author: v.author,
+        authorId: v.authorId,
         thumbnail: v.thumbnail || '',
         type: 'new' as const
       }));

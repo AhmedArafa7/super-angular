@@ -11,6 +11,7 @@ import { PipedApiService } from '../../core/services/piped-api.service';
 import { InvidiousProviderService } from '../../core/services/providers/invidious-provider.service';
 import { environment } from '../../../environments/environment';
 import { catchError } from 'rxjs';
+import { EncryptionService } from '../../core/services/encryption.service';
 
 export interface AlgorithmConfig {
   subscriptionWeight: number;
@@ -29,6 +30,7 @@ export class WeTubeService {
   private dataService = inject(YoutubeDataService);
   private cacheService = inject(YoutubeCacheService);
   private idb = inject(IndexedDBService);
+  private encryption = inject(EncryptionService);
 
   // Core State
   readonly videos = signal<Video[]>([]);
@@ -268,12 +270,12 @@ export class WeTubeService {
         await this.loadMySubscriptions();
       }
 
-      // Load subscription RSS feeds
-      await this.loadSubscriptionsFeed(force);
+      // Fetch both RSS feeds and Whitelist videos in parallel
+      const [_, firestoreResult] = await Promise.all([
+        this.loadSubscriptionsFeed(force),
+        this.firebaseService.getPublishedVideos(undefined, 50)
+      ]);
       const subVideos = this.subscriptionsFeed();
-
-      // Fetch published videos from Firestore
-      const firestoreResult = await this.firebaseService.getPublishedVideos(undefined, 50);
       
       const mappedFirestore: FeedVideo[] = firestoreResult.videos.map(v => ({
         id: v.id,
@@ -534,51 +536,52 @@ export class WeTubeService {
 
   async fetchChannelRssVideos(channelId: string): Promise<FeedVideo[]> {
     if (!channelId) return [];
-    const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
-    const proxyBase = environment.apiBaseUrl || 'https://super-axd.pages.dev';
-    const proxyUrl = `${proxyBase}/api/proxy?url=${encodeURIComponent(rssUrl)}`;
 
     try {
-      const response = await fetch(proxyUrl);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const xmlText = await response.text();
-      
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-      
-      const entries = xmlDoc.getElementsByTagName('entry');
-      const videos: FeedVideo[] = [];
+      const channelDetails = await this.pipedApiService.getChannelDetails(channelId);
+      if (!channelDetails || !channelDetails.relatedStreams) return [];
 
-      for (let i = 0; i < Math.min(entries.length, 30); i++) {
-        const entry = entries[i];
-        const videoId = entry.getElementsByTagName('yt:videoId')[0]?.textContent || '';
-        const title = entry.getElementsByTagName('title')[0]?.textContent || '';
-        const author = entry.getElementsByTagName('author')[0]?.getElementsByTagName('name')[0]?.textContent || '';
-        const published = entry.getElementsByTagName('published')[0]?.textContent || '';
+      const videos: FeedVideo[] = [];
+      const streams = channelDetails.relatedStreams;
+
+      for (let i = 0; i < Math.min(streams.length, 30); i++) {
+        const stream = streams[i];
+        if (stream.type !== 'stream') continue;
+
+        const videoId = stream.url.replace('/watch?v=', '');
         
-        if (videoId) {
-          const isShorts = title.toLowerCase().includes('#shorts') || title.toLowerCase().includes('shorts');
-          videos.push({
-            id: videoId,
-            title,
-            url: `https://www.youtube.com/watch?v=${videoId}`,
-            thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
-            author,
-            authorId: channelId,
-            time: published,
-            source: 'youtube' as const,
-            isShorts: isShorts
-          });
-        }
+        videos.push({
+          id: videoId,
+          title: stream.title,
+          url: `https://www.youtube.com/watch?v=${videoId}`,
+          thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+          author: stream.uploaderName || '',
+          authorId: channelId,
+          time: stream.uploadedDate || 'حديثاً',
+          source: 'youtube' as const,
+          isShorts: stream.isShort === true || (stream.duration > 0 && stream.duration <= 65) || stream.title.toLowerCase().includes('#shorts'),
+          duration: stream.duration ? this.formatDuration(stream.duration) : undefined,
+          views: stream.views ? `${stream.views} مشاهدة` : undefined
+        });
       }
 
       return videos;
     } catch (err) {
-      console.error(`[WeTubeService] Failed to fetch RSS feed for channel ${channelId}`, err);
+      console.error(`[WeTubeService] Failed to fetch channel details for ${channelId}`, err);
       return [];
     }
+  }
+
+  private formatDuration(seconds: number): string {
+    if (!seconds) return '';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    if (m > 60) {
+      const h = Math.floor(m / 60);
+      const rm = m % 60;
+      return `${h}:${rm.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+    return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
   async loadSubscriptionsFeed(force = false): Promise<void> {
@@ -609,7 +612,7 @@ export class WeTubeService {
       const channelIds = sortedSubs.map(s => s.channelId).slice(0, 15);
       
       const results: FeedVideo[][] = [];
-      const chunkSize = 3; // Fetch 3 channels at a time
+      const chunkSize = 5; // Fetch 5 channels at a time
       
       for (let i = 0; i < channelIds.length; i += chunkSize) {
         const chunk = channelIds.slice(i, i + chunkSize);
@@ -618,7 +621,7 @@ export class WeTubeService {
         results.push(...chunkResults);
         
         if (i + chunkSize < channelIds.length) {
-          await new Promise(resolve => setTimeout(resolve, 600));
+          await new Promise(resolve => setTimeout(resolve, 300));
         }
       }
       
@@ -668,28 +671,58 @@ export class WeTubeService {
 
   // ── Initialization ─────────────────────────────────────────
 
-  initialize(): void {
+  private encryptAndSaveReported(reportedList: string[]) {
+    this.encryption.encrypt(reportedList).then(encrypted => {
+      localStorage.setItem('wetube_reported_videos_enc', encrypted);
+      localStorage.removeItem('wetube_reported_videos'); // clean legacy
+    }).catch(() => {});
+  }
+
+  async initialize(): Promise<void> {
     // Load algorithm configuration from local storage
     try {
-      const savedAlgo = localStorage.getItem('wetube_algo_config');
-      if (savedAlgo) {
-        const parsed = JSON.parse(savedAlgo);
+      const savedAlgoEnc = localStorage.getItem('wetube_algo_config_enc');
+      if (savedAlgoEnc) {
+        const parsed = await this.encryption.decrypt(savedAlgoEnc);
         if (parsed && typeof parsed.subscriptionWeight === 'number') {
           this.algoConfig.set({
             ...this.algoConfig(),
             ...parsed
           });
         }
+      } else {
+        // Fallback and migrate
+        const savedAlgo = localStorage.getItem('wetube_algo_config');
+        if (savedAlgo) {
+          const parsed = JSON.parse(savedAlgo);
+          if (parsed && typeof parsed.subscriptionWeight === 'number') {
+            this.algoConfig.set({
+              ...this.algoConfig(),
+              ...parsed
+            });
+            this.updateAlgoConfig(parsed);
+          }
+        }
       }
     } catch (e) {}
 
     // Load reported video IDs from local storage (to hide them persistently)
     try {
-      const saved = localStorage.getItem('wetube_reported_videos');
-      if (saved) {
-        const parsed = JSON.parse(saved);
+      const savedEnc = localStorage.getItem('wetube_reported_videos_enc');
+      if (savedEnc) {
+        const parsed = await this.encryption.decrypt(savedEnc);
         if (Array.isArray(parsed)) {
           this.reportedVideoIds.set(new Set(parsed));
+        }
+      } else {
+        // Fallback and migrate
+        const saved = localStorage.getItem('wetube_reported_videos');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            this.reportedVideoIds.set(new Set(parsed));
+            this.encryptAndSaveReported(parsed);
+          }
         }
       }
     } catch (e) {}
@@ -707,17 +740,16 @@ export class WeTubeService {
     this.reportedVideoIds.update(current => {
       const next = new Set(current);
       next.add(videoId);
-      try {
-        localStorage.setItem('wetube_reported_videos', JSON.stringify(Array.from(next)));
-      } catch (e) {}
+      this.encryptAndSaveReported(Array.from(next));
       return next;
     });
   }
 
   updateAlgoConfig(config: AlgorithmConfig): void {
     this.algoConfig.set(config);
-    try {
-      localStorage.setItem('wetube_algo_config', JSON.stringify(config));
-    } catch (e) {}
+    this.encryption.encrypt(config).then(encrypted => {
+      localStorage.setItem('wetube_algo_config_enc', encrypted);
+      localStorage.removeItem('wetube_algo_config'); // clean legacy
+    }).catch(() => {});
   }
 }

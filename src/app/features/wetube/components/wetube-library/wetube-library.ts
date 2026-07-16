@@ -32,7 +32,7 @@ import { IndexedDBService } from '../../../../core/services/indexed-db.service';
                 @for (item of history().slice(0, 10); track item.videoId) {
                   <div class="w-64 shrink-0 snap-start group cursor-pointer" (click)="playVideo(item.videoId)">
                     <div class="aspect-video bg-gray-800 rounded-xl overflow-hidden relative mb-2">
-                      <img [src]="item.thumbnail" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                      <img crossorigin="anonymous" [src]="item.thumbnail" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                       <div class="absolute bottom-0 left-0 w-full h-1 bg-gray-600">
                         <div class="h-full bg-red-600" style="width: 100%"></div> <!-- Fake progress for now -->
                       </div>
@@ -62,7 +62,7 @@ import { IndexedDBService } from '../../../../core/services/indexed-db.service';
                 @for (item of savedVideos(); track item.videoId) {
                   <div class="w-64 shrink-0 snap-start group cursor-pointer" (click)="playVideo(item.videoId)">
                     <div class="aspect-video bg-gray-800 rounded-xl overflow-hidden relative mb-2">
-                      <img [src]="item.thumbnail" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                      <img crossorigin="anonymous" [src]="item.thumbnail" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                     </div>
                     <h3 class="text-sm font-medium line-clamp-2">{{ item.title }}</h3>
                     <p class="text-xs text-gray-400 mt-1">{{ item.author }}</p>

@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 import { FirebaseService } from '../../../../core/services/firebase.service';
 import { YoutubeDiscoveryService } from '../../../../core/services/youtube-discovery.service';
-import { LucideAngularModule, ShieldCheck, Trash2, CheckCircle2, Clock, PlayCircle, Eye, AlertCircle, RefreshCw, RefreshCcw, Search } from 'lucide-angular';
+import { IndexedDBService } from '../../../../core/services/indexed-db.service';
+import { LucideAngularModule, ShieldCheck, Trash2, CheckCircle2, Clock, PlayCircle, Eye, AlertCircle, RefreshCw, RefreshCcw, Search, Database } from 'lucide-angular';
 import { RouterModule } from '@angular/router';
 import { QueryDocumentSnapshot } from 'firebase/firestore';
 
@@ -16,14 +17,15 @@ import { QueryDocumentSnapshot } from 'firebase/firestore';
 export class WeTubeModerationComponent implements OnInit {
   private firebase = inject(FirebaseService);
 
-  // Tabs: 'pending' | 'approved' | 'rejected' | 'channels'
-  activeSubTab = signal<'pending' | 'approved' | 'rejected' | 'channels'>('pending');
+  // Tabs: 'pending' | 'approved' | 'rejected' | 'channels' | 'local_storage'
+  activeSubTab = signal<'pending' | 'approved' | 'rejected' | 'channels' | 'local_storage'>('pending');
 
   // Video Signals
   pendingVideos = signal<any[]>([]);
   approvedVideos = signal<any[]>([]);
   rejectedVideos = signal<any[]>([]);
   blacklistedChannels = signal<any[]>([]);
+  localStoredVideos = signal<any[]>([]);
 
   // Pagination Trackers
   lastPendingDoc = signal<QueryDocumentSnapshot | null>(null);
@@ -49,19 +51,24 @@ export class WeTubeModerationComponent implements OnInit {
   RefreshCw = RefreshCw;
   RefreshCcw = RefreshCcw;
   Search = Search;
+  Database = Database;
 
   isSyncingAvatars = signal<boolean>(false);
 
   private discoveryService = inject(YoutubeDiscoveryService);
+  private idbService = inject(IndexedDBService);
 
   ngOnInit() {
     this.loadData();
   }
 
-  setTab(tab: 'pending' | 'approved' | 'rejected' | 'channels') {
+  setTab(tab: 'pending' | 'approved' | 'rejected' | 'channels' | 'local_storage') {
     this.activeSubTab.set(tab);
     if (this.needsLoading(tab)) {
       this.loadData();
+    }
+    if (tab === 'local_storage') {
+      this.loadLocalStorage();
     }
   }
 
@@ -155,6 +162,19 @@ export class WeTubeModerationComponent implements OnInit {
       }
     } catch (err) {
       console.error('Error loading moderation data', err);
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  async loadLocalStorage() {
+    this.isLoading.set(true);
+    try {
+      const data = await this.idbService.getAll('saved_videos');
+      // Sort by cachedAt descending
+      this.localStoredVideos.set(data.sort((a, b) => (b.cachedAt || 0) - (a.cachedAt || 0)));
+    } catch (e) {
+      console.error(e);
     } finally {
       this.isLoading.set(false);
     }

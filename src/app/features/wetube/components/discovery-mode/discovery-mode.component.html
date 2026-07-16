@@ -48,7 +48,7 @@
               </iframe>
             } @else {
               <div class="w-full h-full relative" (click)="playVideo(video.id)">
-                <img [src]="video.thumbnail" class="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform duration-300">
+                <img crossorigin="anonymous" [src]="video.thumbnail" class="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform duration-300">
                 
                 <!-- Hover Play Button overlay -->
                 <div class="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center transition-opacity duration-300">

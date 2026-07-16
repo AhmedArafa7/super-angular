@@ -67,6 +67,19 @@ export class VideoStateService {
     this.rawStreamUrl.set(null);
     this.relatedVideos.set([]);
 
+    // Save to local watch_history in IndexedDB (transparently encrypted)
+    try {
+      await this.dbService.put('watch_history', {
+        videoId: video.id,
+        title: video.title,
+        thumbnail: video.thumbnail,
+        author: video.author,
+        watchedAt: Date.now()
+      });
+    } catch (e) {
+      console.warn('Failed to save watch history locally:', e);
+    }
+
     if (forceIframe) {
       this.switchToIframe();
       return;

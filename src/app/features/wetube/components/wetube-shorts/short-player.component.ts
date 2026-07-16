@@ -70,7 +70,7 @@ import { WeTubeService } from '../../wetube.service';
           <!-- Info -->
           <div class="flex-1 pointer-events-auto">
             <div class="flex items-center gap-2 mb-3">
-              <img [src]="video().thumbnail || 'assets/placeholder.jpg'" class="w-10 h-10 rounded-full border border-white/20 object-cover">
+              <img crossorigin="anonymous" [src]="video().thumbnail || 'assets/placeholder.jpg'" class="w-10 h-10 rounded-full border border-white/20 object-cover">
               <span class="text-white font-bold text-sm drop-shadow-md">{{ video().author }}</span>
               <button 
                 class="px-3 py-1 rounded-full text-xs font-bold ml-2 transition-all"
@@ -257,8 +257,9 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
   
   private async checkLocalInteractions() {
     // Check Subscription
-    const subs = await this.idb.getAll('subscriptions');
-    if (subs.some(s => s.channelId === this.video().author)) {
+    const subs = await this.idb.getAll('subscriptions') || [];
+    const targetId = this.video().authorId || this.video().author;
+    if (subs.some(s => s.channelId === targetId)) {
       this.isSubscribed.set(true);
     }
 
@@ -282,6 +283,7 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
           title: this.video().title,
           thumbnail: this.video().thumbnail,
           author: this.video().author,
+          authorId: this.video().authorId,
           savedAt: Date.now()
         });
         this.displayToast('تم تسجيل الإعجاب (حفظ محلياً)');
@@ -301,11 +303,13 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
     const newState = !currentState;
     this.isSubscribed.set(newState);
 
+    const targetId = this.video().authorId || this.video().author;
+
     try {
       if (newState) {
         const newSub = { 
-          id: this.video().author, 
-          channelId: this.video().author, 
+          id: targetId, 
+          channelId: targetId, 
           channelTitle: this.video().author, 
           avatarUrl: this.video().thumbnail || '', 
           subscribedAt: Date.now() 
@@ -313,7 +317,7 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
         await this.idb.put('subscriptions', newSub);
         this.displayToast('تم الاشتراك بالقناة (حفظ محلياً)');
       } else {
-        await this.idb.delete('subscriptions', this.video().author);
+        await this.idb.delete('subscriptions', targetId);
         this.displayToast('تم إلغاء الاشتراك');
       }
       // Force refresh wetube service subscriptions array if needed

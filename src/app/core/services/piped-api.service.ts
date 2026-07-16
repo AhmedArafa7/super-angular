@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, timeout } from 'rxjs';
 
 export interface PipedVideoStream {
   url: string;
@@ -41,7 +41,7 @@ export class PipedApiService {
     for (const instance of this.instances) {
       try {
         const url = `${instance}/streams/${videoId}`;
-        const response = await firstValueFrom(this.http.get<PipedVideoDetails>(url));
+        const response = await firstValueFrom(this.http.get<PipedVideoDetails>(url).pipe(timeout(4000)));
         return response;
       } catch (error) {
         console.warn(`[PipedApiService] Instance ${instance} failed for ${videoId}`, error);
@@ -64,7 +64,7 @@ export class PipedApiService {
         if (nextpage) {
           url += `?nextpage=${nextpage}`;
         }
-        const response = await firstValueFrom(this.http.get<any>(url));
+        const response = await firstValueFrom(this.http.get<any>(url).pipe(timeout(4000)));
         return response;
       } catch (error) {
         console.warn(`[PipedApiService] Instance ${instance} failed for channel ${channelId}`, error);

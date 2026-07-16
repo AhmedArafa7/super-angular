@@ -7,7 +7,9 @@ import { YoutubeDiscoveryService } from '../../../../core/services/youtube-disco
 import { WETUBE_CATEGORIES } from '../../wetube.model';
 import { SubscriptionBarComponent } from '../shared/subscription-bar/subscription-bar';
 import { NexusNativeAdsComponent } from '../nexus-native-ads/nexus-native-ads';
-import { LucideAngularModule, Sparkles, TrendingUp, Search, ArrowLeft, Youtube, RefreshCcw, LogIn, Video, Sliders, Check } from 'lucide-angular';
+import { LucideAngularModule, Sparkles, TrendingUp, Search, ArrowLeft, Youtube, RefreshCcw, LogIn, Video, Sliders, Check, ShieldCheck } from 'lucide-angular';
+import { IndexedDBService } from '../../../../core/services/indexed-db.service';
+import { EncryptionService } from '../../../../core/services/encryption.service';
 
 @Component({
   selector: 'app-wetube-home',
@@ -62,6 +64,70 @@ export class WeTubeHomeComponent implements OnInit {
   Check = Check;
 
   showAlgoModal = signal(false);
+
+  ShieldCheck = ShieldCheck;
+  showDebugModal = signal(false);
+  debugTab = signal<'encrypted' | 'history' | 'saved' | 'subs' | 'algo'>('encrypted');
+  
+  rawEncryptedData = signal<{storeName: string, items: any[]}[]>([]);
+  decryptedHistory = signal<any[]>([]);
+  decryptedSaved = signal<any[]>([]);
+  decryptedSubs = signal<any[]>([]);
+  rawAlgoDataEnc = signal<string>('');
+  rawAlgoDataDec = signal<any>(null);
+
+  indexedDb = inject(IndexedDBService);
+  encryptionService = inject(EncryptionService);
+
+  isFounder = computed(() => {
+    const user = this.firebaseService.currentUser();
+    const role = this.firebaseService.userData()?.role || 'user';
+    const allowedRoles = ['admin', 'super_admin', 'founder', 'cofounder', 'management'];
+    return allowedRoles.includes(role) || 
+           (user && (user.email === 'admin@sineuro.com' || user.email === 'mo1999382@gmail.com'));
+  });
+
+  toggleDebugModal() {
+    const newState = !this.showDebugModal();
+    this.showDebugModal.set(newState);
+    if (newState) {
+      this.loadDebugData();
+    }
+  }
+
+  async loadDebugData() {
+    try {
+      const sensitiveStores = ['watch_history', 'saved_videos', 'subscriptions'];
+      const rawDataList: {storeName: string, items: any[]}[] = [];
+      for (const store of sensitiveStores) {
+        const items = await this.indexedDb.getRawAll(store);
+        rawDataList.push({ storeName: store, items });
+      }
+      this.rawEncryptedData.set(rawDataList);
+
+      const history = await this.indexedDb.getAll('watch_history');
+      this.decryptedHistory.set(history);
+
+      const saved = await this.indexedDb.getAll('saved_videos');
+      this.decryptedSaved.set(saved);
+
+      const subs = await this.indexedDb.getAll('subscriptions');
+      this.decryptedSubs.set(subs);
+
+      const savedAlgoEnc = localStorage.getItem('wetube_algo_config_enc') || '';
+      this.rawAlgoDataEnc.set(savedAlgoEnc);
+      if (savedAlgoEnc) {
+        const parsed = await this.encryptionService.decrypt(savedAlgoEnc);
+        this.rawAlgoDataDec.set(parsed);
+      }
+    } catch (e) {
+      console.error('Failed to load founder debug data', e);
+    }
+  }
+
+  setDebugTab(tab: 'encrypted' | 'history' | 'saved' | 'subs' | 'algo') {
+    this.debugTab.set(tab);
+  }
 
   toggleAlgoModal() {
     this.showAlgoModal.update(v => !v);
@@ -222,7 +288,7 @@ export class WeTubeHomeComponent implements OnInit {
 
   loadMore() {
     const currentCount = this.visibleCount();
-    const totalItems = this.wetube.allHomeContent().length;
+    const totalItems = this.standardVideosList().length;
     
     if (currentCount < totalItems) {
       // Simulate slight network delay for smooth UI
@@ -231,7 +297,7 @@ export class WeTubeHomeComponent implements OnInit {
       }, 100);
     } else if (this.wetube.hasMoreFeed() && !this.wetube.isFeedLoading()) {
       this.wetube.loadMoreTrending().then(() => {
-        this.visibleCount.set(this.wetube.allHomeContent().length);
+        this.visibleCount.set(this.standardVideosList().length);
       });
     }
   }

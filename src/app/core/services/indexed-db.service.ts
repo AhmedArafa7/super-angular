@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { EncryptionService } from './encryption.service';
 
 @Injectable({
   providedIn: 'root'
@@ -7,9 +8,15 @@ export class IndexedDBService {
   private readonly DB_NAME = 'WeTubeDB';
   private readonly DB_VERSION = 5; // Incremented for new stores
   private db: IDBDatabase | null = null;
+  private encryption = inject(EncryptionService);
 
   constructor() {
     this.initDB();
+  }
+
+  private getKeyPathForStore(storeName: string): string {
+    if (storeName === 'subscriptions') return 'channelId';
+    return 'videoId';
   }
 
   private initDB(): Promise<void> {
@@ -73,11 +80,25 @@ export class IndexedDBService {
 
   async put(storeName: string, item: any): Promise<void> {
     await this.initDB();
+
+    let dataToStore = item;
+    const sensitiveStores = ['watch_history', 'saved_videos', 'subscriptions'];
+    if (sensitiveStores.includes(storeName)) {
+      const keyPath = this.getKeyPathForStore(storeName);
+      const idValue = item[keyPath];
+      
+      const encrypted = await this.encryption.encrypt(item);
+      dataToStore = {
+        [keyPath]: idValue,
+        _data: encrypted
+      };
+    }
+
     return new Promise((resolve, reject) => {
       if (!this.db) return reject('DB not initialized');
       const transaction = this.db.transaction(storeName, 'readwrite');
       const store = transaction.objectStore(storeName);
-      const request = store.put(item);
+      const request = store.put(dataToStore);
 
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
@@ -86,7 +107,7 @@ export class IndexedDBService {
 
   async get(storeName: string, key: string): Promise<any> {
     await this.initDB();
-    return new Promise((resolve, reject) => {
+    const rawResult = await new Promise<any>((resolve, reject) => {
       if (!this.db) return reject('DB not initialized');
       const transaction = this.db.transaction(storeName, 'readonly');
       const store = transaction.objectStore(storeName);
@@ -95,17 +116,48 @@ export class IndexedDBService {
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
+
+    const sensitiveStores = ['watch_history', 'saved_videos', 'subscriptions'];
+    if (rawResult && sensitiveStores.includes(storeName) && rawResult._data) {
+      return this.encryption.decrypt(rawResult._data);
+    }
+    return rawResult;
   }
 
   async getAll(storeName: string): Promise<any[]> {
     await this.initDB();
-    return new Promise((resolve, reject) => {
+    const rawResults = await new Promise<any[]>((resolve, reject) => {
       if (!this.db) return reject('DB not initialized');
       const transaction = this.db.transaction(storeName, 'readonly');
       const store = transaction.objectStore(storeName);
       const request = store.getAll();
 
-      request.onsuccess = () => resolve(request.result);
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+
+    const sensitiveStores = ['watch_history', 'saved_videos', 'subscriptions'];
+    if (sensitiveStores.includes(storeName)) {
+      const decryptedPromises = rawResults.map(item => {
+        if (item && item._data) {
+          return this.encryption.decrypt(item._data);
+        }
+        return Promise.resolve(item);
+      });
+      return Promise.all(decryptedPromises);
+    }
+    return rawResults;
+  }
+
+  async getRawAll(storeName: string): Promise<any[]> {
+    await this.initDB();
+    return new Promise<any[]>((resolve, reject) => {
+      if (!this.db) return reject('DB not initialized');
+      const transaction = this.db.transaction(storeName, 'readonly');
+      const store = transaction.objectStore(storeName);
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result || []);
       request.onerror = () => reject(request.error);
     });
   }
@@ -145,5 +197,68 @@ export class IndexedDBService {
       return null;
     }
     return data;
+  }
+
+  // --- Auto Caching & Limits ---
+  async autoCacheVideo(video: any): Promise<void> {
+    const existing = await this.get('saved_videos', video.id || video.videoId);
+    if (existing) {
+      // Update views if it's already there
+      existing.viewCount = (existing.viewCount || 0) + 1;
+      existing.lastViewedAt = Date.now();
+      await this.put('saved_videos', existing);
+    } else {
+      // New cache entry
+      const cacheEntry = {
+        videoId: video.id || video.videoId,
+        title: video.title,
+        thumbnail: video.thumbnail,
+        author: video.author,
+        authorId: video.authorId,
+        category: video.category || '',
+        viewCount: 1,
+        adminPoints: 0,
+        cachedAt: Date.now(),
+        lastViewedAt: Date.now()
+      };
+      await this.put('saved_videos', cacheEntry);
+    }
+    
+    // Manage limits asynchronously without blocking
+    this.manageSavedVideosLimit().catch(e => console.warn('[IndexedDBService] Limit management failed', e));
+  }
+
+  async manageSavedVideosLimit(): Promise<void> {
+    const allVideos = await this.getAll('saved_videos');
+    const MAX_VIDEOS = 500;
+    const EVICT_COUNT = 50;
+
+    if (allVideos.length > MAX_VIDEOS) {
+      // Sort by importance (ascending - lowest importance first)
+      // Importance = views + adminPoints + category bonus
+      const sorted = allVideos.sort((a, b) => {
+        const getImportance = (v: any) => {
+          let score = (v.viewCount || 0) + (v.adminPoints || 0);
+          if (v.savedAt) score += 10000; // User explicitly saved/liked it
+          // Simple category bonus
+          if (v.category === 'برمجة' || v.category === 'تكنولوجيا') score += 10;
+          return score;
+        };
+        
+        // If importance is same, sort by oldest view
+        const impA = getImportance(a);
+        const impB = getImportance(b);
+        if (impA === impB) {
+          return (a.lastViewedAt || 0) - (b.lastViewedAt || 0);
+        }
+        return impA - impB;
+      });
+
+      // Evict the lowest 50
+      const toEvict = sorted.slice(0, EVICT_COUNT);
+      for (const v of toEvict) {
+        await this.delete('saved_videos', v.videoId);
+      }
+    }
   }
 }
