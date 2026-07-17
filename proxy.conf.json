@@ -1,0 +1,15 @@
+{
+  "/piped-proxy": {
+    "target": "https://pipedapi.kavin.rocks",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/piped-proxy": ""
+    },
+    "logLevel": "warn",
+    "headers": {
+      "Origin": "https://pipedapi.kavin.rocks",
+      "Referer": "https://pipedapi.kavin.rocks/"
+    }
+  }
+}

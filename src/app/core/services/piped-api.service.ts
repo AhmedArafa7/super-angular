@@ -33,7 +33,35 @@ export interface PipedVideoDetails {
 })
 export class PipedApiService {
   private http = inject(HttpClient);
+  private proxyBase = environment.apiBaseUrl || 'https://super-axd.pages.dev';
   private instances = environment.pipedInstances || ['https://pipedapi.kavin.rocks'];
+
+  /**
+   * Always uses the proxy to avoid CORS issues entirely.
+   * Reads response as text and parses manually to handle content-type mismatches.
+   */
+  private async smartFetch<T>(targetUrl: string, timeoutMs = 8000): Promise<T> {
+    const proxyUrl = `${this.proxyBase}/api/proxy?url=${encodeURIComponent(targetUrl)}`;
+    const text = await firstValueFrom(
+      this.http.get(proxyUrl, { responseType: 'text' }).pipe(timeout(timeoutMs))
+    );
+
+    if (!text || text.trim().length === 0) {
+      throw new Error('Proxy returned empty response');
+    }
+    if (text.trim().startsWith('<')) {
+      throw new Error('Proxy returned HTML instead of JSON');
+    }
+
+    const parsed = JSON.parse(text) as any;
+
+    // Detect dead/shutdown instance responses
+    if (parsed?.error || parsed?.message?.toLowerCase().includes('shutdown')) {
+      throw new Error(`Dead instance: ${parsed.error || parsed.message}`);
+    }
+
+    return parsed as T;
+  }
 
   async getVideoDetails(videoId: string): Promise<PipedVideoDetails> {
     let lastError: any;
@@ -41,16 +69,13 @@ export class PipedApiService {
     for (const instance of this.instances) {
       try {
         const url = `${instance}/streams/${videoId}`;
-        const response = await firstValueFrom(this.http.get<PipedVideoDetails>(url).pipe(timeout(4000)));
-        return response;
+        return await this.smartFetch<PipedVideoDetails>(url);
       } catch (error) {
         console.warn(`[PipedApiService] Instance ${instance} failed for ${videoId}`, error);
         lastError = error;
-        // Continue to the next instance
       }
     }
 
-    // If all instances fail, throw to trigger fallback in VideoStateService
     console.error(`[PipedApiService] ALL instances failed for video ${videoId}. Triggering Kill Switch.`);
     throw new Error('All Piped instances failed to fetch stream');
   }
@@ -61,11 +86,8 @@ export class PipedApiService {
     for (const instance of this.instances) {
       try {
         let url = `${instance}/channel/${channelId}`;
-        if (nextpage) {
-          url += `?nextpage=${nextpage}`;
-        }
-        const response = await firstValueFrom(this.http.get<any>(url).pipe(timeout(4000)));
-        return response;
+        if (nextpage) url += `?nextpage=${nextpage}`;
+        return await this.smartFetch<any>(url);
       } catch (error) {
         console.warn(`[PipedApiService] Instance ${instance} failed for channel ${channelId}`, error);
         lastError = error;
@@ -81,8 +103,7 @@ export class PipedApiService {
     for (const instance of this.instances) {
       try {
         const url = `${instance}/trending?region=${region}`;
-        const response = await firstValueFrom(this.http.get<any[]>(url));
-        return response;
+        return await this.smartFetch<any[]>(url);
       } catch (error) {
         console.warn(`[PipedApiService] Instance ${instance} failed for trending`, error);
         lastError = error;

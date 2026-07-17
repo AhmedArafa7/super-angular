@@ -1,9 +1,10 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { LucideAngularModule, Play, Clock, History, Bookmark, User, ChevronLeft } from 'lucide-angular';
+import { LucideAngularModule, Play, Clock, History, Bookmark, User, ChevronLeft, Download, Trash2, WifiOff } from 'lucide-angular';
 import { WeTubeService } from '../../wetube.service';
 import { IndexedDBService } from '../../../../core/services/indexed-db.service';
+import { VideoDownloadService } from '../../../../core/services/video-download.service';
 
 @Component({
   selector: 'app-wetube-library',
@@ -124,9 +125,17 @@ export class WeTubeLibraryComponent implements OnInit {
   Bookmark = Bookmark;
   User = User;
   ChevronLeft = ChevronLeft;
+  Download = Download;
+  Trash2 = Trash2;
+  WifiOff = WifiOff;
 
   history = signal<any[]>([]);
   savedVideos = signal<any[]>([]);
+  downloads = signal<any[]>([]);
+
+  totalDownloadSize = () => this.downloads().reduce((sum, d) => sum + (d.sizeBytes || 0), 0);
+
+  private downloadSvc = inject(VideoDownloadService);
 
   ngOnInit() {
     this.loadLibraryData();
@@ -142,6 +151,10 @@ export class WeTubeLibraryComponent implements OnInit {
       // Load Saved Videos
       const savedData = await this.idb.getAll('saved_videos');
       this.savedVideos.set(savedData || []);
+
+      // Load Offline Downloads
+      const dlData = await this.downloadSvc.getAllCachedMeta();
+      this.downloads.set(dlData.sort((a, b) => (b.cachedAt || 0) - (a.cachedAt || 0)));
       
     } catch (e) {
       console.error('Failed to load library data from IndexedDB', e);
@@ -150,5 +163,18 @@ export class WeTubeLibraryComponent implements OnInit {
 
   playVideo(id: string) {
     this.router.navigate(['/stream/watch', id]);
+  }
+
+  async deleteDownload(videoId: string) {
+    await this.downloadSvc.deleteCached(videoId);
+    this.downloads.update(all => all.filter(d => d.videoId !== videoId));
+  }
+
+  formatSize(bytes: number): string {
+    if (!bytes) return '0 B';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
   }
 }

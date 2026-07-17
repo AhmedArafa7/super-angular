@@ -142,6 +142,27 @@
       </div>
 
       <div class="flex items-center gap-4">
+        <!-- Download / Offline Cache Button -->
+        @if (videoId) {
+          <button
+            (click)="$event.stopPropagation(); triggerDownload()"
+            class="text-white transition-colors flex items-center gap-1.5"
+            [class.text-emerald-400]="dlStatus() && dlStatus()!.status === 'cached'"
+            [class.text-amber-400]="dlStatus() && dlStatus()!.status === 'downloading'"
+            [title]="dlStatus() && dlStatus()!.status === 'cached' ? 'محفوظ أوفلاين ✓' : dlStatus() && dlStatus()!.status === 'downloading' ? 'جاري الحفظ...' : 'حفظ أوفلاين (144p)'"
+          >
+            @if (dlStatus() && dlStatus()!.status === 'cached') {
+              <svg lucideIcon="check-circle" class="w-5 h-5"></svg>
+            } @else if (dlStatus() && dlStatus()!.status === 'downloading') {
+              <svg lucideIcon="loader-circle" class="w-5 h-5 animate-spin"></svg>
+              <span class="text-[10px] font-bold">{{ dlStatus()!.progress }}%</span>
+            } @else if (dlStatus() && dlStatus()!.status === 'error') {
+              <svg lucideIcon="alert-circle" class="w-5 h-5 text-red-400"></svg>
+            } @else {
+              <svg lucideIcon="download" class="w-5 h-5"></svg>
+            }
+          </button>
+        }
         <button (click)="toggleFullScreen()" class="text-white hover:text-red-500 transition-colors">
           <svg lucideIcon="maximize" class="w-5 h-5"></svg>
         </button>

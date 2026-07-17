@@ -85,7 +85,8 @@
               "buildTarget": "Super-Angular:build:production"
             },
             "development": {
-              "buildTarget": "Super-Angular:build:development"
+              "buildTarget": "Super-Angular:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

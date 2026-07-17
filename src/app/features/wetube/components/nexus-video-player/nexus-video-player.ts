@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { SafePipe } from '../../../../shared/pipes/safe.pipe';
 import { WeTubeService } from '../../wetube.service';
+import { VideoDownloadService } from '../../../../core/services/video-download.service';
 
 export interface NeuralMetadata {
   introStart?: number;
@@ -40,6 +41,17 @@ export class SiNeuroVideoPlayerComponent implements AfterViewInit, OnDestroy {
   @ViewChild('frameCanvas') canvasRef!: ElementRef<HTMLCanvasElement>;
 
   private wetube = inject(WeTubeService);
+  private downloadSvc = inject(VideoDownloadService);
+
+  /** Current download status for this video */
+  dlStatus = computed(() => this.downloadSvc.downloadStatuses()[this.videoId]);
+
+  triggerDownload() {
+    if (!this.videoId) return;
+    this.downloadSvc.downloadVideo(
+      this.videoId, this.title, this.author, this.poster, '144p'
+    ).catch(() => {});
+  }
 
   isPlaying = signal(false);
   progress = signal(0);

@@ -1,6 +1,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { PipedApiService, PipedVideoDetails } from './piped-api.service';
 import { IndexedDBService } from './indexed-db.service';
+import { VideoDownloadService } from './video-download.service';
 
 export type PlayerMode = 'hidden' | 'floating' | 'full' | 'pip';
 export type PlayerType = 'native' | 'iframe';
@@ -18,6 +19,7 @@ export interface ActiveVideo {
 export class VideoStateService {
   private pipedService = inject(PipedApiService);
   private dbService = inject(IndexedDBService);
+  private downloadService = inject(VideoDownloadService);
 
   // Player UI State
   readonly playerMode = signal<PlayerMode>('hidden');
@@ -95,6 +97,24 @@ export class VideoStateService {
         this.isLoadingRelated.set(false);
       }
 
+      // ── Check local offline cache FIRST (bandwidth × 1 strategy) ──
+      const cachedBlobUrl = await this.downloadService.getCachedBlobUrl(video.id);
+      if (cachedBlobUrl) {
+        this.rawStreamUrl.set(cachedBlobUrl);
+        this.playerType.set('native');
+        this.isLoading.set(false);
+        this.isPlaying.set(true);
+        // Still load related in background
+        this.pipedService.getVideoDetails(video.id).then(details => {
+          if (details?.relatedStreams) {
+            this.relatedVideos.set(details.relatedStreams);
+            this.dbService.setWithTTL('related_videos', { videoId: video.id, streams: details.relatedStreams });
+          }
+          this.isLoadingRelated.set(false);
+        }).catch(() => this.isLoadingRelated.set(false));
+        return;
+      }
+
       const details = await this.pipedService.getVideoDetails(video.id);
       this.pipedDetails.set(details);
       
@@ -121,6 +141,19 @@ export class VideoStateService {
       }
       this.isLoading.set(false);
       this.isPlaying.set(true);
+
+      // ── Background download for offline caching (144p, bandwidth × 1) ──
+      // Only start if not already cached/downloading
+      const dlStatus = this.downloadService.downloadStatuses()[video.id];
+      if (!dlStatus || (dlStatus.status !== 'cached' && dlStatus.status !== 'downloading')) {
+        this.downloadService.downloadVideo(
+          video.id,
+          video.title || '',
+          video.author || '',
+          video.thumbnail || '',
+          '144p'
+        ).catch(() => {}); // Silent - never block playback
+      }
 
     } catch (error) {
       console.warn('[VideoStateService] Piped failed, falling back to IFrame API');
