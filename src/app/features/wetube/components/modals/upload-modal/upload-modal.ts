@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -15,7 +15,7 @@ import { WeTubeService } from '../../../wetube.service';
   templateUrl: './upload-modal.html',
   styleUrls: ['./upload-modal.scss']
 })
-export class UploadModalComponent {
+export class UploadModalComponent implements OnInit {
   private firebaseService = inject(FirebaseService);
   private discoveryService = inject(YoutubeDiscoveryService);
   private vaultService = inject(VaultService);
@@ -52,6 +52,19 @@ export class UploadModalComponent {
   onClose() {
     this.close.emit();
   }
+
+  ngOnInit() {
+    // Check clipboard for YouTube URL when modal opens
+    if (this.isOpen && navigator.clipboard) {
+      navigator.clipboard.readText().then(text => {
+        if (text && /(?:youtube\.com|youtu\.be)/i.test(text)) {
+          this.sourceUrl = text.trim();
+          this.sourceType = 'youtube';
+          this.onSourceUrlChange(text.trim());
+        }
+      }).catch(() => {});
+    }
+  }
   
   selectSourceType(type: 'vault' | 'youtube' | 'local') {
     this.sourceType = type;
@@ -72,9 +85,20 @@ export class UploadModalComponent {
   }
 
   extractYoutubeId(url: string): string | null {
+    // Normal videos
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
     const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
+    if (match && match[2].length === 11) return match[2];
+    
+    // Shorts: youtube.com/shorts/VIDEO_ID
+    const shortsRegExp = /(?:youtube\.com\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]+)/;
+    const shortsMatch = url.match(shortsRegExp);
+    if (shortsMatch) return shortsMatch[1];
+    
+    // Fallback: extract any video ID after youtube.com
+    const fallback = /youtube\.com\/.*?([a-zA-Z0-9_-]{10,})/;
+    const fallbackMatch = url.match(fallback);
+    return fallbackMatch ? fallbackMatch[1] : null;
   }
 
   onSourceUrlChange(url: string) {
@@ -84,6 +108,12 @@ export class UploadModalComponent {
       this.showFetchButton = false;
       this.detectedYtId = '';
       return;
+    }
+
+    // Auto-switch to YouTube tab if a YouTube URL is detected
+    const isYoutube = /(?:youtube\.com|youtu\.be)/i.test(urlVal);
+    if (isYoutube && this.sourceType !== 'youtube') {
+      this.sourceType = 'youtube';
     }
 
     if (this.sourceType === 'youtube') {
@@ -100,9 +130,11 @@ export class UploadModalComponent {
           this.title = knownVideo.title;
           this.showFetchButton = false;
         } else {
-          // Pre-fill a clear suggested placeholder title so they are not blocked
-          this.title = 'فيديو يوتيوب - ' + ytId;
-          this.showFetchButton = true; // Show on-demand API fetch button
+          // Auto-fetch title from YouTube API instead of requiring manual click
+          this.title = '';
+          this.isExtractingTitle = true;
+          this.showFetchButton = false;
+          this.fetchTitleFromApi();
         }
       } else {
         this.showFetchButton = false;
@@ -124,22 +156,45 @@ export class UploadModalComponent {
   fetchTitleFromApi() {
     if (!this.detectedYtId) return;
     this.isExtractingTitle = true;
-    this.discoveryService.fetchVideoDetails(this.detectedYtId).subscribe({
-      next: (details) => {
-        if (details && details.title) {
-          this.title = details.title;
-          this.showFetchButton = false;
+
+    // Use YouTube oEmbed API - simple, free, no API key needed
+    const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${this.detectedYtId}&format=json`;
+
+    fetch(oembedUrl)
+      .then(res => {
+        if (!res.ok) throw new Error('oEmbed failed');
+        return res.json();
+      })
+      .then((data: any) => {
+        if (data && data.title) {
+          this.title = data.title;
+          // Also try to get author from oEmbed
+          if (data.author_name && !this.title.includes(data.author_name)) {
+            // title is good as-is
+          }
         } else {
-          alert('تعذر جلب العنوان من يوتيوب. يمكنك تعديل العنوان المقترح يدوياً.');
+          this.title = 'فيديو يوتيوب - ' + this.detectedYtId;
         }
+        this.showFetchButton = false;
         this.isExtractingTitle = false;
-      },
-      error: (err) => {
-        console.warn('Failed to auto-extract YouTube title', err);
-        alert('تنبيه: تعذر جلب العنوان من السيرفر (ربما بسبب حدود الطلبات). يمكنك تعديل العنوان المقترح يدوياً.');
-        this.isExtractingTitle = false;
-      }
-    });
+      })
+      .catch((err) => {
+        console.warn('oEmbed failed, trying oembed.io fallback', err);
+        // Fallback: try another oEmbed service
+        const fallbackUrl = `https://noembed.com/embed?url=https://www.youtube.com/watch?v=${this.detectedYtId}`;
+        fetch(fallbackUrl)
+          .then(res => res.json())
+          .then((data: any) => {
+            this.title = data.title || 'فيديو يوتيوب - ' + this.detectedYtId;
+            this.showFetchButton = false;
+            this.isExtractingTitle = false;
+          })
+          .catch(() => {
+            this.title = 'فيديو يوتيوب - ' + this.detectedYtId;
+            this.showFetchButton = false;
+            this.isExtractingTitle = false;
+          });
+      });
   }
 
   async onUpload() {

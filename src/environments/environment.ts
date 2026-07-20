@@ -15,9 +15,15 @@ export const environment = {
     scopes: 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/userinfo.profile'
   },
   pipedInstances: [
-    'https://pipedapi.kavin.rocks',         // Main instance, CORS enabled
-    'https://piped-api.garudalinux.org',    // Garuda Linux instance
-    'https://api.piped.yt',                 // piped.yt instance
-    'https://api.piped.privacydev.net'      // Privacy Dev instance
+    'https://pipedapi.kavin.rocks',
+    'https://piped-api.garudalinux.org',
+    'https://api.piped.yt',
+    'https://api.piped.privacydev.net',
+    'https://pipedapi.smnz.de',
+    'https://pipedapi.r4fo.com',
+    'https://pipedapi.us.projectsegfau.lt',
+    'https://pipedapi.adminforge.de',
+    'https://pipedapi.leptons.xyz',
+    'https://pipedapi.pfcd.me'
   ]
 };

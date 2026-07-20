@@ -219,8 +219,7 @@ export class GlobalVideoPlayerComponent {
   getIframeUrl(): string {
     const video = this.videoState.activeVideo();
     if (!video) return '';
-    // Use youtube-nocookie for privacy and autoplay=1
-    return `https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&rel=0&modestbranding=1`;
+    return `https://www.youtube.com/embed/${video.id}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`;
   }
 
   closePlayer() {

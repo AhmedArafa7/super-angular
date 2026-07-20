@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiBaseUrl: 'https://super-axd.pages.dev',
+  apiBaseUrl: '',
   firebase: {
     projectId: 'studio-3522991053-84d29',
     appId: '1:663102763152:web:483fb4c5e300dd53316815',
@@ -15,10 +15,16 @@ export const environment = {
     scopes: 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/userinfo.profile'
   },
   pipedInstances: [
-    'http://localhost:4200/piped-proxy',    // Angular dev proxy (no CORS!)
-    'https://pipedapi.kavin.rocks',
-    'https://piped-api.garudalinux.org',
-    'https://api.piped.yt'
+    '/piped-proxy-kavin',
+    '/piped-proxy-garuda',
+    '/piped-proxy-yt',
+    '/piped-proxy-privacydev',
+    '/piped-proxy-smnz',
+    '/piped-proxy-r4fo',
+    '/piped-proxy-projectsegfault',
+    '/piped-proxy-adminforge',
+    '/piped-proxy-leptons',
+    '/piped-proxy-pfcd'
   ]
 };
 

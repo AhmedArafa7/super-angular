@@ -103,7 +103,7 @@ export class SiNeuroVideoPlayerComponent implements AfterViewInit, OnDestroy {
     // If saving and not completed, load 144p (vq=tiny)
     const qualityParam = isSaving && !isDone ? 'tiny' : config.targetUpscaleQuality.replace(/\D/g, '');
     const vqValue = qualityParam === 'tiny' ? 'tiny' : `hd${qualityParam}`;
-    return `https://www.youtube-nocookie.com/embed/${this.videoId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1&vq=${vqValue}`;
+    return `https://www.youtube.com/embed/${this.videoId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1&vq=${vqValue}&origin=${encodeURIComponent(window.location.origin)}`;
   }
 
   startUpscaleEngine() {

@@ -52,8 +52,18 @@ import { ArcadeAudioService } from '../../core/services/arcade-audio.service';
       </header>
 
       <!-- Dynamic Mode Selection Menu -->
-      <div *ngIf="showModeOverlay" id="arena-menu-overlay" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-6 animate-in fade-in zoom-in duration-500" 
-           [style.background-image]="game ? 'url(/games/' + game.id + '/bg.png)' : 'none'">
+      <div *ngIf="showModeOverlay" id="arena-menu-overlay" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-6 animate-in fade-in zoom-in duration-500 overflow-hidden" 
+           [style.background]="getDynamicGradient()">
+         
+         <!-- Blurred / scaled game thumbnail background decoration -->
+         <div class="absolute inset-0 opacity-20 pointer-events-none bg-cover bg-center blur-2xl scale-110"
+              [style.background-image]="game && game.thumbnail && !game.thumbnail.startsWith('data:') ? 'url(' + game.thumbnail + ')' : 'none'">
+         </div>
+         
+         <!-- Optional bg.png custom theme loaded on top if exists -->
+         <div class="absolute inset-0 opacity-40 pointer-events-none bg-cover bg-center"
+              [style.background-image]="game ? 'url(/games/' + game.id + '/bg.png)' : 'none'">
+         </div>
          
          <!-- Dynamic Menu Container -->
          <div id="arena-menu-container" class="relative w-full max-w-sm flex flex-col gap-5 z-10">
@@ -523,6 +533,50 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
       }
       this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
     }
+  }
+
+  getDynamicGradient(): string {
+    if (!this.game) return 'linear-gradient(135deg, #0f172a 0%, #020617 100%)';
+    const id = this.game.id;
+    const genre = this.game.genre?.toLowerCase() || '';
+
+    const customGradients: Record<string, string> = {
+      'space-shooter': 'radial-gradient(circle at center, #1e1b4b 0%, #03000a 100%)',
+      'tank-battle': 'linear-gradient(135deg, #18181b 0%, #27272a 50%, #09090b 100%)',
+      'air-hockey': 'radial-gradient(circle at center, #0f172a 0%, #020617 100%)',
+      'fruit-slicer': 'linear-gradient(135deg, #022c22 0%, #064e3b 50%, #020617 100%)',
+      'flappy-clone': 'linear-gradient(180deg, #0284c7 0%, #0369a1 50%, #0f172a 100%)',
+      'snake-arena': 'radial-gradient(circle at center, #064e3b 0%, #022c22 100%)',
+      'bomb-arena': 'linear-gradient(135deg, #450a0a 0%, #1e1b4b 100%)',
+      'openttd': 'linear-gradient(135deg, #064e3b 0%, #1e293b 50%, #0f172a 100%)',
+      'echoes-of-time': 'radial-gradient(circle at center, #172554 0%, #020817 100%)',
+      'three-monkeys': 'linear-gradient(135deg, #3b0764 0%, #1e1b4b 100%)',
+      'escape-room': 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+      'space-deception': 'radial-gradient(circle at center, #450a0a 0%, #020617 100%)',
+      'spot-differences': 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
+      'card-battle': 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+      'strategic-xo': 'linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%)',
+      'memory-match': 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+      'arabic-wordle': 'linear-gradient(135deg, #18181b 0%, #121213 100%)',
+      'typing-defense': 'linear-gradient(135deg, #2e1065 0%, #0f172a 100%)',
+      'spyfall': 'linear-gradient(135deg, #1e293b 0%, #020617 100%)',
+      'tick-tock-bomb': 'radial-gradient(circle at center, #7f1d1d 0%, #000000 100%)',
+      'heads-up': 'linear-gradient(135deg, #1d4ed8 0%, #1e1b4b 100%)',
+      'draw-and-guess': 'linear-gradient(135deg, #1e3a8a 0%, #172554 100%)',
+      'dobble': 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+      'squid-game': 'linear-gradient(135deg, #831843 0%, #0f172a 100%)',
+    };
+
+    if (customGradients[id]) return customGradients[id];
+
+    if (genre.includes('action') || genre.includes('co-op')) {
+      return 'linear-gradient(135deg, #311042 0%, #0f172a 100%)';
+    } else if (genre.includes('puzzle') || genre.includes('strategy')) {
+      return 'linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%)';
+    } else if (genre.includes('social') || genre.includes('party')) {
+      return 'linear-gradient(135deg, #1d4ed8 0%, #1e1b4b 100%)';
+    }
+    return 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #020617 100%)';
   }
 
   ngOnDestroy() {

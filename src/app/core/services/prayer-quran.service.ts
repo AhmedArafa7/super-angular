@@ -118,10 +118,46 @@ export class PrayerQuranService {
     }).format(new Date(ts));
   });
 
+  private db: IDBDatabase | null = null;
+  private readonly DB_NAME = 'QuranDB';
+  private readonly STORE_NAME = 'Surahs';
+
   constructor() {
+    this.initDB();
     this.loadPersistedData();
     this.initLocationAndPrayer();
     this.loadSurahs();
+  }
+
+  private initDB() {
+    const request = indexedDB.open(this.DB_NAME, 1);
+    request.onupgradeneeded = (e: any) => {
+      this.db = e.target.result;
+      if (!this.db!.objectStoreNames.contains(this.STORE_NAME)) {
+        this.db!.createObjectStore(this.STORE_NAME);
+      }
+    };
+    request.onsuccess = (e: any) => {
+      this.db = e.target.result;
+    };
+  }
+
+  private async getFromDB(key: number): Promise<Ayah[] | null> {
+    return new Promise((resolve) => {
+      if (!this.db) { resolve(null); return; }
+      const transaction = this.db.transaction([this.STORE_NAME], 'readonly');
+      const store = transaction.objectStore(this.STORE_NAME);
+      const request = store.get(key);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => resolve(null);
+    });
+  }
+
+  private async saveToDB(key: number, value: Ayah[]) {
+    if (!this.db) return;
+    const transaction = this.db.transaction([this.STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(this.STORE_NAME);
+    store.put(value, key);
   }
 
   private loadPersistedData() {
@@ -388,13 +424,21 @@ export class PrayerQuranService {
       const surah = this.surahs().find(s => s.number === surahNumber);
       if (surah) this.currentSurah.set(surah);
 
-      // Load Arabic text
+      // 1. Try IndexedDB
+      const cached = await this.getFromDB(surahNumber);
+      if (cached) {
+        this.ayahs.set(cached);
+        this.isLoadingQuran.set(false);
+        return;
+      }
+
+      // 2. Load from API
       const arabicRes = await this.http.get<any>(`https://api.alquran.cloud/v1/surah/${surahNumber}/ar.alafasy`).pipe(
         catchError(() => of(null))
       ).toPromise();
 
       if (arabicRes?.data?.ayahs) {
-        this.ayahs.set(arabicRes.data.ayahs.map((a: any) => ({
+        const ayahs = arabicRes.data.ayahs.map((a: any) => ({
           number: a.number,
           text: a.text,
           numberInSurah: a.numberInSurah,
@@ -404,7 +448,10 @@ export class PrayerQuranService {
           ruku: a.ruku,
           hizbQuarter: a.hizbQuarter,
           sajda: a.sajda
-        })));
+        }));
+        
+        this.ayahs.set(ayahs);
+        this.saveToDB(surahNumber, ayahs); // Cache offline
       }
 
       // Load translation if needed

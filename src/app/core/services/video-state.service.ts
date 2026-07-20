@@ -2,6 +2,7 @@ import { Injectable, signal, inject } from '@angular/core';
 import { PipedApiService, PipedVideoDetails } from './piped-api.service';
 import { IndexedDBService } from './indexed-db.service';
 import { VideoDownloadService } from './video-download.service';
+import { WeTubeService } from '../../features/wetube/wetube.service';
 
 export type PlayerMode = 'hidden' | 'floating' | 'full' | 'pip';
 export type PlayerType = 'native' | 'iframe';
@@ -20,6 +21,7 @@ export class VideoStateService {
   private pipedService = inject(PipedApiService);
   private dbService = inject(IndexedDBService);
   private downloadService = inject(VideoDownloadService);
+  private wetubeService = inject(WeTubeService);
 
   // Player UI State
   readonly playerMode = signal<PlayerMode>('hidden');
@@ -143,16 +145,18 @@ export class VideoStateService {
       this.isPlaying.set(true);
 
       // ── Background download for offline caching (144p, bandwidth × 1) ──
-      // Only start if not already cached/downloading
-      const dlStatus = this.downloadService.downloadStatuses()[video.id];
-      if (!dlStatus || (dlStatus.status !== 'cached' && dlStatus.status !== 'downloading')) {
-        this.downloadService.downloadVideo(
-          video.id,
-          video.title || '',
-          video.author || '',
-          video.thumbnail || '',
-          '144p'
-        ).catch(() => {}); // Silent - never block playback
+      // Only start if Data Saver mode is enabled and not already cached/downloading
+      if (this.wetubeService.algoConfig().dataSaverEnabled) {
+        const dlStatus = this.downloadService.downloadStatuses()[video.id];
+        if (!dlStatus || (dlStatus.status !== 'cached' && dlStatus.status !== 'downloading')) {
+          this.downloadService.downloadVideo(
+            video.id,
+            video.title || '',
+            video.author || '',
+            video.thumbnail || '',
+            '144p'
+          ).catch(() => {}); // Silent - never block playback
+        }
       }
 
     } catch (error) {

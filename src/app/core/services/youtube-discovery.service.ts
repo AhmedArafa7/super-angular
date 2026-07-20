@@ -89,50 +89,71 @@ export class YoutubeDiscoveryService {
   }
 
   fetchVideoDetails(videoId: string): Observable<VideoDetails | null> {
-    const url = YOUTUBE_WATCH_URL + videoId;
+    // Use direct fetch to YouTube oEmbed API (CORS-supported, no proxy needed)
+    const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
 
-    return this.proxy.fetch(url).pipe(
-      map(html => {
-        if (!html) return null;
-
-        const data = this.extractJSONFromHTML(html, 'ytInitialData');
-        const playerResponse = this.extractJSONFromHTML(html, 'ytInitialPlayerResponse');
-        const videoDetails = playerResponse?.videoDetails;
-
-        const primaryInfo = data?.contents?.twoColumnWatchNextResults?.results?.results?.contents?.find((c: any) => c.videoPrimaryInfoRenderer)?.videoPrimaryInfoRenderer;
-        const dateText = primaryInfo?.dateText?.simpleText || '';
-
-        const secondaryContents = data?.contents?.twoColumnWatchNextResults?.secondaryResults?.secondaryResults?.results;
-        const related: FeedVideo[] = [];
-        if (secondaryContents) {
-          secondaryContents.forEach((item: any) => {
-            if (item.compactVideoRenderer) {
-              const v = this.parseVideoRenderer(item.compactVideoRenderer);
-              if (v) related.push(v);
-            }
-          });
-        }
-
-        return {
-          id: videoId,
-          title: videoDetails?.title || '',
-          url: `https://www.youtube.com/watch?v=${videoId}`,
-          thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
-          author: videoDetails?.author || '',
-          authorId: videoDetails?.channelId || '',
-          channelAvatar: data?.contents?.twoColumnWatchNextResults?.results?.results?.contents?.find((c: any) => c.videoSecondaryInfoRenderer)?.videoSecondaryInfoRenderer?.owner?.videoOwnerRenderer?.thumbnail?.thumbnails?.[0]?.url,
-          published: '',
-          source: 'youtube',
-          isShorts: false,
-          description: videoDetails?.shortDescription || '',
-          views: videoDetails?.viewCount || '0',
-          duration: videoDetails?.lengthSeconds || '0',
-          date: dateText,
-          relatedVideos: related
-        } as VideoDetails;
-      }),
-      catchError(() => of(null))
-    );
+    return new Observable<VideoDetails | null>(observer => {
+      fetch(oembedUrl)
+        .then(res => {
+          if (!res.ok) throw new Error(`oEmbed failed: ${res.status}`);
+          return res.json();
+        })
+        .then(data => {
+          if (!data || !data.title) {
+            observer.next(null);
+            observer.complete();
+            return;
+          }
+          observer.next({
+            id: videoId,
+            title: data.title || 'فيديو يوتيوب',
+            url: `https://www.youtube.com/watch?v=${videoId}`,
+            thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+            author: data.author_name || 'قناة يوتيوب',
+            authorId: '',
+            published: '',
+            source: 'youtube',
+            isShorts: false,
+            description: '',
+            views: '0',
+            duration: '0',
+            relatedVideos: []
+          } as VideoDetails);
+          observer.complete();
+        })
+        .catch(err => {
+          console.warn('[YoutubeDiscoveryService] oEmbed failed, trying noembed fallback', err);
+          // Fallback: try noembed.com
+          fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`)
+            .then(res => res.json())
+            .then(data => {
+              if (data && data.title) {
+                observer.next({
+                  id: videoId,
+                  title: data.title,
+                  url: `https://www.youtube.com/watch?v=${videoId}`,
+                  thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+                  author: data.author_name || 'قناة يوتيوب',
+                  authorId: '',
+                  published: '',
+                  source: 'youtube',
+                  isShorts: false,
+                  description: '',
+                  views: '0',
+                  duration: '0',
+                  relatedVideos: []
+                } as VideoDetails);
+              } else {
+                observer.next(null);
+              }
+              observer.complete();
+            })
+            .catch(() => {
+              observer.next(null);
+              observer.complete();
+            });
+        });
+    });
   }
 
   fetchVideoComments(videoId: string): Observable<YouTubeComment[]> {

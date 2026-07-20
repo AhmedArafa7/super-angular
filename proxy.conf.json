@@ -1,15 +1,60 @@
 {
-  "/piped-proxy": {
+  "/piped-proxy-kavin": {
     "target": "https://pipedapi.kavin.rocks",
     "secure": true,
     "changeOrigin": true,
     "pathRewrite": {
-      "^/piped-proxy": ""
+      "^/piped-proxy-kavin": ""
     },
     "logLevel": "warn",
     "headers": {
       "Origin": "https://pipedapi.kavin.rocks",
       "Referer": "https://pipedapi.kavin.rocks/"
     }
+  },
+  "/piped-proxy-garuda": {
+    "target": "https://piped-api.garudalinux.org",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/piped-proxy-garuda": ""
+    },
+    "logLevel": "warn",
+    "headers": {
+      "Origin": "https://piped-api.garudalinux.org",
+      "Referer": "https://piped-api.garudalinux.org/"
+    }
+  },
+  "/piped-proxy-yt": {
+    "target": "https://api.piped.yt",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/piped-proxy-yt": ""
+    },
+    "logLevel": "warn",
+    "headers": {
+      "Origin": "https://api.piped.yt",
+      "Referer": "https://api.piped.yt/"
+    }
+  },
+  "/piped-proxy-privacydev": {
+    "target": "https://api.piped.privacydev.net",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/piped-proxy-privacydev": ""
+    },
+    "logLevel": "warn",
+    "headers": {
+      "Origin": "https://api.piped.privacydev.net",
+      "Referer": "https://api.piped.privacydev.net/"
+    }
+  },
+  "/api": {
+    "target": "https://super-axd.pages.dev",
+    "secure": true,
+    "changeOrigin": true,
+    "logLevel": "info"
   }
 }

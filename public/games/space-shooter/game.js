@@ -1,3084 +1,3593 @@
-// Elements
-const mainMenu = document.getElementById('main-menu');
-const p2pMenu = document.getElementById('p2p-menu');
-const gameScreen = document.getElementById('game-screen');
-const gameOverScreen = document.getElementById('game-over-screen');
-
-// Shop UI
-const shopModal = document.getElementById('shop-modal');
-const closeShopBtn = document.getElementById('close-shop-btn');
-const mobileShopBtn = document.getElementById('mobile-shop-btn');
-const shopCoinsEl = document.getElementById('shop-coins');
-const shopGemsEl = document.getElementById('shop-gems');
-const buyBtns = document.querySelectorAll('.buy-btn');
-
-// Fusion UI Bindings
-const fusionModal = document.getElementById('fusion-modal');
-const menuFusionBtn = document.getElementById('menu-fusion-btn');
-const closeFusionBtn = document.getElementById('close-fusion-btn');
-const executeFusionBtn = document.getElementById('execute-fusion-btn');
-const fusionPlayerSelect = document.getElementById('fusion-player-select');
-const tabFuseShips = document.getElementById('tab-fuse-ships');
-const tabFuseWeapons = document.getElementById('tab-fuse-weapons');
-const fuseSlot1 = document.getElementById('fuse-slot-1');
-const fuseSlot2 = document.getElementById('fuse-slot-2');
-const fusionResultShowcase = document.getElementById('fusion-result-showcase');
-const fusionResultText = document.getElementById('fusion-result-text');
-
-const modeBtns = document.querySelectorAll('.mode-btn');
-
-const createRoomBtn = document.getElementById('create-room-btn');
-const roomIdDisplay = document.getElementById('roomIdDisplay');
-const roomInfo = document.getElementById('room-info');
-const joinRoomIdInput = document.getElementById('join-room-id');
-const joinRoomBtn = document.getElementById('join-room-btn');
-const joinError = document.getElementById('join-error');
-const backToMenuBtn = document.getElementById('back-to-menu-btn');
-const menuBtn = document.getElementById('menu-btn');
-const rematchBtn = document.getElementById('rematch-btn');
-
-const canvas = document.getElementById('game-canvas');
-const ctx = canvas.getContext('2d');
-
-// Player HUDs (supports up to 6 players)
-const playerHuds = [1,2,3,4,5,6].map(i => document.getElementById(`p${i}-hud`));
-const playerHps = [1,2,3,4,5,6].map(i => document.getElementById(`p${i}-hp`));
-const playerFuels = [1,2,3,4,5,6].map(i => document.getElementById(`p${i}-fuel`));
-const playerCoins = [1,2,3,4,5,6].map(i => document.getElementById(`p${i}-coins`));
-const playerGems = [1,2,3,4,5,6].map(i => document.getElementById(`p${i}-gems`));
-const playerScores = [1,2,3,4,5,6].map(i => document.getElementById(`p${i}-score`));
-// Keep legacy refs for P2P compatibility
-const p2Hud = document.getElementById('p2-hud');
-const p1Hp = document.getElementById('p1-hp');
-const p2Hp = document.getElementById('p2-hp');
-const p1Fuel = document.getElementById('p1-fuel');
-const p2Fuel = document.getElementById('p2-fuel');
-const p1CoinsEl = document.getElementById('p1-coins');
-const p1GemsEl = document.getElementById('p1-gems');
-const p2CoinsEl = document.getElementById('p2-coins');
-const p2GemsEl = document.getElementById('p2-gems');
-const p1ScoreEl = document.getElementById('p1-score');
-const p2ScoreEl = document.getElementById('p2-score');
-const waveNumberEl = document.getElementById('wave-number');
-const resultTitle = document.getElementById('result-title');
-const resultDesc = document.getElementById('result-desc');
-const finalStats = document.getElementById('final-stats');
-const p2ControlsHint = document.getElementById('p2-controls-hint');
-// Player count modal
-const playerCountModal = document.getElementById('player-count-modal');
-const closeCountBtn = document.getElementById('close-count-btn');
-const countBtns = document.querySelectorAll('.count-btn');
-
-// Resource Transfer
-const transferTargetSelect = document.getElementById('transfer-target-select');
-const transferBtns = document.querySelectorAll('.transfer-btn');
-
-// Game State
-let activeMode = 'local'; // local, local-coop, p2p-host, p2p-join
-let isGameOver = false;
-let animationId;
-let lastTime = 0;
-let wave = 1;
-let waveTimer = 0;
-let keys = {};
-let warningText = "";
-let warningTimer = 0;
-let isBossRushMode = false;
-let bulletTimeLeft = 0;
-
-// P2P State
-let peer = null;
-let conn = null;
-
-// Game Entities
-let players = [];
-let bullets = [];
-let enemies = [];
-let particles = [];
-let stars = [];
-let fuelItems = [];
-let meteorites = [];
-let bosses = [];
-let coins = [];
-let gems = [];
-let isBossWave = false;
-let isShopOpen = false;
-let isMapOpen = false;
-let currentWorld = 1;
-let unlockedWorld = 1;
-
-// Game State
-let playersData = []; // تخزين بيانات جميع اللاعبين
-
-function loadProgress() {
-    const saved = localStorage.getItem('spaceShooterProgress');
-    if (saved) {
-        try {
-            const data = JSON.parse(saved);
-            playersData = data.players || [];
-            unlockedWorld = data.unlockedWorld || 1;
-        } catch(e) { console.error("Error loading progress", e); }
+(function () {
+  const e = document.createElement("link").relList;
+  if (e && e.supports && e.supports("modulepreload")) return;
+  for (const l of document.querySelectorAll('link[rel="modulepreload"]')) s(l);
+  new MutationObserver((l) => {
+    for (const n of l)
+      if (n.type === "childList")
+        for (const r of n.addedNodes)
+          r.tagName === "LINK" && r.rel === "modulepreload" && s(r);
+  }).observe(document, { childList: !0, subtree: !0 });
+  function i(l) {
+    const n = {};
+    return (
+      l.integrity && (n.integrity = l.integrity),
+      l.referrerPolicy && (n.referrerPolicy = l.referrerPolicy),
+      l.crossOrigin === "use-credentials"
+        ? (n.credentials = "include")
+        : l.crossOrigin === "anonymous"
+          ? (n.credentials = "omit")
+          : (n.credentials = "same-origin"),
+      n
+    );
+  }
+  function s(l) {
+    if (l.ep) return;
+    l.ep = !0;
+    const n = i(l);
+    fetch(l.href, n);
+  }
+})();
+const ee = document.getElementById("main-menu"),
+  Le = document.getElementById("p2p-menu"),
+  lt = document.getElementById("game-screen"),
+  Ge = document.getElementById("game-over-screen"),
+  ye = document.getElementById("shop-modal"),
+  ht = document.getElementById("close-shop-btn"),
+  pe = document.getElementById("mobile-shop-btn"),
+  nt = document.getElementById("shop-coins"),
+  ot = document.getElementById("shop-gems"),
+  qe = document.querySelectorAll(".buy-btn"),
+  ke = document.getElementById("fusion-modal"),
+  Ie = document.getElementById("menu-fusion-btn"),
+  Fe = document.getElementById("close-fusion-btn"),
+  fe = document.getElementById("execute-fusion-btn"),
+  X = document.getElementById("fusion-player-select"),
+  q = document.getElementById("tab-fuse-ships"),
+  N = document.getElementById("tab-fuse-weapons"),
+  oe = document.getElementById("fuse-slot-1"),
+  G = document.getElementById("fuse-slot-2"),
+  Ne = document.getElementById("fusion-result-showcase"),
+  at = document.getElementById("fusion-result-text"),
+  rt = document.querySelectorAll(".mode-btn"),
+  Ae = document.getElementById("create-room-btn"),
+  dt = document.getElementById("roomIdDisplay"),
+  ft = document.getElementById("room-info"),
+  ct = document.getElementById("join-room-id"),
+  ge = document.getElementById("join-room-btn"),
+  ut = document.getElementById("join-error"),
+  mt = document.getElementById("back-to-menu-btn"),
+  yt = document.getElementById("menu-btn"),
+  pt = document.getElementById("rematch-btn"),
+  u = document.getElementById("game-canvas"),
+  h = u.getContext("2d"),
+  xe = [1, 2, 3, 4, 5, 6].map((t) => document.getElementById(`p${t}-hud`)),
+  He = [1, 2, 3, 4, 5, 6].map((t) => document.getElementById(`p${t}-hp`)),
+  Be = [1, 2, 3, 4, 5, 6].map((t) => document.getElementById(`p${t}-fuel`)),
+  Ce = [1, 2, 3, 4, 5, 6].map((t) => document.getElementById(`p${t}-coins`)),
+  Re = [1, 2, 3, 4, 5, 6].map((t) => document.getElementById(`p${t}-gems`)),
+  Pe = [1, 2, 3, 4, 5, 6].map((t) => document.getElementById(`p${t}-score`));
+document.getElementById("p2-hud");
+document.getElementById("p1-hp");
+document.getElementById("p2-hp");
+document.getElementById("p1-fuel");
+document.getElementById("p2-fuel");
+document.getElementById("p1-coins");
+document.getElementById("p1-gems");
+document.getElementById("p2-coins");
+document.getElementById("p2-gems");
+document.getElementById("p1-score");
+document.getElementById("p2-score");
+const gt = document.getElementById("wave-number");
+document.getElementById("result-title");
+const xt = document.getElementById("result-desc"),
+  wt = document.getElementById("final-stats"),
+  je = document.getElementById("p2-controls-hint"),
+  R = document.getElementById("player-count-modal"),
+  $e = document.getElementById("close-count-btn"),
+  We = document.querySelectorAll(".count-btn"),
+  K = document.getElementById("transfer-target-select"),
+  Oe = document.querySelectorAll(".transfer-btn");
+let m = "local",
+  se = !1,
+  Ke,
+  ce = 0,
+  w = 1,
+  ae = 0,
+  d = {},
+  _e = "",
+  Se = 0,
+  I = 0,
+  H = null,
+  C = null,
+  a = [],
+  o = [],
+  v = [],
+  _ = [],
+  Xe = [],
+  D = [],
+  E = [],
+  S = [],
+  M = [],
+  T = [],
+  P = !1,
+  Q = !1,
+  V = !1,
+  B = 1,
+  j = 1,
+  x = [];
+function vt() {
+  const t = localStorage.getItem("spaceShooterProgress");
+  if (t)
+    try {
+      const e = JSON.parse(t);
+      ((x = e.players || []), (j = e.unlockedWorld || 1));
+    } catch (e) {
+      console.error("Error loading progress", e);
     }
 }
-
-function saveProgress() {
-    if (players && players.length > 0) {
-        playersData = players.map(p => ({
-            coins: p.coins,
-            gems: p.gems,
-            shipType: p.shipType,
-            weaponType: p.weaponType,
-            hasDroneHeal: p.hasDroneHeal,
-            hasDroneFuel: p.hasDroneFuel,
-            hasDroneMagnet: p.hasDroneMagnet,
-            droneHealLevel: p.droneHealLevel,
-            droneFuelLevel: p.droneFuelLevel,
-            droneMagnetLevel: p.droneMagnetLevel,
-            ownedWeapons: p.ownedWeapons || ['normal'],
-            ownedShips: p.ownedShips || ['defender'],
-            hasReflectiveShield: p.hasReflectiveShield,
-            healsCount: p.healsCount || 0,
-            selfReviveKits: p.selfReviveKits || 0,
-            secondLifes: p.secondLifes || 0,
-            tempShieldsCount: p.tempShieldsCount || 0,
-            bulletDamageModifier: p.bulletDamageModifier || 1.0,
-            maxHp: p.maxHp || 100
+function le() {
+  (a &&
+    a.length > 0 &&
+    (x = a.map((t) => ({
+      coins: t.coins,
+      gems: t.gems,
+      shipType: t.shipType,
+      weaponType: t.weaponType,
+      hasDroneHeal: t.hasDroneHeal,
+      hasDroneFuel: t.hasDroneFuel,
+      hasDroneMagnet: t.hasDroneMagnet,
+      droneHealLevel: t.droneHealLevel,
+      droneFuelLevel: t.droneFuelLevel,
+      droneMagnetLevel: t.droneMagnetLevel,
+      ownedWeapons: t.ownedWeapons || ["normal"],
+      ownedShips: t.ownedShips || ["defender"],
+      hasReflectiveShield: t.hasReflectiveShield,
+      healsCount: t.healsCount || 0,
+      selfReviveKits: t.selfReviveKits || 0,
+      secondLifes: t.secondLifes || 0,
+      tempShieldsCount: t.tempShieldsCount || 0,
+      bulletDamageModifier: t.bulletDamageModifier || 1,
+      maxHp: t.maxHp || 100,
+      trailType: t.trailType || 'none',
+    }))),
+    localStorage.setItem(
+      "spaceShooterProgress",
+      JSON.stringify({ players: x, unlockedWorld: j }),
+    ));
+}
+vt();
+const Ue = document.getElementById("worlds-map-modal"),
+  Mt = document.getElementById("close-map-btn"),
+  ze = document.querySelectorAll(".world-btn");
+class Tt {
+  getMass() {
+    let m = 100;
+    if (this.shipType === "tank") m += 100;
+    else if (this.shipType === "speedster") m -= 30;
+    if (this.hasDroneHeal) m += 20 * (this.droneHealLevel || 1);
+    if (this.hasDroneFuel) m += 20 * (this.droneFuelLevel || 1);
+    if (this.hasDroneMagnet) m += 20 * (this.droneMagnetLevel || 1);
+    if (this.weaponType === "explosive") m += 50;
+    else if (this.weaponType === "blackhole") m += 80;
+    else if (this.weaponType === "piercing") m += 40;
+    else if (this.weaponType === "frost") m += 30;
+    return m;
+  }
+  constructor(e, i, s, l) {
+    ((this.id = e),
+      (this.x = i),
+      (this.y = s),
+      (this.width = 64),
+      (this.height = 64),
+      (this.color = l),
+      (this.speed = 350),
+      (this.maxHp = 100),
+      (this.hp = 100),
+      (this.maxFuel = 100),
+      (this.fuel = 100),
+      (this.score = 0),
+      (this.coins = 0),
+      (this.gems = 0),
+      (this.shipType = "defender"),
+      (this.weaponType = "normal"),
+      (this.lastShot = 0),
+      (this.fireRate = 150),
+      (this.isAlive = !0),
+      (this.isHost = e === 1),
+      (this.reviveTimer = 0),
+      (this.hasDroneHeal = !1),
+      (this.hasDroneFuel = !1),
+      (this.hasDroneMagnet = !1),
+      (this.droneHealLevel = 0),
+      (this.droneFuelLevel = 0),
+      (this.droneMagnetLevel = 0),
+      (this.lastDroneHealShot = 0),
+      (this.lastDroneFuelShot = 0),
+      (this.lastDroneHealAction = 0),
+      (this.lastDroneFuelAction = 0),
+      (this.lastDroneMagnetAction = 0),
+      (this.ownedShips = ["defender"]),
+      (this.ownedWeapons = ["normal"]),
+      (this.hasReflectiveShield = !1),
+      (this.isShieldActive = !1),
+      (this.bulletDamageModifier = 1),
+      (this.ultCharge = 0),
+      (this.tankUltTimeLeft = 0),
+      (this.trailType = "none"),
+      (this.healsCount = 0),
+      (this.selfReviveKits = 0),
+      (this.secondLifes = 0),
+      (this.tempShieldsCount = 0),
+      (this.tempShieldTimeLeft = 0),
+      (this.energy = 100),
+      (this.maxEnergy = 100),
+      (this.heat = 0),
+      (this.maxHeat = 100),
+      (this.nuclearReactors = 1));
+  }
+  draw() {
+    if (!this.isAlive) {
+      (h.save(),
+        h.translate(this.x, this.y),
+        (h.globalAlpha = 0.5),
+        (h.fillStyle = "#475569"),
+        h.beginPath(),
+        h.moveTo(this.width / 2, 0),
+        h.lineTo(this.width, this.height),
+        h.lineTo(this.width / 2, this.height - 10),
+        h.lineTo(0, this.height),
+        h.closePath(),
+        h.fill(),
+        this.reviveTimer > 0 &&
+          ((h.globalAlpha = 1),
+          h.beginPath(),
+          h.arc(
+            this.width / 2,
+            this.height / 2,
+            30,
+            -Math.PI / 2,
+            -Math.PI / 2 + Math.PI * 2 * (this.reviveTimer / 2),
+          ),
+          (h.strokeStyle = "#10b981"),
+          (h.lineWidth = 4),
+          h.stroke()),
+        h.restore());
+      return;
+    }
+    (h.save(), h.translate(this.x, this.y));
+    let e = this.getBulletColor();
+    ((h.globalAlpha = this.isBeingRevived ? 0.5 : 1),
+      h.scale(this.width / 200, this.height / 200));
+    let i = Math.sin(Date.now() / 100) * 10;
+    let flameColor = "#ff9800";
+    if (this.trailType === "rainbow") {
+      let hue = (Date.now() / 10) % 360;
+      flameColor = `hsl(${hue}, 100%, 50%)`;
+    } else if (this.trailType === "neon-blue") {
+      flameColor = "#00f0ff";
+    } else if (this.trailType === "matrix") {
+      flameColor = "#00ff00";
+    }
+    ((h.fillStyle = flameColor),
+      h.beginPath(),
+      h.moveTo(85, 160),
+      h.quadraticCurveTo(100, 200 + i, 115, 160),
+      h.fill(),
+      (h.fillStyle = e),
+      h.beginPath(),
+      h.moveTo(100, 40),
+      h.lineTo(160, 140),
+      h.lineTo(130, 150),
+      h.lineTo(100, 120),
+      h.lineTo(70, 150),
+      h.lineTo(40, 140),
+      h.closePath(),
+      h.fill(),
+      (h.fillStyle = "rgba(0,0,0,0.2)"),
+      h.beginPath(),
+      h.moveTo(100, 40),
+      h.lineTo(160, 140),
+      h.lineTo(130, 150),
+      h.lineTo(100, 120),
+      h.closePath(),
+      h.fill());
+    let s = h.createLinearGradient(0, 0, 200, 0);
+    if (
+      (s.addColorStop(0, "#b0bec5"),
+      s.addColorStop(0.5, "#eceff1"),
+      s.addColorStop(1, "#90a4ae"),
+      (h.fillStyle = s),
+      h.beginPath(),
+      h.moveTo(100, 20),
+      h.lineTo(125, 100),
+      h.lineTo(120, 160),
+      h.lineTo(80, 160),
+      h.lineTo(75, 100),
+      h.closePath(),
+      h.fill(),
+      (h.fillStyle = "#29b6f6"),
+      h.beginPath(),
+      h.ellipse(100, 85, 14, 24, 0, 0, Math.PI * 2),
+      h.fill(),
+      h.save(),
+      h.translate(96, 78),
+      h.rotate((-15 * Math.PI) / 180),
+      (h.fillStyle = "#e1f5fe"),
+      h.beginPath(),
+      h.ellipse(0, 0, 4, 10, 0, 0, Math.PI * 2),
+      h.fill(),
+      h.restore(),
+      (h.fillStyle = "#263238"),
+      h.beginPath(),
+      h.roundRect(83, 155, 34, 8, 2),
+      h.fill(),
+      (h.fillStyle = "#37474f"),
+      h.fillRect(88, 163, 24, 4),
+      h.restore(),
+      this.hasDroneHeal)
+    ) {
+      let l = Date.now() / 300,
+        n = this.x - 20 + Math.sin(l) * 5,
+        r = this.y + this.height / 2 - 10 + Math.cos(l) * 5;
+      (h.save(),
+        h.translate(n, r),
+        h.beginPath(),
+        h.arc(10, 10, 12, 0, Math.PI * 2),
+        (h.fillStyle = "rgba(16, 185, 129, 0.3)"),
+        h.fill(),
+        h.beginPath(),
+        h.arc(10, 10, 8, 0, Math.PI * 2),
+        (h.fillStyle = "#10b981"),
+        h.fill(),
+        (h.fillStyle = "#ffffff"),
+        h.fillRect(9, 5, 2, 10),
+        h.fillRect(5, 9, 10, 2),
+        h.restore());
+    }
+    if (this.hasDroneFuel) {
+      let l = Date.now() / 300 + Math.PI,
+        n = this.x + this.width + 10 + Math.sin(l) * 5,
+        r = this.y + this.height / 2 - 10 + Math.cos(l) * 5;
+      (h.save(),
+        h.translate(n, r),
+        h.beginPath(),
+        h.arc(10, 10, 12, 0, Math.PI * 2),
+        (h.fillStyle = "rgba(245, 158, 11, 0.3)"),
+        h.fill(),
+        h.beginPath(),
+        h.arc(10, 10, 8, 0, Math.PI * 2),
+        (h.fillStyle = "#f59e0b"),
+        h.fill(),
+        (h.fillStyle = "#ffffff"),
+        h.fillRect(8, 6, 4, 8),
+        h.fillRect(7, 4, 6, 2),
+        h.restore());
+    }
+    if (this.hasDroneMagnet) {
+      let l = Date.now() / 400 + Math.PI / 2,
+        n = this.x + this.width / 2 - 10 + Math.sin(l) * 35,
+        r = this.y - 25 + Math.cos(l) * 10;
+      (h.save(),
+        h.translate(n, r),
+        h.beginPath(),
+        h.arc(10, 10, 12, 0, Math.PI * 2),
+        (h.fillStyle = "rgba(6, 182, 212, 0.3)"),
+        h.fill(),
+        h.beginPath(),
+        h.arc(10, 10, 8, 0, Math.PI * 2),
+        (h.fillStyle = "#06b6d4"),
+        h.fill(),
+        (h.lineWidth = 3),
+        (h.strokeStyle = "#ef4444"),
+        h.beginPath(),
+        h.arc(10, 8, 4, 0, Math.PI, !1),
+        h.stroke(),
+        (h.strokeStyle = "#3b82f6"),
+        h.beginPath(),
+        h.moveTo(6, 8),
+        h.lineTo(6, 12),
+        h.moveTo(14, 8),
+        h.lineTo(14, 12),
+        h.stroke(),
+        h.restore());
+    }
+    (this.isShieldActive &&
+      (h.save(),
+      h.beginPath(),
+      h.arc(
+        this.x + this.width / 2,
+        this.y + this.height / 2,
+        this.width * 0.8,
+        0,
+        Math.PI * 2,
+      ),
+      (h.strokeStyle = "rgba(6, 182, 212, 0.8)"),
+      (h.lineWidth = 3),
+      h.stroke(),
+      (h.fillStyle = "rgba(6, 182, 212, 0.15)"),
+      h.fill(),
+      h.restore()),
+      this.tempShieldTimeLeft &&
+        this.tempShieldTimeLeft > 0 &&
+        (h.save(),
+        h.beginPath(),
+        h.arc(
+          this.x + this.width / 2,
+          this.y + this.height / 2,
+          this.width * 0.85,
+          0,
+          Math.PI * 2,
+        ),
+        (h.strokeStyle = "rgba(56, 189, 248, 0.9)"),
+        (h.lineWidth = 4),
+        h.stroke(),
+        (h.fillStyle = "rgba(56, 189, 248, 0.2)"),
+        h.fill(),
+        h.restore()));
+  }
+  triggerDeathOrResurrection() {
+    if (this.secondLifes > 0) {
+      (this.secondLifes--,
+        (this.hp = this.maxHp),
+        (this.fuel = this.maxFuel),
+        f(
+          this.x + this.width / 2,
+          this.y + this.height / 2,
+          "#eab308",
+          45,
+          2.5,
+        ),
+        alert(`تم تفعيل الفرصة الثانية الفائقة للاعب ${this.id}! 🌟`));
+      return;
+    }
+    if (this.selfReviveKits > 0) {
+      (this.selfReviveKits--,
+        (this.hp = this.maxHp / 2),
+        (this.fuel = this.maxFuel / 2),
+        f(this.x + this.width / 2, this.y + this.height / 2, "#10b981", 35, 2),
+        alert(`تم تفعيل حقنة الإنعاش الذاتي للاعب ${this.id}! 💉`));
+      return;
+    }
+    ((this.isAlive = !1),
+      f(this.x + this.width / 2, this.y + this.height / 2, this.color, 30, 2));
+      
+    // Ad watched revive option (Max 3 per run)
+    if (!this.isAlive) {
+      this.adRevivesCount = this.adRevivesCount || 0;
+      if (this.adRevivesCount < 3) {
+        setTimeout(() => {
+          let watchAd = confirm(`اللاعب ${this.id} تدمر! 💔\nهل تريد مشاهدة إعلان لإعادة الإحياء؟ (المحاولات المتبقية: ${3 - this.adRevivesCount})`);
+          if (watchAd) {
+            alert("📺 جاري تشغيل الإعلان... الرجاء الانتظار 5 ثوانٍ.");
+            setTimeout(() => {
+              this.isAlive = !0;
+              this.hp = this.maxHp;
+              this.fuel = this.maxFuel;
+              this.adRevivesCount++;
+              f(this.x + this.width / 2, this.y + this.height / 2, "#10b981", 40, 3);
+              alert(`🎉 تم إحياء اللاعب ${this.id} بنجاح!`);
+              if (typeof Y === 'function') Y();
+            }, 5000);
+          }
+        }, 800);
+      }
+    }
+  }
+  getBulletColor() {
+    return this.weaponType === "frost"
+      ? "#60a5fa"
+      : this.weaponType === "explosive"
+        ? "#ef4444"
+        : this.weaponType === "piercing" || this.shipType === "sniper"
+          ? "#fcd34d"
+          : this.color;
+  }
+  update(e) {
+    if (!this.isAlive) return;
+    let i = 0,
+      s = 0;
+    const l = m === "local" || m === "local-coop",
+      n = m === "p2p-join";
+    this.id === 1 && (m === "local" || m === "local-coop" || m === "p2p-host")
+      ? (d.ArrowLeft && (i = -1),
+        d.ArrowRight && (i = 1),
+        d.ArrowUp && (s = -1),
+        d.ArrowDown && (s = 1),
+        d[" "] && Date.now() - this.lastShot > this.fireRate && this.shoot())
+      : this.id === 2 && n
+        ? (d.ArrowLeft && (i = -1),
+          d.ArrowRight && (i = 1),
+          d.ArrowUp && (s = -1),
+          d.ArrowDown && (s = 1),
+          d[" "] && Date.now() - this.lastShot > this.fireRate && this.shoot())
+        : this.id === 2 && l
+          ? ((d.a || d.A) && (i = -1),
+            (d.d || d.D) && (i = 1),
+            (d.w || d.W) && (s = -1),
+            (d.s || d.S) && (s = 1),
+            (d.q || d.Q) &&
+              Date.now() - this.lastShot > this.fireRate &&
+              this.shoot())
+          : this.id === 3 && l
+            ? ((d.j || d.J) && (i = -1),
+              (d.l || d.L) && (i = 1),
+              (d.i || d.I) && (s = -1),
+              (d.k || d.K) && (s = 1),
+              (d.u || d.U) &&
+                Date.now() - this.lastShot > this.fireRate &&
+                this.shoot())
+            : this.id === 4 && l
+              ? ((d.f || d.F) && (i = -1),
+                (d.h || d.H) && (i = 1),
+                (d.t || d.T) && (s = -1),
+                (d.g || d.G) && (s = 1),
+                (d.r || d.R) &&
+                  Date.now() - this.lastShot > this.fireRate &&
+                  this.shoot())
+              : this.id === 5 && l
+                ? ((d.Numpad4 || d[4]) && (i = -1),
+                  (d.Numpad6 || d[6]) && (i = 1),
+                  (d.Numpad8 || d[8]) && (s = -1),
+                  (d.Numpad2 || d[2]) && (s = 1),
+                  (d.Numpad0 || d[0]) &&
+                    Date.now() - this.lastShot > this.fireRate &&
+                    this.shoot())
+                : this.id === 6 &&
+                  l &&
+                  (d.End && (i = -1),
+                  d.Home && (i = 1),
+                  d.PageUp && (s = -1),
+                  d.PageDown && (s = 1),
+                  d.Insert &&
+                    Date.now() - this.lastShot > this.fireRate &&
+                    this.shoot());
+    let r = this.speed;
+    if (
+      (this.shipType.includes("speedster")
+        ? (r = 500)
+        : this.shipType.includes("tank")
+          ? (r = 240)
+          : this.shipType.includes("sniper") && (r = 200),
+      (this.fuel <= 0 && (r = 0)),
+      (this.energy = Math.min(this.maxEnergy, this.energy + this.nuclearReactors * 15 * e)),
+      (this.heat = Math.max(0, this.heat - 25 * e)),
+      (this.x += i * r * e),
+      (this.y += s * r * e),
+      (this.x = Math.max(0, Math.min(u.width - this.width, this.x))),
+      (this.y = Math.max(0, Math.min(u.height - this.height, this.y))),
+      this.isAlive && this.trailType && this.trailType !== "none" && Math.random() > 0.4 && (
+        this.trailType === "rainbow"
+          ? f(this.x + this.width / 2, this.y + this.height - 5, `hsl(${(Date.now() / 8) % 360}, 100%, 50%)`, 2, 0.4)
+          : this.trailType === "neon-blue"
+            ? f(this.x + this.width / 2, this.y + this.height - 5, "#00f0ff", 2, 0.4)
+            : this.trailType === "matrix" &&
+              f(this.x + this.width / 2, this.y + this.height - 5, "#00ff00", 2, 0.4)
+      ),
+      m !== "p2p-join")
+    ) {
+      if (
+        ((this.fuel = Math.max(0, this.fuel - (this.getMass() / 50) * ((Math.abs(i) + Math.abs(s) > 0) ? e : 0))),
+        this.shipType.includes("healer") &&
+          this.isAlive &&
+          this.hp > 0 &&
+          this.hp < this.maxHp &&
+          (this.hp = Math.min(this.maxHp, this.hp + 2 * e)),
+        this.shipType.includes("speedster") && this.isAlive)
+      ) {
+        let y = (g) => {
+          if (Math.hypot(g.x - this.x, g.y - this.y) < 250) {
+            let J = Math.atan2(
+              this.y + this.height / 2 - g.y,
+              this.x + this.width / 2 - g.x,
+            );
+            ((g.x += Math.cos(J) * 300 * e), (g.y += Math.sin(J) * 300 * e));
+          }
+        };
+        (M.forEach(y), T.forEach(y), D.forEach(y));
+      }
+      if (this.hasDroneMagnet && this.isAlive) {
+        const c = 150 + this.droneMagnetLevel * 60,
+          y = 250 + this.droneMagnetLevel * 75;
+        let g = (b) => {
+          if (Math.hypot(b.x - this.x, b.y - this.y) < c) {
+            let k = Math.atan2(
+              this.y + this.height / 2 - b.y,
+              this.x + this.width / 2 - b.x,
+            );
+            ((b.x += Math.cos(k) * y * e),
+              (b.y += Math.sin(k) * y * e),
+              Math.random() > 0.95 && f(b.x, b.y, "#06b6d4", 1, 0.5));
+          }
+        };
+        (M.forEach(g), T.forEach(g), D.forEach(g));
+      }
+      if (this.hasReflectiveShield && this.isAlive) {
+        let c = Date.now() % 15e3;
+        if (c < 3e3 && this.energy >= 20 * e) {
+            this.energy -= 20 * e;
+            this.isShieldActive = !0;
+        } else {
+            this.isShieldActive = !1;
+        }
+      } else this.isShieldActive = !1;
+      (this.tempShieldTimeLeft &&
+        this.tempShieldTimeLeft > 0 &&
+        (this.tempShieldTimeLeft = Math.max(0, this.tempShieldTimeLeft - e)),
+        this.tankUltTimeLeft &&
+          this.tankUltTimeLeft > 0 &&
+          ((this.tankUltTimeLeft = Math.max(0, this.tankUltTimeLeft - e)),
+          (this.width = 110),
+          (this.height = 110),
+          this.tankUltTimeLeft === 0 &&
+            ((this.width = 64), (this.height = 64))));
+    }
+    if (
+      (this.id === 1 && typeof te < "u" && te && this.isAlive && this.shoot(),
+      this.reviveTimer > 0 &&
+        !this.isBeingRevived &&
+        (this.reviveTimer = Math.max(0, this.reviveTimer - e)),
+      (this.isBeingRevived = !1),
+      this.isAlive)
+    ) {
+      if (this.hasDroneHeal) {
+        let c = Math.max(1e3, 5e3 - this.droneHealLevel * 500);
+        Date.now() - this.lastDroneHealAction > c &&
+          this.hp < this.maxHp &&
+          ((this.hp = Math.min(
+            this.maxHp,
+            this.hp + 5 + this.droneHealLevel * 3,
+          )),
+          f(
+            this.x + this.width / 2,
+            this.y + this.height / 2,
+            "#10b981",
+            12,
+            1,
+          ),
+          (this.lastDroneHealAction = Date.now()));
+        let y = this.x - 10,
+          g = this.y + this.height / 2,
+          b = Math.max(400, 1e3 - this.droneHealLevel * 80);
+        Date.now() - this.lastDroneHealShot > b && this.energy >= 5 &&
+          (v.some((k) => Math.abs(k.x + k.width / 2 - y) < 80 && k.y < g) ||
+            S.length > 0) &&
+          (this.energy -= 5, o.push(new p(y + 7, g, -550, "#10b981", this.id, "normal")),
+          (this.lastDroneHealShot = Date.now()));
+      }
+      if (this.hasDroneFuel) {
+        let c = Math.max(1e3, 5e3 - this.droneFuelLevel * 500);
+        Date.now() - this.lastDroneFuelAction > c &&
+          this.fuel < this.maxFuel &&
+          ((this.fuel = Math.min(
+            this.maxFuel,
+            this.fuel + 6 + this.droneFuelLevel * 4,
+          )),
+          f(this.x + this.width / 2, this.y + this.height / 2, "#f59e0b", 8, 1),
+          (this.lastDroneFuelAction = Date.now()));
+        let y = this.x + this.width + 10,
+          g = this.y + this.height / 2,
+          b = Math.max(400, 1e3 - this.droneFuelLevel * 80);
+        Date.now() - this.lastDroneFuelShot > b && this.energy >= 5 &&
+          (v.some((k) => Math.abs(k.x + k.width / 2 - y) < 80 && k.y < g) ||
+            S.length > 0) &&
+          (this.energy -= 5, o.push(new p(y + 7, g, -550, "#f59e0b", this.id, "normal")),
+          (this.lastDroneFuelShot = Date.now()));
+      }
+    }
+  }
+  shoot() {
+    let e = this.fireRate;
+    if (
+      (this.shipType === "sniper" && (e = 600),
+      !(Date.now() - this.lastShot < e))
+    ) {
+      let stats = {
+          "normal": { heat: 5, energy: 5 },
+          "explosive": { heat: 15, energy: 15 },
+          "piercing": { heat: 10, energy: 10 },
+          "blackhole": { heat: 30, energy: 25 },
+          "frost": { heat: 8, energy: 8 }
+      }[this.weaponType] || { heat: 10, energy: 10 };
+      if (this.weaponType.startsWith("hybrid-")) {
+          stats.heat *= 1.5;
+          stats.energy *= 1.5;
+      }
+      if (this.heat + stats.heat > this.maxHeat || this.energy < stats.energy) return;
+      this.heat += stats.heat;
+      this.energy -= stats.energy;
+      if (
+        ((this.lastShot = Date.now()), this.weaponType.startsWith("hybrid-"))
+      ) {
+        let i = this.weaponType,
+          s = "#a855f7",
+          l = -600;
+        (i.includes("piercing")
+          ? (l = -1e3)
+          : i.includes("explosive")
+            ? (l = -400)
+            : i.includes("blackhole")
+              ? (l = -180)
+              : i.includes("frost") && (l = -600),
+          i.includes("blackhole")
+            ? (s = "#7c3aed")
+            : i.includes("piercing")
+              ? (s = "#fcd34d")
+              : i.includes("explosive")
+                ? (s = "#ef4444")
+                : i.includes("frost") && (s = "#60a5fa"),
+          o.push(new p(this.x + this.width / 2 - 3, this.y, l, s, this.id, i)));
+        let n = o[o.length - 1];
+        i.includes("blackhole")
+          ? ((n.width = 32), (n.height = 32), (n.life = 2.5))
+          : i.includes("piercing")
+            ? ((n.width = 4), (n.height = 30))
+            : i.includes("explosive") && (n.width = 12);
+      } else
+        this.weaponType === "frost"
+          ? o.push(
+              new p(
+                this.x + this.width / 2 - 4,
+                this.y,
+                -600,
+                "#60a5fa",
+                this.id,
+                "frost",
+              ),
+            )
+          : this.weaponType === "explosive"
+            ? (o.push(
+                new p(
+                  this.x + this.width / 2 - 6,
+                  this.y,
+                  -400,
+                  "#ef4444",
+                  this.id,
+                  "explosive",
+                ),
+              ),
+              (o[o.length - 1].width = 12))
+            : this.weaponType === "piercing" || this.shipType === "sniper"
+              ? (o.push(
+                  new p(
+                    this.x + this.width / 2 - 2,
+                    this.y,
+                    -1e3,
+                    "#fcd34d",
+                    this.id,
+                    "piercing",
+                  ),
+                ),
+                (o[o.length - 1].height = 30),
+                this.shipType === "sniper" && (o[o.length - 1].isSniper = !0))
+              : this.weaponType === "blackhole"
+                ? o.push(
+                    new p(
+                      this.x + this.width / 2 - 16,
+                      this.y,
+                      -180,
+                      "#7c3aed",
+                      this.id,
+                      "blackhole",
+                    ),
+                  )
+                : o.push(
+                    new p(
+                      this.x + this.width / 2 - 3,
+                      this.y,
+                      -700,
+                      this.color,
+                      this.id,
+                      "normal",
+                    ),
+                  );
+      (o.length > 0 &&
+        (o[o.length - 1].damageMultiplier = this.bulletDamageModifier || 1),
+        f(this.x + this.width / 2, this.y, this.color, 3, 2),
+        (m === "p2p-host" || m === "p2p-join") &&
+          $({
+            type: "shoot",
+            id: this.id,
+            x: this.x,
+            y: this.y,
+            wType: this.weaponType,
+          }));
+    }
+  }
+}
+class p {
+  constructor(e, i, s, l, n, r = "normal") {
+    ((this.x = e),
+      (this.y = i),
+      (this.width = r === "blackhole" ? 32 : 6),
+      (this.height = r === "blackhole" ? 32 : 15),
+      (this.vy = r === "blackhole" ? -180 : s),
+      (this.color = l),
+      (this.ownerId = n),
+      (this.type = r),
+      (this.markedForDeletion = !1),
+      (this.damageMultiplier = 1),
+      r === "blackhole" && (this.life = 2.5));
+  }
+  draw() {
+    if (this.type.includes("blackhole")) {
+      h.save();
+      let e = Date.now() / 150;
+      (h.translate(this.x + 16, this.y + 16), h.rotate(e));
+      let i = h.createRadialGradient(0, 0, 2, 0, 0, 18);
+      (i.addColorStop(0, "#000000"),
+        i.addColorStop(0.3, "#7c3aed"),
+        i.addColorStop(0.8, "rgba(147, 51, 234, 0.4)"),
+        i.addColorStop(1, "rgba(147, 51, 234, 0)"),
+        (h.fillStyle = i),
+        h.beginPath(),
+        h.arc(0, 0, 18, 0, Math.PI * 2),
+        h.fill(),
+        (h.fillStyle = "#ffffff"),
+        h.beginPath(),
+        h.arc(0, 0, 3, 0, Math.PI * 2),
+        h.fill(),
+        h.restore());
+    } else
+      ((h.fillStyle = this.color),
+        h.fillRect(this.x, this.y, this.width, this.height));
+  }
+  update(e) {
+    let i = typeof I < "u" && I > 0 && this.ownerId === "enemy" ? 0.2 : 1;
+    if (
+      ((this.y += this.vy * i * e),
+      this.vx && (this.x += this.vx * i * e),
+      this.isScythe && (this.x += Math.sin(Date.now() / 80) * 150 * e),
+      this.type.includes("blackhole"))
+    ) {
+      ((this.life -= e),
+        this.life <= 0 && (this.markedForDeletion = !0),
+        v.forEach((l) => {
+          let n = this.x + 16 - (l.x + l.width / 2),
+            r = this.y + 16 - (l.y + l.height / 2),
+            c = Math.hypot(n, r);
+          if (c < 180) {
+            let y = (180 - c) * 1.5,
+              g = Math.atan2(r, n);
+            ((l.x += Math.cos(g) * y * e), (l.y += Math.sin(g) * y * e));
+          }
         }));
+      let s = (l) => {
+        let n = this.x + 16 - l.x,
+          r = this.y + 16 - l.y,
+          c = Math.hypot(n, r);
+        if (c < 180) {
+          let y = (180 - c) * 2,
+            g = Math.atan2(r, n);
+          ((l.x += Math.cos(g) * y * e), (l.y += Math.sin(g) * y * e));
+        }
+      };
+      (M.forEach(s), T.forEach(s), D.forEach(s));
     }
-    
-    localStorage.setItem('spaceShooterProgress', JSON.stringify({
-        players: playersData,
-        unlockedWorld: unlockedWorld
+    (this.y < -100 ||
+      this.y > u.height + 100 ||
+      this.x < -100 ||
+      this.x > u.width + 100) &&
+      (this.markedForDeletion = !0);
+  }
+}
+class Ye {
+  constructor(e, i, s) {
+    this.x = e;
+    this.y = i;
+    this.type = s;
+    const l = 1 + (w - 1) * 0.2;
+    if (s === 3) {
+      ((this.width = 60),
+        (this.height = 60),
+        (this.hp = Math.floor(50 * l)),
+        (this.speed = Math.floor(80 * (1 + (w - 1) * 0.02))),
+        (this.color = "#ef4444"),
+        (this.fireRate = Math.max(800, 1500 - (w - 1) * 50)));
+    } else if (s === 2) {
+      ((this.width = 40),
+        (this.height = 40),
+        (this.hp = Math.floor(20 * l)),
+        (this.speed = Math.floor(150 * (1 + (w - 1) * 0.02))),
+        (this.color = "#f59e0b"),
+        (this.fireRate = 3e3));
+    } else if (s === 4) {
+      ((this.width = 45),
+        (this.height = 45),
+        (this.hp = Math.floor(35 * l)),
+        (this.speed = Math.floor(70 * (1 + (w - 1) * 0.01))),
+        (this.color = "#10b981"),
+        (this.fireRate = Math.max(1e3, 2500 - (w - 1) * 80)),
+        (this.lastHeal = Date.now() + Math.random() * 1e3));
+    } else if (s === 5) {
+      ((this.width = 40),
+        (this.height = 40),
+        (this.hp = Math.floor(12 * l)),
+        (this.speed = Math.floor(210 * (1 + (w - 1) * 0.025))),
+        (this.color = "#ef4444"),
+        (this.fireRate = 99999999));
+    } else if (s === 6) {
+      ((this.width = 45),
+        (this.height = 45),
+        (this.hp = Math.floor(60 * l)),
+        (this.speed = Math.floor(60 * (1 + (w - 1) * 0.02))),
+        (this.color = "#3b82f6"),
+        (this.fireRate = Math.max(1e3, 2e3 - (w - 1) * 50)));
+    } else if (s === 7) {
+      ((this.width = 40),
+        (this.height = 40),
+        (this.hp = Math.floor(20 * l)),
+        (this.speed = Math.floor(90 * (1 + (w - 1) * 0.02))),
+        (this.color = "#a855f7"),
+        (this.fireRate = Math.max(1e3, 2e3 - (w - 1) * 50)),
+        (this.phaseTimer = 0),
+        (this.isVisible = !0));
+    } else if (s === 8) {
+      ((this.width = 50),
+        (this.height = 50),
+        (this.hp = Math.floor(40 * l)),
+        (this.speed = Math.floor(50 * (1 + (w - 1) * 0.01))),
+        (this.color = "#d946ef"),
+        (this.fireRate = 99999999),
+        (this.lastSummon = Date.now() + Math.random() * 2e3));
+    } else if (s === 9) {
+      ((this.width = 45),
+        (this.height = 45),
+        (this.hp = Math.floor(30 * l)),
+        (this.speed = Math.floor(70 * (1 + (w - 1) * 0.02))),
+        (this.color = "#94a3b8"),
+        (this.fireRate = 3000));
+    } else if (s === 10) {
+      ((this.width = 40),
+        (this.height = 40),
+        (this.hp = Math.floor(15 * l)),
+        (this.speed = Math.floor(40 * (1 + (w - 1) * 0.01))),
+        (this.color = "#fcd34d"),
+        (this.fireRate = Math.max(1500, 3e3 - (w - 1) * 50)));
+    } else if (s === 11) {
+      ((this.width = 55),
+        (this.height = 55),
+        (this.hp = Math.floor(35 * l)),
+        (this.speed = Math.floor(70 * (1 + (w - 1) * 0.02))),
+        (this.color = "#14b8a6"),
+        (this.fireRate = Math.max(1500, 2500 - (w - 1) * 50)));
+    } else if (s === 12) {
+      ((this.width = 40),
+        (this.height = 40),
+        (this.hp = Math.floor(25 * l)),
+        (this.speed = Math.floor(100 * (1 + (w - 1) * 0.02))),
+        (this.color = "#f43f5e"),
+        (this.fireRate = Math.max(800, 1500 - (w - 1) * 50)),
+        (this.startX = e),
+        (this.timeOffset = Math.random() * Math.PI * 2));
+    } else if (s === 13) {
+      // 🤖 Heavy Battle Droid
+      ((this.width = 65),
+        (this.height = 65),
+        (this.hp = Math.floor(80 * l)),
+        (this.speed = Math.floor(50 * (1 + (w - 1) * 0.015))),
+        (this.color = "#ef4444"),
+        (this.fireRate = Math.max(1200, 2000 - (w - 1) * 40)));
+    } else if (s === 14) {
+      // 💀 Dark Void Reaper
+      ((this.width = 70),
+        (this.height = 70),
+        (this.hp = Math.floor(120 * l)),
+        (this.speed = Math.floor(40 * (1 + (w - 1) * 0.01))),
+        (this.color = "#a855f7"),
+        (this.fireRate = Math.max(1500, 2500 - (w - 1) * 50)));
+    } else {
+      ((this.width = 40),
+        (this.height = 40),
+        (this.hp = Math.floor(10 * l)),
+        (this.speed = Math.floor(80 * (1 + (w - 1) * 0.02))),
+        (this.color = "#22d3ee"),
+        (this.fireRate = Math.max(1200, 3e3 - (w - 1) * 100)));
+    }
+    ((this.maxHp = this.hp),
+      (this.markedForDeletion = !1),
+      (this.lastShot = Date.now() + Math.random() * 2e3),
+      (this.id = Math.random().toString(36).substr(2, 9)));
+  }
+  draw() {
+    if (this.markedForDeletion && this.type === 11 && !this.splitDone) {
+      this.splitDone = true;
+      v.push(new Ye(this.x - 20, this.y, 2));
+      v.push(new Ye(this.x + 20, this.y, 2));
+    }
+
+    (h.save(),
+      h.translate(this.x, this.y),
+      (h.font =
+        this.type === 3
+          ? '50px "Segoe UI Emoji", Arial'
+          : this.type === 13
+            ? '55px "Segoe UI Emoji", Arial'
+            : this.type === 14
+              ? '60px "Segoe UI Emoji", Arial'
+              : '35px "Segoe UI Emoji", Arial'),
+      (h.textAlign = "center"),
+      (h.textBaseline = "middle"));
+    let e = "👾";
+    this.type === 2
+      ? (e = "👽")
+      : this.type === 3
+        ? (e = "👹")
+        : this.type === 4
+          ? (e = "🛸")
+          : this.type === 5
+            ? (e = "💥")
+            : this.type === 6
+              ? (e = "🛡️")
+              : this.type === 7
+                ? (e = "👻")
+                : this.type === 8
+                  ? (e = "🧙")
+                  : this.type === 9
+                    ? (e = "🐺")
+                    : this.type === 10
+                      ? (e = "🎯")
+                      : this.type === 11
+                          ? (e = "🦠")
+                          : this.type === 12
+                            ? (e = "🦇")
+                            : this.type === 13
+                              ? (e = "🤖")
+                              : this.type === 14 && (e = "💀");
+
+    if (this.type === 5) {
+      ((h.shadowBlur = 15), (h.shadowColor = "#ef4444"));
+    }
+    if (this.type === 7 && !this.isVisible) {
+      h.globalAlpha = 0.2;
+    }
+
+    h.fillText(e, this.width / 2, this.height / 2);
+
+    if (this.type === 6 && this.hp > this.maxHp / 2) {
+      (h.beginPath(),
+        h.arc(
+          this.width / 2,
+          this.height / 2,
+          this.width / 1.5,
+          0,
+          Math.PI * 2,
+        ),
+        (h.strokeStyle = "#3b82f6"),
+        (h.lineWidth = 3),
+        h.stroke());
+    }
+
+    if (this.type === 4) {
+      ((h.fillStyle = "#10b981"),
+        (h.font = "bold 16px Arial"),
+        h.fillText("✚", this.width / 2 + 16, this.height / 2 - 16));
+    }
+    h.restore();
+  }
+  update(e) {
+    if (this.type === 7) {
+      this.phaseTimer += e;
+      if (this.phaseTimer > 2) {
+        ((this.isVisible = !this.isVisible), (this.phaseTimer = 0));
+        if (this.isVisible) {
+          this.x += (Math.random() - 0.5) * 100;
+          this.x = Math.max(0, Math.min(u.width - this.width, this.x));
+        }
+      }
+    }
+    if (this.type === 12) {
+      this.timeOffset += e * 3;
+      this.x = this.startX + Math.sin(this.timeOffset) * 100;
+      this.x = Math.max(0, Math.min(u.width - this.width, this.x));
+    }
+
+    if (this.type === 5) {
+      let s = u.width / 2;
+      if (a.length > 0) {
+        let n = null,
+          r = 1 / 0;
+        a.forEach((c) => {
+          if (c.isAlive) {
+            let y = Math.hypot(c.x - this.x, c.y - this.y);
+            y < r && ((r = y), (n = c));
+          }
+        });
+        n && (s = n.x + n.width / 2);
+      }
+      let l = typeof I < "u" && I > 0 ? 0.2 : 1;
+      this.x += (s - (this.x + this.width / 2)) * e * 2.2 * l;
+    }
+
+    let i = typeof I < "u" && I > 0 ? 0.2 : 1;
+    this.y += this.speed * i * e;
+
+    if (m !== "p2p-join") {
+      if (this.type === 4 && Date.now() - this.lastHeal > 2e3) {
+        this.lastHeal = Date.now();
+        let s = !1;
+        v.forEach((l) => {
+          l !== this &&
+            l.hp < l.maxHp &&
+            Math.hypot(l.x - this.x, l.y - this.y) < 250 &&
+            ((l.hp = Math.min(l.maxHp, l.hp + 15)),
+            f(l.x + l.width / 2, l.y + l.height / 2, "#10b981", 8, 1),
+            (s = !0));
+        });
+        s &&
+          f(
+            this.x + this.width / 2,
+            this.y + this.height / 2,
+            "#10b981",
+            15,
+            1.5,
+          );
+      }
+
+      if (this.type === 8 && Date.now() - this.lastSummon > 4e3) {
+        this.lastSummon = Date.now();
+        v.push(new Ye(this.x, this.y + this.height, 1));
+        if (m === "p2p-host")
+          $({
+            type: "spawn_enemy",
+            x: this.x,
+            y: this.y + this.height,
+            eType: 1,
+          });
+      }
+
+      if (this.type === 9 && Date.now() - this.lastShot > 3e3) {
+        this.lastShot = Date.now();
+        for (let k = 0; k < 8; k++) {
+          let angle = (k / 8) * Math.PI * 2;
+          let bb = new p(
+            this.x + this.width / 2,
+            this.y + this.height / 2,
+            0,
+            "#94a3b8",
+            "enemy",
+          );
+          bb.vx = Math.cos(angle) * 150;
+          bb.vy = Math.sin(angle) * 150;
+          o.push(bb);
+        }
+      }
+
+      if (
+        this.type !== 2 &&
+        this.type !== 5 &&
+        this.type !== 8 &&
+        this.type !== 9
+      ) {
+        if (Date.now() - this.lastShot > this.fireRate) {
+          this.lastShot = Date.now();
+          let bColor = "#ef4444",
+            vy = 300,
+            eType = "normal";
+          if (this.type === 4) bColor = "#10b981";
+          else if (this.type === 10) {
+            bColor = "#fcd34d";
+            vy = 600;
+            eType = "piercing";
+          } else if (this.type === 6) {
+            bColor = "#3b82f6";
+          }
+
+          if (this.type === 13) {
+            // 🤖 Heavy Battle Droid: dual parallel lasers
+            o.push(new p(this.x + 10, this.y + this.height, 350, "#ef4444", "enemy", "normal"));
+            o.push(new p(this.x + this.width - 16, this.y + this.height, 350, "#ef4444", "enemy", "normal"));
+          } else if (this.type === 14) {
+            // 💀 Dark Void Reaper: 3-way spread shot
+            let centerLaser = new p(this.x + this.width / 2 - 3, this.y + this.height, 300, "#a855f7", "enemy", "normal");
+            centerLaser.vx = 0;
+            o.push(centerLaser);
+            
+            let leftLaser = new p(this.x + this.width / 2 - 3, this.y + this.height, 280, "#a855f7", "enemy", "normal");
+            leftLaser.vx = -80;
+            o.push(leftLaser);
+            
+            let rightLaser = new p(this.x + this.width / 2 - 3, this.y + this.height, 280, "#a855f7", "enemy", "normal");
+            rightLaser.vx = 80;
+            o.push(rightLaser);
+          } else {
+            o.push(
+              new p(
+                this.x + this.width / 2 - 3,
+                this.y + this.height,
+                vy,
+                bColor,
+                "enemy",
+                eType,
+              ),
+            );
+          }
+          if (m === "p2p-host")
+            $({
+              type: "enemy_shoot",
+              x: this.x,
+              y: this.y,
+              w: this.width,
+              h: this.height,
+              vy: vy,
+              bColor: bColor,
+              eType: eType,
+              owner: "enemy",
+            });
+        }
+      }
+    }
+    if (this.y > u.height + 50) this.markedForDeletion = !0;
+  }
+}
+class De {
+  constructor(e, i) {
+    ((this.x = e),
+      (this.y = i),
+      (this.width = 20),
+      (this.height = 25),
+      (this.vy = 80),
+      (this.markedForDeletion = !1),
+      (this.id = Math.random().toString(36).substr(2, 9)));
+  }
+  draw() {
+    ((h.font = '20px "Segoe UI Emoji", Arial'),
+      (h.textAlign = "center"),
+      (h.textBaseline = "middle"),
+      h.fillText("⛽", this.x + this.width / 2, this.y + this.height / 2));
+  }
+  update(e) {
+    ((this.y += this.vy * e),
+      this.y > u.height + 50 && (this.markedForDeletion = !0));
+  }
+}
+class re {
+  constructor(e, i) {
+    ((this.x = e),
+      (this.y = i),
+      (this.width = 15),
+      (this.height = 15),
+      (this.vy = 50),
+      (this.markedForDeletion = !1),
+      (this.id = Math.random().toString(36).substr(2, 9)));
+  }
+  draw() {
+    ((h.font = "15px Arial"),
+      (h.textAlign = "center"),
+      (h.textBaseline = "middle"),
+      h.fillText("💰", this.x + this.width / 2, this.y + this.height / 2));
+  }
+  update(e) {
+    ((this.y += this.vy * e),
+      this.y > u.height + 50 && (this.markedForDeletion = !0));
+  }
+}
+class de {
+  constructor(e, i) {
+    ((this.x = e),
+      (this.y = i),
+      (this.width = 15),
+      (this.height = 15),
+      (this.vy = 60),
+      (this.markedForDeletion = !1),
+      (this.id = Math.random().toString(36).substr(2, 9)));
+  }
+  draw() {
+    ((h.font = "15px Arial"),
+      (h.textAlign = "center"),
+      (h.textBaseline = "middle"),
+      h.fillText("💎", this.x + this.width / 2, this.y + this.height / 2));
+  }
+  update(e) {
+    ((this.y += this.vy * e),
+      this.y > u.height + 50 && (this.markedForDeletion = !0));
+  }
+}
+class Ee {
+  constructor(e, i, s, l, n, r = !1) {
+    ((this.x = e),
+      (this.y = i),
+      (this.vx = s),
+      (this.vy = l),
+      (this.width = n),
+      (this.height = n),
+      (this.isGolden = r),
+      (this.hp = r ? 25 : Math.max(1, Math.ceil(n / 8))),
+      (this.markedForDeletion = !1),
+      (this.id = Math.random().toString(36).substr(2, 9)));
+  }
+  draw() {
+    (h.save(),
+      (h.font = this.width + 'px "Segoe UI Emoji", Arial'),
+      (h.textAlign = "center"),
+      (h.textBaseline = "middle"),
+      this.isGolden
+        ? ((h.shadowBlur = 12),
+          (h.shadowColor = "#fbbf24"),
+          h.fillText("☄️", this.x + this.width / 2, this.y + this.height / 2))
+        : h.fillText("🪨", this.x + this.width / 2, this.y + this.height / 2),
+      h.restore());
+  }
+  update(e) {
+    ((this.x += this.vx * e),
+      (this.y += this.vy * e),
+      (this.y > u.height + 100 || this.x < -100 || this.x > u.width + 100) &&
+        (this.markedForDeletion = !0));
+  }
+}
+class Je {
+  constructor(e, i) {
+    ((this.x = e),
+      (this.y = i),
+      (this.width = 150),
+      (this.height = 100),
+      (this.dir = 1),
+      (this.markedForDeletion = !1),
+      (this.id = "boss_1"),
+      (this.lastShot = Date.now()),
+      (this.phase = 1));
+    const s = B || 1;
+    s === 1
+      ? ((this.emoji = "😈"),
+        (this.name = "زعيم السديم"),
+        (this.maxHp = 600),
+        (this.speed = 80),
+        (this.fireRate = 1600),
+        (this.bulletColor = "#f59e0b"))
+      : s === 2
+        ? ((this.emoji = "🤖"),
+          (this.name = "حارس الكويكبات"),
+          (this.maxHp = 900),
+          (this.speed = 100),
+          (this.fireRate = 1400),
+          (this.bulletColor = "#fb923c"))
+        : s === 3
+          ? ((this.emoji = "👽"),
+            (this.name = "سيد الثقب الأسود"),
+            (this.maxHp = 1200),
+            (this.speed = 120),
+            (this.fireRate = 1200),
+            (this.bulletColor = "#a855f7"))
+          : s === 4
+            ? ((this.emoji = "👹"),
+              (this.name = "غول الكوكب الفضائي"),
+              (this.maxHp = 1650),
+              (this.speed = 140),
+              (this.fireRate = 1100),
+              (this.bulletColor = "#ef4444"))
+            : s === 5
+              ? ((this.emoji = "🐉"),
+                (this.name = "تنين النجوم المشتعلة"),
+                (this.maxHp = 2200),
+                (this.speed = 160),
+                (this.fireRate = 1e3),
+                (this.bulletColor = "#10b981"))
+              : s === 6
+                ? ((this.emoji = "🐙"),
+                  (this.name = "كراكن الطاقة المظلمة"),
+                  (this.maxHp = 2800),
+                  (this.speed = 180),
+                  (this.fireRate = 900),
+                  (this.bulletColor = "#6366f1"))
+                : s === 7
+                  ? ((this.emoji = "💀"),
+                    (this.name = "حاصد الأرواح الكوني"),
+                    (this.maxHp = 3500),
+                    (this.speed = 200),
+                    (this.fireRate = 800),
+                    (this.bulletColor = "#ec4899"))
+                  : s === 8
+                    ? ((this.emoji = "👑"),
+                      (this.name = "إمبراطور الأبعاد الكبرى"),
+                      (this.maxHp = 4500),
+                      (this.speed = 220),
+                      (this.fireRate = 700),
+                      (this.bulletColor = "#06b6d4"))
+                    : s === 9
+                      ? ((this.emoji = "👾"),
+                        (this.name = "حارس الحافة المظلمة"),
+                        (this.maxHp = 5500),
+                        (this.speed = 230),
+                        (this.fireRate = 650),
+                        (this.bulletColor = "#fb7185"))
+                      : s === 10
+                        ? ((this.emoji = "🥶"),
+                          (this.name = "وحش الصقيع الكوني"),
+                          (this.maxHp = 6500),
+                          (this.speed = 240),
+                          (this.fireRate = 600),
+                          (this.bulletColor = "#67e8f9"))
+                        : s === 11
+                          ? ((this.emoji = "👽"),
+                            (this.name = "لورد الكويزار المدمر"),
+                            (this.maxHp = 8e3),
+                            (this.speed = 250),
+                            (this.fireRate = 550),
+                            (this.bulletColor = "#f97316"))
+                          : ((this.emoji = "🌌💥"),
+                            (this.name = "الحاكم المطلق للأبعاد"),
+                            (this.maxHp = 1e4),
+                            (this.speed = 260),
+                            (this.fireRate = 500),
+                            (this.bulletColor = "#ec4899"));
+    const l = 1 + (w - 5) * 0.15;
+    ((this.maxHp = Math.floor(this.maxHp * Math.max(1, l))),
+      (this.hp = this.maxHp));
+  }
+  draw() {
+    (h.save(),
+      h.translate(this.x, this.y),
+      (h.font = '100px "Segoe UI Emoji", Arial'),
+      (h.textAlign = "center"),
+      (h.textBaseline = "middle"),
+      h.fillText(this.emoji, this.width / 2, this.height / 2),
+      (h.fillStyle = "#ffffff"),
+      (h.font = 'bold 16px "Cairo", Arial'),
+      (h.textAlign = "center"),
+      h.fillText(this.name, this.width / 2, -22),
+      (h.fillStyle = "#000"),
+      h.fillRect(0, -12, this.width, 8),
+      (h.fillStyle = this.bulletColor),
+      h.fillRect(0, -12, this.width * (this.hp / this.maxHp), 8),
+      h.restore());
+  }
+  update(e) {
+    let i = typeof I < "u" && I > 0 ? 0.2 : 1;
+    if (
+      (this.y < 50
+        ? (this.y += 50 * i * e)
+        : ((this.x += this.speed * this.dir * i * e),
+          (this.x <= 0 || this.x + this.width >= u.width) &&
+            ((this.dir *= -1),
+            (this.x = Math.max(0, Math.min(u.width - this.width, this.x))))),
+      m !== "p2p-join" && Date.now() - this.lastShot > this.fireRate)
+    ) {
+      this.lastShot = Date.now();
+      const s = B || 1;
+      if (s === 1)
+        for (let l = -2; l <= 2; l++) {
+          o.push(
+            new p(
+              this.x + this.width / 2,
+              this.y + this.height,
+              250 + Math.abs(l) * 50,
+              this.bulletColor,
+              "enemy",
+            ),
+          );
+          let n = o[o.length - 1];
+          n.vx = l * 80;
+        }
+      else if (s === 2) {
+        for (let l = -2; l <= 2; l++) {
+          o.push(
+            new p(
+              this.x + this.width / 2,
+              this.y + this.height,
+              260 + Math.abs(l) * 50,
+              this.bulletColor,
+              "enemy",
+            ),
+          );
+          let n = o[o.length - 1];
+          n.vx = l * 90;
+        }
+        (o.push(
+          new p(
+            this.x + this.width / 2 - 6,
+            this.y + this.height,
+            380,
+            "#ef4444",
+            "enemy",
+            "explosive",
+          ),
+        ),
+          (o[o.length - 1].width = 12),
+          (o[o.length - 1].height = 20));
+      } else if (s === 3) {
+        let l = a[0];
+        if (a[1] && a[0]) {
+          let c = Math.hypot(a[0].x - this.x, a[0].y - this.y);
+          Math.hypot(a[1].x - this.x, a[1].y - this.y) < c && (l = a[1]);
+        }
+        let r =
+          (l ? l.x + l.width / 2 : u.width / 2) - (this.x + this.width / 2);
+        for (let c = -2; c <= 2; c++) {
+          o.push(
+            new p(
+              this.x + this.width / 2,
+              this.y + this.height,
+              300,
+              this.bulletColor,
+              "enemy",
+            ),
+          );
+          let y = o[o.length - 1];
+          y.vx = (r / u.height) * 250 + c * 40;
+        }
+      } else if (s === 4) {
+        let l = Date.now() / 1e3;
+        for (let n = 0; n < 6; n++) {
+          let r = (n * Math.PI) / 3 + l;
+          o.push(
+            new p(
+              this.x + this.width / 2,
+              this.y + this.height,
+              250,
+              this.bulletColor,
+              "enemy",
+            ),
+          );
+          let c = o[o.length - 1];
+          ((c.vx = Math.sin(r) * 150), (c.vy = Math.cos(r) * 150 + 200));
+        }
+      } else if (s === 5)
+        for (let l = 0; l < 8; l++) {
+          let n = (l * Math.PI) / 4;
+          o.push(
+            new p(
+              this.x + this.width / 2,
+              this.y + this.height,
+              200,
+              this.bulletColor,
+              "enemy",
+            ),
+          );
+          let r = o[o.length - 1];
+          ((r.vx = Math.sin(n) * 180), (r.vy = Math.cos(n) * 180 + 150));
+        }
+      else if (s === 6)
+        for (let l = -3; l <= 3; l++) {
+          o.push(
+            new p(
+              this.x + this.width / 2,
+              this.y + this.height,
+              320,
+              this.bulletColor,
+              "enemy",
+            ),
+          );
+          let n = o[o.length - 1];
+          n.vx = l * 110;
+        }
+      else if (s === 7)
+        for (let l = -3; l <= 3; l++) {
+          o.push(
+            new p(
+              this.x + this.width / 2,
+              this.y + this.height,
+              330,
+              this.bulletColor,
+              "enemy",
+            ),
+          );
+          let n = o[o.length - 1];
+          ((n.vx = l * 120), (n.isScythe = !0));
+        }
+      else if (s === 8) {
+        let l = Date.now() / 1e3;
+        for (let c = 0; c < 8; c++) {
+          let y = (c * Math.PI) / 4 + l;
+          o.push(
+            new p(
+              this.x + this.width / 2,
+              this.y + this.height,
+              200,
+              this.bulletColor,
+              "enemy",
+            ),
+          );
+          let g = o[o.length - 1];
+          ((g.vx = Math.sin(y) * 200), (g.vy = Math.cos(y) * 200 + 250));
+        }
+        let r =
+          (a[0] ? a[0].x + a[0].width / 2 : u.width / 2) -
+          (this.x + this.width / 2);
+        (o.push(
+          new p(
+            this.x + this.width / 2,
+            this.y + this.height,
+            420,
+            "#ff0000",
+            "enemy",
+          ),
+        ),
+          (o[o.length - 1].vx = (r / u.height) * 420));
+      } else if (s === 9) {
+        let l = Date.now() / 800;
+        for (let n = 0; n < 10; n++) {
+          let r = (n * Math.PI) / 5 + l;
+          o.push(
+            new p(
+              this.x + this.width / 2,
+              this.y + this.height,
+              220,
+              this.bulletColor,
+              "enemy",
+            ),
+          );
+          let c = o[o.length - 1];
+          ((c.vx = Math.sin(r) * 220), (c.vy = Math.cos(r) * 220 + 200));
+        }
+      } else if (s === 10) {
+        for (let l = -3; l <= 3; l++) {
+          o.push(
+            new p(
+              this.x + this.width / 2,
+              this.y + this.height,
+              280,
+              this.bulletColor,
+              "enemy",
+            ),
+          );
+          let n = o[o.length - 1];
+          n.vx = l * 60;
+        }
+        (o.push(
+          new p(
+            this.x + this.width / 2,
+            this.y + this.height,
+            180,
+            "#22d3ee",
+            "enemy",
+            "frost",
+          ),
+        ),
+          (o[o.length - 1].width = 18),
+          (o[o.length - 1].height = 18));
+      } else if (s === 11) {
+        let n =
+          (a[0] ? a[0].x + a[0].width / 2 : u.width / 2) -
+          (this.x + this.width / 2);
+        (o.push(
+          new p(
+            this.x + this.width / 2,
+            this.y + this.height,
+            480,
+            this.bulletColor,
+            "enemy",
+          ),
+        ),
+          (o[o.length - 1].vx = (n / u.height) * 480));
+        for (let r = -1; r <= 1; r++)
+          (o.push(
+            new p(
+              this.x + this.width / 2,
+              this.y + this.height,
+              240,
+              "#f97316",
+              "enemy",
+            ),
+          ),
+            (o[o.length - 1].vx = (Math.random() - 0.5) * 300));
+      } else {
+        let l = Date.now() / 600;
+        for (let n = 0; n < 12; n++) {
+          let r = (n * Math.PI) / 6 + l;
+          o.push(
+            new p(
+              this.x + this.width / 2,
+              this.y + this.height,
+              260,
+              this.bulletColor,
+              "enemy",
+            ),
+          );
+          let c = o[o.length - 1];
+          ((c.vx = Math.sin(r) * 240), (c.vy = Math.cos(r) * 240 + 220));
+        }
+        (o.push(
+          new p(
+            this.x + this.width / 2,
+            this.y + this.height,
+            350,
+            "#f43f5e",
+            "enemy",
+          ),
+        ),
+          (o[o.length - 1].vx = (Math.random() - 0.5) * 400),
+          (o[o.length - 1].isScythe = !0));
+      }
+    }
+  }
+}
+class St {
+  constructor(e, i, s, l) {
+    ((this.x = e),
+      (this.y = i),
+      (this.vx = (Math.random() - 0.5) * 300 * l),
+      (this.vy = (Math.random() - 0.5) * 300 * l),
+      (this.size = Math.random() * 4 + 1),
+      (this.color = s),
+      (this.life = 1),
+      (this.decay = Math.random() * 0.02 + 0.02),
+      (this.markedForDeletion = !1));
+  }
+  draw() {
+    ((h.globalAlpha = this.life),
+      (h.fillStyle = this.color),
+      h.beginPath(),
+      h.arc(this.x, this.y, this.size, 0, Math.PI * 2),
+      h.fill(),
+      (h.globalAlpha = 1));
+  }
+  update(e) {
+    ((this.x += this.vx * e),
+      (this.y += this.vy * e),
+      (this.life -= this.decay),
+      this.life <= 0 && (this.markedForDeletion = !0));
+  }
+}
+function f(t, e, i, s, l = 1) {
+  for (let n = 0; n < s; n++) _.push(new St(t, e, i, l));
+}
+function Qe() {
+  ((u.width = window.innerWidth), (u.height = window.innerHeight));
+}
+window.addEventListener("resize", Qe);
+Qe();
+let Z = 1,
+  he = 0;
+window.addEventListener("keydown", (t) => {
+  ((d[t.key] = !0),
+    t.key === "Shift" && a[0]
+      ? W(0)
+      : (t.key === "f" || t.key === "F") && a[1]
+        ? W(1)
+        : (t.key === "h" || t.key === "H") && a[2]
+          ? W(2)
+          : (t.key === "j" || t.key === "J") && a[3]
+            ? W(3)
+            : (t.key === "k" || t.key === "K") && a[4]
+              ? W(4)
+              : (t.key === "l" || t.key === "L") && a[5] && W(5),
+    m === "local" || m === "local-coop"
+      ? (t.key === "b" || t.key === "B") && a[0] && a[0].isAlive
+        ? A(0)
+        : (t.key === "e" || t.key === "E") && a[1] && a[1].isAlive
+          ? A(1)
+          : (t.key === "o" || t.key === "O") && a[2] && a[2].isAlive
+            ? A(2)
+            : (t.key === "y" || t.key === "Y") && a[3] && a[3].isAlive
+              ? A(3)
+              : (t.key === "NumpadAdd" || t.key === "+") && a[4] && a[4].isAlive
+                ? A(4)
+                : t.key === "Delete" && a[5] && a[5].isAlive && A(5)
+      : (t.key === "b" || t.key === "B") && A(0));
+});
+window.addEventListener("keyup", (t) => {
+  d[t.key] = !1;
+});
+let te = !1,
+  ue = { x: 0, y: 0 };
+pe &&
+  (pe.classList.remove("hidden"),
+  pe.addEventListener("click", (t) => {
+    t.stopPropagation();
+    let e = a[0] || (a.length > 0 ? a[0] : null);
+    e && e.isAlive ? A(0) : alert("يجب أن تكون على قيد الحياة لفتح المتجر!");
+  }));
+u.addEventListener(
+  "touchstart",
+  (t) => {
+    if (se || Q || V) return;
+    let e = t.touches[0],
+      i = u.getBoundingClientRect(),
+      s = (e.clientX - i.left) * (u.width / i.width),
+      l = (e.clientY - i.top) * (u.height / i.height),
+      n = a[0];
+    n && n.isAlive && ((te = !0), (ue.x = n.x - s), (ue.y = n.y - l));
+  },
+  { passive: !1 },
+);
+u.addEventListener(
+  "touchmove",
+  (t) => {
+    if (!te) return;
+    let e = t.touches[0],
+      i = u.getBoundingClientRect(),
+      s = (e.clientX - i.left) * (u.width / i.width),
+      l = (e.clientY - i.top) * (u.height / i.height),
+      n = a[0];
+    (n &&
+      n.isAlive &&
+      ((n.x = s + ue.x),
+      (n.y = l + ue.y),
+      (n.x = Math.max(0, Math.min(u.width - n.width, n.x))),
+      (n.y = Math.max(0, Math.min(u.height - n.height, n.y)))),
+      t.preventDefault());
+  },
+  { passive: !1 },
+);
+u.addEventListener("touchend", () => {
+  te = !1;
+});
+document.querySelectorAll(".inv-btn").forEach((t) => {
+  t.addEventListener("click", (e) => {
+    e.stopPropagation();
+    let i = parseInt(t.getAttribute("data-player")),
+      s = t.getAttribute("data-item"),
+      l = a[i];
+    if (l) {
+      if (s === "heal") {
+        if (!l.isAlive) {
+          alert("يجب أن تكون السفينة حية لاستخدام عدة الإصلاح!");
+          return;
+        }
+        if (l.hp >= l.maxHp) {
+          alert("الطاقة كاملة بالفعل!");
+          return;
+        }
+        l.healsCount > 0
+          ? (l.healsCount--,
+            (l.hp = l.maxHp),
+            f(l.x + l.width / 2, l.y + l.height / 2, "#10b981", 20, 2),
+            alert("🔧 تم إصلاح السفينة بالكامل!"))
+          : alert("لا تملك أي عدة إصلاح! اشتريها من المتجر أولاً.");
+      } else if (s === "selfRevive") {
+        if (l.isAlive) {
+          alert("السفينة حية بالفعل ولا تحتاج إنعاش!");
+          return;
+        }
+        l.selfReviveKits > 0
+          ? (l.selfReviveKits--,
+            (l.isAlive = !0),
+            (l.hp = l.maxHp / 2),
+            (l.fuel = Math.max(30, l.fuel)),
+            f(l.x + l.width / 2, l.y + l.height / 2, "#ef4444", 35, 2),
+            alert("💉 تم إنعاش السفينة بنجاح بنصف الطاقة!"))
+          : alert("لا تملك أي حقن إنعاش! اشتريها من المتجر أولاً.");
+      } else if (s === "secondLife")
+        l.secondLifes > 0
+          ? (l.secondLifes--,
+            (l.isAlive = !0),
+            (l.hp = l.maxHp),
+            (l.fuel = l.maxFuel),
+            f(l.x + l.width / 2, l.y + l.height / 2, "#eab308", 50, 3),
+            alert(
+              "🌟 تم تفعيل الفرصة الثانية الفائقة واستعادة كامل الطاقة والوقود!",
+            ))
+          : alert("لا تملك أي فرصة ثانية فائقة! اشتريها من المتجر أولاً.");
+      else if (s === "tempShield") {
+        if (!l.isAlive) {
+          alert("يجب أن تكون السفينة حية لتفعيل درع الحماية!");
+          return;
+        }
+        if (l.tempShieldTimeLeft > 0) {
+          alert("درع الحماية نشط بالفعل حالياً!");
+          return;
+        }
+        l.tempShieldsCount > 0
+          ? (l.tempShieldsCount--,
+            (l.tempShieldTimeLeft = 5),
+            f(l.x + l.width / 2, l.y + l.height / 2, "#38bdf8", 15, 1.5),
+            alert("🛡️ تم تفعيل درع الحماية المؤقت لمدة 5 ثوانٍ!"))
+          : alert("لا تملك أي درع حماية مؤقت! اشتره من المتجر أولاً.");
+      }
+      (le(), Y());
+    }
+  });
+});
+function A(t = 0) {
+  if (m === "p2p-join") {
+    alert("فقط الـ Host يمكنه إيقاف اللعبة لفتح المتجر الآن!");
+    return;
+  }
+  if (((Q = !Q), Q)) {
+    ((he = t), ye.classList.remove("hidden"));
+    const e = ye.querySelector("h2");
+    if ((e && (e.innerText = `متجر اللاعب ${t + 1} 🛒`), K)) {
+      ((K.innerHTML = ""),
+        a.forEach((s, l) => {
+          if (l !== t && s.isAlive) {
+            let n = document.createElement("option");
+            ((n.value = l),
+              (n.innerText = `اللاعب ${l + 1}`),
+              K.appendChild(n));
+          }
+        }));
+      const i = document.querySelector(".shop-transfer-section");
+      i &&
+        (K.children.length === 0
+          ? (i.style.display = "none")
+          : (i.style.display = "block"));
+    }
+    ie();
+  } else (ye.classList.add("hidden"), le());
+}
+function ie() {
+  let t = a[he] || a[0];
+  ((nt.innerText = t.coins),
+    (ot.innerText = t.gems),
+    t.ownedShips || (t.ownedShips = ["defender"]),
+    t.ownedWeapons || (t.ownedWeapons = ["normal"]),
+    qe.forEach((e) => {
+      let i = e.getAttribute("data-type"),
+        s = e.getAttribute("data-item"),
+        l = e.getAttribute("data-cost"),
+        n = e.getAttribute("data-currency") === "gems" ? "💎" : "💰";
+      if (i === "weapon")
+        t.ownedWeapons.includes(s)
+          ? t.weaponType === s
+            ? ((e.innerText = "مجهز الحصان 🎖️"),
+              (e.style.background =
+                "linear-gradient(to bottom, #4b5563, #374151)"),
+              (e.disabled = !0))
+            : ((e.innerText = "تجهيز 🔄"),
+              (e.style.background =
+                "linear-gradient(to bottom, #3b82f6, #1d4ed8)"),
+              (e.disabled = !1))
+          : ((e.innerText = `شراء بـ ${l} ${n}`),
+            (e.style.background = ""),
+            (e.disabled = !1));
+      else if (i === "ship")
+        t.ownedShips.includes(s)
+          ? t.shipType === s
+            ? ((e.innerText = "مجهز الحصان 🎖️"),
+              (e.style.background =
+                "linear-gradient(to bottom, #4b5563, #374151)"),
+              (e.disabled = !0))
+            : ((e.innerText = "تجهيز 🔄"),
+              (e.style.background =
+                "linear-gradient(to bottom, #3b82f6, #1d4ed8)"),
+              (e.disabled = !1))
+          : ((e.innerText = `شراء بـ ${l} ${n}`),
+            (e.style.background = ""),
+            (e.disabled = !1));
+      else if (i === "drone")
+        s === "heal" && t.hasDroneHeal
+          ? ((e.innerText = "مقتناة 🏥"),
+            (e.disabled = !0),
+            (e.style.background = "#4b5563"))
+          : s === "fuel" && t.hasDroneFuel
+            ? ((e.innerText = "مقتناة ⛽"),
+              (e.disabled = !0),
+              (e.style.background = "#4b5563"))
+            : s === "magnet" && t.hasDroneMagnet
+              ? ((e.innerText = "مقتناة 🧲"),
+                (e.disabled = !0),
+                (e.style.background = "#4b5563"))
+              : ((e.innerText = `شراء بـ ${l} ${n}`),
+                (e.style.background = ""),
+                (e.disabled = !1));
+      else if (i === "drone-upgrade") {
+        let r = 0;
+        (s === "heal"
+          ? (r = t.droneHealLevel)
+          : s === "fuel"
+            ? (r = t.droneFuelLevel)
+            : s === "magnet" && (r = t.droneMagnetLevel),
+          (e.innerText = `ترقية لـ ${r + 1} (${l} 💰)`),
+          (e.style.background = ""),
+          (e.disabled = !1));
+      } else
+        i === "upgrade"
+          ? s === "reflectiveShield" &&
+            (t.hasReflectiveShield
+              ? ((e.innerText = "ممتلكة 🛡️"),
+                (e.disabled = !0),
+                (e.style.background = "#4b5563"))
+              : ((e.innerText = `شراء بـ ${l} ${n}`),
+                (e.style.background = ""),
+                (e.disabled = !1)))
+          : i === "consumable" ?
+            (s === "selfRevive"
+              ? t.boughtSelfReviveThisRun
+                ? ((e.innerText = "مباعة 🔒"),
+                  (e.disabled = !0),
+                  (e.style.background = "#4b5563"))
+                : ((e.innerText = `شراء بـ ${l} ${n}`),
+                  (e.style.background = ""),
+                  (e.disabled = !1))
+              : s === "secondLife" &&
+                (t.boughtSecondLifeThisRun
+                  ? ((e.innerText = "مباعة 🔒"),
+                    (e.disabled = !0),
+                    (e.style.background = "#4b5563"))
+                  : ((e.innerText = `شراء بـ ${l} ${n}`),
+                    (e.style.background = ""),
+                    (e.disabled = !1))))
+          : i === "trail" &&
+            (t.trailType === s
+              ? ((e.innerText = "مفعلة 🎖️"),
+                (e.disabled = !0),
+                (e.style.background = "linear-gradient(to bottom, #4b5563, #374151)"))
+              : ((e.innerText = `تفعيل بـ ${l} ${n}`),
+                (e.style.background = ""),
+                (e.disabled = !1)));
     }));
 }
-loadProgress();
-
-// Map UI
-const worldsMapModal = document.getElementById('worlds-map-modal');
-const closeMapBtn = document.getElementById('close-map-btn');
-const worldBtns = document.querySelectorAll('.world-btn');
-
-class Player {
-    constructor(id, x, y, color) {
-        this.id = id; // 1 or 2
-        this.x = x;
-        this.y = y;
-        this.width = 64;
-        this.height = 64;
-        this.color = color;
-        this.speed = 350; // pixels per sec (slower for better control)
-        this.maxHp = 100;
-        this.hp = 100;
-        this.maxFuel = 100;
-        this.fuel = 100; 
-        this.score = 0;
-        this.coins = 0;
-        this.gems = 0;
-        this.shipType = 'defender'; // defender, speedster, tank, healer
-        this.weaponType = 'normal'; // normal, frost, explosive, piercing
-        this.lastShot = 0;
-        this.fireRate = 150; // ms
-        this.isAlive = true;
-        this.isHost = (id === 1);
-        this.reviveTimer = 0;
-        
-        // Drone companions
-        this.hasDroneHeal = false;
-        this.hasDroneFuel = false;
-        this.hasDroneMagnet = false;
-        this.droneHealLevel = 0;
-        this.droneFuelLevel = 0;
-        this.droneMagnetLevel = 0;
-        this.lastDroneHealShot = 0;
-        this.lastDroneFuelShot = 0;
-        this.lastDroneHealAction = 0;
-        this.lastDroneFuelAction = 0;
-        this.lastDroneMagnetAction = 0;
-
-        // Inventory ownership
-        this.ownedShips = ['defender'];
-        this.ownedWeapons = ['normal'];
-        this.hasReflectiveShield = false;
-        this.isShieldActive = false;
-
-        this.bulletDamageModifier = 1.0;
-
-        this.ultCharge = 0;
-        this.tankUltTimeLeft = 0;
-        this.trailType = 'none';
-
-        // Consumables inventory count
-        this.healsCount = 0;
-        this.selfReviveKits = 0;
-        this.secondLifes = 0;
-        this.tempShieldsCount = 0;
-        this.tempShieldTimeLeft = 0;
+ht.addEventListener("click", () => A(he));
+qe.forEach((t) => {
+  t.addEventListener("click", (e) => {
+    let i = a[he] || a[0],
+      s = t.getAttribute("data-type"),
+      l = t.getAttribute("data-item"),
+      n = parseInt(t.getAttribute("data-cost")),
+      r = t.getAttribute("data-currency");
+    (i.ownedShips || (i.ownedShips = ["defender"]),
+      i.ownedWeapons || (i.ownedWeapons = ["normal"]));
+    let c = !1;
+    if (
+      (s === "weapon" && i.ownedWeapons.includes(l) && (c = !0),
+      s === "ship" && i.ownedShips.includes(l) && (c = !0),
+      c)
+    ) {
+      (we(i, s, l), ie());
+      return;
     }
-    draw() {
-        if (!this.isAlive) {
-            // Draw wreck / revive progress
-            ctx.save();
-            ctx.translate(this.x, this.y);
-            ctx.globalAlpha = 0.5;
-            ctx.fillStyle = '#475569';
-            ctx.beginPath();
-            ctx.moveTo(this.width / 2, 0);
-            ctx.lineTo(this.width, this.height);
-            ctx.lineTo(this.width / 2, this.height - 10);
-            ctx.lineTo(0, this.height);
-            ctx.closePath();
-            ctx.fill();
-            
-            if(this.reviveTimer > 0) {
-                ctx.globalAlpha = 1.0;
-                ctx.beginPath();
-                ctx.arc(this.width/2, this.height/2, 30, -Math.PI/2, (-Math.PI/2) + (Math.PI * 2 * (this.reviveTimer / 2.0)));
-                ctx.strokeStyle = '#10b981';
-                ctx.lineWidth = 4;
-                ctx.stroke();
-            }
-            ctx.restore();
-            return;
-        }
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        let bColor = this.getBulletColor();
-        ctx.globalAlpha = this.isBeingRevived ? 0.5 : 1.0;
-        
-        // Draw the spaceship SVG using Canvas paths!
-        ctx.scale(this.width / 200, this.height / 200);
-
-        // Exhaust Fire
-        let timeOffset = Math.sin(Date.now() / 100) * 10; 
-        ctx.fillStyle = '#ff9800'; 
-        ctx.beginPath();
-        ctx.moveTo(85, 160);
-        ctx.quadraticCurveTo(100, 200 + timeOffset, 115, 160);
-        ctx.fill();
-
-        // Wings (Bullet Color!)
-        ctx.fillStyle = bColor;
-        ctx.beginPath();
-        ctx.moveTo(100, 40); ctx.lineTo(160, 140); ctx.lineTo(130, 150); ctx.lineTo(100, 120); ctx.lineTo(70, 150); ctx.lineTo(40, 140); ctx.closePath();
-        ctx.fill();
-        
-        // Wing shadow
-        ctx.fillStyle = "rgba(0,0,0,0.2)";
-        ctx.beginPath();
-        ctx.moveTo(100, 40); ctx.lineTo(160, 140); ctx.lineTo(130, 150); ctx.lineTo(100, 120); ctx.closePath();
-        ctx.fill();
-
-        // Body
-        let bodyGrad = ctx.createLinearGradient(0, 0, 200, 0);
-        bodyGrad.addColorStop(0, "#b0bec5");
-        bodyGrad.addColorStop(0.5, "#eceff1");
-        bodyGrad.addColorStop(1, "#90a4ae");
-        ctx.fillStyle = bodyGrad;
-        ctx.beginPath();
-        ctx.moveTo(100, 20); ctx.lineTo(125, 100); ctx.lineTo(120, 160); ctx.lineTo(80, 160); ctx.lineTo(75, 100); ctx.closePath();
-        ctx.fill();
-
-        // Cockpit
-        ctx.fillStyle = "#29b6f6";
-        ctx.beginPath();
-        ctx.ellipse(100, 85, 14, 24, 0, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Cockpit highlight
-        ctx.save();
-        ctx.translate(96, 78);
-        ctx.rotate(-15 * Math.PI / 180);
-        ctx.fillStyle = "#e1f5fe";
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 4, 10, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-
-        // Engine details
-        ctx.fillStyle = "#263238";
-        ctx.beginPath(); ctx.roundRect(83, 155, 34, 8, 2); ctx.fill();
-        ctx.fillStyle = "#37474f";
-        ctx.fillRect(88, 163, 24, 4);
-
-        ctx.restore();
-
-        // Draw Drone 1 (Medical Drone - Left side)
-        if (this.hasDroneHeal) {
-            let angle = Date.now() / 300;
-            let dx = this.x - 20 + Math.sin(angle) * 5;
-            let dy = this.y + this.height/2 - 10 + Math.cos(angle) * 5;
-            
-            ctx.save();
-            ctx.translate(dx, dy);
-            
-            // Glow
-            ctx.beginPath();
-            ctx.arc(10, 10, 12, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(16, 185, 129, 0.3)';
-            ctx.fill();
-            
-            // Core
-            ctx.beginPath();
-            ctx.arc(10, 10, 8, 0, Math.PI * 2);
-            ctx.fillStyle = '#10b981';
-            ctx.fill();
-            
-            // Plus Sign
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(9, 5, 2, 10);
-            ctx.fillRect(5, 9, 10, 2);
-            
-            ctx.restore();
-        }
-
-        // Draw Drone 2 (Fuel Drone - Right side)
-        if (this.hasDroneFuel) {
-            let angle = Date.now() / 300 + Math.PI; // Opposite phase
-            let dx = this.x + this.width + 10 + Math.sin(angle) * 5;
-            let dy = this.y + this.height/2 - 10 + Math.cos(angle) * 5;
-            
-            ctx.save();
-            ctx.translate(dx, dy);
-            
-            // Glow
-            ctx.beginPath();
-            ctx.arc(10, 10, 12, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(245, 158, 11, 0.3)';
-            ctx.fill();
-            
-            // Core
-            ctx.beginPath();
-            ctx.arc(10, 10, 8, 0, Math.PI * 2);
-            ctx.fillStyle = '#f59e0b';
-            ctx.fill();
-            
-            // Fuel shape indicator
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(8, 6, 4, 8);
-            ctx.fillRect(7, 4, 6, 2);
-            
-            ctx.restore();
-        }
-
-        // Draw Drone 3 (Magnet Drone - Orbiting above)
-        if (this.hasDroneMagnet) {
-            let angle = Date.now() / 400 + Math.PI / 2;
-            let dx = this.x + this.width/2 - 10 + Math.sin(angle) * 35;
-            let dy = this.y - 25 + Math.cos(angle) * 10;
-            
-            ctx.save();
-            ctx.translate(dx, dy);
-            
-            // Glow
-            ctx.beginPath();
-            ctx.arc(10, 10, 12, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(6, 182, 212, 0.3)';
-            ctx.fill();
-            
-            // Core
-            ctx.beginPath();
-            ctx.arc(10, 10, 8, 0, Math.PI * 2);
-            ctx.fillStyle = '#06b6d4';
-            ctx.fill();
-            
-            // Draw a tiny U-shape magnet symbol
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = '#ef4444'; // Red half of magnet
-            ctx.beginPath();
-            ctx.arc(10, 8, 4, 0, Math.PI, false);
-            ctx.stroke();
-            
-            ctx.strokeStyle = '#3b82f6'; // Blue tips of magnet
-            ctx.beginPath();
-            ctx.moveTo(6, 8); ctx.lineTo(6, 12);
-            ctx.moveTo(14, 8); ctx.lineTo(14, 12);
-            ctx.stroke();
-            
-            ctx.restore();
-        }
-
-        // Draw reflective shield bubble
-        if (this.isShieldActive) {
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width * 0.8, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(6, 182, 212, 0.8)';
-            ctx.lineWidth = 3;
-            ctx.stroke();
-            ctx.fillStyle = 'rgba(6, 182, 212, 0.15)';
-            ctx.fill();
-            ctx.restore();
-        }
-
-        // Draw temporary invincibility shield bubble (5-second shield)
-        if (this.tempShieldTimeLeft && this.tempShieldTimeLeft > 0) {
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width * 0.85, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
-            ctx.lineWidth = 4;
-            ctx.stroke();
-            ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
-            ctx.fill();
-            ctx.restore();
-        }
-    }
-    
-    triggerDeathOrResurrection() {
-        if (this.secondLifes > 0) {
-            this.secondLifes--;
-            this.hp = this.maxHp;
-            this.fuel = this.maxFuel;
-            createParticles(this.x + this.width/2, this.y + this.height/2, '#eab308', 45, 2.5);
-            alert(`تم تفعيل الفرصة الثانية الفائقة للاعب ${this.id}! 🌟`);
-            return;
-        }
-        if (this.selfReviveKits > 0) {
-            this.selfReviveKits--;
-            this.hp = this.maxHp / 2;
-            this.fuel = this.maxFuel / 2;
-            createParticles(this.x + this.width/2, this.y + this.height/2, '#10b981', 35, 2);
-            alert(`تم تفعيل حقنة الإنعاش الذاتي للاعب ${this.id}! 💉`);
-            return;
-        }
-        this.isAlive = false;
-        createParticles(this.x + this.width/2, this.y + this.height/2, this.color, 30, 2);
-    }
-    
-    getBulletColor() {
-        if (this.weaponType === 'frost') return '#60a5fa';
-        if (this.weaponType === 'explosive') return '#ef4444';
-        if (this.weaponType === 'piercing' || this.shipType === 'sniper') return '#fcd34d';
-        return this.color;
-    }
-        
-    update(dt) {
-        if (!this.isAlive) return;
-        
-        let dx = 0;
-        let dy = 0;
-
-        const isLocal = (activeMode === 'local' || activeMode === 'local-coop');
-        const isP2PJoin = (activeMode === 'p2p-join');
-
-        if (this.id === 1 && (activeMode === 'local' || activeMode === 'local-coop' || activeMode === 'p2p-host')) {
-            // P1: Arrow keys + Space
-            if (keys['ArrowLeft']) dx = -1;
-            if (keys['ArrowRight']) dx = 1;
-            if (keys['ArrowUp']) dy = -1;
-            if (keys['ArrowDown']) dy = 1;
-            if (keys[' '] && Date.now() - this.lastShot > this.fireRate) this.shoot();
-
-        } else if (this.id === 2 && isP2PJoin) {
-            // P2 remote (P2P): Arrow keys + Space
-            if (keys['ArrowLeft']) dx = -1;
-            if (keys['ArrowRight']) dx = 1;
-            if (keys['ArrowUp']) dy = -1;
-            if (keys['ArrowDown']) dy = 1;
-            if (keys[' '] && Date.now() - this.lastShot > this.fireRate) this.shoot();
-
-        } else if (this.id === 2 && isLocal) {
-            // P2: WASD + Q
-            if (keys['a'] || keys['A']) dx = -1;
-            if (keys['d'] || keys['D']) dx = 1;
-            if (keys['w'] || keys['W']) dy = -1;
-            if (keys['s'] || keys['S']) dy = 1;
-            if ((keys['q'] || keys['Q']) && Date.now() - this.lastShot > this.fireRate) this.shoot();
-
-        } else if (this.id === 3 && isLocal) {
-            // P3: IJKL + U
-            if (keys['j'] || keys['J']) dx = -1;
-            if (keys['l'] || keys['L']) dx = 1;
-            if (keys['i'] || keys['I']) dy = -1;
-            if (keys['k'] || keys['K']) dy = 1;
-            if ((keys['u'] || keys['U']) && Date.now() - this.lastShot > this.fireRate) this.shoot();
-
-        } else if (this.id === 4 && isLocal) {
-            // P4: TFGH + R
-            if (keys['f'] || keys['F']) dx = -1;
-            if (keys['h'] || keys['H']) dx = 1;
-            if (keys['t'] || keys['T']) dy = -1;
-            if (keys['g'] || keys['G']) dy = 1;
-            if ((keys['r'] || keys['R']) && Date.now() - this.lastShot > this.fireRate) this.shoot();
-
-        } else if (this.id === 5 && isLocal) {
-            // P5: Numpad 8,4,6,2 + 0
-            if (keys['Numpad4'] || keys['4']) dx = -1;
-            if (keys['Numpad6'] || keys['6']) dx = 1;
-            if (keys['Numpad8'] || keys['8']) dy = -1;
-            if (keys['Numpad2'] || keys['2']) dy = 1;
-            if ((keys['Numpad0'] || keys['0']) && Date.now() - this.lastShot > this.fireRate) this.shoot();
-
-        } else if (this.id === 6 && isLocal) {
-            // P6: Home/End/PgUp/PgDn + Ins
-            if (keys['End']) dx = -1;
-            if (keys['Home']) dx = 1;
-            if (keys['PageUp']) dy = -1;
-            if (keys['PageDown']) dy = 1;
-            if (keys['Insert'] && Date.now() - this.lastShot > this.fireRate) this.shoot();
-        }
-        
-        let currentSpeed = this.speed;
-        if(this.shipType.includes('speedster')) currentSpeed = 500;
-        else if(this.shipType.includes('tank')) currentSpeed = 240;
-        else if(this.shipType.includes('sniper')) currentSpeed = 200;
-
-        this.x += dx * currentSpeed * dt;
-        this.y += dy * currentSpeed * dt;
-
-        // Bounds
-        this.x = Math.max(0, Math.min(canvas.width - this.width, this.x));
-        this.y = Math.max(0, Math.min(canvas.height - this.height, this.y));
-        
-        // Fuel Depletion
-        if (activeMode !== 'p2p-join') { // Host handles fuel depletion
-            this.fuel = Math.max(0, this.fuel - 2 * dt);
-            if (this.fuel <= 0) {
-                this.hp -= 5 * dt; // Take damage if out of fuel
-                if(this.hp <= 0 && this.isAlive) {
-                    this.triggerDeathOrResurrection();
-                }
-            }
-            // Healer passive
-            if(this.shipType.includes('healer') && this.isAlive && this.hp > 0 && this.hp < this.maxHp) {
-                this.hp = Math.min(this.maxHp, this.hp + 2 * dt);
-            }
-            // Magnet passive
-            if(this.shipType.includes('speedster') && this.isAlive) {
-                const magnetRadius = 250;
-                let pull = (item) => {
-                    let dist = Math.hypot(item.x - this.x, item.y - this.y);
-                    if(dist < magnetRadius) {
-                        let angle = Math.atan2(this.y + this.height/2 - item.y, this.x + this.width/2 - item.x);
-                        item.x += Math.cos(angle) * 300 * dt;
-                        item.y += Math.sin(angle) * 300 * dt;
-                    }
-                };
-                coins.forEach(pull);
-                gems.forEach(pull);
-                fuelItems.forEach(pull);
-            }
-            
-            // Magnet Drone passive (Drone 3)
-            if(this.hasDroneMagnet && this.isAlive) {
-                const magnetRadius = 150 + this.droneMagnetLevel * 60;
-                const magnetSpeed = 250 + this.droneMagnetLevel * 75;
-                let pull = (item) => {
-                    let dist = Math.hypot(item.x - this.x, item.y - this.y);
-                    if(dist < magnetRadius) {
-                        let angle = Math.atan2(this.y + this.height/2 - item.y, this.x + this.width/2 - item.x);
-                        item.x += Math.cos(angle) * magnetSpeed * dt;
-                        item.y += Math.sin(angle) * magnetSpeed * dt;
-                        
-                        if(Math.random() > 0.95) {
-                            createParticles(item.x, item.y, '#06b6d4', 1, 0.5);
-                        }
-                    }
-                };
-                coins.forEach(pull);
-                gems.forEach(pull);
-                fuelItems.forEach(pull);
-            }
-            
-            // Reflective Shield Active Cycle
-            if (this.hasReflectiveShield && this.isAlive) {
-                let cycle = (Date.now() % 15000);
-                this.isShieldActive = (cycle < 3000); // Active for 3 seconds every 15 seconds
-            } else {
-                this.isShieldActive = false;
-            }
-            
-            // Temp Shield Decrement
-            if (this.tempShieldTimeLeft && this.tempShieldTimeLeft > 0) {
-                this.tempShieldTimeLeft = Math.max(0, this.tempShieldTimeLeft - dt);
-            }
-            
-            // Tank Ultimate timer
-            if (this.tankUltTimeLeft && this.tankUltTimeLeft > 0) {
-                this.tankUltTimeLeft = Math.max(0, this.tankUltTimeLeft - dt);
-                this.width = 110;
-                this.height = 110;
-                if (this.tankUltTimeLeft === 0) {
-                    this.width = 64;
-                    this.height = 64;
-                }
-            }
-        }
-
-        // Auto shoot on mobile drag
-        if (this.id === 1 && typeof isDragging !== 'undefined' && isDragging && this.isAlive) {
-            this.shoot();
-        }
-
-        if(this.reviveTimer > 0 && !this.isBeingRevived) {
-            this.reviveTimer = Math.max(0, this.reviveTimer - dt);
-        }
-        this.isBeingRevived = false;
-
-        // Update Drone Actions and Autoshot
-        if (this.isAlive) {
-            // Drone 1: Medical
-            if (this.hasDroneHeal) {
-                // Heal action
-                let healCooldown = Math.max(1000, 5000 - this.droneHealLevel * 500);
-                if (Date.now() - this.lastDroneHealAction > healCooldown) {
-                    if (this.hp < this.maxHp) {
-                        this.hp = Math.min(this.maxHp, this.hp + 5 + this.droneHealLevel * 3);
-                        createParticles(this.x + this.width/2, this.y + this.height/2, '#10b981', 12, 1);
-                        this.lastDroneHealAction = Date.now();
-                    }
-                }
-                
-                // Shoot action if enemy is in front (x difference < 80px)
-                let d1x = this.x - 10;
-                let d1y = this.y + this.height/2;
-                let shotCooldown = Math.max(400, 1000 - this.droneHealLevel * 80);
-                if (Date.now() - this.lastDroneHealShot > shotCooldown) {
-                    let enemyInFront = enemies.some(e => Math.abs(e.x + e.width/2 - d1x) < 80 && e.y < d1y) || (bosses.length > 0);
-                    if (enemyInFront) {
-                        bullets.push(new Bullet(d1x + 7, d1y, -550, '#10b981', this.id, 'normal'));
-                        this.lastDroneHealShot = Date.now();
-                    }
-                }
-            }
-            
-            // Drone 2: Fuel
-            if (this.hasDroneFuel) {
-                // Fuel action
-                let fuelCooldown = Math.max(1000, 5000 - this.droneFuelLevel * 500);
-                if (Date.now() - this.lastDroneFuelAction > fuelCooldown) {
-                    if (this.fuel < this.maxFuel) {
-                        this.fuel = Math.min(this.maxFuel, this.fuel + 6 + this.droneFuelLevel * 4);
-                        createParticles(this.x + this.width/2, this.y + this.height/2, '#f59e0b', 8, 1);
-                        this.lastDroneFuelAction = Date.now();
-                    }
-                }
-                
-                // Shoot action if enemy is in front
-                let d2x = this.x + this.width + 10;
-                let d2y = this.y + this.height/2;
-                let shotCooldown = Math.max(400, 1000 - this.droneFuelLevel * 80);
-                if (Date.now() - this.lastDroneFuelShot > shotCooldown) {
-                    let enemyInFront = enemies.some(e => Math.abs(e.x + e.width/2 - d2x) < 80 && e.y < d2y) || (bosses.length > 0);
-                    if (enemyInFront) {
-                        bullets.push(new Bullet(d2x + 7, d2y, -550, '#f59e0b', this.id, 'normal'));
-                        this.lastDroneFuelShot = Date.now();
-                    }
-                }
-            }
-        }
-    }
-    shoot() {
-        let currentFireRate = this.fireRate;
-        if (this.shipType === 'sniper') currentFireRate = 600; // slow fire
-
-        if (Date.now() - this.lastShot < currentFireRate) return;
-        this.lastShot = Date.now();
-        
-        if (this.weaponType.startsWith('hybrid-')) {
-            let type = this.weaponType;
-            let color = '#a855f7';
-            let vy = -600;
-            if (type.includes('piercing')) vy = -1000;
-            else if (type.includes('explosive')) vy = -400;
-            else if (type.includes('blackhole')) vy = -180;
-            else if (type.includes('frost')) vy = -600;
-            
-            if (type.includes('blackhole')) color = '#7c3aed';
-            else if (type.includes('piercing')) color = '#fcd34d';
-            else if (type.includes('explosive')) color = '#ef4444';
-            else if (type.includes('frost')) color = '#60a5fa';
-            
-            bullets.push(new Bullet(this.x + this.width / 2 - 3, this.y, vy, color, this.id, type));
-            let b = bullets[bullets.length - 1];
-            if (type.includes('blackhole')) {
-                b.width = 32;
-                b.height = 32;
-                b.life = 2.5;
-            } else if (type.includes('piercing')) {
-                b.width = 4;
-                b.height = 30;
-            } else if (type.includes('explosive')) {
-                b.width = 12;
-            }
-        } else if (this.weaponType === 'frost') {
-            bullets.push(new Bullet(this.x + this.width / 2 - 4, this.y, -600, '#60a5fa', this.id, 'frost'));
-        } else if (this.weaponType === 'explosive') {
-            bullets.push(new Bullet(this.x + this.width / 2 - 6, this.y, -400, '#ef4444', this.id, 'explosive'));
-            bullets[bullets.length-1].width = 12;
-        } else if (this.weaponType === 'piercing' || this.shipType === 'sniper') {
-            bullets.push(new Bullet(this.x + this.width / 2 - 2, this.y, -1000, '#fcd34d', this.id, 'piercing'));
-            bullets[bullets.length-1].height = 30;
-            if (this.shipType === 'sniper') bullets[bullets.length-1].isSniper = true;
-        } else if (this.weaponType === 'blackhole') {
-            bullets.push(new Bullet(this.x + this.width / 2 - 16, this.y, -180, '#7c3aed', this.id, 'blackhole'));
-        } else {
-            // Normal
-            bullets.push(new Bullet(this.x + this.width / 2 - 3, this.y, -700, this.color, this.id, 'normal'));
-        }
-
-        if (bullets.length > 0) {
-            bullets[bullets.length - 1].damageMultiplier = this.bulletDamageModifier || 1.0;
-        }
-
-        createParticles(this.x + this.width / 2, this.y, this.color, 3, 2);
-        
-        if (activeMode === 'p2p-host' || activeMode === 'p2p-join') {
-            broadcast({ type: 'shoot', id: this.id, x: this.x, y: this.y, wType: this.weaponType });
-        }
-    }
-}
-
-class Bullet {
-    constructor(x, y, vy, color, ownerId, type = 'normal') {
-        this.x = x;
-        this.y = y;
-        this.width = type === 'blackhole' ? 32 : 6;
-        this.height = type === 'blackhole' ? 32 : 15;
-        this.vy = type === 'blackhole' ? -180 : vy;
-        this.color = color;
-        this.ownerId = ownerId; // 1, 2, or 'enemy'
-        this.type = type; // normal, frost, explosive, piercing, blackhole
-        this.markedForDeletion = false;
-        this.damageMultiplier = 1.0;
-        if (type === 'blackhole') {
-            this.life = 2.5; // lasts 2.5 seconds
-        }
-    }
-    draw() {
-        if (this.type.includes('blackhole')) {
-            ctx.save();
-            let angle = Date.now() / 150;
-            ctx.translate(this.x + 16, this.y + 16);
-            ctx.rotate(angle);
-            
-            // Radial black hole gradient
-            let grad = ctx.createRadialGradient(0, 0, 2, 0, 0, 18);
-            grad.addColorStop(0, '#000000');
-            grad.addColorStop(0.3, '#7c3aed');
-            grad.addColorStop(0.8, 'rgba(147, 51, 234, 0.4)');
-            grad.addColorStop(1, 'rgba(147, 51, 234, 0)');
-            
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.arc(0, 0, 18, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Tiny white core
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.arc(0, 0, 3, 0, Math.PI * 2);
-            ctx.fill();
-            
-            ctx.restore();
-        } else {
-            ctx.fillStyle = this.color;
-            ctx.fillRect(this.x, this.y, this.width, this.height);
-        }
-    }
-    update(dt) {
-        let speedMult = (typeof bulletTimeLeft !== 'undefined' && bulletTimeLeft > 0 && this.ownerId === 'enemy') ? 0.2 : 1.0;
-        this.y += this.vy * speedMult * dt;
-        if(this.vx) this.x += this.vx * speedMult * dt;
-        if (this.isScythe) {
-            this.x += Math.sin(Date.now() / 80) * 150 * dt;
-        }
-
-        if (this.type.includes('blackhole')) {
-            this.life -= dt;
-            if (this.life <= 0) {
-                this.markedForDeletion = true;
-            }
-            
-            // Pull enemies
-            enemies.forEach(e => {
-                let dx = (this.x + 16) - (e.x + e.width / 2);
-                let dy = (this.y + 16) - (e.y + e.height / 2);
-                let dist = Math.hypot(dx, dy);
-                if (dist < 180) {
-                    let force = (180 - dist) * 1.5;
-                    let angle = Math.atan2(dy, dx);
-                    e.x += Math.cos(angle) * force * dt;
-                    e.y += Math.sin(angle) * force * dt;
-                }
-            });
-
-            // Pull items (coins, gems, fuels)
-            let pullItem = (item) => {
-                let dx = (this.x + 16) - item.x;
-                let dy = (this.y + 16) - item.y;
-                let dist = Math.hypot(dx, dy);
-                if (dist < 180) {
-                    let force = (180 - dist) * 2;
-                    let angle = Math.atan2(dy, dx);
-                    item.x += Math.cos(angle) * force * dt;
-                    item.y += Math.sin(angle) * force * dt;
-                }
-            };
-            coins.forEach(pullItem);
-            gems.forEach(pullItem);
-            fuelItems.forEach(pullItem);
-        }
-
-        if (this.y < -100 || this.y > canvas.height + 100 || this.x < -100 || this.x > canvas.width + 100) {
-            this.markedForDeletion = true;
-        }
-    }
-}
-
-class Enemy {
-    constructor(x, y, type) {
-        this.x = x;
-        this.y = y;
-        this.type = type; // 1 = basic, 2 = fast, 3 = tank, 4 = healer
-        
-        // Scale stats by wave progression (20% HP scaling per wave, 3% speed scaling)
-        const scaling = 1.0 + (wave - 1) * 0.20;
-        
-        if (type === 3) {
-            this.width = 60;
-            this.height = 60;
-            this.hp = Math.floor(50 * scaling);
-            this.speed = Math.floor(80 * (1.0 + (wave - 1) * 0.02));
-            this.color = '#ef4444';
-            this.fireRate = Math.max(800, 1500 - (wave - 1) * 50);
-        } else if (type === 2) {
-            this.width = 40;
-            this.height = 40;
-            this.hp = Math.floor(20 * scaling);
-            this.speed = Math.floor(150 * (1.0 + (wave - 1) * 0.02));
-            this.color = '#f59e0b';
-            this.fireRate = 3000;
-        } else if (type === 4) {
-            this.width = 45;
-            this.height = 45;
-            this.hp = Math.floor(35 * scaling);
-            this.speed = Math.floor(70 * (1.0 + (wave - 1) * 0.01));
-            this.color = '#10b981';
-            this.fireRate = Math.max(1000, 2500 - (wave - 1) * 80);
-            this.lastHeal = Date.now() + Math.random() * 1000;
-        } else if (type === 5) {
-            // Type 5 (Kamikaze)
-            this.width = 40;
-            this.height = 40;
-            this.hp = Math.floor(12 * scaling);
-            this.speed = Math.floor(210 * (1.0 + (wave - 1) * 0.025));
-            this.color = '#ef4444';
-            this.fireRate = 99999999; // Doesn't shoot
-        } else {
-            // Type 1 (Basic)
-            this.width = 40;
-            this.height = 40;
-            this.hp = Math.floor(10 * scaling);
-            this.speed = Math.floor(80 * (1.0 + (wave - 1) * 0.02));
-            this.color = '#22d3ee';
-            this.fireRate = Math.max(1200, 3000 - (wave - 1) * 100);
-        }
-        
-        this.maxHp = this.hp;
-        this.markedForDeletion = false;
-        this.lastShot = Date.now() + Math.random() * 2000;
-        this.id = Math.random().toString(36).substr(2, 9);
-    }
-    draw() {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.font = this.type === 3 ? '50px "Segoe UI Emoji", Arial' : '35px "Segoe UI Emoji", Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        
-        let emoji = '👾';
-        if (this.type === 2) emoji = '👽';
-        else if (this.type === 3) emoji = '👹';
-        else if (this.type === 4) emoji = '🛸';
-        else if (this.type === 5) emoji = '💥';
-        
-        // Draw red pulsing indicator for kamikaze
-        if (this.type === 5) {
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = '#ef4444';
-        }
-        
-        ctx.fillText(emoji, this.width/2, this.height/2);
-        
-        // Green medic cross overlay for healer
-        if (this.type === 4) {
-            ctx.fillStyle = '#10b981';
-            ctx.font = 'bold 16px Arial';
-            ctx.fillText('✚', this.width/2 + 16, this.height/2 - 16);
-        }
-        ctx.restore();
-    }
-    update(dt) {
-        if (this.type === 5) {
-            // Track the nearest player's x coordinate
-            let targetX = canvas.width / 2;
-            if (players.length > 0) {
-                let closestP = null;
-                let minDist = Infinity;
-                players.forEach(p => {
-                    if (p.isAlive) {
-                        let d = Math.hypot(p.x - this.x, p.y - this.y);
-                        if (d < minDist) {
-                            minDist = d;
-                            closestP = p;
-                        }
-                    }
-                });
-                if (closestP) {
-                    targetX = closestP.x + closestP.width / 2;
-                }
-            }
-            // Move horizontally towards player target coordinate
-            let horizMult = (typeof bulletTimeLeft !== 'undefined' && bulletTimeLeft > 0) ? 0.2 : 1.0;
-            this.x += (targetX - (this.x + this.width / 2)) * dt * 2.2 * horizMult;
-        }
-        
-        let speedMult = (typeof bulletTimeLeft !== 'undefined' && bulletTimeLeft > 0) ? 0.2 : 1.0;
-        this.y += this.speed * speedMult * dt;
-        
-        if (activeMode !== 'p2p-join') {
-            // Healer aura healing action
-            if (this.type === 4 && Date.now() - this.lastHeal > this.fireRate) {
-                this.lastHeal = Date.now();
-                let healedAny = false;
-                enemies.forEach(other => {
-                    if (other !== this && other.hp < other.maxHp) {
-                        let dist = Math.hypot(other.x - this.x, other.y - this.y);
-                        if (dist < 250) {
-                            other.hp = Math.min(other.maxHp, other.hp + 15);
-                            createParticles(other.x + other.width/2, other.y + other.height/2, '#10b981', 8, 1);
-                            healedAny = true;
-                        }
-                    }
-                });
-                if (healedAny) {
-                    createParticles(this.x + this.width/2, this.y + this.height/2, '#10b981', 15, 1.5);
-                }
-            }
-            
-            // Host controls enemy shooting (Fast 2 and Kamikaze 5 do not shoot)
-            if (this.type !== 2 && this.type !== 5 && Date.now() - this.lastShot > (this.type === 4 ? 3000 : this.fireRate)) {
-                this.lastShot = Date.now();
-                let bColor = this.type === 4 ? '#10b981' : '#ef4444';
-                bullets.push(new Bullet(this.x + this.width / 2 - 3, this.y + this.height, 300, bColor, 'enemy'));
-                if (activeMode === 'p2p-host') broadcast({ type: 'enemy_shoot', x: this.x, y: this.y, w: this.width, h: this.height });
-            }
-        }
-
-        if (this.y > canvas.height + 50) this.markedForDeletion = true;
-    }
-}
-
-class FuelItem {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        this.width = 20;
-        this.height = 25;
-        this.vy = 80;
-        this.markedForDeletion = false;
-        this.id = Math.random().toString(36).substr(2, 9);
-    }
-    draw() {
-        ctx.font = '20px "Segoe UI Emoji", Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('⛽', this.x + this.width/2, this.y + this.height/2);
-    }
-    update(dt) {
-        this.y += this.vy * dt;
-        if (this.y > canvas.height + 50) this.markedForDeletion = true;
-    }
-}
-
-class Coin {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        this.width = 15;
-        this.height = 15;
-        this.vy = 50;
-        this.markedForDeletion = false;
-        this.id = Math.random().toString(36).substr(2, 9);
-    }
-    draw() {
-        ctx.font = '15px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('💰', this.x + this.width/2, this.y + this.height/2);
-    }
-    update(dt) {
-        this.y += this.vy * dt;
-        if (this.y > canvas.height + 50) this.markedForDeletion = true;
-    }
-}
-
-class Gem {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        this.width = 15;
-        this.height = 15;
-        this.vy = 60;
-        this.markedForDeletion = false;
-        this.id = Math.random().toString(36).substr(2, 9);
-    }
-    draw() {
-        ctx.font = '15px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('💎', this.x + this.width/2, this.y + this.height/2);
-    }
-    update(dt) {
-        this.y += this.vy * dt;
-        if (this.y > canvas.height + 50) this.markedForDeletion = true;
-    }
-}
-
-class Meteorite {
-    constructor(x, y, vx, vy, size, isGolden = false) {
-        this.x = x;
-        this.y = y;
-        this.vx = vx;
-        this.vy = vy;
-        this.width = size;
-        this.height = size;
-        this.isGolden = isGolden;
-        this.hp = isGolden ? 25 : Math.max(1, Math.ceil(size / 8));
-        this.markedForDeletion = false;
-        this.id = Math.random().toString(36).substr(2, 9);
-    }
-    draw() {
-        ctx.save();
-        ctx.font = this.width + 'px "Segoe UI Emoji", Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        if (this.isGolden) {
-            ctx.shadowBlur = 12;
-            ctx.shadowColor = '#fbbf24';
-            ctx.fillText('☄️', this.x + this.width/2, this.y + this.height/2);
-        } else {
-            ctx.fillText('🪨', this.x + this.width/2, this.y + this.height/2);
-        }
-        ctx.restore();
-    }
-    update(dt) {
-        this.x += this.vx * dt;
-        this.y += this.vy * dt;
-        if (this.y > canvas.height + 100 || this.x < -100 || this.x > canvas.width + 100) {
-            this.markedForDeletion = true;
-        }
-    }
-}
-
-class Boss {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        this.width = 150;
-        this.height = 100;
-        this.dir = 1;
-        this.markedForDeletion = false;
-        this.id = 'boss_1';
-        this.lastShot = Date.now();
-        this.phase = 1;
-
-        // Choose boss configuration based on currentWorld
-        const w = currentWorld || 1;
-        if (w === 1) {
-            this.emoji = '😈';
-            this.name = 'زعيم السديم';
-            this.maxHp = 600;
-            this.speed = 80;
-            this.fireRate = 1600;
-            this.bulletColor = '#f59e0b';
-        } else if (w === 2) {
-            this.emoji = '🤖';
-            this.name = 'حارس الكويكبات';
-            this.maxHp = 900;
-            this.speed = 100;
-            this.fireRate = 1400;
-            this.bulletColor = '#fb923c';
-        } else if (w === 3) {
-            this.emoji = '👽';
-            this.name = 'سيد الثقب الأسود';
-            this.maxHp = 1200;
-            this.speed = 120;
-            this.fireRate = 1200;
-            this.bulletColor = '#a855f7';
-        } else if (w === 4) {
-            this.emoji = '👹';
-            this.name = 'غول الكوكب الفضائي';
-            this.maxHp = 1650;
-            this.speed = 140;
-            this.fireRate = 1100;
-            this.bulletColor = '#ef4444';
-        } else if (w === 5) {
-            this.emoji = '🐉';
-            this.name = 'تنين النجوم المشتعلة';
-            this.maxHp = 2200;
-            this.speed = 160;
-            this.fireRate = 1000;
-            this.bulletColor = '#10b981';
-        } else if (w === 6) {
-            this.emoji = '🐙';
-            this.name = 'كراكن الطاقة المظلمة';
-            this.maxHp = 2800;
-            this.speed = 180;
-            this.fireRate = 900;
-            this.bulletColor = '#6366f1';
-        } else if (w === 7) {
-            this.emoji = '💀';
-            this.name = 'حاصد الأرواح الكوني';
-            this.maxHp = 3500;
-            this.speed = 200;
-            this.fireRate = 800;
-            this.bulletColor = '#ec4899';
-        } else {
-            this.emoji = '👑';
-            this.name = 'إمبراطور الأبعاد الكبرى';
-            this.maxHp = 4500;
-            this.speed = 220;
-            this.fireRate = 700;
-            this.bulletColor = '#06b6d4';
-        }
-
-        const bossScaling = 1.0 + (wave - 5) * 0.15;
-        this.maxHp = Math.floor(this.maxHp * Math.max(1.0, bossScaling));
-        this.hp = this.maxHp;
-    }
-    draw() {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.font = '100px "Segoe UI Emoji", Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(this.emoji, this.width/2, this.height/2);
-
-        // Draw Boss Name text
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 16px "Cairo", Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(this.name, this.width/2, -22);
-        
-        // Boss HP Bar
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, -12, this.width, 8);
-        ctx.fillStyle = this.bulletColor;
-        ctx.fillRect(0, -12, this.width * (this.hp / this.maxHp), 8);
-        
-        ctx.restore();
-    }
-    update(dt) {
-        let speedMult = (typeof bulletTimeLeft !== 'undefined' && bulletTimeLeft > 0) ? 0.2 : 1.0;
-        if (this.y < 50) {
-            this.y += 50 * speedMult * dt; // Boss enters the screen!
-        } else {
-            // Move side to side
-            this.x += this.speed * this.dir * speedMult * dt;
-            if (this.x <= 0 || this.x + this.width >= canvas.width) {
-                this.dir *= -1;
-                this.x = Math.max(0, Math.min(canvas.width - this.width, this.x));
-            }
-        }
-
-        // Host controls shooting
-        if (activeMode !== 'p2p-join') {
-            if (Date.now() - this.lastShot > this.fireRate) {
-                this.lastShot = Date.now();
-                const w = currentWorld || 1;
-
-                if (w === 1) {
-                    // Spread shot
-                    for(let i=-2; i<=2; i++) {
-                        bullets.push(new Bullet(this.x + this.width/2, this.y + this.height, 250 + Math.abs(i)*50, this.bulletColor, 'enemy'));
-                        let b = bullets[bullets.length-1];
-                        b.vx = i * 80;
-                    }
-                } else if (w === 2) {
-                    // Spread + central fast bullet
-                    for(let i=-2; i<=2; i++) {
-                        bullets.push(new Bullet(this.x + this.width/2, this.y + this.height, 260 + Math.abs(i)*50, this.bulletColor, 'enemy'));
-                        let b = bullets[bullets.length-1];
-                        b.vx = i * 90;
-                    }
-                    bullets.push(new Bullet(this.x + this.width/2 - 6, this.y + this.height, 380, '#ef4444', 'enemy', 'explosive'));
-                    bullets[bullets.length-1].width = 12;
-                    bullets[bullets.length-1].height = 20;
-                } else if (w === 3) {
-                    // Spread tracking players
-                    let closestP = players[0];
-                    if (players[1] && players[0]) {
-                        let dist1 = Math.hypot(players[0].x - this.x, players[0].y - this.y);
-                        let dist2 = Math.hypot(players[1].x - this.x, players[1].y - this.y);
-                        if(dist2 < dist1) closestP = players[1];
-                    }
-                    let targetX = closestP ? closestP.x + closestP.width/2 : canvas.width/2;
-                    let dx = targetX - (this.x + this.width/2);
-                    for(let i=-2; i<=2; i++) {
-                        bullets.push(new Bullet(this.x + this.width/2, this.y + this.height, 300, this.bulletColor, 'enemy'));
-                        let b = bullets[bullets.length-1];
-                        b.vx = (dx / canvas.height) * 250 + i * 40;
-                    }
-                } else if (w === 4) {
-                    // Spiral pattern fire
-                    let time = Date.now() / 1000;
-                    for (let i = 0; i < 6; i++) {
-                        let angle = (i * Math.PI / 3) + time;
-                        bullets.push(new Bullet(this.x + this.width/2, this.y + this.height, 250, this.bulletColor, 'enemy'));
-                        let b = bullets[bullets.length-1];
-                        b.vx = Math.sin(angle) * 150;
-                        b.vy = Math.cos(angle) * 150 + 200;
-                    }
-                } else if (w === 5) {
-                    // Star shape / 8 directions spray
-                    for(let i=0; i<8; i++) {
-                        let angle = (i * Math.PI / 4);
-                        bullets.push(new Bullet(this.x + this.width/2, this.y + this.height, 200, this.bulletColor, 'enemy'));
-                        let b = bullets[bullets.length-1];
-                        b.vx = Math.sin(angle) * 180;
-                        b.vy = Math.cos(angle) * 180 + 150;
-                    }
-                } else if (w === 6) {
-                    // Wave pattern
-                    for(let i=-3; i<=3; i++) {
-                        bullets.push(new Bullet(this.x + this.width/2, this.y + this.height, 320, this.bulletColor, 'enemy'));
-                        let b = bullets[bullets.length-1];
-                        b.vx = i * 110;
-                    }
-                } else if (w === 7) {
-                    // Oscillating scythe attacks
-                    for(let i=-3; i<=3; i++) {
-                        bullets.push(new Bullet(this.x + this.width/2, this.y + this.height, 330, this.bulletColor, 'enemy'));
-                        let b = bullets[bullets.length-1];
-                        b.vx = i * 120;
-                        b.isScythe = true;
-                    }
-                } else {
-                    // Dimensional Emperor: spiral spray + track combinations
-                    let time = Date.now() / 1000;
-                    for (let i = 0; i < 8; i++) {
-                        let angle = (i * Math.PI / 4) + time;
-                        bullets.push(new Bullet(this.x + this.width/2, this.y + this.height, 200, this.bulletColor, 'enemy'));
-                        let b = bullets[bullets.length-1];
-                        b.vx = Math.sin(angle) * 200;
-                        b.vy = Math.cos(angle) * 200 + 250;
-                    }
-                    // Additional fast tracking bullet
-                    let targetX = players[0] ? players[0].x + players[0].width/2 : canvas.width/2;
-                    let dx = targetX - (this.x + this.width/2);
-                    bullets.push(new Bullet(this.x + this.width/2, this.y + this.height, 420, '#ff0000', 'enemy'));
-                    bullets[bullets.length-1].vx = (dx / canvas.height) * 420;
-                }
-            }
-        }
-    }
-}
-
-class Particle {
-    constructor(x, y, color, speedScale) {
-        this.x = x;
-        this.y = y;
-        this.vx = (Math.random() - 0.5) * 300 * speedScale;
-        this.vy = (Math.random() - 0.5) * 300 * speedScale;
-        this.size = Math.random() * 4 + 1;
-        this.color = color;
-        this.life = 1.0;
-        this.decay = Math.random() * 0.02 + 0.02;
-        this.markedForDeletion = false;
-    }
-    draw() {
-        ctx.globalAlpha = this.life;
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1.0;
-    }
-    update(dt) {
-        this.x += this.vx * dt;
-        this.y += this.vy * dt;
-        this.life -= this.decay;
-        if (this.life <= 0) this.markedForDeletion = true;
-    }
-}
-
-function createParticles(x, y, color, count, speedScale = 1) {
-    for (let i = 0; i < count; i++) {
-        particles.push(new Particle(x, y, color, speedScale));
-    }
-}
-
-// Window resize
-function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resize);
-resize();
-
-// Input
-let localPlayerCount = 1;
-let activeShopPlayerIndex = 0;
-
-// Key Listeners
-window.addEventListener('keydown', e => {
-    keys[e.key] = true;
-    
-    // Ultimate keys
-    if (e.key === 'Shift' && players[0]) triggerUltimate(0);
-    else if ((e.key === 'f' || e.key === 'F') && players[1]) triggerUltimate(1);
-    else if ((e.key === 'h' || e.key === 'H') && players[2]) triggerUltimate(2);
-    else if ((e.key === 'j' || e.key === 'J') && players[3]) triggerUltimate(3);
-    else if ((e.key === 'k' || e.key === 'K') && players[4]) triggerUltimate(4);
-    else if ((e.key === 'l' || e.key === 'L') && players[5]) triggerUltimate(5);
-
-    if (activeMode === 'local' || activeMode === 'local-coop') {
-        if ((e.key === 'b' || e.key === 'B') && players[0] && players[0].isAlive) toggleShop(0);
-        else if ((e.key === 'e' || e.key === 'E') && players[1] && players[1].isAlive) toggleShop(1);
-        else if ((e.key === 'o' || e.key === 'O') && players[2] && players[2].isAlive) toggleShop(2);
-        else if ((e.key === 'y' || e.key === 'Y') && players[3] && players[3].isAlive) toggleShop(3);
-        else if ((e.key === 'NumpadAdd' || e.key === '+') && players[4] && players[4].isAlive) toggleShop(4);
-        else if ((e.key === 'Delete') && players[5] && players[5].isAlive) toggleShop(5);
-    } else {
-        if (e.key === 'b' || e.key === 'B') {
-            toggleShop(0);
-        }
-    }
+    (r === "coins" && i.coins >= n
+      ? we(i, s, l) && (i.coins -= n)
+      : r === "gems" && i.gems >= n
+        ? we(i, s, l) && (i.gems -= n)
+        : alert("رصيد غير كافٍ!"),
+      ie());
+  });
 });
-window.addEventListener('keyup', e => {
-    keys[e.key] = false;
-});
-
-// Mobile Touch & Mouse Drag controls
-let isDragging = false;
-let dragOffset = { x: 0, y: 0 };
-
-// Auto-display floating mobile shop button on load
-if (mobileShopBtn) {
-    mobileShopBtn.classList.remove('hidden');
-    mobileShopBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        let p = players[0] || (players.length > 0 ? players[0] : null);
-        if (p && p.isAlive) {
-            toggleShop(0);
-        } else {
-            alert("يجب أن تكون على قيد الحياة لفتح المتجر!");
-        }
-    });
-}
-
-// Touch listeners on canvas
-canvas.addEventListener('touchstart', e => {
-    if (isGameOver || isShopOpen || isMapOpen) return;
-    let touch = e.touches[0];
-    let rect = canvas.getBoundingClientRect();
-    let touchX = (touch.clientX - rect.left) * (canvas.width / rect.width);
-    let touchY = (touch.clientY - rect.top) * (canvas.height / rect.height);
-    
-    let p = players[0];
-    if (p && p.isAlive) {
-        isDragging = true;
-        dragOffset.x = p.x - touchX;
-        dragOffset.y = p.y - touchY;
-    }
-}, { passive: false });
-
-canvas.addEventListener('touchmove', e => {
-    if (!isDragging) return;
-    let touch = e.touches[0];
-    let rect = canvas.getBoundingClientRect();
-    let touchX = (touch.clientX - rect.left) * (canvas.width / rect.width);
-    let touchY = (touch.clientY - rect.top) * (canvas.height / rect.height);
-    
-    let p = players[0];
-    if (p && p.isAlive) {
-        p.x = touchX + dragOffset.x;
-        p.y = touchY + dragOffset.y;
-        
-        p.x = Math.max(0, Math.min(canvas.width - p.width, p.x));
-        p.y = Math.max(0, Math.min(canvas.height - p.height, p.y));
-    }
-    e.preventDefault();
-}, { passive: false });
-
-canvas.addEventListener('touchend', () => {
-    isDragging = false;
-});
-
-// Bind manual clicks to HUD inventory icons
-document.querySelectorAll('.inv-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        let playerIdx = parseInt(btn.getAttribute('data-player'));
-        let item = btn.getAttribute('data-item');
-        
-        let p = players[playerIdx];
-        if (!p) return;
-        
-        if (item === 'heal') {
-            if (!p.isAlive) {
-                alert("يجب أن تكون السفينة حية لاستخدام عدة الإصلاح!");
-                return;
-            }
-            if (p.hp >= p.maxHp) {
-                alert("الطاقة كاملة بالفعل!");
-                return;
-            }
-            if (p.healsCount > 0) {
-                p.healsCount--;
-                p.hp = p.maxHp;
-                createParticles(p.x + p.width/2, p.y + p.height/2, '#10b981', 20, 2);
-                alert("🔧 تم إصلاح السفينة بالكامل!");
-            } else {
-                alert("لا تملك أي عدة إصلاح! اشتريها من المتجر أولاً.");
-            }
-        }
-        else if (item === 'selfRevive') {
-            if (p.isAlive) {
-                alert("السفينة حية بالفعل ولا تحتاج إنعاش!");
-                return;
-            }
-            if (p.selfReviveKits > 0) {
-                p.selfReviveKits--;
-                p.isAlive = true;
-                p.hp = p.maxHp / 2;
-                p.fuel = Math.max(30, p.fuel); // Give starting fuel
-                createParticles(p.x + p.width/2, p.y + p.height/2, '#ef4444', 35, 2);
-                alert("💉 تم إنعاش السفينة بنجاح بنصف الطاقة!");
-            } else {
-                alert("لا تملك أي حقن إنعاش! اشتريها من المتجر أولاً.");
-            }
-        }
-        else if (item === 'secondLife') {
-            if (p.secondLifes > 0) {
-                p.secondLifes--;
-                p.isAlive = true;
-                p.hp = p.maxHp;
-                p.fuel = p.maxFuel;
-                createParticles(p.x + p.width/2, p.y + p.height/2, '#eab308', 50, 3);
-                alert("🌟 تم تفعيل الفرصة الثانية الفائقة واستعادة كامل الطاقة والوقود!");
-            } else {
-                alert("لا تملك أي فرصة ثانية فائقة! اشتريها من المتجر أولاً.");
-            }
-        }
-        else if (item === 'tempShield') {
-            if (!p.isAlive) {
-                alert("يجب أن تكون السفينة حية لتفعيل درع الحماية!");
-                return;
-            }
-            if (p.tempShieldTimeLeft > 0) {
-                alert("درع الحماية نشط بالفعل حالياً!");
-                return;
-            }
-            if (p.tempShieldsCount > 0) {
-                p.tempShieldsCount--;
-                p.tempShieldTimeLeft = 5;
-                createParticles(p.x + p.width/2, p.y + p.height/2, '#38bdf8', 15, 1.5);
-                alert("🛡️ تم تفعيل درع الحماية المؤقت لمدة 5 ثوانٍ!");
-            } else {
-                alert("لا تملك أي درع حماية مؤقت! اشتره من المتجر أولاً.");
-            }
-        }
-        
-        saveProgress();
-        updateHUD();
-    });
-});
-
-// Shop Logic
-function toggleShop(playerIndex = 0) {
-    if (activeMode === 'p2p-join') {
-        alert("فقط الـ Host يمكنه إيقاف اللعبة لفتح المتجر الآن!");
-        return; 
-    }
-    isShopOpen = !isShopOpen;
-    if (isShopOpen) {
-        activeShopPlayerIndex = playerIndex;
-        shopModal.classList.remove('hidden');
-        const shopTitle = shopModal.querySelector('h2');
-        if (shopTitle) {
-            shopTitle.innerText = `متجر اللاعب ${playerIndex + 1} 🛒`;
-        }
-
-        // Dynamically load target teammates for resource transfer
-        if (transferTargetSelect) {
-            transferTargetSelect.innerHTML = '';
-            players.forEach((p, idx) => {
-                if (idx !== playerIndex && p.isAlive) {
-                    let opt = document.createElement('option');
-                    opt.value = idx;
-                    opt.innerText = `اللاعب ${idx + 1}`;
-                    transferTargetSelect.appendChild(opt);
-                }
-            });
-            const transferSection = document.querySelector('.shop-transfer-section');
-            if (transferSection) {
-                if (transferTargetSelect.children.length === 0) {
-                    transferSection.style.display = 'none';
-                } else {
-                    transferSection.style.display = 'block';
-                }
-            }
-        }
-
-        updateShopUI();
-    } else {
-        shopModal.classList.add('hidden');
-        saveProgress();
-    }
-}
-
-function updateShopUI() {
-    let p = players[activeShopPlayerIndex] || players[0];
-    shopCoinsEl.innerText = p.coins;
-    shopGemsEl.innerText = p.gems;
-
-    if (!p.ownedShips) p.ownedShips = ['defender'];
-    if (!p.ownedWeapons) p.ownedWeapons = ['normal'];
-
-    // Update all buy buttons dynamically based on ownership
-    buyBtns.forEach(btn => {
-        let type = btn.getAttribute('data-type');
-        let item = btn.getAttribute('data-item');
-        let cost = btn.getAttribute('data-cost');
-        let currency = btn.getAttribute('data-currency') === 'gems' ? '💎' : '💰';
-
-        if (type === 'weapon') {
-            if (p.ownedWeapons.includes(item)) {
-                if (p.weaponType === item) {
-                    btn.innerText = 'مجهز الحصان 🎖️';
-                    btn.style.background = 'linear-gradient(to bottom, #4b5563, #374151)';
-                    btn.disabled = true;
-                } else {
-                    btn.innerText = 'تجهيز 🔄';
-                    btn.style.background = 'linear-gradient(to bottom, #3b82f6, #1d4ed8)';
-                    btn.disabled = false;
-                }
-            } else {
-                btn.innerText = `شراء بـ ${cost} ${currency}`;
-                btn.style.background = '';
-                btn.disabled = false;
-            }
-        } else if (type === 'ship') {
-            if (p.ownedShips.includes(item)) {
-                if (p.shipType === item) {
-                    btn.innerText = 'مجهز الحصان 🎖️';
-                    btn.style.background = 'linear-gradient(to bottom, #4b5563, #374151)';
-                    btn.disabled = true;
-                } else {
-                    btn.innerText = 'تجهيز 🔄';
-                    btn.style.background = 'linear-gradient(to bottom, #3b82f6, #1d4ed8)';
-                    btn.disabled = false;
-                }
-            } else {
-                btn.innerText = `شراء بـ ${cost} ${currency}`;
-                btn.style.background = '';
-                btn.disabled = false;
-            }
-        } else if (type === 'drone') {
-            if (item === 'heal' && p.hasDroneHeal) {
-                btn.innerText = 'مقتناة 🏥';
-                btn.disabled = true;
-                btn.style.background = '#4b5563';
-            } else if (item === 'fuel' && p.hasDroneFuel) {
-                btn.innerText = 'مقتناة ⛽';
-                btn.disabled = true;
-                btn.style.background = '#4b5563';
-            } else if (item === 'magnet' && p.hasDroneMagnet) {
-                btn.innerText = 'مقتناة 🧲';
-                btn.disabled = true;
-                btn.style.background = '#4b5563';
-            } else {
-                btn.innerText = `شراء بـ ${cost} ${currency}`;
-                btn.style.background = '';
-                btn.disabled = false;
-            }
-        } else if (type === 'drone-upgrade') {
-            let currentLvl = 0;
-            if (item === 'heal') currentLvl = p.droneHealLevel;
-            else if (item === 'fuel') currentLvl = p.droneFuelLevel;
-            else if (item === 'magnet') currentLvl = p.droneMagnetLevel;
-            btn.innerText = `ترقية لـ ${currentLvl + 1} (${cost} 💰)`;
-            btn.style.background = '';
-            btn.disabled = false;
-        } else if (type === 'upgrade') {
-            if (item === 'reflectiveShield') {
-                if (p.hasReflectiveShield) {
-                    btn.innerText = 'ممتلكة 🛡️';
-                    btn.disabled = true;
-                    btn.style.background = '#4b5563';
-                } else {
-                    btn.innerText = `شراء بـ ${cost} ${currency}`;
-                    btn.style.background = '';
-                    btn.disabled = false;
-                }
-            }
-        } else if (type === 'consumable') {
-            if (item === 'selfRevive') {
-                if (p.boughtSelfReviveThisRun) {
-                    btn.innerText = 'مباعة 🔒';
-                    btn.disabled = true;
-                    btn.style.background = '#4b5563';
-                } else {
-                    btn.innerText = `شراء بـ ${cost} ${currency}`;
-                    btn.style.background = '';
-                    btn.disabled = false;
-                }
-            } else if (item === 'secondLife') {
-                if (p.boughtSecondLifeThisRun) {
-                    btn.innerText = 'مباعة 🔒';
-                    btn.disabled = true;
-                    btn.style.background = '#4b5563';
-                } else {
-                    btn.innerText = `شراء بـ ${cost} ${currency}`;
-                    btn.style.background = '';
-                    btn.disabled = false;
-                }
-            }
-        }
-    });
-}
-
-closeShopBtn.addEventListener('click', () => toggleShop(activeShopPlayerIndex));
-
-buyBtns.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        let p = players[activeShopPlayerIndex] || players[0];
-        let type = btn.getAttribute('data-type');
-        let item = btn.getAttribute('data-item');
-        let cost = parseInt(btn.getAttribute('data-cost'));
-        let currency = btn.getAttribute('data-currency');
-
-        if (!p.ownedShips) p.ownedShips = ['defender'];
-        if (!p.ownedWeapons) p.ownedWeapons = ['normal'];
-
-        // If the ship/weapon is already owned, equip it for free
-        let isOwned = false;
-        if (type === 'weapon' && p.ownedWeapons.includes(item)) isOwned = true;
-        if (type === 'ship' && p.ownedShips.includes(item)) isOwned = true;
-
-        if (isOwned) {
-            applyPurchase(p, type, item);
-            updateShopUI();
-            return;
-        }
-
-        if (currency === 'coins' && p.coins >= cost) {
-            if (applyPurchase(p, type, item)) {
-                p.coins -= cost;
-            }
-        } else if (currency === 'gems' && p.gems >= cost) {
-            if (applyPurchase(p, type, item)) {
-                p.gems -= cost;
-            }
-        } else {
-            alert("رصيد غير كافٍ!");
-        }
-        updateShopUI();
-    });
-});
-
-// Resource Transfer Listeners
-if (transferBtns) {
-    transferBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            let sender = players[activeShopPlayerIndex] || players[0];
-            if (!transferTargetSelect.value) {
-                alert("لم يتم اختيار أي لاعب لإرسال الموارد إليه!");
-                return;
-            }
-            let targetIdx = parseInt(transferTargetSelect.value);
-            let target = players[targetIdx];
-            if (!target || !target.isAlive) {
-                alert("اللاعب المستهدف غير متوفر أو غير حي!");
-                return;
-            }
-            
-            let type = btn.getAttribute('data-type');
-            let amount = parseInt(btn.getAttribute('data-amount'));
-            
-            if (type === 'coins') {
-                if (sender.coins >= amount) {
-                    sender.coins -= amount;
-                    target.coins += amount;
-                    createParticles(target.x + target.width/2, target.y + target.height/2, '#eab308', 15, 1);
-                    alert(`تم إرسال ${amount} 💰 إلى اللاعب ${targetIdx + 1}!`);
-                } else {
-                    alert("لا تملك رصيد كافٍ من الذهب!");
-                }
-            } else if (type === 'gems') {
-                if (sender.gems >= amount) {
-                    sender.gems -= amount;
-                    target.gems += amount;
-                    createParticles(target.x + target.width/2, target.y + target.height/2, '#06b6d4', 15, 1);
-                    alert(`تم إرسال ${amount} 💎 إلى اللاعب ${targetIdx + 1}!`);
-                } else {
-                    alert("لا تملك رصيد كافٍ من الجواهر!");
-                }
-            } else if (type === 'fuel') {
-                if (sender.fuel >= amount) {
-                    sender.fuel = Math.max(0, sender.fuel - amount);
-                    target.fuel = Math.min(target.maxFuel, target.fuel + amount);
-                    createParticles(target.x + target.width/2, target.y + target.height/2, '#10b981', 15, 1);
-                    alert(`تم إرسال ${amount} ⛽ وقود إلى اللاعب ${targetIdx + 1}!`);
-                } else {
-                    alert("لا تملك وقوداً كافياً للإرسال!");
-                }
-            }
-            
-            updateShopUI();
-            
-            // P2P Sync
-            if (activeMode === 'p2p-host' || activeMode === 'p2p-join') {
-                broadcast({
-                    type: 'transfer',
-                    senderId: sender.id,
-                    targetId: target.id,
-                    resourceType: type,
-                    amount: amount
-                });
-            }
-        });
-    });
-}
-
-function applyPurchase(p, type, item) {
-    if (!p.ownedShips) p.ownedShips = ['defender'];
-    if (!p.ownedWeapons) p.ownedWeapons = ['normal'];
-
-    if (type === 'weapon') {
-        p.weaponType = item;
-        if (!p.ownedWeapons.includes(item)) p.ownedWeapons.push(item);
-        return true;
-    } else if (type === 'ship') {
-        p.shipType = item;
-        if (!p.ownedShips.includes(item)) p.ownedShips.push(item);
-        return true;
-    } else if (type === 'upgrade') {
-        if (item === 'maxFuel') {
-            p.maxFuel += 20;
-            p.fuel += 20;
-            return true;
-        } else if (item === 'upgradeMaxHp') {
-            p.maxHp += 25;
-            p.hp = Math.min(p.maxHp, p.hp + 25);
-            alert(`تمت ترقية الطاقة القصوى بنجاح! الطاقة القصوى الآن: ${p.maxHp} 🩸`);
-            return true;
-        } else if (item === 'upgradeDamage') {
-            p.bulletDamageModifier = (p.bulletDamageModifier || 1.0) + 0.25;
-            let currentPercentage = Math.round((p.bulletDamageModifier - 1.0) * 100);
-            alert(`تمت ترقية قوة المقذوف بنجاح! زيادة الضرر الحالية: +${currentPercentage}% ⚡`);
-            return true;
-        } else if (item === 'heal') {
-            p.healsCount = (p.healsCount || 0) + 1;
-            alert("تم شراء عدة الإصلاح بنجاح! 🔧 (تمت إضافتها للمخزن على الجنب)");
-            return true;
-        } else if (item === 'reflectiveShield') {
-            if (p.hasReflectiveShield) {
-                alert("تمتلك الدرع العاكس بالفعل!");
-                return false;
-            }
-            p.hasReflectiveShield = true;
-            alert("تم شراء الدرع العاكس المغناطيسي بنجاح! 🛡️⚡ (سيفعل تلقائياً كل 15 ثانية)");
-            return true;
-        }
-    } else if (type === 'drone') {
-        if (item === 'heal') {
-            if (p.hasDroneHeal) {
-                alert("تمتلك درون الهيل بالفعل!");
-                return false;
-            }
-            p.hasDroneHeal = true;
-            p.droneHealLevel = 1;
-            p.lastDroneHealAction = Date.now();
-            p.lastDroneHealShot = Date.now();
-            return true;
-        } else if (item === 'fuel') {
-            if (p.hasDroneFuel) {
-                alert("تمتلك درون الوقود بالفعل!");
-                return false;
-            }
-            p.hasDroneFuel = true;
-            p.droneFuelLevel = 1;
-            p.lastDroneFuelAction = Date.now();
-            p.lastDroneFuelShot = Date.now();
-            return true;
-        } else if (item === 'magnet') {
-            if (p.hasDroneMagnet) {
-                alert("تمتلك درون المغناطيس بالفعل!");
-                return false;
-            }
-            p.hasDroneMagnet = true;
-            p.droneMagnetLevel = 1;
-            p.lastDroneMagnetAction = Date.now();
-            return true;
-        }
-    } else if (type === 'drone-upgrade') {
-        if (item === 'heal') {
-            if (!p.hasDroneHeal) {
-                alert("يجب شراء درون الهيل أولاً!");
-                return false;
-            }
-            p.droneHealLevel++;
-            alert(`تم ترقية درون الهيل للمستوى ${p.droneHealLevel}!`);
-            return true;
-        } else if (item === 'fuel') {
-            if (!p.hasDroneFuel) {
-                alert("يجب شراء درون الوقود أولاً!");
-                return false;
-            }
-            p.droneFuelLevel++;
-            alert(`تم ترقية درون الوقود للمستوى ${p.droneFuelLevel}!`);
-            return true;
-        } else if (item === 'magnet') {
-            if (!p.hasDroneMagnet) {
-                alert("يجب شراء درون المغناطيس أولاً!");
-                return false;
-            }
-            p.droneMagnetLevel++;
-            alert(`تم ترقية درون المغناطيس للمستوى ${p.droneMagnetLevel}!`);
-            return true;
-        }
-    } else if (type === 'consumable') {
-        if (item === 'selfRevive') {
-            p.selfReviveKits = (p.selfReviveKits || 0) + 1;
-            alert("تم شراء حقنة الإنعاش الذاتي بنجاح! 💉 (تمت إضافتها للمخزن على الجنب)");
-            return true;
-        } else if (item === 'secondLife') {
-            p.secondLifes = (p.secondLifes || 0) + 1;
-            alert("تم شراء الفرصة الثانية الفائقة بنجاح! 🌟 (تمت إضافتها للمخزن على الجنب)");
-            return true;
-        } else if (item === 'tempShield') {
-            p.tempShieldsCount = (p.tempShieldsCount || 0) + 1;
-            alert("تم شراء درع الخمس ثوانٍ بنجاح! 🛡️ (تمت إضافته للمخزن على الجنب)");
-            return true;
-        }
-    }
-    return false;
-}
-
-// --- Fusion Workshop State & Logic ---
-let isFusionOpen = false;
-let activeFusionTab = 'ships'; // 'ships' or 'weapons'
-let activeFusionPlayerIndex = 0;
-
-const SHIP_NAMES_AR = {
-    'defender': 'السفينة المدافعة 🛡️',
-    'speedster': 'السفينة السريعة ⚡',
-    'tank': 'السفينة المدرعة 🧱',
-    'healer': 'السفينة المعالجة ✚',
-    'ghost': 'السفينة الشبحية 👻',
-    'vampire': 'السفينة الخفاشية 🦇'
-};
-
-const WEAPON_NAMES_AR = {
-    'normal': 'السلاح الأساسي 🔫',
-    'frost': 'سلاح الجليد المبطئ ❄️',
-    'explosive': 'سلاح المتفجرات المدمر 💥',
-    'piercing': 'سلاح الليزر المخترق ⚡',
-    'blackhole': 'سلاح الجاذبية الكونية 🕳️'
-};
-
-function translateItemName(id) {
-    if (!id) return '';
-    if (id.startsWith('hybrid-')) {
-        let parts = id.replace('hybrid-', '').split('-');
-        let n1 = SHIP_NAMES_AR[parts[0]] || WEAPON_NAMES_AR[parts[0]] || parts[0];
-        let n2 = SHIP_NAMES_AR[parts[1]] || WEAPON_NAMES_AR[parts[1]] || parts[1];
-        // Strip emojis to clean label
-        n1 = n1.replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '').trim();
-        n2 = n2.replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '').trim();
-        return `هجين: ${n1} + ${n2} 🧪`;
-    }
-    return SHIP_NAMES_AR[id] || WEAPON_NAMES_AR[id] || id;
-}
-
-function getPlayerFusionInfo() {
-    let p = null;
-    if (players && players[activeFusionPlayerIndex]) {
-        p = players[activeFusionPlayerIndex];
-    } else if (playersData && playersData[activeFusionPlayerIndex]) {
-        p = playersData[activeFusionPlayerIndex];
-    }
-    return {
-        coins: p ? p.coins : 0,
-        gems: p ? p.gems : 0,
-        ownedShips: p ? (p.ownedShips || ['defender']) : ['defender'],
-        ownedWeapons: p ? (p.ownedWeapons || ['normal']) : ['normal']
-    };
-}
-
-function populateFusionSlots() {
-    fuseSlot1.innerHTML = '';
-    fuseSlot2.innerHTML = '';
-    
-    let info = getPlayerFusionInfo();
-    let list = activeFusionTab === 'ships' ? info.ownedShips : info.ownedWeapons;
-    
-    if (list.length < 2) {
-        let opt = document.createElement('option');
-        opt.value = "";
-        opt.innerText = activeFusionTab === 'ships' ? "تحتاج لشراء سفن أكثر لدمجها!" : "تحتاج لشراء أسلحة أكثر لدمجها!";
-        fuseSlot1.appendChild(opt);
-        
-        let opt2 = document.createElement('option');
-        opt2.value = "";
-        opt2.innerText = activeFusionTab === 'ships' ? "شاهد المتجر لشراء سفن" : "شاهد المتجر لشراء أسلحة";
-        fuseSlot2.appendChild(opt2);
-        executeFusionBtn.disabled = true;
+Oe &&
+  Oe.forEach((t) => {
+    t.addEventListener("click", () => {
+      let e = a[he] || a[0];
+      if (!K.value) {
+        alert("لم يتم اختيار أي لاعب لإرسال الموارد إليه!");
         return;
-    }
-    
-    executeFusionBtn.disabled = false;
-    
-    list.forEach(item => {
-        let opt = document.createElement('option');
-        opt.value = item;
-        opt.innerText = translateItemName(item);
-        fuseSlot1.appendChild(opt);
-        
-        let opt2 = document.createElement('option');
-        opt2.value = item;
-        opt2.innerText = translateItemName(item);
-        fuseSlot2.appendChild(opt2);
+      }
+      let i = parseInt(K.value),
+        s = a[i];
+      if (!s || !s.isAlive) {
+        alert("اللاعب المستهدف غير متوفر أو غير حي!");
+        return;
+      }
+      let l = t.getAttribute("data-type"),
+        n = parseInt(t.getAttribute("data-amount"));
+      (l === "coins"
+        ? e.coins >= n
+          ? ((e.coins -= n),
+            (s.coins += n),
+            f(s.x + s.width / 2, s.y + s.height / 2, "#eab308", 15, 1),
+            alert(`تم إرسال ${n} 💰 إلى اللاعب ${i + 1}!`))
+          : alert("لا تملك رصيد كافٍ من الذهب!")
+        : l === "gems"
+          ? e.gems >= n
+            ? ((e.gems -= n),
+              (s.gems += n),
+              f(s.x + s.width / 2, s.y + s.height / 2, "#06b6d4", 15, 1),
+              alert(`تم إرسال ${n} 💎 إلى اللاعب ${i + 1}!`))
+            : alert("لا تملك رصيد كافٍ من الجواهر!")
+          : l === "fuel" &&
+            (e.fuel >= n
+              ? ((e.fuel = Math.max(0, e.fuel - n)),
+                (s.fuel = Math.min(s.maxFuel, s.fuel + n)),
+                f(s.x + s.width / 2, s.y + s.height / 2, "#10b981", 15, 1),
+                alert(`تم إرسال ${n} ⛽ وقود إلى اللاعب ${i + 1}!`))
+              : alert("لا تملك وقوداً كافياً للإرسال!")),
+        ie(),
+        (m === "p2p-host" || m === "p2p-join") &&
+          $({
+            type: "transfer",
+            senderId: e.id,
+            targetId: s.id,
+            resourceType: l,
+            amount: n,
+          }));
     });
-    
-    if (fuseSlot2.options.length > 1) {
-        fuseSlot2.selectedIndex = 1;
+  });
+function we(t, e, i) {
+  if (
+    (t.ownedShips || (t.ownedShips = ["defender"]),
+    t.ownedWeapons || (t.ownedWeapons = ["normal"]),
+    e === "weapon")
+  )
+    return (
+      (t.weaponType = i),
+      t.ownedWeapons.includes(i) || t.ownedWeapons.push(i),
+      !0
+    );
+  if (e === "ship")
+    return (
+      (t.shipType = i),
+      t.ownedShips.includes(i) || t.ownedShips.push(i),
+      !0
+    );
+  if (e === "upgrade") {
+    if (i === "maxFuel") return ((t.maxFuel += 20), (t.fuel += 20), !0);
+    if (i === "nuclearReactor") {
+      t.nuclearReactors = (t.nuclearReactors || 1) + 1;
+      alert(`تمت إضافة مفاعل نووي بنجاح! المفاعلات الحالية: ${t.nuclearReactors} ☢️`);
+      return !0;
     }
-}
-
-function toggleFusion() {
-    isFusionOpen = !isFusionOpen;
-    if (isFusionOpen) {
-        fusionModal.classList.remove('hidden');
-        fusionResultShowcase.classList.add('hidden');
-        
-        // Populate players select
-        fusionPlayerSelect.innerHTML = '';
-        const maxPlayers = players.length > 0 ? players.length : Math.max(1, playersData.length);
-        for (let i = 0; i < maxPlayers; i++) {
-            let opt = document.createElement('option');
-            opt.value = i;
-            opt.innerText = `اللاعب ${i + 1}`;
-            fusionPlayerSelect.appendChild(opt);
-        }
-        activeFusionPlayerIndex = parseInt(fusionPlayerSelect.value) || 0;
-        populateFusionSlots();
+    if (i === "upgradeMaxHp")
+      return (
+        (t.maxHp += 25),
+        (t.hp = Math.min(t.maxHp, t.hp + 25)),
+        alert(
+          `تمت ترقية الطاقة القصوى بنجاح! الطاقة القصوى الآن: ${t.maxHp} 🩸`,
+        ),
+        !0
+      );
+    if (i === "upgradeDamage") {
+      t.bulletDamageModifier = (t.bulletDamageModifier || 1) + 0.25;
+      let s = Math.round((t.bulletDamageModifier - 1) * 100);
+      return (
+        alert(`تمت ترقية قوة المقذوف بنجاح! زيادة الضرر الحالية: +${s}% ⚡`),
+        !0
+      );
     } else {
-        fusionModal.classList.add('hidden');
+      if (i === "heal")
+        return (
+          (t.healsCount = (t.healsCount || 0) + 1),
+          alert("تم شراء عدة الإصلاح بنجاح! 🔧 (تمت إضافتها للمخزن على الجنب)"),
+          !0
+        );
+      if (i === "reflectiveShield")
+        return t.hasReflectiveShield
+          ? (alert("تمتلك الدرع العاكس بالفعل!"), !1)
+          : ((t.hasReflectiveShield = !0),
+            alert(
+              "تم شراء الدرع العاكس المغناطيسي بنجاح! 🛡️⚡ (سيفعل تلقائياً كل 15 ثانية)",
+            ),
+            !0);
     }
+  } else if (e === "drone") {
+    if (i === "heal")
+      return t.hasDroneHeal
+        ? (alert("تمتلك درون الهيل بالفعل!"), !1)
+        : ((t.hasDroneHeal = !0),
+          (t.droneHealLevel = 1),
+          (t.lastDroneHealAction = Date.now()),
+          (t.lastDroneHealShot = Date.now()),
+          !0);
+    if (i === "fuel")
+      return t.hasDroneFuel
+        ? (alert("تمتلك درون الوقود بالفعل!"), !1)
+        : ((t.hasDroneFuel = !0),
+          (t.droneFuelLevel = 1),
+          (t.lastDroneFuelAction = Date.now()),
+          (t.lastDroneFuelShot = Date.now()),
+          !0);
+    if (i === "magnet")
+      return t.hasDroneMagnet
+        ? (alert("تمتلك درون المغناطيس بالفعل!"), !1)
+        : ((t.hasDroneMagnet = !0),
+          (t.droneMagnetLevel = 1),
+          (t.lastDroneMagnetAction = Date.now()),
+          !0);
+  } else if (e === "drone-upgrade") {
+    if (i === "heal")
+      return t.hasDroneHeal
+        ? (t.droneHealLevel++,
+          alert(`تم ترقية درون الهيل للمستوى ${t.droneHealLevel}!`),
+          !0)
+        : (alert("يجب شراء درون الهيل أولاً!"), !1);
+    if (i === "fuel")
+      return t.hasDroneFuel
+        ? (t.droneFuelLevel++,
+          alert(`تم ترقية درون الوقود للمستوى ${t.droneFuelLevel}!`),
+          !0)
+        : (alert("يجب شراء درون الوقود أولاً!"), !1);
+    if (i === "magnet")
+      return t.hasDroneMagnet
+        ? (t.droneMagnetLevel++,
+          alert(`تم ترقية درون المغناطيس للمستوى ${t.droneMagnetLevel}!`),
+          !0)
+        : (alert("يجب شراء درون المغناطيس أولاً!"), !1);
+  } else if (e === "consumable") {
+    if (i === "selfRevive")
+      return (
+        (t.selfReviveKits = (t.selfReviveKits || 0) + 1),
+        alert(
+          "تم شراء حقنة الإنعاش الذاتي بنجاح! 💉 (تمت إضافتها للمخزن على الجنب)",
+        ),
+        !0
+      );
+    if (i === "secondLife")
+      return (
+        (t.secondLifes = (t.secondLifes || 0) + 1),
+        alert(
+          "تم شراء الفرصة الثانية الفائقة بنجاح! 🌟 (تمت إضافتها للمخزن على الجنب)",
+        ),
+        !0
+      );
+    if (i === "tempShield")
+      return (
+        (t.tempShieldsCount = (t.tempShieldsCount || 0) + 1),
+        alert(
+          "تم شراء درع الخمس ثوانٍ بنجاح! 🛡️ (تمت إضافته للمخزن على الجنب)",
+        ),
+        !0
+      );
+  } else if (e === "trail") {
+    t.trailType = i;
+    alert(`🎉 تم تفعيل مظهر محرك الدفع: ${i === 'rainbow' ? 'قوس قزح 🌈' : i === 'neon-blue' ? 'نيون أزرق 🟦' : 'الماتريكس 🟢'}`);
+    return !0;
+  }
+  return !1;
 }
-
-// Listeners
-if (menuFusionBtn) menuFusionBtn.addEventListener('click', toggleFusion);
-if (closeFusionBtn) closeFusionBtn.addEventListener('click', toggleFusion);
-
-if (fusionPlayerSelect) {
-    fusionPlayerSelect.addEventListener('change', () => {
-        activeFusionPlayerIndex = parseInt(fusionPlayerSelect.value) || 0;
-        populateFusionSlots();
-    });
+let ve = !1,
+  z = "ships",
+  F = 0;
+const Me = {
+    defender: "السفينة المدافعة 🛡️",
+    speedster: "السفينة السريعة ⚡",
+    tank: "السفينة المدرعة 🧱",
+    healer: "السفينة المعالجة ✚",
+    ghost: "السفينة الشبحية 👻",
+    vampire: "السفينة الخفاشية 🦇",
+  },
+  Te = {
+    normal: "السلاح الأساسي 🔫",
+    frost: "سلاح الجليد المبطئ ❄️",
+    explosive: "سلاح المتفجرات المدمر 💥",
+    piercing: "سلاح الليزر المخترق ⚡",
+    blackhole: "سلاح الجاذبية الكونية 🕳️",
+  };
+function me(t) {
+  if (!t) return "";
+  if (t.startsWith("hybrid-")) {
+    let e = t.replace("hybrid-", "").split("-"),
+      i = Me[e[0]] || Te[e[0]] || e[0],
+      s = Me[e[1]] || Te[e[1]] || e[1];
+    return (
+      (i = i
+        .replace(
+          /[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g,
+          "",
+        )
+        .trim()),
+      (s = s
+        .replace(
+          /[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g,
+          "",
+        )
+        .trim()),
+      `هجين: ${i} + ${s} 🧪`
+    );
+  }
+  return Me[t] || Te[t] || t;
 }
-
-if (tabFuseShips) {
-    tabFuseShips.addEventListener('click', () => {
-        activeFusionTab = 'ships';
-        tabFuseShips.classList.add('primary');
-        tabFuseShips.classList.remove('secondary');
-        tabFuseWeapons.classList.add('secondary');
-        tabFuseWeapons.classList.remove('primary');
-        populateFusionSlots();
-    });
-}
-
-if (tabFuseWeapons) {
-    tabFuseWeapons.addEventListener('click', () => {
-        activeFusionTab = 'weapons';
-        tabFuseWeapons.classList.add('primary');
-        tabFuseWeapons.classList.remove('secondary');
-        tabFuseShips.classList.add('secondary');
-        tabFuseShips.classList.remove('primary');
-        populateFusionSlots();
-    });
-}
-
-if (executeFusionBtn) {
-    executeFusionBtn.addEventListener('click', () => {
-        let item1 = fuseSlot1.value;
-        let item2 = fuseSlot2.value;
-        
-        if (!item1 || !item2) {
-            alert("يرجى اختيار المكونات المُراد دمجها أولاً!");
-            return;
-        }
-        
-        if (item1 === item2) {
-            alert("لا يمكن دمج العنصر مع نفسه! اختر مكونين مختلفين.");
-            return;
-        }
-        
-        let info = getPlayerFusionInfo();
-        if (info.gems < 15) {
-            alert("لا تملك جواهر كافية! تكلفة الدمج هي 15 جوهرة 💎.");
-            return;
-        }
-        
-        // Deduct gems & perform fusion
-        let p = null;
-        let isGameInstance = false;
-        if (players && players[activeFusionPlayerIndex]) {
-            p = players[activeFusionPlayerIndex];
-            isGameInstance = true;
-        } else if (playersData && playersData[activeFusionPlayerIndex]) {
-            p = playersData[activeFusionPlayerIndex];
-        }
-        
-        if (!p) return;
-        
-        p.gems -= 15;
-        
-        // Clean prefix if any
-        let clean1 = item1.replace('hybrid-', '');
-        let clean2 = item2.replace('hybrid-', '');
-        // Combine clean parts
-        let combinedParts = Array.from(new Set([...clean1.split('-'), ...clean2.split('-')]));
-        let hybridId = `hybrid-${combinedParts.join('-')}`;
-        
-        let resultText = '';
-        if (activeFusionTab === 'ships') {
-            if (!p.ownedShips.includes(hybridId)) {
-                p.ownedShips.push(hybridId);
-            }
-            p.shipType = hybridId;
-            resultText = translateItemName(hybridId);
-        } else {
-            if (!p.ownedWeapons.includes(hybridId)) {
-                p.ownedWeapons.push(hybridId);
-            }
-            p.weaponType = hybridId;
-            resultText = translateItemName(hybridId);
-        }
-        
-        // Show result display
-        fusionResultText.innerText = resultText;
-        fusionResultShowcase.classList.remove('hidden');
-        
-        // Save progress immediately
-        saveProgress();
-        
-        // Update UI
-        populateFusionSlots();
-        updateHUD();
-        
-        // Play particles if in game instance
-        if (isGameInstance) {
-            createParticles(canvas.width / 2, canvas.height / 2, '#a855f7', 80, 3);
-        }
-        alert(`🎉 تم دمج وصياغة: ${resultText}`);
-    });
-}
-
-function toggleMap() {
-    if (activeMode === 'p2p-join') {
-        alert("فقط الـ Host يمكنه اختيار العوالم الآن!");
-        return; 
+function Ve() {
+  let t = null;
+  return (
+    a && a[F] ? (t = a[F]) : x && x[F] && (t = x[F]),
+    {
+      coins: t ? t.coins : 0,
+      gems: t ? t.gems : 0,
+      ownedShips: t ? t.ownedShips || ["defender"] : ["defender"],
+      ownedWeapons: t ? t.ownedWeapons || ["normal"] : ["normal"],
     }
-    isMapOpen = !isMapOpen;
-    if (isMapOpen) {
-        worldsMapModal.classList.remove('hidden');
-        updateMapUI();
-    } else {
-        worldsMapModal.classList.add('hidden');
-        // Prevent duplicate loop
+  );
+}
+function ne() {
+  ((oe.innerHTML = ""), (G.innerHTML = ""));
+  let t = Ve(),
+    e = z === "ships" ? t.ownedShips : t.ownedWeapons;
+  if (e.length < 2) {
+    let i = document.createElement("option");
+    ((i.value = ""),
+      (i.innerText =
+        z === "ships"
+          ? "تحتاج لشراء سفن أكثر لدمجها!"
+          : "تحتاج لشراء أسلحة أكثر لدمجها!"),
+      oe.appendChild(i));
+    let s = document.createElement("option");
+    ((s.value = ""),
+      (s.innerText =
+        z === "ships" ? "شاهد المتجر لشراء سفن" : "شاهد المتجر لشراء أسلحة"),
+      G.appendChild(s),
+      (fe.disabled = !0));
+    return;
+  }
+  ((fe.disabled = !1),
+    e.forEach((i) => {
+      let s = document.createElement("option");
+      ((s.value = i), (s.innerText = me(i)), oe.appendChild(s));
+      let l = document.createElement("option");
+      ((l.value = i), (l.innerText = me(i)), G.appendChild(l));
+    }),
+    G.options.length > 1 && (G.selectedIndex = 1));
+}
+function Ze() {
+  if (((ve = !ve), ve)) {
+    (ke.classList.remove("hidden"),
+      Ne.classList.add("hidden"),
+      (X.innerHTML = ""));
+    const t = a.length > 0 ? a.length : Math.max(1, x.length);
+    for (let e = 0; e < t; e++) {
+      let i = document.createElement("option");
+      ((i.value = e), (i.innerText = `اللاعب ${e + 1}`), X.appendChild(i));
     }
+    ((F = parseInt(X.value) || 0), ne());
+  } else ke.classList.add("hidden");
 }
-
-function updateMapUI() {
-    worldBtns.forEach(btn => {
-        let w = parseInt(btn.getAttribute('data-world'));
-        if (w <= unlockedWorld) {
-            btn.classList.remove('locked');
-            btn.removeAttribute('disabled');
-            let pTag = btn.querySelector('p');
-            if(pTag.innerText.includes('🔒')) pTag.innerText = pTag.innerText.replace(' 🔒', '');
-        }
-        if (w === currentWorld) {
-            btn.classList.add('selected');
-        } else {
-            btn.classList.remove('selected');
-        }
-    });
+Ie && Ie.addEventListener("click", Ze);
+Fe && Fe.addEventListener("click", Ze);
+X &&
+  X.addEventListener("change", () => {
+    ((F = parseInt(X.value) || 0), ne());
+  });
+q &&
+  q.addEventListener("click", () => {
+    ((z = "ships"),
+      q.classList.add("primary"),
+      q.classList.remove("secondary"),
+      N.classList.add("secondary"),
+      N.classList.remove("primary"),
+      ne());
+  });
+N &&
+  N.addEventListener("click", () => {
+    ((z = "weapons"),
+      N.classList.add("primary"),
+      N.classList.remove("secondary"),
+      q.classList.add("secondary"),
+      q.classList.remove("primary"),
+      ne());
+  });
+fe &&
+  fe.addEventListener("click", () => {
+    let t = oe.value,
+      e = G.value;
+    if (!t || !e) {
+      alert("يرجى اختيار المكونات المُراد دمجها أولاً!");
+      return;
+    }
+    if (t === e) {
+      alert("لا يمكن دمج العنصر مع نفسه! اختر مكونين مختلفين.");
+      return;
+    }
+    if (Ve().gems < 15) {
+      alert("لا تملك جواهر كافية! تكلفة الدمج هي 15 جوهرة 💎.");
+      return;
+    }
+    let s = null,
+      l = !1;
+    if ((a && a[F] ? ((s = a[F]), (l = !0)) : x && x[F] && (s = x[F]), !s))
+      return;
+    s.gems -= 15;
+    let n = t.replace("hybrid-", ""),
+      r = e.replace("hybrid-", ""),
+      y = `hybrid-${Array.from(new Set([...n.split("-"), ...r.split("-")])).join("-")}`,
+      g = "";
+    (z === "ships"
+      ? (s.ownedShips.includes(y) || s.ownedShips.push(y),
+        (s.shipType = y),
+        (g = me(y)))
+      : (s.ownedWeapons.includes(y) || s.ownedWeapons.push(y),
+        (s.weaponType = y),
+        (g = me(y))),
+      (at.innerText = g),
+      Ne.classList.remove("hidden"),
+      le(),
+      ne(),
+      Y(),
+      l && f(u.width / 2, u.height / 2, "#a855f7", 80, 3),
+      alert(`🎉 تم دمج وصياغة: ${g}`));
+  });
+function et() {
+  if (m === "p2p-join") {
+    alert("فقط الـ Host يمكنه اختيار العوالم الآن!");
+    return;
+  }
+  ((V = !V),
+    V ? (Ue.classList.remove("hidden"), tt()) : Ue.classList.add("hidden"));
 }
-
-worldBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        let w = parseInt(btn.getAttribute('data-world'));
-        if (w <= unlockedWorld) {
-            currentWorld = w;
-            wave = (currentWorld - 1) * 5 + 1; // Start at the beginning of that world
-            enemies = [];
-            meteorites = [];
-            bosses = [];
-            bullets = [];
-            isBossWave = false;
-            updateMapUI();
-        }
-    });
+function tt() {
+  ze.forEach((t) => {
+    let e = parseInt(t.getAttribute("data-world"));
+    if (e <= j) {
+      (t.classList.remove("locked"), t.removeAttribute("disabled"));
+      let i = t.querySelector("p");
+      i.innerText.includes("🔒") &&
+        (i.innerText = i.innerText.replace(" 🔒", ""));
+    }
+    e === B ? t.classList.add("selected") : t.classList.remove("selected");
+  });
+}
+ze.forEach((t) => {
+  t.addEventListener("click", () => {
+    let e = parseInt(t.getAttribute("data-world"));
+    e <= j &&
+      ((B = e),
+      (w = (B - 1) * 5 + 1),
+      (v = []),
+      (E = []),
+      (S = []),
+      (o = []),
+      (P = !1),
+      tt());
+  });
 });
-
-closeMapBtn.addEventListener('click', toggleMap);
-
-// UI Handlers
-modeBtns.forEach(btn => btn.addEventListener('click', e => {
-    activeMode = e.currentTarget.dataset.mode;
-    if (activeMode === 'local') {
-        localPlayerCount = 1;
-        startGame();
-    } else if (activeMode === 'local-coop') {
-        // Show player count selector modal
-        mainMenu.classList.add('hidden');
-        if (playerCountModal) {
-            playerCountModal.style.display = 'flex';
-        }
-    } else {
-        mainMenu.classList.add('hidden');
-        p2pMenu.classList.remove('hidden');
-    }
-}));
-
-// Player count modal handlers
-if (countBtns) {
-    countBtns.forEach(btn => btn.addEventListener('click', () => {
-        localPlayerCount = parseInt(btn.getAttribute('data-count')) || 2;
-        activeMode = 'local-coop';
-        if (playerCountModal) playerCountModal.style.display = 'none';
-        startGame();
+Mt.addEventListener("click", et);
+rt.forEach((t) =>
+  t.addEventListener("click", (e) => {
+    ((m = e.currentTarget.dataset.mode),
+      m === "local"
+        ? ((Z = 1), O())
+        : m === "local-coop"
+          ? (ee.classList.add("hidden"), R && (R.style.display = "flex"))
+          : (ee.classList.add("hidden"), Le.classList.remove("hidden")));
+  }),
+);
+We &&
+  We.forEach((t) =>
+    t.addEventListener("click", () => {
+      ((Z = parseInt(t.getAttribute("data-count")) || 2),
+        (m = "local-coop"),
+        R && (R.style.display = "none"),
+        O());
+    }),
+  );
+$e &&
+  $e.addEventListener("click", () => {
+    (R && (R.style.display = "none"), ee.classList.remove("hidden"));
+  });
+mt.addEventListener("click", () => {
+  (Le.classList.add("hidden"),
+    ee.classList.remove("hidden"),
+    H && (H.destroy(), (H = null)));
+});
+yt.addEventListener("click", () => location.reload());
+pt.addEventListener("click", () => {
+  m === "p2p-host"
+    ? ($({ type: "rematch" }), O())
+    : (m === "local" || m === "local-coop") && O();
+});
+function Dt() {
+  ((H = new Peer()),
+    H.on("open", (t) => {
+      dt.innerText = t;
+    }),
+    H.on("connection", (t) => {
+      ((C = t), it());
     }));
 }
-if (closeCountBtn) {
-    closeCountBtn.addEventListener('click', () => {
-        if (playerCountModal) playerCountModal.style.display = 'none';
-        mainMenu.classList.remove('hidden');
-    });
-}
-
-backToMenuBtn.addEventListener('click', () => {
-    p2pMenu.classList.add('hidden');
-    mainMenu.classList.remove('hidden');
-    if (peer) { peer.destroy(); peer = null; }
+Ae.addEventListener("click", () => {
+  (Ae.classList.add("hidden"),
+    ft.classList.remove("hidden"),
+    (m = "p2p-host"),
+    Dt());
 });
-menuBtn.addEventListener('click', () => location.reload());
-rematchBtn.addEventListener('click', () => {
-    if(activeMode === 'p2p-host') {
-        broadcast({type: 'rematch'});
-        startGame();
-    } else if (activeMode === 'local' || activeMode === 'local-coop') {
-        startGame();
+ge.addEventListener("click", () => {
+  const t = ct.value.trim();
+  t &&
+    ((ge.innerText = "جاري الاتصال..."),
+    (H = new Peer()),
+    H.on("open", () => {
+      ((C = H.connect(t)),
+        C.on("open", () => {
+          ((m = "p2p-join"), it());
+        }),
+        C.on("error", () => {
+          (ut.classList.remove("hidden"), (ge.innerText = "بدء المهمة"));
+        }));
+    }));
+});
+function it() {
+  (C.on("data", (t) => {
+    if (t.type === "start") O();
+    else if (t.type === "ultimate_triggered") {
+      const e = a[t.playerIdx];
+      if (e && e.isAlive) {
+        e.ultCharge = 0;
+        let i = t.shipType;
+        if (i.includes("defender")) {
+          for (let s = 0; s < Math.PI * 2; s += (Math.PI * 2) / 24) {
+            let l = Math.cos(s) * 500,
+              n = Math.sin(s) * 500;
+            (o.push(
+              new p(
+                e.x + e.width / 2 - 3,
+                e.y + e.height / 2,
+                n,
+                "#a855f7",
+                e.id,
+                "explosive",
+              ),
+            ),
+              (o[o.length - 1].vx = l),
+              (o[o.length - 1].damageMultiplier = e.bulletDamageModifier || 1));
+          }
+          f(e.x + e.width / 2, e.y + e.height / 2, "#a855f7", 40, 3);
+        } else
+          i.includes("speedster")
+            ? ((I = 5),
+              f(e.x + e.width / 2, e.y + e.height / 2, "#38bdf8", 40, 3))
+            : i.includes("tank")
+              ? ((e.tankUltTimeLeft = 5),
+                (e.tempShieldTimeLeft = 5),
+                f(e.x + e.width / 2, e.y + e.height / 2, "#e11d48", 40, 3))
+              : (i.includes("healer") || i.includes("hybrid")) &&
+                a.forEach((s) => {
+                  s.isAlive
+                    ? ((s.hp = s.maxHp),
+                      f(
+                        s.x + s.width / 2,
+                        s.y + s.height / 2,
+                        "#10b981",
+                        30,
+                        2,
+                      ))
+                    : ((s.isAlive = !0),
+                      (s.hp = s.maxHp / 2),
+                      (s.fuel = Math.max(40, s.fuel)),
+                      f(
+                        s.x + s.width / 2,
+                        s.y + s.height / 2,
+                        "#10b981",
+                        40,
+                        3,
+                      ));
+                });
+      }
+    } else if (t.type === "sync") It(t);
+    else if (t.type === "rematch") O();
+    else if (t.type === "shoot")
+      (o.push(
+        new p(t.x + 29, t.y, -700, t.id === 1 ? "#3b82f6" : "#8b5cf6", t.id),
+      ),
+        f(t.x + 32, t.y, t.id === 1 ? "#3b82f6" : "#8b5cf6", 3, 2));
+    else if (t.type === "enemy_shoot")
+      o.push(new p(t.x + t.w / 2 - 3, t.y + t.h, 300, "#ef4444", "enemy"));
+    else if (t.type === "player_input") {
+      const e = a.find((i) => i.id === t.id);
+      e && ((e.x = t.x), (e.y = t.y));
+    } else if (t.type === "transfer") {
+      const e = a.find((s) => s.id === t.senderId),
+        i = a.find((s) => s.id === t.targetId);
+      e &&
+        i &&
+        (t.resourceType === "coins"
+          ? ((e.coins -= t.amount),
+            (i.coins += t.amount),
+            f(i.x + i.width / 2, i.y + i.height / 2, "#eab308", 15, 1))
+          : t.resourceType === "gems"
+            ? ((e.gems -= t.amount),
+              (i.gems += t.amount),
+              f(i.x + i.width / 2, i.y + i.height / 2, "#06b6d4", 15, 1))
+            : t.resourceType === "fuel" &&
+              ((e.fuel = Math.max(0, e.fuel - t.amount)),
+              (i.fuel = Math.min(i.maxFuel, i.fuel + t.amount)),
+              f(i.x + i.width / 2, i.y + i.height / 2, "#10b981", 15, 1)),
+        ie());
     }
-});
-
-// P2P Logic
-function initP2P() {
-    peer = new Peer();
-    peer.on('open', id => {
-        roomIdDisplay.innerText = id;
-    });
-    peer.on('connection', connection => {
-        conn = connection;
-        setupConnection();
-    });
+  }),
+    m === "p2p-host" && (O(), setTimeout(() => $({ type: "start" }), 500)));
 }
+function $(t) {
+  C && C.open && C.send(t);
+}
+const Et = ["#3b82f6", "#8b5cf6", "#a855f7", "#10b981", "#f59e0b", "#06b6d4"];
+function bt(t) {
+  const e = [],
+    i = u.width / (t + 1);
+  for (let s = 0; s < t; s++)
+    e.push({ x: i * (s + 1) - 32, y: u.height - 100 });
+  return e;
+}
+function O() {
+  (ee.classList.add("hidden"),
+    Le.classList.add("hidden"),
+    R && (R.style.display = "none"),
+    Ge.classList.add("hidden"),
+    lt.classList.remove("hidden"),
+    (a = []),
+    (o = []),
+    (v = []),
+    (_ = []),
+    (D = []),
+    (E = []),
+    (S = []),
+    (M = []),
+    (T = []),
+    (P = !1),
+    (w = 1),
+    (ae = 0),
+    (se = !1),
+    (d = {}),
+    xe.forEach((e) => {
+      e && e.classList.add("hidden");
+    }),
+    (m === "p2p-host" || m === "p2p-join") && (Z = 2));
+  const t = bt(Z);
+  for (let e = 0; e < Z; e++) {
+    const i = t[e],
+      s = new Tt(e + 1, i.x, i.y, Et[e]);
+    (x[e] &&
+      ((s.coins = x[e].coins || 0),
+      (s.gems = x[e].gems || 0),
+      (s.shipType = x[e].shipType || "defender"),
+      (s.weaponType = x[e].weaponType || "normal"),
+      (s.hasDroneHeal = x[e].hasDroneHeal || !1),
+      (s.hasDroneFuel = x[e].hasDroneFuel || !1),
+      (s.hasDroneMagnet = x[e].hasDroneMagnet || !1),
+      (s.droneHealLevel = x[e].droneHealLevel || 0),
+      (s.droneFuelLevel = x[e].droneFuelLevel || 0),
+      (s.droneMagnetLevel = x[e].droneMagnetLevel || 0),
+      (s.ownedWeapons = x[e].ownedWeapons || ["normal"]),
+      (s.ownedShips = x[e].ownedShips || ["defender"]),
+      (s.hasReflectiveShield = x[e].hasReflectiveShield || !1),
+      (s.healsCount = x[e].healsCount || 0),
+      (s.selfReviveKits = x[e].selfReviveKits || 0),
+      (s.secondLifes = x[e].secondLifes || 0),
+      (s.tempShieldsCount = x[e].tempShieldsCount || 0),
+      (s.bulletDamageModifier = x[e].bulletDamageModifier || 1),
+      (s.maxHp = x[e].maxHp || 100),
+      (s.hp = s.maxHp),
+      (s.trailType = x[e].trailType || 'none'),
+      (s.adRevivesCount = 0)),
+      a.push(s),
+      xe[e] && xe[e].classList.remove("hidden"));
+  }
+  ((m === "p2p-join" || m === "p2p-host") && je && (je.innerText = "(الزميل)"),
+    Y(),
+    (ce = performance.now()),
+    cancelAnimationFrame(Ke),
+    be(ce));
+}
+function Y() {
+  (a.forEach((t, e) => {
+    (He[e] && (He[e].style.width = `${Math.max(0, (t.hp / t.maxHp) * 100)}%`),
+      Be[e] &&
+        (Be[e].style.width = `${Math.max(0, (t.fuel / t.maxFuel) * 100)}%`),
+      document.getElementById(`p${e+1}-energy`) && (document.getElementById(`p${e+1}-energy`).style.width = `${Math.min(100, Math.max(0, (t.energy / t.maxEnergy) * 100))}%`),
+      document.getElementById(`p${e+1}-heat`) && (document.getElementById(`p${e+1}-heat`).style.width = `${Math.min(100, Math.max(0, (t.heat / t.maxHeat) * 100))}%`),
+      Pe[e] && (Pe[e].innerText = t.score),
+      Ce[e] && (Ce[e].innerText = t.coins),
+      Re[e] && (Re[e].innerText = t.gems));
+    
+    // Glowing HUD titles update
+    let badgeSpan = document.getElementById(`p${e + 1}-title-badge`);
+    if (badgeSpan) {
+      let titleText = "";
+      let titleClass = "";
+      if (t.coins >= 300) {
+        titleText = "[الملياردير الفضائي 💰]";
+        titleClass = "title-billionaire";
+      } else if (t.healsCount > 0 || t.selfReviveKits > 0 || t.secondLifes > 0) {
+        titleText = "[ملاك الرحمة 💉]";
+        titleClass = "title-angel";
+      } else if (w >= 10) {
+        titleText = "[قاهر العمالقة 👑]";
+        titleClass = "title-slayer";
+      } else if (t.score >= 2000) {
+        titleText = "[صائد الوحوش 👹]";
+        titleClass = "title-hunter";
+      }
+      
+      if (titleText) {
+        badgeSpan.className = `glowing-title ${titleClass}`;
+        badgeSpan.innerText = titleText + " ";
+      } else {
+        badgeSpan.className = "";
+        badgeSpan.innerText = "";
+      }
+    }
 
-createRoomBtn.addEventListener('click', () => {
-    createRoomBtn.classList.add('hidden');
-    roomInfo.classList.remove('hidden');
-    activeMode = 'p2p-host';
-    initP2P();
-});
-
-joinRoomBtn.addEventListener('click', () => {
-    const id = joinRoomIdInput.value.trim();
-    if(!id) return;
-    joinRoomBtn.innerText = 'جاري الاتصال...';
-    peer = new Peer();
-    peer.on('open', () => {
-        conn = peer.connect(id);
-        conn.on('open', () => {
-            activeMode = 'p2p-join';
-            setupConnection();
-        });
-        conn.on('error', () => {
-            joinError.classList.remove('hidden');
-            joinRoomBtn.innerText = 'بدء المهمة';
-        });
-    });
-});
-
-function setupConnection() {
-    conn.on('data', data => {
-        if (data.type === 'start') {
-            startGame();
-        } else if (data.type === 'ultimate_triggered') {
-            const p = players[data.playerIdx];
-            if (p && p.isAlive) {
-                p.ultCharge = 0;
-                let baseShip = data.shipType;
-                if (baseShip.includes('defender')) {
-                    for (let angle = 0; angle < Math.PI * 2; angle += (Math.PI * 2 / 24)) {
-                        let vx = Math.cos(angle) * 500;
-                        let vy = Math.sin(angle) * 500;
-                        bullets.push(new Bullet(p.x + p.width/2 - 3, p.y + p.height/2, vy, '#a855f7', p.id, 'explosive'));
-                        bullets[bullets.length - 1].vx = vx;
-                        bullets[bullets.length - 1].damageMultiplier = p.bulletDamageModifier || 1.0;
-                    }
-                    createParticles(p.x + p.width/2, p.y + p.height/2, '#a855f7', 40, 3);
-                } else if (baseShip.includes('speedster')) {
-                    bulletTimeLeft = 5.0;
-                    createParticles(p.x + p.width/2, p.y + p.height/2, '#38bdf8', 40, 3);
-                } else if (baseShip.includes('tank')) {
-                    p.tankUltTimeLeft = 5.0;
-                    p.tempShieldTimeLeft = 5.0;
-                    createParticles(p.x + p.width/2, p.y + p.height/2, '#e11d48', 40, 3);
-                } else if (baseShip.includes('healer') || baseShip.includes('hybrid')) {
-                    players.forEach(other => {
-                        if (other.isAlive) {
-                            other.hp = other.maxHp;
-                            createParticles(other.x + other.width/2, other.y + other.height/2, '#10b981', 30, 2);
-                        } else {
-                            other.isAlive = true;
-                            other.hp = other.maxHp / 2;
-                            other.fuel = Math.max(40, other.fuel);
-                            createParticles(other.x + other.width/2, other.y + other.height/2, '#10b981', 40, 3);
-                        }
-                    });
+    let i = document.getElementById(`p${e + 1}-ult`);
+    if (i) {
+      let l = t.ultCharge || 0;
+      i.style.width = `${l}%`;
+      let n = i.parentElement;
+      l >= 100
+        ? (n.classList.add("charged"), i.classList.add("charged"))
+        : (n.classList.remove("charged"), i.classList.remove("charged"));
+    }
+    let s = document.getElementById(`p${e + 1}-hud`);
+    s &&
+      s.querySelectorAll(".inv-btn").forEach((n) => {
+        let r = n.getAttribute("data-item"),
+          c = n.querySelector(".count");
+        c &&
+          (r === "heal"
+            ? (c.innerText = t.healsCount || 0)
+            : r === "selfRevive"
+              ? (c.innerText = t.selfReviveKits || 0)
+              : r === "secondLife"
+                ? (c.innerText = t.secondLifes || 0)
+                : r === "tempShield" &&
+                  (c.innerText = t.tempShieldsCount || 0));
+      });
+  }),
+    (gt.innerText = w));
+}
+function Lt() {
+  if (
+    (o.forEach((t) => {
+      t.ownerId === "enemy"
+        ? a.forEach((e) => {
+            if (e.isAlive) {
+              if (
+                e.isShieldActive &&
+                L(
+                  t.x,
+                  t.y,
+                  t.width,
+                  t.height,
+                  e.x - e.width * 0.3,
+                  e.y - e.height * 0.3,
+                  e.width * 1.6,
+                  e.height * 1.6,
+                )
+              ) {
+                ((t.vy = -Math.abs(t.vy)),
+                  (t.vx = (Math.random() - 0.5) * 200),
+                  (t.ownerId = e.id),
+                  (t.color = "#06b6d4"),
+                  f(t.x, t.y, "#06b6d4", 8, 1.5));
+                return;
+              }
+              if (
+                L(t.x, t.y, t.width, t.height, e.x, e.y, e.width, e.height) &&
+                ((t.markedForDeletion = !0), m !== "p2p-join")
+              ) {
+                if (e.tempShieldTimeLeft && e.tempShieldTimeLeft > 0) {
+                  f(t.x, t.y, "#38bdf8", 5);
+                  return;
                 }
+                let i = Math.round(10 * (1 + (w - 1) * 0.12));
+                ((e.hp -= i),
+                  f(e.x + e.width / 2, e.y + e.height / 2, "#3b82f6", 10),
+                  e.hp <= 0 && e.triggerDeathOrResurrection());
+              }
             }
-        } else if (data.type === 'sync') {
-            syncState(data);
-        } else if (data.type === 'rematch') {
-            startGame();
-        } else if (data.type === 'shoot') {
-            bullets.push(new Bullet(data.x + 29, data.y, -700, data.id === 1 ? '#3b82f6' : '#8b5cf6', data.id));
-            createParticles(data.x + 32, data.y, data.id === 1 ? '#3b82f6' : '#8b5cf6', 3, 2);
-        } else if (data.type === 'enemy_shoot') {
-            bullets.push(new Bullet(data.x + data.w / 2 - 3, data.y + data.h, 300, '#ef4444', 'enemy'));
-        } else if (data.type === 'player_input') {
-            const p = players.find(p => p.id === data.id);
-            if(p) {
-                p.x = data.x;
-                p.y = data.y;
+          })
+        : (v.forEach((e) => {
+            if (
+              L(t.x, t.y, t.width, t.height, e.x, e.y, e.width, e.height) &&
+              !t.markedForDeletion &&
+              (!t.type.includes("piercing") &&
+                !t.type.includes("blackhole") &&
+                (t.markedForDeletion = !0),
+              m !== "p2p-join")
+            ) {
+              t.type.includes("frost") && (e.slowTimer = 3);
+              let i = 10;
+              if (
+                (t.type.includes("explosive")
+                  ? (i = 30)
+                  : t.type.includes("blackhole")
+                    ? (i = 15)
+                    : t.isSniper && (i = 40),
+                (i = Math.round(i * (t.damageMultiplier || 1))),
+                (e.hp -= i),
+                f(t.x, t.y, e.color, 5),
+                t.type.includes("explosive") &&
+                  (f(t.x, t.y, "#ef4444", 40, 3),
+                  v.forEach((s) => {
+                    s !== e &&
+                      Math.hypot(s.x - e.x, s.y - e.y) < 100 &&
+                      (s.hp -= 20);
+                  })),
+                e.hp <= 0)
+              ) {
+                ((e.markedForDeletion = !0),
+                  f(e.x + e.width / 2, e.y + e.height / 2, e.color, 20, 2));
+                const s = a.find((n) => n.id === t.ownerId);
+                s &&
+                  ((s.score += e.maxHp),
+                  (s.ultCharge = Math.min(100, (s.ultCharge || 0) + 8)),
+                  s.shipType.includes("vampire") &&
+                    s.hp < s.maxHp &&
+                    ((s.hp = Math.min(s.maxHp, s.hp + 5)),
+                    f(
+                      s.x + s.width / 2,
+                      s.y + s.height / 2,
+                      "#7f1d1d",
+                      10,
+                      2,
+                    )));
+                let l = Math.random();
+                l < 0.1
+                  ? T.push(new de(e.x, e.y))
+                  : l < 0.5
+                    ? M.push(new re(e.x, e.y))
+                    : l < 0.8 && D.push(new De(e.x, e.y));
+              }
             }
-        } else if (data.type === 'transfer') {
-            const sender = players.find(p => p.id === data.senderId);
-            const target = players.find(p => p.id === data.targetId);
-            if (sender && target) {
-                if (data.resourceType === 'coins') {
-                    sender.coins -= data.amount;
-                    target.coins += data.amount;
-                    createParticles(target.x + target.width/2, target.y + target.height/2, '#eab308', 15, 1);
-                } else if (data.resourceType === 'gems') {
-                    sender.gems -= data.amount;
-                    target.gems += data.amount;
-                    createParticles(target.x + target.width/2, target.y + target.height/2, '#06b6d4', 15, 1);
-                } else if (data.resourceType === 'fuel') {
-                    sender.fuel = Math.max(0, sender.fuel - data.amount);
-                    target.fuel = Math.min(target.maxFuel, target.fuel + data.amount);
-                    createParticles(target.x + target.width/2, target.y + target.height/2, '#10b981', 15, 1);
+          }),
+          S.forEach((e) => {
+            if (
+              L(t.x, t.y, t.width, t.height, e.x, e.y, e.width, e.height) &&
+              !t.markedForDeletion &&
+              (!t.type.includes("piercing") &&
+                !t.type.includes("blackhole") &&
+                (t.markedForDeletion = !0),
+              m !== "p2p-join")
+            ) {
+              let i = 10;
+              if (
+                (t.type.includes("explosive")
+                  ? (i = 30)
+                  : t.type.includes("blackhole") && (i = 15),
+                (i = Math.round(i * (t.damageMultiplier || 1))),
+                (e.hp -= i),
+                f(t.x, t.y, "#9333ea", 5),
+                t.type.includes("explosive") && f(t.x, t.y, "#ef4444", 40, 3),
+                e.hp <= 0)
+              ) {
+                ((e.markedForDeletion = !0),
+                  f(e.x + e.width / 2, e.y + e.height / 2, "#9333ea", 100, 3),
+                  (P = !1),
+                  w++);
+                const s = a.find((l) => l.id === t.ownerId);
+                (s &&
+                  ((s.score += e.maxHp),
+                  (s.gems += 5),
+                  (s.coins += 50),
+                  (s.ultCharge = Math.min(100, (s.ultCharge || 0) + 40))),
+                  B * 5 < w &&
+                    ((j = Math.max(j, B + 1)), m !== "p2p-join" && et()));
+              }
+            }
+          }),
+          E.forEach((e) => {
+            if (
+              L(t.x, t.y, t.width, t.height, e.x, e.y, e.width, e.height) &&
+              !t.markedForDeletion &&
+              !e.markedForDeletion &&
+              (!t.type.includes("piercing") &&
+                !t.type.includes("blackhole") &&
+                (t.markedForDeletion = !0),
+              m !== "p2p-join")
+            ) {
+              let i = 10;
+              if (
+                (t.type.includes("explosive")
+                  ? (i = 30)
+                  : t.type.includes("blackhole") && (i = 15),
+                (e.hp -= i),
+                f(t.x, t.y, "#78716c", 5),
+                t.type.includes("explosive") && f(t.x, t.y, "#ef4444", 30, 2),
+                e.hp <= 0)
+              ) {
+                ((e.markedForDeletion = !0),
+                  f(
+                    e.x + e.width / 2,
+                    e.y + e.height / 2,
+                    e.isGolden ? "#fbbf24" : "#78716c",
+                    20,
+                    2,
+                  ));
+                const s = a.find((l) => l.id === t.ownerId);
+                if (s) {
+                  s.score += e.isGolden ? 100 : Math.round(e.width);
+                  let l = Math.random();
+                  e.isGolden
+                    ? (M.push(new re(e.x, e.y)), T.push(new de(e.x, e.y)))
+                    : l < 0.08
+                      ? T.push(new de(e.x, e.y))
+                      : l < 0.25
+                        ? M.push(new re(e.x, e.y))
+                        : l < 0.4 && D.push(new De(e.x, e.y));
                 }
-                updateShopUI();
+              }
             }
-        }
-    });
-
-    if (activeMode === 'p2p-host') {
-        startGame();
-        setTimeout(() => broadcast({ type: 'start' }), 500);
-    }
-}
-
-function broadcast(data) {
-    if (conn && conn.open) {
-        conn.send(data);
-    }
-}
-
-// Game Logic
-const PLAYER_COLORS = ['#3b82f6', '#8b5cf6', '#a855f7', '#10b981', '#f59e0b', '#06b6d4'];
-
-function getSpawnPositions(count) {
-    // Distribute players evenly along the bottom
-    const positions = [];
-    const spacing = canvas.width / (count + 1);
-    for (let i = 0; i < count; i++) {
-        positions.push({ x: spacing * (i + 1) - 32, y: canvas.height - 100 });
-    }
-    return positions;
-}
-
-function startGame() {
-    mainMenu.classList.add('hidden');
-    p2pMenu.classList.add('hidden');
-    if (playerCountModal) playerCountModal.style.display = 'none';
-    gameOverScreen.classList.add('hidden');
-    gameScreen.classList.remove('hidden');
-
-    players = [];
-    bullets = [];
-    enemies = [];
-    particles = [];
-    fuelItems = [];
-    meteorites = [];
-    bosses = [];
-    coins = [];
-    gems = [];
-    isBossWave = false;
-    wave = 1;
-    waveTimer = 0;
-    isGameOver = false;
-    keys = {};
-
-    // Hide all player HUDs first
-    playerHuds.forEach(h => { if (h) h.classList.add('hidden'); });
-
-    if (activeMode === 'p2p-host' || activeMode === 'p2p-join') {
-        // P2P: exactly 2 players
-        localPlayerCount = 2;
-    }
-
-    const spawnPositions = getSpawnPositions(localPlayerCount);
-
-    for (let i = 0; i < localPlayerCount; i++) {
-        const pos = spawnPositions[i];
-        const p = new Player(i + 1, pos.x, pos.y, PLAYER_COLORS[i]);
-        
-        // استرجاع بيانات اللاعب إذا توفرت
-        if (playersData[i]) {
-            p.coins = playersData[i].coins || 0;
-            p.gems = playersData[i].gems || 0;
-            p.shipType = playersData[i].shipType || 'defender';
-            p.weaponType = playersData[i].weaponType || 'normal';
-            p.hasDroneHeal = playersData[i].hasDroneHeal || false;
-            p.hasDroneFuel = playersData[i].hasDroneFuel || false;
-            p.hasDroneMagnet = playersData[i].hasDroneMagnet || false;
-            p.droneHealLevel = playersData[i].droneHealLevel || 0;
-            p.droneFuelLevel = playersData[i].droneFuelLevel || 0;
-            p.droneMagnetLevel = playersData[i].droneMagnetLevel || 0;
-            p.ownedWeapons = playersData[i].ownedWeapons || ['normal'];
-            p.ownedShips = playersData[i].ownedShips || ['defender'];
-            p.hasReflectiveShield = playersData[i].hasReflectiveShield || false;
-            p.healsCount = playersData[i].healsCount || 0;
-            p.selfReviveKits = playersData[i].selfReviveKits || 0;
-            p.secondLifes = playersData[i].secondLifes || 0;
-            p.tempShieldsCount = playersData[i].tempShieldsCount || 0;
-            p.bulletDamageModifier = playersData[i].bulletDamageModifier || 1.0;
-            p.maxHp = playersData[i].maxHp || 100;
-            p.hp = p.maxHp;
-        }
-        
-        players.push(p);
-        // Show HUD for this player
-        if (playerHuds[i]) playerHuds[i].classList.remove('hidden');
-    }
-
-    if (activeMode === 'p2p-join' || activeMode === 'p2p-host') {
-        if (p2ControlsHint) p2ControlsHint.innerText = '(الزميل)';
-    }
-
-    updateHUD();
-    lastTime = performance.now();
-    cancelAnimationFrame(animationId);
-    animate(lastTime);
-}
-
-function updateHUD() {
-    players.forEach((p, i) => {
-        if (playerHps[i]) playerHps[i].style.width = `${Math.max(0, p.hp / p.maxHp * 100)}%`;
-        if (playerFuels[i]) playerFuels[i].style.width = `${Math.max(0, p.fuel / p.maxFuel * 100)}%`;
-        if (playerScores[i]) playerScores[i].innerText = p.score;
-        if (playerCoins[i]) playerCoins[i].innerText = p.coins;
-        if (playerGems[i]) playerGems[i].innerText = p.gems;
-
-        // Update Ultimate Bar
-        let ultBar = document.getElementById(`p${i+1}-ult`);
-        if (ultBar) {
-            let charge = p.ultCharge || 0;
-            ultBar.style.width = `${charge}%`;
-            let barBg = ultBar.parentElement;
-            if (charge >= 100) {
-                barBg.classList.add('charged');
-                ultBar.classList.add('charged');
-            } else {
-                barBg.classList.remove('charged');
-                ultBar.classList.remove('charged');
+          }));
+    }),
+    m !== "p2p-join" &&
+      a.forEach((t) => {
+        t.isAlive &&
+          (v.forEach((e) => {
+            if (L(t.x, t.y, t.width, t.height, e.x, e.y, e.width, e.height)) {
+              if (
+                ((e.markedForDeletion = !0),
+                t.tankUltTimeLeft && t.tankUltTimeLeft > 0)
+              ) {
+                (f(e.x + e.width / 2, e.y + e.height / 2, "#e11d48", 25, 2),
+                  (t.score += e.maxHp));
+                return;
+              }
+              if (t.tempShieldTimeLeft && t.tempShieldTimeLeft > 0) {
+                f(t.x + t.width / 2, t.y + t.height / 2, "#38bdf8", 15, 1.5);
+                return;
+              }
+              if (t.shipType.includes("ghost") && Math.random() < 0.2) {
+                f(t.x + t.width / 2, t.y + t.height / 2, "#ffffff", 10, 1);
+                return;
+              }
+              let i = e.type === 5 ? 30 : 20;
+              ((i = Math.round(i * (1 + (w - 1) * 0.12))),
+                e.type === 5
+                  ? f(t.x + t.width / 2, t.y + t.height / 2, "#f97316", 30, 2.5)
+                  : f(t.x + t.width / 2, t.y + t.height / 2, "#ef4444", 20, 2),
+                (t.hp -= t.shipType.includes("tank") ? Math.round(i / 2) : i),
+                t.hp <= 0 && t.triggerDeathOrResurrection());
             }
-        }
-        
-        // Update inventory counts
-        let hudEl = document.getElementById(`p${i+1}-hud`);
-        if (hudEl) {
-            let btns = hudEl.querySelectorAll('.inv-btn');
-            btns.forEach(btn => {
-                let item = btn.getAttribute('data-item');
-                let countEl = btn.querySelector('.count');
-                if (countEl) {
-                    if (item === 'heal') countEl.innerText = p.healsCount || 0;
-                    else if (item === 'selfRevive') countEl.innerText = p.selfReviveKits || 0;
-                    else if (item === 'secondLife') countEl.innerText = p.secondLifes || 0;
-                    else if (item === 'tempShield') countEl.innerText = p.tempShieldsCount || 0;
-                }
-            });
-        }
+          }),
+          E.forEach((e) => {
+            if (L(t.x, t.y, t.width, t.height, e.x, e.y, e.width, e.height)) {
+              if (((e.markedForDeletion = !0), e.isGolden)) {
+                ((t.coins += 10),
+                  (t.gems += 2),
+                  f(e.x + e.width / 2, e.y + e.height / 2, "#fbbf24", 20, 2));
+                return;
+              }
+              if (t.tempShieldTimeLeft && t.tempShieldTimeLeft > 0) {
+                f(t.x + t.width / 2, t.y + t.height / 2, "#38bdf8", 15, 1.5);
+                return;
+              }
+              if (t.shipType.includes("ghost") && Math.random() < 0.2) {
+                f(t.x + t.width / 2, t.y + t.height / 2, "#ffffff", 10, 1);
+                return;
+              }
+              let i = Math.round(
+                (t.shipType.includes("tank") ? 0 : 50) * (1 + (w - 1) * 0.1),
+              );
+              ((t.hp -= i),
+                f(t.x + t.width / 2, t.y + t.height / 2, "#78716c", 30, 3),
+                t.hp <= 0 && t.triggerDeathOrResurrection());
+            }
+          }),
+          D.forEach((e) => {
+            L(t.x, t.y, t.width, t.height, e.x, e.y, e.width, e.height) &&
+              ((e.markedForDeletion = !0),
+              (t.fuel = Math.min(t.maxFuel, t.fuel + 30)),
+              f(t.x + t.width / 2, t.y + t.height / 2, "#f59e0b", 10, 1.5));
+          }),
+          M.forEach((e) => {
+            L(t.x, t.y, t.width, t.height, e.x, e.y, e.width, e.height) &&
+              ((e.markedForDeletion = !0), (t.coins += 5));
+          }),
+          T.forEach((e) => {
+            L(t.x, t.y, t.width, t.height, e.x, e.y, e.width, e.height) &&
+              ((e.markedForDeletion = !0), (t.gems += 1));
+          }));
+      }),
+    m !== "p2p-join" && a.length >= 2)
+  )
+    for (let t = 0; t < a.length; t++) {
+      let e = a[t];
+      for (let i = 0; i < a.length; i++) {
+        if (t === i) continue;
+        let s = a[i];
+        L(e.x, e.y, e.width, e.height, s.x, s.y, s.width, s.height) &&
+          (!e.isAlive && s.isAlive
+            ? ((e.isBeingRevived = !0),
+              (e.reviveTimer += 1 / 60),
+              Math.random() > 0.8 &&
+                f(e.x + e.width / 2, e.y + e.height / 2, "#10b981", 1),
+              e.reviveTimer >= 2 &&
+                ((e.isAlive = !0),
+                (e.hp = 50),
+                (e.reviveTimer = 0),
+                f(e.x + e.width / 2, e.y + e.height / 2, "#10b981", 30, 2)))
+            : e.isAlive &&
+              s.isAlive &&
+              e.hp > s.hp + 2 &&
+              ((e.hp -= 0.5),
+              (s.hp += 0.5),
+              Math.random() > 0.7 &&
+                f(s.x + s.width / 2, s.y + s.height / 2, "#10b981", 1)));
+      }
+    }
+}
+function L(t, e, i, s, l, n, r, c) {
+  return l < t + i && l + r > t && n < e + s && n + c > e;
+}
+function kt() {
+  if (m === "p2p-join") return;
+  if (w % 5 === 0 && !P) {
+    ((P = !0), S.push(new Je(u.width / 2 - 75, -150)));
+    return;
+  }
+  let t = w * 4 + 4;
+  for (let i = 0; i < t; i++) {
+    let s = Math.random(),
+      l = 1;
+    let c = typeof B !== "undefined" ? B : 1;
+    let avail = [1, 2];
+    if (c >= 2) avail.push(3, 13);
+    if (c >= 3) avail.push(4, 14);
+    if (c >= 4) avail.push(5);
+    if (c >= 5) avail.push(6);
+    if (c >= 6) avail.push(7);
+    if (c >= 7) avail.push(8);
+    if (c >= 8) avail.push(9);
+    if (c >= 9) avail.push(10);
+    if (c >= 10) avail.push(11);
+    if (c >= 11) avail.push(12);
+
+    if (c > 1 && s < 0.3) l = Math.min(14, c + 1);
+    else l = avail[Math.floor(Math.random() * avail.length)];
+
+    let n = Math.random() * (u.width - 60),
+      r = -Math.random() * 500 - 100;
+
+    let overlap = !1;
+    if (m === "p2p-host") {
+      v.forEach((e) => {
+        if (Math.hypot(e.x - n, e.y - r) < 50) overlap = !0;
+      });
+    }
+    if (!overlap) v.push(new Ye(n, r, l));
+  }
+
+  if (m === "p2p-host") {
+    let syncEnemies = v.map((e) => ({
+      x: e.x,
+      y: e.y,
+      type: e.type,
+      id: e.id,
+      hp: e.hp,
+    }));
+    $({ type: "spawn_wave", wave: w, enemies: syncEnemies });
+  }
+
+  if (w % 4 === 3) {
+    ((_e = "⚠️ عاصفة نيازك ذهبية تقترب! 🌌✨"), (Se = 4));
+    for (let i = 0; i < w + 3; i++)
+      E.push(
+        new Ee(
+          Math.random() * u.width,
+          -100 - Math.random() * 300,
+          (Math.random() - 0.5) * 100,
+          Math.random() * 80 + 80,
+          Math.random() * 40 + 35,
+          !0,
+        ),
+      );
+  } else if (Math.random() > 0.5) {
+    for (let i = 0; i < w; i++)
+      E.push(
+        new Ee(
+          Math.random() * u.width,
+          -100,
+          (Math.random() - 0.5) * 100,
+          Math.random() * 100 + 100,
+          Math.random() * 40 + 30,
+          !1,
+        ),
+      );
+  }
+  w++;
+}
+let U = 0;
+function be(t) {
+  if (se) return;
+  let e = (t - ce) / 1e3;
+  if (
+    ((ce = t),
+    e > 0.1 && (e = 0.1),
+    h.clearRect(0, 0, u.width, u.height),
+    (h.fillStyle = "#ffffff"),
+    Xe.forEach((i) => {
+      ((i.y += i.speed * e),
+        i.y > u.height && ((i.y = 0), (i.x = Math.random() * u.width)),
+        (h.globalAlpha = i.alpha),
+        h.fillRect(i.x, i.y, i.size, i.size));
+    }),
+    (h.globalAlpha = 1),
+    Se > 0 &&
+      ((Se -= e),
+      h.save(),
+      (h.fillStyle = "#fcd34d"),
+      (h.font = 'bold 30px "Cairo", Arial'),
+      (h.textAlign = "center"),
+      (h.textBaseline = "middle"),
+      (h.shadowBlur = 10),
+      (h.shadowColor = "#f59e0b"),
+      h.fillText(_e, u.width / 2, u.height / 3),
+      h.restore()),
+    Q || V)
+  ) {
+    requestAnimationFrame(be);
+    return;
+  }
+  if (
+    (a.forEach((i) => i.update(e)),
+    o.forEach((i) => i.update(e)),
+    v.forEach((i) => i.update(e)),
+    _.forEach((i) => i.update(e)),
+    D.forEach((i) => i.update(e)),
+    E.forEach((i) => i.update(e)),
+    S.forEach((i) => i.update(e)),
+    M.forEach((i) => i.update(e)),
+    T.forEach((i) => i.update(e)),
+    Lt(),
+    a.forEach((i) => i.draw()),
+    o.forEach((i) => i.draw()),
+    v.forEach((i) => i.draw()),
+    _.forEach((i) => i.draw()),
+    D.forEach((i) => i.draw()),
+    E.forEach((i) => i.draw()),
+    S.forEach((i) => i.draw()),
+    M.forEach((i) => i.draw()),
+    T.forEach((i) => i.draw()),
+    (o = o.filter((i) => !i.markedForDeletion)),
+    (v = v.filter((i) => !i.markedForDeletion)),
+    (_ = _.filter((i) => !i.markedForDeletion)),
+    (D = D.filter((i) => !i.markedForDeletion)),
+    (E = E.filter((i) => !i.markedForDeletion)),
+    (S = S.filter((i) => !i.markedForDeletion)),
+    (M = M.filter((i) => !i.markedForDeletion)),
+    (T = T.filter((i) => !i.markedForDeletion)),
+    Y(),
+    m !== "p2p-join")
+  )
+    (v.length === 0 &&
+      !P &&
+      S.length === 0 &&
+      ((ae -= e), ae <= 0 && (kt(), (ae = 3))),
+      m === "p2p-host" &&
+        ((U += e),
+        U > 0.05 &&
+          ((U = 0),
+          $({
+            type: "sync",
+            players: a.map((i) => ({
+              id: i.id,
+              hp: i.hp,
+              maxHp: i.maxHp,
+              fuel: i.fuel,
+              maxFuel: i.maxFuel,
+              score: i.score,
+              coins: i.coins,
+              gems: i.gems,
+              isAlive: i.isAlive,
+              reviveTimer: i.reviveTimer,
+              shipType: i.shipType,
+              weaponType: i.weaponType,
+              energy: i.energy,
+              heat: i.heat,
+              maxEnergy: i.maxEnergy,
+              maxHeat: i.maxHeat,
+              nuclearReactors: i.nuclearReactors,
+            })),
+            enemies: v.map((i) => ({
+              id: i.id,
+              x: i.x,
+              y: i.y,
+              type: i.type,
+              hp: i.hp,
+            })),
+            fuelItems: D.map((i) => ({ id: i.id, x: i.x, y: i.y })),
+            meteorites: E.map((i) => ({
+              id: i.id,
+              x: i.x,
+              y: i.y,
+              width: i.width,
+            })),
+            bosses: S.map((i) => ({ id: i.id, x: i.x, y: i.y, hp: i.hp })),
+            coins: M.map((i) => ({ id: i.id, x: i.x, y: i.y })),
+            gems: T.map((i) => ({ id: i.id, x: i.x, y: i.y })),
+            isBossWave: P,
+            wave: w,
+            currentWorld: B,
+            unlockedWorld: j,
+          }))),
+      a.every((i) => !i.isAlive) && st());
+  else {
+    let i = a[1];
+    i &&
+      i.isAlive &&
+      ((U += e),
+      U > 0.05 &&
+        ((U = 0), $({ type: "player_input", id: 2, x: i.x, y: i.y })));
+  }
+  Ke = requestAnimationFrame(be);
+}
+function It(t) {
+  (t.players.forEach((e) => {
+    let i = a.find((s) => s.id === e.id);
+    i &&
+      ((i.hp = e.hp),
+      (i.maxHp = e.maxHp),
+      (i.fuel = e.fuel),
+      (i.maxFuel = e.maxFuel),
+      (i.score = e.score),
+      (i.coins = e.coins),
+      (i.gems = e.gems),
+      (i.shipType = e.shipType),
+      (i.weaponType = e.weaponType),
+      (i.energy = e.energy),
+      (i.heat = e.heat),
+      (i.maxEnergy = e.maxEnergy),
+      (i.maxHeat = e.maxHeat),
+      (i.nuclearReactors = e.nuclearReactors),
+      (i.isAlive = e.isAlive),
+      e.reviveTimer !== void 0 && (i.reviveTimer = e.reviveTimer));
+  }),
+    t.enemies.forEach((e) => {
+      let i = v.find((s) => s.id === e.id);
+      if (i) ((i.x = e.x), (i.y = e.y), (i.hp = e.hp));
+      else {
+        let s = new Ye(e.x, e.y, e.type);
+        ((s.id = e.id), (s.hp = e.hp), v.push(s));
+      }
+    }),
+    (v = v.filter((e) => t.enemies.some((i) => i.id === e.id))),
+    t.fuelItems.forEach((e) => {
+      let i = D.find((s) => s.id === e.id);
+      if (i) ((i.x = e.x), (i.y = e.y));
+      else {
+        let s = new De(e.x, e.y);
+        ((s.id = e.id), D.push(s));
+      }
+    }),
+    (D = D.filter((e) => t.fuelItems.some((i) => i.id === e.id))),
+    t.meteorites.forEach((e) => {
+      let i = E.find((s) => s.id === e.id);
+      if (i) ((i.x = e.x), (i.y = e.y));
+      else {
+        let s = new Ee(e.x, e.y, 0, 0, e.width);
+        ((s.id = e.id), E.push(s));
+      }
+    }),
+    (E = E.filter((e) => t.meteorites.some((i) => i.id === e.id))),
+    t.bosses.forEach((e) => {
+      let i = S.find((s) => s.id === e.id);
+      if (i) ((i.x = e.x), (i.y = e.y), (i.hp = e.hp));
+      else {
+        let s = new Je(e.x, e.y);
+        ((s.id = e.id), (s.hp = e.hp), S.push(s));
+      }
+    }),
+    (S = S.filter((e) => t.bosses.some((i) => i.id === e.id))),
+    t.coins.forEach((e) => {
+      let i = M.find((s) => s.id === e.id);
+      if (i) ((i.x = e.x), (i.y = e.y));
+      else {
+        let s = new re(e.x, e.y);
+        ((s.id = e.id), M.push(s));
+      }
+    }),
+    (M = M.filter((e) => t.coins.some((i) => i.id === e.id))),
+    t.gems.forEach((e) => {
+      let i = T.find((s) => s.id === e.id);
+      if (i) ((i.x = e.x), (i.y = e.y));
+      else {
+        let s = new de(e.x, e.y);
+        ((s.id = e.id), T.push(s));
+      }
+    }),
+    (T = T.filter((e) => t.gems.some((i) => i.id === e.id))),
+    (P = t.isBossWave),
+    (w = t.wave),
+    (B = t.currentWorld),
+    (j = t.unlockedWorld),
+    Y(),
+    a.every((e) => !e.isAlive) && st());
+}
+function st() {
+  ((se = !0),
+    le(),
+    Ge.classList.remove("hidden"),
+    (xt.innerText = `وصلت للموجة رقم ${w}`));
+  let t = `
+        <div style="color: #3b82f6">اللاعب 1: ${a[0].score} نقطة</div>
+    `;
+  (a[1] &&
+    (t += `<div style="color: #8b5cf6">اللاعب 2: ${a[1].score} نقطة</div>`),
+    (wt.innerHTML = t));
+}
+for (let t = 0; t < 100; t++)
+  Xe.push({
+    x: Math.random() * window.innerWidth,
+    y: Math.random() * window.innerHeight,
+    size: Math.random() * 2 + 1,
+    speed: Math.random() * 50 + 20,
+    alpha: Math.random() * 0.8 + 0.2,
+  });
+function W(t) {
+  let e = a[t];
+  if (!e || !e.isAlive || se) return;
+  if (e.ultCharge < 100) {
+    alert("القدرة الخارقة لم تشحن بالكامل بعد!");
+    return;
+  }
+  e.ultCharge = 0;
+  let i = e.shipType;
+  if (i.includes("defender")) {
+    for (let s = 0; s < Math.PI * 2; s += (Math.PI * 2) / 24) {
+      let l = Math.cos(s) * 500,
+        n = Math.sin(s) * 500;
+      (o.push(
+        new p(
+          e.x + e.width / 2 - 3,
+          e.y + e.height / 2,
+          n,
+          "#a855f7",
+          e.id,
+          "explosive",
+        ),
+      ),
+        (o[o.length - 1].vx = l),
+        (o[o.length - 1].damageMultiplier = e.bulletDamageModifier || 1));
+    }
+    (f(e.x + e.width / 2, e.y + e.height / 2, "#a855f7", 40, 3),
+      alert("⚡ تم إطلاق إعصار البلازما الخارق!"));
+  } else if (i.includes("speedster"))
+    ((I = 5),
+      f(e.x + e.width / 2, e.y + e.height / 2, "#38bdf8", 40, 3),
+      alert("⏰ تم إبطاء الوقت بنسبة 80% لجميع الأعداء والمقذوفات!"));
+  else if (i.includes("tank"))
+    ((e.tankUltTimeLeft = 5),
+      (e.tempShieldTimeLeft = 5),
+      f(e.x + e.width / 2, e.y + e.height / 2, "#e11d48", 40, 3),
+      alert("👹 طور المدرعة العملاقة نشط! اصطدم بالأعداء لتدميرهم!"));
+  else if (i.includes("healer") || i.includes("hybrid"))
+    (a.forEach((s) => {
+      s.isAlive
+        ? ((s.hp = s.maxHp),
+          f(s.x + s.width / 2, s.y + s.height / 2, "#10b981", 30, 2))
+        : ((s.isAlive = !0),
+          (s.hp = s.maxHp / 2),
+          (s.fuel = Math.max(40, s.fuel)),
+          f(s.x + s.width / 2, s.y + s.height / 2, "#10b981", 40, 3));
+    }),
+      alert("💉 تم إطلاق موجة الشفاء الكبرى وإحياء جميع الزملاء الموتى!"));
+  else {
+    for (let s = 0; s < Math.PI * 2; s += (Math.PI * 2) / 12) {
+      let l = Math.cos(s) * 450,
+        n = Math.sin(s) * 450;
+      (o.push(
+        new p(
+          e.x + e.width / 2 - 3,
+          e.y + e.height / 2,
+          n,
+          "#06b6d4",
+          e.id,
+          "normal",
+        ),
+      ),
+        (o[o.length - 1].vx = l),
+        (o[o.length - 1].damageMultiplier = e.bulletDamageModifier || 1));
+    }
+    (f(e.x + e.width / 2, e.y + e.height / 2, "#06b6d4", 30, 2.5),
+      alert("⚡ تم إطلاق انفجار الطاقة الموجي!"));
+  }
+  ((m === "p2p-host" || m === "p2p-join") &&
+    $({ type: "ultimate_triggered", playerIdx: t, shipType: e.shipType }),
+    le(),
+    Y());
+}
+for (let t = 1; t <= 6; t++) {
+  let e = document.getElementById(`p${t}-ult`);
+  e &&
+    e.parentElement.addEventListener("click", () => {
+      W(t - 1);
     });
-    waveNumberEl.innerText = wave;
 }
 
-function checkCollisions() {
-    // Bullets vs Enemies/Players
-    bullets.forEach(b => {
-        if (b.ownerId === 'enemy') {
-            players.forEach(p => {
-                if (p.isAlive) {
-                    // Check shield collision first if active
-                    if (p.isShieldActive && rectIntersect(b.x, b.y, b.width, b.height, p.x - p.width * 0.3, p.y - p.height * 0.3, p.width * 1.6, p.height * 1.6)) {
-                        b.vy = -Math.abs(b.vy);
-                        b.vx = (Math.random() - 0.5) * 200;
-                        b.ownerId = p.id;
-                        b.color = '#06b6d4';
-                        createParticles(b.x, b.y, '#06b6d4', 8, 1.5);
-                        return;
+document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => {
+        const lastLogin = localStorage.getItem("spaceShooterLastLogin");
+        const today = new Date().toDateString();
+        
+        if (lastLogin !== today) {
+            const modal = document.getElementById("daily-reward-modal");
+            const claimBtn = document.getElementById("claim-daily-btn");
+            
+            if (modal && claimBtn) {
+                modal.classList.remove("hidden");
+                
+                claimBtn.addEventListener("click", () => {
+                    if (!x || x.length === 0) {
+                        x = [{ id: 1, hp: 100, maxHp: 100, fuel: 100, maxFuel: 100, coins: 0, gems: 0, score: 0 }];
                     }
                     
-                    // Normal player body collision
-                    if (rectIntersect(b.x, b.y, b.width, b.height, p.x, p.y, p.width, p.height)) {
-                        b.markedForDeletion = true;
-                        if(activeMode !== 'p2p-join') {
-                            if (p.tempShieldTimeLeft && p.tempShieldTimeLeft > 0) {
-                                createParticles(b.x, b.y, '#38bdf8', 5);
-                                return;
-                            }
-                            let enemyDmg = Math.round(10 * (1.0 + (wave - 1) * 0.12));
-                            p.hp -= enemyDmg;
-                            createParticles(p.x + p.width/2, p.y + p.height/2, '#3b82f6', 10);
-                            if(p.hp <= 0) p.triggerDeathOrResurrection();
-                        }
+                    x[0].coins = (x[0].coins || 0) + 100;
+                    x[0].gems = (x[0].gems || 0) + 5;
+                    
+                    localStorage.setItem("spaceShooterProgress", JSON.stringify({ players: x, unlockedWorld: typeof j !== 'undefined' ? j : 1 }));
+                    localStorage.setItem("spaceShooterLastLogin", today);
+                    
+                    if (typeof a !== 'undefined' && a.length > 0) {
+                        a[0].coins = x[0].coins;
+                        a[0].gems = x[0].gems;
+                        if (typeof Y === 'function') Y();
                     }
-                }
-            });
-        } else {
-            enemies.forEach(e => {
-                if (rectIntersect(b.x, b.y, b.width, b.height, e.x, e.y, e.width, e.height) && !b.markedForDeletion) {
-                    if (!b.type.includes('piercing') && !b.type.includes('blackhole')) b.markedForDeletion = true;
-                    if(activeMode !== 'p2p-join') {
-                        if(b.type.includes('frost')) e.slowTimer = 3;
-                        
-                        let damage = 10;
-                        if (b.type.includes('explosive')) damage = 30;
-                        else if (b.type.includes('blackhole')) damage = 15;
-                        else if (b.isSniper) damage = 40;
-                        
-                        damage = Math.round(damage * (b.damageMultiplier || 1.0));
-                        e.hp -= damage;
-                        createParticles(b.x, b.y, e.color, 5);
-
-                        if(b.type.includes('explosive')) {
-                            createParticles(b.x, b.y, '#ef4444', 40, 3);
-                            // Area of effect damage
-                            enemies.forEach(otherE => {
-                                if(otherE !== e && Math.hypot(otherE.x - e.x, otherE.y - e.y) < 100) {
-                                    otherE.hp -= 20;
-                                }
-                            });
-                        }
-
-                        if(e.hp <= 0) {
-                            e.markedForDeletion = true;
-                            createParticles(e.x + e.width/2, e.y + e.height/2, e.color, 20, 2);
-                            const owner = players.find(p => p.id === b.ownerId);
-                            if(owner) {
-                                owner.score += e.maxHp;
-                                owner.ultCharge = Math.min(100, (owner.ultCharge || 0) + 8);
-                                if(owner.shipType.includes('vampire') && owner.hp < owner.maxHp) {
-                                    owner.hp = Math.min(owner.maxHp, owner.hp + 5);
-                                    createParticles(owner.x + owner.width/2, owner.y + owner.height/2, '#7f1d1d', 10, 2);
-                                }
-                            }
-                            
-                            // Drops
-                            let dropRoll = Math.random();
-                            if(dropRoll < 0.1) gems.push(new Gem(e.x, e.y));
-                            else if(dropRoll < 0.5) coins.push(new Coin(e.x, e.y));
-                            else if(dropRoll < 0.8) fuelItems.push(new FuelItem(e.x, e.y));
-                        }
-                    }
-                }
-            });
-            bosses.forEach(boss => {
-                if (rectIntersect(b.x, b.y, b.width, b.height, boss.x, boss.y, boss.width, boss.height) && !b.markedForDeletion) {
-                    if (!b.type.includes('piercing') && !b.type.includes('blackhole')) b.markedForDeletion = true;
-                    if(activeMode !== 'p2p-join') {
-                        let damage = 10;
-                        if (b.type.includes('explosive')) damage = 30;
-                        else if (b.type.includes('blackhole')) damage = 15;
-                        damage = Math.round(damage * (b.damageMultiplier || 1.0));
-                        boss.hp -= damage;
-                        createParticles(b.x, b.y, '#9333ea', 5);
-                        if(b.type.includes('explosive')) createParticles(b.x, b.y, '#ef4444', 40, 3);
-                        if(boss.hp <= 0) {
-                            boss.markedForDeletion = true;
-                            createParticles(boss.x + boss.width/2, boss.y + boss.height/2, '#9333ea', 100, 3);
-                            isBossWave = false; // Boss dead, proceed
-                            wave++; // Increment wave so we don't spawn boss again
-                            const owner = players.find(p => p.id === b.ownerId);
-                            if(owner) { 
-                                owner.score += boss.maxHp; 
-                                owner.gems += 5; 
-                                owner.coins += 50; 
-                                owner.ultCharge = Math.min(100, (owner.ultCharge || 0) + 40);
-                            }
-                            
-                            // Check world unlock
-                            if (currentWorld * 5 < wave) {
-                                unlockedWorld = Math.max(unlockedWorld, currentWorld + 1);
-                                if (activeMode !== 'p2p-join') {
-                                    toggleMap(); // Open map to choose next world
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-            meteorites.forEach(m => {
-                if (rectIntersect(b.x, b.y, b.width, b.height, m.x, m.y, m.width, m.height) && !b.markedForDeletion && !m.markedForDeletion) {
-                    if (!b.type.includes('piercing') && !b.type.includes('blackhole')) b.markedForDeletion = true;
-                    if (activeMode !== 'p2p-join') {
-                        let damage = 10;
-                        if (b.type.includes('explosive')) damage = 30;
-                        else if (b.type.includes('blackhole')) damage = 15;
-                        
-                        m.hp -= damage;
-                        createParticles(b.x, b.y, '#78716c', 5);
-                        
-                        if (b.type.includes('explosive')) {
-                            createParticles(b.x, b.y, '#ef4444', 30, 2);
-                        }
-                        
-                        if (m.hp <= 0) {
-                            m.markedForDeletion = true;
-                            createParticles(m.x + m.width/2, m.y + m.height/2, m.isGolden ? '#fbbf24' : '#78716c', 20, 2.0);
-                            
-                            const owner = players.find(p => p.id === b.ownerId);
-                            if (owner) {
-                                owner.score += m.isGolden ? 100 : Math.round(m.width);
-                                // Drops
-                                let dropRoll = Math.random();
-                                if (m.isGolden) {
-                                    coins.push(new Coin(m.x, m.y));
-                                    gems.push(new Gem(m.x, m.y));
-                                } else {
-                                    if (dropRoll < 0.08) gems.push(new Gem(m.x, m.y));
-                                    else if (dropRoll < 0.25) coins.push(new Coin(m.x, m.y));
-                                    else if (dropRoll < 0.4) fuelItems.push(new FuelItem(m.x, m.y));
-                                }
-                            }
-                        }
-                    }
-                }
-            });
+                    
+                    modal.classList.add("hidden");
+                }, { once: true });
+            }
         }
-    });
-
-    if(activeMode !== 'p2p-join') {
-        players.forEach(p => {
-            if(!p.isAlive) return;
-            // Vs Enemies
-            enemies.forEach(e => {
-                if (rectIntersect(p.x, p.y, p.width, p.height, e.x, e.y, e.width, e.height)) {
-                    e.markedForDeletion = true;
-                    if (p.tankUltTimeLeft && p.tankUltTimeLeft > 0) {
-                        createParticles(e.x + e.width/2, e.y + e.height/2, '#e11d48', 25, 2.0);
-                        p.score += e.maxHp;
-                        return;
-                    }
-                    if (p.tempShieldTimeLeft && p.tempShieldTimeLeft > 0) {
-                        createParticles(p.x + p.width/2, p.y + p.height/2, '#38bdf8', 15, 1.5);
-                        return;
-                    }
-                    if (p.shipType.includes('ghost') && Math.random() < 0.2) {
-                        createParticles(p.x + p.width/2, p.y + p.height/2, '#ffffff', 10, 1);
-                        return; // Evade
-                    }
-                    let damage = e.type === 5 ? 30 : 20;
-                    damage = Math.round(damage * (1.0 + (wave - 1) * 0.12));
-                    if (e.type === 5) {
-                        createParticles(p.x + p.width/2, p.y + p.height/2, '#f97316', 30, 2.5); // larger explosion
-                    } else {
-                        createParticles(p.x + p.width/2, p.y + p.height/2, '#ef4444', 20, 2);
-                    }
-                    p.hp -= p.shipType.includes('tank') ? Math.round(damage / 2) : damage;
-                    if(p.hp <= 0) p.triggerDeathOrResurrection();
+        
+        // Free Ad watch rewards (Gold & Gems) once per day
+        const adGoldBtn = document.getElementById("ad-gold-btn");
+        const adGemsBtn = document.getElementById("ad-gems-btn");
+        
+        if (adGoldBtn) {
+            adGoldBtn.addEventListener("click", () => {
+                const today = new Date().toDateString();
+                const lastGoldAd = localStorage.getItem("spaceShooterLastGoldAd");
+                if (lastGoldAd === today) {
+                    alert("لقد استلمت هذه المكافأة اليوم بالفعل! عد غداً.");
+                    return;
                 }
-            });
-            // Vs Meteorites
-            meteorites.forEach(m => {
-                if (rectIntersect(p.x, p.y, p.width, p.height, m.x, m.y, m.width, m.height)) {
-                    m.markedForDeletion = true;
-                    if (m.isGolden) {
-                        p.coins += 10;
-                        p.gems += 2;
-                        createParticles(m.x + m.width/2, m.y + m.height/2, '#fbbf24', 20, 2.0); // gold explosion
-                        return; // No damage to player!
-                    }
-                    if (p.tempShieldTimeLeft && p.tempShieldTimeLeft > 0) {
-                        createParticles(p.x + p.width/2, p.y + p.height/2, '#38bdf8', 15, 1.5);
-                        return;
-                    }
-                    if (p.shipType.includes('ghost') && Math.random() < 0.2) {
-                        createParticles(p.x + p.width/2, p.y + p.height/2, '#ffffff', 10, 1);
-                        return; // Evade
-                    }
-                    let metDmg = Math.round((p.shipType.includes('tank') ? 0 : 50) * (1.0 + (wave - 1) * 0.10));
-                    p.hp -= metDmg;
-                    createParticles(p.x + p.width/2, p.y + p.height/2, '#78716c', 30, 3);
-                    if(p.hp <= 0) p.triggerDeathOrResurrection();
-                }
-            });
-            // Vs Fuel
-            fuelItems.forEach(f => {
-                if (rectIntersect(p.x, p.y, p.width, p.height, f.x, f.y, f.width, f.height)) {
-                    f.markedForDeletion = true;
-                    p.fuel = Math.min(p.maxFuel, p.fuel + 30); // Restore 30 fuel
-                    createParticles(p.x + p.width/2, p.y + p.height/2, '#f59e0b', 10, 1.5);
-                }
-            });
-            // Vs Coins
-            coins.forEach(c => {
-                if (rectIntersect(p.x, p.y, p.width, p.height, c.x, c.y, c.width, c.height)) {
-                    c.markedForDeletion = true;
-                    p.coins += 5;
-                }
-            });
-            // Vs Gems
-            gems.forEach(g => {
-                if (rectIntersect(p.x, p.y, p.width, p.height, g.x, g.y, g.width, g.height)) {
-                    g.markedForDeletion = true;
-                    p.gems += 1;
-                }
-            });
-        });
-    }
-
-    // Player vs Player (Healing and Reviving)
-    if (activeMode !== 'p2p-join' && players.length >= 2) {
-        for (let i = 0; i < players.length; i++) {
-            let p1 = players[i];
-            for (let j = 0; j < players.length; j++) {
-                if (i === j) continue;
-                let p2 = players[j];
                 
-                if (rectIntersect(p1.x, p1.y, p1.width, p1.height, p2.x, p2.y, p2.width, p2.height)) {
-                    // Revive Logic
-                    if (!p1.isAlive && p2.isAlive) {
-                        p1.isBeingRevived = true;
-                        p1.reviveTimer += 1/60; // Approximate dt
-                        if(Math.random() > 0.8) createParticles(p1.x + p1.width/2, p1.y + p1.height/2, '#10b981', 1);
-                        if (p1.reviveTimer >= 2.0) {
-                            p1.isAlive = true;
-                            p1.hp = 50;
-                            p1.reviveTimer = 0;
-                            createParticles(p1.x + p1.width/2, p1.y + p1.height/2, '#10b981', 30, 2);
-                        }
+                alert("📺 جاري تشغيل إعلان الذهب... الرجاء الانتظار 5 ثوانٍ.");
+                setTimeout(() => {
+                    let activePlayer = a[he] || a[0];
+                    activePlayer.coins = (activePlayer.coins || 0) + 100;
+                    
+                    if (x && x[he]) {
+                        x[he].coins = activePlayer.coins;
                     }
-                    // Heal Logic (Health Sharing)
-                    else if (p1.isAlive && p2.isAlive) {
-                        if (p1.hp > p2.hp + 2) {
-                            p1.hp -= 0.5;
-                            p2.hp += 0.5;
-                            if(Math.random() > 0.7) createParticles(p2.x + p2.width/2, p2.y + p2.height/2, '#10b981', 1);
-                        }
-                    }
+                    localStorage.setItem("spaceShooterLastGoldAd", today);
+                    le();
+                    Y();
+                    ie();
+                    alert("🎉 تم استلام 100 عملة ذهبية 💰 بنجاح!");
+                }, 5000);
+            });
+        }
+        
+        if (adGemsBtn) {
+            adGemsBtn.addEventListener("click", () => {
+                const today = new Date().toDateString();
+                const lastGemsAd = localStorage.getItem("spaceShooterLastGemsAd");
+                if (lastGemsAd === today) {
+                    alert("لقد استلمت هذه المكافأة اليوم بالفعل! عد غداً.");
+                    return;
                 }
+                
+                alert("📺 جاري تشغيل إعلان الجواهر... الرجاء الانتظار 5 ثوانٍ.");
+                setTimeout(() => {
+                    let activePlayer = a[he] || a[0];
+                    activePlayer.gems = (activePlayer.gems || 0) + 5;
+                    
+                    if (x && x[he]) {
+                        x[he].gems = activePlayer.gems;
+                    }
+                    localStorage.setItem("spaceShooterLastGemsAd", today);
+                    le();
+                    Y();
+                    ie();
+                    alert("🎉 تم استلام 5 جواهر 💎 بنجاح!");
+                }, 5000);
+            });
+        }
+    }, 500); // Wait a bit for game to load progress
+});
+
+
+
+
+
+const exploreBtn = document.getElementById("menu-explore-btn");
+const exploreModal = document.getElementById("exploration-modal");
+const closeExploreBtn = document.getElementById("close-explore-btn");
+const exploreGrid = document.getElementById("exploration-grid");
+
+let isExploreOpen = false;
+
+function toggleExplore() {
+    isExploreOpen = !isExploreOpen;
+    if (isExploreOpen) {
+        if (exploreModal) exploreModal.classList.remove("hidden");
+        const mm = document.getElementById("main-menu");
+        if (mm) mm.classList.add("hidden");
+        renderExploreGrid();
+    } else {
+        if (exploreModal) exploreModal.classList.add("hidden");
+        const mm = document.getElementById("main-menu");
+        if (mm) mm.classList.remove("hidden");
+    }
+}
+
+if (exploreBtn) exploreBtn.addEventListener("click", toggleExplore);
+if (closeExploreBtn) closeExploreBtn.addEventListener("click", toggleExplore);
+
+function checkDailyExploreReset() {
+    if (!x || x.length === 0) return;
+    let p = x[0];
+    const lastExplore = localStorage.getItem("spaceShooterLastExplore");
+    const today = new Date().toDateString();
+    
+    if (lastExplore !== today || !p.exploreMap) {
+        p.explorePoints = 5;
+        p.exploreMap = generateDeterministicMap();
+        localStorage.setItem("spaceShooterLastExplore", today);
+        localStorage.setItem("spaceShooterProgress", JSON.stringify({ players: x, unlockedWorld: typeof j !== 'undefined' ? j : 1 }));
+    }
+}
+
+function renderExploreGrid() {
+    if (!x || x.length === 0) {
+        x = [{ id: 1, hp: 100, maxHp: 100, fuel: 100, maxFuel: 100, coins: 0, gems: 0, score: 0 }];
+    }
+    
+    checkDailyExploreReset();
+    
+    let p = x[0];
+    
+    let ep = document.getElementById("explore-points");
+    if (ep) ep.innerText = p.explorePoints;
+    
+    let cDisp = document.getElementById("explore-coins-display");
+    let gDisp = document.getElementById("explore-gems-display");
+    if (cDisp) cDisp.innerText = p.coins || 0;
+    if (gDisp) gDisp.innerText = p.gems || 0;
+    
+    if (exploreGrid) {
+        exploreGrid.innerHTML = "";
+        
+        p.exploreMap.forEach((node, index) => {
+            let btn = document.createElement("button");
+            btn.style.width = "100%";
+            btn.style.padding = "10px";
+            btn.style.borderRadius = "12px";
+            btn.style.border = node.explored ? "2px solid #10b981" : "2px solid #3b82f6";
+            btn.style.background = node.explored ? "rgba(16, 185, 129, 0.2)" : "rgba(30, 41, 59, 0.8)";
+            btn.style.color = "white";
+            btn.style.cursor = node.explored ? "default" : "pointer";
+            btn.style.display = "flex";
+            btn.style.flexDirection = "column";
+            btn.style.alignItems = "center";
+            btn.style.justifyContent = "center";
+            btn.style.transition = "transform 0.2s, box-shadow 0.2s";
+            btn.style.gap = "5px";
+            
+            btn.onmouseover = () => { if(!node.explored) { btn.style.transform = "scale(1.05)"; btn.style.boxShadow = "0 0 10px rgba(59,130,246,0.5)"; } };
+            btn.onmouseout = () => { btn.style.transform = "scale(1)"; btn.style.boxShadow = "none"; };
+            
+            let iconDiv = document.createElement("div");
+            iconDiv.style.fontSize = "1.5rem";
+            iconDiv.innerText = node.explored ? "✅" : node.icon;
+            
+            let rewardDiv = document.createElement("div");
+            rewardDiv.style.fontSize = "0.9rem";
+            rewardDiv.style.fontWeight = "bold";
+            rewardDiv.innerText = node.explored ? "تم الاستلام" : node.desc;
+            
+            btn.appendChild(iconDiv);
+            btn.appendChild(rewardDiv);
+            
+            if (!node.explored) {
+                btn.addEventListener("click", () => exploreNode(index));
             }
-        }
+            exploreGrid.appendChild(btn);
+        });
     }
 }
 
-function rectIntersect(x1, y1, w1, h1, x2, y2, w2, h2) {
-    return x2 < x1 + w1 && x2 + w2 > x1 && y2 < y1 + h1 && y2 + h2 > y1;
+function generateDeterministicMap() {
+    return [
+        { icon: "🪐", desc: "50 💰", rewardType: "coins", amount: 50, explored: false },
+        { icon: "☄️", desc: "2 💎", rewardType: "gems", amount: 2, explored: false },
+        { icon: "🛸", desc: "1 🔧", rewardType: "heals", amount: 1, explored: false },
+        { icon: "🛰️", desc: "100 💰", rewardType: "coins", amount: 100, explored: false },
+        { icon: "🌟", desc: "3 💎", rewardType: "gems", amount: 3, explored: false },
+        { icon: "🚀", desc: "75 💰", rewardType: "coins", amount: 75, explored: false },
+        { icon: "🌑", desc: "1 🛡️", rewardType: "tempShield", amount: 1, explored: false },
+        { icon: "🌌", desc: "150 💰", rewardType: "coins", amount: 150, explored: false },
+        { icon: "🛰️", desc: "5 💎", rewardType: "gems", amount: 5, explored: false }
+    ];
 }
 
-function spawnWave() {
-    if(activeMode === 'p2p-join') return; // Host controls spawns
-    
-    if(wave % 5 === 0 && !isBossWave) {
-        // Spawn Boss every 5 waves
-        isBossWave = true;
-        bosses.push(new Boss(canvas.width / 2 - 75, -150));
-        return; // Don't spawn normal enemies
-    }
-
-    // Escalated enemy count: more enemies in higher waves
-    let count = wave * 4 + 4;
-    for (let i = 0; i < count; i++) {
-        let rand = Math.random();
-        let type = 1;
-        
-        // Introduce Type 4 (Healer) at wave 4+ and Type 5 (Kamikaze) at wave 2+
-        if (wave >= 4 && rand < 0.12) {
-            type = 4; // healer spawn rate
-        } else if (wave >= 2 && rand < 0.26) {
-            type = 5; // Kamikaze spawn rate
-        } else if (rand < 0.52) {
-            type = 1; // Basic
-        } else if (rand < 0.77) {
-            type = 2; // Fast
-        } else {
-            type = 3; // Tank
-        }
-        
-        let x = Math.random() * (canvas.width - 60);
-        let y = -Math.random() * 500 - 100;
-        enemies.push(new Enemy(x, y, type));
-    }
-
-    // Spawn Meteorites occasionally or trigger a Golden Meteor Shower!
-    let isGoldenShower = (wave % 4 === 3);
-    if (isGoldenShower) {
-        warningText = "⚠️ عاصفة نيازك ذهبية تقترب! 🌌✨";
-        warningTimer = 4.0; // 4 seconds warning display on screen
-        for (let j = 0; j < wave + 3; j++) {
-            meteorites.push(new Meteorite(Math.random() * canvas.width, -100 - Math.random() * 300, (Math.random() - 0.5) * 100, Math.random() * 80 + 80, Math.random() * 40 + 35, true));
-        }
-    } else if (Math.random() > 0.5) {
-        for (let j = 0; j < wave; j++) {
-            meteorites.push(new Meteorite(Math.random() * canvas.width, -100, (Math.random() - 0.5) * 100, Math.random() * 100 + 100, Math.random() * 40 + 30, false));
-        }
-    }
-    
-    wave++;
-}
-
-let syncTimer = 0;
-
-function animate(time) {
-    if (isGameOver) return;
-    
-    let dt = (time - lastTime) / 1000;
-    lastTime = time;
-    if(dt > 0.1) dt = 0.1;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw background stars
-    ctx.fillStyle = '#ffffff';
-    stars.forEach(s => {
-        s.y += s.speed * dt;
-        if(s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; }
-        ctx.globalAlpha = s.alpha;
-        ctx.fillRect(s.x, s.y, s.size, s.size);
-    });
-    
-    ctx.globalAlpha = 1.0;
-
-    // Draw Event Warning notification
-    if (warningTimer > 0) {
-        warningTimer -= dt;
-        ctx.save();
-        ctx.fillStyle = '#fcd34d';
-        ctx.font = 'bold 30px "Cairo", Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = '#f59e0b';
-        ctx.fillText(warningText, canvas.width / 2, canvas.height / 3);
-        ctx.restore();
-    }
-
-    if (isShopOpen || isMapOpen) {
-        requestAnimationFrame(animate);
+function exploreNode(index) {
+    let p = x[0];
+    if (p.explorePoints <= 0) {
+        alert("لقد استنفدت نقاط الاستكشاف الخاصة بك لهذا اليوم! عد غداً للحصول على نقاط جديدة.");
         return;
     }
-
-    players.forEach(p => p.update(dt));
-    bullets.forEach(b => b.update(dt));
-    enemies.forEach(e => e.update(dt));
-    particles.forEach(p => p.update(dt));
-    fuelItems.forEach(f => f.update(dt));
-    meteorites.forEach(m => m.update(dt));
-    bosses.forEach(b => b.update(dt));
-    coins.forEach(c => c.update(dt));
-    gems.forEach(g => g.update(dt));
-
-    checkCollisions();
-
-    players.forEach(p => p.draw());
-    bullets.forEach(b => b.draw());
-    enemies.forEach(e => e.draw());
-    particles.forEach(p => p.draw());
-    fuelItems.forEach(f => f.draw());
-    meteorites.forEach(m => m.draw());
-    bosses.forEach(b => b.draw());
-    coins.forEach(c => c.draw());
-    gems.forEach(g => g.draw());
-
-    bullets = bullets.filter(b => !b.markedForDeletion);
-    enemies = enemies.filter(e => !e.markedForDeletion);
-    particles = particles.filter(p => !p.markedForDeletion);
-    fuelItems = fuelItems.filter(f => !f.markedForDeletion);
-    meteorites = meteorites.filter(m => !m.markedForDeletion);
-    bosses = bosses.filter(b => !b.markedForDeletion);
-    coins = coins.filter(c => !c.markedForDeletion);
-    gems = gems.filter(g => !g.markedForDeletion);
-
-    updateHUD();
-
-    // Host Logic
-    if(activeMode !== 'p2p-join') {
-        if(enemies.length === 0 && !isBossWave && bosses.length === 0) {
-            waveTimer -= dt;
-            if(waveTimer <= 0) {
-                spawnWave();
-                waveTimer = 3;
-            }
-        }
-
-        // Sync State to Peer
-        if(activeMode === 'p2p-host') {
-            syncTimer += dt;
-            if(syncTimer > 0.05) { // 20 times per sec
-                syncTimer = 0;
-                broadcast({
-                    type: 'sync',
-                    players: players.map(p => ({
-                        id: p.id, hp: p.hp, maxHp: p.maxHp, fuel: p.fuel, maxFuel: p.maxFuel,
-                        score: p.score, coins: p.coins, gems: p.gems,
-                        isAlive: p.isAlive, reviveTimer: p.reviveTimer,
-                        shipType: p.shipType, weaponType: p.weaponType
-                    })),
-                    enemies: enemies.map(e => ({id: e.id, x: e.x, y: e.y, type: e.type, hp: e.hp})),
-                    fuelItems: fuelItems.map(f => ({id: f.id, x: f.x, y: f.y})),
-                    meteorites: meteorites.map(m => ({id: m.id, x: m.x, y: m.y, width: m.width})),
-                    bosses: bosses.map(b => ({id: b.id, x: b.x, y: b.y, hp: b.hp})),
-                    coins: coins.map(c => ({id: c.id, x: c.x, y: c.y})),
-                    gems: gems.map(g => ({id: g.id, x: g.x, y: g.y})),
-                    isBossWave: isBossWave,
-                    wave: wave,
-                    currentWorld: currentWorld,
-                    unlockedWorld: unlockedWorld
-                });
-            }
-        }
-        
-        // End Game condition
-        if(players.every(p => !p.isAlive)) {
-            endGame();
-        }
-    } else {
-        // P2P Join sends its position
-        let myP = players[1];
-        if(myP && myP.isAlive) {
-            syncTimer += dt;
-            if(syncTimer > 0.05) {
-                syncTimer = 0;
-                broadcast({type: 'player_input', id: 2, x: myP.x, y: myP.y});
-            }
-        }
-    }
-
-    animationId = requestAnimationFrame(animate);
-}
-
-function syncState(data) {
-    // Sync players
-    data.players.forEach(dp => {
-        let p = players.find(p => p.id === dp.id);
-        if(p) {
-            p.hp = dp.hp;
-            p.maxHp = dp.maxHp;
-            p.fuel = dp.fuel;
-            p.maxFuel = dp.maxFuel;
-            p.score = dp.score;
-            p.coins = dp.coins;
-            p.gems = dp.gems;
-            p.shipType = dp.shipType;
-            p.weaponType = dp.weaponType;
-            p.isAlive = dp.isAlive;
-            if(dp.reviveTimer !== undefined) p.reviveTimer = dp.reviveTimer;
-        }
-    });
-
-    // Update enemies positions
-    data.enemies.forEach(de => {
-        let e = enemies.find(en => en.id === de.id);
-        if(e) {
-            e.x = de.x;
-            e.y = de.y;
-            e.hp = de.hp;
-        } else {
-            let ne = new Enemy(de.x, de.y, de.type);
-            ne.id = de.id;
-            ne.hp = de.hp;
-            enemies.push(ne);
-        }
-    });
-    enemies = enemies.filter(e => data.enemies.some(de => de.id === e.id));
-
-    // Update Fuel Items
-    data.fuelItems.forEach(df => {
-        let f = fuelItems.find(fi => fi.id === df.id);
-        if(f) { f.x = df.x; f.y = df.y; }
-        else { let nf = new FuelItem(df.x, df.y); nf.id = df.id; fuelItems.push(nf); }
-    });
-    fuelItems = fuelItems.filter(f => data.fuelItems.some(df => df.id === f.id));
-
-    // Update Meteorites
-    data.meteorites.forEach(dm => {
-        let m = meteorites.find(mi => mi.id === dm.id);
-        if(m) { m.x = dm.x; m.y = dm.y; }
-        else { let nm = new Meteorite(dm.x, dm.y, 0, 0, dm.width); nm.id = dm.id; meteorites.push(nm); }
-    });
-    meteorites = meteorites.filter(m => data.meteorites.some(dm => dm.id === m.id));
-
-    // Update Bosses
-    data.bosses.forEach(db => {
-        let b = bosses.find(bi => bi.id === db.id);
-        if(b) { b.x = db.x; b.y = db.y; b.hp = db.hp; }
-        else { let nb = new Boss(db.x, db.y); nb.id = db.id; nb.hp = db.hp; bosses.push(nb); }
-    });
-    bosses = bosses.filter(b => data.bosses.some(db => db.id === b.id));
-
-    // Update Coins
-    data.coins.forEach(dc => {
-        let c = coins.find(ci => ci.id === dc.id);
-        if(c) { c.x = dc.x; c.y = dc.y; }
-        else { let nc = new Coin(dc.x, dc.y); nc.id = dc.id; coins.push(nc); }
-    });
-    coins = coins.filter(c => data.coins.some(dc => dc.id === c.id));
-
-    // Update Gems
-    data.gems.forEach(dg => {
-        let g = gems.find(gi => gi.id === dg.id);
-        if(g) { g.x = dg.x; g.y = dg.y; }
-        else { let ng = new Gem(dg.x, dg.y); ng.id = dg.id; gems.push(ng); }
-    });
-    gems = gems.filter(g => data.gems.some(dg => dg.id === g.id));
-
-    isBossWave = data.isBossWave;
-    wave = data.wave;
-    currentWorld = data.currentWorld;
-    unlockedWorld = data.unlockedWorld;
+    p.explorePoints--;
+    p.exploreMap[index].explored = true;
     
-    updateHUD();
-    if(players.every(p => !p.isAlive)) {
-        endGame();
-    }
-}
-
-function endGame() {
-    isGameOver = true;
-    saveProgress();
-    gameOverScreen.classList.remove('hidden');
-    resultDesc.innerText = `وصلت للموجة رقم ${wave}`;
-    
-    let statsHTML = `
-        <div style="color: #3b82f6">اللاعب 1: ${players[0].score} نقطة</div>
-    `;
-    if(players[1]) {
-        statsHTML += `<div style="color: #8b5cf6">اللاعب 2: ${players[1].score} نقطة</div>`;
-    }
-    finalStats.innerHTML = statsHTML;
-}
-
-// Generate stars once
-for(let i=0; i<100; i++) {
-    stars.push({
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
-        size: Math.random() * 2 + 1,
-        speed: Math.random() * 50 + 20,
-        alpha: Math.random() * 0.8 + 0.2
-    });
-}
-
-function triggerUltimate(playerIdx) {
-    let p = players[playerIdx];
-    if (!p || !p.isAlive || isGameOver) return;
-    
-    if (p.ultCharge < 100) {
-        alert("القدرة الخارقة لم تشحن بالكامل بعد!");
-        return;
+    let node = p.exploreMap[index];
+    if (node.rewardType === "coins") {
+        p.coins = (p.coins || 0) + node.amount;
+        alert(`تم استكشاف القطاع بنجاح! حصلت على ${node.amount} 💰`);
+    } else if (node.rewardType === "gems") {
+        p.gems = (p.gems || 0) + node.amount;
+        alert(`تم استكشاف القطاع بنجاح! حصلت على ${node.amount} 💎`);
+    } else if (node.rewardType === "heals") {
+        p.healsCount = (p.healsCount || 0) + node.amount;
+        alert(`تم استكشاف القطاع بنجاح! حصلت على ${node.amount} 🔧`);
+    } else if (node.rewardType === "tempShield") {
+        p.tempShieldsCount = (p.tempShieldsCount || 0) + node.amount;
+        alert(`تم استكشاف القطاع بنجاح! حصلت على ${node.amount} 🛡️`);
     }
     
-    p.ultCharge = 0;
-    
-    let baseShip = p.shipType;
-    if (baseShip.includes('defender')) {
-        for (let angle = 0; angle < Math.PI * 2; angle += (Math.PI * 2 / 24)) {
-            let vx = Math.cos(angle) * 500;
-            let vy = Math.sin(angle) * 500;
-            bullets.push(new Bullet(p.x + p.width/2 - 3, p.y + p.height/2, vy, '#a855f7', p.id, 'explosive'));
-            bullets[bullets.length - 1].vx = vx;
-            bullets[bullets.length - 1].damageMultiplier = p.bulletDamageModifier || 1.0;
-        }
-        createParticles(p.x + p.width/2, p.y + p.height/2, '#a855f7', 40, 3);
-        alert("⚡ تم إطلاق إعصار البلازما الخارق!");
-    }
-    else if (baseShip.includes('speedster')) {
-        bulletTimeLeft = 5.0;
-        createParticles(p.x + p.width/2, p.y + p.height/2, '#38bdf8', 40, 3);
-        alert("⏰ تم إبطاء الوقت بنسبة 80% لجميع الأعداء والمقذوفات!");
-    }
-    else if (baseShip.includes('tank')) {
-        p.tankUltTimeLeft = 5.0;
-        p.tempShieldTimeLeft = 5.0;
-        createParticles(p.x + p.width/2, p.y + p.height/2, '#e11d48', 40, 3);
-        alert("👹 طور المدرعة العملاقة نشط! اصطدم بالأعداء لتدميرهم!");
-    }
-    else if (baseShip.includes('healer') || baseShip.includes('hybrid')) {
-        players.forEach(other => {
-            if (other.isAlive) {
-                other.hp = other.maxHp;
-                createParticles(other.x + other.width/2, other.y + other.height/2, '#10b981', 30, 2);
-            } else {
-                other.isAlive = true;
-                other.hp = other.maxHp / 2;
-                other.fuel = Math.max(40, other.fuel);
-                createParticles(other.x + other.width/2, other.y + other.height/2, '#10b981', 40, 3);
-            }
-        });
-        alert("💉 تم إطلاق موجة الشفاء الكبرى وإحياء جميع الزملاء الموتى!");
-    } else {
-        for (let angle = 0; angle < Math.PI * 2; angle += (Math.PI * 2 / 12)) {
-            let vx = Math.cos(angle) * 450;
-            let vy = Math.sin(angle) * 450;
-            bullets.push(new Bullet(p.x + p.width/2 - 3, p.y + p.height/2, vy, '#06b6d4', p.id, 'normal'));
-            bullets[bullets.length - 1].vx = vx;
-            bullets[bullets.length - 1].damageMultiplier = p.bulletDamageModifier || 1.0;
-        }
-        createParticles(p.x + p.width/2, p.y + p.height/2, '#06b6d4', 30, 2.5);
-        alert("⚡ تم إطلاق انفجار الطاقة الموجي!");
+    if (typeof a !== 'undefined' && a.length > 0) {
+        a[0].coins = p.coins;
+        a[0].gems = p.gems;
+        a[0].healsCount = p.healsCount;
+        a[0].tempShieldsCount = p.tempShieldsCount;
+        if (typeof Y === 'function') Y();
     }
     
-    if (activeMode === 'p2p-host' || activeMode === 'p2p-join') {
-        broadcast({
-            type: 'ultimate_triggered',
-            playerIdx: playerIdx,
-            shipType: p.shipType
-        });
-    }
-    
-    saveProgress();
-    updateHUD();
-}
-
-// Bind manual clicks to HUD ultimate bars
-for (let i = 1; i <= 6; i++) {
-    let ultBar = document.getElementById(`p${i}-ult`);
-    if (ultBar) {
-        ultBar.parentElement.addEventListener('click', () => {
-            triggerUltimate(i - 1);
-        });
-    }
+    localStorage.setItem("spaceShooterProgress", JSON.stringify({ players: x, unlockedWorld: typeof j !== 'undefined' ? j : 1 }));
+    renderExploreGrid();
 }

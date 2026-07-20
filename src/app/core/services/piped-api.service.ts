@@ -33,14 +33,36 @@ export interface PipedVideoDetails {
 })
 export class PipedApiService {
   private http = inject(HttpClient);
-  private proxyBase = environment.apiBaseUrl || 'https://super-axd.pages.dev';
+  private proxyBase = environment.apiBaseUrl !== undefined && environment.apiBaseUrl !== null ? environment.apiBaseUrl : 'https://super-axd.pages.dev';
   private instances = environment.pipedInstances || ['https://pipedapi.kavin.rocks'];
 
-  /**
-   * Always uses the proxy to avoid CORS issues entirely.
-   * Reads response as text and parses manually to handle content-type mismatches.
-   */
   private async smartFetch<T>(targetUrl: string, timeoutMs = 8000): Promise<T> {
+    if (targetUrl.includes('/piped-proxy')) {
+      const text = await firstValueFrom(
+        this.http.get(targetUrl, { responseType: 'text' }).pipe(timeout(timeoutMs))
+      );
+      if (!text || text.trim().length === 0) {
+        throw new Error('Local proxy returned empty response');
+      }
+      return JSON.parse(text) as T;
+    }
+
+    // Try direct fetch first (some Piped instances support CORS)
+    try {
+      const response = await fetch(targetUrl, { signal: AbortSignal.timeout(timeoutMs) });
+      if (response.ok) {
+        const text = await response.text();
+        if (text && text.trim().length > 0 && !text.trim().startsWith('<')) {
+          const parsed = JSON.parse(text) as any;
+          if (!parsed?.error && !parsed?.message?.toLowerCase().includes('shutdown')) {
+            return parsed as T;
+          }
+        }
+      }
+    } catch {
+      // Direct fetch failed, fall through to proxy
+    }
+
     const proxyUrl = `${this.proxyBase}/api/proxy?url=${encodeURIComponent(targetUrl)}`;
     const text = await firstValueFrom(
       this.http.get(proxyUrl, { responseType: 'text' }).pipe(timeout(timeoutMs))
@@ -55,7 +77,6 @@ export class PipedApiService {
 
     const parsed = JSON.parse(text) as any;
 
-    // Detect dead/shutdown instance responses
     if (parsed?.error || parsed?.message?.toLowerCase().includes('shutdown')) {
       throw new Error(`Dead instance: ${parsed.error || parsed.message}`);
     }

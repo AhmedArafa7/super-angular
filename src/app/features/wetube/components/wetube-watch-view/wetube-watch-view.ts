@@ -77,36 +77,33 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.sidebar.setCollapsed(true);
     
-    // Check if the current video is already playing to avoid reloading
     const currentVideo = this.videoState.activeVideo();
     if (!currentVideo || currentVideo.id !== this.id()) {
-      // Direct link or new video clicked
       this.isLoading.set(true);
       this.discovery.fetchVideoDetails(this.id()).subscribe({
         next: (details) => {
           if (details) {
-            // Inject into Signals Reactivity Pipeline
             this.videoState.playVideo({
               ...details,
-              thumbnail: details.thumbnail || '' // map VideoDetails to ActiveVideo
+              thumbnail: details.thumbnail || ''
             });
           } else {
             this.playFallbackVideo();
           }
           this.isLoading.set(false);
+          setTimeout(() => this.updatePlayerRect(), 50);
         },
         error: (err) => {
           console.warn('[WeTubeWatchView] API failed, using fallback mock video.', err);
           this.playFallbackVideo();
           this.isLoading.set(false);
+          setTimeout(() => this.updatePlayerRect(), 50);
         }
       });
     } else {
       this.videoState.setPlayerMode('full');
+      setTimeout(() => this.updatePlayerRect(), 50);
     }
-
-    // Small delay to allow DOM to render placeholder before measuring
-    setTimeout(() => this.updatePlayerRect(), 100);
   }
 
   playFallbackVideo() {
