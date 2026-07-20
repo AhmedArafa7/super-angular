@@ -137,14 +137,28 @@ export class WeTubeService {
     let combined: ContentItem[] = [];
     const tab = this.activeTab();
 
+    const localVideos: ContentItem[] = [{
+      id: 'local_intro_1',
+      title: 'لماذا يجعلك الأكل ضعيفا ؟ - كيف يجعلك الجوع بصحة افضل',
+      source: 'local',
+      author: 'إدارة الموقع',
+      time: 'الآن',
+      category: 'تكنولوجيا',
+      thumbnail: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=2953&auto=format&fit=crop',
+      url: '/videos/لماذا يجعلك الأكل ضعيفا ؟ - كيف يجعلك الجوع بصحة افضل(240P).mp4',
+      duration: '05:00',
+      views: '1M'
+    }];
+
     if (tab === 'home') {
       const config = this.algoConfig();
       const subWeight = config.subscriptionWeight / 100;
       
       if (subVids.length === 0) {
         // Fallback to Whitelist only if they are not logged in or have no subscriptions
-        combined = [...dbVids];
+        combined = [...localVideos, ...dbVids];
       } else {
+        combined = [...localVideos];
         // Advanced Recommendation interleaving based on subscriptionWeight
         let subIdx = 0;
         let dbIdx = 0;
@@ -162,9 +176,9 @@ export class WeTubeService {
         }
       }
     } else if (tab === 'explore') {
-      combined = [...dbVids];
+      combined = [...localVideos, ...dbVids];
     } else {
-      combined = [...subVids, ...dbVids];
+      combined = [...localVideos, ...subVids, ...dbVids];
     }
 
     const category = this.activeCategory();

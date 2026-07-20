@@ -77,6 +77,22 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.sidebar.setCollapsed(true);
     
+    const homeVideo = this.wetube.allHomeContent().find(v => v.id === this.id());
+    
+    if (homeVideo && homeVideo.source === 'local') {
+      this.videoState.playVideo({
+        id: homeVideo.id,
+        title: homeVideo.title,
+        author: homeVideo.author,
+        thumbnail: homeVideo.thumbnail || '',
+        url: homeVideo.url,
+        source: homeVideo.source
+      });
+      this.isLoading.set(false);
+      setTimeout(() => this.updatePlayerRect(), 50);
+      return;
+    }
+
     const currentVideo = this.videoState.activeVideo();
     if (!currentVideo || currentVideo.id !== this.id()) {
       this.isLoading.set(true);

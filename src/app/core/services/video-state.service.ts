@@ -12,6 +12,8 @@ export interface ActiveVideo {
   title: string;
   author: string;
   thumbnail: string;
+  url?: string;
+  source?: string;
 }
 
 @Injectable({
@@ -86,6 +88,15 @@ export class VideoStateService {
 
     if (forceIframe) {
       this.switchToIframe();
+      return;
+    }
+
+    // ── Local Video Fast Track ──
+    if (video.source === 'local' && video.url) {
+      this.playerType.set('native');
+      this.rawStreamUrl.set(video.url);
+      this.isLoading.set(false);
+      this.isPlaying.set(true);
       return;
     }
 
