@@ -142,12 +142,13 @@ export class WeTubeService {
       title: 'لماذا يجعلك الأكل ضعيفا ؟ - كيف يجعلك الجوع بصحة افضل',
       source: 'local',
       author: 'إدارة الموقع',
-      time: 'الآن',
-      category: 'تكنولوجيا',
+      time: 'منذ يومين',
+      category: 'صحة',
       thumbnail: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=2953&auto=format&fit=crop',
       url: '/videos/لماذا يجعلك الأكل ضعيفا ؟ - كيف يجعلك الجوع بصحة افضل(240P).mp4',
-      duration: '05:00',
-      views: '1M'
+      duration: '08:44',
+      views: '1M',
+      visibility: 'public'
     }];
 
     if (tab === 'home') {
