@@ -23,8 +23,7 @@
     @for (sub of wetube.subscriptions(); track sub.channelId) {
       <div class="sub-item group flex items-center gap-3 p-2 rounded-xl transition-all cursor-pointer hover:bg-white/10"
            [ngClass]="isChannelSelected(sub.channelId) ? 'bg-white/10 shadow-inner' : ''"
-           [routerLink]="['/stream']" 
-           [queryParams]="{channel: sub.channelId}"
+           [routerLink]="['/stream/channel', sub.channelId]" 
            [title]="sub.channelTitle">
         
         <!-- Avatar -->

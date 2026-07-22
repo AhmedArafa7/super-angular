@@ -57,7 +57,7 @@ export class WeTubeSidebarComponent implements OnInit {
       title: '', // No title for the first section
       items: [
         { label: 'الصفحة الرئيسية', icon: Home, route: '/stream', active: () => this.wetube.activeTab() === 'home', section: 'main' },
-        { label: 'استكشاف يوتيوب', icon: TrendingUp, route: '/stream', active: () => this.wetube.activeTab() === 'explore', section: 'main' },
+        { label: 'استكشاف يوتيوب', icon: TrendingUp, route: '/stream/discovery', active: () => this.router.url.includes('/stream/discovery'), section: 'main' },
         { label: 'Shorts', icon: Film, route: '/stream/shorts', active: () => this.wetube.activeTab() === 'shorts', section: 'main' },
         { label: 'الاشتراكات', icon: Users, route: '/stream/subscriptions', active: () => this.wetube.activeTab() === 'subs', section: 'main' },
         { label: 'الإشعارات', icon: Bell, route: '/stream/notifications', active: () => this.wetube.activeTab() === 'notifications', section: 'main' }

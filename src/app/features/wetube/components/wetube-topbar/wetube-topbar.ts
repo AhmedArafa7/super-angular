@@ -5,6 +5,8 @@ import { LucideAngularModule, Bell, Plus, Search, Mic, Menu } from 'lucide-angul
 import { WeTubeService } from '../../wetube.service';
 import { FirebaseService } from '../../../../core/services/firebase.service';
 
+import { Router } from '@angular/router';
+
 @Component({
   selector: 'app-wetube-topbar',
   standalone: true,
@@ -16,6 +18,7 @@ export class WeTubeTopbarComponent {
   searchQuery = signal('');
   wetube = inject(WeTubeService);
   firebase = inject(FirebaseService);
+  router = inject(Router);
 
   // Icons
   Bell = Bell;
@@ -33,6 +36,7 @@ export class WeTubeTopbarComponent {
     const q = this.searchQuery().trim();
     if (!q) return;
     this.wetube.search(q);
+    this.router.navigate(['/stream']);
   }
 
   onLogoClick(): void {
@@ -40,5 +44,6 @@ export class WeTubeTopbarComponent {
     this.wetube.setSearchQuery('');
     this.wetube.setActiveCategory('الكل');
     this.wetube.setActiveTab('home');
+    this.router.navigate(['/stream']);
   }
 }

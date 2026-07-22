@@ -219,13 +219,6 @@ export class WeTubeHomeComponent implements OnInit {
       this.setupIntersectionObserver();
     }, 1000);
 
-    this.route.queryParams.subscribe(params => {
-      if (params['channel']) {
-        this.selectedChannelId.set(params['channel']);
-        this.wetube.setActiveTab('home');
-      }
-    });
-
     this.wetube.initialize();
   }
 

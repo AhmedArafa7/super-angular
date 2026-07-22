@@ -14,6 +14,7 @@ import { WeTubeService } from '../../wetube.service';
 import { SidebarService } from '../../../../core/sidebar.service';
 import { VideoStateService } from '../../../../core/services/video-state.service';
 import { YoutubeDiscoveryService } from '../../../../core/services/youtube-discovery.service';
+import { IndexedDBService } from '../../../../core/services/indexed-db.service';
 import { LucideAngularModule, Flag, CheckCircle2, AlertTriangle } from 'lucide-angular';
 
 @Component({
@@ -45,6 +46,7 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
 
   video = this.videoState.activeVideo;
   isLoading = signal(false);
+  comments = signal<any[]>([]);
 
   isLiked = signal(false);
   isDisliked = signal(false);
@@ -92,6 +94,11 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
       setTimeout(() => this.updatePlayerRect(), 50);
       return;
     }
+
+    this.discovery.fetchVideoComments(this.id()).subscribe({
+      next: (comments) => this.comments.set(comments),
+      error: () => this.comments.set([])
+    });
 
     const currentVideo = this.videoState.activeVideo();
     if (!currentVideo || currentVideo.id !== this.id()) {
@@ -200,8 +207,23 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
     alert('فتح أداة القص...');
   }
 
-  onSave() {
-    this.showProductSelector.update(v => !v);
+  dbService = inject(IndexedDBService);
+
+  async onSave() {
+    const vid = this.video();
+    if (!vid) return;
+    try {
+      await this.dbService.put('saved_videos', {
+        id: vid.id,
+        title: vid.title,
+        author: vid.author,
+        thumbnail: vid.thumbnail,
+        savedAt: Date.now()
+      });
+      alert('تم حفظ الفيديو في المكتبة بنجاح');
+    } catch (e) {
+      console.error('Failed to save video:', e);
+    }
   }
 
   onProductUpdate(data: {productIds: string[], mode: string}) {

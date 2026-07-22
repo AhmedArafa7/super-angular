@@ -1,9 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, catchError, map } from 'rxjs';
+import { Observable, of, from } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { ProxyService } from './proxy.service';
 import { FeedVideo } from '../../features/wetube/wetube.model';
+import { PipedApiService } from './piped-api.service';
 
 export interface VideoDetails extends FeedVideo {
   description: string;
@@ -15,10 +17,14 @@ export interface VideoDetails extends FeedVideo {
 }
 
 export interface YouTubeComment {
+  id: string;
   author: string;
-  text: string;
   authorThumb: string;
+  text: string;
+  likes: number;
   time: string;
+  isPinned: boolean;
+  repliesCount: number;
 }
 
 const YOUTUBE_SEARCH_URL = 'https://www.youtube.com/results?search_query=';
@@ -30,6 +36,7 @@ const YOUTUBE_WATCH_URL = 'https://www.youtube.com/watch?v=';
 })
 export class YoutubeDiscoveryService {
   private proxy = inject(ProxyService);
+  private pipedService = inject(PipedApiService);
   private baseUrl = environment.apiBaseUrl;
 
   searchYouTube(query: string, sp?: string): Observable<FeedVideo[]> {
@@ -157,8 +164,25 @@ export class YoutubeDiscoveryService {
   }
 
   fetchVideoComments(videoId: string): Observable<YouTubeComment[]> {
-    const url = YOUTUBE_WATCH_URL + videoId;
-    return of([]);
+    return from(this.pipedService.getComments(videoId)).pipe(
+      map(res => {
+        if (!res || !res.comments) return [];
+        return res.comments.map((c: any) => ({
+          id: c.commentId,
+          author: c.author,
+          authorThumb: c.thumbnail,
+          text: c.commentText,
+          likes: c.likeCount,
+          time: c.commentedTime,
+          isPinned: c.pinned || false,
+          repliesCount: c.replyCount || 0
+        }));
+      }),
+      catchError(err => {
+        console.error('Failed to fetch real comments:', err);
+        return of([]);
+      })
+    );
   }
 
   private parseVideoRenderer(renderer: any): FeedVideo | null {

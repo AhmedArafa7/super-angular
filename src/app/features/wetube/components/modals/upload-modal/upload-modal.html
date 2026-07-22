@@ -114,19 +114,21 @@
       <!-- Local File Upload Placeholder (shown if local is selected) -->
       <div class="form-group animate-fade-in" *ngIf="sourceType === 'local'">
         <label class="input-label">ملف الفيديو</label>
-        <div class="local-upload-area">
+        <div class="local-upload-area" (click)="fileInput.click()">
           <lucide-icon [img]="Upload" class="w-8 h-8 text-indigo-400 mb-2"></lucide-icon>
-          <span class="text-xs text-slate-300">اسحب وأفلت الملف هنا</span>
-          <button type="button" class="local-select-btn">اختر من الجهاز</button>
+          <span class="text-xs text-slate-300">{{ selectedFile ? selectedFile.name : 'اسحب وأفلت الملف هنا' }}</span>
+          <button type="button" class="local-select-btn">{{ selectedFile ? 'تغيير الملف' : 'اختر من الجهاز' }}</button>
+          <input #fileInput type="file" accept="video/*" class="hidden" (change)="onFileSelected($event)" style="display: none;" />
         </div>
       </div>
     </div>
 
     <!-- Footer Button -->
     <div class="modal-footer">
-      <button class="submit-btn" (click)="onUpload()">
-        <lucide-icon [img]="Zap" class="w-4 h-4"></lucide-icon>
-        <span>بدء المزامنة</span>
+      <button class="submit-btn" (click)="onUpload()" [disabled]="isUploading">
+        <lucide-icon *ngIf="!isUploading" [img]="Zap" class="w-4 h-4"></lucide-icon>
+        <span *ngIf="isUploading" class="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin inline-block"></span>
+        <span>{{ isUploading ? 'جاري الرفع...' : 'بدء المزامنة' }}</span>
       </button>
     </div>
 

@@ -133,4 +133,21 @@ export class PipedApiService {
 
     throw new Error('All Piped instances failed to fetch trending');
   }
+
+  async getComments(videoId: string, nextpage?: string): Promise<any> {
+    let lastError: any;
+
+    for (const instance of this.instances) {
+      try {
+        let url = `${instance}/comments/${videoId}`;
+        if (nextpage) url += `?nextpage=${nextpage}`;
+        return await this.smartFetch<any>(url);
+      } catch (error) {
+        console.warn(`[PipedApiService] Instance ${instance} failed for comments`, error);
+        lastError = error;
+      }
+    }
+
+    throw new Error('All Piped instances failed to fetch comments');
+  }
 }

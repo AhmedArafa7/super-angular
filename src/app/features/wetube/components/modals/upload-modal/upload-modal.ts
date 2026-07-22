@@ -197,6 +197,19 @@ export class UploadModalComponent implements OnInit {
       });
   }
 
+  selectedFile: File | null = null;
+  isUploading = false;
+
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedFile = file;
+      if (!this.title) {
+        this.title = file.name.replace(/\.[^/.]+$/, '');
+      }
+    }
+  }
+
   async onUpload() {
     const titleVal = this.title.trim();
     const sourceUrlVal = this.sourceUrl.trim();
@@ -211,19 +224,38 @@ export class UploadModalComponent implements OnInit {
       return;
     }
 
+    if (this.sourceType === 'local' && !this.selectedFile) {
+      alert('يرجى اختيار ملف فيديو للرفع');
+      return;
+    }
+
     try {
+      this.isUploading = true;
+      let finalUrl = sourceUrlVal;
+      let finalSource = this.sourceType === 'youtube' ? 'youtube' : 'platform';
+
+      if (this.sourceType === 'local' && this.selectedFile) {
+        // Upload to Firebase Storage
+        finalUrl = await this.firebaseService.uploadVideoToStorage(this.selectedFile);
+        finalSource = 'platform';
+      } else if (this.sourceType === 'vault') {
+        finalSource = 'platform';
+      }
+
       await this.firebaseService.addVideoForReview({
         title: titleVal,
         author: this.selectedChannel,
-        category: 'تكنولوجيا',
-        thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800', // default placeholder
-        source: this.sourceType === 'youtube' ? 'youtube' : 'drive',
-        url: this.sourceType === 'local' ? 'local_stream' : sourceUrlVal
+        category: 'تكنولوجيا', // Can be made dynamic later
+        thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800',
+        source: finalSource,
+        url: finalUrl
       });
       
+      this.isUploading = false;
       alert('تمت جدولة المزامنة وإرسال الفيديو للمراجعة بنجاح! ⚡');
       this.onClose();
     } catch (e) {
+      this.isUploading = false;
       console.error('Failed to submit video for review', e);
       alert('حدث خطأ أثناء إرسال الفيديو. تأكد من اتصالك بالشبكة.');
     }

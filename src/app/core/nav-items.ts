@@ -6,6 +6,7 @@ export interface NavItem {
   isPermanent?: boolean;
   badge?: number;
   status?: 'BETA' | 'PRO' | 'NEW';
+  route?: string;
 }
 
 export const ALL_NAV_ITEMS: NavItem[] = [
@@ -22,7 +23,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: "deals", label: "عروض المحلات", icon: "tag", restricted: false },
   { id: "peer-chat", label: "التواصل المباشر", icon: "message-circle", restricted: false, isPermanent: true, status: 'BETA' },
   { id: "stream", label: "WeTube", icon: "video", restricted: false, isPermanent: true, status: 'PRO' },
-  { id: "wetube-studio", label: "WeTube Studio", icon: "layout-dashboard", restricted: false, isPermanent: true, status: 'BETA' },
+  { id: "wetube-studio", label: "WeTube Studio", icon: "layout-dashboard", restricted: false, isPermanent: true, status: 'BETA', route: 'stream/studio' },
   { id: "downloads", label: "التحميلات", icon: "download-cloud", restricted: false, isPermanent: true, status: 'BETA' },
   { id: "wallet", label: "المحفظة الرقمية", icon: "wallet", restricted: false, isPermanent: true },
   { id: "lab", label: "المختبر التجريبي", icon: "microscope", restricted: false, isPermanent: true },

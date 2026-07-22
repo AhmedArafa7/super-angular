@@ -1,6 +1,6 @@
-<a [routerLink]="['/' + item.id]"
+<a [routerLink]="['/' + (item.route || item.id)]"
    routerLinkActive="bg-white/10 text-white font-bold shadow-lg"
-   [routerLinkActiveOptions]="{ exact: true }"
+   [routerLinkActiveOptions]="{ exact: !item.route && item.id === '' }"
    class="w-full flex items-center h-12 gap-3 px-3 rounded-xl transition-all relative group overflow-hidden text-slate-300 hover:text-white hover:bg-white/10"
    [ngClass]="{'justify-center': sidebar.isCollapsed()}"
    dir="rtl">

@@ -292,17 +292,20 @@ export class WeTubeService {
       ]);
       const subVideos = this.subscriptionsFeed();
       
-      const mappedFirestore: FeedVideo[] = firestoreResult.videos.map(v => ({
-        id: v.id,
-        title: v.title,
-        url: v.externalUrl || `https://www.youtube.com/watch?v=${v.id}`,
-        thumbnail: v.thumbnail || `https://img.youtube.com/vi/${v.id}/hqdefault.jpg`,
-        author: v.author,
-        authorId: v.authorId,
-        time: v.time || 'حديثاً',
-        source: 'youtube',
-        isShorts: v.isShorts || false
-      }));
+      const mappedFirestore: FeedVideo[] = firestoreResult.videos.map(v => {
+        const isYt = v.source === 'youtube';
+        return {
+          id: v.id,
+          title: v.title,
+          url: v.url || v.externalUrl || (isYt ? `https://www.youtube.com/watch?v=${v.id}` : ''),
+          thumbnail: v.thumbnail || (isYt ? `https://img.youtube.com/vi/${v.id}/hqdefault.jpg` : ''),
+          author: v.author,
+          authorId: v.authorId,
+          time: v.time || 'حديثاً',
+          source: v.source || 'youtube',
+          isShorts: v.isShorts || false
+        };
+      });
 
       // Combine personalized subscription videos and published Firestore videos
       let combined = [...subVideos, ...mappedFirestore];

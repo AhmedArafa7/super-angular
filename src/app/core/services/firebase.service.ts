@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { getFirestore, Firestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, orderBy, limit, startAfter, QueryDocumentSnapshot, documentId, runTransaction, arrayUnion, addDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL, FirebaseStorage } from 'firebase/storage';
 import { environment } from '../../../environments/environment';
 
 export interface UserData {
@@ -83,10 +84,11 @@ export interface WatchHistoryItem {
   providedIn: 'root'
 })
 export class FirebaseService {
-  private app!: FirebaseApp;
-  private auth!: Auth;
-  private firestore!: Firestore;
-
+  public app!: FirebaseApp;
+  public auth!: Auth;
+  public firestore!: Firestore;
+  public storage!: FirebaseStorage;
+  
   readonly currentUser = signal<User | null>(null);
   readonly userData = signal<UserData | null>(null);
   readonly isReady = signal<boolean>(false);
@@ -100,6 +102,7 @@ export class FirebaseService {
       this.app = initializeApp(environment.firebase);
       this.auth = getAuth(this.app);
       this.firestore = getFirestore(this.app);
+      this.storage = getStorage(this.app);
 
       let parentSessionReceived = false;
 
@@ -314,6 +317,13 @@ export class FirebaseService {
     } catch (err) {
       console.error('[FirebaseService] loadUserData failed:', err);
     }
+  }
+
+  async uploadVideoToStorage(file: File): Promise<string> {
+    const fileName = `${Date.now()}_${file.name}`;
+    const storageRef = ref(this.storage, `videos/${fileName}`);
+    const uploadTask = await uploadBytesResumable(storageRef, file);
+    return getDownloadURL(uploadTask.ref);
   }
 
   private async mergeAndLoadUserData(uid: string): Promise<void> {

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { LucideAngularModule, Sparkles, Loader2, Play } from 'lucide-angular';
 import { WeTubeService } from '../../wetube.service';
+import { IndexedDBService } from '../../../../core/services/indexed-db.service';
 import { VideoCardComponent } from '../video-card/video-card.component';
 import { SkeletonLoaderComponent } from '../skeleton-loader/skeleton-loader.component';
 import { ImportSubscriptionsModalComponent } from '../modals/import-subscriptions-modal/import-subscriptions-modal';
@@ -28,6 +29,7 @@ import { AddChannelModalComponent } from '../modals/add-channel-modal/add-channe
 export class WeTubeSubscriptionsComponent implements OnInit {
   wetube = inject(WeTubeService);
   router = inject(Router);
+  dbService = inject(IndexedDBService);
   
   Sparkles = Sparkles;
   Loader2 = Loader2;
@@ -75,5 +77,24 @@ export class WeTubeSubscriptionsComponent implements OnInit {
 
   playVideo(videoId: string) {
     this.router.navigate(['/stream/watch', videoId]);
+  }
+
+  async removeChannel(channelId: string) {
+    const subs = this.wetube.subscriptions().filter(s => s.channelId !== channelId);
+    this.wetube.subscriptions.set(subs);
+    // Persist to indexed db (pseudo code assuming dbService exists in wetube or inject it)
+    await this.dbService.delete('subscriptions', channelId).catch(() => {});
+  }
+
+  async toggleNotifications(channelId: string) {
+    const subs = this.wetube.subscriptions().map(s => {
+      if (s.channelId === channelId) {
+        // Mock toggling notifications (add property to model if needed)
+        // For now just console log
+        console.log('Toggled notifications for', channelId);
+      }
+      return s;
+    });
+    this.wetube.subscriptions.set(subs);
   }
 }

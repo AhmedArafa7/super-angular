@@ -14,6 +14,8 @@ export const routes: Routes = [
         loadComponent: () => import('./features/wetube/components/wetube-shell/wetube-shell').then(c => c.WeTubeShellComponent),
         children: [
           { path: '', loadComponent: () => import('./features/wetube/components/wetube-home/wetube-home').then(c => c.WeTubeHomeComponent), title: 'الصفحة الرئيسية - WeTube' },
+          { path: 'onboarding', loadComponent: () => import('./shared/onboarding/onboarding').then(c => c.OnboardingComponent), title: 'تخصيص WeTube' },
+          { path: 'discovery', loadComponent: () => import('./features/wetube/components/discovery-mode/discovery-mode.component').then(c => c.DiscoveryModeComponent), title: 'اكتشاف - WeTube' },
           { path: 'shorts', loadComponent: () => import('./features/wetube/components/wetube-shorts/wetube-shorts').then(c => c.WeTubeShortsComponent), title: 'Shorts - WeTube' },
           { path: 'subscriptions', loadComponent: () => import('./features/wetube/components/wetube-subscriptions/wetube-subscriptions').then(c => c.WeTubeSubscriptionsComponent), title: 'الاشتراكات - WeTube' },
           { path: 'notifications', loadComponent: () => import('./features/wetube/components/wetube-notifications/wetube-notifications').then(c => c.WeTubeNotificationsComponent), title: 'الإشعارات - WeTube' },
