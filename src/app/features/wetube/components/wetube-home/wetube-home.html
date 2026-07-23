@@ -218,14 +218,14 @@
             }
           }
         </div>
-
-        <!-- Infinite Scroll Trigger -->
-        <div id="infinite-scroll-trigger" class="h-20 w-full flex items-center justify-center mt-10">
-          @if (visibleCount() < standardVideosList().length || (wetube.hasMoreFeed() && wetube.isFeedLoading())) {
-            <div class="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin opacity-50"></div>
-          }
-        </div>
       }
+
+      <!-- Infinite Scroll Trigger -->
+      <div id="infinite-scroll-trigger" class="h-20 w-full flex items-center justify-center mt-10">
+        @if (visibleCount() < standardVideosList().length || (wetube.hasMoreFeed() && wetube.isFeedLoading())) {
+          <div class="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin opacity-50"></div>
+        }
+      </div>
 
       <!-- Empty state -->
       @if (!wetube.isFeedLoading() && wetube.allHomeContent().length === 0) {

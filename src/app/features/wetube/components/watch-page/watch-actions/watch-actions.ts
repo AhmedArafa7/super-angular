@@ -15,6 +15,8 @@ export class WatchActionsComponent {
   @Input() isDisliked: boolean = false;
   @Input() isSubscribed: boolean = false;
   @Input() channelName: string = '';
+  @Input() isYoutube: boolean = false;
+  @Input() isWhitelisted: boolean = true;
   
   @Output() like = new EventEmitter<void>();
   @Output() dislike = new EventEmitter<void>();
@@ -24,6 +26,7 @@ export class WatchActionsComponent {
   @Output() clip = new EventEmitter<void>();
   @Output() save = new EventEmitter<void>();
   @Output() report = new EventEmitter<void>();
+  @Output() addToWhitelist = new EventEmitter<void>();
   
   ThumbsUp = ThumbsUp;
   ThumbsDown = ThumbsDown;

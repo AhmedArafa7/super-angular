@@ -57,13 +57,14 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
   showReportModal = signal(false);
   reportSubmitted = signal(false);
   reportReasons = [
+    'محتوى حرام شرعاً أو خادش للحياء',
     'محتوى غير لائق / عنيف',
     'معلومات مضللة أو كاذبة',
     'محتوى لا يستحق القائمة البيضاء (مستوى متدني)',
     'انتهاك حقوق الملكية الفكرية',
     'أخرى'
   ];
-  selectedReason = signal<string>('محتوى لا يستحق القائمة البيضاء (مستوى متدني)');
+  selectedReason = signal<string>('محتوى حرام شرعاً أو خادش للحياء');
   reportComments = signal<string>('');
 
   // Report Icons
@@ -280,5 +281,27 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
     } catch (e) {
       alert('حدث خطأ أثناء إرسال الإبلاغ. الرجاء المحاولة مرة أخرى.');
     }
+  }
+
+  async onAddToWhitelist() {
+    const vid = this.video();
+    if (!vid) return;
+
+    try {
+      await this.wetube.addVideoToWhitelist(vid);
+      
+      // Update local state to reflect it is whitelisted now
+      this.videoState.activeVideo.update(v => v ? { ...v, isWhitelisted: true } as any : null);
+      
+      alert('تم إضافة الفيديو للقائمة البيضاء بنجاح وسيتم اقتراحه لباقي المستخدمين!');
+    } catch (e) {
+      console.error(e);
+      alert('حدث خطأ أثناء إضافة الفيديو.');
+    }
+  }
+
+  isVideoWhitelisted(id: string): boolean {
+    const vid: any = this.video();
+    return vid?.isWhitelisted === true;
   }
 }

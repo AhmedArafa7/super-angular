@@ -42,9 +42,14 @@
       <span>حفظ</span>
     </button>
     
-    <button class="action-btn text-red-500 hover:text-red-400" (click)="report.emit()" title="إبلاغ عن الفيديو">
+    <button *ngIf="isYoutube && !isWhitelisted" class="action-btn text-emerald-500 hover:text-emerald-400 border border-emerald-500/20 bg-emerald-500/10" (click)="addToWhitelist.emit()" title="إضافة الفيديو للقائمة البيضاء ليراه الآخرون">
+      <lucide-icon [img]="Plus" class="text-emerald-500"></lucide-icon>
+      <span class="text-emerald-500 font-bold text-xs whitespace-nowrap">إضافة للقائمة البيضاء</span>
+    </button>
+
+    <button class="action-btn text-red-500 hover:text-red-400" (click)="report.emit()" title="إبلاغ عن محتوى حرام أو مخالف">
       <lucide-icon [img]="Flag" class="text-red-500"></lucide-icon>
-      <span class="text-red-500">إبلاغ</span>
+      <span class="text-red-500 font-bold">حرام</span>
     </button>
   </div>
 </div>

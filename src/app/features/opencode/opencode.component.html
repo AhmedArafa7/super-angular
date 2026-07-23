@@ -1,0 +1,176 @@
+<div class="opencode-container min-h-screen bg-slate-950 text-slate-100 p-4 md:p-6 flex flex-col dir-rtl">
+  
+  <!-- Header Bar -->
+  <header class="flex flex-col md:flex-row items-start md:items-center justify-between pb-6 mb-6 border-b border-slate-800 gap-4">
+    <div class="flex items-center gap-3">
+      <div class="p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-xl text-cyan-400 shadow-lg shadow-cyan-500/5">
+        <lucide-icon name="terminal" class="w-7 h-7"></lucide-icon>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400 bg-clip-text text-transparent">
+          Code Assistant (OpenCode)
+        </h1>
+        <p class="text-sm text-slate-400">
+          ربط تشغيلي مباشر لـ CLI الشخصي الخاص بك من المتصفح مباشرة (Browser P2P)
+        </p>
+      </div>
+    </div>
+
+    <!-- Status Badges & Controls when Connected -->
+    <div *ngIf="opencodeService.isConnected()" class="flex flex-wrap items-center gap-3">
+      <div class="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-lg text-xs font-semibold">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>متصل مباشر: {{ opencodeService.savedConfig()?.instanceUrl }}</span>
+      </div>
+
+      <button (click)="clearTerminalScreen()" title="تصفية الشاشة"
+              class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition">
+        <lucide-icon name="refresh-cw" class="w-3.5 h-3.5"></lucide-icon>
+        <span>تصفية الشاشة</span>
+      </button>
+
+      <button (click)="handleReconnect()" title="إعادة الاتصال"
+              class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sky-400 rounded-lg text-xs transition">
+        <lucide-icon name="wifi" class="w-3.5 h-3.5"></lucide-icon>
+        <span>إعادة الاتصال</span>
+      </button>
+
+      <button (click)="handleReset()" title="فصل الحساب"
+              class="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 rounded-lg text-xs transition">
+        <lucide-icon name="unlink" class="w-3.5 h-3.5"></lucide-icon>
+        <span>فصل الحساب</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Cold Start Alert Banner -->
+  <div *ngIf="opencodeService.isColdStart()" 
+       class="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 flex items-center gap-3 animate-pulse">
+    <lucide-icon name="alert-triangle" class="w-6 h-6 shrink-0 text-amber-400"></lucide-icon>
+    <div class="text-sm">
+      <p class="font-bold">جاري استيقاظ الـ Instance (Cold Start)...</p>
+      <p class="text-xs text-amber-300/80">الخادم المستضيف قد يستغرق من 10 إلى 25 ثانية للاستجابة إذا كان في حالة خمول (Free Tier Sleep Mode).</p>
+    </div>
+  </div>
+
+  <!-- Error Message Alert -->
+  <div *ngIf="opencodeService.errorMessage()" 
+       class="mb-6 p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <lucide-icon name="alert-circle" class="w-6 h-6 shrink-0 text-rose-400"></lucide-icon>
+      <span class="text-sm">{{ opencodeService.errorMessage() }}</span>
+    </div>
+    <button *ngIf="opencodeService.hasSavedConfig()" (click)="handleReconnect()" 
+            class="px-3 py-1 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 rounded-lg text-xs font-semibold">
+      إعادة المحاولة
+    </button>
+  </div>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 flex flex-col">
+    
+    <!-- CONNECT FORM VIEW (Shown when disconnected or errored without active terminal) -->
+    <div *ngIf="!opencodeService.isConnected()" class="max-w-2xl mx-auto w-full my-auto py-8">
+      
+      <div class="bg-slate-900/80 backdrop-blur border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl shadow-cyan-950/20">
+        
+        <div class="text-center mb-8">
+          <div class="w-16 h-16 bg-gradient-to-tr from-cyan-500 to-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-white mb-4 shadow-lg shadow-cyan-500/20">
+            <lucide-icon name="code-2" class="w-8 h-8"></lucide-icon>
+          </div>
+          <h2 class="text-xl font-bold text-slate-100 mb-2">ربط خادم OpenCode الخاص بك</h2>
+          <p class="text-sm text-slate-400 max-w-md mx-auto">
+            أدخل بيانات اتصال خادمتك الشخصي لتمكين الـ Terminal التفاعلي والتحكم التام بالأكواد من المتصفح مباشرة.
+          </p>
+        </div>
+
+        <form [formGroup]="connectForm" (ngSubmit)="handleConnect()" class="space-y-5">
+          
+          <!-- Instance URL -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-2 flex items-center gap-1.5">
+              <lucide-icon name="server" class="w-4 h-4 text-cyan-400"></lucide-icon>
+              <span>رابط الخادم (Instance URL)</span>
+            </label>
+            <div class="relative">
+              <input type="text" formControlName="instanceUrl"
+                     placeholder="https://opencode-myinstance.onrender.com"
+                     class="w-full px-4 py-3 bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-xl text-slate-100 text-sm outline-none transition font-mono dir-ltr placeholder:dir-rtl placeholder:text-slate-600" />
+            </div>
+            <p *ngIf="connectForm.get('instanceUrl')?.touched && connectForm.get('instanceUrl')?.invalid" 
+               class="text-xs text-rose-400 mt-1.5">
+              يرجى إدخال رابط URL صحيح للـ Instance.
+            </p>
+          </div>
+
+          <!-- Auth Token -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-2 flex items-center gap-1.5">
+              <lucide-icon name="key" class="w-4 h-4 text-cyan-400"></lucide-icon>
+              <span>رمز التوثيق (Auth Token)</span>
+            </label>
+            <div class="relative">
+              <input [type]="showToken() ? 'text' : 'password'" formControlName="authToken"
+                     placeholder="أدخل مفتاح التوثيق السري"
+                     class="w-full pl-12 pr-4 py-3 bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-xl text-slate-100 text-sm outline-none transition font-mono dir-ltr placeholder:dir-rtl placeholder:text-slate-600" />
+              
+              <button type="button" (click)="toggleShowToken()" 
+                      class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition">
+                <lucide-icon [name]="showToken() ? 'eye-off' : 'eye'" class="w-4 h-4"></lucide-icon>
+              </button>
+            </div>
+            <p *ngIf="connectForm.get('authToken')?.touched && connectForm.get('authToken')?.invalid" 
+               class="text-xs text-rose-400 mt-1.5">
+              رمز التوثيق مطلوب ويجب أن يتكون من 4 محارف على الأقل.
+            </p>
+          </div>
+
+          <!-- Security Callout -->
+          <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl text-xs text-slate-400 flex items-start gap-2.5">
+            <lucide-icon name="shield-check" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></lucide-icon>
+            <span>
+              <strong>أمان مطلق:</strong> البيانات تشفّر محلياً برمز AES-GCM 256 ولا يتم تسريب المفاتيح لأي سيرفرات وسيطة. الاتصال مباشر من متصفحك لخادمك الخاص.
+            </span>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" 
+                  [disabled]="opencodeService.isConnecting()"
+                  class="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-sky-600 hover:from-cyan-400 hover:to-sky-500 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/20 transition flex items-center justify-center gap-2">
+            <lucide-icon *ngIf="!opencodeService.isConnecting()" name="wifi" class="w-5 h-5"></lucide-icon>
+            <lucide-icon *ngIf="opencodeService.isConnecting()" name="loader-2" class="w-5 h-5 animate-spin"></lucide-icon>
+            <span>{{ opencodeService.isConnecting() ? 'جاري التحقق والاتصال...' : 'ربط واختبار الاتصال' }}</span>
+          </button>
+        </form>
+
+        <!-- Informational Guide -->
+        <div class="mt-8 pt-6 border-t border-slate-800 text-xs text-slate-400 space-y-2">
+          <p class="font-semibold text-slate-300">💡 كيف تحصل على خادم OpenCode مجاني؟</p>
+          <ul class="list-disc list-inside space-y-1 text-slate-400">
+            <li>قم بنشر أداة opencode CLI على منصة استضافة مثل Render أو Fly.io أو Koyeb (Free Tier).</li>
+            <li>انسخ رابط التطبيق المستضاف والـ Token المحدد في إعدادات البيئة الخاصة بك.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- TERMINAL VIEWPORT (Shown when connected) -->
+    <div *ngIf="opencodeService.isConnected()" class="flex-1 flex flex-col min-h-[500px] bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+      <div class="px-4 py-2 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-rose-500/80 inline-block"></span>
+          <span class="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
+          <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
+          <span class="text-xs text-slate-400 font-mono ml-2">opencode-tty ~ p2p-session</span>
+        </div>
+        <div class="text-xs text-slate-500 font-mono dir-ltr">
+          WebSocket Secure (WSS)
+        </div>
+      </div>
+
+      <!-- Terminal Container where xterm.js renders -->
+      <div #terminalContainer class="flex-1 w-full h-full p-2 bg-[#0a0d14]"></div>
+    </div>
+
+  </main>
+</div>

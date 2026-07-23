@@ -1,6 +1,7 @@
 export const environment = {
   production: false,
-  apiBaseUrl: '',
+  apiBaseUrl: 'https://super-axd.pages.dev',
+
   firebase: {
     projectId: 'studio-3522991053-84d29',
     appId: '1:663102763152:web:483fb4c5e300dd53316815',

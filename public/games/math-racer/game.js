@@ -14,6 +14,7 @@ document.querySelectorAll('.diff-btn').forEach(btn => {
 });
 
 let isPlaying = false;
+let timeLeft = 20;
 let currentAnswer = 0;
 let playerProgress = 0; // 0 to 100
 let enemyProgress = 0;
@@ -44,7 +45,7 @@ function initGame() {
     generateEquation();
     
     if (gameLoopInterval) clearInterval(gameLoopInterval);
-    gameLoopInterval = setInterval(gameLoop, 50);
+    gameLoopInterval = setInterval(gameLoop, 1000);
 }
 
 function generateEquation() {
@@ -84,14 +85,21 @@ function submitAnswer() {
     if (val === currentAnswer) {
         // Correct
         playerProgress += 10;
-        $('feedback').innerText = 'صحيح! 🚙💨';
+        let bonus = difficulty === 'easy' ? 2 : 4;
+        timeLeft += bonus;
+        $('feedback').innerText = `صحيح! +${bonus} ثانية 🚙`;
         $('feedback').className = 'feedback correct';
         $('answer').value = '';
         generateEquation();
     } else {
         // Wrong
         $('feedback').innerText = 'خطأ! ❌';
-        $('feedback').className = 'feedback wrong';
+        // إعادة تفعيل الاهتزاز
+        const feedback = $('feedback');
+        feedback.className = 'feedback';
+        void feedback.offsetWidth; // Force reflow
+        feedback.className = 'feedback wrong';
+        
         $('answer').value = '';
         // Penalty: car stops moving or goes back slightly
         playerProgress = Math.max(0, playerProgress - 5);
@@ -110,9 +118,19 @@ $('answer').addEventListener('keydown', e => {
 function gameLoop() {
     if (!isPlaying) return;
     
-    // Enemy moves automatically
-    let enemySpeed = difficulty === 'easy' ? 0.2 : 0.35;
-    enemyProgress += enemySpeed;
+    timeLeft--;
+    $('timer-display').innerText = timeLeft;
+    
+    // Enemy moves automatically (with smart variance)
+    let enemySpeed = (difficulty === 'easy' ? 4 : 7);
+    if (Math.random() > 0.1) { // 10% chance to stop
+         enemyProgress += enemySpeed * (0.8 + Math.random() * 0.4);
+    }
+    
+    if (timeLeft <= 0) {
+        isPlaying = false;
+        checkWin(); // استدعاء checkWin
+    }
     
     updateCars();
     checkWin();

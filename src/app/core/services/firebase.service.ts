@@ -654,25 +654,35 @@ export class FirebaseService {
     }
   }
 
-  async addVideoToWhitelist(video: import('../../features/wetube/wetube.model').FeedVideo): Promise<void> {
+  async addVideoToWhitelist(video: any): Promise<void> {
     try {
-      // Final security check done on the backend by Firestore Rules
+      if (!video || !video.id) {
+        throw new Error('Invalid video object provided');
+      }
+
       const docRef = doc(this.firestore, 'videos', video.id);
       
+      let parsedViews = 0;
+      if (typeof video.views === 'number') {
+        parsedViews = video.views;
+      } else if (typeof video.views === 'string') {
+        parsedViews = parseInt(video.views.replace(/\D/g, '')) || 0;
+      }
+
       const videoData = {
         id: video.id,
-        title: video.title,
-        externalUrl: video.url,
-        thumbnail: video.thumbnail,
-        author: video.author,
-        authorId: video.authorId,
+        title: video.title || '',
+        externalUrl: video.url || video.externalUrl || `https://www.youtube.com/watch?v=${video.id}`,
+        thumbnail: video.thumbnail || '',
+        author: video.author || '',
+        authorId: video.authorId || null,
         channelAvatar: video.channelAvatar || null,
         status: 'published',
         createdAt: Date.now(),
-        addedBy: this.getUserId(),
+        addedBy: this.getUserId() || 'anonymous',
         isShorts: video.isShorts || false,
         duration: video.duration || null,
-        views: video.views ? parseInt(video.views.replace(/\D/g,'')) || 0 : 0
+        views: parsedViews
       };
 
       await setDoc(docRef, videoData);

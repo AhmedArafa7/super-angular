@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ArcadeService, ArcadeGame } from './arcade.service';
+import { ArcadeService, ArcadeGame, GameCategory } from './arcade.service';
 import { GlobalStateService } from '../../core/services/global-state.service';
 import { FirebaseService } from '../../core/services/firebase.service';
 import { LucideAngularModule, UserPlus } from 'lucide-angular';
@@ -117,6 +117,25 @@ import { LucideAngularModule, UserPlus } from 'lucide-angular';
         </div>
       </div>
 
+      <!-- Floating Category Tabs -->
+      <div class="flex justify-center mb-10">
+        <div class="inline-flex bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl p-1.5 shadow-2xl shadow-black/50" role="tablist">
+          <button *ngFor="let cat of arcadeService.categories"
+                  (click)="activeCategory = cat.id"
+                  role="tab"
+                  [attr.aria-selected]="activeCategory === cat.id"
+                  class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300"
+                  [ngClass]="{
+                    'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30': activeCategory === cat.id,
+                    'text-slate-400 hover:text-white hover:bg-white/5': activeCategory !== cat.id
+                  }">
+            <span>{{ cat.icon }}</span>
+            <span>{{ cat.label }}</span>
+            <span class="text-[10px] opacity-60">({{ getCategoryCount(cat.id) }})</span>
+          </button>
+        </div>
+      </div>
+
       <div class="flex items-center justify-between mb-8">
         <div>
           <h2 class="text-2xl font-black text-white flex items-center gap-3">
@@ -129,7 +148,7 @@ import { LucideAngularModule, UserPlus } from 'lucide-angular';
 
       <!-- Games Grid -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        <div *ngFor="let game of games" class="group relative">
+        <div *ngFor="let game of filteredGames" class="group relative">
           <div class="aspect-[4/3] rounded-[2rem] overflow-hidden border border-white/5 bg-slate-900 transition-all duration-500 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-indigo-500/10 flex flex-col">
             <div class="flex-1 bg-slate-800 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity">
                 <img *ngIf="game.thumbnail" [src]="game.thumbnail" class="w-full h-full object-cover" [alt]="game.title" />
@@ -200,11 +219,20 @@ import { LucideAngularModule, UserPlus } from 'lucide-angular';
 })
 export class ArcadeHubComponent implements OnInit {
   games: ArcadeGame[] = [];
+  activeCategory: string = 'mental';
   
-  private arcadeService = inject(ArcadeService);
+  arcadeService = inject(ArcadeService);
   private router = inject(Router);
   globalState = inject(GlobalStateService);
   private firebaseService = inject(FirebaseService);
+
+  get filteredGames(): ArcadeGame[] {
+    return this.games.filter(g => g.category === this.activeCategory && g.status !== 'coming_soon');
+  }
+
+  getCategoryCount(categoryId: string): number {
+    return this.games.filter(g => g.category === categoryId && g.status !== 'coming_soon').length;
+  }
 
   UserPlus = UserPlus;
   showAddFriend = false;

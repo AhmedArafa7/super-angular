@@ -36,6 +36,7 @@ export const routes: Routes = [
       { path: 'hisn', loadComponent: () => import('./features/hisn/hisn.component').then(c => c.HisnComponent), title: 'حصن المسلم' },
       { path: 'docs', loadComponent: () => import('./features/docs/docs.component').then(c => c.DocsComponent), title: 'محرر المستندات SuperDoc' },
       { path: 'vault', loadComponent: () => import('./features/vault/vault.component').then(c => c.VaultComponent), title: 'خزنة الملفات' },
+      { path: 'opencode', loadComponent: () => import('./features/opencode/opencode.component').then(c => c.OpencodeComponent), title: 'مساعد البرمجة - OpenCode' },
       { path: 'admin', loadComponent: () => import('./features/admin/admin.component').then(c => c.AdminComponent), canActivate: [adminGuard] }
     ]
   },

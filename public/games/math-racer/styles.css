@@ -99,6 +99,19 @@ p { color: #94a3b8; margin-bottom: 20px; }
     flex-direction: column;
 }
 
+.timer {
+    position: absolute;
+    top: 50px;
+    right: 20px;
+    background: rgba(0,0,0,0.5);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #facc15;
+    z-index: 2;
+}
+
 .finish-line {
     position: absolute;
     top: 0; left: 0; right: 0;

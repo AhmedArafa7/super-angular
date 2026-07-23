@@ -213,7 +213,7 @@ export class WeTubeService {
     }
     combined = uniqueCombined;
 
-    // Recommendation Sorting: prioritizing user's favorite categories, then sorting by date
+    // Recommendation Sorting: prioritizing user's favorite categories, then sorting by _shuffleOrder
     const catWeights = config.categoryWeights || {};
     return combined.sort((a, b) => {
       const weightA = catWeights[a.category || ''] || 5;
@@ -223,9 +223,10 @@ export class WeTubeService {
         return weightB - weightA; // Higher weight comes first
       }
 
-      const aTime = (a as any).fetchedAt || new Date(a.time || 0).getTime();
-      const bTime = (b as any).fetchedAt || new Date(b.time || 0).getTime();
-      return bTime - aTime; // Newer comes first
+      // Preserve the shuffled order if weights are equal
+      const orderA = (a as any)._shuffleOrder !== undefined ? (a as any)._shuffleOrder : Math.random();
+      const orderB = (b as any)._shuffleOrder !== undefined ? (b as any)._shuffleOrder : Math.random();
+      return orderA - orderB;
     });
   });
 
@@ -285,14 +286,33 @@ export class WeTubeService {
         await this.loadMySubscriptions();
       }
 
-      // Fetch both RSS feeds and Whitelist videos in parallel
-      const [_, firestoreResult] = await Promise.all([
+      const topics = ['برمجة', 'تكنولوجيا', 'علوم', 'وثائقي', 'أخبار تقنية', 'ذكاء اصطناعي', 'تطوير الويب', 'عالم الفضاء', 'تاريخ', 'بودكاست'];
+      const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+
+      // Fetch RSS feeds, Whitelist videos, and random YT topic in parallel
+      const cachedLive = this.cacheService.getRandomVideos() || [];
+      let liveVideosPromise = Promise.resolve(cachedLive.slice(0, 5)); // Use 5 cached by default
+      
+      // If cache is empty or we want to refresh (e.g. 20% chance to fetch new), fetch from API
+      if (cachedLive.length < 20 || Math.random() < 0.2) {
+        liveVideosPromise = firstValueFrom(this.discoveryService.searchYouTube(randomTopic))
+          .then(vids => {
+            if (vids && vids.length > 0) {
+              this.cacheService.setRandomVideos(vids);
+            }
+            return vids.slice(0, 5); // Take up to 5 fresh ones
+          })
+          .catch(() => cachedLive.slice(0, 5));
+      }
+
+      const [_, firestoreResult, liveVideos] = await Promise.all([
         this.loadSubscriptionsFeed(force),
-        this.firebaseService.getPublishedVideos(undefined, 50)
+        this.firebaseService.getPublishedVideos(undefined, 50),
+        liveVideosPromise
       ]);
       const subVideos = this.subscriptionsFeed();
       
-      const mappedFirestore: FeedVideo[] = firestoreResult.videos.map(v => {
+      const mappedFirestore: FeedVideo[] = firestoreResult.videos.map((v: any) => {
         const isYt = v.source === 'youtube';
         return {
           id: v.id,
@@ -303,20 +323,31 @@ export class WeTubeService {
           authorId: v.authorId,
           time: v.time || 'حديثاً',
           source: v.source || 'youtube',
-          isShorts: v.isShorts || false
-        };
+          isShorts: v.isShorts || false,
+          isWhitelisted: true, // Add this flag
+          _shuffleOrder: Math.random() // Add shuffle order
+        } as any;
       });
 
-      // Combine personalized subscription videos and published Firestore videos
-      let combined = [...subVideos, ...mappedFirestore];
+      // Combine personalized subscription videos, published Firestore videos, and random topic videos
+      let combined = [...subVideos, ...mappedFirestore, ...liveVideos];
 
-      // Fallback to safe YouTube content ONLY if both are empty
-      if (combined.length === 0) {
-        const topics = ['برمجة', 'تكنولوجيا', 'علوم', 'وثائقي'];
-        const randomTopic = topics[Math.floor(Math.random() * topics.length)];
-        const liveVideos = await firstValueFrom(this.discoveryService.searchYouTube(randomTopic));
-        combined = liveVideos;
+      // Shuffle the combined array to make the feed dynamic and prevent static content
+      for (let i = combined.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [combined[i], combined[j]] = [combined[j], combined[i]];
       }
+
+      // Add _shuffleOrder to all items so they keep this order after sorting
+      combined = combined.map((v, idx) => ({ ...v, _shuffleOrder: idx }));
+
+      // Deduplicate by ID just in case
+      const seenIds = new Set();
+      combined = combined.filter(v => {
+        if (seenIds.has(v.id)) return false;
+        seenIds.add(v.id);
+        return true;
+      });
       
       this.trendingVideos.set(combined);
       this.feedVideos.set(combined);
@@ -345,27 +376,55 @@ export class WeTubeService {
     this.isFeedLoading.set(true);
     
     try {
-      const result = await this.firebaseService.getPublishedVideos(this.lastVisibleFeedDoc() || undefined, 20);
+      const topics = ['برمجة', 'تكنولوجيا', 'علوم', 'وثائقي', 'أخبار تقنية', 'ذكاء اصطناعي', 'تطوير الويب', 'عالم الفضاء', 'تاريخ', 'بودكاست'];
+      const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+
+      const [result, liveVideos] = await Promise.all([
+        this.firebaseService.getPublishedVideos(this.lastVisibleFeedDoc() || undefined, 20),
+        firstValueFrom(this.discoveryService.searchYouTube(randomTopic)).catch(() => [])
+      ]);
       
-      const mappedVideos: FeedVideo[] = result.videos.map(v => ({
-        id: v.id,
-        title: v.title,
-        url: v.externalUrl || `https://www.youtube.com/watch?v=${v.id}`,
-        thumbnail: v.thumbnail || `https://img.youtube.com/vi/${v.id}/hqdefault.jpg`,
-        author: v.author,
-        authorId: v.authorId,
-        time: v.time || new Date(v.createdAt).toLocaleDateString(),
-        source: v.source || 'youtube',
-        isShorts: v.isShorts || false,
-        channelAvatar: v.channelAvatar,
-        duration: v.duration,
-        views: v.views ? `${v.views} مشاهدة` : undefined
-      }));
+      const mappedVideos: FeedVideo[] = result.videos.map(v => {
+        const isYt = v.source === 'youtube';
+        return {
+          id: v.id,
+          title: v.title,
+          url: v.url || v.externalUrl || (isYt ? `https://www.youtube.com/watch?v=${v.id}` : ''),
+          thumbnail: v.thumbnail || (isYt ? `https://img.youtube.com/vi/${v.id}/hqdefault.jpg` : ''),
+          author: v.author,
+          authorId: v.authorId,
+          time: v.time || new Date(v.createdAt).toLocaleDateString(),
+          source: v.source || 'youtube',
+          isShorts: v.isShorts || false,
+          isWhitelisted: true, // Add this flag
+          channelAvatar: v.channelAvatar,
+          duration: v.duration,
+          views: v.views ? `${v.views} مشاهدة` : undefined
+        };
+      });
       
-      this.trendingVideos.update(vids => [...vids, ...mappedVideos]);
-      this.feedVideos.update(vids => [...vids, ...mappedVideos]);
+      let newCombined = [...mappedVideos, ...liveVideos];
+
+      // Shuffle
+      for (let i = newCombined.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newCombined[i], newCombined[j]] = [newCombined[j], newCombined[i]];
+      }
+
+      this.trendingVideos.update(vids => [...vids, ...newCombined]);
+      this.feedVideos.update(vids => {
+        const combined = [...vids, ...newCombined];
+        // Deduplicate
+        const seenIds = new Set();
+        return combined.filter(v => {
+          if (seenIds.has(v.id)) return false;
+          seenIds.add(v.id);
+          return true;
+        });
+      });
+      
       this.lastVisibleFeedDoc.set(result.lastVisible);
-      this.hasMoreFeed.set(mappedVideos.length === 20);
+      this.hasMoreFeed.set(result.videos.length === 20);
       
     } catch (err) {
       console.error('[WeTubeService] loadMoreTrending failed', err);
@@ -761,6 +820,15 @@ export class WeTubeService {
       this.encryptAndSaveReported(Array.from(next));
       return next;
     });
+  }
+
+  async addVideoToWhitelist(videoData: any): Promise<void> {
+    try {
+      await this.firebaseService.addVideoToWhitelist(videoData);
+    } catch (e) {
+      console.error('[WeTubeService] addVideoToWhitelist failed:', e);
+      throw e;
+    }
   }
 
   updateAlgoConfig(config: AlgorithmConfig): void {
