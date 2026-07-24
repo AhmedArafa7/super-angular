@@ -660,7 +660,15 @@ export class FirebaseService {
         throw new Error('Invalid video object provided');
       }
 
+      // First check if the video already exists
       const docRef = doc(this.firestore, 'videos', video.id);
+      const docSnap = await getDoc(docRef);
+      
+      // If it already exists, do nothing (don't overwrite
+      if (docSnap.exists()) {
+        console.log('[FirebaseService] Video already exists in whitelist');
+        return;
+      }
       
       let parsedViews = 0;
       if (typeof video.views === 'number') {
@@ -677,7 +685,7 @@ export class FirebaseService {
         author: video.author || '',
         authorId: video.authorId || null,
         channelAvatar: video.channelAvatar || null,
-        status: 'published',
+        status: 'pending_review', // Users can only submit for review
         createdAt: Date.now(),
         addedBy: this.getUserId() || 'anonymous',
         isShorts: video.isShorts || false,

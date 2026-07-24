@@ -19,6 +19,7 @@ export interface ContentItem {
   externalUrl?: string;
   duration?: string;
   views?: string;
+  isWhitelisted?: boolean;
 }
 
 export interface Video extends ContentItem {

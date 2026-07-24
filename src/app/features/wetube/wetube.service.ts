@@ -452,8 +452,19 @@ export class WeTubeService {
         return this.invidious.search(query, sp);
       })
     ).subscribe({
-      next: (videos) => {
-        this.searchResults.set(videos);
+      next: async (videos) => {
+        // Check which videos are already whitelisted
+        const videoIds = videos.map(v => v.id);
+        const whitelistedIds = await this.firebaseService.checkVideosExist(videoIds);
+        const whitelistedSet = new Set(whitelistedIds);
+        
+        // Add isWhitelisted flag
+        const videosWithFlag = videos.map(v => ({
+          ...v,
+          isWhitelisted: whitelistedSet.has(v.id)
+        }));
+        
+        this.searchResults.set(videosWithFlag);
         this.isSearching.set(false);
       },
       error: (err) => {
@@ -466,9 +477,17 @@ export class WeTubeService {
 
   async loadVideoDetails(videoId: string): Promise<void> {
     this.discoveryService.fetchVideoDetails(videoId).subscribe({
-      next: (details) => {
-        this.currentVideoDetails.set(details);
+      next: async (details) => {
         if (details) {
+          // Check if video is whitelisted
+          const whitelistedIds = await this.firebaseService.checkVideosExist([videoId]);
+          const isWhitelisted = whitelistedIds.includes(videoId);
+          
+          this.currentVideoDetails.set({
+            ...details,
+            isWhitelisted
+          });
+          
           this.firebaseService.addToHistory({
             videoId: details.id,
             title: details.title,
@@ -476,6 +495,8 @@ export class WeTubeService {
             author: details.author,
             watchedAt: Date.now()
           });
+        } else {
+          this.currentVideoDetails.set(null);
         }
       },
       error: (err) => console.error('[WeTubeService] loadVideoDetails failed:', err)

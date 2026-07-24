@@ -327,6 +327,11 @@ export class WeTubeHomeComponent implements OnInit {
   }
 
   trackByVideoId(index: number, video: any): string {
-    return video.id || index.toString();
+    return video.id || index;
+  }
+
+  getAvatarUrl(video: any): string {
+    if (video.channelAvatar) return video.channelAvatar;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(video.author || 'Channel')}&background=random&color=fff`;
   }
 }

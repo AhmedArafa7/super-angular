@@ -1,6 +1,6 @@
 <div class="actions-container">
   <div class="channel-info">
-    <div class="channel-avatar">{{ channelName.charAt(0) }}</div>
+    <img [src]="getAvatar()" [alt]="channelName" class="w-12 h-12 rounded-full object-cover border border-white/10 shrink-0" />
     <div class="channel-details">
       <h3>{{ channelName }}</h3>
       <span class="subscribers">1.2M مشترك</span>

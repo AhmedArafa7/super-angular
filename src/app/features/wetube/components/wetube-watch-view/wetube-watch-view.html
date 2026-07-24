@@ -24,13 +24,14 @@
         <h1 class="video-title">{{ vid.title }}</h1>
 
         <!-- Actions -->
-        <app-watch-actions
-          [likes]="likes()"
-          [isLiked]="isLiked()"
-          [isDisliked]="isDisliked()"
-          [isSubscribed]="isSubscribed()"
-          [channelName]="vid.author"
-          [isYoutube]="vid.source === 'youtube'"
+         <app-watch-actions
+           [likes]="likes()"
+           [isLiked]="isLiked()"
+           [isDisliked]="isDisliked()"
+           [isSubscribed]="isSubscribed()"
+           [channelName]="vid.author"
+           [channelAvatar]="vid.channelAvatar"
+           [isYoutube]="vid.source === 'youtube'"
           [isWhitelisted]="(vid.source !== 'youtube') || isVideoWhitelisted(vid.id)"
           (like)="onLike()"
           (dislike)="onDislike()"

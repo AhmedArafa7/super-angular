@@ -15,8 +15,14 @@ export class WatchActionsComponent {
   @Input() isDisliked: boolean = false;
   @Input() isSubscribed: boolean = false;
   @Input() channelName: string = '';
+  @Input() channelAvatar?: string | null = '';
   @Input() isYoutube: boolean = false;
   @Input() isWhitelisted: boolean = true;
+  
+  getAvatar(): string {
+    if (this.channelAvatar) return this.channelAvatar;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(this.channelName || 'Channel')}&background=random&color=fff`;
+  }
   
   @Output() like = new EventEmitter<void>();
   @Output() dislike = new EventEmitter<void>();

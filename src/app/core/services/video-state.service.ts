@@ -14,6 +14,7 @@ export interface ActiveVideo {
   thumbnail: string;
   url?: string;
   source?: string;
+  channelAvatar?: string | null;
 }
 
 @Injectable({

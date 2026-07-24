@@ -18,11 +18,7 @@ import { CommonModule } from '@angular/common';
 
       <!-- Info Section -->
       <div class="video-info flex gap-3 items-start px-1">
-        @if (video().channelAvatar) {
-          <img crossorigin="anonymous" [src]="video().channelAvatar" class="w-9 h-9 rounded-full bg-slate-800 border border-white/10 shrink-0 object-cover mt-0.5" [alt]="video().author">
-        } @else {
-          <div class="w-9 h-9 rounded-full bg-slate-800 shrink-0 mt-0.5"></div>
-        }
+        <img crossorigin="anonymous" [src]="getAvatarUrl()" class="w-9 h-9 rounded-full bg-slate-800 border border-white/10 shrink-0 object-cover mt-0.5" [alt]="video().author">
         
         <div class="info-text flex flex-col min-w-0 flex-1">
           <h3 class="text-sm font-bold text-white leading-snug line-clamp-2 mb-1 group-hover:text-indigo-400 transition-colors">{{ video().title }}</h3>
@@ -38,4 +34,10 @@ import { CommonModule } from '@angular/common';
 })
 export class VideoCardComponent {
   video = input.required<any>();
+
+  getAvatarUrl(): string {
+    const v = this.video();
+    if (v.channelAvatar) return v.channelAvatar;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(v.author || 'Channel')}&background=random&color=fff`;
+  }
 }
