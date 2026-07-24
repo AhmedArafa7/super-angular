@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, HostListener, ViewChild, ElementRef, ChangeDetectionStrategy, effect } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, HostListener, ViewChild, ElementRef, ChangeDetectionStrategy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ShortPlayerComponent } from './short-player.component';
 import { ShortsQueueService, ShortVideo } from '../../../../core/services/shorts-queue.service';
@@ -52,7 +52,7 @@ import { SidebarService } from '../../../../core/sidebar.service';
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class WeTubeShortsComponent implements OnInit {
+export class WeTubeShortsComponent implements OnInit, OnDestroy {
   private queueService = inject(ShortsQueueService);
   private sidebar = inject(SidebarService);
 
@@ -66,8 +66,13 @@ export class WeTubeShortsComponent implements OnInit {
   Math = Math;
 
   ngOnInit() {
-    this.sidebar.setCollapsed(true); // Always collapse sidebar for shorts
+    this.sidebar.setPosition('right'); // Move to opposite side (right) for shorts
+    this.sidebar.setCollapsed(true); 
     this.loadQueue();
+  }
+
+  ngOnDestroy() {
+    this.sidebar.setPosition('left'); // Restore default position
   }
 
   @HostListener('window:resize')

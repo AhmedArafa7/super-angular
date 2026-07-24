@@ -56,6 +56,23 @@ export interface UserData {
  *       allow read, write: if isReviewer();
  *     }
  *     
+ *     // Blacklisted Videos Collection (per-video reports)
+ *     match /blacklisted_videos/{videoId} {
+ *       // Any authenticated user can report (create)
+ *       allow create: if request.auth != null;
+ *       // Only admins/reviewers can read/update/delete
+ *       allow read, update, delete: if isReviewer();
+ *     }
+ *     
+ *     // User notifications (subcollection)
+ *     match /users/{userId}/notifications/{notificationId} {
+ *       // Only the notification owner can read/update their own notifications
+ *       allow read, update: if request.auth != null && request.auth.uid == userId;
+ *       // Any authenticated user can create a notification for another user (for reporting)
+ *       allow create: if request.auth != null;
+ *       allow delete: if isReviewer();
+ *     }
+ *     
  *     // Other collections...
  *   }
  * }
@@ -921,6 +938,68 @@ export class FirebaseService {
     } catch (err) {
       console.error('[FirebaseService] reportVideo failed:', err);
       throw err;
+    }
+  }
+
+  // ==========================================
+  // VIDEO BLACKLIST (per-video, not channel)
+  // ==========================================
+
+  async blacklistVideo(videoId: string, videoTitle: string, reason: string, authorId?: string, authorName?: string): Promise<void> {
+    try {
+      const docRef = doc(this.firestore, 'blacklisted_videos', videoId);
+      await setDoc(docRef, {
+        videoId,
+        videoTitle,
+        reason,
+        blacklistedAt: Date.now(),
+        blacklistedBy: this.getUserId() || 'anonymous',
+        authorId: authorId || null,
+        authorName: authorName || null
+      });
+      console.log(`[FirebaseService] Video ${videoId} blacklisted.`);
+    } catch (err) {
+      console.error('[FirebaseService] blacklistVideo failed:', err);
+      throw err;
+    }
+
+    if (authorId) {
+      await this.notifyChannelOwner(authorId, videoId, videoTitle, reason);
+    }
+  }
+
+  private async notifyChannelOwner(channelId: string, videoId: string, videoTitle: string, reason: string): Promise<void> {
+    try {
+      const usersRef = collection(this.firestore, 'users');
+      const snap = await getDocs(usersRef);
+      let notifiedCount = 0;
+
+      for (const userDoc of snap.docs) {
+        const data = userDoc.data();
+        const linkedAccount = (data['linkedAccounts'] || []).find(
+          (a: any) => a.platform === 'youtube' && a.channelId === channelId
+        );
+        if (linkedAccount) {
+          const notificationsRef = collection(this.firestore, 'users', userDoc.id, 'notifications');
+          await addDoc(notificationsRef, {
+            type: 'video_reported',
+            videoId,
+            videoTitle,
+            reason,
+            reportedBy: this.getUserId(),
+            reportedByName: this.userData()?.displayName || 'مستخدم',
+            timestamp: Date.now(),
+            read: false
+          });
+          notifiedCount++;
+        }
+      }
+
+      if (notifiedCount > 0) {
+        console.log(`[FirebaseService] Notified ${notifiedCount} owner(s) about video report.`);
+      }
+    } catch (err) {
+      console.error('[FirebaseService] notifyChannelOwner failed:', err);
     }
   }
 }

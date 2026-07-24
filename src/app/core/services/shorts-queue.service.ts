@@ -30,7 +30,18 @@ export class ShortsQueueService {
     const queue: ShortVideo[] = [];
 
     // Fetch all available data sources
-    const allHomeContent = this.wetube.allHomeContent(); // Includes videos and shorts. We should filter for shorts if possible, but our mock doesn't always have enough shorts. We'll just map them.
+    const allHomeContent = this.wetube.allHomeContent(); // Includes videos and shorts
+    const shortsFeed = this.wetube.shortsFeed(); // Use dedicated shorts feed if available
+
+    // Combine shorts from both sources, with priority to shortsFeed
+    let allShorts = [...shortsFeed];
+    const feedShorts = allHomeContent.filter(v => v.isShorts);
+    const existingIds = new Set(allShorts.map(v => v.id));
+    for (const short of feedShorts) {
+      if (!existingIds.has(short.id)) {
+        allShorts.push(short);
+      }
+    }
     
     let watchedHistory: any[] = [];
     let savedVideos: any[] = [];
@@ -42,8 +53,8 @@ export class ShortsQueueService {
       console.warn('Could not read from IndexedDB for Shorts Queue', e);
     }
 
-    // 1. Get 15 new videos (randomly selected from home content, preferably marked as isShorts)
-    let newCandidates = allHomeContent.filter(v => v.isShorts);
+    // 1. Get 15 new videos (randomly selected from shorts sources)
+    let newCandidates = [...allShorts];
     
     // Guard Clause & API Fallback
     if (newCandidates.length < 15 && !this.isFetchingAPI) {

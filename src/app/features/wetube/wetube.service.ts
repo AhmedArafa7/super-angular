@@ -767,6 +767,58 @@ export class WeTubeService {
     }
   }
 
+  async loadShorts(force = false): Promise<void> {
+    this.isShortsLoading.set(true);
+    try {
+      // Try to load from cache first
+      if (!force) {
+        const cached = await this.idb.getWithTTL('shorts_feed', 'main', 60 * 60 * 1000);
+        if (cached && cached.videos && cached.videos.length > 0) {
+          this.shortsFeed.set(cached.videos);
+          this.isShortsLoading.set(false);
+          return;
+        }
+      }
+
+      // Fetch new shorts from YouTube
+      const apiShorts = await firstValueFrom(
+        this.discoveryService.searchYouTube('shorts', 'EgQYAXAB')
+      );
+
+      // Filter shorts
+      let shorts = apiShorts.filter(v => v.isShorts);
+
+      // If no shorts found, mark all as shorts
+      if (shorts.length === 0) {
+        shorts = apiShorts.map(v => ({ ...v, isShorts: true }));
+      }
+
+      // Also include shorts from trending/feed
+      const feedShorts = this.feedVideos().filter(v => v.isShorts);
+
+      // Combine and deduplicate
+      const combined = [...feedShorts, ...shorts];
+      const seenIds = new Set<string>();
+      const uniqueShorts: FeedVideo[] = [];
+      
+      for (const video of combined) {
+        if (!seenIds.has(video.id)) {
+          seenIds.add(video.id);
+          uniqueShorts.push(video);
+        }
+      }
+
+      this.shortsFeed.set(uniqueShorts);
+
+      // Cache the result
+      await this.idb.setWithTTL('shorts_feed', { id: 'main', videos: uniqueShorts });
+    } catch (err) {
+      console.error('[WeTubeService] loadShorts failed:', err);
+    } finally {
+      this.isShortsLoading.set(false);
+    }
+  }
+
   // ── Initialization ─────────────────────────────────────────
 
   private encryptAndSaveReported(reportedList: string[]) {
@@ -826,6 +878,7 @@ export class WeTubeService {
     } catch (e) {}
 
     this.loadTrending();
+    this.loadShorts();
     this.loadMyYouTubeData();
     this.loadMySubscriptions();
   }
