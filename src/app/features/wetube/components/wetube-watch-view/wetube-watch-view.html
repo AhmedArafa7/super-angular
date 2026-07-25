@@ -34,6 +34,7 @@
            [subscriberCount]="subscriberCount()"
            [isYoutube]="vid.source === 'youtube'"
            [isWhitelisted]="(vid.source !== 'youtube') || isVideoWhitelisted(vid.id)"
+           [isOfficialCreator]="vid.source === 'wetube' || !!$any(vid).isStudioCreator || !!$any(vid).isOfficial"
            (like)="onLike()"
            (dislike)="onDislike()"
            (subscribe)="onSubscribe()"

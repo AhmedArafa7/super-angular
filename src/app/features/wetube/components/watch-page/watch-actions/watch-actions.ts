@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, ThumbsUp, ThumbsDown, Share2, Download, Plus, Scissors, Flag, VolumeX } from 'lucide-angular';
+import { LucideAngularModule, ThumbsUp, ThumbsDown, Share2, Download, Plus, Scissors, Flag, VolumeX, CheckCircle } from 'lucide-angular';
 import { WeTubeService } from '../../../wetube.service';
 
 @Component({
@@ -22,6 +22,20 @@ export class WatchActionsComponent {
   @Input() subscriberCount: string = '';
   @Input() isYoutube: boolean = false;
   @Input() isWhitelisted: boolean = true;
+  @Input() isOfficialCreator: boolean = false;
+
+  getSubscriberLabel(): string {
+    if (this.subscriberCount && this.subscriberCount.trim()) {
+      return this.subscriberCount.includes('مشترك') ? this.subscriberCount : `${this.subscriberCount} مشترك`;
+    }
+    if (this.isOfficialCreator) {
+      return 'منشئ محتوى موثق في WeTube Studio ⚡';
+    }
+    if (this.isYoutube) {
+      return 'فيديو مُقترَح من مجتمع WeTube 👥';
+    }
+    return 'قناة في WeTube';
+  }
   
   getAvatar(): string {
     if (this.channelAvatar && this.channelAvatar.startsWith('http')) {
@@ -74,4 +88,5 @@ export class WatchActionsComponent {
   Scissors = Scissors;
   Flag = Flag;
   VolumeX = VolumeX;
+  CheckCircle = CheckCircle;
 }

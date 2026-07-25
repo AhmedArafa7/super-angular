@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, MessageCircle, ThumbsUp } from 'lucide-angular';
@@ -18,26 +18,26 @@ export class WatchCommentsComponent {
   ThumbsUp = ThumbsUp;
   newComment = '';
   
-  defaultComments = [
-    { id: 1, author: 'أحمد محمد', avatar: 'A', text: 'فيديو رائع! شكراً على هذا المحتوى المميز', likes: 245, time: 'منذ ساعتين' },
-    { id: 2, author: 'سارة علي', avatar: 'S', text: 'استفدت كثيراً من هذا الشرح', likes: 128, time: 'منذ 5 ساعات' },
-    { id: 3, author: 'محمد حسن', avatar: 'M', text: 'في انتظار المزيد من هذا النوع من المحتوى', likes: 89, time: 'منذ يوم' }
-  ];
-  
+  localComments = signal<any[]>([]);
+
   get displayComments() {
-    return this.comments.length > 0 ? this.comments : this.defaultComments;
+    const external = this.comments || [];
+    const local = this.localComments();
+    return [...local, ...external];
   }
   
   addComment() {
     if (this.newComment.trim()) {
-      this.defaultComments.unshift({
+      const newEntry = {
         id: Date.now(),
         author: 'أنت',
         avatar: 'Y',
-        text: this.newComment,
+        authorThumb: '',
+        text: this.newComment.trim(),
         likes: 0,
         time: 'الآن'
-      });
+      };
+      this.localComments.update(c => [newEntry, ...c]);
       this.newComment = '';
     }
   }

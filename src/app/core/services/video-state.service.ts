@@ -57,6 +57,23 @@ export class VideoStateService {
   // Shorts State Coordination
   readonly isShortsMuted = signal<boolean>(true); // All shorts start muted per policies
 
+  // Watched History IDs for thumbnail progress/indicator
+  readonly watchedIds = signal<Set<string>>(new Set());
+
+  constructor() {
+    this.loadWatchedHistory();
+  }
+
+  private async loadWatchedHistory() {
+    try {
+      const history = await this.dbService.getAll('watch_history') || [];
+      const ids = new Set<string>(history.map((item: any) => item.videoId || item.id));
+      this.watchedIds.set(ids);
+    } catch (e) {
+      console.warn('Failed to load watch history:', e);
+    }
+  }
+
   // Commands
   readonly seekCommand = signal<number | null>(null);
 
@@ -81,6 +98,12 @@ export class VideoStateService {
     this.rawStreamUrl.set(null);
     this.relatedVideos.set([]);
 
+    this.watchedIds.update(set => {
+      const newSet = new Set(set);
+      newSet.add(video.id);
+      return newSet;
+    });
+
     // Save to local watch_history in IndexedDB (transparently encrypted)
     try {
       await this.dbService.put('watch_history', {
@@ -94,6 +117,13 @@ export class VideoStateService {
       console.warn('Failed to save watch history locally:', e);
     }
 
+    // Safety fallback timeout to ensure sidebar never gets stuck loading
+    setTimeout(() => {
+      if (this.isLoadingRelated()) {
+        this.isLoadingRelated.set(false);
+      }
+    }, 2000);
+
     if (forceIframe) {
       this.switchToIframe();
       return;
@@ -105,6 +135,7 @@ export class VideoStateService {
       this.rawStreamUrl.set(video.url);
       this.isLoading.set(false);
       this.isPlaying.set(true);
+      this.isLoadingRelated.set(false);
       return;
     }
 
@@ -189,6 +220,7 @@ export class VideoStateService {
     this.rawStreamUrl.set(null);
     this.isLoading.set(false);
     this.isPlaying.set(true);
+    this.isLoadingRelated.set(false);
   }
 
   setPlayerMode(mode: PlayerMode) {

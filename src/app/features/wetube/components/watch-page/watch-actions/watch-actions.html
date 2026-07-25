@@ -1,9 +1,16 @@
 <div class="actions-container">
   <div class="channel-info">
     <img [src]="getAvatar()" [alt]="channelName" class="w-12 h-12 rounded-full object-cover border border-white/10 shrink-0" />
-    <div class="channel-details">
-      <h3>{{ channelName }}</h3>
-      <span class="subscribers">{{ subscriberCount || 'قناة WeTube' }}</span>
+    <div class="channel-details flex flex-col justify-center">
+      <div class="flex items-center gap-1.5">
+        <h3 class="font-bold text-white text-base m-0 leading-snug">{{ channelName }}</h3>
+        @if (isOfficialCreator) {
+          <lucide-icon [img]="CheckCircle" class="w-4 h-4 text-emerald-400 shrink-0" title="منشئ محتوى موثق في WeTube Studio"></lucide-icon>
+        } @else if (isYoutube) {
+          <span class="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800/80 text-indigo-300 border border-indigo-500/20 font-medium">مُقترَح</span>
+        }
+      </div>
+      <span class="subscribers text-xs text-slate-400 font-medium truncate block mt-0.5">{{ getSubscriberLabel() }}</span>
     </div>
     <button class="subscribe-btn" [class.subscribed]="isSubscribed" (click)="subscribe.emit()">
       <lucide-icon [img]="Plus"></lucide-icon>

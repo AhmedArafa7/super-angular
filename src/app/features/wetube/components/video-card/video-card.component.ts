@@ -1,5 +1,6 @@
-import { Component, input } from '@angular/core';
+import { Component, input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { VideoStateService } from '../../../../core/services/video-state.service';
 
 @Component({
   selector: 'app-video-card',
@@ -12,7 +13,12 @@ import { CommonModule } from '@angular/common';
         <img crossorigin="anonymous" [src]="video().thumbnail || 'assets/placeholder.jpg'" [alt]="video().title" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy">
         
         @if (video().duration) {
-          <span class="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-[10px] font-bold">{{ video().duration }}</span>
+          <span class="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-[10px] font-bold z-10">{{ video().duration }}</span>
+        }
+
+        <!-- Watched Indicator (Red Progress Bar like YouTube) -->
+        @if (isWatched()) {
+          <div class="absolute bottom-0 left-0 right-0 h-1 bg-red-600 z-20"></div>
         }
       </div>
 
@@ -34,10 +40,16 @@ import { CommonModule } from '@angular/common';
 })
 export class VideoCardComponent {
   video = input.required<any>();
+  videoState = inject(VideoStateService);
 
   getAvatarUrl(): string {
     const v = this.video();
     if (v.channelAvatar) return v.channelAvatar;
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(v.author || 'Channel')}&background=random&color=fff`;
+  }
+
+  isWatched(): boolean {
+    const v = this.video();
+    return this.videoState.watchedIds().has(v.id);
   }
 }

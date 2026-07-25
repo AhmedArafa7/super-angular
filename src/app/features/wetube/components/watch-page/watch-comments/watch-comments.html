@@ -11,22 +11,35 @@
   </div>
   
   <div class="comments-list">
-    <div *ngFor="let comment of displayComments" class="comment-item">
-      <div class="comment-avatar">{{ comment.avatar }}</div>
-      <div class="comment-content">
-        <div class="comment-header">
-          <span class="comment-author">{{ comment.author }}</span>
-          <span class="comment-time">{{ comment.time }}</span>
+    @if (displayComments.length > 0) {
+      @for (comment of displayComments; track comment.id) {
+        <div class="comment-item">
+          @if (comment.authorThumb) {
+            <img [src]="comment.authorThumb" class="comment-avatar-img" alt="Avatar">
+          } @else {
+            <div class="comment-avatar">{{ comment.author ? comment.author.charAt(0) : 'U' }}</div>
+          }
+          <div class="comment-content">
+            <div class="comment-header">
+              <span class="comment-author">{{ comment.author }}</span>
+              <span class="comment-time">{{ comment.time }}</span>
+            </div>
+            <p class="comment-text">{{ comment.text }}</p>
+            <div class="comment-actions">
+              <button>
+                <lucide-icon [img]="ThumbsUp"></lucide-icon>
+                <span>{{ comment.likes || 0 }}</span>
+              </button>
+              <button>رد</button>
+            </div>
+          </div>
         </div>
-        <p class="comment-text">{{ comment.text }}</p>
-        <div class="comment-actions">
-          <button>
-            <lucide-icon [img]="ThumbsUp"></lucide-icon>
-            <span>{{ comment.likes }}</span>
-          </button>
-          <button>رد</button>
-        </div>
+      }
+    } @else {
+      <div class="flex flex-col items-center justify-center py-10 text-slate-400 text-sm">
+        <p>لا توجد تعليقات بعد.</p>
+        <p class="text-xs mt-1">كن أول من يشارك برأيه في هذا الفيديو!</p>
       </div>
-    </div>
+    }
   </div>
 </div>
