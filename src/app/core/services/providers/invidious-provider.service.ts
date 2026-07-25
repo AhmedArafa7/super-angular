@@ -9,7 +9,14 @@ import { VideoDetails } from '../youtube-discovery.service';
 export class InvidiousProviderService implements VideoProvider {
   private http = inject(HttpClient);
   name = 'Invidious';
-  private instances = ['https://invidious.snopyta.org', 'https://yewtu.be', 'https://inv.riverside.rocks', 'https://vid.puffyan.us'];
+  private instances = [
+    'https://yewtu.be',
+    'https://invidious.drgns.space',
+    'https://inv.privacydev.net',
+    'https://invidious.nerdvpn.de',
+    'https://invidious.lunar.icu',
+    'https://invidious.projectsegfau.lt'
+  ];
 
   // Helper function to try instances in order
   private tryInstances<T>(

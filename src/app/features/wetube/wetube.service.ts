@@ -1,5 +1,5 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, from, catchError } from 'rxjs';
 import { QueryDocumentSnapshot } from 'firebase/firestore';
 import { Video, YouTubeSubscription, FeedVideo, HistoryItem, WeTubeTab, ContentItem } from './wetube.model';
 import { FirebaseService } from '../../core/services/firebase.service';
@@ -10,7 +10,6 @@ import { IndexedDBService } from '../../core/services/indexed-db.service';
 import { PipedApiService } from '../../core/services/piped-api.service';
 import { InvidiousProviderService } from '../../core/services/providers/invidious-provider.service';
 import { environment } from '../../../environments/environment';
-import { catchError } from 'rxjs';
 import { EncryptionService } from '../../core/services/encryption.service';
 
 export interface AlgorithmConfig {
@@ -448,18 +447,41 @@ export class WeTubeService {
 
     this.discoveryService.searchYouTube(query, sp).pipe(
       catchError(err => {
-        console.warn('[WeTubeService] Discovery search failed, trying Invidious...', err);
+        console.warn('[WeTubeService] Discovery search failed, trying Piped...', err);
+        return from(this.pipedApiService.search(query));
+      }),
+      catchError(err => {
+        console.warn('[WeTubeService] Piped search failed, trying Invidious...', err);
         return this.invidious.search(query, sp);
       })
     ).subscribe({
       next: async (videos) => {
+        let finalVideos: any[] = videos || [];
+        // If initial search returned very few results (less than 5), supplement with Piped search
+        if (!finalVideos || finalVideos.length < 5) {
+          try {
+            const pipedVids = await this.pipedApiService.search(query);
+            if (pipedVids && pipedVids.length > 0) {
+              const seen = new Set(finalVideos.map((v: any) => v.id));
+              const combined = [...finalVideos];
+              for (const pVid of pipedVids) {
+                if (!seen.has(pVid.id)) {
+                  seen.add(pVid.id);
+                  combined.push(pVid);
+                }
+              }
+              finalVideos = combined;
+            }
+          } catch (e) {}
+        }
+
         // Check which videos are already whitelisted
-        const videoIds = videos.map(v => v.id);
+        const videoIds = finalVideos.map((v: any) => v.id);
         const whitelistedIds = await this.firebaseService.checkVideosExist(videoIds);
         const whitelistedSet = new Set(whitelistedIds);
         
         // Add isWhitelisted flag
-        const videosWithFlag = videos.map(v => ({
+        const videosWithFlag = finalVideos.map((v: any) => ({
           ...v,
           isWhitelisted: whitelistedSet.has(v.id)
         }));
@@ -603,24 +625,48 @@ export class WeTubeService {
     });
   }
 
-  async toggleSubscription(channelId: string, channelTitle: string, avatarUrl: string): Promise<boolean> {
+  isSubscribedToChannel(channelId?: string, channelTitle?: string): boolean {
     const current = this.subscriptions();
-    const isSubscribed = current.some(s => s.channelId === channelId);
+    if (!current || current.length === 0) return false;
+
+    const cleanId = channelId?.trim();
+    const cleanTitle = channelTitle?.trim().toLowerCase();
+
+    return current.some(s => {
+      if (cleanId && (s.channelId === cleanId || s.id === cleanId)) return true;
+      if (cleanTitle && s.channelTitle && s.channelTitle.trim().toLowerCase() === cleanTitle) return true;
+      return false;
+    });
+  }
+
+  async toggleSubscription(channelId: string, channelTitle: string, avatarUrl: string): Promise<boolean> {
+    const effectiveId = channelId || ('title_' + encodeURIComponent(channelTitle || 'channel'));
+    const isSub = this.isSubscribedToChannel(effectiveId, channelTitle);
     
     try {
-      if (isSubscribed) {
-        await this.idb.delete('subscriptions', channelId);
-        this.subscriptions.update(subs => subs.filter(s => s.channelId !== channelId));
+      if (isSub) {
+        const current = this.subscriptions();
+        const existing = current.find(s => 
+          (effectiveId && (s.channelId === effectiveId || s.id === effectiveId)) ||
+          (channelTitle && s.channelTitle && s.channelTitle.trim().toLowerCase() === channelTitle.trim().toLowerCase())
+        );
+        const delId = existing ? (existing.id || existing.channelId) : effectiveId;
+        await this.idb.delete('subscriptions', delId);
+        this.subscriptions.update(subs => subs.filter(s => 
+          s.channelId !== delId && 
+          s.id !== delId && 
+          (!channelTitle || !s.channelTitle || s.channelTitle.trim().toLowerCase() !== channelTitle.trim().toLowerCase())
+        ));
         return false;
       } else {
-        const newSub = { id: channelId, channelId, channelTitle, avatarUrl, subscribedAt: Date.now() };
+        const newSub = { id: effectiveId, channelId: effectiveId, channelTitle: channelTitle || 'قناة', avatarUrl: avatarUrl || '', subscribedAt: Date.now() };
         await this.idb.put('subscriptions', newSub);
         this.subscriptions.update(subs => [...subs, newSub]);
         return true;
       }
     } catch (e) {
       console.error('Failed to toggle subscription in IndexedDB', e);
-      return isSubscribed;
+      return isSub;
     }
   }
 

@@ -171,11 +171,19 @@ export class WeTubeChannelComponent implements OnInit {
     this.isLoadingMeta.set(true);
     this.checkSubscriptionStatus(id);
 
-    // 1. Try Cache for Meta (TTL 24h)
-    const cachedMeta = await this.idb.getWithTTL('channel_meta', id, 24 * 60 * 60 * 1000);
+    const META_TTL = 30 * 24 * 60 * 60 * 1000; // 14 days TTL for channel meta
+    const FEED_TTL = 2 * 60 * 60 * 1000;       // 2 hours TTL for video feeds
+
+    // 1. Try Cache for Meta (TTL 14 days)
+    const cachedMeta = await this.idb.getWithTTL('channel_meta', id, META_TTL);
     
-    // 2. Try Cache for Feed (TTL 2h)
-    const cachedFeed = await this.idb.getWithTTL('channel_feed', id, 2 * 60 * 60 * 1000);
+    // 2. Try Cache for Feed (TTL 2 hours)
+    const cachedFeed = await this.idb.getWithTTL('channel_feed', id, FEED_TTL);
+
+    if (cachedMeta) {
+      // Renew TTL on visit so active channels stay cached
+      await this.idb.setWithTTL('channel_meta', cachedMeta);
+    }
 
     if (cachedMeta && cachedFeed) {
       this.channelData.set(cachedMeta);
@@ -286,8 +294,9 @@ export class WeTubeChannelComponent implements OnInit {
   }
 
   private checkSubscriptionStatus(id: string) {
-    const subs = this.wetube.subscriptions();
-    this.isSubscribed.set(subs.some(s => s.channelId === id));
+    const meta = this.channelData();
+    const isSub = this.wetube.isSubscribedToChannel(id, meta?.name);
+    this.isSubscribed.set(isSub);
   }
 
   async toggleSubscribe() {

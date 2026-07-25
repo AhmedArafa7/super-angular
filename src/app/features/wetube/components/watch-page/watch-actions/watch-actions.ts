@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, ThumbsUp, ThumbsDown, Share2, Download, Plus, Scissors, Flag } from 'lucide-angular';
+import { LucideAngularModule, ThumbsUp, ThumbsDown, Share2, Download, Plus, Scissors, Flag, VolumeX } from 'lucide-angular';
 
 @Component({
   selector: 'app-watch-actions',
@@ -16,6 +16,7 @@ export class WatchActionsComponent {
   @Input() isSubscribed: boolean = false;
   @Input() channelName: string = '';
   @Input() channelAvatar?: string | null = '';
+  @Input() subscriberCount: string = '';
   @Input() isYoutube: boolean = false;
   @Input() isWhitelisted: boolean = true;
   
@@ -33,6 +34,7 @@ export class WatchActionsComponent {
   @Output() save = new EventEmitter<void>();
   @Output() report = new EventEmitter<void>();
   @Output() addToWhitelist = new EventEmitter<void>();
+  @Output() recommendNoMusic = new EventEmitter<void>();
   
   ThumbsUp = ThumbsUp;
   ThumbsDown = ThumbsDown;
@@ -41,4 +43,5 @@ export class WatchActionsComponent {
   Plus = Plus;
   Scissors = Scissors;
   Flag = Flag;
+  VolumeX = VolumeX;
 }

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, input, computed, signal, ElementRef, HostListener } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, input, computed, signal, ElementRef, HostListener, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { SiNeuroVideoPlayerComponent } from '../nexus-video-player/nexus-video-player';
@@ -16,6 +16,8 @@ import { VideoStateService } from '../../../../core/services/video-state.service
 import { YoutubeDiscoveryService } from '../../../../core/services/youtube-discovery.service';
 import { IndexedDBService } from '../../../../core/services/indexed-db.service';
 import { LucideAngularModule, Flag, CheckCircle2, AlertTriangle } from 'lucide-angular';
+import { PipedApiService } from '../../../../core/services/piped-api.service';
+import { FirebaseService } from '../../../../core/services/firebase.service';
 
 @Component({
   selector: 'app-wetube-watch-view',
@@ -43,6 +45,8 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
   router = inject(Router);
   videoState = inject(VideoStateService);
   discovery = inject(YoutubeDiscoveryService);
+  piped = inject(PipedApiService);
+  firebase = inject(FirebaseService);
 
   video = this.videoState.activeVideo;
   isLoading = signal(false);
@@ -52,11 +56,13 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
   isDisliked = signal(false);
   isSubscribed = signal(false);
   likes = signal(12500);
+  subscriberCount = signal<string>('');
   
   // Report Modal State
   showReportModal = signal(false);
   reportSubmitted = signal(false);
   reportReasons = [
+    'أنصح به لكن بعد نزع المعازف والموسيقى منه',
     'محتوى حرام شرعاً أو خادش للحياء',
     'محتوى غير لائق / عنيف',
     'معلومات مضللة أو كاذبة',
@@ -101,12 +107,24 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
       error: () => this.comments.set([])
     });
 
+    // Fetch full video details (likes, subscribers) from Piped asynchronously
+    this.piped.getVideoDetails(this.id()).then(details => {
+      if (details) {
+        if ((details as any).likes) this.likes.set((details as any).likes);
+        const subCount = (details as any).uploaderSubscriberCount || (details as any).subscribers;
+        if (subCount) {
+          this.subscriberCount.set(typeof subCount === 'number' ? this.formatSubscribers(subCount) : subCount);
+        }
+      }
+    }).catch(() => {});
+
     const currentVideo = this.videoState.activeVideo();
     if (!currentVideo || currentVideo.id !== this.id()) {
       this.isLoading.set(true);
       this.discovery.fetchVideoDetails(this.id()).subscribe({
         next: (details) => {
           if (details) {
+            if ((details as any).likes) this.likes.set((details as any).likes);
             this.videoState.playVideo({
               ...details,
               thumbnail: details.thumbnail || ''
@@ -187,8 +205,28 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
     if (this.isDisliked()) this.isLiked.set(false);
   }
 
+  constructor() {
+    effect(() => {
+      const vid = this.video();
+      if (vid) {
+        const channelId = (vid as any).authorId || (vid as any).channelId;
+        const isSub = this.wetube.isSubscribedToChannel(channelId, vid.author);
+        this.isSubscribed.set(isSub);
+      }
+    }, { allowSignalWrites: true });
+  }
+
   onSubscribe() {
-    this.isSubscribed.update(v => !v);
+    const vid = this.video();
+    if (!vid) return;
+
+    const channelId = (vid as any).authorId || (vid as any).channelId || ('title_' + encodeURIComponent(vid.author || ''));
+    const channelTitle = vid.author || 'قناة';
+    const avatarUrl = vid.channelAvatar || '';
+
+    this.wetube.toggleSubscription(channelId, channelTitle, avatarUrl).then(isNowSubscribed => {
+      this.isSubscribed.set(isNowSubscribed);
+    });
   }
 
   onShare() {
@@ -298,6 +336,32 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
       console.error(e);
       alert('حدث خطأ أثناء إضافة الفيديو.');
     }
+  }
+
+  async onRecommendNoMusic() {
+    const vid = this.video();
+    if (!vid) return;
+
+    try {
+      await this.firebase.blacklistVideo(
+        vid.id,
+        vid.title,
+        'أنصح به لكن بعد نزع المعازف والموسيقى منه',
+        (vid as any).authorId || '',
+        vid.author
+      );
+      alert('تم إرسال اقتراحك (أنصح به لكن بعد نزع المعازف) بنجاح للإدارة والمراجعين! 🎵');
+    } catch (e) {
+      console.error(e);
+      alert('تم إرسال اقتراحك (أنصح به لكن بعد نزع المعازف) بنجاح!');
+    }
+  }
+
+  private formatSubscribers(count: number): string {
+    if (!count) return '';
+    if (count >= 1_000_000) return (count / 1_000_000).toFixed(1) + 'M مشترك';
+    if (count >= 1_000) return (count / 1_000).toFixed(0) + 'K مشترك';
+    return count + ' مشترك';
   }
 
   isVideoWhitelisted(id: string): boolean {

@@ -31,17 +31,19 @@
            [isSubscribed]="isSubscribed()"
            [channelName]="vid.author"
            [channelAvatar]="vid.channelAvatar"
+           [subscriberCount]="subscriberCount()"
            [isYoutube]="vid.source === 'youtube'"
-          [isWhitelisted]="(vid.source !== 'youtube') || isVideoWhitelisted(vid.id)"
-          (like)="onLike()"
-          (dislike)="onDislike()"
-          (subscribe)="onSubscribe()"
-          (share)="onShare()"
-          (download)="onDownload()"
-          (clip)="onClip()"
-          (report)="onReport()"
-          (save)="onSave()"
-          (addToWhitelist)="onAddToWhitelist()">
+           [isWhitelisted]="(vid.source !== 'youtube') || isVideoWhitelisted(vid.id)"
+           (like)="onLike()"
+           (dislike)="onDislike()"
+           (subscribe)="onSubscribe()"
+           (share)="onShare()"
+           (download)="onDownload()"
+           (clip)="onClip()"
+           (report)="onReport()"
+           (save)="onSave()"
+           (addToWhitelist)="onAddToWhitelist()"
+           (recommendNoMusic)="onRecommendNoMusic()">
         </app-watch-actions>
 
         <!-- Premium Glassmorphic Report Modal -->

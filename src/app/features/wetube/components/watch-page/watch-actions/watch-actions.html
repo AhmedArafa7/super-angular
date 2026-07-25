@@ -3,7 +3,7 @@
     <img [src]="getAvatar()" [alt]="channelName" class="w-12 h-12 rounded-full object-cover border border-white/10 shrink-0" />
     <div class="channel-details">
       <h3>{{ channelName }}</h3>
-      <span class="subscribers">1.2M مشترك</span>
+      <span class="subscribers">{{ subscriberCount || 'قناة مفيدة' }}</span>
     </div>
     <button class="subscribe-btn" [class.subscribed]="isSubscribed" (click)="subscribe.emit()">
       <lucide-icon [img]="Plus"></lucide-icon>
@@ -40,6 +40,11 @@
     
     <button class="action-btn" (click)="save.emit()">
       <span>حفظ</span>
+    </button>
+
+    <button class="action-btn text-amber-400 hover:text-amber-300 border border-amber-500/20 bg-amber-500/10" (click)="recommendNoMusic.emit()" title="أنصح بهذا الفيديو لكن بعد نزع المعازف والموسيقى منه">
+      <lucide-icon [img]="VolumeX" class="text-amber-400"></lucide-icon>
+      <span class="text-amber-400 font-bold text-xs whitespace-nowrap">أنصح به (بدون معازف)</span>
     </button>
     
     <button *ngIf="isYoutube && !isWhitelisted" class="action-btn text-emerald-500 hover:text-emerald-400 border border-emerald-500/20 bg-emerald-500/10" (click)="addToWhitelist.emit()" title="إضافة الفيديو للقائمة البيضاء ليراه الآخرون">
