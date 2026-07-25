@@ -57,8 +57,9 @@ export class VideoStateService {
   // Shorts State Coordination
   readonly isShortsMuted = signal<boolean>(true); // All shorts start muted per policies
 
-  // Watched History IDs for thumbnail progress/indicator
+  // Watched History IDs & Progress for thumbnail progress/indicator
   readonly watchedIds = signal<Set<string>>(new Set());
+  readonly watchedProgress = signal<Map<string, number>>(new Map());
 
   constructor() {
     this.loadWatchedHistory();
@@ -67,8 +68,18 @@ export class VideoStateService {
   private async loadWatchedHistory() {
     try {
       const history = await this.dbService.getAll('watch_history') || [];
-      const ids = new Set<string>(history.map((item: any) => item.videoId || item.id));
+      const ids = new Set<string>();
+      const progMap = new Map<string, number>();
+      
+      for (const item of history) {
+        const vid = item.videoId || item.id;
+        if (vid) {
+          ids.add(vid);
+          progMap.set(vid, item.progress || 100);
+        }
+      }
       this.watchedIds.set(ids);
+      this.watchedProgress.set(progMap);
     } catch (e) {
       console.warn('Failed to load watch history:', e);
     }
@@ -104,6 +115,14 @@ export class VideoStateService {
       return newSet;
     });
 
+    this.watchedProgress.update(map => {
+      const newMap = new Map(map);
+      if (!newMap.has(video.id)) {
+        newMap.set(video.id, 5); // Initial marker when opened
+      }
+      return newMap;
+    });
+
     // Save to local watch_history in IndexedDB (transparently encrypted)
     try {
       await this.dbService.put('watch_history', {
@@ -111,6 +130,7 @@ export class VideoStateService {
         title: video.title,
         thumbnail: video.thumbnail,
         author: video.author,
+        progress: this.watchedProgress().get(video.id) || 5,
         watchedAt: Date.now()
       });
     } catch (e) {
@@ -249,5 +269,29 @@ export class VideoStateService {
 
   updateProgress(time: number) {
     this.currentTime.set(time);
+    const active = this.activeVideo();
+    const dur = this.duration();
+    if (active && dur > 0) {
+      const percent = Math.min(100, Math.max(1, Math.round((time / dur) * 100)));
+      const videoId = active.id;
+      
+      this.watchedProgress.update(map => {
+        const newMap = new Map(map);
+        const current = newMap.get(videoId) || 0;
+        if (percent > current) {
+          newMap.set(videoId, percent);
+        }
+        return newMap;
+      });
+
+      this.dbService.put('watch_history', {
+        videoId: active.id,
+        title: active.title,
+        thumbnail: active.thumbnail,
+        author: active.author,
+        progress: this.watchedProgress().get(active.id) || percent,
+        watchedAt: Date.now()
+      }).catch(() => {});
+    }
   }
 }

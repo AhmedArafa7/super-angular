@@ -195,8 +195,25 @@ export class YoutubeDiscoveryService {
       const authorId = renderer.ownerText?.runs?.[0]?.navigationEndpoint?.browseEndpoint?.browseId || '';
       const published = renderer.publishedTimeText?.simpleText || renderer.videoInfo?.runs?.[0]?.text || '';
       const views = renderer.viewCountText?.simpleText || renderer.shortViewCountText?.simpleText || '';
-      const channelAvatar = renderer.channelThumbnail?.thumbnails?.[0]?.url;
-      const duration = renderer.lengthText?.simpleText || renderer.lengthText?.runs?.[0]?.text || '';
+      const channelAvatar = renderer.channelThumbnail?.thumbnails?.[0]?.url || 
+                            renderer.ownerThumbnail?.thumbnails?.[0]?.url || 
+                            renderer.videoOwnerRenderer?.thumbnail?.thumbnails?.[0]?.url;
+      
+      let duration = renderer.lengthText?.simpleText || 
+                     renderer.lengthText?.runs?.[0]?.text || 
+                     renderer.thumbnailOverlays?.[0]?.thumbnailOverlayTimeStatusRenderer?.text?.simpleText || '';
+      
+      if (!duration && renderer.approxDurationMs) {
+        const totalSeconds = Math.floor(Number(renderer.approxDurationMs) / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        if (hours > 0) {
+          duration = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        } else {
+          duration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+      }
 
       const isShorts = 
         title.toLowerCase().includes('#shorts') || 
