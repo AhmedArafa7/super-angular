@@ -3,7 +3,7 @@
     <img [src]="getAvatar()" [alt]="channelName" class="w-12 h-12 rounded-full object-cover border border-white/10 shrink-0" />
     <div class="channel-details">
       <h3>{{ channelName }}</h3>
-      <span class="subscribers">{{ subscriberCount || 'قناة مفيدة' }}</span>
+      <span class="subscribers">{{ subscriberCount || 'قناة WeTube' }}</span>
     </div>
     <button class="subscribe-btn" [class.subscribed]="isSubscribed" (click)="subscribe.emit()">
       <lucide-icon [img]="Plus"></lucide-icon>

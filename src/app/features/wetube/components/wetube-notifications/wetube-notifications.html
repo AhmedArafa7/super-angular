@@ -1,26 +1,58 @@
-<div class="notifications-container">
-  <h1>الإشعارات</h1>
-  <div class="notifications-list flex-1 w-full max-w-2xl mx-auto flex flex-col items-center justify-center pt-20">
-    <div *ngIf="notifications.length === 0" class="empty-state text-center flex flex-col items-center">
-      <div class="w-24 h-24 bg-slate-900/50 rounded-full flex items-center justify-center mb-6 border border-white/5">
-        <lucide-icon [img]="Bell" class="w-10 h-10 text-slate-500 opacity-50"></lucide-icon>
+<div class="notifications-container p-6 max-w-4xl mx-auto min-h-screen text-right" dir="rtl">
+  <div class="flex items-center justify-between mb-8 border-b border-white/10 pb-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+        <lucide-icon [img]="Bell" class="w-5 h-5"></lucide-icon>
       </div>
-      <h2 class="text-xl font-bold text-white mb-2">لا توجد إشعارات حالياً</h2>
-      <p class="text-sm text-slate-400 max-w-sm">الإشعارات المتعلقة بقنواتك المفضلة وتفاعلاتك ستظهر هنا.</p>
+      <h1 class="text-2xl font-bold text-white">الإشعارات والتحديثات</h1>
     </div>
+    @if (notifications().length > 0) {
+      <button (click)="markAllAsRead()" class="text-xs font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 transition-all">
+        <lucide-icon [img]="CheckCheck" class="w-4 h-4"></lucide-icon>
+        <span>تحديد الكل كُمقروء</span>
+      </button>
+    }
+  </div>
 
-    <div *ngFor="let notif of notifications" class="notification-item w-full" [class.unread]="!notif.read">
-      <div class="notif-icon" [ngSwitch]="notif.type">
-        <lucide-icon *ngSwitchCase="'video'" [img]="Video"></lucide-icon>
-        <lucide-icon *ngSwitchCase="'comment'" [img]="Bell"></lucide-icon>
-        <lucide-icon *ngSwitchCase="'subscribe'" [img]="User"></lucide-icon>
+  <div class="notifications-list w-full flex flex-col gap-3">
+    @if (notifications().length === 0) {
+      <div class="empty-state text-center flex flex-col items-center justify-center py-20 bg-slate-900/40 border border-white/5 rounded-3xl">
+        <div class="w-20 h-20 bg-slate-800/50 rounded-2xl flex items-center justify-center mb-4 border border-white/5 shadow-inner">
+          <lucide-icon [img]="Bell" class="w-9 h-9 text-slate-500 opacity-60"></lucide-icon>
+        </div>
+        <h2 class="text-lg font-bold text-white mb-1">لا توجد إشعارات حالياً</h2>
+        <p class="text-xs text-slate-400 max-w-sm leading-relaxed">الإشعارات المتعلقة بقنواتك المُشترَك بها والتحديثات المميزة تظهر هنا.</p>
       </div>
-      <div class="notif-content">
-        <p class="notif-channel">{{ notif.channel }}</p>
-        <p class="notif-message">{{ notif.message }}</p>
-        <p class="notif-time">{{ notif.time }}</p>
-      </div>
-      <div *ngIf="!notif.read" class="unread-dot"></div>
-    </div>
+    } @else {
+      @for (notif of notifications(); track notif.id) {
+        <div 
+          (click)="openNotification(notif)" 
+          class="notification-item group w-full p-4 rounded-2xl bg-slate-900/60 hover:bg-slate-800/80 border border-white/5 hover:border-indigo-500/30 transition-all cursor-pointer flex items-center justify-between gap-4 shadow-lg"
+          [class.opacity-60]="notif.read">
+          
+          <div class="flex items-center gap-4 flex-1">
+            <!-- Avatar / Thumbnail -->
+            <div class="relative shrink-0">
+              <img [src]="notif.avatar || 'assets/placeholder.jpg'" [alt]="notif.channel" class="w-12 h-12 rounded-xl object-cover border border-white/10 group-hover:scale-105 transition-transform" />
+              <div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-indigo-600 border border-slate-900 flex items-center justify-center text-white text-[10px]">
+                <lucide-icon [img]="notif.type === 'video' ? Video : Sparkles" class="w-3 h-3"></lucide-icon>
+              </div>
+            </div>
+
+            <!-- Content -->
+            <div class="flex flex-col gap-1 text-right flex-1">
+              <span class="text-xs font-black text-indigo-400">{{ notif.channel }}</span>
+              <p class="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors line-clamp-1">{{ notif.message }}</p>
+              <span class="text-[10px] text-slate-500 font-medium">{{ notif.time }}</span>
+            </div>
+          </div>
+
+          <!-- Unread Dot -->
+          @if (!notif.read) {
+            <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.8)] shrink-0"></span>
+          }
+        </div>
+      }
+    }
   </div>
 </div>

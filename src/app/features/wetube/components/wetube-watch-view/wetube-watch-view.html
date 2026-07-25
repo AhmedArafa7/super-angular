@@ -176,10 +176,23 @@
         <app-watch-sidebar></app-watch-sidebar>
       </div>
     </div>
-  } @else {
-    <div class="loading-container">
-      <div class="loading-spinner"></div>
-      <p>جاري التحميل...</p>
-    </div>
   }
 </div>
+
+<app-share-modal
+  [isOpen]="showShareModal()"
+  [videoUrl]="'https://youtu.be/' + (extractYoutubeId(video()?.url || id()) || id())"
+  (close)="closeShareModal()">
+</app-share-modal>
+
+<app-clip-modal
+  [isOpen]="showClipModal()"
+  (close)="closeClipModal()"
+  (create)="onClipCreate($event)">
+</app-clip-modal>
+
+<app-playlist-selector-modal
+  [isOpen]="showPlaylistModal()"
+  (close)="closePlaylistModal()"
+  (select)="onPlaylistSelect($event)">
+</app-playlist-selector-modal>

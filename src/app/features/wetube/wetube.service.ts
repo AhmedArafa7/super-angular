@@ -629,12 +629,18 @@ export class WeTubeService {
     const current = this.subscriptions();
     if (!current || current.length === 0) return false;
 
+    const normalize = (str?: string) => str ? str.trim().toLowerCase().replace(/[\u064B-\u0652]/g, '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه') : '';
+
     const cleanId = channelId?.trim();
-    const cleanTitle = channelTitle?.trim().toLowerCase();
+    const cleanTitle = normalize(channelTitle);
 
     return current.some(s => {
-      if (cleanId && (s.channelId === cleanId || s.id === cleanId)) return true;
-      if (cleanTitle && s.channelTitle && s.channelTitle.trim().toLowerCase() === cleanTitle) return true;
+      const sId = s.channelId || s.id;
+      if (cleanId && sId && (sId === cleanId || cleanId.includes(sId) || sId.includes(cleanId))) return true;
+      
+      const sTitle = normalize(s.channelTitle || (s as any).name || (s as any).title || (s as any).channelName || (s as any).author);
+      if (cleanTitle && sTitle && (sTitle === cleanTitle || sTitle.includes(cleanTitle) || cleanTitle.includes(sTitle))) return true;
+      
       return false;
     });
   }

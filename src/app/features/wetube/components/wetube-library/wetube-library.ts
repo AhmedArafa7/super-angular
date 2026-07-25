@@ -6,6 +6,8 @@ import { WeTubeService } from '../../wetube.service';
 import { IndexedDBService } from '../../../../core/services/indexed-db.service';
 import { VideoDownloadService } from '../../../../core/services/video-download.service';
 
+import { FirebaseService } from '../../../../core/services/firebase.service';
+
 @Component({
   selector: 'app-wetube-library',
   standalone: true,
@@ -88,11 +90,12 @@ import { VideoDownloadService } from '../../../../core/services/video-download.s
           <div class="w-full lg:w-80 shrink-0">
             <div class="bg-[#181818] rounded-2xl p-6 sticky top-24">
             <div class="flex flex-col items-center text-center border-b border-gray-800 pb-6 mb-6">
-              <div class="w-24 h-24 rounded-full bg-indigo-900 border-2 border-indigo-500 mb-4 flex items-center justify-center overflow-hidden">
-                <lucide-icon [img]="User" size="40" class="text-indigo-300"></lucide-icon>
+              <div class="w-24 h-24 rounded-full bg-indigo-900 border-2 border-indigo-500 mb-4 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
+                <img *ngIf="userAvatar" [src]="userAvatar" [alt]="userName" class="w-full h-full object-cover" />
+                <lucide-icon *ngIf="!userAvatar" [img]="User" size="40" class="text-indigo-300"></lucide-icon>
               </div>
-              <h2 class="text-lg font-bold">المستخدم الحالي</h2>
-              <p class="text-sm text-gray-400">@user_xyz</p>
+              <h2 class="text-lg font-bold text-white">{{ userName }}</h2>
+              <p class="text-sm text-gray-400" dir="ltr">{{ userHandle }}</p>
             </div>
 
             <div class="space-y-4">
@@ -127,8 +130,26 @@ import { VideoDownloadService } from '../../../../core/services/video-download.s
 })
 export class WeTubeLibraryComponent implements OnInit {
   wetube = inject(WeTubeService);
+  firebase = inject(FirebaseService);
   private idb = inject(IndexedDBService);
   private router = inject(Router);
+
+  get userName(): string {
+    const user = this.firebase.currentUser();
+    const data = this.firebase.userData();
+    return data?.name || user?.displayName || 'مستخدم WeTube';
+  }
+
+  get userHandle(): string {
+    const user = this.firebase.currentUser();
+    if (user?.email) return '@' + user.email.split('@')[0];
+    return '@user';
+  }
+
+  get userAvatar(): string | null {
+    const user = this.firebase.currentUser();
+    return user?.photoURL || null;
+  }
   
   Clock = Clock;
   Play = Play;

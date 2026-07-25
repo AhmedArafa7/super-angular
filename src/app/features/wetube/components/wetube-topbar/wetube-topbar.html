@@ -36,8 +36,12 @@
         <lucide-icon [img]="Search" class="w-4 h-4"></lucide-icon>
       </button>
     </div>
-    <button class="w-11 h-11 shrink-0 rounded-full bg-[#18181B] hover:bg-white/10 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-inner">
-      <lucide-icon [img]="Mic" class="w-5 h-5"></lucide-icon>
+    <button (click)="startVoiceSearch()" 
+            [class.animate-pulse]="isListening()"
+            [class.text-red-500]="isListening()"
+            class="w-11 h-11 shrink-0 rounded-full bg-[#18181B] hover:bg-white/10 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-inner" 
+            title="البحث الصوتي">
+      <lucide-icon [img]="isListening() ? MicOff : Mic" class="w-5 h-5"></lucide-icon>
     </button>
   </div>
 
@@ -51,13 +55,13 @@
     </button>
 
     <!-- Bell Icon -->
-    <button class="w-10 h-10 rounded-full hover:bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors relative">
+    <button [routerLink]="['/stream/notifications']" class="w-10 h-10 rounded-full hover:bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors relative" title="الإشعارات">
       <lucide-icon [img]="Bell" class="w-5 h-5"></lucide-icon>
       <div class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-[#0B0F19]"></div>
     </button>
 
     <!-- User Avatar -->
-    <div class="relative cursor-pointer hover:ring-2 ring-indigo-500/50 rounded-full transition-all">
+    <div [routerLink]="['/stream/studio']" class="relative cursor-pointer hover:ring-2 ring-indigo-500/50 rounded-full transition-all" title="WeTube Studio والملف الشخصي">
       <img [src]="userPhoto" 
            alt="User" 
            class="w-8 h-8 rounded-full object-cover border border-white/10">

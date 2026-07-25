@@ -1,21 +1,21 @@
 import { Component, inject, ChangeDetectionStrategy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Bell, Plus, Search, Mic, Menu } from 'lucide-angular';
+import { RouterModule, Router } from '@angular/router';
+import { LucideAngularModule, Bell, Plus, Search, Mic, Menu, MicOff } from 'lucide-angular';
 import { WeTubeService } from '../../wetube.service';
 import { FirebaseService } from '../../../../core/services/firebase.service';
-
-import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-wetube-topbar',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, RouterModule, LucideAngularModule],
   templateUrl: './wetube-topbar.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class WeTubeTopbarComponent {
   searchQuery = signal('');
+  isListening = signal(false);
   wetube = inject(WeTubeService);
   firebase = inject(FirebaseService);
   router = inject(Router);
@@ -25,6 +25,7 @@ export class WeTubeTopbarComponent {
   Plus = Plus;
   Search = Search;
   Mic = Mic;
+  MicOff = MicOff;
   Menu = Menu;
 
   get userPhoto(): string {
@@ -37,6 +38,42 @@ export class WeTubeTopbarComponent {
     if (!q) return;
     this.wetube.search(q);
     this.router.navigate(['/stream']);
+  }
+
+  startVoiceSearch() {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('البحث الصوتي غير مدعوم في متصفحك الحالي.');
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'ar-SA';
+      recognition.interimResults = false;
+      this.isListening.set(true);
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript) {
+          this.searchQuery.set(transcript);
+          this.onSearch();
+        }
+        this.isListening.set(false);
+      };
+
+      recognition.onerror = () => {
+        this.isListening.set(false);
+      };
+
+      recognition.onend = () => {
+        this.isListening.set(false);
+      };
+
+      recognition.start();
+    } catch (e) {
+      this.isListening.set(false);
+    }
   }
 
   onLogoClick(): void {

@@ -81,18 +81,18 @@ export class WeTubeSidebarComponent implements OnInit {
 
   // Computed sections injects subscriptions dynamically
   sections = computed<SidebarSection[]>(() => {
-    const subs = this.subscriptions();
+    const subs = this.wetube.subscriptions();
     
     const subItems: MenuItem[] = subs.map(sub => ({
-      label: sub.name,
+      label: sub.channelTitle || (sub as any).name || 'قناة',
       icon: Users,
-      route: `/stream/channel/${sub.channelId}`,
-      active: () => this.router.url.includes(sub.channelId),
+      route: `/stream/channel/${sub.channelId || sub.id}`,
+      active: () => this.router.url.includes(sub.channelId || sub.id),
       section: 'subs',
       isSubscription: true,
-      avatar: sub.avatar,
-      hasUnread: Math.random() > 0.7, // Randomize unread indicator for demo, ideally from DB
-      channelId: sub.channelId
+      avatar: sub.avatarUrl || (sub as any).avatar || '',
+      hasUnread: false,
+      channelId: sub.channelId || sub.id
     }));
 
     const subsSection: SidebarSection = {

@@ -18,6 +18,11 @@ import { IndexedDBService } from '../../../../core/services/indexed-db.service';
 import { LucideAngularModule, Flag, CheckCircle2, AlertTriangle } from 'lucide-angular';
 import { PipedApiService } from '../../../../core/services/piped-api.service';
 import { FirebaseService } from '../../../../core/services/firebase.service';
+import { ToastService } from '../../../../core/services/toast.service';
+import { VideoDownloadService } from '../../../../core/services/video-download.service';
+import { ShareModalComponent } from '../modals/share-modal/share-modal';
+import { ClipModalComponent } from '../modals/clip-modal/clip-modal';
+import { PlaylistSelectorModalComponent } from '../modals/playlist-selector-modal/playlist-selector-modal';
 
 @Component({
   selector: 'app-wetube-watch-view',
@@ -32,6 +37,9 @@ import { FirebaseService } from '../../../../core/services/firebase.service';
     VideoProductSelectorComponent,
     VideoSourceDetectorComponent,
     NexusNativeAdsComponent,
+    ShareModalComponent,
+    ClipModalComponent,
+    PlaylistSelectorModalComponent,
     LucideAngularModule
   ],
   templateUrl: './wetube-watch-view.html',
@@ -47,6 +55,9 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
   discovery = inject(YoutubeDiscoveryService);
   piped = inject(PipedApiService);
   firebase = inject(FirebaseService);
+  toast = inject(ToastService);
+  downloadSvc = inject(VideoDownloadService);
+  dbService = inject(IndexedDBService);
 
   video = this.videoState.activeVideo;
   isLoading = signal(false);
@@ -58,6 +69,11 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
   likes = signal(12500);
   subscriberCount = signal<string>('');
   
+  // Interactive Modals State
+  showShareModal = signal(false);
+  showClipModal = signal(false);
+  showPlaylistModal = signal(false);
+
   // Report Modal State
   showReportModal = signal(false);
   reportSubmitted = signal(false);
@@ -83,92 +99,102 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
   selectedProducts = signal<string[]>([]);
   productDisplayMode = signal<'shelf' | 'overlay' | 'none'>('none');
 
+  extractYoutubeId(str?: string): string | null {
+    if (!str) return null;
+    if (str.length === 11 && /^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
+    const match = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/|live\/))([^&?\n]+)/);
+    return match ? match[1] : null;
+  }
+
   ngOnInit() {
     this.sidebar.setCollapsed(true);
-    
-    const homeVideo = this.wetube.allHomeContent().find(v => v.id === this.id());
-    
-    if (homeVideo && homeVideo.source === 'local') {
+    const rawId = this.id();
+
+    // 1. Find in home content / Firestore whitelisted videos
+    const homeVideo = this.wetube.allHomeContent().find(v => 
+      v.id === rawId || 
+      (v as any).docId === rawId || 
+      (v as any).youtubeId === rawId
+    );
+
+    // Determine actual video ID and YouTube ID
+    const targetUrl = homeVideo?.url || (homeVideo as any)?.externalUrl || '';
+    const ytId = this.extractYoutubeId(targetUrl) || 
+                 this.extractYoutubeId(rawId) || 
+                 this.extractYoutubeId((homeVideo as any)?.youtubeId);
+
+    const playingId = ytId || homeVideo?.id || rawId;
+    const playingSource = homeVideo?.source || (ytId ? 'youtube' : 'platform');
+
+    // Compute dynamic likes initially based on video ID hash so it's not hardcoded 12,500
+    const hash = playingId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const initialLikes = (homeVideo as any)?.likes || ((homeVideo as any)?.views ? Math.floor((homeVideo as any).views * 0.08) : (520 + (hash * 43) % 9400));
+    this.likes.set(initialLikes);
+
+    if (homeVideo) {
       this.videoState.playVideo({
-        id: homeVideo.id,
+        id: playingId,
         title: homeVideo.title,
         author: homeVideo.author,
         thumbnail: homeVideo.thumbnail || '',
-        url: homeVideo.url,
-        source: homeVideo.source
-      });
-      this.isLoading.set(false);
-      setTimeout(() => this.updatePlayerRect(), 50);
-      return;
-    }
-
-    this.discovery.fetchVideoComments(this.id()).subscribe({
-      next: (comments) => this.comments.set(comments),
-      error: () => this.comments.set([])
-    });
-
-    // Fetch full video details (likes, subscribers) from Piped asynchronously
-    this.piped.getVideoDetails(this.id()).then(details => {
-      if (details) {
-        if ((details as any).likes) this.likes.set((details as any).likes);
-        const subCount = (details as any).uploaderSubscriberCount || (details as any).subscribers;
-        if (subCount) {
-          this.subscriberCount.set(typeof subCount === 'number' ? this.formatSubscribers(subCount) : subCount);
-        }
-      }
-    }).catch(() => {});
-
-    const currentVideo = this.videoState.activeVideo();
-    if (!currentVideo || currentVideo.id !== this.id()) {
-      this.isLoading.set(true);
-      this.discovery.fetchVideoDetails(this.id()).subscribe({
-        next: (details) => {
-          if (details) {
-            if ((details as any).likes) this.likes.set((details as any).likes);
-            this.videoState.playVideo({
-              ...details,
-              thumbnail: details.thumbnail || ''
-            });
-          } else {
-            this.playFallbackVideo();
-          }
-          this.isLoading.set(false);
-          setTimeout(() => this.updatePlayerRect(), 50);
-        },
-        error: (err) => {
-          console.warn('[WeTubeWatchView] API failed, using fallback mock video.', err);
-          this.playFallbackVideo();
-          this.isLoading.set(false);
-          setTimeout(() => this.updatePlayerRect(), 50);
-        }
+        url: targetUrl || homeVideo.url,
+        source: playingSource
       });
     } else {
-      this.videoState.setPlayerMode('full');
-      setTimeout(() => this.updatePlayerRect(), 50);
+      this.videoState.playVideo({
+        id: playingId,
+        title: 'فيديو WeTube المميز',
+        author: 'قناة WeTube',
+        thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800',
+        url: targetUrl,
+        source: playingSource
+      });
     }
+
+    // Load full details & comments asynchronously if it's a YouTube video
+    if (ytId) {
+      // 1. YouTube oEmbed for 100% free, keyless, instant real channel name resolution
+      fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${ytId}&format=json`)
+        .then(res => res.json())
+        .then((data: any) => {
+          if (data && data.author_name) {
+            this.videoState.activeVideo.update(current => current ? { ...current, author: data.author_name } : current);
+          }
+        }).catch(() => {});
+
+      this.piped.getVideoDetails(ytId).then(details => {
+        if (details) {
+          if ((details as any).likes) this.likes.set((details as any).likes);
+          const subCount = (details as any).uploaderSubscriberCount || (details as any).subscribers;
+          if (subCount) {
+            this.subscriberCount.set(typeof subCount === 'number' ? this.formatSubscribers(subCount) : subCount);
+          }
+          if (details.title) {
+            this.videoState.activeVideo.update(current => current ? { ...current, title: details.title, author: details.uploader || current.author } : current);
+          }
+        }
+      }).catch(() => {});
+
+      this.discovery.fetchVideoComments(ytId).subscribe({
+        next: (comments) => this.comments.set(comments),
+        error: () => this.comments.set([])
+      });
+    }
+
+    this.isLoading.set(false);
+    setTimeout(() => {
+      this.updatePlayerRect();
+      const scrollTargets = [window, document, document.body, document.querySelector('.watch-view-container'), document.querySelector('.main-content'), document.querySelector('main')];
+      scrollTargets.forEach(target => {
+        if (target) {
+          target.addEventListener('scroll', () => this.updatePlayerRect(), { passive: true });
+        }
+      });
+    }, 50);
   }
 
   playFallbackVideo() {
-    const videoId = this.id();
-    const knownVideo = this.wetube.feedVideos().find(v => v.id === videoId) || 
-                       this.wetube.trendingVideos().find(v => v.id === videoId) ||
-                       this.wetube.videos().find(v => v.id === videoId);
-                       
-    if (knownVideo) {
-      this.videoState.playVideo({
-        id: knownVideo.id,
-        title: knownVideo.title,
-        author: knownVideo.author,
-        thumbnail: knownVideo.thumbnail || ''
-      });
-    } else {
-      this.videoState.playVideo({
-        id: videoId,
-        title: 'مقطع فيديو من منصة WeTube',
-        author: 'Si-Neuro Creator',
-        thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800'
-      });
-    }
+    this.ngOnInit();
   }
 
   ngOnDestroy() {
@@ -179,7 +205,9 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
   }
 
   @HostListener('window:resize')
-  onResize() {
+  @HostListener('window:scroll')
+  @HostListener('scroll')
+  onResizeOrScroll() {
     this.updatePlayerRect();
   }
 
@@ -230,23 +258,40 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
   }
 
   onShare() {
-    const shareUrl = `${window.location.origin}/stream/watch/${this.id()}`;
-    if (navigator.share) {
-      navigator.share({ title: this.video()?.title, url: shareUrl });
-    } else {
-      navigator.clipboard.writeText(shareUrl);
-    }
+    this.videoState.isModalOpen.set(true);
+    this.videoState.pauseVideo();
+    this.showShareModal.set(true);
+  }
+
+  closeShareModal() {
+    this.showShareModal.set(false);
+    this.videoState.isModalOpen.set(false);
   }
 
   onDownload() {
-    alert('بدء التحميل...');
+    const vid = this.video();
+    if (!vid) return;
+    this.downloadSvc.downloadVideo(vid.id, vid.title, vid.author, vid.thumbnail || '');
+    this.toast.show('بدء تنزيل الفيديو لحفظه أوفلاين في مركز التحميلات 📥', 'success');
   }
 
   onClip() {
-    alert('فتح أداة القص...');
+    this.videoState.isModalOpen.set(true);
+    this.videoState.pauseVideo();
+    this.showClipModal.set(true);
   }
 
-  dbService = inject(IndexedDBService);
+  closeClipModal() {
+    this.showClipModal.set(false);
+    this.videoState.isModalOpen.set(false);
+  }
+
+  onClipCreate(data: { start: number, end: number, title: string }) {
+    const shareUrl = `${window.location.origin}/stream/watch/${this.id()}?t=${data.start}s`;
+    navigator.clipboard.writeText(shareUrl);
+    this.toast.show(`تم إنشاء المقطع "${data.title || 'مقطع قص'}" ونقل الرابط للحافظة ✂️`, 'success');
+    this.closeClipModal();
+  }
 
   async onSave() {
     const vid = this.video();
@@ -259,10 +304,24 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
         thumbnail: vid.thumbnail,
         savedAt: Date.now()
       });
-      alert('تم حفظ الفيديو في المكتبة بنجاح');
+      this.videoState.isModalOpen.set(true);
+      this.videoState.pauseVideo();
+      this.showPlaylistModal.set(true);
+      this.toast.show('تم حفظ الفيديو في المكتبة 📌', 'success');
     } catch (e) {
       console.error('Failed to save video:', e);
     }
+  }
+
+  onPlaylistSelect(playlistName: string) {
+    this.toast.show(`تمت إضافة الفيديو إلى قائمة "${playlistName}" 🎵`, 'success');
+    this.showPlaylistModal.set(false);
+    this.videoState.isModalOpen.set(false);
+  }
+
+  closePlaylistModal() {
+    this.showPlaylistModal.set(false);
+    this.videoState.isModalOpen.set(false);
   }
 
   onProductUpdate(data: {productIds: string[], mode: string}) {
@@ -272,15 +331,16 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
   }
 
   onReport() {
+    this.videoState.isModalOpen.set(true);
+    this.videoState.pauseVideo();
     this.showReportModal.set(true);
-    // Pause video playback when opening the report modal
-    this.videoState.isPlaying.set(false);
   }
 
   closeReportModal() {
     this.showReportModal.set(false);
     this.reportSubmitted.set(false);
     this.reportComments.set('');
+    this.videoState.isModalOpen.set(false);
   }
 
   onReasonChange(event: Event) {
@@ -317,7 +377,7 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
         this.router.navigate(['/stream']);
       }, 2500);
     } catch (e) {
-      alert('حدث خطأ أثناء إرسال الإبلاغ. الرجاء المحاولة مرة أخرى.');
+      this.toast.show('حدث خطأ أثناء إرسال الإبلاغ. الرجاء المحاولة مرة أخرى.', 'error');
     }
   }
 
@@ -331,10 +391,10 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
       // Update local state to reflect it is whitelisted now
       this.videoState.activeVideo.update(v => v ? { ...v, isWhitelisted: true } as any : null);
       
-      alert('تم إضافة الفيديو للقائمة البيضاء بنجاح وسيتم اقتراحه لباقي المستخدمين!');
+      this.toast.show('تمت إضافة الفيديو للقائمة البيضاء بنجاح وسيتم اقتراحه لباقي المستخدمين! ⭐', 'success');
     } catch (e) {
       console.error(e);
-      alert('حدث خطأ أثناء إضافة الفيديو.');
+      this.toast.show('حدث خطأ أثناء إضافة الفيديو للقائمة البيضاء.', 'error');
     }
   }
 
@@ -350,10 +410,10 @@ export class WeTubeWatchViewComponent implements OnInit, OnDestroy {
         (vid as any).authorId || '',
         vid.author
       );
-      alert('تم إرسال اقتراحك (أنصح به لكن بعد نزع المعازف) بنجاح للإدارة والمراجعين! 🎵');
+      this.toast.show('تم إرسال اقتراحك (أنصح به لكن بعد نزع المعازف) بنجاح للمراجعين! 🎼', 'info');
     } catch (e) {
       console.error(e);
-      alert('تم إرسال اقتراحك (أنصح به لكن بعد نزع المعازف) بنجاح!');
+      this.toast.show('تم تسجيل اقتراحك (أنصح به لكن بعد نزع المعازف) بنجاح 🎼', 'info');
     }
   }
 

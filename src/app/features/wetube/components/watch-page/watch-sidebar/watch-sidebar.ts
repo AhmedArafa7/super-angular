@@ -6,6 +6,8 @@ import { ContextMenuService } from '../../../../../shared/components/context-men
 import { ContextMenuItem } from '../../../../../shared/components/context-menu/context-menu.model';
 import { LucideAngularModule, MoreVertical, ListPlus, BookmarkPlus, Download, Share2, VideoOff, Loader2 } from 'lucide-angular';
 
+import { WeTubeService } from '../../../wetube.service';
+
 @Component({
   selector: 'app-watch-sidebar',
   standalone: true,
@@ -15,6 +17,7 @@ import { LucideAngularModule, MoreVertical, ListPlus, BookmarkPlus, Download, Sh
 })
 export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   videoState = inject(VideoStateService);
+  wetube = inject(WeTubeService);
   router = inject(Router);
   contextMenu = inject(ContextMenuService);
 
@@ -42,14 +45,13 @@ export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   // Computed state for filtered and paginated videos
   filteredVideos = computed(() => {
     let videos = this.videoState.relatedVideos() || [];
+    if (!videos || videos.length === 0) {
+      videos = this.wetube.allHomeContent() || [];
+    }
     const cat = this.activeCategory();
     
-    // Basic mock filtering since Piped API doesn't return explicit categories for related streams
-    // We just shuffle or slice to simulate filtering
     if (cat === 'نفس القناة') {
-       // Only videos from the same uploader if we had that data easily accessible in related streams
-       // For now, we return a subset or just all.
-       videos = videos.slice(0, Math.floor(videos.length / 2));
+       videos = videos.slice(0, Math.max(2, Math.floor(videos.length / 2)));
     } else if (cat === 'حديثاً') {
        videos = [...videos].reverse();
     }

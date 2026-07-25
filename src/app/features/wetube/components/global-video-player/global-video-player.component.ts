@@ -1,4 +1,4 @@
-import { Component, inject, ViewChild, ElementRef, ChangeDetectionStrategy, effect, signal } from '@angular/core';
+import { Component, inject, ViewChild, ElementRef, ChangeDetectionStrategy, effect, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { VideoStateService } from '../../../../core/services/video-state.service';
@@ -12,7 +12,8 @@ import { SafePipe } from '../../../../core/pipes/safe.pipe'; // Need to ensure w
   template: `
     @if (videoState.playerMode() !== 'hidden' && videoState.activeVideo()) {
       <div 
-        class="global-player-wrapper transition-all duration-300 rounded-2xl shadow-2xl overflow-hidden border border-white/10 bg-slate-950"
+        class="global-player-wrapper transition-all duration-300 rounded-2xl shadow-2xl overflow-hidden border border-white/10 bg-slate-950 cursor-pointer"
+        [style.display]="videoState.isModalOpen() ? 'none' : 'block'"
         [style.position]="'fixed'"
         [style.z-index]="videoState.playerMode() === 'floating' ? '9999' : '40'"
         [style.background]="'black'"
@@ -22,6 +23,7 @@ import { SafePipe } from '../../../../core/pipes/safe.pipe'; // Need to ensure w
         [style.right]="videoState.playerMode() === 'floating' ? '24px' : 'auto'"
         [style.width]="videoState.playerMode() === 'full' ? (videoState.playerRect()?.width + 'px') : '320px'"
         [style.height]="videoState.playerMode() === 'full' ? (videoState.playerRect()?.height + 'px') : '180px'"
+        (click)="onPlayerWrapperClick($event)"
       >
         <!-- Loading State -->
         @if (videoState.isLoading()) {
@@ -154,24 +156,37 @@ export class GlobalVideoPlayerComponent {
     });
 
     effect(() => {
-      // Sync play/pause state
+      // Sync play/pause state & modal state
       const isPlaying = this.videoState.isPlaying();
+      const isModal = this.videoState.isModalOpen();
       const video = this.nativeVideoEl?.nativeElement;
+      const shouldPlay = isPlaying && !isModal;
+
       if (video) {
-        if (isPlaying && video.paused) {
+        if (shouldPlay && video.paused) {
           video.play().catch(e => console.warn('Auto-play prevented', e));
-        } else if (!isPlaying && !video.paused) {
+        } else if (!shouldPlay && !video.paused) {
           video.pause();
         }
         
         // Handle Ambient Mode Extraction interval
-        if (isPlaying) {
+        if (shouldPlay) {
           this.startAmbientExtraction();
         } else {
           this.stopAmbientExtraction();
         }
       } else {
         this.stopAmbientExtraction();
+      }
+
+      // If shouldPlay is false, pause YouTube iframe via postMessage as well
+      if (!shouldPlay) {
+        try {
+          const iframes = document.querySelectorAll('iframe');
+          iframes.forEach(iframe => {
+            iframe.contentWindow?.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+          });
+        } catch (e) {}
       }
     });
   }
@@ -214,6 +229,110 @@ export class GlobalVideoPlayerComponent {
 
   ngOnDestroy() {
     this.stopAmbientExtraction();
+  }
+
+  onPlayerWrapperClick(event: MouseEvent) {
+    if (this.videoState.playerMode() === 'floating') {
+      const target = event.target as HTMLElement;
+      if (!target.closest('button')) {
+        this.expandPlayer();
+      }
+    }
+  }
+
+  minimizeToMiniplayer() {
+    this.videoState.setPlayerMode('floating');
+    if (this.router.url.includes('/stream/watch/')) {
+      this.router.navigate(['/stream']);
+    }
+  }
+
+  toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyboardEvent(event: KeyboardEvent) {
+    // Ignore keyboard shortcuts if typing in text inputs or textareas
+    const activeEl = document.activeElement;
+    if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || (activeEl as HTMLElement).isContentEditable)) {
+      return;
+    }
+
+    const vid = this.videoState.activeVideo();
+    if (!vid || this.videoState.playerMode() === 'hidden') return;
+
+    const key = event.key;
+
+    switch (key.toLowerCase()) {
+      case 'i':
+        event.preventDefault();
+        if (this.videoState.playerMode() === 'floating') {
+          this.expandPlayer();
+        } else {
+          this.minimizeToMiniplayer();
+        }
+        break;
+
+      case 'k':
+      case ' ':
+        event.preventDefault();
+        this.videoState.togglePlayPause();
+        break;
+
+      case 'j':
+        event.preventDefault();
+        this.videoState.seekTo(Math.max(0, this.videoState.currentTime() - 10));
+        break;
+
+      case 'l':
+        event.preventDefault();
+        this.videoState.seekTo(Math.min(this.videoState.duration() || 100, this.videoState.currentTime() + 10));
+        break;
+
+      case 'arrowleft':
+        event.preventDefault();
+        this.videoState.seekTo(Math.max(0, this.videoState.currentTime() - 5));
+        break;
+
+      case 'arrowright':
+        event.preventDefault();
+        this.videoState.seekTo(Math.min(this.videoState.duration() || 100, this.videoState.currentTime() + 5));
+        break;
+
+      case 'arrowup':
+        event.preventDefault();
+        this.videoState.volume.update(v => Math.min(1, v + 0.05));
+        this.videoState.isMuted.set(false);
+        break;
+
+      case 'arrowdown':
+        event.preventDefault();
+        this.videoState.volume.update(v => Math.max(0, v - 0.05));
+        break;
+
+      case 'm':
+        event.preventDefault();
+        this.videoState.isMuted.update(m => !m);
+        break;
+
+      case 'f':
+        event.preventDefault();
+        this.toggleFullscreen();
+        break;
+
+      default:
+        if (/^[0-9]$/.test(key) && this.videoState.duration() > 0) {
+          event.preventDefault();
+          const percent = parseInt(key, 10) * 0.10;
+          this.videoState.seekTo(this.videoState.duration() * percent);
+        }
+        break;
+    }
   }
 
   getIframeUrl(): string {

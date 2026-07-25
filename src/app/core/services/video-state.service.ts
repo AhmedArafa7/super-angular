@@ -51,11 +51,18 @@ export class VideoStateService {
   // Position for seamless Full <-> Floating transition
   readonly playerRect = signal<DOMRect | null>(null);
 
+  // Modal Coordination (Pause video & lower player z-index when modal is active)
+  readonly isModalOpen = signal<boolean>(false);
+
   // Shorts State Coordination
   readonly isShortsMuted = signal<boolean>(true); // All shorts start muted per policies
 
   // Commands
   readonly seekCommand = signal<number | null>(null);
+
+  pauseVideo() {
+    this.isPlaying.set(false);
+  }
 
   notifyShortsStarted() {
     // Coordinate with Global Player: pause it if a short starts
