@@ -17,8 +17,8 @@ import { QueryDocumentSnapshot } from 'firebase/firestore';
 export class WeTubeModerationComponent implements OnInit {
   private firebase = inject(FirebaseService);
 
-  // Tabs: 'pending' | 'approved' | 'rejected' | 'channels' | 'local_storage'
-  activeSubTab = signal<'pending' | 'approved' | 'rejected' | 'channels' | 'local_storage'>('pending');
+  // Tabs: 'pending' | 'approved' | 'rejected' | 'channels' | 'local_storage' | 'whitelisted_channels'
+  activeSubTab = signal<'pending' | 'approved' | 'rejected' | 'channels' | 'local_storage' | 'whitelisted_channels'>('pending');
 
   // Video Signals
   pendingVideos = signal<any[]>([]);
@@ -26,6 +26,8 @@ export class WeTubeModerationComponent implements OnInit {
   rejectedVideos = signal<any[]>([]);
   blacklistedChannels = signal<any[]>([]);
   localStoredVideos = signal<any[]>([]);
+  whitelistedChannels = signal<any[]>([]);
+  selectedChannel = signal<any | null>(null);
 
   // Pagination Trackers
   lastPendingDoc = signal<QueryDocumentSnapshot | null>(null);
@@ -62,13 +64,46 @@ export class WeTubeModerationComponent implements OnInit {
     this.loadData();
   }
 
-  setTab(tab: 'pending' | 'approved' | 'rejected' | 'channels' | 'local_storage') {
+  setTab(tab: 'pending' | 'approved' | 'rejected' | 'channels' | 'local_storage' | 'whitelisted_channels') {
     this.activeSubTab.set(tab);
     if (this.needsLoading(tab)) {
       this.loadData();
     }
     if (tab === 'local_storage') {
       this.loadLocalStorage();
+    }
+    if (tab === 'whitelisted_channels' && this.whitelistedChannels().length === 0) {
+      this.loadWhitelistedChannels();
+    }
+  }
+
+  async loadWhitelistedChannels() {
+    this.isLoading.set(true);
+    try {
+      const { videos } = await this.firebase.getVideosByStatus('published', undefined, 200);
+      const channelMap = new Map<string, { authorId: string; author: string; count: number; thumbnail: string; videos: any[] }>();
+      
+      for (const v of videos) {
+        const key = v.authorId || v.author || 'unknown';
+        if (!channelMap.has(key)) {
+          channelMap.set(key, {
+            authorId: v.authorId || key,
+            author: v.author || 'قناة غير معروفة',
+            count: 0,
+            thumbnail: v.thumbnail || '',
+            videos: []
+          });
+        }
+        const entry = channelMap.get(key)!;
+        entry.count++;
+        entry.videos.push(v);
+      }
+
+      this.whitelistedChannels.set(Array.from(channelMap.values()));
+    } catch (e) {
+      console.error('Failed to load whitelisted channels', e);
+    } finally {
+      this.isLoading.set(false);
     }
   }
 
@@ -227,6 +262,38 @@ export class WeTubeModerationComponent implements OnInit {
       this.blacklistedChannels.update(list => [channel, ...list]);
       console.error('Failed to unban channel', err);
       alert('فشل فك الحظر عن القناة.');
+    }
+  }
+
+  inspectChannel(channel: any) {
+    this.selectedChannel.set(channel);
+  }
+
+  closeChannelModal() {
+    this.selectedChannel.set(null);
+  }
+
+  async revokeChannelApproval(channel: any) {
+    if (!confirm(`هل أنت متأكد من إلغاء اعتماد قناة "${channel.author}" وحظرها وإزالة جميع فيديوهاتها (${channel.videos.length})؟`)) {
+      return;
+    }
+
+    this.isLoading.set(true);
+    try {
+      await this.firebase.blacklistChannel(channel.authorId, channel.author);
+
+      for (const video of channel.videos) {
+        await this.firebase.updateVideoStatus(video.id, 'rejected');
+      }
+
+      this.whitelistedChannels.update(list => list.filter(c => c.authorId !== channel.authorId));
+      this.selectedChannel.set(null);
+      alert(`تم بنجاح إلغاء اعتماد القناة وحظرها وإزالة ${channel.videos.length} فيديو.`);
+    } catch (e) {
+      console.error('Failed to revoke channel approval', e);
+      alert('حدث خطأ أثناء إلغاء اعتماد القناة.');
+    } finally {
+      this.isLoading.set(false);
     }
   }
 }

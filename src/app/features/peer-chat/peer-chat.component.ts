@@ -1,8 +1,8 @@
-import { Component, signal, computed, inject } from '@angular/core';
+import { Component, signal, computed, inject, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideDynamicIcon } from '@lucide/angular';
-import { PeerChatService, PeerContact, PeerMessage, MessageType } from '../../core/peer-chat.service';
+import { PeerChatService, PeerContact } from '../../core/peer-chat.service';
 
 @Component({
   selector: 'app-peer-chat',
@@ -11,8 +11,9 @@ import { PeerChatService, PeerContact, PeerMessage, MessageType } from '../../co
   templateUrl: './peer-chat.component.html',
   styleUrls: ['./peer-chat.component.scss']
 })
-export class PeerChatComponent {
+export class PeerChatComponent implements OnDestroy {
   chatService = inject(PeerChatService);
+  private unsubscribeChat: (() => void) | null = null;
 
   // States
   searchQuery = signal<string>('');
@@ -69,25 +70,28 @@ export class PeerChatComponent {
 
   // Selected contact details
   activeContact = computed(() => {
-    return this.chatService.contacts().find(c => c.id === this.selectedId());
+    return this.chatService.contacts().find((c: PeerContact) => c.id === this.selectedId());
   });
 
-  // Current chat messages list filter
+  // Current chat messages list
   activeChatMessages = computed(() => {
-    const targetId = this.selectedId();
-    if (!targetId) return [];
-    const chatId = this.chatService.getChatId('me', targetId);
-    return this.chatService.messages().filter(m => m.chatId === chatId);
+    return this.chatService.messages();
   });
+
+  ngOnDestroy() {
+    if (this.unsubscribeChat) this.unsubscribeChat();
+  }
 
   // Select contact node trigger
   selectContact(c: PeerContact): void {
+    // إلغاء الاتصال السابق إن وجد
+    if (this.unsubscribeChat) this.unsubscribeChat();
+
     this.selectedId.set(c.id);
     this.viewMode.set('chat');
     
-    // Mark as read
-    const chatId = this.chatService.getChatId('me', c.id);
-    this.chatService.markAsRead(chatId);
+    // الاتصال الجديد بـ Firebase عبر الـ Service
+    this.unsubscribeChat = this.chatService.loadMessages('me', c.id);
   }
 
   // Check if contact has unread messages
@@ -104,10 +108,6 @@ export class PeerChatComponent {
 
     this.chatService.sendMessage('me', targetId, text, 'text');
     this.textInput.set('');
-
-    // Auto mark read
-    const chatId = this.chatService.getChatId('me', targetId);
-    setTimeout(() => this.chatService.markAsRead(chatId), 100);
   }
 
   // Simulate file / image upload

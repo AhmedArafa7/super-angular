@@ -247,7 +247,7 @@
             
             <!-- Image attachments renders -->
             <div *ngIf="msg.type === 'image' && msg.imageUrl" class="mb-2 rounded-xl overflow-hidden border border-white/10 bg-black/20">
-              <img [src]="msg.imageUrl" alt="Attachment" class="max-w-full h-auto object-cover cursor-pointer hover:opacity-90" (click)="chatService.saveState()" />
+              <img [src]="msg.imageUrl" alt="Attachment" class="max-w-full h-auto object-cover cursor-pointer hover:opacity-90" />
             </div>
 
             <!-- Documents download attachments renders -->

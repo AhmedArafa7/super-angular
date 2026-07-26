@@ -214,7 +214,7 @@ export class WeTubeService {
 
     // Recommendation Sorting: prioritizing user's favorite categories, then sorting by _shuffleOrder
     const catWeights = config.categoryWeights || {};
-    return combined.sort((a, b) => {
+    const sorted = combined.sort((a, b) => {
       const weightA = catWeights[a.category || ''] || 5;
       const weightB = catWeights[b.category || ''] || 5;
       
@@ -227,7 +227,37 @@ export class WeTubeService {
       const orderB = (b as any)._shuffleOrder !== undefined ? (b as any)._shuffleOrder : Math.random();
       return orderA - orderB;
     });
+
+    // Enforce channel diversity so videos from the same channel are never clustered together
+    return this.enforceChannelDiversity(sorted);
   });
+
+  private enforceChannelDiversity<T extends { author?: string }>(videos: T[]): T[] {
+    const authorMap = new Map<string, T[]>();
+    for (const v of videos) {
+      const author = v.author || 'Unknown';
+      if (!authorMap.has(author)) {
+        authorMap.set(author, []);
+      }
+      authorMap.get(author)!.push(v);
+    }
+
+    const authorLists = Array.from(authorMap.values());
+    authorLists.sort((a, b) => b.length - a.length);
+
+    const result: T[] = [];
+    let added = true;
+    while (added) {
+      added = false;
+      for (const list of authorLists) {
+        if (list.length > 0) {
+          result.push(list.shift()!);
+          added = true;
+        }
+      }
+    }
+    return result;
+  }
 
   // Actions
   setActiveTab(tab: WeTubeTab) {

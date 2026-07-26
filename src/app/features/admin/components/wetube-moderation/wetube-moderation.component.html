@@ -42,6 +42,18 @@
       القنوات المحظورة
     </button>
 
+    <!-- Whitelisted Channels Tab -->
+    <button 
+      (click)="setTab('whitelisted_channels')"
+      [ngClass]="activeSubTab() === 'whitelisted_channels' ? 'bg-cyan-500/20 text-cyan-400 font-black' : 'text-slate-400 hover:text-white font-bold hover:bg-white/5'"
+      class="h-10 px-6 rounded-xl text-xs transition-all flex items-center gap-2 flex-row-reverse">
+      <lucide-icon [img]="ShieldCheck" class="size-4"></lucide-icon>
+      القنوات المعتمدة تلقائياً
+      @if (whitelistedChannels().length > 0) {
+        <span class="size-5 rounded-full bg-cyan-500 text-slate-900 flex items-center justify-center text-[10px]">{{ whitelistedChannels().length }}</span>
+      }
+    </button>
+
     <!-- Founder Debug Tab -->
     <button 
       (click)="setTab('local_storage')"
@@ -220,6 +232,87 @@
           <button (click)="loadData()" [disabled]="isLoading()" class="h-10 px-8 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50">تحميل المزيد</button>
         </div>
       }
+    </div>
+  }
+
+  <!-- 5. WHITELISTED CHANNELS -->
+  @if (activeSubTab() === 'whitelisted_channels') {
+    <div class="bg-slate-900/40 border border-white/5 rounded-3xl p-6">
+      <div class="flex items-center justify-between mb-6 flex-row-reverse">
+        <h3 class="text-lg font-black text-white">القنوات المعتمدة تلقائياً (القائمة البيضاء)</h3>
+        <span class="text-xs font-bold text-slate-400">القنوات التي تم اعتماد محتواها وظهوره في المنصة بناءً على الفيديوهات المنشورة.</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        @for (channel of whitelistedChannels(); track channel.authorId) {
+          <div (click)="inspectChannel(channel)" class="flex items-center justify-between bg-white/5 p-4 rounded-2xl flex-row-reverse border border-white/5 hover:border-cyan-500/50 cursor-pointer transition-all group">
+            <div class="flex items-center gap-3 flex-row-reverse">
+              <div class="size-10 rounded-full bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center font-bold text-sm group-hover:bg-cyan-500 group-hover:text-black transition-colors">
+                {{ channel.author ? channel.author.charAt(0) : 'C' }}
+              </div>
+              <div class="text-right">
+                <h4 class="text-sm font-black text-white group-hover:text-cyan-400 transition-colors">{{ channel.author }}</h4>
+                <p class="text-[10px] text-cyan-400 font-bold mt-0.5">{{ channel.count }} فيديو معتمد (انقر للعرض)</p>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-lg bg-cyan-500/10 text-cyan-300 text-[10px] font-bold border border-cyan-500/20">معتمدة تلقائياً</span>
+          </div>
+        }
+        @if (whitelistedChannels().length === 0 && !isLoading()) {
+          <div class="col-span-full text-center py-10 text-slate-500 text-xs font-bold">لا توجد قنوات معتمدة حتى الآن.</div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Channel Inspector Modal -->
+  @if (selectedChannel()) {
+    <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in" dir="rtl">
+      <div class="bg-slate-900 border border-white/10 rounded-3xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col gap-6 text-right">
+        
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between border-b border-white/10 pb-4">
+          <div>
+            <h2 class="text-lg font-black text-white">{{ selectedChannel().author }}</h2>
+            <p class="text-xs text-slate-400 font-mono mt-1">Channel ID: {{ selectedChannel().authorId }} | إجمالي الفيديوهات: {{ selectedChannel().count }}</p>
+          </div>
+          <button (click)="closeChannelModal()" class="size-10 rounded-xl bg-white/5 hover:bg-white/10 text-white flex items-center justify-center font-bold">✕</button>
+        </div>
+
+        <!-- Channel Videos Grid -->
+        <div>
+          <h3 class="text-sm font-bold text-slate-300 mb-3">فيديوهات القناة المعتمدة:</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            @for (video of selectedChannel().videos; track video.id) {
+              <div class="bg-slate-950/60 border border-white/5 rounded-2xl overflow-hidden flex flex-col">
+                <div class="aspect-video relative">
+                  <img [src]="getSafeThumbnail(video)" class="w-full h-full object-cover">
+                </div>
+                <div class="p-3 flex-1 flex flex-col">
+                  <h4 class="text-xs font-bold text-white line-clamp-2 mb-2">{{ video.title }}</h4>
+                  <a [routerLink]="['/stream/watch', video.id]" class="mt-auto text-[11px] text-cyan-400 hover:underline flex items-center gap-1 no-underline">
+                    مشاهدة الفيديو داخل المنصة ↗
+                  </a>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Danger Zone: Revoke Channel Approval -->
+        <div class="border-t border-rose-500/20 pt-4 flex items-center justify-between mt-4">
+          <div>
+            <h4 class="text-sm font-black text-rose-400">منطقة الخطر: إلغاء اعتماد القناة</h4>
+            <p class="text-[11px] text-slate-400">إلغاء الاعتماد سيقوم بحظر القناة وإزالة جميع فيديوهاتها من المنصة فوراً.</p>
+          </div>
+          <button 
+            (click)="revokeChannelApproval(selectedChannel())"
+            class="h-10 px-6 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-black transition-all">
+            إلغاء اعتماد القناة وحظرها
+          </button>
+        </div>
+
+      </div>
     </div>
   }
 
