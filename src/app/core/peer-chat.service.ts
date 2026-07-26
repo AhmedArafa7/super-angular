@@ -36,15 +36,16 @@ export class PeerChatService {
   activeChatId = signal<string | null>(null);
   whatsappConnected = signal<boolean>(false);
 
+  private lastMessageTimestamps = new Map<string, number>();
+
   constructor() {
     this.initContacts();
   }
 
   private initContacts(): void {
     const usersRef = collection(this.firebase.firestore, 'users');
-    const q = query(usersRef, limit(50));
-
-    onSnapshot(q, (snapshot) => {
+    
+    onSnapshot(usersRef, (snapshot) => {
       const contacts = snapshot.docs.map(doc => {
         const data = doc.data() as any;
         return {
@@ -52,13 +53,23 @@ export class PeerChatService {
           name: data.displayName || data.name || 'مستخدم',
           username: data.username || 'guest',
           avatar_url: data.photoURL || data.avatar_url || 'https://picsum.photos/100',
-          status: 'online', // يمكن تحديثها لاحقاً بناءً على آخر نشاط
+          status: 'online',
           platform: 'Si-Neuro',
           bio: data.bio || 'عضو في الشبكة العصبية'
         } as PeerContact;
       });
-      this.contacts.set(contacts);
+
+      this.sortContacts(contacts);
     });
+  }
+
+  private sortContacts(contacts: PeerContact[]): void {
+    const sorted = [...contacts].sort((a, b) => {
+      const timeA = this.lastMessageTimestamps.get(this.getChatId('me', a.id)) || 0;
+      const timeB = this.lastMessageTimestamps.get(this.getChatId('me', b.id)) || 0;
+      return timeB - timeA;
+    });
+    this.contacts.set(sorted);
   }
 
   // جلب الرسائل لحظياً من Firestore
@@ -70,11 +81,22 @@ export class PeerChatService {
     const q = query(messagesRef, orderBy('timestamp', 'asc'), limit(100));
 
     return onSnapshot(q, (snapshot) => {
-      const messages = snapshot.docs.map(d => ({
-        id: d.id,
-        chatId: chatId,
-        ...d.data()
-      } as PeerMessage));
+      const messages = snapshot.docs.map(d => {
+          const data = d.data() as any;
+          return {
+            id: d.id,
+            chatId: chatId,
+            ...data
+          } as PeerMessage;
+      });
+      
+      if (messages.length > 0) {
+        const lastMsg = messages[messages.length - 1];
+        const timestamp = lastMsg.timestamp?.toMillis ? lastMsg.timestamp.toMillis() : Date.now();
+        this.lastMessageTimestamps.set(chatId, timestamp);
+        this.sortContacts(this.contacts());
+      }
+      
       this.messages.set(messages);
     });
   }

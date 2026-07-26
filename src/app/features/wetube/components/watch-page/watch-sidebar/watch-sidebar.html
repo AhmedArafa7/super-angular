@@ -37,7 +37,13 @@
               
               <!-- Thumbnail -->
               <div class="relative w-40 min-w-[160px] aspect-video rounded-lg overflow-hidden shrink-0 bg-slate-800">
-                <img crossorigin="anonymous" [src]="getThumbnail(video)" [alt]="video.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                <img 
+                  crossorigin="anonymous" 
+                  [src]="getThumbnail(video)" 
+                  [alt]="video.title || ''"
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  (error)="$any($event.target).style.display='none'"
+                >
                 @if (video.duration) {
                   <span class="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-xs font-medium text-white backdrop-blur-sm">
                     {{ video.duration >= 0 ? (video.duration | number:'1.0-0') : video.duration }}

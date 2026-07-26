@@ -144,14 +144,33 @@ export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   getThumbnail(video: any): string {
-    // Piped usually returns thumbnail directly.
-    return video.thumbnail || `https://i.ytimg.com/vi/${video.url?.split('?v=')[1]}/hqdefault.jpg`;
+    if (video.thumbnail && video.thumbnail.startsWith('http')) {
+      return video.thumbnail;
+    }
+    const id = this.getVideoId(video);
+    if (id && !id.startsWith('/') && !id.startsWith('http')) {
+      return `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+    }
+    return 'assets/placeholder-video.jpg';
   }
   
   getVideoId(video: any): string {
-    if (video.url && video.url.includes('?v=')) {
-      return video.url.split('?v=')[1];
+    // Handle ?v= format: /watch?v=VIDEO_ID
+    if (video.url?.includes('?v=')) {
+      return video.url.split('?v=')[1].split('&')[0];
     }
-    return video.url;
+    // Handle /watch/VIDEO_ID format (Piped)
+    if (video.url?.includes('/watch/')) {
+      return video.url.split('/watch/')[1].split('?')[0];
+    }
+    // Handle youtu.be/VIDEO_ID format
+    if (video.url?.includes('youtu.be/')) {
+      return video.url.split('youtu.be/')[1].split('?')[0];
+    }
+    // Handle direct ID (11 chars)
+    if (video.url && /^[a-zA-Z0-9_-]{11}$/.test(video.url)) {
+      return video.url;
+    }
+    return video.id || video.url || '';
   }
 }

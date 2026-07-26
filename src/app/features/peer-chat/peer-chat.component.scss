@@ -5,6 +5,23 @@
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+/* Responsive layout adjustments to prevent sidebar overflow */
+@media (max-width: 1024px) {
+  .h-\[calc\(100vh-6rem\)\] {
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 100vh;
+  }
+  
+  aside {
+    width: 100% !important;
+    height: 300px !important;
+    border-left: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+  }
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
