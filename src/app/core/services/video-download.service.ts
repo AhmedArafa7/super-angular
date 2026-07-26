@@ -116,28 +116,49 @@ export class VideoDownloadService {
     this.setStatus(videoId, { status: 'downloading', progress: 0 });
 
     try {
-      const details = await this.pipedApi.getVideoDetails(videoId);
-
       let streamUrl: string | null = null;
       let quality = preferredQuality;
 
-      const targetQualities = preferredQuality === '144p'
-        ? ['144p', '240p', '360p']
-        : ['360p', '480p', '240p', '144p'];
+      try {
+        const details = await this.pipedApi.getVideoDetails(videoId);
+        const targetQualities = preferredQuality === '144p'
+          ? ['144p', '240p', '360p']
+          : ['360p', '480p', '240p', '144p'];
 
-      for (const q of targetQualities) {
-        const stream = details.videoStreams?.find(
-          (s: any) => !s.videoOnly && s.quality?.includes(q.replace('p', ''))
-        );
-        if (stream) {
-          streamUrl = stream.url;
-          quality = q as '144p' | '360p';
-          break;
+        for (const q of targetQualities) {
+          const stream = details.videoStreams?.find(
+            (s: any) => !s.videoOnly && s.quality?.includes(q.replace('p', ''))
+          );
+          if (stream) {
+            streamUrl = stream.url;
+            quality = q as '144p' | '360p';
+            break;
+          }
         }
+
+        if (!streamUrl && details.hls) {
+          streamUrl = details.hls;
+        }
+      } catch (err) {
+        console.warn('[VideoDownloadService] Piped details failed, trying fallback stream fetch', err);
       }
 
-      if (!streamUrl && details.hls) {
-        streamUrl = details.hls;
+      // Invidious Fallback Stream Fetcher if Piped API is blocked or offline
+      if (!streamUrl) {
+        const invidiousInstances = ['https://inv.tux.pizza', 'https://invidious.nerdvpn.de', 'https://invidious.drgns.space'];
+        for (const inv of invidiousInstances) {
+          try {
+            const invRes = await fetch(`${inv}/api/v1/videos/${videoId}`);
+            if (invRes.ok) {
+              const data = await invRes.json();
+              const format = data.formatStreams?.find((f: any) => f.quality === '144p' || f.qualityLabel === '144p') || data.formatStreams?.[0];
+              if (format?.url) {
+                streamUrl = format.url;
+                break;
+              }
+            }
+          } catch {}
+        }
       }
 
       if (!streamUrl) {
@@ -182,7 +203,7 @@ export class VideoDownloadService {
       this.setStatus(videoId, { status: 'cached', progress: 100, sizeBytes: blob.size, quality });
       return blobUrl;
 
-    } catch (err) {
+    } catch (err: any) {
       console.error('[VideoDownloadService] Download failed for', videoId, err);
       this.setStatus(videoId, { status: 'error', progress: 0 });
       return null;
@@ -191,7 +212,7 @@ export class VideoDownloadService {
 
   async deleteCached(videoId: string): Promise<void> {
     await this.initDB();
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       if (!this.db) { resolve(); return; }
       const tx = this.db.transaction(VIDEO_CACHE_STORE, 'readwrite');
       const store = tx.objectStore(VIDEO_CACHE_STORE);
@@ -215,7 +236,7 @@ export class VideoDownloadService {
   }
 
   private saveBlob(videoId: string, blob: Blob, meta: any): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       if (!this.db) { reject('DB not initialized'); return; }
       const tx = this.db.transaction(VIDEO_CACHE_STORE, 'readwrite');
       const store = tx.objectStore(VIDEO_CACHE_STORE);
@@ -227,7 +248,7 @@ export class VideoDownloadService {
 
   private async enforceStorageLimit(incomingBytes: number): Promise<void> {
     await this.initDB();
-    return new Promise((resolve) => {
+    return new Promise<void>((resolve) => {
       if (!this.db) { resolve(); return; }
       const tx = this.db.transaction(VIDEO_CACHE_STORE, 'readwrite');
       const store = tx.objectStore(VIDEO_CACHE_STORE);

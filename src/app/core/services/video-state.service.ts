@@ -169,7 +169,38 @@ export class VideoStateService {
         this.isLoadingRelated.set(false);
       }
 
-      // ── Check local offline cache FIRST (bandwidth × 1 strategy) ──
+      // ── Data Saver Direct Offline Loading Mode ──
+      // If Data Saver is enabled, we download the lowest stream (144p) with real percentage feedback, store in IndexedDB cache, then play as a local blob URL.
+      if (this.wetubeService.algoConfig().dataSaverEnabled) {
+        const cachedBlobUrl = await this.downloadService.getCachedBlobUrl(video.id);
+        if (cachedBlobUrl) {
+          this.rawStreamUrl.set(cachedBlobUrl);
+          this.playerType.set('native');
+          this.isLoading.set(false);
+          this.isPlaying.set(true);
+          return;
+        }
+
+        // Trigger real download with progress tracking
+        this.isLoading.set(true);
+        const downloadedBlobUrl = await this.downloadService.downloadVideo(
+          video.id,
+          video.title || '',
+          video.author || '',
+          video.thumbnail || '',
+          '144p'
+        );
+
+        if (downloadedBlobUrl) {
+          this.rawStreamUrl.set(downloadedBlobUrl);
+          this.playerType.set('native');
+          this.isLoading.set(false);
+          this.isPlaying.set(true);
+          return;
+        }
+      }
+
+      // Standard Piped Stream Fetch
       const cachedBlobUrl = await this.downloadService.getCachedBlobUrl(video.id);
       if (cachedBlobUrl) {
         this.rawStreamUrl.set(cachedBlobUrl);
@@ -190,48 +221,33 @@ export class VideoStateService {
       const details = await this.pipedService.getVideoDetails(video.id);
       this.pipedDetails.set(details);
       
-      // Update related videos and cache them if not cached or if we want to refresh
+      // Update related videos and cache them
       if (details.relatedStreams) {
         this.relatedVideos.set(details.relatedStreams);
         this.isLoadingRelated.set(false);
         await this.dbService.setWithTTL('related_videos', { videoId: video.id, streams: details.relatedStreams });
       }
       
-      // Prefer HLS stream, otherwise fallback to highest quality mp4 videoOnly + audio (which is hard in native video tag)
-      // Usually Piped HLS is best for native web playback.
       if (details.hls) {
         this.rawStreamUrl.set(details.hls);
       } else {
-        // Fallback to highest quality mp4 that includes both video and audio, or just first stream
         const combinedStream = details.videoStreams.find(s => !s.videoOnly && s.mimeType.includes('mp4'));
         if (combinedStream) {
           this.rawStreamUrl.set(combinedStream.url);
         } else {
-          // If no combined stream, we might have to use IFrame as fallback since native video tag can't easily mux video+audio
           this.switchToIframe();
         }
       }
       this.isLoading.set(false);
       this.isPlaying.set(true);
 
-      // ── Background download for offline caching (144p, bandwidth × 1) ──
-      // Only start if Data Saver mode is enabled and not already cached/downloading
-      if (this.wetubeService.algoConfig().dataSaverEnabled) {
-        const dlStatus = this.downloadService.downloadStatuses()[video.id];
-        if (!dlStatus || (dlStatus.status !== 'cached' && dlStatus.status !== 'downloading')) {
-          this.downloadService.downloadVideo(
-            video.id,
-            video.title || '',
-            video.author || '',
-            video.thumbnail || '',
-            '144p'
-          ).catch(() => {}); // Silent - never block playback
-        }
-      }
-
     } catch (error) {
-      console.warn('[VideoStateService] Piped failed, falling back to IFrame API');
-      this.switchToIframe();
+      console.warn('[VideoStateService] Piped failed');
+      if (!this.wetubeService.algoConfig().dataSaverEnabled) {
+        this.switchToIframe();
+      } else {
+        this.isLoading.set(false);
+      }
     }
   }
 

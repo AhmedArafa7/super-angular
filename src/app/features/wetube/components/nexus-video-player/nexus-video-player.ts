@@ -118,7 +118,6 @@ export class SiNeuroVideoPlayerComponent implements AfterViewInit, OnDestroy {
       this.upscaleStep.set('idle');
       this.upscaleQuality.set(this.defaultQuality);
       
-      // Auto play if data saver is disabled
       setTimeout(() => {
         if (this.videoRef?.nativeElement) {
           this.videoRef.nativeElement.play().catch(() => {});
@@ -128,48 +127,37 @@ export class SiNeuroVideoPlayerComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    // Initialize Data Saver Upscaling Sequence
+    // Initialize Real Data Saver Download Progress Monitor
     this.isUpscaling.set(true);
-    this.upscaleProgress.set(0);
     this.upscaleStep.set('loading_144');
     this.upscaleQuality.set('144p');
 
-    // Pause player initially if playing
     if (this.videoRef?.nativeElement) {
       this.videoRef.nativeElement.pause();
       this.isPlaying.set(false);
     }
 
-    // Start background upscaling progress simulation
     this.upscaleInterval = setInterval(() => {
-      const nextProgress = this.upscaleProgress() + 5;
-      this.upscaleProgress.set(nextProgress);
+      const status = this.dlStatus();
+      const realProgress = status ? Math.min(100, Math.max(0, status.progress)) : 0;
+      this.upscaleProgress.set(realProgress);
 
-      if (nextProgress === 50) {
-        // Start playback at 50% upscaled (in low quality 144p while upscaling continues in background)
-        this.upscaleStep.set('processing');
-        if (this.videoRef?.nativeElement) {
-          this.videoRef.nativeElement.play().catch(() => {});
-          this.isPlaying.set(true);
-        }
-      }
-
-      if (nextProgress >= 100) {
+      if (realProgress >= 100 || status?.status === 'cached') {
         clearInterval(this.upscaleInterval);
         this.upscaleInterval = null;
         this.upscaleProgress.set(100);
         this.upscaleStep.set('completed');
-        
-        // Upgrade quality to user-selected target
-        const targetQ = config.targetUpscaleQuality || '720p';
-        this.upscaleQuality.set(targetQ);
+        this.upscaleQuality.set('144p (مخزّن محلياً ⚡)');
 
-        // Hide overlay after showing 100% completed state for 1.5 seconds
         setTimeout(() => {
           this.isUpscaling.set(false);
-        }, 1500);
+          if (this.videoRef?.nativeElement) {
+            this.videoRef.nativeElement.play().catch(() => {});
+            this.isPlaying.set(true);
+          }
+        }, 800);
       }
-    }, 150); // 20 steps * 150ms = 3.0s total upscale delay. Playback starts at 1.5s (50% progress)
+    }, 100);
   }
 
   handleMouseMove() {

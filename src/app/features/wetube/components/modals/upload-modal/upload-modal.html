@@ -113,10 +113,17 @@
 
       <!-- Local File Upload Placeholder (shown if local is selected) -->
       <div class="form-group animate-fade-in" *ngIf="sourceType === 'local'">
-        <label class="input-label">ملف الفيديو</label>
+        <div class="flex justify-between items-center mb-1">
+          <label class="input-label">ملف الفيديو المحالي</label>
+          <span class="text-[10px] text-amber-400 font-medium px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
+            أكبر من 25MB يُرفع بنظام الأجزاء العصبي ⚡
+          </span>
+        </div>
         <div class="local-upload-area" (click)="fileInput.click()">
           <lucide-icon [img]="Upload" class="w-8 h-8 text-indigo-400 mb-2"></lucide-icon>
-          <span class="text-xs text-slate-300">{{ selectedFile ? selectedFile.name : 'اسحب وأفلت الملف هنا' }}</span>
+          <span class="text-xs text-slate-300">
+            {{ selectedFile ? selectedFile.name + ' (' + (selectedFile.size / (1024 * 1024)).toFixed(1) + ' MB)' : 'اسحب وأفلت ملف الفيديو هنا' }}
+          </span>
           <button type="button" class="local-select-btn">{{ selectedFile ? 'تغيير الملف' : 'اختر من الجهاز' }}</button>
           <input #fileInput type="file" accept="video/*" class="hidden" (change)="onFileSelected($event)" style="display: none;" />
         </div>

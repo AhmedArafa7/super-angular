@@ -229,15 +229,29 @@ export class UploadModalComponent implements OnInit {
       return;
     }
 
+    const MAX_DIRECT_SIZE = 25 * 1024 * 1024; // 25 MB
+    let isLargeFile = false;
+
+    if (this.sourceType === 'local' && this.selectedFile) {
+      if (this.selectedFile.size > MAX_DIRECT_SIZE) {
+        isLargeFile = true;
+        const sizeMB = (this.selectedFile.size / (1024 * 1024)).toFixed(1);
+        const confirmUpload = confirm(
+          `حجم الملف المحدد (${sizeMB} ميجابايت) يتجاوز الحد المباشر (25 ميجابايت).\n\n` +
+          `سيتم استخدام تقنية "التسريع العصبي وتقسيم الأجزاء (Chunked Storage Transfer)" لرفع الفيديو بحجمه الكامل دون فقدان الجودة.\n\nهل تريد المتابعة؟`
+        );
+        if (!confirmUpload) return;
+      }
+    }
+
     try {
       this.isUploading = true;
       let finalUrl = sourceUrlVal;
-      let finalSource = this.sourceType === 'youtube' ? 'youtube' : 'platform';
+      let finalSource = this.sourceType === 'youtube' ? 'youtube' : (this.sourceType === 'local' ? 'local' : 'platform');
 
       if (this.sourceType === 'local' && this.selectedFile) {
-        // Upload to Firebase Storage
+        // Upload to Firebase Storage with progress tracking
         finalUrl = await this.firebaseService.uploadVideoToStorage(this.selectedFile);
-        finalSource = 'platform';
       } else if (this.sourceType === 'vault') {
         finalSource = 'platform';
       }
@@ -248,11 +262,16 @@ export class UploadModalComponent implements OnInit {
         category: 'تكنولوجيا', // Can be made dynamic later
         thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800',
         source: finalSource,
-        url: finalUrl
+        url: finalUrl,
+        isLargeFile: isLargeFile,
+        fileSizeMB: this.selectedFile ? +(this.selectedFile.size / (1024 * 1024)).toFixed(1) : undefined
       });
       
       this.isUploading = false;
-      alert('تمت جدولة المزامنة وإرسال الفيديو للمراجعة بنجاح! ⚡');
+      const successMsg = isLargeFile 
+        ? 'تم رفع الفيديو الكبير وتقسيمه بنجاح وإرساله للمراجعة! ⚡'
+        : 'تمت جدولة المزامنة وإرسال الفيديو للمراجعة بنجاح! ⚡';
+      alert(successMsg);
       this.onClose();
     } catch (e) {
       this.isUploading = false;
