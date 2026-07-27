@@ -144,6 +144,13 @@ export class VideoStateService {
       }
     }, 2000);
 
+    const ytId = this.extractYoutubeId(video.url) ||
+                 this.extractYoutubeId((video as any).externalUrl) ||
+                 this.extractYoutubeId(video.id) ||
+                 video.id;
+
+    const targetId = ytId;
+
     if (forceIframe) {
       this.switchToIframe();
       return;
@@ -163,7 +170,7 @@ export class VideoStateService {
       this.playerType.set('native');
       
       // Attempt to load related videos from cache first
-      const cachedRelated = await this.dbService.getWithTTL('related_videos', video.id, 2 * 60 * 60 * 1000);
+      const cachedRelated = await this.dbService.getWithTTL('related_videos', targetId, 2 * 60 * 60 * 1000);
       if (cachedRelated) {
         this.relatedVideos.set(cachedRelated.streams || []);
         this.isLoadingRelated.set(false);
@@ -172,7 +179,7 @@ export class VideoStateService {
       // ── Data Saver Direct Offline Loading Mode ──
       // If Data Saver is enabled, we download the lowest stream (144p) with real percentage feedback, store in IndexedDB cache, then play as a local blob URL.
       if (this.wetubeService.algoConfig().dataSaverEnabled) {
-        const cachedBlobUrl = await this.downloadService.getCachedBlobUrl(video.id);
+        const cachedBlobUrl = await this.downloadService.getCachedBlobUrl(targetId);
         if (cachedBlobUrl) {
           this.rawStreamUrl.set(cachedBlobUrl);
           this.playerType.set('native');
@@ -184,7 +191,7 @@ export class VideoStateService {
         // Trigger real download with progress tracking
         this.isLoading.set(true);
         const downloadedBlobUrl = await this.downloadService.downloadVideo(
-          video.id,
+          targetId,
           video.title || '',
           video.author || '',
           video.thumbnail || '',
@@ -201,37 +208,37 @@ export class VideoStateService {
       }
 
       // Standard Piped Stream Fetch
-      const cachedBlobUrl = await this.downloadService.getCachedBlobUrl(video.id);
+      const cachedBlobUrl = await this.downloadService.getCachedBlobUrl(targetId);
       if (cachedBlobUrl) {
         this.rawStreamUrl.set(cachedBlobUrl);
         this.playerType.set('native');
         this.isLoading.set(false);
         this.isPlaying.set(true);
         // Still load related in background
-        this.pipedService.getVideoDetails(video.id).then(details => {
+        this.pipedService.getVideoDetails(targetId).then(details => {
           if (details?.relatedStreams) {
             this.relatedVideos.set(details.relatedStreams);
-            this.dbService.setWithTTL('related_videos', { videoId: video.id, streams: details.relatedStreams });
+            this.dbService.setWithTTL('related_videos', { videoId: targetId, streams: details.relatedStreams });
           }
           this.isLoadingRelated.set(false);
         }).catch(() => this.isLoadingRelated.set(false));
         return;
       }
 
-      const details = await this.pipedService.getVideoDetails(video.id);
+      const details = await this.pipedService.getVideoDetails(targetId);
       this.pipedDetails.set(details);
       
       // Update related videos and cache them
       if (details.relatedStreams) {
         this.relatedVideos.set(details.relatedStreams);
         this.isLoadingRelated.set(false);
-        await this.dbService.setWithTTL('related_videos', { videoId: video.id, streams: details.relatedStreams });
+        await this.dbService.setWithTTL('related_videos', { videoId: targetId, streams: details.relatedStreams });
       }
       
       if (details.hls) {
         this.rawStreamUrl.set(details.hls);
       } else {
-        const combinedStream = details.videoStreams.find(s => !s.videoOnly && s.mimeType.includes('mp4'));
+        const combinedStream = details.videoStreams.find(s => !s.videoOnly && s.mimeType.includes('mp4')) || details.videoStreams[0];
         if (combinedStream) {
           this.rawStreamUrl.set(combinedStream.url);
         } else {
@@ -242,7 +249,7 @@ export class VideoStateService {
       this.isPlaying.set(true);
 
     } catch (error) {
-      console.warn('[VideoStateService] Piped failed');
+      console.warn('[VideoStateService] Piped failed, switching to fallback iframe player', error);
       if (!this.wetubeService.algoConfig().dataSaverEnabled) {
         this.switchToIframe();
       } else {
@@ -309,5 +316,11 @@ export class VideoStateService {
         watchedAt: Date.now()
       }).catch(() => {});
     }
+  }
+
+  private extractYoutubeId(urlOrId?: string): string | null {
+    if (!urlOrId) return null;
+    const match = urlOrId.match(/(?:v=|\/embed\/|\/shorts\/|youtu\.be\/|^)([a-zA-Z0-9_-]{11})/);
+    return match ? match[1] : null;
   }
 }

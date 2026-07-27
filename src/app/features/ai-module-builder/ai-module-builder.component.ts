@@ -2,9 +2,11 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
-import { LucideAngularModule, Sparkles, Cpu, Key, Plus, RefreshCw, Layers, CheckCircle2, Trash2, Edit3, Save, History, ChevronLeft, ChevronRight, Image as ImageIcon, X, LayoutTemplate, ShieldCheck, Code, Copy, Download, Maximize2, Cloud, Lock, Smartphone, Tablet, Monitor, RotateCcw, Share2, Wrench } from 'lucide-angular';
+import { LucideAngularModule, Sparkles, Cpu, Key, Plus, RefreshCw, Layers, CheckCircle2, Trash2, Edit3, Save, History, ChevronLeft, ChevronRight, Image as ImageIcon, X, LayoutTemplate, ShieldCheck, Code, Copy, Download, Maximize2, Cloud, Lock, Smartphone, Tablet, Monitor, RotateCcw, Share2, Wrench, Pin, PinOff } from 'lucide-angular';
 import { AiKeyManagerService } from '../../core/services/ai-key-manager.service';
 import { ToastService } from '../../core/services/toast.service';
+import { SidebarService } from '../../core/sidebar.service';
+import { CustomModuleStorageService } from './custom-module-viewer.component';
 
 export interface ModuleVersion {
   versionId: string;
@@ -311,6 +313,16 @@ export interface CustomModuleItem {
             </div>
 
             <div class="flex items-center gap-2 flex-wrap">
+              <!-- Pin to Sidebar Button -->
+              <button 
+                (click)="togglePinToSidebar()"
+                [title]="isModulePinnedToSidebar() ? 'إزالة من القائمة الجانبية' : 'تثبيت كـ قسم في القائمة الجانبية للموقع'"
+                class="px-3 py-2 border rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-lg"
+                [ngClass]="isModulePinnedToSidebar() ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border-indigo-500/30'">
+                <lucide-icon [img]="isModulePinnedToSidebar() ? PinOff : Pin" class="w-4 h-4 text-amber-400"></lucide-icon>
+                <span>{{ isModulePinnedToSidebar() ? 'إزالة من شريطي' : 'تثبيت بالجانبية 📌' }}</span>
+              </button>
+
               <!-- Reload Canvas Button -->
               <button 
                 (click)="reloadIframe()"
@@ -407,7 +419,7 @@ export interface CustomModuleItem {
                 'w-[375px] max-w-full': viewportMode() === 'mobile'
               }">
               <iframe 
-                [src]="safeIframeUrl()" 
+                [srcdoc]="rawHtmlContent()" 
                 class="w-full h-[550px] border-0 bg-slate-950" 
                 sandbox="allow-scripts allow-same-origin allow-modals flex-1">
               </iframe>
@@ -463,6 +475,7 @@ export class AiModuleBuilderComponent {
   keyManager = inject(AiKeyManagerService);
   toast = inject(ToastService);
   sanitizer = inject(DomSanitizer);
+  moduleStorage = inject(CustomModuleStorageService);
 
   private readonly STORAGE_KEY = 'si_neuro_custom_modules_v2';
 
@@ -474,24 +487,23 @@ export class AiModuleBuilderComponent {
   activeModuleId = signal<string | null>(null);
   showCodeViewer = signal<boolean>(false);
 
-  safeIframeUrl = computed(() => {
+  rawHtmlContent = computed(() => {
     let rawHtml = this.generatedHtml();
     if (!rawHtml) return '';
     
     // Clean code blocks if present
     rawHtml = rawHtml.replace(/^```html\s*/gi, '').replace(/```\s*$/gi, '').trim();
 
-    const headAssets = `<script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"><style>body{margin:0;padding:1rem;background-color:#020617;color:white;font-family:'Cairo',system-ui,sans-serif;}</style>`;
+    const headAssets = `<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"><style>body{margin:0;padding:1rem;background-color:#020617;color:white;font-family:'Cairo',system-ui,sans-serif;}</style>`;
 
-    let fullPage = '';
     if (rawHtml.toLowerCase().includes('<html') || rawHtml.toLowerCase().includes('<!doctype')) {
       if (rawHtml.includes('<head>')) {
-        fullPage = rawHtml.replace('<head>', `<head>${headAssets}`);
+        return rawHtml.replace('<head>', `<head>${headAssets}`);
       } else {
-        fullPage = headAssets + rawHtml;
+        return headAssets + rawHtml;
       }
     } else {
-      fullPage = `<!DOCTYPE html>
+      return `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8">
@@ -502,8 +514,6 @@ export class AiModuleBuilderComponent {
 </body>
 </html>`;
     }
-
-    return this.sanitizer.bypassSecurityTrustResourceUrl('data:text/html;charset=utf-8,' + encodeURIComponent(fullPage));
   });
 
   attachedImage: { name: string; mimeType: string; base64: string; previewUrl: string } | null = null;
@@ -552,9 +562,33 @@ export class AiModuleBuilderComponent {
   RotateCcw = RotateCcw;
   Share2 = Share2;
   Wrench = Wrench;
+  Pin = Pin;
+  PinOff = PinOff;
 
   viewportMode = signal<'desktop' | 'tablet' | 'mobile'>('desktop');
   showEmbedModal = signal<boolean>(false);
+  sidebarService = inject(SidebarService);
+
+  isModulePinnedToSidebar(): boolean {
+    const active = this.activeModule();
+    if (!active) return false;
+    return this.sidebarService.pinnedItems().includes(`custom-${active.id}` as any);
+  }
+
+  togglePinToSidebar() {
+    const active = this.activeModule();
+    if (!active) {
+      this.toast.show('يرجى حفظ أو توليد موديول أولاً لثبيته في القائمة الجانبية.', 'info');
+      return;
+    }
+    const navId = `custom-${active.id}` as any;
+    this.sidebarService.togglePin(navId);
+    if (this.isModulePinnedToSidebar()) {
+      this.toast.show(`📌 تم تثبيت قسم "${active.title}" في القائمة الجانبية بنجاح!`, 'success');
+    } else {
+      this.toast.show(`إزالة قسم "${active.title}" من القائمة الجانبية.`, 'info');
+    }
+  }
 
   quickShortcuts = [
     { label: '🎨 نمط نيون وذهبي', prompt: 'قم بتحديث التصميم ليكون بنمط نيون مظلم ولمسات ذهبية زجاجية عالية الفخامة.' },
@@ -601,6 +635,7 @@ export class AiModuleBuilderComponent {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(modules));
     }
     this.savedModules.set(modules);
+    this.moduleStorage.loadModules();
   }
 
   saveUserApiKey() {

@@ -8,6 +8,7 @@ import { GlobalStateService } from '../../core/services/global-state.service';
 
 import { OfflineQueueService } from '../../core/services/offline-queue.service';
 import { FirebaseService } from '../../core/services/firebase.service';
+import { CustomModuleStorageService } from '../../features/ai-module-builder/custom-module-viewer.component';
 import { LucideAngularModule, LogOut, User, Settings, LayoutDashboard, CloudUpload, CheckCircle2, XCircle, CloudCog, Chrome, UserPlus, Users } from 'lucide-angular';
 
 import { SidebarItemComponent } from './sidebar-item/sidebar-item.component';
@@ -59,8 +60,22 @@ export class AppSidebarComponent {
   UserPlus = UserPlus;
   Users = Users;
   
+  moduleStorage = inject(CustomModuleStorageService);
+
   get visibleItems(): NavItem[] {
-    return getVisibleNavItems(this.userRole, ALL_NAV_ITEMS);
+    const baseItems = getVisibleNavItems(this.userRole, ALL_NAV_ITEMS);
+    
+    // Dynamically append user-generated custom modules pinned to sidebar
+    const customModules = this.moduleStorage.modules().map(mod => ({
+      id: `custom-${mod.id}`,
+      label: mod.title,
+      icon: 'sparkles',
+      restricted: false,
+      status: 'NEW' as const,
+      route: `custom-module/${mod.id}`
+    }));
+
+    return [...baseItems, ...customModules];
   }
 
   get pinnedItems(): NavItem[] {

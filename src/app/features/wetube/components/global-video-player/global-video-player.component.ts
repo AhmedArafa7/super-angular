@@ -345,10 +345,21 @@ export class GlobalVideoPlayerComponent {
     }
   }
 
+  private extractYoutubeId(str?: string): string | null {
+    if (!str) return null;
+    if (str.length === 11 && /^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
+    const match = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/|live\/))([^&?\n]+)/);
+    return match ? match[1] : null;
+  }
+
   getIframeUrl(): string {
     const video = this.videoState.activeVideo();
     if (!video) return '';
-    return `https://www.youtube.com/embed/${video.id}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`;
+    const ytId = this.extractYoutubeId(video.url) ||
+                 this.extractYoutubeId((video as any).externalUrl) ||
+                 this.extractYoutubeId(video.id) ||
+                 video.id;
+    return `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`;
   }
 
   closePlayer() {

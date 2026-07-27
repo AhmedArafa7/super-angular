@@ -96,6 +96,13 @@ export class SiNeuroVideoPlayerComponent implements AfterViewInit, OnDestroy {
     }
   }
 
+  private extractYoutubeId(str?: string): string | null {
+    if (!str) return null;
+    if (str.length === 11 && /^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
+    const match = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/|live\/))([^&?\n]+)/);
+    return match ? match[1] : null;
+  }
+
   get youtubeIframeUrl() {
     const config = this.wetube.algoConfig();
     const isSaving = config.dataSaverEnabled;
@@ -103,7 +110,8 @@ export class SiNeuroVideoPlayerComponent implements AfterViewInit, OnDestroy {
     // If saving and not completed, load 144p (vq=tiny)
     const qualityParam = isSaving && !isDone ? 'tiny' : config.targetUpscaleQuality.replace(/\D/g, '');
     const vqValue = qualityParam === 'tiny' ? 'tiny' : `hd${qualityParam}`;
-    return `https://www.youtube.com/embed/${this.videoId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1&vq=${vqValue}&origin=${encodeURIComponent(window.location.origin)}`;
+    const ytId = this.extractYoutubeId(this.src) || this.extractYoutubeId(this.videoId) || this.videoId;
+    return `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1&vq=${vqValue}&origin=${encodeURIComponent(window.location.origin)}`;
   }
 
   startUpscaleEngine() {

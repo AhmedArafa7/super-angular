@@ -51,6 +51,9 @@ export class PipedApiService {
       if (!text || text.trim().length === 0) {
         throw new Error('Local proxy returned empty response');
       }
+      if (text.trim().startsWith('<')) {
+        throw new Error('Local proxy returned HTML instead of JSON');
+      }
       return JSON.parse(text) as T;
     }
 
@@ -101,6 +104,62 @@ export class PipedApiService {
       } catch (error) {
         console.warn(`[PipedApiService] Instance ${instance} failed for ${videoId}`, error);
         lastError = error;
+      }
+    }
+
+    // Secondary Fallback: Multi-instance Invidious API
+    const invidiousInstances = [
+      'https://inv.tux.pizza',
+      'https://invidious.nerdvpn.de',
+      'https://invidious.drgns.space',
+      'https://vid.puffyan.us',
+      'https://invidious.fdn.fr'
+    ];
+
+    for (const inv of invidiousInstances) {
+      try {
+        const invRes = await fetch(`${inv}/api/v1/videos/${videoId}`, { signal: AbortSignal.timeout(6000) });
+        if (invRes.ok) {
+          const text = await invRes.text();
+          if (text && !text.trim().startsWith('<')) {
+            const data = JSON.parse(text);
+            if (data && (data.formatStreams?.length > 0 || data.adaptiveFormats?.length > 0)) {
+              const videoStreams: PipedVideoStream[] = (data.formatStreams || []).map((f: any) => ({
+                url: f.url,
+                quality: f.quality || f.qualityLabel || '360p',
+                mimeType: f.container ? `video/${f.container}` : 'video/mp4',
+                videoOnly: false
+              }));
+
+              const audioStreams: PipedAudioStream[] = (data.adaptiveFormats || []).filter((f: any) => f.type?.includes('audio')).map((f: any) => ({
+                url: f.url,
+                quality: f.quality || 'audio',
+                mimeType: f.type || 'audio/mp4'
+              }));
+
+              return {
+                title: data.title || '',
+                description: data.description || '',
+                uploader: data.author || '',
+                uploaderAvatar: data.authorThumbnails?.[0]?.url || '',
+                thumbnailUrl: data.videoThumbnails?.[0]?.url || '',
+                hls: data.hlsUrl || null,
+                videoStreams,
+                audioStreams,
+                relatedStreams: (data.recommendedVideos || []).map((r: any) => ({
+                  url: `/watch?v=${r.videoId}`,
+                  title: r.title,
+                  uploaderName: r.author,
+                  thumbnail: r.videoThumbnails?.[0]?.url || `https://img.youtube.com/vi/${r.videoId}/hqdefault.jpg`,
+                  duration: r.lengthSeconds,
+                  views: r.viewCount
+                }))
+              };
+            }
+          }
+        }
+      } catch (invErr) {
+        console.warn(`[PipedApiService] Invidious fallback ${inv} failed for ${videoId}`, invErr);
       }
     }
 

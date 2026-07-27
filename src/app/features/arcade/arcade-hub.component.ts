@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ArcadeService, ArcadeGame, GameCategory } from './arcade.service';
 import { GlobalStateService } from '../../core/services/global-state.service';
 import { FirebaseService } from '../../core/services/firebase.service';
-import { LucideAngularModule, UserPlus } from 'lucide-angular';
+import { LucideAngularModule, UserPlus, Plus, Sparkles } from 'lucide-angular';
 
 @Component({
   selector: 'app-arcade-hub',
@@ -148,6 +148,26 @@ import { LucideAngularModule, UserPlus } from 'lucide-angular';
 
       <!-- Games Grid -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        <!-- AI Game Creator Card (+ Button) -->
+        <div 
+          [routerLink]="['/arcade/ai-builder']"
+          class="group relative cursor-pointer">
+          <div class="aspect-[4/3] rounded-[2rem] border-2 border-dashed border-indigo-500/40 hover:border-indigo-400 bg-slate-900/60 hover:bg-indigo-950/30 transition-all duration-500 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-indigo-500/20 flex flex-col items-center justify-center p-6 text-center">
+            
+            <div class="w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 shadow-xl mb-4">
+              <lucide-icon [img]="Plus" class="w-8 h-8"></lucide-icon>
+            </div>
+
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full mb-2">
+              <lucide-icon [img]="Sparkles" class="w-3 h-3 text-amber-400"></lucide-icon>
+              <span class="text-[10px] font-black text-amber-400">استوديو الذكاء الاصطناعي</span>
+            </div>
+
+            <h3 class="text-lg font-black text-white group-hover:text-indigo-300 transition-colors">اصنع لعبة جديدة⚡</h3>
+            <p class="text-xs text-slate-400 mt-1 font-medium leading-relaxed">ابنِ لعبة Arcade تفاعلية بالذكاء الاصطناعي مخصصة لك</p>
+          </div>
+        </div>
+
         <div *ngFor="let game of filteredGames" class="group relative">
           <div class="aspect-[4/3] rounded-[2rem] overflow-hidden border border-white/5 bg-slate-900 transition-all duration-500 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-indigo-500/10 flex flex-col">
             <div class="flex-1 bg-slate-800 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity">
@@ -235,6 +255,8 @@ export class ArcadeHubComponent implements OnInit {
   }
 
   UserPlus = UserPlus;
+  Plus = Plus;
+  Sparkles = Sparkles;
   showAddFriend = false;
   showSubmitGameModal = false;
   showOpenTTDModal = false;
