@@ -191,19 +191,29 @@ export class GlobalVideoPlayerComponent {
     });
   }
 
-  // --- Ambient Mode: 1x1 Canvas Hack ---
+  // --- Ambient Mode: 1x1 Canvas Hack with requestAnimationFrame ---
   @ViewChild('ambientCanvas') ambientCanvas?: ElementRef<HTMLCanvasElement>;
-  private ambientInterval: any;
+  private animFrameId: number | null = null;
+  private lastExtractionTime = 0;
 
   private startAmbientExtraction() {
-    if (this.ambientInterval) return;
-    this.ambientInterval = setInterval(() => this.extractAmbientColor(), 500); // 2 FPS
+    if (this.animFrameId) return;
+
+    const loop = (timestamp: number) => {
+      if (timestamp - this.lastExtractionTime >= 500) { // Throttle to ~2 FPS
+        this.extractAmbientColor();
+        this.lastExtractionTime = timestamp;
+      }
+      this.animFrameId = requestAnimationFrame(loop);
+    };
+
+    this.animFrameId = requestAnimationFrame(loop);
   }
 
   private stopAmbientExtraction() {
-    if (this.ambientInterval) {
-      clearInterval(this.ambientInterval);
-      this.ambientInterval = null;
+    if (this.animFrameId) {
+      cancelAnimationFrame(this.animFrameId);
+      this.animFrameId = null;
     }
   }
 

@@ -7,8 +7,7 @@ import { AppHeaderComponent } from '../app-header/app-header';
 import { SidebarService } from '../../core/sidebar.service';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { SyncMonitorComponent } from './sync-monitor/sync-monitor';
-//import { OnboardingComponent } from '../../shared/onboarding/onboarding';
-//import { PrivacyConsentComponent } from '../../shared/privacy/privacy';
+import { SessionPurgeService } from '../../core/services/session-purge.service';
 
 @Component({
   selector: 'app-shell',
@@ -20,8 +19,6 @@ import { SyncMonitorComponent } from './sync-monitor/sync-monitor';
     AppHeaderComponent,
     SyncMonitorComponent,
     LucideDynamicIcon,
-    //OnboardingComponent,
-    //PrivacyConsentComponent
   ],
   templateUrl: './app-shell.html',
   styleUrls: ['./app-shell.scss']
@@ -29,6 +26,7 @@ import { SyncMonitorComponent } from './sync-monitor/sync-monitor';
 export class AppShellComponent {
   sidebar = inject(SidebarService);
   router = inject(Router);
+  sessionPurge = inject(SessionPurgeService); // Initialize session purge monitoring
   isWeTubeRoute = signal(false);
   isInitialized = signal(false);
 

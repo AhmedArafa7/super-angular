@@ -41,7 +41,7 @@ export class ChatService {
   defaultModels: AIProviderModel[] = [
     { id: 'googleai/gemini-2.5-flash', label: 'Si-NeuroAI (Flash)', desc: 'المحرك العصبي الأساسي السريع للمنصة', inputLimit: '1,048,576', outputLimit: '8,192' },
     { id: 'groq/llama-3.3-70b-versatile', label: 'Groq Llama 3.3', desc: 'محرك التحليل والبحث السريع', inputLimit: '128,000', outputLimit: '4,096' },
-    { id: 'googleai/gemini-1.5-pro', label: 'Gemini Pro 1.5', desc: 'تحليل دقيق متعدد الوسائط', inputLimit: '2,097,152', outputLimit: '8,192' }
+    { id: 'googleai/gemini-2.5-pro', label: 'Gemini Pro 2.5', desc: 'تحليل دقيق متعدد الوسائط', inputLimit: '2,097,152', outputLimit: '8,192' }
   ];
 
   constructor() {

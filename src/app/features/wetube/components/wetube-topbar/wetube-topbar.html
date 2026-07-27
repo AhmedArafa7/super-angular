@@ -23,11 +23,12 @@
       <input 
         type="text" 
         [ngModel]="searchQuery()"
-        (ngModelChange)="searchQuery.set($event)"
+        (ngModelChange)="onInputChange($event)"
         (keyup.enter)="onSearch()"
-        placeholder="بحث"
+        (focus)="onInputChange(searchQuery())"
+        placeholder="بحث في WeTube (يدعم Algolia Instant Search)..."
         dir="rtl"
-        class="w-full h-11 bg-[#121212] border border-white/10 rounded-full pl-5 pr-14 text-sm text-white focus:outline-none focus:border-blue-500/50 focus:bg-[#18181B] font-medium placeholder-slate-400 transition-all shadow-inner"
+        class="w-full h-11 bg-[#121212] border border-white/10 rounded-full pl-5 pr-14 text-sm text-white focus:outline-none focus:border-indigo-500/80 focus:bg-[#18181B] font-medium placeholder-slate-400 transition-all shadow-inner"
       />
       <button 
         (click)="onSearch()"
@@ -35,6 +36,38 @@
         style="width: 60px; right: 0; height: 100%; border-radius: 0 9999px 9999px 0;">
         <lucide-icon [img]="Search" class="w-4 h-4"></lucide-icon>
       </button>
+
+      <!-- Algolia Instant Search Dropdown Menu -->
+      @if (showSuggestions() && (algolia.suggestions().length > 0 || algolia.isSearchingAlgolia())) {
+        <div class="absolute top-13 left-0 right-0 bg-slate-900/95 border border-indigo-500/30 rounded-2xl p-2 shadow-2xl backdrop-blur-xl z-50 animate-in fade-in duration-200">
+          <div class="flex items-center justify-between px-3 py-1.5 border-b border-white/10 text-[11px] font-bold text-indigo-400">
+            <span class="flex items-center gap-1.5">
+              <lucide-icon [img]="Sparkles" class="w-3.5 h-3.5 text-indigo-400"></lucide-icon>
+              <span>اقتراحات البحث الفوري (Algolia Instant Search)</span>
+            </span>
+            @if (algolia.isSearchingAlgolia()) {
+              <span class="text-slate-400 text-[10px] animate-pulse">جاري البحث...</span>
+            }
+          </div>
+
+          <div class="py-1 space-y-0.5">
+            @for (item of algolia.suggestions(); track item.objectID) {
+              <div 
+                (click)="selectSuggestion(item)"
+                class="flex items-center gap-3 p-2 hover:bg-indigo-600/20 rounded-xl cursor-pointer transition group text-right" dir="rtl">
+                <img [src]="item.thumbnail" class="w-10 h-7 object-cover rounded-lg border border-white/10 shrink-0" alt="Thumbnail" />
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-bold text-white group-hover:text-indigo-300 block truncate">{{ item.title }}</span>
+                  @if (item.author) {
+                    <span class="text-[10px] text-slate-400 block truncate">{{ item.author }}</span>
+                  }
+                </div>
+                <lucide-icon [img]="Play" class="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-400 shrink-0"></lucide-icon>
+              </div>
+            }
+          </div>
+        </div>
+      }
     </div>
     <button (click)="startVoiceSearch()" 
             [class.animate-pulse]="isListening()"

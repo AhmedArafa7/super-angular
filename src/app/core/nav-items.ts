@@ -21,6 +21,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: "sheets", label: "جداول البيانات", icon: "table", restricted: false, isPermanent: true, status: 'BETA' },
   { id: "docs", label: "محرر المستندات", icon: "file-text", restricted: false, isPermanent: true, status: 'NEW' },
   { id: "opencode", label: "مساعد البرمجة OpenCode", icon: "terminal", restricted: false, isPermanent: true, status: 'NEW', route: 'opencode' },
+  { id: "ai-module-builder", label: "صانع الأقسام بالذكاء الاصطناعي", icon: "sparkles", restricted: false, isPermanent: true, status: 'NEW', route: 'ai-module-builder' },
   { id: "deals", label: "عروض المحلات", icon: "tag", restricted: false },
   { id: "peer-chat", label: "التواصل المباشر", icon: "message-circle", restricted: false, isPermanent: true, status: 'BETA' },
   { id: "stream", label: "WeTube", icon: "video", restricted: false, isPermanent: true, status: 'PRO' },

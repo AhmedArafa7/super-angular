@@ -2,9 +2,10 @@ import { Component, inject, ChangeDetectionStrategy, signal } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
-import { LucideAngularModule, Bell, Plus, Search, Mic, Menu, MicOff } from 'lucide-angular';
+import { LucideAngularModule, Bell, Plus, Search, Mic, Menu, MicOff, Sparkles, Play } from 'lucide-angular';
 import { WeTubeService } from '../../wetube.service';
 import { FirebaseService } from '../../../../core/services/firebase.service';
+import { AlgoliaSearchService, AlgoliaSearchResult } from '../../../../core/services/algolia-search.service';
 
 @Component({
   selector: 'app-wetube-topbar',
@@ -16,8 +17,11 @@ import { FirebaseService } from '../../../../core/services/firebase.service';
 export class WeTubeTopbarComponent {
   searchQuery = signal('');
   isListening = signal(false);
+  showSuggestions = signal(false);
+  
   wetube = inject(WeTubeService);
   firebase = inject(FirebaseService);
+  algolia = inject(AlgoliaSearchService);
   router = inject(Router);
 
   // Icons
@@ -27,13 +31,38 @@ export class WeTubeTopbarComponent {
   Mic = Mic;
   MicOff = MicOff;
   Menu = Menu;
+  Sparkles = Sparkles;
+  Play = Play;
 
   get userPhoto(): string {
     const user = this.firebase.currentUser();
     return user?.photoURL || `https://ui-avatars.com/api/?name=${user?.displayName || 'User'}&background=4f46e5&color=fff`;
   }
 
+  onInputChange(query: string) {
+    this.searchQuery.set(query);
+    if (query.trim().length > 1) {
+      this.algolia.searchAlgolia(query);
+      this.showSuggestions.set(true);
+    } else {
+      this.algolia.clearSuggestions();
+      this.showSuggestions.set(false);
+    }
+  }
+
+  selectSuggestion(item: AlgoliaSearchResult) {
+    this.showSuggestions.set(false);
+    if (item.url && item.url.includes('?v=')) {
+      const vidId = item.url.split('?v=')[1];
+      this.router.navigate(['/stream/watch', vidId]);
+    } else {
+      this.searchQuery.set(item.title);
+      this.onSearch();
+    }
+  }
+
   onSearch() {
+    this.showSuggestions.set(false);
     const q = this.searchQuery().trim();
     if (!q) return;
     this.wetube.search(q);

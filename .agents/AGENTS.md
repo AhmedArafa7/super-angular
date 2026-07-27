@@ -17,3 +17,5 @@ Every game must implement **exactly three** play modes. The UI should clearly pr
    - Public online matchmaking against random opponents.
    - **Restriction**: This mode is strictly reserved for subscribed "Pro" users. Non-pro users should see a premium lock/prompt to upgrade.
 
+## Cost Optimization & Subscriptions Policy
+Any feature or service that incurs actual recurring operational costs (such as Cloud Storage database persistence, continuous server resources, or platform API quotas) must be restricted exclusively to subscribed "Pro" users. Free users should use zero-cost local alternatives (e.g. LocalStorage, Local Play) or bring their own API keys, with clear premium prompts to upgrade for cloud features.
