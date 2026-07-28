@@ -4,7 +4,7 @@ import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { WeTubeService, AlgorithmConfig } from '../../wetube.service';
 import { FirebaseService } from '../../../../core/services/firebase.service';
 import { YoutubeDiscoveryService } from '../../../../core/services/youtube-discovery.service';
-import { WETUBE_CATEGORIES, ContentItem } from '../../wetube.model';
+import { WETUBE_CATEGORIES, ContentItem, checkIsShorts } from '../../wetube.model';
 import { SubscriptionBarComponent } from '../shared/subscription-bar/subscription-bar';
 import { NexusNativeAdsComponent } from '../nexus-native-ads/nexus-native-ads';
 import { 
@@ -314,11 +314,11 @@ export class WeTubeHomeComponent implements OnInit {
 
   // Lists computed per Section
   shortsList = computed(() => {
-    return this.wetube.allHomeContent().filter(v => v.isShorts);
+    return this.wetube.allHomeContent().filter(v => checkIsShorts(v));
   });
 
   standardVideosList = computed(() => {
-    return this.wetube.allHomeContent().filter(v => !v.isShorts);
+    return this.wetube.allHomeContent().filter(v => !checkIsShorts(v));
   });
 
   // Section 1: Quran List

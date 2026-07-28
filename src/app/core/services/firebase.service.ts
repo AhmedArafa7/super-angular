@@ -558,8 +558,17 @@ export class FirebaseService {
   async addVideoForReview(videoData: any): Promise<void> {
     try {
       const videosRef = collection(this.firestore, 'videos');
+      
+      // Strip undefined values to prevent Firestore Unsupported field value: undefined error
+      const cleanData: any = {};
+      Object.keys(videoData || {}).forEach(key => {
+        if (videoData[key] !== undefined) {
+          cleanData[key] = videoData[key];
+        }
+      });
+
       await addDoc(videosRef, {
-        ...videoData,
+        ...cleanData,
         status: 'pending_review',
         createdAt: serverTimestamp()
       });
@@ -569,25 +578,37 @@ export class FirebaseService {
     }
   }
 
-  async getVideosByStatus(status: 'pending_review' | 'published' | 'rejected', lastDoc?: QueryDocumentSnapshot, pageSize: number = 20): Promise<{ videos: any[], lastVisible: QueryDocumentSnapshot | null }> {
+  async getVideosByStatus(status: 'pending_review' | 'published' | 'rejected', lastDoc?: QueryDocumentSnapshot, pageSize: number = 100): Promise<{ videos: any[], lastVisible: QueryDocumentSnapshot | null }> {
     try {
       const videosRef = collection(this.firestore, 'videos');
       
-      let q;
-      if (lastDoc) {
-        q = query(videosRef, where('status', '==', status), orderBy('createdAt', 'desc'), startAfter(lastDoc), limit(pageSize));
-      } else {
-        q = query(videosRef, where('status', '==', status), orderBy('createdAt', 'desc'), limit(pageSize));
+      let snap;
+      try {
+        let q;
+        if (lastDoc) {
+          q = query(videosRef, where('status', '==', status), orderBy('createdAt', 'desc'), startAfter(lastDoc), limit(pageSize));
+        } else {
+          q = query(videosRef, where('status', '==', status), orderBy('createdAt', 'desc'), limit(pageSize));
+        }
+        snap = await getDocs(q);
+      } catch (orderErr) {
+        console.warn(`[FirebaseService] orderBy createdAt failed for status ${status}, falling back to simple query:`, orderErr);
+        let qFallback;
+        if (lastDoc) {
+          qFallback = query(videosRef, where('status', '==', status), startAfter(lastDoc), limit(pageSize));
+        } else {
+          qFallback = query(videosRef, where('status', '==', status), limit(pageSize));
+        }
+        snap = await getDocs(qFallback);
       }
 
-      const snap = await getDocs(q);
       const videos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       const lastVisible = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
 
       return { videos, lastVisible };
     } catch (err) {
       console.error(`[FirebaseService] getVideosByStatus(${status}) failed:`, err);
-      throw err;
+      return { videos: [], lastVisible: null };
     }
   }
 

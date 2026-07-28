@@ -1,12 +1,16 @@
-import { Component, Input, Output, EventEmitter, inject, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, OnInit, ChangeDetectorRef, ViewChild, ElementRef, AfterViewInit, OnChanges, SimpleChanges, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { LucideAngularModule, X, Upload, HardDrive, Link, Plus, Zap, ExternalLink, FileVideo, Sparkles } from 'lucide-angular';
+import { 
+  LucideAngularModule, X, Upload, HardDrive, Link, Plus, Zap, ExternalLink, 
+  FileVideo, Sparkles, Pin, PinOff, CheckCircle2, AlertCircle 
+} from 'lucide-angular';
 import { FirebaseService } from '../../../../../core/services/firebase.service';
 import { YoutubeDiscoveryService } from '../../../../../core/services/youtube-discovery.service';
 import { VaultService } from '../../../../../core/vault.service';
 import { WeTubeService } from '../../../wetube.service';
+import { checkIsShorts } from '../../../wetube.model';
 
 @Component({
   selector: 'app-upload-modal',
@@ -15,15 +19,17 @@ import { WeTubeService } from '../../../wetube.service';
   templateUrl: './upload-modal.html',
   styleUrls: ['./upload-modal.scss']
 })
-export class UploadModalComponent implements OnInit {
+export class UploadModalComponent implements OnInit, AfterViewInit, OnChanges {
   private firebaseService = inject(FirebaseService);
   private discoveryService = inject(YoutubeDiscoveryService);
   private vaultService = inject(VaultService);
   private wetubeService = inject(WeTubeService);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
 
   @Input() isOpen: boolean = true;
   @Output() close = new EventEmitter<void>();
+  @ViewChild('urlInput') urlInput?: ElementRef<HTMLInputElement>;
   
   // Icons
   X = X;
@@ -35,6 +41,10 @@ export class UploadModalComponent implements OnInit {
   ExternalLink = ExternalLink;
   FileVideo = FileVideo;
   Sparkles = Sparkles;
+  Pin = Pin;
+  PinOff = PinOff;
+  CheckCircle2 = CheckCircle2;
+  AlertCircle = AlertCircle;
 
   // Form Fields
   title = '';
@@ -48,9 +58,89 @@ export class UploadModalComponent implements OnInit {
   isExtractingTitle = false;
   showFetchButton = false;
   detectedYtId = '';
+  isPinned = false;
+
+  // Toast Notification System
+  toast: { message: string; type: 'success' | 'error' } | null = null;
+  private toastTimeout: any = null;
+  private titleFetchTimeout: any = null;
+
+  focusUrlInput() {
+    setTimeout(() => {
+      if (this.urlInput?.nativeElement && this.sourceType !== 'local') {
+        this.urlInput.nativeElement.focus();
+        this.urlInput.nativeElement.select();
+      }
+    }, 150);
+  }
+
+  @HostListener('window:focus')
+  onWindowFocus() {
+    if (!this.isOpen || this.sourceType === 'local') return;
+    this.ensureInputFocused();
+  }
+
+  @HostListener('document:focusout', ['$event'])
+  onFocusOut(event: FocusEvent) {
+    if (!this.isOpen || this.sourceType === 'local') return;
+    setTimeout(() => {
+      this.ensureInputFocused();
+    }, 100);
+  }
+
+  private ensureInputFocused() {
+    if (!this.isOpen || this.sourceType === 'local') return;
+    const active = document.activeElement;
+    const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
+    const isInteractive = active && (
+      active.tagName === 'BUTTON' || 
+      active.classList.contains('segment-btn') || 
+      active.classList.contains('channel-dropdown-trigger') ||
+      active.classList.contains('channel-dropdown-item') ||
+      active.classList.contains('pin-btn') ||
+      active.classList.contains('close-btn')
+    );
+    
+    if (!isInput && !isInteractive) {
+      this.focusUrlInput();
+    }
+  }
+
+  ngAfterViewInit() {
+    this.focusUrlInput();
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['isOpen'] && changes['isOpen'].currentValue) {
+      this.focusUrlInput();
+    }
+  }
+
+  showToast(message: string, type: 'success' | 'error' = 'success', durationMs = 3500) {
+    this.toast = { message, type };
+    this.cdr.detectChanges();
+    if (this.toastTimeout) clearTimeout(this.toastTimeout);
+    this.toastTimeout = setTimeout(() => {
+      this.toast = null;
+      this.cdr.detectChanges();
+    }, durationMs);
+  }
+
+  togglePin() {
+    this.isPinned = !this.isPinned;
+    const msg = this.isPinned ? 'تم تثبيت النافذة لرفع فيديوهات متعددة 📌' : 'تم إلغاء تثبيت النافذة';
+    this.showToast(msg, 'success', 2000);
+  }
 
   onClose() {
     this.close.emit();
+  }
+
+  onEnterPress(event: Event) {
+    event.preventDefault();
+    if (!this.isUploading) {
+      this.onUpload();
+    }
   }
 
   ngOnInit() {
@@ -61,6 +151,7 @@ export class UploadModalComponent implements OnInit {
           this.sourceUrl = text.trim();
           this.sourceType = 'youtube';
           this.onSourceUrlChange(text.trim());
+          this.cdr.detectChanges();
         }
       }).catch(() => {});
     }
@@ -72,11 +163,14 @@ export class UploadModalComponent implements OnInit {
     this.sourceUrl = '';
     this.showFetchButton = false;
     this.detectedYtId = '';
+    this.isExtractingTitle = false;
+    this.cdr.detectChanges();
   }
 
   selectChannel(channel: string) {
     this.selectedChannel = channel;
     this.showChannelDropdown = false;
+    this.cdr.detectChanges();
   }
 
   openVault() {
@@ -107,6 +201,8 @@ export class UploadModalComponent implements OnInit {
     if (!urlVal) {
       this.showFetchButton = false;
       this.detectedYtId = '';
+      this.isExtractingTitle = false;
+      this.cdr.detectChanges();
       return;
     }
 
@@ -121,24 +217,31 @@ export class UploadModalComponent implements OnInit {
       if (ytId) {
         this.detectedYtId = ytId;
         
-        // 1. Search locally first (Instant, offline & 100% free)
+        // Search locally first
         const knownVideo = this.wetubeService.feedVideos().find((v: any) => v.id === ytId) || 
-                           this.wetubeService.trendingVideos().find((v: any) => v.id === ytId) ||
-                           this.wetubeService.videos().find((v: any) => v.id === ytId);
+                           this.wetubeService.trendingVideos().find((v: any) => v.id === ytId);
         
         if (knownVideo) {
           this.title = knownVideo.title;
           this.showFetchButton = false;
+          this.isExtractingTitle = false;
+          this.cdr.detectChanges();
         } else {
-          // Auto-fetch title from YouTube API instead of requiring manual click
-          this.title = '';
+          // Instant debounced title fetching
+          if (this.titleFetchTimeout) clearTimeout(this.titleFetchTimeout);
           this.isExtractingTitle = true;
           this.showFetchButton = false;
-          this.fetchTitleFromApi();
+          this.cdr.detectChanges();
+
+          this.titleFetchTimeout = setTimeout(() => {
+            this.fetchTitleFromApi();
+          }, 200);
         }
       } else {
         this.showFetchButton = false;
         this.detectedYtId = '';
+        this.isExtractingTitle = false;
+        this.cdr.detectChanges();
       }
     } else if (this.sourceType === 'vault') {
       const matchedAsset = this.vaultService.assets().find(a => 
@@ -150,14 +253,20 @@ export class UploadModalComponent implements OnInit {
         this.title = matchedAsset.name;
       }
       this.showFetchButton = false;
+      this.isExtractingTitle = false;
+      this.cdr.detectChanges();
     }
   }
 
   fetchTitleFromApi() {
-    if (!this.detectedYtId) return;
-    this.isExtractingTitle = true;
+    if (!this.detectedYtId) {
+      this.isExtractingTitle = false;
+      this.cdr.detectChanges();
+      return;
+    }
 
-    // Use YouTube oEmbed API - simple, free, no API key needed
+    this.isExtractingTitle = true;
+    this.cdr.detectChanges();
     const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${this.detectedYtId}&format=json`;
 
     fetch(oembedUrl)
@@ -168,19 +277,14 @@ export class UploadModalComponent implements OnInit {
       .then((data: any) => {
         if (data && data.title) {
           this.title = data.title;
-          // Also try to get author from oEmbed
-          if (data.author_name && !this.title.includes(data.author_name)) {
-            // title is good as-is
-          }
         } else {
           this.title = 'فيديو يوتيوب - ' + this.detectedYtId;
         }
         this.showFetchButton = false;
         this.isExtractingTitle = false;
+        this.cdr.detectChanges();
       })
-      .catch((err) => {
-        console.warn('oEmbed failed, trying oembed.io fallback', err);
-        // Fallback: try another oEmbed service
+      .catch(() => {
         const fallbackUrl = `https://noembed.com/embed?url=https://www.youtube.com/watch?v=${this.detectedYtId}`;
         fetch(fallbackUrl)
           .then(res => res.json())
@@ -188,11 +292,13 @@ export class UploadModalComponent implements OnInit {
             this.title = data.title || 'فيديو يوتيوب - ' + this.detectedYtId;
             this.showFetchButton = false;
             this.isExtractingTitle = false;
+            this.cdr.detectChanges();
           })
           .catch(() => {
             this.title = 'فيديو يوتيوب - ' + this.detectedYtId;
             this.showFetchButton = false;
             this.isExtractingTitle = false;
+            this.cdr.detectChanges();
           });
       });
   }
@@ -215,17 +321,17 @@ export class UploadModalComponent implements OnInit {
     const sourceUrlVal = this.sourceUrl.trim();
 
     if (!titleVal) {
-      alert('يرجى إدخال عنوان الفيديو');
+      this.showToast('يرجى إدخال عنوان الفيديو', 'error');
       return;
     }
 
     if (this.sourceType !== 'local' && !sourceUrlVal) {
-      alert('يرجى إدخال رابط المصدر');
+      this.showToast('يرجى إدخال رابط المصدر', 'error');
       return;
     }
 
     if (this.sourceType === 'local' && !this.selectedFile) {
-      alert('يرجى اختيار ملف فيديو للرفع');
+      this.showToast('يرجى اختيار ملف فيديو للرفع', 'error');
       return;
     }
 
@@ -256,27 +362,53 @@ export class UploadModalComponent implements OnInit {
         finalSource = 'platform';
       }
 
+      // Extract YouTube video ID if YouTube source
+      let thumbnail = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800';
+      const ytMatch = finalUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([^&?\n]+)/);
+      if (ytMatch && ytMatch[1]) {
+        thumbnail = `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
+      }
+
+      const calculatedIsShorts = checkIsShorts({ url: finalUrl, title: titleVal });
+
       await this.firebaseService.addVideoForReview({
         title: titleVal,
         author: this.selectedChannel,
-        category: 'تكنولوجيا', // Can be made dynamic later
-        thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800',
+        category: calculatedIsShorts ? 'shorts' : 'تكنولوجيا',
+        thumbnail: thumbnail,
         source: finalSource,
         url: finalUrl,
+        isShorts: calculatedIsShorts,
         isLargeFile: isLargeFile,
-        fileSizeMB: this.selectedFile ? +(this.selectedFile.size / (1024 * 1024)).toFixed(1) : undefined
+        fileSizeMB: this.selectedFile ? +(this.selectedFile.size / (1024 * 1024)).toFixed(1) : 0
       });
       
       this.isUploading = false;
       const successMsg = isLargeFile 
         ? 'تم رفع الفيديو الكبير وتقسيمه بنجاح وإرساله للمراجعة! ⚡'
         : 'تمت جدولة المزامنة وإرسال الفيديو للمراجعة بنجاح! ⚡';
-      alert(successMsg);
-      this.onClose();
+
+      this.showToast(successMsg, 'success');
+
+      if (this.isPinned) {
+        // Reset form inputs for next submission while keeping modal open
+        this.title = '';
+        this.sourceUrl = '';
+        this.selectedFile = null;
+        this.detectedYtId = '';
+        this.isExtractingTitle = false;
+        this.cdr.detectChanges();
+        this.focusUrlInput();
+      } else {
+        // Close modal after 1.2 seconds so toast is visible
+        setTimeout(() => {
+          this.onClose();
+        }, 1200);
+      }
     } catch (e) {
       this.isUploading = false;
       console.error('Failed to submit video for review', e);
-      alert('حدث خطأ أثناء إرسال الفيديو. تأكد من اتصالك بالشبكة.');
+      this.showToast('حدث خطأ أثناء إرسال الفيديو. تأكد من اتصالك بالشبكة.', 'error');
     }
   }
 }

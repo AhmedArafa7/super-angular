@@ -1,7 +1,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { firstValueFrom, from, catchError } from 'rxjs';
 import { QueryDocumentSnapshot } from 'firebase/firestore';
-import { Video, YouTubeSubscription, FeedVideo, HistoryItem, WeTubeTab, ContentItem } from './wetube.model';
+import { Video, YouTubeSubscription, FeedVideo, HistoryItem, WeTubeTab, ContentItem, checkIsShorts } from './wetube.model';
 import { FirebaseService } from '../../core/services/firebase.service';
 import { YoutubeDiscoveryService, VideoDetails, YouTubeComment } from '../../core/services/youtube-discovery.service';
 import { YoutubeDataService, YouTubeChannelStats, YouTubeVideo } from '../../core/services/youtube-data.service';
@@ -867,8 +867,8 @@ export class WeTubeService {
         this.discoveryService.searchYouTube('shorts', 'EgQYAXAB')
       );
 
-      // Filter shorts
-      let shorts = apiShorts.filter(v => v.isShorts);
+      // Filter shorts using robust checkIsShorts helper
+      let shorts = apiShorts.filter(v => checkIsShorts(v));
 
       // If no shorts found, mark all as shorts
       if (shorts.length === 0) {
@@ -876,7 +876,7 @@ export class WeTubeService {
       }
 
       // Also include shorts from trending/feed
-      const feedShorts = this.feedVideos().filter(v => v.isShorts);
+      const feedShorts = this.feedVideos().filter(v => checkIsShorts(v));
 
       // Combine and deduplicate
       const combined = [...feedShorts, ...shorts];

@@ -65,9 +65,11 @@ export class WeTubeModerationComponent implements OnInit {
   }
 
   setTab(tab: 'pending' | 'approved' | 'rejected' | 'channels' | 'local_storage' | 'whitelisted_channels') {
+    const isSameTab = this.activeSubTab() === tab;
     this.activeSubTab.set(tab);
-    if (this.needsLoading(tab)) {
-      this.loadData();
+    
+    if (isSameTab || this.needsLoading(tab)) {
+      this.loadData(true);
     }
     if (tab === 'local_storage') {
       this.loadLocalStorage();
@@ -168,32 +170,78 @@ export class WeTubeModerationComponent implements OnInit {
     }
   }
 
-  async loadData() {
+  refreshCurrentTab() {
+    this.loadData(true);
+  }
+
+  async loadData(forceRefresh = false) {
     if (this.isLoading()) return;
     this.isLoading.set(true);
 
     const tab = this.activeSubTab();
     try {
       if (tab === 'pending') {
-        const { videos, lastVisible } = await this.firebase.getVideosByStatus('pending_review', this.lastPendingDoc() || undefined);
-        this.pendingVideos.update(list => [...list, ...videos]);
+        if (forceRefresh) {
+          this.pendingVideos.set([]);
+          this.lastPendingDoc.set(null);
+        }
+        const { videos, lastVisible } = await this.firebase.getVideosByStatus('pending_review', this.lastPendingDoc() || undefined, 100);
+        
+        this.pendingVideos.update(existing => {
+          const combined = forceRefresh ? videos : [...existing, ...videos];
+          const map = new Map<string, any>();
+          combined.forEach(v => map.set(v.id, v));
+          return Array.from(map.values());
+        });
         this.lastPendingDoc.set(lastVisible);
-        this.hasMorePending.set(videos.length === 20);
+        this.hasMorePending.set(videos.length >= 100);
+
       } else if (tab === 'approved') {
-        const { videos, lastVisible } = await this.firebase.getVideosByStatus('published', this.lastApprovedDoc() || undefined);
-        this.approvedVideos.update(list => [...list, ...videos]);
+        if (forceRefresh) {
+          this.approvedVideos.set([]);
+          this.lastApprovedDoc.set(null);
+        }
+        const { videos, lastVisible } = await this.firebase.getVideosByStatus('published', this.lastApprovedDoc() || undefined, 100);
+        
+        this.approvedVideos.update(existing => {
+          const combined = forceRefresh ? videos : [...existing, ...videos];
+          const map = new Map<string, any>();
+          combined.forEach(v => map.set(v.id, v));
+          return Array.from(map.values());
+        });
         this.lastApprovedDoc.set(lastVisible);
-        this.hasMoreApproved.set(videos.length === 20);
+        this.hasMoreApproved.set(videos.length >= 100);
+
       } else if (tab === 'rejected') {
-        const { videos, lastVisible } = await this.firebase.getVideosByStatus('rejected', this.lastRejectedDoc() || undefined);
-        this.rejectedVideos.update(list => [...list, ...videos]);
+        if (forceRefresh) {
+          this.rejectedVideos.set([]);
+          this.lastRejectedDoc.set(null);
+        }
+        const { videos, lastVisible } = await this.firebase.getVideosByStatus('rejected', this.lastRejectedDoc() || undefined, 100);
+        
+        this.rejectedVideos.update(existing => {
+          const combined = forceRefresh ? videos : [...existing, ...videos];
+          const map = new Map<string, any>();
+          combined.forEach(v => map.set(v.id, v));
+          return Array.from(map.values());
+        });
         this.lastRejectedDoc.set(lastVisible);
-        this.hasMoreRejected.set(videos.length === 20);
+        this.hasMoreRejected.set(videos.length >= 100);
+
       } else if (tab === 'channels') {
-        const { channels, lastVisible } = await this.firebase.getBlacklistedChannelsList(this.lastChannelDoc() || undefined);
-        this.blacklistedChannels.update(list => [...list, ...channels]);
+        if (forceRefresh) {
+          this.blacklistedChannels.set([]);
+          this.lastChannelDoc.set(null);
+        }
+        const { channels, lastVisible } = await this.firebase.getBlacklistedChannelsList(this.lastChannelDoc() || undefined, 100);
+        this.blacklistedChannels.update(existing => {
+          const combined = forceRefresh ? channels : [...existing, ...channels];
+          const map = new Map<string, any>();
+          combined.forEach(c => map.set(c.id, c));
+          return Array.from(map.values());
+        });
         this.lastChannelDoc.set(lastVisible);
-        this.hasMoreChannels.set(channels.length === 20);
+        this.hasMoreChannels.set(channels.length >= 100);
       }
     } catch (err) {
       console.error('Error loading moderation data', err);

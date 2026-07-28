@@ -3,6 +3,7 @@ import { PipedApiService, PipedVideoDetails } from './piped-api.service';
 import { IndexedDBService } from './indexed-db.service';
 import { VideoDownloadService } from './video-download.service';
 import { WeTubeService } from '../../features/wetube/wetube.service';
+import { checkIsShorts } from '../../features/wetube/wetube.model';
 
 export type PlayerMode = 'hidden' | 'floating' | 'full' | 'pip';
 export type PlayerType = 'native' | 'iframe';
@@ -125,11 +126,21 @@ export class VideoStateService {
 
     // Save to local watch_history in IndexedDB (transparently encrypted)
     try {
+      const ytIdForThumb = this.extractYoutubeId(video.url) ||
+                           this.extractYoutubeId((video as any).externalUrl) ||
+                           this.extractYoutubeId(video.id);
+
+      const safeThumb = (video.thumbnail && !video.thumbnail.includes('placeholder'))
+        ? video.thumbnail
+        : (ytIdForThumb ? `https://img.youtube.com/vi/${ytIdForThumb}/hqdefault.jpg` : 'assets/placeholder.jpg');
+
       await this.dbService.put('watch_history', {
         videoId: video.id,
-        title: video.title,
-        thumbnail: video.thumbnail,
-        author: video.author,
+        title: video.title || 'فيديو WeTube',
+        thumbnail: safeThumb,
+        author: video.author || 'قناة WeTube',
+        duration: (video as any).duration || '',
+        isShorts: checkIsShorts(video),
         progress: this.watchedProgress().get(video.id) || 5,
         watchedAt: Date.now()
       });

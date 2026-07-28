@@ -175,6 +175,19 @@ export class IndexedDBService {
     });
   }
 
+  async clearStore(storeName: string): Promise<void> {
+    await this.initDB();
+    return new Promise((resolve, reject) => {
+      if (!this.db) return reject('DB not initialized');
+      const transaction = this.db.transaction(storeName, 'readwrite');
+      const store = transaction.objectStore(storeName);
+      const request = store.clear();
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
   // --- TTL Caching Logic ---
   async setWithTTL(storeName: string, item: any): Promise<void> {
     // Inject current timestamp for TTL checks
