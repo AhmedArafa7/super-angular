@@ -48,11 +48,15 @@ export class GlobalStateService {
     });
 
     // Listen for incoming game invites
-    effect(() => {
+    effect((onCleanup) => {
       const isReady = this.firebaseService.isReady();
-      if (isReady && this.firebaseService.currentUser()) {
-        this.firebaseService.listenForGameInvites((invites) => {
+      const user = this.firebaseService.currentUser();
+      if (isReady && user) {
+        const unsubscribe = this.firebaseService.listenForGameInvites((invites) => {
           this.activeGameInvites.set(invites);
+        });
+        onCleanup(() => {
+          if (unsubscribe) unsubscribe();
         });
       }
     }, { allowSignalWrites: true });

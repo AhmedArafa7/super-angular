@@ -21,7 +21,10 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3 } from 'lucide-ang
                <img [src]="invite.fromAvatar" class="size-10 rounded-full border-2 border-indigo-400" alt="Avatar">
                <div>
                   <h4 class="text-white font-black text-sm">{{ invite.fromName }} يدعوك للعب</h4>
-                  <p class="text-indigo-200 text-xs">{{ invite.gameTitle }}</p>
+                  <p class="text-indigo-200 text-xs flex items-center gap-1.5">
+                     <span>{{ invite.gameTitle }}</span>
+                     <span *ngIf="invite.isCustom || invite.gameId?.startsWith('custom_game_')" class="bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded-full border border-emerald-400/30 font-bold">لعبة محلية 🚀</span>
+                  </p>
                </div>
             </div>
             <div class="flex gap-2">
@@ -167,6 +170,9 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3 } from 'lucide-ang
                   <lucide-icon [img]="Edit3" class="w-3.5 h-3.5"></lucide-icon>
                   تعديل ✏️
                 </button>
+                <button *ngIf="game.status === 'available'" (click)="openInviteModalForGame(game)" class="bg-indigo-600/90 hover:bg-indigo-600 text-white rounded-xl font-bold h-9 px-3 text-xs flex items-center gap-1 shadow cursor-pointer">
+                  دعوة ✉️
+                </button>
                 <button *ngIf="game.status === 'available'" (click)="playGame(game.id)" class="bg-white text-black hover:bg-white/90 rounded-xl font-bold h-9 px-4 text-sm cursor-pointer">
                   العب الآن
                 </button>
@@ -222,6 +228,42 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3 } from 'lucide-ang
            </button>
         </div>
       </div>
+
+      <!-- Hub Invite Friend Modal -->
+      <div *ngIf="showHubInviteModal && selectedGameForInvite" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6 text-right" dir="rtl">
+        <div class="bg-slate-900 border border-white/10 rounded-3xl p-8 w-full max-w-md shadow-2xl animate-in zoom-in-95">
+           <h3 class="text-2xl font-black text-white mb-1">دعوة صديق للعب {{ selectedGameForInvite.title }}</h3>
+           <p class="text-xs text-indigo-300 mb-6">اختر صديقاً من قائمة أصدقائك المتصلين لإرسال الدعوة ومزامنة اللعبة لديه فوراً</p>
+
+           <div *ngIf="globalState.friends().length > 0; else noFriendsHub" class="flex flex-col gap-2 max-h-60 overflow-y-auto custom-scrollbar mb-6">
+              <div *ngFor="let friend of globalState.friends()" class="flex items-center justify-between bg-black/40 border border-white/5 p-3 rounded-2xl">
+                 <div class="flex items-center gap-3">
+                    <img [src]="friend.avatarUrl" class="size-10 rounded-full border border-white/10" alt="Avatar">
+                    <div>
+                      <h4 class="text-sm font-bold text-white leading-tight">{{ friend.name }}</h4>
+                      <span class="text-[10px]" [ngClass]="friend.status === 'online' ? 'text-green-400' : (friend.status === 'in-game' ? 'text-indigo-400' : 'text-slate-400')">
+                        {{ friend.status === 'online' ? 'متصل الآن' : (friend.status === 'in-game' ? 'يلعب حالياً' : 'غير متصل') }}
+                      </span>
+                    </div>
+                 </div>
+                 <button (click)="sendHubGameInvite(friend.id)" [disabled]="sentInviteFriendIds.includes(friend.id)" class="text-xs font-bold px-4 py-2 rounded-xl transition-all" [ngClass]="sentInviteFriendIds.includes(friend.id) ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'">
+                    {{ sentInviteFriendIds.includes(friend.id) ? 'تم إرسال الدعوة ✓' : 'إرسال دعوة ✉️' }}
+                 </button>
+              </div>
+           </div>
+
+           <ng-template #noFriendsHub>
+              <div class="bg-black/30 border border-white/5 rounded-2xl p-6 text-center mb-6">
+                 <p class="text-sm text-slate-400">لا يوجد أصدقاء متصلون في قائمتك حالياً.</p>
+                 <p class="text-xs text-indigo-400 mt-1">يمكنك إضافة أصدقاء عبر زر "إضافة صديق" في الشريط العلوي!</p>
+              </div>
+           </ng-template>
+
+           <button (click)="showHubInviteModal = false" class="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-2xl border border-white/10 text-xs transition-colors">
+             إلغاء
+           </button>
+        </div>
+      </div>
     </div>
   `
 })
@@ -253,10 +295,51 @@ export class ArcadeHubComponent implements OnInit {
   showAddFriend = false;
   showSubmitGameModal = false;
   showOpenTTDModal = false;
+  showHubInviteModal = false;
+  selectedGameForInvite: ArcadeGame | null = null;
+  sentInviteFriendIds: string[] = [];
   newFriendName = '';
   newGameUrl = '';
   newGameTitle = '';
   isAdding = false;
+
+  openInviteModalForGame(game: ArcadeGame) {
+    this.selectedGameForInvite = game;
+    this.showHubInviteModal = true;
+  }
+
+  async sendHubGameInvite(friendId: string) {
+    if (!this.selectedGameForInvite) return;
+    const game = this.selectedGameForInvite;
+    const roomCode = 'ROOM-' + Math.floor(1000 + Math.random() * 9000);
+
+    let customGameData: any = undefined;
+    if (game.id.startsWith('custom_game_')) {
+      const htmlContent = localStorage.getItem(`arcade_custom_code_${game.id}`) || '';
+      customGameData = {
+        title: game.title,
+        description: game.description,
+        thumbnail: game.thumbnail,
+        category: game.category,
+        genre: game.genre,
+        htmlContent: htmlContent,
+        updatedAt: Date.now()
+      };
+    }
+
+    this.sentInviteFriendIds.push(friendId);
+    await this.firebaseService.sendGameInvite(
+      friendId,
+      game.id,
+      game.title,
+      roomCode,
+      customGameData
+    );
+
+    // توجيه المرسل فوراً لساحة اللعب كصاحب الغرفة (Host)
+    this.showHubInviteModal = false;
+    this.router.navigate(['/arcade/arena', game.id], { queryParams: { room: roomCode, host: 'true' } });
+  }
 
   submitGame() {
     const title = this.newGameTitle.trim();
@@ -320,6 +403,28 @@ export class ArcadeHubComponent implements OnInit {
   }
 
   async acceptInvite(invite: any) {
+    // التحقق مما إذا كانت اللعبة محلية/مخصصة ومزامنتها تلقائياً عند القبول
+    const isCustom = invite.isCustom || invite.gameId?.startsWith('custom_game_');
+    if (isCustom && invite.customGameData) {
+      const gameId = invite.gameId;
+      const customData = invite.customGameData;
+      const htmlContent = customData.htmlContent;
+
+      if (htmlContent && (!this.arcadeService.hasUpToDateCustomGame(gameId))) {
+        this.arcadeService.saveOrUpdateCustomGame(
+          gameId,
+          {
+            title: invite.gameTitle || customData.title || 'لعبة مخصصة',
+            description: customData.description,
+            thumbnail: customData.thumbnail,
+            category: customData.category,
+            genre: customData.genre
+          },
+          htmlContent
+        );
+      }
+    }
+
     await this.firebaseService.updateGameInviteStatus(invite.id, 'accepted');
     this.router.navigate(['/arcade/arena', invite.gameId], { queryParams: { room: invite.roomCode } });
   }

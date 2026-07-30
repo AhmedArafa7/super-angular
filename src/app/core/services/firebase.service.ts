@@ -891,12 +891,18 @@ export class FirebaseService {
   // GAME INVITES SYSTEM
   // ==========================================
 
-  async sendGameInvite(toUid: string, gameId: string, gameTitle: string, roomCode: string): Promise<void> {
+  async sendGameInvite(
+    toUid: string,
+    gameId: string,
+    gameTitle: string,
+    roomCode: string,
+    customGameData?: { htmlContent?: string; thumbnail?: string; description?: string; updatedAt?: number; category?: string; genre?: string }
+  ): Promise<void> {
     const user = this.currentUser();
     if (!user) return;
     try {
       const invitesRef = collection(this.firestore, 'game_invites');
-      await addDoc(invitesRef, {
+      const payload: any = {
         fromUid: user.uid,
         fromName: user.displayName || this.userData()?.name || 'لاعب',
         fromAvatar: user.photoURL || 'https://ui-avatars.com/api/?name=U',
@@ -906,7 +912,14 @@ export class FirebaseService {
         roomCode: roomCode,
         status: 'pending',
         createdAt: Date.now()
-      });
+      };
+
+      if (customGameData) {
+        payload.isCustom = true;
+        payload.customGameData = customGameData;
+      }
+
+      await addDoc(invitesRef, payload);
     } catch (err) {
       console.error('[FirebaseService] sendGameInvite failed:', err);
     }
@@ -914,19 +927,23 @@ export class FirebaseService {
 
   listenForGameInvites(callback: (invites: any[]) => void): () => void {
     const user = this.currentUser();
-    if (!user) return () => {};
+    const targetUid = user?.uid || (user as any)?.id;
+    if (!targetUid) return () => {};
     
     try {
       const q = query(
         collection(this.firestore, 'game_invites'),
-        where('toUid', '==', user.uid),
-        where('status', '==', 'pending')
+        where('toUid', '==', targetUid)
       );
       
-      // onSnapshot is imported from firebase/firestore
       return onSnapshot(q, (snapshot) => {
-        const invites = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const invites = snapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter((inv: any) => inv.status === 'pending');
+        console.log('[FirebaseService] Incoming game invites for', targetUid, ':', invites);
         callback(invites);
+      }, (err) => {
+        console.error('[FirebaseService] listenForGameInvites snapshot error:', err);
       });
     } catch (err) {
       console.error('[FirebaseService] listenForGameInvites failed:', err);

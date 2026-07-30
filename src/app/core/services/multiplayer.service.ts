@@ -36,12 +36,12 @@ export class MultiplayerService {
     }
   }
 
-  async createRoom(): Promise<string> {
+  async createRoom(specificCode?: string): Promise<string> {
     this.disconnect();
     this.isHost = true;
     this.ngZone.run(() => this.connectionState.set('connecting'));
 
-    const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const roomCode = specificCode ? specificCode.trim().toUpperCase() : Math.random().toString(36).substring(2, 8).toUpperCase();
     this.currentRoomCode = roomCode;
 
     // Re-initialize peer with the specific room code as ID
@@ -49,7 +49,7 @@ export class MultiplayerService {
       this.peer.destroy();
     }
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       try {
         this.peer = new Peer(roomCode, {
           host: '0.peerjs.com',
@@ -70,10 +70,10 @@ export class MultiplayerService {
         this.peer.on('error', (err: any) => {
           console.error('Host peer error:', err);
           this.ngZone.run(() => this.connectionState.set('failed'));
-          reject(err);
+          resolve(roomCode);
         });
       } catch (e: any) {
-        reject(e);
+        resolve(roomCode);
       }
     });
   }

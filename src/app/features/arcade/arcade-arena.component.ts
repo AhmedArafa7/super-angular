@@ -15,6 +15,30 @@ import { ArcadeAudioService } from '../../core/services/arcade-audio.service';
   imports: [CommonModule, FormsModule],
   template: `
     <div #container class="fixed inset-0 z-[60] bg-black flex flex-col" dir="rtl">
+      <!-- Incoming Game Invites -->
+      <div *ngIf="globalState.activeGameInvites().length > 0" class="fixed top-20 right-6 z-[100] flex flex-col gap-3 max-w-sm w-full">
+         <div *ngFor="let invite of globalState.activeGameInvites()" class="bg-indigo-900/90 backdrop-blur-xl border border-indigo-400/50 rounded-2xl p-4 shadow-2xl animate-in slide-in-from-right fade-in duration-500">
+            <div class="flex items-center gap-3 mb-3">
+               <img [src]="invite.fromAvatar" class="size-10 rounded-full border-2 border-indigo-400" alt="Avatar">
+               <div>
+                  <h4 class="text-white font-black text-sm">{{ invite.fromName }} يدعوك للعب</h4>
+                  <p class="text-indigo-200 text-xs flex items-center gap-1.5">
+                     <span>{{ invite.gameTitle }}</span>
+                     <span *ngIf="invite.isCustom || invite.gameId?.startsWith('custom_game_')" class="bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded-full border border-emerald-400/30 font-bold">لعبة محلية 🚀</span>
+                  </p>
+               </div>
+            </div>
+            <div class="flex gap-2">
+               <button (click)="acceptInvite(invite)" class="flex-1 bg-indigo-500 hover:bg-indigo-400 text-white font-bold py-2 rounded-xl text-xs transition-colors">
+                  قبول وانضمام
+               </button>
+               <button (click)="declineInvite(invite)" class="bg-white/10 hover:bg-white/20 text-white font-bold px-4 py-2 rounded-xl text-xs transition-colors">
+                  رفض
+               </button>
+            </div>
+         </div>
+      </div>
+
       <!-- Immersive Header -->
       <header [class.hidden]="isImmersive" class="h-16 px-6 border-b border-white/5 bg-slate-900/80 backdrop-blur-xl flex items-center justify-between shrink-0 transition-all duration-300">
         <div class="flex items-center gap-4">
@@ -28,7 +52,13 @@ import { ArcadeAudioService } from '../../core/services/arcade-audio.service';
         </div>
 
         <div class="flex items-center gap-2 md:gap-4">
-          <!-- Game Status Indicators -->
+           <!-- Direct Invite Friend Button -->
+           <button (click)="openPrivateRoomInviteModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 shadow-lg shadow-indigo-500/20">
+              <svg xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
+              <span>دعوة صديق ✉️</span>
+           </button>
+
+           <!-- Game Status Indicators -->
            <div class="hidden md:flex items-center gap-6 px-4 py-1.5 bg-white/5 rounded-full border border-white/5">
               <div class="flex items-center gap-2">
                  <svg xmlns="http://www.w3.org/2000/svg" class="size-4" [ngClass]="{'text-green-400': multiplayer.connectionState() === 'connected' || gameState !== 'Waiting...', 'text-amber-400': multiplayer.connectionState() === 'connecting', 'text-red-400': multiplayer.connectionState() === 'failed'}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
@@ -120,20 +150,27 @@ import { ArcadeAudioService } from '../../core/services/arcade-audio.service';
             <p *ngIf="copied" class="text-xs text-emerald-400 mt-2 animate-in fade-in slide-in-from-bottom-2">تم نسخ الرابط بنجاح!</p>
 
             <!-- Friend Invites Section -->
-            <div class="mt-6 border-t border-white/10 pt-4 text-right" *ngIf="globalState.friends().length > 0">
+            <div class="mt-6 border-t border-white/10 pt-4 text-right">
                <h4 class="text-sm font-bold text-slate-300 mb-3 text-center">أصدقاؤك المتصلون</h4>
-               <div class="flex flex-col gap-2 max-h-40 overflow-y-auto custom-scrollbar px-2">
+               <div *ngIf="globalState.friends().length > 0; else noFriends" class="flex flex-col gap-2 max-h-40 overflow-y-auto custom-scrollbar px-2">
                   <div *ngFor="let friend of globalState.friends()" class="flex items-center justify-between bg-black/40 border border-white/5 p-2 rounded-xl">
                      <div class="flex items-center gap-2">
                         <img [src]="friend.avatarUrl" class="size-8 rounded-full border border-white/10" alt="Avatar">
                         <span class="text-sm font-bold text-white">{{ friend.name }}</span>
                      </div>
                      <button (click)="inviteFriend(friend.id)" [disabled]="invitedFriends.includes(friend.id)" class="text-xs font-bold px-3 py-1.5 rounded-lg transition-colors" [ngClass]="invitedFriends.includes(friend.id) ? 'bg-slate-800 text-slate-500' : 'bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600 hover:text-white'">
-                        {{ invitedFriends.includes(friend.id) ? 'تم الإرسال' : 'دعوة' }}
+                        {{ invitedFriends.includes(friend.id) ? 'تم الإرسال ✓' : 'دعوة ✉️' }}
                      </button>
                   </div>
                </div>
+               <ng-template #noFriends>
+                  <p class="text-xs text-slate-400 text-center py-2">لا يوجد أصدقاء متصلين حالياً. يمكنك مشاركة الكود أعلاه مباشرة مع صديقك!</p>
+               </ng-template>
             </div>
+
+            <button (click)="showPrivateRoomModal = false" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 rounded-xl text-xs transition-colors mt-4">
+               إغلاق والعودة للعبة
+            </button>
          </div>
       </div>
 
@@ -335,8 +372,13 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
       if (state === 'connected' && this.selectedMode === 'private') {
         this.launchGame();
       } else if (state === 'failed') {
-        alert('فشل الاتصال بالغرفة. قد تكون الغرفة غير موجودة أو انتهت صلاحيتها.');
-        this.goBack();
+        if (this.game && this.game.id.startsWith('custom_game_')) {
+          console.warn('P2P connection state failed for custom game, continuing in local mode.');
+          this.launchGame();
+        } else {
+          alert('فشل الاتصال بالغرفة. قد تكون الغرفة غير موجودة أو انتهت صلاحيتها.');
+          this.goBack();
+        }
       }
     });
 
@@ -373,6 +415,7 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
 
     this.route.queryParamMap.subscribe(params => {
       const room = params.get('room');
+      const isHost = params.get('host') === 'true';
       const version = params.get('v');
       
       if (version) {
@@ -381,12 +424,21 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
       
       if (room) {
         this.generatedRoomCode = room.trim().toUpperCase();
-        this.privateRoomRole = 'guest';
         this.selectedMode = 'private';
         this.showModeOverlay = false;
         this.showPrivateRoomModal = false;
         this.showJoinRoomModal = false;
-        this.multiplayer.joinRoom(this.generatedRoomCode);
+
+        if (isHost) {
+          this.privateRoomRole = 'host';
+          this.multiplayer.createRoom(this.generatedRoomCode).catch(e => console.warn('Host createRoom:', e));
+        } else {
+          this.privateRoomRole = 'guest';
+          this.multiplayer.joinRoom(this.generatedRoomCode).catch(e => console.warn('Guest joinRoom:', e));
+        }
+
+        // Launch game iframe automatically
+        this.launchGame();
       }
     });
 
@@ -444,15 +496,73 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
     }
   }
 
+  async openPrivateRoomInviteModal() {
+    if (!this.generatedRoomCode || this.generatedRoomCode === 'جاري...') {
+      try {
+        const code = await this.multiplayer.createRoom();
+        this.generatedRoomCode = code || ('ROOM-' + Math.floor(1000 + Math.random() * 9000));
+      } catch (e) {
+        this.generatedRoomCode = 'ROOM-' + Math.floor(1000 + Math.random() * 9000);
+      }
+    }
+    this.showPrivateRoomModal = true;
+  }
+
   async inviteFriend(friendId: string) {
     if (!this.game || !this.generatedRoomCode) return;
     this.invitedFriends.push(friendId);
+
+    let customGameData: any = undefined;
+    if (this.game.id.startsWith('custom_game_')) {
+      const htmlContent = localStorage.getItem(`arcade_custom_code_${this.game.id}`) || '';
+      customGameData = {
+        title: this.game.title,
+        description: this.game.description,
+        thumbnail: this.game.thumbnail,
+        category: this.game.category,
+        genre: this.game.genre,
+        htmlContent: htmlContent,
+        updatedAt: Date.now()
+      };
+    }
+
     await this.firebaseService.sendGameInvite(
       friendId,
       this.game.id,
       this.game.title,
-      this.generatedRoomCode
+      this.generatedRoomCode,
+      customGameData
     );
+  }
+
+  async acceptInvite(invite: any) {
+    const isCustom = invite.isCustom || invite.gameId?.startsWith('custom_game_');
+    if (isCustom && invite.customGameData) {
+      const gameId = invite.gameId;
+      const customData = invite.customGameData;
+      const htmlContent = customData.htmlContent;
+
+      if (htmlContent && (!this.arcadeService.hasUpToDateCustomGame(gameId))) {
+        this.arcadeService.saveOrUpdateCustomGame(
+          gameId,
+          {
+            title: invite.gameTitle || customData.title || 'لعبة مخصصة',
+            description: customData.description,
+            thumbnail: customData.thumbnail,
+            category: customData.category,
+            genre: customData.genre
+          },
+          htmlContent
+        );
+      }
+    }
+
+    await this.firebaseService.updateGameInviteStatus(invite.id, 'accepted');
+    this.router.navigate(['/arcade/arena', invite.gameId], { queryParams: { room: invite.roomCode } });
+  }
+
+  async declineInvite(invite: any) {
+    await this.firebaseService.updateGameInviteStatus(invite.id, 'declined');
   }
 
   async simulateKey(key1: string, key2: string, isDown: boolean, event?: TouchEvent) {

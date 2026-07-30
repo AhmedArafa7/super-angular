@@ -477,6 +477,42 @@ export class ArcadeService {
     return newGame;
   }
 
+  saveOrUpdateCustomGame(gameId: string, gameData: { title: string; description?: string; thumbnail?: string; category?: string; genre?: string }, htmlContent: string): ArcadeGame {
+    const published = this.getPublishedGames();
+    const existingIndex = published.findIndex(g => g.id === gameId);
+
+    const updatedGame: ArcadeGame = {
+      id: gameId,
+      category: gameData.category || 'general',
+      title: gameData.title,
+      description: gameData.description || 'لعبة مخصصة تم استقبالها من صديق ومزامنتها بنجاح.',
+      thumbnail: gameData.thumbnail || 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%234f46e5%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22280%22%20font-size%3D%22100%22%20text-anchor%3D%22middle%22%3E%F0%9F%9A%80%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22420%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2240%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3E' + encodeURIComponent(gameData.title.substring(0, 20)) + '%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: gameData.genre || 'Arcade AI',
+      platforms: ['browser'],
+      status: 'available',
+      hasCustomMenu: true
+    };
+
+    if (existingIndex >= 0) {
+      published[existingIndex] = updatedGame;
+    } else {
+      published.unshift(updatedGame);
+    }
+
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(`arcade_custom_code_${gameId}`, htmlContent);
+      localStorage.setItem(this.publishedGamesKey, JSON.stringify(published));
+    }
+
+    return updatedGame;
+  }
+
+  hasUpToDateCustomGame(gameId: string): boolean {
+    if (typeof localStorage === 'undefined') return false;
+    const code = localStorage.getItem(`arcade_custom_code_${gameId}`);
+    return !!code && code.trim().length > 0;
+  }
+
   getGames(): Observable<ArcadeGame[]> {
     const custom = this.getPublishedGames();
     return of([...custom, ...this.games]);
