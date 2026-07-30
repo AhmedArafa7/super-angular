@@ -434,34 +434,41 @@ export class LibraryComponent {
         if (stored) localIngestedBooks = JSON.parse(stored);
       } catch (e) {}
 
-      // 3. Fetch Personal Saved PDF books from IndexedDB
+      // 3. Fetch Personal Saved PDF books from LocalStorage and IndexedDB
       let personalPdfBooks: Book[] = [];
       try {
+        const storedPdfs = localStorage.getItem('SUPER_PERSONAL_PDFS');
+        if (storedPdfs) personalPdfBooks = JSON.parse(storedPdfs);
+
         const pdfItems = await this.indexedDb.getAll('personal_pdf_books');
         if (pdfItems && pdfItems.length > 0) {
-          personalPdfBooks = pdfItems.map(item => ({
-            id: item.id,
-            title: item.title,
-            author: item.author || 'كتاب شخصي',
-            description: 'كتاب PDF شخصي محفوظ في متصفحك.',
-            coverUrl: item.coverUrl || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
-            fileUrl: '',
-            category: item.category || 'كتب PDF الشخصية',
-            status: 'approved',
-            uploaderId: 'local_user',
-            uploaderName: 'أنت (كتاب شخصي)',
-            downloadCount: 1,
-            createdAt: item.createdAt || new Date().toISOString().split('T')[0],
-            fileSize: item.fileSize || 'PDF',
-            rating: 5.0,
-            ratingCount: 1,
-            featured: true,
-            isPersonalPdf: true,
-            fileDataUrl: item.fileDataUrl
-          } as Book));
+          pdfItems.forEach(item => {
+            if (!personalPdfBooks.some(p => p.id === item.id)) {
+              personalPdfBooks.push({
+                id: item.id,
+                title: item.title,
+                author: item.author || 'كتاب شخصي',
+                description: 'كتاب PDF شخصي محفوظ في متصفحك.',
+                coverUrl: item.coverUrl || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
+                fileUrl: '',
+                category: item.category || 'كتب PDF الشخصية',
+                status: 'approved',
+                uploaderId: 'local_user',
+                uploaderName: 'أنت (كتاب شخصي)',
+                downloadCount: 1,
+                createdAt: item.createdAt || new Date().toISOString().split('T')[0],
+                fileSize: item.fileSize || 'PDF',
+                rating: 5.0,
+                ratingCount: 1,
+                featured: true,
+                isPersonalPdf: true,
+                fileDataUrl: item.fileDataUrl
+              } as Book);
+            }
+          });
         }
       } catch (e) {
-        console.warn('Could not load personal_pdf_books from IndexedDB:', e);
+        console.warn('Could not load personal_pdf_books:', e);
       }
 
       const db = this.firebase.firestore;
@@ -481,9 +488,9 @@ export class LibraryComponent {
           }
         });
 
-        // Deduplicate by title
+        // Deduplicate non-personal books by title while ALWAYS keeping personal PDF books
         const uniqueBooks = combined.filter((b, index, self) => 
-          index === self.findIndex(t => t.title === b.title)
+          b.isPersonalPdf || index === self.findIndex(t => t.title === b.title)
         );
 
         this.books.set(uniqueBooks);
@@ -524,37 +531,69 @@ export class LibraryComponent {
 
     this.isPdfSaving = true;
     try {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const fileDataUrl = e.target?.result as string;
-        const pdfBook = {
-          id: 'pdf_local_' + Date.now(),
-          title: this.newPdfTitle,
-          author: this.newPdfAuthor || 'كتاب شخصي',
-          category: this.newPdfCategory || 'روايات مصرية',
-          fileDataUrl: fileDataUrl,
-          fileSize: `${(this.selectedPdfFile!.size / (1024 * 1024)).toFixed(1)} MB`,
-          createdAt: new Date().toISOString().split('T')[0],
-          coverUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80'
-        };
+      const file = this.selectedPdfFile;
+      const fileDataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
 
-        // Save to IndexedDB
-        await this.indexedDb.put('personal_pdf_books', pdfBook);
-
-        this.toast.show(`تم حفظ كتاب "${this.newPdfTitle}" بنجاح وبشكل دائم في مكتبتك!`, 'success');
-        this.showAddPdfDialog = false;
-        this.newPdfTitle = '';
-        this.newPdfAuthor = '';
-        this.selectedPdfFile = null;
-        this.isPdfSaving = false;
-
-        // Reload books
-        this.loadBooks();
+      const newPdfBook: Book = {
+        id: 'pdf_local_' + Date.now(),
+        title: this.newPdfTitle,
+        author: this.newPdfAuthor || 'كتاب شخصي',
+        description: 'كتاب PDF شخصي محفوظ في متصفحك.',
+        coverUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
+        fileUrl: '',
+        category: this.newPdfCategory || 'روايات مصرية',
+        status: 'approved',
+        uploaderId: 'local_user',
+        uploaderName: 'أنت (كتاب شخصي)',
+        downloadCount: 1,
+        createdAt: new Date().toISOString().split('T')[0],
+        fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+        rating: 5.0,
+        ratingCount: 1,
+        featured: true,
+        isPersonalPdf: true,
+        fileDataUrl: fileDataUrl
       };
-      reader.readAsDataURL(this.selectedPdfFile);
+
+      // 1. INSTANTLY Update UI Signal so it shows on screen immediately!
+      this.books.update(prev => [newPdfBook, ...prev]);
+
+      // 2. Persist to IndexedDB
+      try {
+        await this.indexedDb.put('personal_pdf_books', {
+          id: newPdfBook.id,
+          title: newPdfBook.title,
+          author: newPdfBook.author,
+          category: newPdfBook.category,
+          fileDataUrl: fileDataUrl,
+          fileSize: newPdfBook.fileSize,
+          createdAt: newPdfBook.createdAt,
+          coverUrl: newPdfBook.coverUrl
+        });
+      } catch (e) {}
+
+      // 3. Persist to LocalStorage fallback
+      try {
+        const stored = localStorage.getItem('SUPER_PERSONAL_PDFS');
+        const list: any[] = stored ? JSON.parse(stored) : [];
+        list.unshift(newPdfBook);
+        localStorage.setItem('SUPER_PERSONAL_PDFS', JSON.stringify(list));
+      } catch (e) {}
+
+      this.toast.show(`تم رفع وحفظ كتاب "${this.newPdfTitle}" بالمكتبة بنجاح!`, 'success');
+      this.showAddPdfDialog = false;
+      this.newPdfTitle = '';
+      this.newPdfAuthor = '';
+      this.selectedPdfFile = null;
     } catch (err) {
-      console.error('Error saving PDF to IndexedDB:', err);
-      this.toast.show('حدث خطأ أثناء حفظ ملف الـ PDF', 'error');
+      console.error('Error saving PDF:', err);
+      this.toast.show('حدث خطأ أثناء قراءة وحفظ ملف الـ PDF', 'error');
+    } finally {
       this.isPdfSaving = false;
     }
   }
@@ -578,11 +617,23 @@ export class LibraryComponent {
     if (!confirmDelete) return;
 
     try {
-      await this.indexedDb.delete('personal_pdf_books', bookId);
+      try {
+        await this.indexedDb.delete('personal_pdf_books', bookId);
+      } catch (e) {}
+
+      try {
+        const stored = localStorage.getItem('SUPER_PERSONAL_PDFS');
+        if (stored) {
+          const list: any[] = JSON.parse(stored);
+          const filtered = list.filter(b => b.id !== bookId);
+          localStorage.setItem('SUPER_PERSONAL_PDFS', JSON.stringify(filtered));
+        }
+      } catch (e) {}
+
       this.books.update(list => list.filter(b => b.id !== bookId));
       this.toast.show('تم حذف الكتاب الشخصي بنجاح', 'success');
     } catch (err) {
-      console.error('Error deleting PDF from IndexedDB:', err);
+      console.error('Error deleting PDF:', err);
       this.toast.show('فشل حذف الكتاب', 'error');
     }
   }
