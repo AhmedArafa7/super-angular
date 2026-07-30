@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { FirebaseService } from '../../core/services/firebase.service';
@@ -317,7 +317,7 @@ export const FAMOUS_EGYPTIAN_NOVELS: Book[] = [
 @Component({
   selector: 'app-library',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule, LucideDynamicIcon],
+  imports: [CommonModule, FormsModule, LucideDynamicIcon],
   templateUrl: './library.component.html',
   styleUrls: ['./library.component.scss']
 })
@@ -419,68 +419,74 @@ export class LibraryComponent {
 
   async loadBooks() {
     this.isLoading.set(true);
+
+    // 1. Load local datasets first so they are instantly guaranteed to render
+    let jsonAssetBooks: Book[] = [];
     try {
-      // 1. Fetch JSON dataset from assets/data/arabic-books.json
-      let jsonAssetBooks: Book[] = [];
-      try {
-        const res = await this.http.get<Book[]>('assets/data/arabic-books.json').toPromise();
-        if (res && Array.isArray(res)) jsonAssetBooks = res;
-      } catch (e) {}
+      const res = await this.http.get<Book[]>('assets/data/arabic-books.json').toPromise();
+      if (res && Array.isArray(res)) jsonAssetBooks = res;
+    } catch (e) {}
 
-      // 2. Fetch locally auto-ingested books from LocalStorage
-      let localIngestedBooks: Book[] = [];
-      try {
-        const stored = localStorage.getItem('SUPER_INGESTED_BOOKS');
-        if (stored) localIngestedBooks = JSON.parse(stored);
-      } catch (e) {}
+    let localIngestedBooks: Book[] = [];
+    try {
+      const stored = localStorage.getItem('SUPER_INGESTED_BOOKS');
+      if (stored) localIngestedBooks = JSON.parse(stored);
+    } catch (e) {}
 
-      // 3. Fetch Personal Saved PDF books from LocalStorage and IndexedDB
-      let personalPdfBooks: Book[] = [];
-      try {
-        const storedPdfs = localStorage.getItem('SUPER_PERSONAL_PDFS');
-        if (storedPdfs) personalPdfBooks = JSON.parse(storedPdfs);
-
-        const pdfItems = await this.indexedDb.getAll('personal_pdf_books');
-        if (pdfItems && pdfItems.length > 0) {
-          pdfItems.forEach(item => {
-            if (!personalPdfBooks.some(p => p.id === item.id)) {
-              personalPdfBooks.push({
-                id: item.id,
-                title: item.title,
-                author: item.author || 'كتاب شخصي',
-                description: 'كتاب PDF شخصي محفوظ في متصفحك.',
-                coverUrl: item.coverUrl || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
-                fileUrl: '',
-                category: item.category || 'كتب PDF الشخصية',
-                status: 'approved',
-                uploaderId: 'local_user',
-                uploaderName: 'أنت (كتاب شخصي)',
-                downloadCount: 1,
-                createdAt: item.createdAt || new Date().toISOString().split('T')[0],
-                fileSize: item.fileSize || 'PDF',
-                rating: 5.0,
-                ratingCount: 1,
-                featured: true,
-                isPersonalPdf: true,
-                fileDataUrl: item.fileDataUrl
-              } as Book);
-            }
-          });
-        }
-      } catch (e) {
-        console.warn('Could not load personal_pdf_books:', e);
+    let personalPdfBooks: Book[] = [];
+    try {
+      const pdfItems = await this.indexedDb.getAll('personal_pdf_books');
+      if (pdfItems && pdfItems.length > 0) {
+        pdfItems.forEach(item => {
+          personalPdfBooks.push({
+            id: item.id,
+            title: item.title,
+            author: item.author || 'كتاب شخصي',
+            description: 'كتاب PDF شخصي محفوظ في متصفحك.',
+            coverUrl: item.coverUrl || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
+            fileUrl: '',
+            category: item.category || 'كتب PDF الشخصية',
+            status: 'approved',
+            uploaderId: 'local_user',
+            uploaderName: 'أنت (كتاب شخصي)',
+            downloadCount: 1,
+            createdAt: item.createdAt || new Date().toISOString().split('T')[0],
+            fileSize: item.fileSize || 'PDF',
+            rating: 5.0,
+            ratingCount: 1,
+            featured: true,
+            isPersonalPdf: true,
+            fileDataUrl: item.fileDataUrl
+          } as Book);
+        });
       }
+    } catch (e) {
+      console.warn('Could not load personal_pdf_books from IndexedDB:', e);
+    }
 
-      const db = this.firebase.firestore;
-      let q = query(
-        collection(db, 'library_books'),
-        where('status', '==', this.showPendingReview ? 'pending' : 'approved'),
-        orderBy('createdAt', 'desc')
+    // Set initial local books immediately
+    if (!this.showPendingReview) {
+      const initialCombined = [...personalPdfBooks, ...jsonAssetBooks, ...localIngestedBooks, ...FAMOUS_EGYPTIAN_NOVELS];
+      const uniqueInitial = initialCombined.filter((b, index, self) => 
+        b.isPersonalPdf || index === self.findIndex(t => t.title === b.title)
       );
-      const snap = await getDocs(q);
-      const fetchedBooks = snap.docs.map(d => ({ id: d.id, ...d.data() } as Book));
-      
+      this.books.set(uniqueInitial);
+    }
+
+    // 2. Fetch from Firestore asynchronously
+    try {
+      const db = this.firebase.firestore;
+      let fetchedBooks: Book[] = [];
+
       if (!this.showPendingReview) {
+        let q = query(
+          collection(db, 'library_books'),
+          where('status', '==', 'approved'),
+          orderBy('createdAt', 'desc')
+        );
+        const snap = await getDocs(q);
+        fetchedBooks = snap.docs.map(d => ({ id: d.id, ...d.data() } as Book));
+
         const combined = [...personalPdfBooks, ...jsonAssetBooks, ...localIngestedBooks, ...FAMOUS_EGYPTIAN_NOVELS];
         fetchedBooks.forEach(fb => {
           if (!combined.some(c => c.id === fb.id || c.title === fb.title)) {
@@ -488,20 +494,23 @@ export class LibraryComponent {
           }
         });
 
-        // Deduplicate non-personal books by title while ALWAYS keeping personal PDF books
         const uniqueBooks = combined.filter((b, index, self) => 
           b.isPersonalPdf || index === self.findIndex(t => t.title === b.title)
         );
 
         this.books.set(uniqueBooks);
       } else {
+        let q = query(
+          collection(db, 'library_books'),
+          where('status', '==', 'pending'),
+          orderBy('createdAt', 'desc')
+        );
+        const snap = await getDocs(q);
+        fetchedBooks = snap.docs.map(d => ({ id: d.id, ...d.data() } as Book));
         this.books.set(fetchedBooks);
       }
     } catch (err) {
-      console.warn('Using offline Egyptian & Islamic books collection:', err);
-      if (!this.showPendingReview) {
-        this.books.set(FAMOUS_EGYPTIAN_NOVELS);
-      }
+      console.warn('Firestore library fetch failed, keeping local collection:', err);
     } finally {
       this.isLoading.set(false);
     }
@@ -575,15 +584,9 @@ export class LibraryComponent {
           createdAt: newPdfBook.createdAt,
           coverUrl: newPdfBook.coverUrl
         });
-      } catch (e) {}
-
-      // 3. Persist to LocalStorage fallback
-      try {
-        const stored = localStorage.getItem('SUPER_PERSONAL_PDFS');
-        const list: any[] = stored ? JSON.parse(stored) : [];
-        list.unshift(newPdfBook);
-        localStorage.setItem('SUPER_PERSONAL_PDFS', JSON.stringify(list));
-      } catch (e) {}
+      } catch (e) {
+        console.error('Failed to save personal PDF to IndexedDB:', e);
+      }
 
       this.toast.show(`تم رفع وحفظ كتاب "${this.newPdfTitle}" بالمكتبة بنجاح!`, 'success');
       this.showAddPdfDialog = false;
@@ -617,19 +620,7 @@ export class LibraryComponent {
     if (!confirmDelete) return;
 
     try {
-      try {
-        await this.indexedDb.delete('personal_pdf_books', bookId);
-      } catch (e) {}
-
-      try {
-        const stored = localStorage.getItem('SUPER_PERSONAL_PDFS');
-        if (stored) {
-          const list: any[] = JSON.parse(stored);
-          const filtered = list.filter(b => b.id !== bookId);
-          localStorage.setItem('SUPER_PERSONAL_PDFS', JSON.stringify(filtered));
-        }
-      } catch (e) {}
-
+      await this.indexedDb.delete('personal_pdf_books', bookId);
       this.books.update(list => list.filter(b => b.id !== bookId));
       this.toast.show('تم حذف الكتاب الشخصي بنجاح', 'success');
     } catch (err) {
@@ -761,7 +752,7 @@ export class LibraryComponent {
     a.href = url;
     a.download = `${book.title.replace(/\s+/g, '_')}_code.json`;
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   setCategory(cat: string) {

@@ -1,50 +1,66 @@
+export type NavCategoryId = 'core' | 'ai' | 'dev' | 'tools';
+
+export interface NavCategory {
+  id: NavCategoryId;
+  label: string;
+  icon: string;
+}
+
+export const NAV_CATEGORIES: NavCategory[] = [
+  { id: 'core', label: 'الأدوات الرئيسية', icon: 'layout-grid' },
+  { id: 'ai', label: 'الذكاء الاصطناعي والتعلم', icon: 'sparkles' },
+  { id: 'dev', label: 'المختبر والتطوير', icon: 'code-2' },
+  { id: 'tools', label: 'الخدمات والمرافق', icon: 'wrench' },
+];
+
 export interface NavItem {
   id: string;
   label: string;
   icon: string;
   restricted: boolean;
   isPermanent?: boolean;
+  category?: NavCategoryId;
   badge?: number;
   status?: 'BETA' | 'PRO' | 'NEW';
   route?: string;
 }
 
 export const ALL_NAV_ITEMS: NavItem[] = [
-  { id: "dashboard", label: "لوحة التحكم", icon: "layout-dashboard", restricted: false, isPermanent: true, status: 'BETA' },
-  { id: "qa", label: "الأسئلة والطلبات", icon: "message-circle-question", restricted: false, isPermanent: true, status: 'BETA' },
-  { id: "arcade", label: "Si-Neuro Arcade", icon: "gamepad-2", restricted: false, isPermanent: true },
-  { id: "time", label: "تنظيم الوقت", icon: "clock", restricted: false, isPermanent: true },
-  { id: "health", label: "الصحة والرياضة", icon: "heart-pulse", restricted: false, isPermanent: true, status: 'BETA' },
-  { id: "chat", label: "الدردشة الذكية", icon: "message-square", restricted: false, isPermanent: true },
-  { id: "agent-ai", label: "المهندس المساعد", icon: "cpu", restricted: false, isPermanent: true, status: 'BETA' },
-  { id: "vault", label: "خزنة الملفات", icon: "hard-drive", restricted: false, isPermanent: true },
-  { id: "sheets", label: "جداول البيانات", icon: "table", restricted: false, isPermanent: true, status: 'BETA' },
-  { id: "docs", label: "محرر المستندات", icon: "file-text", restricted: false, isPermanent: true, status: 'NEW' },
-  { id: "opencode", label: "مساعد البرمجة OpenCode", icon: "terminal", restricted: false, isPermanent: true, status: 'NEW', route: 'opencode' },
-  { id: "ai-module-builder", label: "صانع الأقسام بالذكاء الاصطناعي", icon: "sparkles", restricted: false, isPermanent: true, status: 'NEW', route: 'ai-module-builder' },
-  { id: "deals", label: "عروض المحلات", icon: "tag", restricted: false },
-  { id: "peer-chat", label: "التواصل المباشر", icon: "message-circle", restricted: false, isPermanent: true, status: 'BETA' },
-  { id: "stream", label: "WeTube", icon: "video", restricted: false, isPermanent: true, status: 'PRO' },
-  { id: "wetube-studio", label: "WeTube Studio", icon: "layout-dashboard", restricted: false, isPermanent: true, status: 'BETA', route: 'stream/studio' },
-  { id: "downloads", label: "التحميلات", icon: "download-cloud", restricted: false, isPermanent: true, status: 'BETA' },
-  { id: "wallet", label: "المحفظة الرقمية", icon: "wallet", restricted: false, isPermanent: true },
-  { id: "lab", label: "المختبر التجريبي", icon: "microscope", restricted: false, isPermanent: true },
+  { id: "dashboard", label: "لوحة التحكم", icon: "layout-dashboard", restricted: false, isPermanent: true, status: 'BETA', category: 'core' },
+  { id: "qa", label: "الأسئلة والطلبات", icon: "message-circle-question", restricted: false, isPermanent: true, status: 'BETA', category: 'core' },
+  { id: "arcade", label: "Si-Neuro Arcade", icon: "gamepad-2", restricted: false, isPermanent: true, category: 'core' },
+  { id: "time", label: "تنظيم الوقت", icon: "clock", restricted: false, isPermanent: true, category: 'core' },
+  { id: "health", label: "الصحة والرياضة", icon: "heart-pulse", restricted: false, isPermanent: true, status: 'BETA', category: 'core' },
+  { id: "chat", label: "الدردشة الذكية", icon: "message-square", restricted: false, isPermanent: true, category: 'ai' },
+  { id: "agent-ai", label: "المهندس المساعد", icon: "cpu", restricted: false, isPermanent: true, status: 'BETA', category: 'ai' },
+  { id: "vault", label: "خزنة الملفات", icon: "hard-drive", restricted: false, isPermanent: true, category: 'core' },
+  { id: "sheets", label: "جداول البيانات", icon: "table", restricted: false, isPermanent: true, status: 'BETA', category: 'core' },
+  { id: "docs", label: "محرر المستندات", icon: "file-text", restricted: false, isPermanent: true, status: 'NEW', category: 'core' },
+  { id: "opencode", label: "مساعد البرمجة OpenCode", icon: "terminal", restricted: false, isPermanent: true, status: 'NEW', route: 'opencode', category: 'dev' },
+  { id: "ai-module-builder", label: "صانع الأقسام بالذكاء الاصطناعي", icon: "sparkles", restricted: false, isPermanent: true, status: 'NEW', route: 'ai-module-builder', category: 'ai' },
+  { id: "deals", label: "عروض المحلات", icon: "tag", restricted: false, category: 'tools' },
+  { id: "peer-chat", label: "التواصل المباشر", icon: "message-circle", restricted: false, isPermanent: true, status: 'BETA', category: 'core' },
+  { id: "stream", label: "WeTube", icon: "video", restricted: false, isPermanent: true, status: 'PRO', category: 'core' },
+  { id: "wetube-studio", label: "WeTube Studio", icon: "layout-dashboard", restricted: false, isPermanent: true, status: 'BETA', route: 'stream/studio', category: 'dev' },
+  { id: "downloads", label: "التحميلات", icon: "download-cloud", restricted: false, isPermanent: true, status: 'BETA', category: 'tools' },
+  { id: "wallet", label: "المحفظة الرقمية", icon: "wallet", restricted: false, isPermanent: true, category: 'tools' },
+  { id: "lab", label: "المختبر التجريبي", icon: "microscope", restricted: false, isPermanent: true, category: 'dev' },
   
-  { id: "market", label: "المتجر التقني", icon: "shopping-cart", restricted: false },
-  { id: "study-ai", label: "المساعد الدراسي", icon: "graduation-cap", restricted: false },
-  { id: "knowledge", label: "المكتبة المعرفية", icon: "library-big", restricted: false },
-  { id: "ads", label: "مركز الإعلانات", icon: "megaphone", restricted: false },
-  { id: "launcher", label: "مشغل المواقع", icon: "rocket", restricted: false },
-  { id: "offers", label: "صندوق العروض", icon: "repeat", restricted: false },
-  { id: "learning", label: "التعلم", icon: "graduation-cap", restricted: false },
-  { id: "microcontroller-lab", label: "برمجة المتحكمات", icon: "circuit-board", restricted: false },
-  { id: "library", label: "المكتبة العامة", icon: "library", restricted: false, isPermanent: true, status: 'NEW' },
-  { id: "directory", label: "دليل المستخدمين", icon: "users", restricted: false },
-  { id: "hisn", label: "حصن المسلم", icon: "book-open", restricted: false },
-  { id: "features", label: "المميزات", icon: "zap", restricted: false },
-  { id: "notifications", label: "التنبيهات", icon: "bell", restricted: false },
-  { id: "settings", label: "الإعدادات", icon: "settings", restricted: false },
-  { id: "admin", label: "لوحة الإدارة", icon: "shield-check", restricted: true },
+  { id: "market", label: "المتجر التقني", icon: "shopping-cart", restricted: false, category: 'tools' },
+  { id: "study-ai", label: "المساعد الدراسي", icon: "graduation-cap", restricted: false, category: 'ai' },
+  { id: "knowledge", label: "المكتبة المعرفية", icon: "library-big", restricted: false, category: 'ai' },
+  { id: "ads", label: "مركز الإعلانات", icon: "megaphone", restricted: false, category: 'tools' },
+  { id: "launcher", label: "مشغل المواقع", icon: "rocket", restricted: false, category: 'tools' },
+  { id: "offers", label: "صندوق العروض", icon: "repeat", restricted: false, category: 'tools' },
+  { id: "learning", label: "التعلم", icon: "graduation-cap", restricted: false, category: 'ai' },
+  { id: "microcontroller-lab", label: "برمجة المتحكمات", icon: "circuit-board", restricted: false, category: 'dev' },
+  { id: "library", label: "المكتبة العامة", icon: "library", restricted: false, isPermanent: true, status: 'NEW', category: 'ai' },
+  { id: "directory", label: "دليل المستخدمين", icon: "users", restricted: false, category: 'tools' },
+  { id: "hisn", label: "حصن المسلم", icon: "book-open", restricted: false, category: 'tools' },
+  { id: "features", label: "المميزات", icon: "zap", restricted: false, category: 'tools' },
+  { id: "notifications", label: "التنبيهات", icon: "bell", restricted: false, category: 'tools' },
+  { id: "settings", label: "الإعدادات", icon: "settings", restricted: false, category: 'tools' },
+  { id: "admin", label: "لوحة الإدارة", icon: "shield-check", restricted: true, category: 'tools' },
 ];
 
 export function getVisibleNavItems(userRole: string | null, navItems: NavItem[]) {

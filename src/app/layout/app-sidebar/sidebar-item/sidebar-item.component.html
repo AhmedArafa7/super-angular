@@ -44,59 +44,20 @@
     <div class="h-px bg-white/10 mb-1"></div>
     
     <div class="p-1 space-y-0.5">
-      <button class="group w-full flex items-center gap-3 px-2.5 py-2 text-sm rounded-lg hover:bg-white/10 transition-all text-slate-300 hover:text-white text-right">
+      <a [routerLink]="['/' + (item.route || item.id)]" (click)="closeContextMenu()" class="group w-full flex items-center gap-3 px-2.5 py-2 text-sm rounded-lg hover:bg-white/10 transition-all text-slate-300 hover:text-white text-right">
         <lucide-icon name="external-link" class="w-4 h-4 text-slate-400 group-hover:text-white transition-colors shrink-0"></lucide-icon>
         <span class="flex-1">فتح القسم</span>
-      </button>
-
-      <button class="group w-full flex items-center gap-3 px-2.5 py-2 text-sm rounded-lg hover:bg-white/10 transition-all text-slate-300 hover:text-white text-right">
+      </a>
+      <a [routerLink]="['/settings']" [queryParams]="{ tab: item.id }" (click)="closeContextMenu()" class="group w-full flex items-center gap-3 px-2.5 py-2 text-sm rounded-lg hover:bg-white/10 transition-all text-slate-300 hover:text-white text-right">
         <lucide-icon name="settings-2" class="w-4 h-4 text-slate-400 group-hover:text-white transition-colors shrink-0"></lucide-icon>
         <span class="flex-1">إعدادات القسم العامة</span>
-      </button>
+      </a>
     </div>
 
     <div class="h-px bg-white/10 my-1"></div>
 
+    <!-- Submenu: تغيير تخطيط الواجهة -->
     <div class="p-1 space-y-0.5">
-      <button class="group w-full flex items-center gap-3 px-2.5 py-2 text-sm rounded-lg hover:bg-white/10 transition-all text-slate-300 hover:text-white text-right">
-        <lucide-icon name="palette" class="w-4 h-4 text-slate-400 group-hover:text-white transition-colors shrink-0"></lucide-icon>
-        <span class="flex-1">تخصيص المظهر والتصميم</span>
-      </button>
-
-      <button class="group w-full flex items-center gap-3 px-2.5 py-2 text-sm rounded-lg hover:bg-emerald-500/10 transition-all text-emerald-400 hover:text-emerald-300 text-right">
-        <lucide-icon name="plus-circle" class="w-4 h-4 text-emerald-500 group-hover:text-emerald-400 transition-colors shrink-0"></lucide-icon>
-        <span class="flex-1 font-medium">إضافة ميزات متقدمة</span>
-      </button>
-    </div>
-
-    <div class="h-px bg-white/10 my-1"></div>
-
-    <div class="p-1 space-y-0.5">
-      <button class="group w-full flex items-center gap-3 px-2.5 py-2 text-sm rounded-lg hover:bg-white/10 transition-all text-slate-300 hover:text-white text-right">
-        <lucide-icon name="download" class="w-4 h-4 text-slate-400 group-hover:text-white transition-colors shrink-0"></lucide-icon>
-        <span class="flex-1">تفعيل التحميل المسبق</span>
-      </button>
-
-      <!-- Submenu Trigger -->
-      <div class="relative group/submenu" #submenuTrigger>
-        <button (click)="openSubmenu($event, submenuTrigger)" class="w-full flex items-center gap-3 px-2.5 py-2 text-sm rounded-lg hover:bg-white/10 transition-all text-slate-300 hover:text-white text-right">
-          <lucide-icon name="activity" class="w-4 h-4 text-slate-400 group-hover:text-white transition-colors shrink-0"></lucide-icon>
-          <span class="flex-1">إجراء الضغط المزدوج</span>
-          <lucide-icon name="chevron-left" class="w-3.5 h-3.5 text-slate-500 group-hover:text-white transition-colors shrink-0"></lucide-icon>
-        </button>
-      </div>
-
-<!-- Submenu Template -->
-<ng-template #subMenuTemplate>
-  <div class="w-48 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-1.5 z-[1000] animate-in fade-in zoom-in-95 duration-100" dir="rtl">
-    <button class="w-full flex items-center gap-2.5 px-2 py-1.5 text-xs rounded-md text-slate-300 hover:text-white hover:bg-white/10 text-right transition-all" (click)="closeSubmenu(); closeContextMenu()">
-       <lucide-icon name="external-link" class="w-3.5 h-3.5 text-slate-400 shrink-0"></lucide-icon>
-       <span>فتح القسم</span>
-    </button>
-  </div>
-</ng-template>
-
-      <!-- Submenu: تغيير تخطيط الواجهة -->
       <div class="relative group/submenu">
         <button class="group/btn w-full flex items-center gap-3 px-2.5 py-2 text-sm rounded-lg hover:bg-white/10 transition-all text-indigo-300 hover:text-indigo-200 text-right">
           <lucide-icon name="box" class="w-4 h-4 text-indigo-400 group-hover/btn:text-indigo-300 transition-colors shrink-0"></lucide-icon>
@@ -139,5 +100,15 @@
       </button>
     </div>
 
+  </div>
+</ng-template>
+
+<!-- Submenu Template -->
+<ng-template #subMenuTemplate>
+  <div class="w-48 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-1.5 z-[1000] animate-in fade-in zoom-in-95 duration-100" dir="rtl">
+    <a [routerLink]="['/' + (item.route || item.id)]" class="w-full flex items-center gap-2.5 px-2 py-1.5 text-xs rounded-md text-slate-300 hover:text-white hover:bg-white/10 text-right transition-all" (click)="closeSubmenu(); closeContextMenu()">
+       <lucide-icon name="external-link" class="w-3.5 h-3.5 text-slate-400 shrink-0"></lucide-icon>
+       <span>فتح القسم</span>
+    </a>
   </div>
 </ng-template>

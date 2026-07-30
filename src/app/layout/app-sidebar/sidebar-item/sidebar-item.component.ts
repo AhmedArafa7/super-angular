@@ -109,12 +109,12 @@ export class SidebarItemComponent {
     }
   }
 
-  get isPinned() {
-    return this.sidebar.isPinned(this.item.id as any)();
+  get isPinned(): boolean {
+    return this.sidebar.isPinned(this.item.id);
   }
 
   togglePin() {
-    this.sidebar.togglePin(this.item.id as any);
+    this.sidebar.togglePin(this.item.id);
     this.closeContextMenu();
   }
 }

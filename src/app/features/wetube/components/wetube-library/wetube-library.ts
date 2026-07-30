@@ -318,8 +318,64 @@ export interface HistoryGroup {
           }
 
           <!-- ========================================================= -->
-          <!-- SAVED / LIKED VIDEOS SECTION                              -->
+          <!-- OFFLINE DOWNLOADS SECTION                                  -->
           <!-- ========================================================= -->
+          @if (pageMode() === 'library' || pageMode() === 'downloads') {
+            <section class="space-y-6">
+              <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                    <lucide-icon [img]="Download" size="22"></lucide-icon>
+                  </div>
+                  <div>
+                    <h2 class="text-xl font-black text-white">التنزيلات المحفوظة أوفلاين</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">الفيديوهات المخزنة محلياً لمشاهدتها بدون إنترنت (إجمالي الحجم: {{ formatSize(totalDownloadSize()) }})</p>
+                  </div>
+                </div>
+              </div>
+
+              @if (downloads().length === 0) {
+                <div class="text-slate-400 py-12 text-center bg-slate-900/40 border border-white/5 rounded-2xl flex flex-col items-center justify-center gap-3">
+                  <lucide-icon [img]="WifiOff" size="36" class="text-slate-600"></lucide-icon>
+                  <h4 class="text-sm font-bold text-slate-300">لا توجد تنزيلات محلية</h4>
+                  <p class="text-xs text-slate-500 max-w-xs">يمكنك تنزيل أي فيديو لمشاهدته لاحقاً بدون الحاجة لاتصال بالإنترنت</p>
+                </div>
+              } @else {
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                  @for (item of downloads(); track item.videoId) {
+                    <div class="w-full group cursor-pointer relative flex flex-col gap-2 bg-slate-900/50 p-2.5 rounded-2xl border border-white/5 hover:border-emerald-500/30 transition-all duration-300 hover:-translate-y-1"
+                         (click)="playVideo(item.videoId)">
+                      
+                      <div class="aspect-video bg-slate-950 rounded-xl overflow-hidden relative border border-white/5">
+                        <img 
+                          crossorigin="anonymous" 
+                          [src]="item.thumbnail || 'assets/placeholder.jpg'" 
+                          [alt]="item.title" 
+                          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                          loading="lazy"
+                        />
+                        <button 
+                          (click)="deleteDownload(item.videoId, $event)"
+                          title="حذف التنزيل"
+                          class="absolute top-2 left-2 w-7 h-7 rounded-lg bg-black/70 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center backdrop-blur-sm z-10">
+                          <lucide-icon [img]="X" size="14"></lucide-icon>
+                        </button>
+                        <span class="absolute bottom-2 right-2 bg-emerald-600 text-white px-1.5 py-0.5 rounded text-[9px] font-black">{{ item.quality || '144p' }}</span>
+                      </div>
+
+                      <div class="flex flex-col min-w-0 pt-0.5">
+                        <h3 class="text-xs font-bold text-white line-clamp-2 leading-snug group-hover:text-emerald-400 transition-colors">{{ item.title }}</h3>
+                        <div class="flex items-center justify-between text-[10px] text-slate-400 mt-1">
+                          <span class="truncate font-medium">{{ item.author || 'WeTube' }}</span>
+                          <span class="text-emerald-400 font-bold shrink-0">{{ formatSize(item.sizeBytes) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </section>
+          }
           @if (pageMode() === 'library' || pageMode() === 'liked') {
             <section class="space-y-6">
               <div class="flex items-center justify-between border-b border-white/10 pb-4">
@@ -472,10 +528,11 @@ export class WeTubeLibraryComponent implements OnInit {
   viewMode = signal<'grid' | 'list'>('grid');
   isHistoryPaused = signal<boolean>(localStorage.getItem('wetube_history_paused') === 'true');
 
-  pageMode = computed(() => {
+  pageMode = computed<'library' | 'history' | 'liked' | 'downloads'>(() => {
     const url = this.router.url;
     if (url.includes('/history')) return 'history';
     if (url.includes('/liked')) return 'liked';
+    if (url.includes('/downloads')) return 'downloads';
     return 'library';
   });
 
@@ -592,16 +649,20 @@ export class WeTubeLibraryComponent implements OnInit {
   }
 
   private async resolveLegacyHistoryRecords(items: any[]) {
+    let resolvedCount = 0;
     for (const item of items) {
+      if (resolvedCount >= 5) break;
+      if (item._resolved) continue;
+
       const ytId = this.extractYoutubeId(item.videoId || item.url || item.id);
       if (!ytId) continue;
 
       const isShortsVal = checkIsShorts(item);
-
       const needsTitleUpdate = !item.title || item.title === 'فيديو WeTube المميز' || !item.author || item.author === 'قناة WeTube';
       const needsIsShortsUpdate = item.isShorts !== isShortsVal;
 
       if (needsTitleUpdate || needsIsShortsUpdate) {
+        resolvedCount++;
         try {
           let resolvedTitle = item.title;
           let resolvedAuthor = item.author;
@@ -622,16 +683,14 @@ export class WeTubeLibraryComponent implements OnInit {
             title: resolvedTitle || 'فيديو WeTube',
             author: resolvedAuthor || 'قناة WeTube',
             thumbnail: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
-            isShorts: isShortsVal
+            isShorts: isShortsVal,
+            _resolved: true
           };
 
-          // Update in IndexedDB
           await this.idb.put('watch_history', updatedItem);
-          
-          // Update local signal state immediately
           this.history.update(list => list.map(h => ((h.videoId || h.id) === (item.videoId || item.id)) ? updatedItem : h));
         } catch (e) {
-          console.warn('Failed to resolve legacy history item', e);
+          // silently catch
         }
       }
     }
@@ -641,7 +700,12 @@ export class WeTubeLibraryComponent implements OnInit {
     try {
       const dbVideos = await this.idb.getAll('saved_videos');
       if (dbVideos && dbVideos.length > 0) {
-        this.savedVideos.set(dbVideos.sort((a: any, b: any) => (b.savedAt || 0) - (a.savedAt || 0)));
+        const normalized = dbVideos.map((v: any) => ({
+          ...v,
+          id: v.id || v.videoId,
+          videoId: v.videoId || v.id
+        }));
+        this.savedVideos.set(normalized.sort((a: any, b: any) => (b.savedAt || 0) - (a.savedAt || 0)));
       } else {
         this.savedVideos.set([]);
       }
@@ -720,7 +784,8 @@ export class WeTubeLibraryComponent implements OnInit {
     }
   }
 
-  async deleteDownload(videoId: string) {
+  async deleteDownload(videoId: string, event?: Event) {
+    if (event) event.stopPropagation();
     await this.downloadSvc.deleteCached(videoId);
     this.downloads.update(all => all.filter(d => d.videoId !== videoId));
   }

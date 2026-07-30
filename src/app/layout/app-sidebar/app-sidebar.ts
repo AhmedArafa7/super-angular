@@ -1,15 +1,14 @@
-import { Component, inject, HostListener, signal } from '@angular/core';
+import { Component, inject, HostListener, signal, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { SidebarService } from '../../core/sidebar.service';
-import { ALL_NAV_ITEMS, NavItem, getVisibleNavItems } from '../../core/nav-items';
+import { ALL_NAV_ITEMS, NavItem, NAV_CATEGORIES, NavCategory, getVisibleNavItems } from '../../core/nav-items';
 import { GlobalStateService } from '../../core/services/global-state.service';
-
 import { OfflineQueueService } from '../../core/services/offline-queue.service';
 import { FirebaseService } from '../../core/services/firebase.service';
 import { CustomModuleStorageService } from '../../features/ai-module-builder/custom-module-viewer.component';
-import { LucideAngularModule, LogOut, User, Settings, LayoutDashboard, CloudUpload, CheckCircle2, XCircle, CloudCog, Chrome, UserPlus, Users } from 'lucide-angular';
+import { LucideAngularModule, LogOut, User, Settings, LayoutDashboard, CloudUpload, CheckCircle2, XCircle, CloudCog, Chrome, UserPlus, Users, Search, ChevronDown, ChevronRight, Moon, Sun, PanelLeftClose, PanelLeftOpen } from 'lucide-angular';
 
 import { SidebarItemComponent } from './sidebar-item/sidebar-item.component';
 import { FloatingOrbComponent } from './floating-orb/floating-orb.component';
@@ -38,10 +37,19 @@ export class AppSidebarComponent {
   offlineQueue = inject(OfflineQueueService);
   firebase = inject(FirebaseService);
   globalState = inject(GlobalStateService);
+  moduleStorage = inject(CustomModuleStorageService);
   
-  userRole: string | null = 'admin'; 
+  @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
+  
+  get userRole(): string | null {
+    return (this.firebase.userData() as any)?.role || 'admin';
+  }
   showCustomizationDialog = false;
   showUserProfileDropdown = false;
+  
+  searchQuery = signal<string>('');
+  isOnline = signal<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  isDarkMode = signal<boolean>(true);
   
   // Resize State
   private startX = 0;
@@ -59,8 +67,15 @@ export class AppSidebarComponent {
   CloudCog = CloudCog;
   UserPlus = UserPlus;
   Users = Users;
-  
-  moduleStorage = inject(CustomModuleStorageService);
+  Search = Search;
+  ChevronDown = ChevronDown;
+  ChevronRight = ChevronRight;
+  Moon = Moon;
+  Sun = Sun;
+  PanelLeftClose = PanelLeftClose;
+  PanelLeftOpen = PanelLeftOpen;
+
+  categories = NAV_CATEGORIES;
 
   get visibleItems(): NavItem[] {
     const baseItems = getVisibleNavItems(this.userRole, ALL_NAV_ITEMS);
@@ -72,6 +87,7 @@ export class AppSidebarComponent {
       icon: 'sparkles',
       restricted: false,
       status: 'NEW' as const,
+      category: 'ai' as const,
       route: `custom-module/${mod.id}`
     }));
 
@@ -79,22 +95,68 @@ export class AppSidebarComponent {
   }
 
   get pinnedItems(): NavItem[] {
-    return this.visibleItems.filter(item => 
-      item.isPermanent || this.sidebar.pinnedItems().includes(item.id as any)
+    const pinnedList = this.sidebar.pinnedItems();
+    let items = this.visibleItems.filter(item => 
+      item.isPermanent || pinnedList.includes(item.id)
     );
+
+    const q = this.searchQuery().trim().toLowerCase();
+    if (q) {
+      items = items.filter(item => item.label.toLowerCase().includes(q));
+    }
+    return items;
   }
 
-  // Keyboard Shortcut: Ctrl + B or Cmd + B to toggle sidebar
+  get recentItems(): NavItem[] {
+    const ids = this.sidebar.recentItemIds();
+    return ids.map(id => this.visibleItems.find(i => i.id === id)).filter(Boolean) as NavItem[];
+  }
+
+  getItemsByCategory(catId: string): NavItem[] {
+    return this.pinnedItems.filter(item => (item.category || 'core') === catId);
+  }
+
+  onItemClick(item: NavItem) {
+    this.sidebar.addRecentItem(item.id);
+  }
+
+  // Keyboard Shortcut: Ctrl + K or Cmd + K to focus search
+  @HostListener('window:keydown.control.k', ['$event'])
+  @HostListener('window:keydown.meta.k', ['$event'])
+  handleSearchFocus(event: Event) {
+    event.preventDefault();
+    if (this.sidebar.isCollapsed()) {
+      this.sidebar.setCollapsed(false);
+    }
+    setTimeout(() => {
+      this.searchInput?.nativeElement?.focus();
+    }, 50);
+  }
+
+  @HostListener('window:online')
+  onOnline() {
+    this.isOnline.set(true);
+  }
+
+  @HostListener('window:offline')
+  onOffline() {
+    this.isOnline.set(false);
+  }
+
+  toggleTheme() {
+    this.isDarkMode.update(v => !v);
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.toggle('light', !this.isDarkMode());
+    }
+  }
+
+  // Keyboard Shortcut: Ctrl + B or Cmd + B to toggle sidebar collapse state
   @HostListener('window:keydown.control.b', ['$event'])
   @HostListener('window:keydown.meta.b', ['$event'])
   handleKeyboardToggle(event: Event) {
     const e = event as KeyboardEvent;
     e.preventDefault();
-    if (this.sidebar.position() === 'left') {
-      this.sidebar.toggleCollapsed();
-    } else {
-      this.sidebar.setPosition('left');
-    }
+    this.sidebar.toggleCollapsed();
   }
 
   @HostListener('document:click', ['$event'])
@@ -105,16 +167,9 @@ export class AppSidebarComponent {
   // Handle responsive layout automatically
   @HostListener('window:resize')
   onResize() {
-    if (window.innerWidth < 768) {
-      this.sidebar.isMobile.set(true);
-      if (this.sidebar.position() === 'left') {
-        this.sidebar.setPosition('bottom');
-      }
-    } else {
-      this.sidebar.isMobile.set(false);
-      if (this.sidebar.position() === 'bottom') {
-        this.sidebar.setPosition('left');
-      }
+    if (typeof window !== 'undefined') {
+      const mobile = window.innerWidth < 768;
+      this.sidebar.isMobile.set(mobile);
     }
   }
 
@@ -130,8 +185,6 @@ export class AppSidebarComponent {
     const deltaX = event.clientX - this.startX;
     let newWidth = this.startWidth;
     
-    // If sidebar is on the left, moving right (positive delta) increases width.
-    // If sidebar is on the right, moving left (negative delta) increases width.
     if (this.sidebar.position() === 'left') {
       newWidth = this.startWidth + deltaX;
     } else if (this.sidebar.position() === 'right') {

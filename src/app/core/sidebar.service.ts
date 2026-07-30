@@ -9,7 +9,7 @@ export type SidebarPosition = "left" | "right" | "top" | "bottom" | "floating";
 })
 export class SidebarService {
   // State Signals
-  readonly pinnedItems = signal<NavItemId[]>(["dashboard", "qa", "time", "health", "chat", "vault", "agent-ai", "deals", "peer-chat", "stream", "market", "arcade", "launcher", "lab", "ads", "downloads", "wallet", "hisn", "microcontroller-lab", "sheets", "settings", "admin"]);
+  readonly pinnedItems = signal<string[]>(["dashboard", "qa", "time", "health", "chat", "vault", "agent-ai", "deals", "peer-chat", "stream", "market", "arcade", "launcher", "lab", "ads", "downloads", "wallet", "hisn", "microcontroller-lab", "sheets", "settings", "admin"]);
   readonly isCollapsed = signal<boolean>(false);
   readonly isVisible = signal<boolean>(true);
   readonly isHeaderVisible = signal<boolean>(true);
@@ -19,18 +19,41 @@ export class SidebarService {
   readonly floatingPos = signal<{x: number, y: number}>({ x: 20, y: 100 });
   readonly isMobile = signal<boolean>(false);
 
+  readonly collapsedCategories = signal<string[]>([]);
+  readonly recentItemIds = signal<string[]>([]);
+
   constructor() {
     this.loadState();
   }
 
-  // Derived State (Computed)
-  // We return a computed signal for each id to efficiently track pinned status in templates
-  isPinned(id: NavItemId) {
-    return computed(() => this.pinnedItems().includes(id));
+  // Check if an item ID is pinned
+  isPinned(id: string): boolean {
+    return this.pinnedItems().includes(id);
+  }
+
+  toggleCategoryCollapse(catId: string): void {
+    const current = this.collapsedCategories();
+    if (current.includes(catId)) {
+      this.collapsedCategories.set(current.filter(c => c !== catId));
+    } else {
+      this.collapsedCategories.set([...current, catId]);
+    }
+    this.saveState();
+  }
+
+  isCategoryCollapsed(catId: string): boolean {
+    return this.collapsedCategories().includes(catId);
+  }
+
+  addRecentItem(id: string): void {
+    const current = this.recentItemIds().filter(i => i !== id);
+    const updated = [id, ...current].slice(0, 4);
+    this.recentItemIds.set(updated);
+    this.saveState();
   }
 
   // Actions
-  togglePin(id: NavItemId): void {
+  togglePin(id: string): void {
     const current = this.pinnedItems();
     if (current.includes(id)) {
       this.pinnedItems.set(current.filter(item => item !== id));
@@ -40,7 +63,7 @@ export class SidebarService {
     this.saveState();
   }
 
-  reorderPinnedItems(newItems: NavItemId[]): void {
+  reorderPinnedItems(newItems: string[]): void {
     this.pinnedItems.set(newItems);
     this.saveState();
   }
@@ -104,7 +127,9 @@ export class SidebarService {
         isHeaderVisible: this.isHeaderVisible(),
         width: this.width(),
         position: this.position(),
-        floatingPos: this.floatingPos()
+        floatingPos: this.floatingPos(),
+        collapsedCategories: this.collapsedCategories(),
+        recentItemIds: this.recentItemIds()
       };
       localStorage.setItem('Si-Neuro-sidebar-prefs-v4', JSON.stringify(state));
     }
@@ -123,6 +148,8 @@ export class SidebarService {
           if (parsed.width !== undefined) this.width.set(parsed.width);
           if (parsed.position !== undefined) this.position.set(parsed.position);
           if (parsed.floatingPos !== undefined) this.floatingPos.set(parsed.floatingPos);
+          if (parsed.collapsedCategories !== undefined) this.collapsedCategories.set(parsed.collapsedCategories);
+          if (parsed.recentItemIds !== undefined) this.recentItemIds.set(parsed.recentItemIds);
         } catch (e) {
           console.error("Failed to parse sidebar prefs", e);
         }

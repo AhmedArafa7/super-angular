@@ -2,6 +2,7 @@ import { Component, inject, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SidebarService } from '../../../core/sidebar.service';
 import { ALL_NAV_ITEMS, NavItem } from '../../../core/nav-items';
+import { CustomModuleStorageService } from '../../../features/ai-module-builder/custom-module-viewer.component';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 
@@ -34,7 +35,7 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
                 </div>
                 
                 <button (click)="togglePin(item.id)" 
-                        [disabled]="item.isPermanent"
+                        [disabled]="!!item.isPermanent"
                         [ngClass]="{'opacity-50 cursor-not-allowed': item.isPermanent}"
                         class="p-2 rounded-lg transition-colors">
                   <svg [lucideIcon]="isPinned(item.id) ? 'pin-off' : 'pin'" 
@@ -51,23 +52,37 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
 })
 export class CustomizationDialogComponent implements OnInit {
   sidebar = inject(SidebarService);
+  moduleStorage = inject(CustomModuleStorageService);
   @Output() onClose = new EventEmitter<void>();
 
   sortedItems: NavItem[] = [];
 
+  get allAvailableItems(): NavItem[] {
+    const customModules: NavItem[] = this.moduleStorage.modules().map(mod => ({
+      id: `custom-${mod.id}`,
+      label: mod.title,
+      icon: 'sparkles',
+      restricted: false,
+      status: 'NEW' as const,
+      route: `custom-module/${mod.id}`
+    }));
+    return [...ALL_NAV_ITEMS, ...customModules];
+  }
+
   ngOnInit() {
     const pinned = this.sidebar.pinnedItems();
-    const pinnedItemsObjects = pinned.map(id => ALL_NAV_ITEMS.find(i => i.id === id)).filter(Boolean) as NavItem[];
-    const unpinnedItems = ALL_NAV_ITEMS.filter(i => !pinned.includes(i.id as any));
+    const all = this.allAvailableItems;
+    const pinnedItemsObjects = pinned.map(id => all.find(i => i.id === id)).filter(Boolean) as NavItem[];
+    const unpinnedItems = all.filter(i => !pinned.includes(i.id));
     this.sortedItems = [...pinnedItemsObjects, ...unpinnedItems];
   }
 
   isPinned(id: string) {
-    return this.sidebar.pinnedItems().includes(id as any) || ALL_NAV_ITEMS.find(i => i.id === id)?.isPermanent;
+    return this.sidebar.pinnedItems().includes(id) || !!this.allAvailableItems.find(i => i.id === id)?.isPermanent;
   }
 
   togglePin(id: string) {
-    this.sidebar.togglePin(id as any);
+    this.sidebar.togglePin(id);
   }
 
   drop(event: CdkDragDrop<NavItem[]>) {
@@ -75,7 +90,7 @@ export class CustomizationDialogComponent implements OnInit {
     
     const newPinnedOrder = this.sortedItems
       .filter(item => this.isPinned(item.id))
-      .map(item => item.id as any);
+      .map(item => item.id);
       
     this.sidebar.reorderPinnedItems(newPinnedOrder);
   }
