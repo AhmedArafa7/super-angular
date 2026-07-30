@@ -21,6 +21,7 @@ export class SidebarService {
 
   readonly collapsedCategories = signal<string[]>([]);
   readonly recentItemIds = signal<string[]>([]);
+  readonly hasUnsavedChanges = signal<boolean>(false);
 
   constructor() {
     this.loadState();
@@ -38,7 +39,7 @@ export class SidebarService {
     } else {
       this.collapsedCategories.set([...current, catId]);
     }
-    this.saveState();
+    this.markUnsaved();
   }
 
   isCategoryCollapsed(catId: string): boolean {
@@ -60,32 +61,32 @@ export class SidebarService {
     } else {
       this.pinnedItems.set([...current, id]);
     }
-    this.saveState();
+    this.markUnsaved();
   }
 
   reorderPinnedItems(newItems: string[]): void {
     this.pinnedItems.set(newItems);
-    this.saveState();
+    this.markUnsaved();
   }
 
   setCollapsed(val: boolean): void {
     this.isCollapsed.set(val);
-    this.saveState();
+    this.markUnsaved();
   }
 
   setVisible(val: boolean): void {
     this.isVisible.set(val);
-    this.saveState();
+    this.markUnsaved();
   }
 
   setHeaderVisible(val: boolean): void {
     this.isHeaderVisible.set(val);
-    this.saveState();
+    this.markUnsaved();
   }
 
   setWidth(val: number): void {
     this.width.set(val);
-    this.saveState();
+    this.markUnsaved();
   }
 
   setIsResizing(val: boolean): void {
@@ -94,27 +95,37 @@ export class SidebarService {
 
   setPosition(val: SidebarPosition): void {
     this.position.set(val);
-    this.saveState();
+    this.markUnsaved();
   }
 
   setFloatingPos(pos: { x: number, y: number }): void {
     this.floatingPos.set(pos);
-    this.saveState();
+    this.markUnsaved();
   }
 
   toggleCollapsed(): void {
     this.isCollapsed.update(v => !v);
-    this.saveState();
+    this.markUnsaved();
   }
 
   toggleVisible(): void {
     this.isVisible.update(v => !v);
-    this.saveState();
+    this.markUnsaved();
   }
 
   toggleHeader(): void {
     this.isHeaderVisible.update(v => !v);
+    this.markUnsaved();
+  }
+
+  markUnsaved(): void {
+    this.hasUnsavedChanges.set(true);
+    this.saveState(); // Keep persistent fallback while notifying UI of changes
+  }
+
+  saveStateExplicitly(): void {
     this.saveState();
+    this.hasUnsavedChanges.set(false);
   }
 
   // Persistence Logic (Replacing Zustand persist middleware)

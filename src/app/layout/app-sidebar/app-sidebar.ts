@@ -96,9 +96,16 @@ export class AppSidebarComponent {
 
   get pinnedItems(): NavItem[] {
     const pinnedList = this.sidebar.pinnedItems();
-    let items = this.visibleItems.filter(item => 
-      item.isPermanent || pinnedList.includes(item.id)
-    );
+    const visible = this.visibleItems;
+    
+    // Map pinned IDs to actual NavItem objects in the exact order saved by user
+    let items: NavItem[] = [];
+    for (const id of pinnedList) {
+      const found = visible.find(i => i.id === id);
+      if (found && !items.some(i => i.id === found.id)) {
+        items.push(found);
+      }
+    }
 
     const q = this.searchQuery().trim().toLowerCase();
     if (q) {

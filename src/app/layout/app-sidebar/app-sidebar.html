@@ -105,36 +105,19 @@
             </div>
           }
 
-          <!-- Grouped Categories -->
-          @for (cat of categories; track cat.id) {
-            @let catItems = getItemsByCategory(cat.id);
-            @if (catItems.length > 0) {
-              <div class="space-y-1">
-                <!-- Category Collapsible Header -->
-                @if (!sidebar.isCollapsed()) {
-                  <button (click)="sidebar.toggleCategoryCollapse(cat.id)"
-                          class="w-full flex items-center justify-between px-2 py-1 text-[11px] font-bold text-slate-400 hover:text-white transition-colors group">
-                    <div class="flex items-center gap-1.5">
-                      <lucide-icon [name]="cat.icon" class="w-3.5 h-3.5 text-indigo-400"></lucide-icon>
-                      <span class="uppercase tracking-wider">{{ cat.label }}</span>
-                      <span class="text-[9px] text-slate-500 font-mono">({{ catItems.length }})</span>
-                    </div>
-                    <lucide-icon [img]="sidebar.isCategoryCollapsed(cat.id) ? ChevronRight : ChevronDown" class="w-3.5 h-3.5 text-slate-500 group-hover:text-white transition-transform"></lucide-icon>
-                  </button>
-                }
-
-                <!-- Category Items -->
-                @if (!sidebar.isCategoryCollapsed(cat.id) || sidebar.isCollapsed()) {
-                  <div class="space-y-0.5">
-                    @for (item of catItems; track item.id) {
-                      <app-sidebar-item [item]="item" (click)="onItemClick(item)"></app-sidebar-item>
-                    }
-                  </div>
-                }
+          <!-- Pinned Nav Items in Exact User-Saved Order -->
+          <div class="space-y-1">
+            @if (!sidebar.isCollapsed()) {
+              <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-1 flex items-center justify-between">
+                <span>القوائم المثبتة ({{ pinnedItems.length }})</span>
               </div>
             }
-          }
-
+            @for (item of pinnedItems; track item.id) {
+              <app-sidebar-item [item]="item" (click)="onItemClick(item)"></app-sidebar-item>
+            } @empty {
+              <div class="text-xs text-slate-500 text-center py-6">لا توجد أقسام مثبتة</div>
+            }
+          </div>
         </div>
       }
     </div>
@@ -187,6 +170,20 @@
       </div>
     }
     
+    <!-- Unsaved Changes Save Action Banner -->
+    @if (sidebar.hasUnsavedChanges() && !sidebar.isCollapsed()) {
+      <div class="mx-2 mb-2 p-2.5 bg-indigo-600/90 backdrop-blur border border-indigo-400/30 rounded-xl text-white flex items-center justify-between shadow-lg animate-in slide-in-from-bottom-2 duration-300 shrink-0" dir="rtl">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+          <span class="text-xs font-semibold">تغييرات غير محفوظة</span>
+        </div>
+        <button (click)="sidebar.saveStateExplicitly()" class="px-3 py-1 bg-white text-indigo-950 font-bold text-xs rounded-lg hover:bg-slate-100 transition-colors shadow flex items-center gap-1 cursor-pointer">
+          <lucide-icon name="save" class="w-3.5 h-3.5 text-indigo-600"></lucide-icon>
+          <span>حفظ التغييرات</span>
+        </button>
+      </div>
+    }
+
     <!-- User Profile Footer with Live Network Indicator -->
     <div class="p-2 shrink-0 relative">
       <div class="bg-black/20 hover:bg-white/5 transition-all rounded-2xl border border-white/5 mx-1 relative z-10"
