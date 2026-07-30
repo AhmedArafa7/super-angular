@@ -354,7 +354,7 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
       const gameId = params.get('id');
       if (gameId) {
         this.arcadeService.getGameById(gameId).subscribe(game => {
-          if (game && game.localUrl) {
+          if (game && (game.localUrl || gameId.startsWith('custom_game_'))) {
             this.game = game;
             this.loadGameMenuTheme(gameId);
             if (this.game.hasCustomMenu && !this.selectedMode) {
@@ -515,23 +515,33 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
     this.showPrivateRoomModal = false;
     this.isLoading = true;
     this.gameState = 'Launching...';
-    // Here we can append the mode to the localUrl if we want to pass it to the game iframe
-    if (this.game && this.game.localUrl) {
-      let url = this.game.localUrl;
-      
-      // Handle modified version for OpenTTD
-      if (this.game.id === 'openttd' && this.gameVersion === 'modified') {
-        url = url.replace('index.html', 'index_modified.html');
+
+    if (this.game) {
+      if (this.game.id.startsWith('custom_game_')) {
+        const storedCode = localStorage.getItem(`arcade_custom_code_${this.game.id}`);
+        if (storedCode) {
+          this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl('data:text/html;charset=utf-8,' + encodeURIComponent(storedCode));
+          return;
+        }
       }
 
-      url += (url.includes('?') ? '&' : '?') + 'mode=' + this.selectedMode;
-      if (this.selectedMode === 'private') {
-         url += '&room=' + this.generatedRoomCode;
-         if (this.privateRoomRole) {
-           url += '&role=' + this.privateRoomRole;
-         }
+      if (this.game.localUrl) {
+        let url = this.game.localUrl;
+        
+        // Handle modified version for OpenTTD
+        if (this.game.id === 'openttd' && this.gameVersion === 'modified') {
+          url = url.replace('index.html', 'index_modified.html');
+        }
+
+        url += (url.includes('?') ? '&' : '?') + 'mode=' + this.selectedMode;
+        if (this.selectedMode === 'private') {
+           url += '&room=' + this.generatedRoomCode;
+           if (this.privateRoomRole) {
+             url += '&role=' + this.privateRoomRole;
+           }
+        }
+        this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
       }
-      this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
     }
   }
 

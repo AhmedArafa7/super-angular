@@ -80,16 +80,18 @@ export class AppSidebarComponent {
   get visibleItems(): NavItem[] {
     const baseItems = getVisibleNavItems(this.userRole, ALL_NAV_ITEMS);
     
-    // Dynamically append user-generated custom modules pinned to sidebar
-    const customModules = this.moduleStorage.modules().map(mod => ({
-      id: `custom-${mod.id}`,
-      label: mod.title,
-      icon: 'sparkles',
-      restricted: false,
-      status: 'NEW' as const,
-      category: 'ai' as const,
-      route: `custom-module/${mod.id}`
-    }));
+    // Dynamically append user-generated custom modules (excluding arcade games)
+    const customModules = this.moduleStorage.modules()
+      .filter(mod => !mod.id.startsWith('game_') && !mod.id.startsWith('custom_game_') && !mod.title.includes('🎮'))
+      .map(mod => ({
+        id: `custom-${mod.id}`,
+        label: mod.title,
+        icon: 'sparkles',
+        restricted: false,
+        status: 'NEW' as const,
+        category: 'ai' as const,
+        route: `custom-module/${mod.id}`
+      }));
 
     return [...baseItems, ...customModules];
   }

@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute, ParamMap } from '@angular/router';
 import { DomSanitizer } from '@angular/platform-browser';
 import { 
   LucideAngularModule, Gamepad2, Sparkles, Cpu, Key, RefreshCw, CheckCircle2, 
@@ -14,6 +14,7 @@ import { AiKeyManagerService } from '../../core/services/ai-key-manager.service'
 import { ToastService } from '../../core/services/toast.service';
 import { SidebarService } from '../../core/sidebar.service';
 import { CustomModuleStorageService, CustomModuleItem } from '../ai-module-builder/custom-module-viewer.component';
+import { ArcadeService, ArcadeGame } from './arcade.service';
 
 export interface GameVersion {
   versionId: string;
@@ -347,6 +348,11 @@ export interface SavedGameItem {
                     <span>تحميل كود</span>
                   </button>
 
+                  <button (click)="openPublishModal()" title="نشر اللعبة في معرض الألعاب" class="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl text-xs font-black text-white flex items-center gap-2 shadow-lg shadow-emerald-600/30 cursor-pointer">
+                    <lucide-icon [img]="Share2" class="w-4 h-4"></lucide-icon>
+                    <span>نشر اللعبة 🚀</span>
+                  </button>
+
                   <button (click)="showCodeViewer.set(!showCodeViewer())" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-bold text-white flex items-center gap-2 shadow-lg shadow-indigo-600/20">
                     <lucide-icon [img]="Code" class="w-4 h-4"></lucide-icon>
                     <span>{{ showCodeViewer() ? 'إخفاء Sandbox' : 'عرض Sandbox الكود' }}</span>
@@ -395,6 +401,66 @@ export interface SavedGameItem {
 
         </div>
       </div>
+
+      <!-- Publish Game Modal -->
+      @if (showPublishModal()) {
+        <div class="fixed inset-0 z-[300] bg-black/80 backdrop-blur-md flex items-center justify-center p-4" dir="rtl">
+          <div class="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-lg shadow-2xl p-6 space-y-5 animate-in fade-in zoom-in duration-300">
+            <div class="flex items-center justify-between border-b border-white/10 pb-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                  <lucide-icon [img]="Share2" class="w-5 h-5"></lucide-icon>
+                </div>
+                <div>
+                  <h3 class="text-lg font-black text-white">نشر اللعبة في معرض الألعاب 🚀</h3>
+                  <p class="text-xs text-slate-400">اجعل لعبتك المبتكرة متاحة للجميع في منصة Super Arcade!</p>
+                </div>
+              </div>
+              <button (click)="showPublishModal.set(false)" class="p-2 hover:bg-white/10 text-slate-400 hover:text-white rounded-full">
+                ✕
+              </button>
+            </div>
+
+            <div class="space-y-4 text-right">
+              <div>
+                <label class="text-xs font-bold text-slate-300 block mb-1">عنوان اللعبة:</label>
+                <input type="text" [(ngModel)]="publishData.title" placeholder="مثال: سباق النيون الخارق" class="w-full bg-slate-950 border border-white/10 rounded-2xl p-3 text-xs text-white focus:outline-none focus:border-indigo-500 font-bold" />
+              </div>
+
+              <div>
+                <label class="text-xs font-bold text-slate-300 block mb-1">وصف اللعبة وطريقة اللعب:</label>
+                <textarea [(ngModel)]="publishData.description" rows="3" placeholder="اكتب وصفاً جذاباً للعبة والقوانين..." class="w-full bg-slate-950 border border-white/10 rounded-2xl p-3 text-xs text-white focus:outline-none focus:border-indigo-500 resize-none"></textarea>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-xs font-bold text-slate-300 block mb-1">التصنيف:</label>
+                  <select [(ngModel)]="publishData.category" class="w-full bg-slate-950 border border-white/10 rounded-2xl p-3 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    <option value="general">🎮 ألعاب عامة (General)</option>
+                    <option value="mental">🧠 ألعاب ذهنية وألغاز (Mental)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="text-xs font-bold text-slate-300 block mb-1">النوع (Genre):</label>
+                  <input type="text" [(ngModel)]="publishData.genre" placeholder="مثال: Arcade, Action..." class="w-full bg-slate-950 border border-white/10 rounded-2xl p-3 text-xs text-white focus:outline-none focus:border-indigo-500" />
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3 pt-3 border-t border-white/10">
+              <button (click)="showPublishModal.set(false)" class="flex-1 py-3 bg-white/5 hover:bg-white/10 text-slate-300 rounded-2xl text-xs font-bold transition cursor-pointer">
+                إلغاء
+              </button>
+              <button (click)="confirmPublishGame()" class="flex-2 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-2xl text-xs font-black shadow-xl shadow-emerald-600/30 flex items-center justify-center gap-2 transition cursor-pointer">
+                <lucide-icon [img]="Share2" class="w-4 h-4"></lucide-icon>
+                <span>تأكيد ونشر اللعبة الآن 🚀</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
     </div>
   `
 })
@@ -404,6 +470,8 @@ export class AiGameBuilderComponent implements OnInit {
   keyManager = inject(AiKeyManagerService);
   moduleStorage = inject(CustomModuleStorageService);
   router = inject(Router);
+  route = inject(ActivatedRoute);
+  arcadeService = inject(ArcadeService);
 
   private readonly STORAGE_KEY = 'si_neuro_custom_games_v1';
 
@@ -414,6 +482,14 @@ export class AiGameBuilderComponent implements OnInit {
   activeGameId = signal<string | null>(null);
   showCodeViewer = signal<boolean>(false);
   viewportMode = signal<'desktop' | 'tablet' | 'mobile'>('desktop');
+
+  showPublishModal = signal<boolean>(false);
+  publishData = {
+    title: '',
+    description: '',
+    category: 'general',
+    genre: 'Arcade AI'
+  };
 
   physicsConfig = {
     speed: 1.0,
@@ -460,7 +536,7 @@ export class AiGameBuilderComponent implements OnInit {
 
   gameTemplates = [
     { title: '🎮 طيران السفن النيونية (Neon Asteroids)', genre: 'Arcade Action', desc: 'لعبة طيران بسفينة فضائية وتفادِي العقبات مع 3 أنماط لعب (محلي - P2P - أونلاين).', prompt: 'اصنع لعبة طيران فضائية تفاعلية 2D بـ Canvas باسم (Neon Asteroids). اشترط تطبيق معايير الألعاب: أنماط اللعب الثلاثة في بداية اللعبة (محلياً، غرفة خاصة P2P، لعب أونلاين Pro)، عزل تام لشاشات البداية واللعب 60fps وGame Over، والتحكم بالأسهم/اللمس.' },
-    { title: '⚽ كرة قدم الطاولة التكتيكية (Table Soccer)', genre: 'Sports Multiplayer', desc: 'لعبة كرة قدم ثنائية 2D تدعم اللعب المحلي لشخصين على جهاز واحد.', prompt: 'اصنع لعبة كرة قدم طاولة تفاعلية ثنائية اللاعبين (Player 1: WASD, Player 2: الأسهم) بـ Canvas مع حساب الأهداف والوقت وشاشات فصل واضحة.' },
+    { title: '⚽ كرة قدم الطاولة التكتيكية (Table Soccer)', genre: 'Sports Multiplayer', desc: 'لعبة كرة قدم طاولة تفاعلية ثنائية اللاعبين (Player 1: WASD, Player 2: الأسهم) بـ Canvas مع حساب الأهداف والوقت وشاشات فصل واضحة.', prompt: 'اصنع لعبة كرة قدم طاولة تفاعلية ثنائية اللاعبين (Player 1: WASD, Player 2: الأسهم) بـ Canvas مع حساب الأهداف والوقت وشاشات فصل واضحة.' },
     { title: '🧠 ألغاز الذاكرة والأشكال (Memory Cards)', genre: 'Puzzle & Mind', desc: 'مطابقة البطاقات المقلوبة وتقييم السرعة والذاكرة.', prompt: 'اصنع لعبة ألغاز مطابقة كروت الذاكرة التفاعلية مع بطاقات أنيقة، عداد محاولات ومؤقت زمن وشاشة نصر مبهجة.' }
   ];
 
@@ -539,6 +615,60 @@ export class AiGameBuilderComponent implements OnInit {
 
   ngOnInit() {
     this.loadSavedGames();
+    this.route.queryParamMap.subscribe((params: ParamMap) => {
+      const editId = params.get('gameId') || params.get('edit');
+      if (editId) {
+        this.arcadeService.getGameById(editId).subscribe((game: ArcadeGame | undefined) => {
+          if (game) {
+            const storedCode = localStorage.getItem(`arcade_custom_code_${game.id}`);
+            if (storedCode) {
+              this.generatedHtml.set(storedCode);
+              this.promptText = `تعديل وتطوير لعبة (${game.title})`;
+              this.toast.show(`تم تحميل اللعبة (${game.title}) للتعديل والتطوير ✏️`, 'info');
+            }
+          }
+        });
+      }
+    });
+  }
+
+  openPublishModal() {
+    const activeG = this.activeGame();
+    if (activeG) {
+      this.publishData.title = activeG.title.replace('🎮 ', '');
+    } else {
+      this.publishData.title = this.promptText.trim().substring(0, 30) || 'لعبة جديدة';
+    }
+    this.publishData.description = this.promptText.trim() || 'لعبة Arcade تفاعلية تم إنشاؤها عبر الذكاء الاصطناعي.';
+    this.showPublishModal.set(true);
+  }
+
+  confirmPublishGame() {
+    if (!this.publishData.title.trim()) {
+      this.toast.show('يرجى كتابة عنوان للعبة أولاً.', 'warning');
+      return;
+    }
+
+    const code = this.generatedHtml();
+    if (!code) {
+      this.toast.show('لا يوجد كود لعبة ينشر بعد!', 'warning');
+      return;
+    }
+
+    this.arcadeService.publishGame({
+      title: this.publishData.title,
+      description: this.publishData.description,
+      category: this.publishData.category,
+      genre: this.publishData.genre,
+      htmlContent: code
+    });
+
+    this.showPublishModal.set(false);
+    this.toast.show('🚀 تم نشر اللعبة بنجاح في معرض ألعاب Super Arcade!', 'success');
+    
+    setTimeout(() => {
+      this.router.navigate(['/arcade']);
+    }, 1000);
   }
 
   loadSavedGames() {
@@ -769,26 +899,6 @@ MANDATORY ARCHITECTURE & POLICY REQUIREMENTS (STRICT COMPLIANCE):
     }
 
     this.saveGamesToStorage(list);
-
-    // Save to custom modules as well so it appears in sidebar and viewer
-    const customModules = this.moduleStorage.modules();
-    const existingIdx = customModules.findIndex(m => m.id === this.activeGameId());
-    let updatedCustom = [...customModules];
-    if (existingIdx !== -1) {
-      updatedCustom[existingIdx].code = html;
-      updatedCustom[existingIdx].title = `🎮 ${title}`;
-    } else {
-      updatedCustom.push({
-        id: this.activeGameId()!,
-        title: `🎮 ${title}`,
-        code: html,
-        createdAt: Date.now()
-      });
-    }
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('si_neuro_custom_modules_v2', JSON.stringify(updatedCustom));
-    }
-    this.moduleStorage.loadModules();
   }
 
   reloadIframe() {

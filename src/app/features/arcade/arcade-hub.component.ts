@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ArcadeService, ArcadeGame, GameCategory } from './arcade.service';
 import { GlobalStateService } from '../../core/services/global-state.service';
 import { FirebaseService } from '../../core/services/firebase.service';
-import { LucideAngularModule, UserPlus, Plus, Sparkles } from 'lucide-angular';
+import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3 } from 'lucide-angular';
 
 @Component({
   selector: 'app-arcade-hub',
@@ -100,49 +100,32 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles } from 'lucide-angular';
            <img src="https://images.unsplash.com/photo-1596515828859-e9ceec5c4839?q=80&w=1000&auto=format&fit=crop" class="w-full h-full object-cover" alt="Tank Battle Feature" />
         </div>
         
-        <div class="absolute bottom-0 right-0 p-8 md:p-12 z-20 max-w-2xl">
-          <span class="inline-block bg-amber-500 text-black font-black mb-4 px-4 py-1 rounded-full animate-pulse text-sm">
-            لعبة مميزة
-          </span>
-          <h1 class="text-4xl md:text-6xl font-black text-white mb-6 leading-tight">Tank Battle</h1>
-          <p class="text-slate-400 text-lg mb-8 leading-relaxed">
-            استمتع بأقوى تجربة حرب دبابات تكتيكية مباشرة من متصفحك. ادعُ أصدقاءك للعب معاً في شاشة واحدة أو تحدَّ الذكاء الاصطناعي.
-          </p>
-          <div class="flex flex-wrap gap-4">
-            <button (click)="playGame('tank-battle')" class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl h-14 px-8 font-black text-lg shadow-xl shadow-indigo-600/20 flex items-center gap-3 border-t border-white/20 transition-all">
-               العب الآن 
-               <svg xmlns="http://www.w3.org/2000/svg" class="size-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-            </button>
-          </div>
+        <div class="absolute bottom-0 inset-x-0 p-8 md:p-12 z-20 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
+           <div class="max-w-2xl text-right">
+              <div class="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/20 border border-indigo-500/30 rounded-full mb-4 backdrop-blur-md">
+                 <span class="w-2 h-2 rounded-full bg-indigo-400 animate-ping"></span>
+                 <span class="text-xs font-bold text-indigo-300">Super Arcade Platform</span>
+              </div>
+              <h1 class="text-3xl md:text-5xl font-black text-white mb-3 tracking-tight">معرض ألعاب التسلية الذكية</h1>
+              <p class="text-slate-300 text-sm md:text-base font-medium leading-relaxed">استمتع بـ 20+ لعبة ممتعة فردية وجماعية، أو ابنِ لعبتك المخصصة بالذكاء الاصطناعي وانشرها للجميع!</p>
+           </div>
+
+           <div class="flex gap-4">
+              <button (click)="playGame('tank-battle')" class="bg-indigo-600 hover:bg-indigo-500 text-white font-black px-8 py-4 rounded-2xl shadow-xl shadow-indigo-600/30 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-3 text-base">
+                 <span>العب اللعبة الأكثر شعبية ⚡</span>
+              </button>
+           </div>
         </div>
       </div>
 
-      <!-- Floating Category Tabs -->
-      <div class="flex justify-center mb-10">
-        <div class="inline-flex bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl p-1.5 shadow-2xl shadow-black/50" role="tablist">
-          <button *ngFor="let cat of arcadeService.categories"
-                  (click)="activeCategory = cat.id"
-                  role="tab"
-                  [attr.aria-selected]="activeCategory === cat.id"
-                  class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300"
-                  [ngClass]="{
-                    'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30': activeCategory === cat.id,
-                    'text-slate-400 hover:text-white hover:bg-white/5': activeCategory !== cat.id
-                  }">
-            <span>{{ cat.icon }}</span>
-            <span>{{ cat.label }}</span>
-            <span class="text-[10px] opacity-60">({{ getCategoryCount(cat.id) }})</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="flex items-center justify-between mb-8">
+      <!-- Main Section Header -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6">
         <div>
           <h2 class="text-2xl font-black text-white flex items-center gap-3">
             <svg xmlns="http://www.w3.org/2000/svg" class="text-indigo-500 size-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             مكتبة الألعاب السيادية
           </h2>
-          <p class="text-sm text-muted-foreground mr-11">ألعاب تعمل بالكامل داخل بيئة نكسوس، بدون إعلانات وبسيادة كاملة.</p>
+          <p class="text-sm text-slate-400 mr-11">ألعاب تعمل بالكامل داخل بيئة نكسوس، بدون إعلانات وبسيادة كاملة.</p>
         </div>
       </div>
 
@@ -168,7 +151,7 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles } from 'lucide-angular';
           </div>
         </div>
 
-        <div *ngFor="let game of filteredGames" class="group relative">
+        <div *ngFor="let game of games" class="group relative">
           <div class="aspect-[4/3] rounded-[2rem] overflow-hidden border border-white/5 bg-slate-900 transition-all duration-500 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-indigo-500/10 flex flex-col">
             <div class="flex-1 bg-slate-800 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity">
                 <img *ngIf="game.thumbnail" [src]="game.thumbnail" class="w-full h-full object-cover" [alt]="game.title" />
@@ -180,7 +163,11 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles } from 'lucide-angular';
               <p class="text-[10px] text-slate-400 mb-4 line-clamp-2">{{ game.description }}</p>
               
               <div class="flex gap-2 justify-end opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-                <button *ngIf="game.status === 'available'" (click)="playGame(game.id)" class="bg-white text-black hover:bg-white/90 rounded-xl font-bold h-9 px-4 text-sm">
+                <button *ngIf="game.id.startsWith('custom_game_')" (click)="editGame(game.id)" class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold h-9 px-3 text-xs flex items-center gap-1 shadow cursor-pointer">
+                  <lucide-icon [img]="Edit3" class="w-3.5 h-3.5"></lucide-icon>
+                  تعديل ✏️
+                </button>
+                <button *ngIf="game.status === 'available'" (click)="playGame(game.id)" class="bg-white text-black hover:bg-white/90 rounded-xl font-bold h-9 px-4 text-sm cursor-pointer">
                   العب الآن
                 </button>
                 <button *ngIf="game.status !== 'available'" disabled class="bg-white/10 text-white/40 rounded-xl font-bold h-9 px-4 text-sm cursor-not-allowed">
@@ -189,6 +176,7 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles } from 'lucide-angular';
               </div>
             </div>
           </div>
+          <span *ngIf="game.id.startsWith('custom_game_')" class="absolute top-4 right-4 bg-emerald-500 text-slate-950 text-xs font-black px-3 py-1 rounded-full border border-emerald-300 shadow">منشورة حديثاً 🚀</span>
           <span *ngIf="game.status === 'coming_soon'" class="absolute top-4 right-4 bg-slate-800 text-white text-xs font-bold px-3 py-1 rounded-full border border-white/10">قريباً</span>
         </div>
       </div>
@@ -257,6 +245,11 @@ export class ArcadeHubComponent implements OnInit {
   UserPlus = UserPlus;
   Plus = Plus;
   Sparkles = Sparkles;
+  Edit3 = Edit3;
+
+  editGame(id: string) {
+    this.router.navigate(['/arcade/ai-builder'], { queryParams: { gameId: id } });
+  }
   showAddFriend = false;
   showSubmitGameModal = false;
   showOpenTTDModal = false;

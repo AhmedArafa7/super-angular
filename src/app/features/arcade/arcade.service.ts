@@ -442,11 +442,50 @@ export class ArcadeService {
     }
   ];
 
+  private readonly publishedGamesKey = 'si_neuro_published_arcade_games_v1';
+
+  getPublishedGames(): ArcadeGame[] {
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(this.publishedGamesKey);
+        if (stored) return JSON.parse(stored);
+      } catch (e) {}
+    }
+    return [];
+  }
+
+  publishGame(gameData: { title: string; description: string; genre: string; category: string; htmlContent: string; thumbnail?: string }): ArcadeGame {
+    const published = this.getPublishedGames();
+    const id = 'custom_game_' + Date.now();
+    const newGame: ArcadeGame = {
+      id: id,
+      category: gameData.category || 'general',
+      title: gameData.title,
+      description: gameData.description || 'لعبة مخصصة تم إنشاؤها بنجاح ونشرها عبر استوديو الألعاب الذكي.',
+      thumbnail: gameData.thumbnail || 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%234f46e5%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22280%22%20font-size%3D%22100%22%20text-anchor%3D%22middle%22%3E%F0%9F%9A%80%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22420%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2240%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3E' + encodeURIComponent(gameData.title.substring(0, 20)) + '%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: gameData.genre || 'Arcade AI',
+      platforms: ['browser'],
+      status: 'available',
+      hasCustomMenu: true
+    };
+
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(`arcade_custom_code_${id}`, gameData.htmlContent);
+      localStorage.setItem(this.publishedGamesKey, JSON.stringify([newGame, ...published]));
+    }
+
+    return newGame;
+  }
+
   getGames(): Observable<ArcadeGame[]> {
-    return of(this.games);
+    const custom = this.getPublishedGames();
+    return of([...custom, ...this.games]);
   }
 
   getGameById(id: string): Observable<ArcadeGame | undefined> {
+    const custom = this.getPublishedGames();
+    const foundCustom = custom.find(g => g.id === id);
+    if (foundCustom) return of(foundCustom);
     return of(this.games.find(g => g.id === id));
   }
 }

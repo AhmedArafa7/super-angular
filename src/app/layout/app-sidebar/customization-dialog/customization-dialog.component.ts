@@ -98,14 +98,16 @@ export class CustomizationDialogComponent implements OnInit {
   showSavedToast = signal<boolean>(false);
 
   get allAvailableItems(): NavItem[] {
-    const customModules: NavItem[] = this.moduleStorage.modules().map(mod => ({
-      id: `custom-${mod.id}`,
-      label: mod.title,
-      icon: 'sparkles',
-      restricted: false,
-      status: 'NEW' as const,
-      route: `custom-module/${mod.id}`
-    }));
+    const customModules: NavItem[] = this.moduleStorage.modules()
+      .filter(mod => !mod.id.startsWith('game_') && !mod.id.startsWith('custom_game_') && !mod.title.includes('🎮'))
+      .map(mod => ({
+        id: `custom-${mod.id}`,
+        label: mod.title,
+        icon: 'sparkles',
+        restricted: false,
+        status: 'NEW' as const,
+        route: `custom-module/${mod.id}`
+      }));
     return [...ALL_NAV_ITEMS, ...customModules];
   }
 
