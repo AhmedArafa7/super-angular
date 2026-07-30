@@ -438,6 +438,10 @@ export class LibraryComponent {
       const pdfItems = await this.indexedDb.getAll('personal_pdf_books');
       if (pdfItems && pdfItems.length > 0) {
         pdfItems.forEach(item => {
+          let blobUrl = item.fileDataUrl;
+          if (item.fileBlob instanceof Blob || (item.fileBlob && typeof item.fileBlob === 'object')) {
+            blobUrl = URL.createObjectURL(item.fileBlob);
+          }
           personalPdfBooks.push({
             id: item.id,
             title: item.title,
@@ -456,7 +460,7 @@ export class LibraryComponent {
             ratingCount: 1,
             featured: true,
             isPersonalPdf: true,
-            fileDataUrl: item.fileDataUrl
+            fileDataUrl: blobUrl
           } as Book);
         });
       }
@@ -541,12 +545,7 @@ export class LibraryComponent {
     this.isPdfSaving = true;
     try {
       const file = this.selectedPdfFile;
-      const fileDataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      const fileBlobUrl = URL.createObjectURL(file);
 
       const newPdfBook: Book = {
         id: 'pdf_local_' + Date.now(),
@@ -566,26 +565,26 @@ export class LibraryComponent {
         ratingCount: 1,
         featured: true,
         isPersonalPdf: true,
-        fileDataUrl: fileDataUrl
+        fileDataUrl: fileBlobUrl
       };
 
       // 1. INSTANTLY Update UI Signal so it shows on screen immediately!
       this.books.update(prev => [newPdfBook, ...prev]);
 
-      // 2. Persist to IndexedDB
+      // 2. Persist raw File/Blob to IndexedDB (supports large files of any size)
       try {
         await this.indexedDb.put('personal_pdf_books', {
           id: newPdfBook.id,
           title: newPdfBook.title,
           author: newPdfBook.author,
           category: newPdfBook.category,
-          fileDataUrl: fileDataUrl,
+          fileBlob: file,
           fileSize: newPdfBook.fileSize,
           createdAt: newPdfBook.createdAt,
           coverUrl: newPdfBook.coverUrl
         });
       } catch (e) {
-        console.error('Failed to save personal PDF to IndexedDB:', e);
+        console.error('Failed to save personal PDF blob to IndexedDB:', e);
       }
 
       this.toast.show(`تم رفع وحفظ كتاب "${this.newPdfTitle}" بالمكتبة بنجاح!`, 'success');
