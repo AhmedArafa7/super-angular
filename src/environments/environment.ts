@@ -1,5 +1,8 @@
 export const environment = {
   production: true,
+  devKey: '457119132189353',
+  apiKey: '457119132189353',
+  secretKey: '457119132189353',
   apiBaseUrl: 'https://super-axd.pages.dev',
   firebase: {
     projectId: 'studio-3522991053-84d29',

@@ -59,6 +59,11 @@ export const routes: Routes = [
     path: 'bakery/admin',
     loadComponent: () => import('./features/admin/components/bakery-auth.component').then(c => c.BakeryAuthComponent)
   },
+  {
+    path: 'om-al-qura',
+    loadComponent: () => import('./features/om-al-qura/om-al-qura-home.component').then(c => c.OmAlQuraHomeComponent),
+    title: 'متجر أم القرى الإلكتروني'
+  },
 
   { path: '**', redirectTo: '/launcher' }
 ];
