@@ -6,7 +6,7 @@ import { EncryptionService } from './encryption.service';
 })
 export class IndexedDBService {
   private readonly DB_NAME = 'WeTubeDB';
-  private readonly DB_VERSION = 5; // Incremented for new stores
+  private readonly DB_VERSION = 6; // Incremented for personal PDF books store
   private db: IDBDatabase | null = null;
   private encryption = inject(EncryptionService);
 
@@ -16,6 +16,7 @@ export class IndexedDBService {
 
   private getKeyPathForStore(storeName: string): string {
     if (storeName === 'subscriptions') return 'channelId';
+    if (storeName === 'personal_pdf_books') return 'id';
     return 'videoId';
   }
 
@@ -73,6 +74,11 @@ export class IndexedDBService {
         // Reviewer Blacklist caching
         if (!db.objectStoreNames.contains('blacklisted_channels')) {
           db.createObjectStore('blacklisted_channels', { keyPath: 'id' });
+        }
+
+        // Personal PDF Books Store
+        if (!db.objectStoreNames.contains('personal_pdf_books')) {
+          db.createObjectStore('personal_pdf_books', { keyPath: 'id' });
         }
       };
     });

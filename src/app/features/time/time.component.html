@@ -11,18 +11,227 @@
         <svg lucideIcon="clock" class="text-indigo-400 size-10 animate-spin-slow"></svg>
       </h1>
       <p class="text-muted-foreground text-lg max-w-2xl">
-        أدوات ذكية مصممة لرفع كفاءة أدائك اليومي من خلال تقنيات التركيز العصبي.
+        جدول زمني متكامل وقائمة تفاعلية لتنظيم أوقات عملك، فترات استراحتك ومستوى تركيزك الذهني.
       </p>
+    </div>
+
+    <!-- Quick Stats Header Badges -->
+    <div class="flex items-center gap-3">
+      <div class="glass px-5 py-3 rounded-2xl border-white/5 flex items-center gap-3">
+        <div class="size-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+          <svg lucideIcon="calendar-check" class="size-5"></svg>
+        </div>
+        <div>
+          <span class="text-[10px] text-muted-foreground uppercase font-bold block">إجمالي الجلسات</span>
+          <span class="text-xl font-black text-white">{{ timeService.scheduleBlocks().length }} فترات</span>
+        </div>
+      </div>
+
+      <div class="glass px-5 py-3 rounded-2xl border-white/5 flex items-center gap-3">
+        <div class="size-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+          <svg lucideIcon="check-circle" class="size-5"></svg>
+        </div>
+        <div>
+          <span class="text-[10px] text-muted-foreground uppercase font-bold block">المكتملة اليوم</span>
+          <span class="text-xl font-black text-white">{{ completedBlocksCount() }} جلسة</span>
+        </div>
+      </div>
     </div>
   </header>
 
-  <!-- Main Content Grid -->
+  <!-- 1. SECTION: TIME & FOCUS ORGANIZATION SCHEDULE TABLE (جدول وقائمة تنظيم الوقت والتركيز) -->
+  <section class="glass border-white/5 rounded-[3rem] p-8 md:p-10 shadow-2xl space-y-6 relative overflow-hidden">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-white/10 pb-6">
+      <div>
+        <h2 class="text-2xl font-bold text-white flex items-center gap-3">
+          <svg lucideIcon="list-todo" class="text-indigo-400 size-7"></svg>
+          قائمة وجدول تنظيم الوقت والتركيز
+        </h2>
+        <p class="text-sm text-muted-foreground mt-1">
+          خطتك الزمنية اليومية لتقسيم الفترات بين العمل العميق والراحة والاجتماعات.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3 flex-wrap">
+        <button 
+          (click)="loadDefaultPreset()"
+          class="px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+          <svg lucideIcon="sparkles" class="size-4"></svg>
+          تحميل الخطة النموذجية
+        </button>
+        <button 
+          (click)="showAddBlockForm = !showAddBlockForm"
+          class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2">
+          <svg [lucideIcon]="showAddBlockForm ? 'x' : 'plus'" class="size-4"></svg>
+          {{ showAddBlockForm ? 'إلغاء' : 'إضافة فترة زمنية' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Add New Schedule Block Form -->
+    <div *ngIf="showAddBlockForm" class="p-6 bg-white/5 border border-indigo-500/20 rounded-2xl space-y-4 animate-in slide-in-from-top duration-300">
+      <h3 class="text-sm font-bold text-indigo-300 flex items-center gap-2">
+        <svg lucideIcon="clock" class="size-4"></svg> إضافة فترة تنظيم وقت جديدة
+      </h3>
+      
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="space-y-1">
+          <label class="text-xs text-muted-foreground font-bold">الفترة الزمنية (مثال: 08:00 - 09:30)</label>
+          <input type="text" [(ngModel)]="newSlot" placeholder="08:00 - 09:30" 
+                 class="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-3 text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div class="space-y-1 md:col-span-2">
+          <label class="text-xs text-muted-foreground font-bold">عنوان النشاط / الجلسة</label>
+          <input type="text" [(ngModel)]="newBlockTitle" placeholder="مثال: كتابة كود الواجهة وتجربتها" 
+                 class="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-3 text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-xs text-muted-foreground font-bold">نوع الفعالية</label>
+          <select [(ngModel)]="newCategory" class="w-full h-11 bg-slate-900 border border-white/10 rounded-xl px-3 text-sm text-white focus:outline-none focus:border-indigo-500">
+            <option value="deep_work">⚡ عمل عميق</option>
+            <option value="break">☕ استراحة</option>
+            <option value="meeting">👥 اجتماع/تنسيق</option>
+            <option value="learning">📚 تعلم وتطوير</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+        <div class="space-y-1 md:col-span-2">
+          <label class="text-xs text-muted-foreground font-bold">ملاحظات أو هدف الجلسة</label>
+          <input type="text" [(ngModel)]="newNotes" placeholder="ملاحظات توضيحية خفيفة..." 
+                 class="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-3 text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-xs text-muted-foreground font-bold">مستوى التركيز المستهدف: {{ newTargetFocus }}%</label>
+          <input type="range" [(ngModel)]="newTargetFocus" min="40" max="100" step="5" class="w-full accent-indigo-500">
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3 pt-2">
+        <button (click)="handleAddScheduleBlock()" 
+                class="px-6 h-11 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2">
+          <svg lucideIcon="check" class="size-4"></svg> حفظ الفترة في الجدول
+        </button>
+      </div>
+    </div>
+
+    <!-- SCHEDULE TABLE -->
+    <div class="overflow-x-auto rounded-2xl border border-white/10 bg-slate-900/40">
+      <table class="w-full text-right border-collapse">
+        <thead>
+          <tr class="bg-white/5 border-b border-white/10 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+            <th class="p-4">الفترة الزمنية</th>
+            <th class="p-4">عنوان النشاط والتركيز</th>
+            <th class="p-4">نوع الفعالية</th>
+            <th class="p-4">مستوى التركيز</th>
+            <th class="p-4">الحالة</th>
+            <th class="p-4 text-center">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5 text-sm">
+          <tr *ngFor="let block of timeService.scheduleBlocks()" 
+              [ngClass]="{
+                'bg-emerald-500/5': block.status === 'completed',
+                'bg-amber-500/5': block.status === 'active'
+              }"
+              class="hover:bg-white/5 transition-colors">
+            
+            <!-- Time slot -->
+            <td class="p-4 font-mono font-bold text-indigo-300 whitespace-nowrap dir-ltr text-right">
+              <span class="inline-flex items-center gap-2">
+                <svg lucideIcon="clock" class="size-4 text-indigo-400"></svg>
+                {{ block.timeSlot }}
+              </span>
+            </td>
+
+            <!-- Title & Notes -->
+            <td class="p-4 min-w-[220px]">
+              <p class="font-bold text-white" [ngClass]="{'line-through opacity-60': block.status === 'completed'}">
+                {{ block.title }}
+              </p>
+              <p *ngIf="block.notes" class="text-xs text-muted-foreground mt-0.5">
+                {{ block.notes }}
+              </p>
+            </td>
+
+            <!-- Category -->
+            <td class="p-4 whitespace-nowrap">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold"
+                    [ngClass]="categoryConfig[block.category].badgeClass">
+                <svg [lucideIcon]="categoryConfig[block.category].icon" class="size-3.5"></svg>
+                {{ categoryConfig[block.category].label }}
+              </span>
+            </td>
+
+            <!-- Focus percentage bar -->
+            <td class="p-4 whitespace-nowrap min-w-[130px]">
+              <div class="space-y-1">
+                <div class="flex justify-between text-[11px] font-bold text-slate-300">
+                  <span>المستهدف</span>
+                  <span>{{ block.targetFocus }}%</span>
+                </div>
+                <div class="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                  <div class="h-full bg-indigo-500 rounded-full" [style.width.%]="block.targetFocus"></div>
+                </div>
+              </div>
+            </td>
+
+            <!-- Status badge -->
+            <td class="p-4 whitespace-nowrap">
+              <span class="inline-block px-3 py-1 rounded-full border text-xs font-bold"
+                    [ngClass]="statusConfig[block.status].badgeClass">
+                {{ statusConfig[block.status].label }}
+              </span>
+            </td>
+
+            <!-- Actions -->
+            <td class="p-4 whitespace-nowrap text-center">
+              <div class="flex items-center justify-center gap-2">
+                <button (click)="toggleScheduleStatus(block.id)" 
+                        title="تغيير حالة الفترة"
+                        class="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-slate-300 hover:text-white transition-colors">
+                  <svg [lucideIcon]="block.status === 'completed' ? 'rotate-ccw' : 'check'" class="size-4 text-emerald-400"></svg>
+                </button>
+                <button (click)="deleteScheduleBlock(block.id)" 
+                        title="حذف الفترة"
+                        class="p-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-xl text-red-400 transition-colors">
+                  <svg lucideIcon="trash-2" class="size-4"></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty schedule message -->
+          <tr *ngIf="timeService.scheduleBlocks().length === 0">
+            <td colspan="6" class="p-8 text-center text-muted-foreground">
+              لا يوجد فترات زمنية في الجدول حالياً. انقر على "تحميل الخطة النموذجية" أو أضف فترة جديدة.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 2. Main Content Grid (Pomodoro & Daily Tasks Cards) -->
   <main class="grid grid-cols-1 lg:grid-cols-5 gap-8 pb-20">
     
-    <!-- 1. Pomodoro Card -->
+    <!-- Pomodoro Card -->
     <div class="lg:col-span-3 glass border-white/5 rounded-[3.5rem] p-10 flex flex-col items-center text-center shadow-2xl relative overflow-hidden">
       <div class="absolute top-0 right-0 size-64 bg-indigo-500/5 blur-[100px] -mr-32 -mt-32"></div>
       
+      <div class="w-full flex items-center justify-between mb-6">
+        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+          <svg lucideIcon="timer" class="text-indigo-400"></svg> مؤقت التركيز (Pomodoro)
+        </h3>
+        <span class="text-xs text-indigo-400 font-bold px-3 py-1 bg-indigo-500/10 rounded-full border border-indigo-500/20">
+          تقنية 25 / 5 دقيقة
+        </span>
+      </div>
+
       <!-- Mode Tabs -->
       <div class="bg-white/5 p-1.5 rounded-2xl flex gap-1 mb-12 relative z-10">
         <button 
@@ -84,14 +293,13 @@
         </button>
       </div>
 
-      <!-- Core footer note -->
       <div class="mt-12 flex items-center gap-3 text-indigo-400 opacity-40">
         <svg lucideIcon="zap" class="size-4 animate-pulse"></svg>
         <span class="text-[10px] font-black uppercase tracking-[0.3em]">Protocol v1.0 • Neural Integration</span>
       </div>
     </div>
 
-    <!-- 2. Daily Tasks Card -->
+    <!-- Daily Tasks Card -->
     <div class="lg:col-span-2 glass border-white/5 rounded-[3.5rem] p-8 flex flex-col h-full shadow-2xl">
       <div class="flex items-center justify-between mb-8 flex-row-reverse">
         <h3 class="text-xl font-bold text-white flex items-center gap-3 flex-row-reverse">
@@ -135,13 +343,11 @@
       <!-- Scrollable Tasks List -->
       <div class="flex-1 space-y-3 overflow-y-auto max-h-[380px] pr-2 custom-scrollbar">
         
-        <!-- Empty task screen -->
         <div *ngIf="timeService.tasks().length === 0" class="py-20 text-center opacity-20 flex flex-col items-center gap-3 justify-center">
           <svg lucideIcon="shield-check" class="size-12 text-slate-400"></svg>
           <p class="text-sm font-bold text-white">كل شيء مكتمل! استمتع بوقتك.</p>
         </div>
 
-        <!-- Render loop -->
         <div 
           *ngFor="let task of timeService.tasks(); trackBy: timeService.tasks"
           [ngClass]="task.completed ? 'opacity-50 grayscale' : ''"
@@ -178,3 +384,4 @@
     </div>
   </main>
 </div>
+

@@ -1,0 +1,662 @@
+<div class="min-h-screen bg-[#0a0a0c] text-white p-6 md:p-10" dir="rtl">
+  <!-- Header Section -->
+  <div class="max-w-7xl mx-auto mb-12">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 text-right">
+      <div class="order-2 md:order-1">
+        <div class="flex items-center gap-3 mb-4 justify-end flex-wrap">
+          <div class="relative">
+            <svg lucideIcon="search" class="absolute right-3 top-1/2 -translate-y-1/2 size-5 text-slate-500"></svg>
+            <input
+              type="text"
+              [(ngModel)]="searchQuery"
+              placeholder="ابحث عن رواية، كتاب أو مؤلف..."
+              class="w-full md:w-80 bg-white/5 border border-white/10 rounded-2xl pr-10 text-right h-12 text-white px-4 focus:outline-none focus:border-indigo-500/50"
+            />
+          </div>
+
+          <!-- Personal PDF Upload Button -->
+          <button
+            (click)="showAddPdfDialog = true"
+            class="rounded-2xl h-12 px-5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold gap-2 flex items-center shadow-lg transition-all"
+            title="إضافة كتاب PDF شخصي وحفظه دائماً بمتصفحك"
+          >
+            <svg lucideIcon="file-plus" class="size-5"></svg>
+            <span>📕 رفع كتاب PDF شخصي (حفظ دائم)</span>
+          </button>
+
+          <!-- Auto Importer Tool Trigger Button -->
+          <button
+            (click)="showAutoImportDialog = true"
+            class="rounded-2xl h-12 px-5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold gap-2 flex items-center shadow-lg transition-all"
+            title="أداة استيراد وتجزئة نصوص الكتب تلقائياً"
+          >
+            <svg lucideIcon="wand" class="size-5"></svg>
+            <span>⚡ استيراد كتاب نصي تلقائياً</span>
+          </button>
+
+          <button
+            *ngIf="isAdmin"
+            (click)="toggleReviewMode()"
+            [ngClass]="showPendingReview ? 'bg-amber-600 text-white' : 'bg-white/5 text-indigo-400 hover:bg-indigo-500/10'"
+            class="rounded-2xl h-12 px-5 border border-indigo-500/30 gap-2 flex items-center transition-all"
+          >
+            <svg lucideIcon="shield-check" class="size-5"></svg>
+            {{ showPendingReview ? 'الكتب المعتمدة' : 'طلبات المراجعة' }}
+          </button>
+        </div>
+      </div>
+      <div class="order-1 md:order-2">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full mb-2">
+          <svg lucideIcon="sparkles" class="size-3.5 text-amber-400"></svg>
+          <span class="text-[11px] font-bold text-amber-400">مجموعات الروايات الكلاسيكية والحديثة الأكثر تقييماً</span>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-black mb-3 bg-gradient-to-l from-white via-slate-100 to-indigo-400 bg-clip-text text-transparent">
+          المكتبة العامة وروايات النخبة
+        </h1>
+        <p class="text-slate-400 text-lg">أشهر الروايات المصرية والأعمال الأدبية الخالدة لأبرز الكُتّاب والروائيين.</p>
+      </div>
+    </div>
+
+    <!-- Categories Bar -->
+    <div class="flex flex-wrap gap-2 justify-end mb-10 overflow-x-auto pb-2">
+      <button
+        *ngFor="let cat of ['الكل', ...categories]"
+        (click)="setCategory(cat)"
+        [ngClass]="activeCategory === cat ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 font-bold' : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white'"
+        class="px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap"
+      >
+        {{ cat }}
+      </button>
+    </div>
+
+    <!-- Main Content Area -->
+    <ng-container *ngIf="!isLoading(); else loadingTmpl">
+      <ng-container *ngIf="filteredBooks.length > 0; else emptyTmpl">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+          <div
+            *ngFor="let book of filteredBooks"
+            class="group relative bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:border-indigo-500/50 transition-all duration-300 shadow-xl flex flex-col h-full"
+          >
+            <!-- Cover Image -->
+            <div class="relative aspect-[3/4] overflow-hidden bg-slate-900">
+              <img
+                [src]="book.coverUrl"
+                [alt]="book.title"
+                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                loading="lazy"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-4">
+                <button
+                  *ngIf="!book.isPersonalPdf"
+                  (click)="openBookReader(book)"
+                  class="w-full bg-indigo-600 hover:bg-indigo-500 rounded-xl gap-2 h-11 flex items-center justify-center text-white font-bold text-sm transition-all shadow-lg shadow-indigo-600/30"
+                >
+                  <svg lucideIcon="book-open" class="size-4"></svg>
+                  تصفح وقراءة الفصول
+                </button>
+
+                <button
+                  *ngIf="book.isPersonalPdf"
+                  (click)="openPdfViewer(book)"
+                  class="w-full bg-emerald-600 hover:bg-emerald-500 rounded-xl gap-2 h-11 flex items-center justify-center text-white font-bold text-sm transition-all shadow-lg shadow-emerald-600/30"
+                >
+                  <svg lucideIcon="file-text" class="size-4"></svg>
+                  عرض كتاب الـ PDF المحفوظ
+                </button>
+              </div>
+
+              <!-- Top Right Category Badge -->
+              <div class="absolute top-2 right-2 flex flex-col gap-1 items-end">
+                <span class="inline-block bg-black/70 backdrop-blur-md text-white border border-white/10 px-2.5 py-1 rounded-full text-[10px] font-bold">
+                  {{ book.category }}
+                </span>
+                <span *ngIf="book.isPersonalPdf" class="inline-block bg-emerald-500/90 text-slate-950 backdrop-blur-md px-2 py-0.5 rounded-full text-[9px] font-black shadow-md">
+                  📕 PDF شخصي محفوظ
+                </span>
+              </div>
+
+              <!-- Top Left Actions / Rating Badge -->
+              <div class="absolute top-2 left-2 flex items-center gap-1">
+                <button *ngIf="book.isPersonalPdf" (click)="deletePersonalPdfBook(book.id)"
+                        class="size-7 rounded-full bg-red-500/80 hover:bg-red-600 text-white flex items-center justify-center font-bold text-xs shadow-md transition-all"
+                        title="حذف الكتاب الشخصي من متصفحك">
+                  ✕
+                </button>
+
+                <span *ngIf="book.rating && !book.isPersonalPdf" class="inline-flex items-center gap-1 bg-amber-500/90 text-slate-950 font-black px-2.5 py-0.5 rounded-full text-[10px] shadow-md">
+                  ⭐ {{ book.rating }}
+                </span>
+              </div>
+
+              <div *ngIf="book.status === 'pending'" class="absolute top-2 left-2">
+                <span class="inline-block bg-amber-500/80 text-white px-3 py-1 rounded-full text-[11px] font-medium animate-pulse">قيد المراجعة</span>
+              </div>
+            </div>
+
+            <!-- Book Info -->
+            <div class="p-4 flex flex-col flex-1 text-right">
+              <h3 class="font-bold text-base md:text-lg text-white line-clamp-1 mb-0.5" [title]="book.title">{{ book.title }}</h3>
+              <p class="text-xs text-indigo-300 font-semibold mb-2 line-clamp-1">{{ book.author }}</p>
+              
+              <p *ngIf="book.description" class="text-[11px] text-slate-400 line-clamp-2 mb-3 leading-relaxed">
+                {{ book.description }}
+              </p>
+
+              <div class="mt-auto flex items-center justify-between gap-2 border-t border-white/5 pt-3">
+                <div class="flex items-center gap-1 text-[10px] text-slate-400 font-bold">
+                  <svg lucideIcon="download" class="size-3 text-indigo-400"></svg>
+                  <span>{{ book.downloadCount | number }}</span>
+                </div>
+
+                <div *ngIf="book.ratingCount" class="flex items-center gap-1 text-[10px] text-amber-400 font-bold">
+                  <span>({{ book.ratingCount }})</span>
+                  <svg lucideIcon="star" class="size-3 fill-amber-400 text-amber-400"></svg>
+                </div>
+
+                <div class="flex items-center gap-1 text-[10px] text-slate-500 font-mono">
+                  <span>{{ book.fileSize }}</span>
+                </div>
+              </div>
+
+              <!-- Admin Controls -->
+              <div *ngIf="isAdmin && book.status === 'pending'" class="mt-4 grid grid-cols-2 gap-2">
+                <button
+                  (click)="approveBook(book.id)"
+                  class="h-9 rounded-lg border border-green-500/30 text-green-400 hover:bg-green-500/10 flex items-center justify-center transition-all"
+                >
+                  <svg lucideIcon="check" class="size-4"></svg>
+                </button>
+                <button
+                  (click)="rejectBook(book.id)"
+                  class="h-9 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 flex items-center justify-center transition-all"
+                >
+                  <svg lucideIcon="x" class="size-4"></svg>
+                </button>
+              </div>
+
+              <button
+                *ngIf="isAdmin && book.status === 'approved'"
+                (click)="deleteBook(book.id)"
+                class="mt-3 h-9 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg w-full flex items-center justify-center gap-2 text-sm transition-all"
+              >
+                <svg lucideIcon="trash-2" class="size-4"></svg>
+                حذف الكتاب
+              </button>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+
+
+    <!-- Empty State -->
+    <ng-template #emptyTmpl>
+      <div class="flex flex-col items-center justify-center py-40 border-2 border-dashed border-white/5 rounded-[3rem]">
+        <div class="size-20 bg-white/5 rounded-[2rem] flex items-center justify-center mb-6">
+          <svg lucideIcon="book" class="size-10 text-slate-500"></svg>
+        </div>
+        <h3 class="text-2xl font-bold mb-2">لا توجد كتب حالياً</h3>
+        <p class="text-slate-400 mb-8">كن أول من يثري المكتبة ويرفع كتاباً نافعاً!</p>
+        <button
+          (click)="showUploadDialog = true"
+          class="bg-indigo-600 hover:bg-indigo-500 rounded-2xl h-12 px-8 gap-2 flex items-center text-white font-bold transition-all"
+        >
+          <svg lucideIcon="upload" class="size-5"></svg>
+          إضافة كتاب جديد
+        </button>
+      </div>
+    </ng-template>
+
+    <!-- Loading State -->
+    <ng-template #loadingTmpl>
+      <div class="flex flex-col items-center justify-center py-40 gap-4">
+        <svg lucideIcon="loader-2" class="size-12 text-indigo-500 animate-spin"></svg>
+        <p class="text-slate-400">جاري تحميل الكتب...</p>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- Floating Upload Button -->
+  <button
+    (click)="showUploadDialog = true"
+    class="fixed bottom-10 right-10 size-16 rounded-[2rem] bg-indigo-600 hover:bg-indigo-500 shadow-2xl shadow-indigo-600/40 z-50 flex items-center justify-center group transition-all"
+  >
+    <svg lucideIcon="plus" class="size-8 transition-transform duration-300 group-hover:rotate-90"></svg>
+  </button>
+
+  <!-- Upload Dialog Modal -->
+  <div *ngIf="showUploadDialog" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#121216] border border-white/10 text-white max-w-2xl w-full rounded-[2.5rem] overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+      
+      <!-- Header -->
+      <div class="p-8 pb-4">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-2xl font-black bg-gradient-to-l from-white to-indigo-400 bg-clip-text text-transparent">إضافة كتاب جديد</h2>
+          <button
+            (click)="resetUploadForm()"
+            class="size-9 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- Form -->
+        <div class="space-y-6 overflow-y-auto pr-2 max-h-[60vh] text-right">
+          
+          <!-- Title & Author -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-slate-400 mr-2">اسم المؤلف</label>
+              <input
+                type="text"
+                [(ngModel)]="newBook.author"
+                placeholder="محمد الغزالي..."
+                class="w-full bg-white/5 border border-white/10 rounded-2xl h-12 text-right px-4 text-white focus:outline-none focus:border-indigo-500/50"
+              />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-slate-400 mr-2">عنوان الكتاب</label>
+              <input
+                type="text"
+                [(ngModel)]="newBook.title"
+                placeholder="جدد حياتك..."
+                class="w-full bg-white/5 border border-white/10 rounded-2xl h-12 text-right px-4 text-white font-bold focus:outline-none focus:border-indigo-500/50"
+              />
+            </div>
+          </div>
+
+          <!-- Category -->
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-slate-400 mr-2">تصنيف الكتاب</label>
+            <select
+              [(ngModel)]="newBook.category"
+              class="w-full bg-white/5 border border-white/10 rounded-2xl h-12 px-4 text-white focus:outline-none focus:border-indigo-500/50"
+            >
+              <option value="" disabled class="bg-[#121216]">اختر التصنيف الرئيسي</option>
+              <option *ngFor="let cat of categories" [value]="cat" class="bg-[#121216]">{{ cat }}</option>
+            </select>
+          </div>
+
+          <!-- Description -->
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-slate-400 mr-2">وصف قصير</label>
+            <textarea
+              [(ngModel)]="newBook.description"
+              placeholder="نبذة عن محتوى الكتاب..."
+              class="w-full bg-white/5 border border-white/10 rounded-2xl min-h-[100px] text-right px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50"
+            ></textarea>
+          </div>
+
+          <!-- File Uploads -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Cover Upload -->
+            <div class="relative group">
+              <label class="block p-6 border-2 border-dashed border-white/10 rounded-[2rem] hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all cursor-pointer text-center">
+                <input type="file" accept="image/*" class="hidden" (change)="onFileChange($event, 'cover')" />
+                <ng-container *ngIf="selectedFiles.cover; else coverPlaceholder">
+                  <div class="flex items-center gap-2 text-green-400 justify-center">
+                    <svg lucideIcon="image" class="size-6"></svg>
+                    <span class="text-sm font-medium truncate max-w-[150px]">{{ selectedFiles.cover.name }}</span>
+                  </div>
+                </ng-container>
+                <ng-template #coverPlaceholder>
+                  <div class="flex flex-col items-center gap-3">
+                    <svg lucideIcon="image" class="size-8 text-slate-400 group-hover:text-indigo-400 transition-colors"></svg>
+                    <span class="text-sm text-slate-400">صورة الغلاف (PNG/JPG)</span>
+                  </div>
+                </ng-template>
+              </label>
+            </div>
+
+            <!-- PDF Upload -->
+            <div class="relative group">
+              <label class="block p-6 border-2 border-dashed border-white/10 rounded-[2rem] hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all cursor-pointer text-center">
+                <input type="file" accept=".pdf" class="hidden" (change)="onFileChange($event, 'book')" />
+                <ng-container *ngIf="selectedFiles.book; else bookPlaceholder">
+                  <div class="flex items-center gap-2 text-indigo-400 justify-center">
+                    <svg lucideIcon="file-text" class="size-6"></svg>
+                    <span class="text-sm font-medium truncate max-w-[150px]">{{ selectedFiles.book.name }}</span>
+                  </div>
+                </ng-container>
+                <ng-template #bookPlaceholder>
+                  <div class="flex flex-col items-center gap-3">
+                    <svg lucideIcon="book-open" class="size-8 text-slate-400 group-hover:text-indigo-400 transition-colors"></svg>
+                    <span class="text-sm text-slate-400">ملف الكتاب (PDF)</span>
+                  </div>
+                </ng-template>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="p-8 pt-4 flex items-center justify-between gap-4 border-t border-white/5 bg-white/[0.02]">
+        <button
+          (click)="resetUploadForm()"
+          [disabled]="isUploading"
+          class="rounded-2xl h-14 px-8 hover:bg-white/5 text-white transition-all"
+        >
+          إلغاء
+        </button>
+        <button
+          (click)="handleUpload()"
+          [disabled]="isUploading"
+          class="flex-1 bg-indigo-600 hover:bg-indigo-500 rounded-2xl h-14 text-lg font-bold shadow-xl shadow-indigo-600/20 gap-3 flex items-center justify-center text-white transition-all disabled:opacity-50"
+        >
+          <ng-container *ngIf="!isUploading; else uploadingTmpl">
+            <svg lucideIcon="upload" class="size-6"></svg>
+            إرسال للمراجعة
+          </ng-container>
+          <ng-template #uploadingTmpl>
+            <svg lucideIcon="loader-2" class="size-5 animate-spin"></svg>
+            جاري الرفع... {{ uploadProgress | number:'1.0-0' }}%
+          </ng-template>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- IN-APP BOOK READER MODAL (قارئ الكتب الإلكتروني التفاعلي) -->
+  <div *ngIf="selectedBookForReading" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 md:p-6 animate-in fade-in duration-300">
+    <div [ngClass]="{
+           'bg-[#0f172a] text-slate-100 border-white/10': readerTheme === 'dark',
+           'bg-[#fbf0d9] text-[#2b251a] border-[#e2d2b4]': readerTheme === 'sepia',
+           'bg-white text-slate-900 border-slate-200': readerTheme === 'light'
+         }"
+         class="w-full max-w-5xl h-[92vh] rounded-[2.5rem] border shadow-2xl flex flex-col overflow-hidden relative transition-colors duration-300">
+      
+      <!-- Reader Header Toolbar -->
+      <div [ngClass]="{
+             'bg-slate-900/80 border-b border-white/10': readerTheme === 'dark',
+             'bg-[#f3e3c3] border-b border-[#e2d2b4]': readerTheme === 'sepia',
+             'bg-slate-100 border-b border-slate-200': readerTheme === 'light'
+           }"
+           class="p-4 md:px-8 flex items-center justify-between gap-4 shrink-0">
+        
+        <!-- Book Details -->
+        <div class="flex items-center gap-3 min-w-0">
+          <img [src]="selectedBookForReading.coverUrl" [alt]="selectedBookForReading.title" 
+               class="size-11 rounded-xl object-cover shadow-md shrink-0 border border-white/10">
+          <div class="min-w-0 text-right">
+            <h2 class="font-bold text-base md:text-lg truncate leading-snug">{{ selectedBookForReading.title }}</h2>
+            <p class="text-xs opacity-75 font-semibold truncate">{{ selectedBookForReading.author }}</p>
+          </div>
+        </div>
+
+        <!-- Reader Controls -->
+        <div class="flex items-center gap-2 md:gap-3 flex-wrap">
+          <!-- Font Size Adjuster -->
+          <div class="flex items-center gap-1 rounded-xl p-1 border opacity-80"
+               [ngClass]="readerTheme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'">
+            <button (click)="changeFontSize(-2)" class="px-2 py-1 text-xs font-bold hover:opacity-100" title="تصغير الخط">A-</button>
+            <span class="text-xs font-mono font-bold px-1">{{ readerFontSize }}px</span>
+            <button (click)="changeFontSize(2)" class="px-2 py-1 text-xs font-bold hover:opacity-100" title="تكبير الخط">A+</button>
+          </div>
+
+          <!-- Reader Theme Switcher -->
+          <div class="flex items-center gap-1 rounded-xl p-1 border opacity-80"
+               [ngClass]="readerTheme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'">
+            <button (click)="setReaderTheme('dark')" [class.font-bold]="readerTheme === 'dark'" class="px-2 py-1 text-xs rounded-lg hover:opacity-100">🌙 داكن</button>
+            <button (click)="setReaderTheme('sepia')" [class.font-bold]="readerTheme === 'sepia'" class="px-2 py-1 text-xs rounded-lg hover:opacity-100">📜 بيج</button>
+            <button (click)="setReaderTheme('light')" [class.font-bold]="readerTheme === 'light'" class="px-2 py-1 text-xs rounded-lg hover:opacity-100">☀️ فاتح</button>
+          </div>
+
+          <!-- Close Reader -->
+          <button (click)="closeBookReader()" 
+                  class="size-10 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 flex items-center justify-center font-bold text-lg transition-all"
+                  title="إغلاق القارئ">
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <!-- Reader Body Layout (Chapters Navigation + Native Reading View) -->
+      <div class="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden relative">
+        
+        <!-- Chapters Sidebar Table of Contents -->
+        <div *ngIf="selectedBookForReading.chapters && selectedBookForReading.chapters.length > 0"
+             [ngClass]="{
+               'bg-slate-950/40 border-l border-white/10': readerTheme === 'dark',
+               'bg-[#f3e3c3]/50 border-l border-[#e2d2b4]': readerTheme === 'sepia',
+               'bg-slate-50 border-l border-slate-200': readerTheme === 'light'
+             }"
+             class="w-full md:w-72 p-4 overflow-y-auto shrink-0 space-y-2 border-b md:border-b-0">
+          <h3 class="text-xs font-bold uppercase tracking-wider opacity-70 mb-3 text-right">فصول واقتباسات الكتاب</h3>
+          
+          <button *ngFor="let chap of selectedBookForReading.chapters; let idx = index"
+                  (click)="activeChapterIndex = idx"
+                  [ngClass]="{
+                    'bg-indigo-600 text-white font-bold shadow-md': activeChapterIndex === idx && (readerTheme === 'dark' || readerTheme === 'light'),
+                    'bg-[#d6b986] text-slate-950 font-bold shadow-md': activeChapterIndex === idx && readerTheme === 'sepia',
+                    'opacity-70 hover:opacity-100': activeChapterIndex !== idx
+                  }"
+                  class="w-full p-3 rounded-xl text-xs text-right transition-all flex items-center justify-between gap-2">
+            <span class="truncate">{{ chap.title }}</span>
+            <span class="font-mono text-[10px] opacity-60">#{{ idx + 1 }}</span>
+          </button>
+        </div>
+
+        <!-- Main Reading Content Surface -->
+        <div class="flex-1 p-6 md:p-12 overflow-y-auto text-right leading-loose font-serif select-text custom-scrollbar">
+          
+          <!-- Book Overview Card if no chapters -->
+          <div *ngIf="!selectedBookForReading.chapters || selectedBookForReading.chapters.length === 0" class="max-w-2xl mx-auto space-y-6 text-center py-8">
+            <img [src]="selectedBookForReading.coverUrl" [alt]="selectedBookForReading.title" 
+                 class="size-48 mx-auto rounded-2xl object-cover shadow-2xl border border-white/10">
+            
+            <h2 class="text-3xl font-black">{{ selectedBookForReading.title }}</h2>
+            <p class="text-lg opacity-80 font-bold">المؤلف: {{ selectedBookForReading.author }}</p>
+
+            <div class="p-6 rounded-2xl bg-black/10 border border-white/10 text-right leading-relaxed text-sm md:text-base opacity-90">
+              <h4 class="font-bold text-lg mb-2">نبذة عن الكتاب:</h4>
+              <p>{{ selectedBookForReading.description }}</p>
+            </div>
+          </div>
+
+          <!-- Active Chapter Text Content -->
+          <div *ngIf="selectedBookForReading.chapters && selectedBookForReading.chapters[this.activeChapterIndex]" class="max-w-3xl mx-auto space-y-6">
+            <div class="border-b pb-4 mb-6" [ngClass]="readerTheme === 'dark' ? 'border-white/10' : 'border-slate-300'">
+              <span class="text-xs font-bold uppercase tracking-widest text-indigo-400 block mb-1">الفصل {{ activeChapterIndex + 1 }} من {{ selectedBookForReading.chapters.length }}</span>
+              <h2 class="text-2xl md:text-3xl font-bold leading-relaxed">
+                {{ selectedBookForReading.chapters[this.activeChapterIndex].title }}
+              </h2>
+            </div>
+
+            <p [style.fontSize.px]="readerFontSize" class="leading-loose whitespace-pre-line text-justify font-sans">
+              {{ selectedBookForReading.chapters[this.activeChapterIndex].content }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reader Footer Navigation Bar -->
+      <div *ngIf="selectedBookForReading.chapters && selectedBookForReading.chapters.length > 0"
+           [ngClass]="{
+             'bg-slate-900/90 border-t border-white/10': readerTheme === 'dark',
+             'bg-[#f3e3c3] border-t border-[#e2d2b4]': readerTheme === 'sepia',
+             'bg-slate-100 border-t border-slate-200': readerTheme === 'light'
+           }"
+           class="p-4 px-8 flex items-center justify-between gap-4 shrink-0">
+        
+        <button (click)="prevChapter()" [disabled]="activeChapterIndex === 0"
+                class="px-5 h-11 rounded-xl text-xs font-bold border transition-all disabled:opacity-30 flex items-center gap-2"
+                [ngClass]="readerTheme === 'dark' ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-black/5 border-black/10 hover:bg-black/10'">
+          <svg lucideIcon="chevron-right" class="size-4"></svg> الفصل السابق
+        </button>
+
+        <span class="text-xs font-mono font-bold opacity-75">
+          الفصل {{ activeChapterIndex + 1 }} من {{ selectedBookForReading.chapters.length }}
+        </span>
+
+        <button (click)="nextChapter()" [disabled]="activeChapterIndex === selectedBookForReading.chapters.length - 1"
+                class="px-5 h-11 rounded-xl text-xs font-bold border transition-all disabled:opacity-30 flex items-center gap-2"
+                [ngClass]="readerTheme === 'dark' ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-black/5 border-black/10 hover:bg-black/10'">
+          الفصل التالي <svg lucideIcon="chevron-left" class="size-4"></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AUTO IMPORTER TOOL MODAL -->
+<div *ngIf="showAutoImportDialog" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md" dir="rtl">
+  <div class="bg-slate-900 border border-white/10 rounded-3xl p-6 md:p-8 max-w-2xl w-full text-right shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto custom-scrollbar">
+    
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <div class="flex items-center gap-3">
+        <div class="size-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">⚡</div>
+        <div>
+          <h3 class="text-xl font-bold text-white">أداة استيراد وتجزئة الكتب التلقائية</h3>
+          <p class="text-xs text-slate-400">تقوم بفك وتجزئة نصوص الكتب الطويلة إلى فصول محلية وتوليد كود JSON جاهز</p>
+        </div>
+      </div>
+      <button (click)="showAutoImportDialog = false" class="text-slate-400 hover:text-white font-bold text-xl px-2">✕</button>
+    </div>
+
+    <div class="space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">عنوان الكتاب / الرواية *</label>
+          <input type="text" [(ngModel)]="autoImport.title" placeholder="مثال: أرض زيكولا" 
+                 class="w-full bg-white/5 border border-white/10 rounded-xl h-11 px-4 text-sm text-white text-right focus:outline-none focus:border-indigo-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">اسم المؤلف / الكاتب</label>
+          <input type="text" [(ngModel)]="autoImport.author" placeholder="مثال: عمرو عبد الحميد" 
+                 class="w-full bg-white/5 border border-white/10 rounded-xl h-11 px-4 text-sm text-white text-right focus:outline-none focus:border-indigo-500" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">القسم / التصنيف</label>
+          <select [(ngModel)]="autoImport.category" class="w-full bg-slate-800 border border-white/10 rounded-xl h-11 px-4 text-sm text-white text-right focus:outline-none focus:border-indigo-500">
+            <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">رابط صورة الغلاف (اختياري)</label>
+          <input type="text" [(ngModel)]="autoImport.coverUrl" placeholder="https://..." 
+                 class="w-full bg-white/5 border border-white/10 rounded-xl h-11 px-4 text-sm text-white text-right focus:outline-none focus:border-indigo-500" />
+        </div>
+      </div>
+
+      <!-- File Upload or Paste Raw Text -->
+      <div>
+        <label class="block text-xs font-bold text-slate-300 mb-1">رفع ملف نصي (.TXT / .MD) أو لصق نص الكتاب كاملاً *</label>
+        <input type="file" (change)="onImportFileSelected($event)" accept=".txt,.md"
+               class="block w-full text-xs text-slate-400 file:ml-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 mb-2 cursor-pointer" />
+        
+        <textarea [(ngModel)]="autoImport.rawText" rows="6" placeholder="انسخ والصق نص الكتاب هنا بجميع فصوله..." 
+                  class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white text-right font-serif leading-relaxed focus:outline-none focus:border-indigo-500 custom-scrollbar"></textarea>
+      </div>
+    </div>
+
+    <div class="pt-4 flex items-center justify-between border-t border-white/10 gap-3">
+      <span class="text-xs text-slate-400">💡 سيتم إنشاء الفصول تلقائياً وحفظ الكتاب بالمنصة وتنزيل ملف JSON جاهز للربط</span>
+      
+      <div class="flex items-center gap-2">
+        <button (click)="showAutoImportDialog = false" class="px-4 h-11 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-bold text-xs">إلغاء</button>
+        <button (click)="runAutoImportProcess()" class="px-6 h-11 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg transition-all">
+          ⚡ معالجة وحفظ بالمكتبة
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PERSONAL PDF UPLOAD MODAL -->
+<div *ngIf="showAddPdfDialog" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md" dir="rtl">
+  <div class="bg-slate-900 border border-white/10 rounded-3xl p-6 md:p-8 max-w-lg w-full text-right shadow-2xl space-y-6">
+    
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <div class="flex items-center gap-3">
+        <div class="size-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">📕</div>
+        <div>
+          <h3 class="text-xl font-bold text-white">إضافة كتاب PDF شخصي (حفظ دائم)</h3>
+          <p class="text-xs text-slate-400">يُحفظ الكتاب في متصفحك مباشرة عبر IndexedDB دون الاتصال بإنترنت</p>
+        </div>
+      </div>
+      <button (click)="showAddPdfDialog = false" class="text-slate-400 hover:text-white font-bold text-xl px-2">✕</button>
+    </div>
+
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-bold text-slate-300 mb-1">اسم الكتاب / الرواية *</label>
+        <input type="text" [(ngModel)]="newPdfTitle" placeholder="مثال: مقدمة ابن خلدون" 
+               class="w-full bg-white/5 border border-white/10 rounded-xl h-11 px-4 text-sm text-white text-right focus:outline-none focus:border-emerald-500" />
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">اسم الكاتب / المؤلف</label>
+          <input type="text" [(ngModel)]="newPdfAuthor" placeholder="مثال: ابن خلدون" 
+                 class="w-full bg-white/5 border border-white/10 rounded-xl h-11 px-4 text-sm text-white text-right focus:outline-none focus:border-emerald-500" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">القسم</label>
+          <select [(ngModel)]="newPdfCategory" class="w-full bg-slate-800 border border-white/10 rounded-xl h-11 px-4 text-sm text-white text-right focus:outline-none focus:border-emerald-500">
+            <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-300 mb-1">اختيار ملف الكتاب (.PDF) *</label>
+        <input type="file" (change)="onPdfFileSelected($event)" accept="application/pdf,.pdf"
+               class="block w-full text-xs text-slate-400 file:ml-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-500 cursor-pointer border border-white/10 rounded-xl p-2 bg-white/5" />
+        <span *ngIf="selectedPdfFile" class="text-[11px] text-emerald-400 font-mono block mt-1">
+          ✓ تم اختيار: {{ selectedPdfFile.name }} ({{ (selectedPdfFile.size / 1024 / 1024).toFixed(1) }} MB)
+        </span>
+      </div>
+    </div>
+
+    <div class="pt-4 flex items-center justify-end gap-3 border-t border-white/10">
+      <button (click)="showAddPdfDialog = false" class="px-4 h-11 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-bold text-xs">إلغاء</button>
+      <button (click)="savePersonalPdfBook()" [disabled]="isPdfSaving || !selectedPdfFile"
+              class="px-6 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-bold text-xs shadow-lg transition-all flex items-center gap-2">
+        <span *ngIf="isPdfSaving" class="animate-spin text-sm">⏳</span>
+        <span>{{ isPdfSaving ? 'جاري الحفظ بالمكتبة...' : '💾 حفظ الكتاب بالمكتبة الآن' }}</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- FULLSCREEN PERSONAL LOCAL PDF READER VIEWER MODAL -->
+<div *ngIf="selectedPdfBookForViewing && safePdfViewerUrl" class="fixed inset-0 z-50 bg-slate-950 flex flex-col overflow-hidden" dir="rtl">
+  <!-- Reader Header Control Bar -->
+  <div class="bg-slate-900 border-b border-white/10 px-6 py-3 flex items-center justify-between gap-4 shrink-0">
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="size-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-lg shrink-0">📕</div>
+      <div class="truncate">
+        <h2 class="font-black text-lg text-white truncate">{{ selectedPdfBookForViewing.title }}</h2>
+        <p class="text-xs text-emerald-400 font-semibold truncate">{{ selectedPdfBookForViewing.author }} • (كتاب PDF شخصي محفوظ)</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3 shrink-0">
+      <a [href]="safePdfViewerUrl" download="{{ selectedPdfBookForViewing.title }}.pdf"
+         class="px-4 h-10 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-2 transition-all">
+        📥 تنزيل نسختك
+      </a>
+      
+      <button (click)="closePdfViewer()" 
+              class="size-10 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 flex items-center justify-center font-bold text-lg transition-all"
+              title="إغلاق القارئ">
+        ✕
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Offline Interactive PDF Object/Iframe Surface -->
+  <div class="flex-1 w-full h-full bg-slate-900 relative">
+    <object [data]="safePdfViewerUrl" type="application/pdf" class="w-full h-full border-none">
+      <iframe [src]="safePdfViewerUrl" class="w-full h-full border-none"></iframe>
+    </object>
+  </div>
+</div>
+
