@@ -7,26 +7,28 @@
         <h2 class="text-xs font-black text-indigo-400 uppercase tracking-wider leading-none">الجدول الزمني الأكاديمي</h2>
         <button 
           (click)="showAddEvent.set(true)"
-          class="size-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/25 flex items-center justify-center transition-all">
-          <svg lucideIcon="plus" class="size-4"></svg>
+          title="إضافة حدث مجدول جديد"
+          class="size-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/25 flex items-center justify-center transition-all cursor-pointer">
+          <lucide-icon [img]="Plus" class="size-4"></lucide-icon>
         </button>
       </div>
       <p class="text-[9px] text-slate-500 font-bold uppercase leading-none mt-1">تتبع مواعيد المحاضرات وتسليم الواجبات عصبياً.</p>
     </div>
 
     <!-- Scrollable Events List -->
-    <nav class="flex-1 overflow-y-auto p-4 space-y-3">
+    <nav class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
       <div *ngIf="learningService.schedule().length === 0" class="py-20 text-center text-slate-600 italic text-xs font-bold">
         لا توجد أحداث دراسية مجدولة.
       </div>
 
       <div 
         *ngFor="let event of learningService.schedule()"
-        class="p-4 glass border border-white/5 rounded-2xl relative group">
+        class="p-4 glass border border-white/5 rounded-2xl relative group hover:border-indigo-500/30 transition-all">
         
         <button 
           (click)="deleteEvent(event.id)"
-          class="absolute top-3 left-3 size-6 bg-red-500/10 border border-red-500/20 text-red-400 opacity-0 group-hover:opacity-100 rounded-md flex items-center justify-center transition-all text-[8px]">
+          title="حذف الحدث"
+          class="absolute top-3 left-3 size-6 bg-red-500/10 border border-red-500/20 text-red-400 opacity-0 group-hover:opacity-100 rounded-md flex items-center justify-center transition-all text-[8px] cursor-pointer">
           ✕
         </button>
 
@@ -39,14 +41,14 @@
           <h4 class="text-xs font-black text-white truncate leading-none">{{ event.title }}</h4>
         </div>
 
-        <div class="text-[9px] text-slate-450 space-y-1 font-bold">
+        <div class="text-[9px] text-slate-400 space-y-1 font-bold">
           <p class="flex items-center gap-2 justify-end">
             <span>{{ event.date }}</span>
-            <svg lucideIcon="clock" class="size-3 text-slate-500"></svg>
+            <lucide-icon [img]="Clock" class="size-3 text-slate-500"></lucide-icon>
           </p>
           <p class="flex items-center gap-2 justify-end">
             <span>{{ event.time }}</span>
-            <svg lucideIcon="info" class="size-3 text-slate-500"></svg>
+            <lucide-icon [img]="Info" class="size-3 text-slate-500"></lucide-icon>
           </p>
         </div>
       </div>
@@ -60,44 +62,57 @@
     <header class="p-8 border-b border-white/5 bg-slate-900/10 shrink-0 flex items-center justify-between flex-row-reverse gap-4">
       <div class="space-y-2 text-right">
         <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full flex-row-reverse">
-          <svg lucideIcon="graduation-cap" class="size-3 text-indigo-400"></svg>
-          <span class="text-[9px] uppercase font-black text-indigo-400 tracking-widest leading-none">University Knowledge Hub</span>
+          <lucide-icon [img]="GraduationCap" class="size-3 text-indigo-400"></lucide-icon>
+          <span class="text-[9px] uppercase font-black text-indigo-400 tracking-widest leading-none">Super Study AI Hub</span>
         </div>
-        <h1 class="text-3xl font-black text-white">المكتبة المعرفية الأكاديمية</h1>
-        <p class="text-xs text-slate-500 font-bold">بوابة التعلم المتكاملة: تحكم في المحاضرات، حمل الملخصات، وتتبع الإنجاز الدراسي.</p>
+        <h1 class="text-3xl font-black text-white">المساعد الدراسي الأكاديمي 🎓</h1>
+        <p class="text-xs text-slate-400 font-medium">منصتك التفاعلية الشاملة: تتبع المواد، أنجز التكليفات، واستشر المساعد الذكي في مراجعة المحاضرات.</p>
       </div>
 
-      <!-- Performance telemetries progress -->
-      <div class="bg-indigo-500/5 border border-indigo-500/15 p-4 rounded-3xl shrink-0 text-right min-w-[200px] space-y-2">
-        <div class="flex items-center justify-between flex-row-reverse">
-          <span class="text-[10px] font-black text-indigo-400">مؤشر الإنجاز الكلي</span>
-          <span class="text-xs font-mono font-black text-white">{{ globalProgress() }}%</span>
-        </div>
-        <!-- Progress Bar -->
-        <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-          <div [style.width.%]="globalProgress()" class="h-full bg-indigo-500 rounded-full transition-all duration-700"></div>
+      <!-- Header Action Buttons & Performance telemetries progress -->
+      <div class="flex items-center gap-4 flex-row-reverse">
+        <button 
+          (click)="showAiTutorModal.set(true)"
+          class="h-11 px-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-xs font-black shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition-all cursor-pointer hover:scale-105 active:scale-95">
+          <span>المساعد الدراسي الذكي 🤖</span>
+        </button>
+
+        <button 
+          (click)="generateStudySummary()"
+          class="h-11 px-4 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 rounded-2xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer">
+          <span>تلخيص المادة ⚡</span>
+        </button>
+
+        <div class="bg-indigo-500/5 border border-indigo-500/15 p-4 rounded-3xl shrink-0 text-right min-w-[200px] space-y-2">
+          <div class="flex items-center justify-between flex-row-reverse">
+            <span class="text-[10px] font-black text-indigo-400">مؤشر الإنجاز الكلي</span>
+            <span class="text-xs font-mono font-black text-white">{{ globalProgress() }}%</span>
+          </div>
+          <!-- Progress Bar -->
+          <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+            <div [style.width.%]="globalProgress()" class="h-full bg-indigo-500 rounded-full transition-all duration-700"></div>
+          </div>
         </div>
       </div>
     </header>
 
     <!-- Content body panels -->
-    <div class="flex-1 p-8 overflow-y-auto space-y-6">
+    <div class="flex-1 p-8 overflow-y-auto space-y-6 custom-scrollbar">
       
       <!-- Subject selectors tabs grid -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <button 
           *ngFor="let s of subjectsList()"
           (click)="activeSubjectId.set(s.id)"
-          [ngClass]="activeSubjectId() === s.id ? 'bg-indigo-650 text-white shadow-lg shadow-indigo-650/20 border-indigo-550' : 'hover:bg-white/5 border-white/5 text-slate-400'"
-          class="p-5 glass border rounded-2xl transition-all flex flex-col justify-between items-start text-right relative group overflow-hidden">
+          [ngClass]="activeSubjectId() === s.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 border-indigo-500' : 'hover:bg-white/5 border-white/5 text-slate-400'"
+          class="p-5 glass border rounded-2xl transition-all flex flex-col justify-between items-start text-right relative group overflow-hidden cursor-pointer">
           
           <div class="flex items-center justify-between w-full flex-row-reverse">
             <span class="text-[8px] font-bold opacity-60 uppercase">{{ s.code }}</span>
-            <svg lucideIcon="library-big" class="size-4 opacity-40 group-hover:scale-110 transition-transform"></svg>
+            <lucide-icon [img]="LibraryBig" class="size-4 opacity-40 group-hover:scale-110 transition-transform"></lucide-icon>
           </div>
           <h3 class="text-xs font-black truncate max-w-full leading-none pt-3 pb-1 w-full text-right">{{ s.name }}</h3>
           <p class="text-[8px] opacity-50 font-bold truncate max-w-full w-full text-right">{{ s.instructor }}</p>
-
         </button>
       </div>
 
@@ -107,11 +122,11 @@
         <div class="flex items-center justify-between border-b border-white/5 pb-4 flex-row-reverse">
           <div class="space-y-1 text-right">
             <h2 class="text-xl font-black text-white">{{ subject.name }}</h2>
-            <p class="text-[10px] text-slate-500 font-bold">بإشراف: {{ subject.instructor }} ({{ subject.code }})</p>
+            <p class="text-[10px] text-slate-400 font-bold">بإشراف: {{ subject.instructor }} ({{ subject.code }})</p>
           </div>
 
           <div class="flex items-center gap-4 flex-row-reverse">
-            <span class="text-[10px] font-black py-1 px-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-full leading-none">
+            <span class="text-[10px] font-black py-1.5 px-4 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-full leading-none">
               إنجاز المادة: {{ currentProgress() }}%
             </span>
           </div>
@@ -122,19 +137,19 @@
           <button 
             (click)="activeSection.set('materials')"
             [ngClass]="activeSection() === 'materials' ? 'border-indigo-500 text-indigo-400 font-black' : 'border-transparent text-slate-500 hover:text-white'"
-            class="pb-3 border-b-2 text-xs font-bold transition-all px-2 leading-none">أوراق العمل والملخصات</button>
+            class="pb-3 border-b-2 text-xs font-bold transition-all px-2 leading-none cursor-pointer">أوراق العمل والملخصات</button>
           <button 
             (click)="activeSection.set('recordings')"
             [ngClass]="activeSection() === 'recordings' ? 'border-indigo-500 text-indigo-400 font-black' : 'border-transparent text-slate-500 hover:text-white'"
-            class="pb-3 border-b-2 text-xs font-bold transition-all px-2 leading-none">المحاضرات المسجلة</button>
+            class="pb-3 border-b-2 text-xs font-bold transition-all px-2 leading-none cursor-pointer">المحاضرات المسجلة</button>
           <button 
             (click)="activeSection.set('assignments')"
             [ngClass]="activeSection() === 'assignments' ? 'border-indigo-500 text-indigo-400 font-black' : 'border-transparent text-slate-500 hover:text-white'"
-            class="pb-3 border-b-2 text-xs font-bold transition-all px-2 leading-none">الواجبات الدراسية</button>
+            class="pb-3 border-b-2 text-xs font-bold transition-all px-2 leading-none cursor-pointer">الواجبات والتكليفات</button>
           <button 
             (click)="activeSection.set('quizzes')"
             [ngClass]="activeSection() === 'quizzes' ? 'border-indigo-500 text-indigo-400 font-black' : 'border-transparent text-slate-500 hover:text-white'"
-            class="pb-3 border-b-2 text-xs font-bold transition-all px-2 leading-none">الاختبارات القصيرة</button>
+            class="pb-3 border-b-2 text-xs font-bold transition-all px-2 leading-none cursor-pointer">الاختبارات القصيرة</button>
         </div>
 
         <!-- ================= SUBSECTION 1: MATERIALS ================= -->
@@ -143,8 +158,8 @@
             <h3 class="text-sm font-black text-white">ملخصات ومستندات المادة</h3>
             <button 
               (click)="showAddMaterial.set(true)"
-              class="h-9 px-4 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 text-xs font-black rounded-xl flex items-center justify-center gap-2 flex-row-reverse">
-              <svg lucideIcon="plus" class="size-4"></svg>
+              class="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black rounded-xl flex items-center justify-center gap-2 flex-row-reverse transition-all cursor-pointer">
+              <lucide-icon [img]="Plus" class="size-4"></lucide-icon>
               إضافة مستند جديد
             </button>
           </div>
@@ -156,10 +171,10 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div 
               *ngFor="let m of subject.materials"
-              class="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between flex-row-reverse group">
+              class="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between flex-row-reverse group hover:border-indigo-500/30 transition-all">
               <div class="flex items-center gap-3 flex-row-reverse text-right">
                 <div class="size-10 bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400">
-                  <svg lucideIcon="file-text" class="size-5"></svg>
+                  <lucide-icon [img]="FileText" class="size-5"></lucide-icon>
                 </div>
                 <div>
                   <h4 class="text-xs font-black text-white leading-none">{{ m.name }}</h4>
@@ -169,13 +184,15 @@
               <div class="flex items-center gap-2">
                 <button 
                   (click)="deleteMaterial(m.id)"
-                  class="size-8 rounded-lg hover:bg-red-500/10 text-red-400 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
+                  title="حذف المستند"
+                  class="size-8 rounded-lg hover:bg-red-500/10 text-red-400 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 cursor-pointer">
                   ✕
                 </button>
                 <a 
                   [href]="m.downloadUrl" 
+                  title="تحميل المستند"
                   class="size-8 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 flex items-center justify-center transition-all">
-                  <svg lucideIcon="download-cloud" class="size-4"></svg>
+                  <lucide-icon [img]="DownloadCloud" class="size-4"></lucide-icon>
                 </a>
               </div>
             </div>
@@ -193,10 +210,10 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div 
               *ngFor="let r of subject.recordings"
-              class="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between flex-row-reverse">
+              class="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between flex-row-reverse hover:border-indigo-500/30 transition-all">
               <div class="flex items-center gap-3 flex-row-reverse text-right">
                 <div class="size-10 bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400">
-                  <svg lucideIcon="video" class="size-5"></svg>
+                  <lucide-icon [img]="Video" class="size-5"></lucide-icon>
                 </div>
                 <div>
                   <h4 class="text-xs font-black text-white leading-none">{{ r.name }}</h4>
@@ -205,8 +222,9 @@
               </div>
               <a 
                 [href]="r.videoUrl" 
+                title="مشاهدة الشرح"
                 class="size-8 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 flex items-center justify-center transition-all">
-                <svg lucideIcon="arrow-left" class="size-4"></svg>
+                <lucide-icon [img]="ArrowLeft" class="size-4"></lucide-icon>
               </a>
             </div>
           </div>
@@ -214,7 +232,15 @@
 
         <!-- ================= SUBSECTION 3: ASSIGNMENTS ================= -->
         <div *ngIf="activeSection() === 'assignments'" class="space-y-4">
-          <h3 class="text-sm font-black text-white text-right">قائمة التكليفات والواجبات المطلوبة</h3>
+          <div class="flex items-center justify-between flex-row-reverse">
+            <h3 class="text-sm font-black text-white text-right">قائمة التكليفات والواجبات المطلوبة</h3>
+            <button 
+              (click)="showAddAssignment.set(true)"
+              class="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black rounded-xl flex items-center justify-center gap-2 flex-row-reverse transition-all cursor-pointer">
+              <lucide-icon [img]="Plus" class="size-4"></lucide-icon>
+              إضافة تكليف جديد
+            </button>
+          </div>
 
           <div *ngIf="subject.assignments.length === 0" class="py-12 text-center text-slate-600 italic text-xs font-bold">
             لا توجد تكليفات أكاديمية مطلوبة لهذه المادة حالياً.
@@ -223,20 +249,21 @@
           <div class="space-y-3">
             <div 
               *ngFor="let a of subject.assignments"
-              class="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between flex-row-reverse">
+              class="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between flex-row-reverse hover:border-indigo-500/30 transition-all">
               
               <div class="flex items-center gap-3 flex-row-reverse text-right">
                 <button 
                   (click)="toggleAssignment(a.id)"
-                  class="size-5 rounded-lg border flex items-center justify-center transition-all shrink-0"
-                  [ngClass]="a.status === 'submitted' ? 'bg-emerald-500 border-emerald-600 text-white' : 'border-white/20 bg-transparent'">
-                  <svg lucideIcon="check" class="size-3.5" *ngIf="a.status === 'submitted'"></svg>
+                  title="تغيير حالة التسليم"
+                  class="size-6 rounded-lg border flex items-center justify-center transition-all shrink-0 cursor-pointer"
+                  [ngClass]="a.status === 'submitted' ? 'bg-emerald-500 border-emerald-600 text-white' : 'border-white/20 bg-transparent hover:border-indigo-400'">
+                  <lucide-icon [img]="Check" class="size-4" *ngIf="a.status === 'submitted'"></lucide-icon>
                 </button>
                 <div>
-                  <h4 [ngClass]="a.status === 'submitted' ? 'line-through text-slate-550' : 'text-white'" class="text-xs font-black leading-none">
+                  <h4 [ngClass]="a.status === 'submitted' ? 'line-through text-slate-500' : 'text-white'" class="text-xs font-black leading-none">
                     {{ a.name }}
                   </h4>
-                  <p class="text-[8px] text-slate-500 font-bold mt-1.5">موعد التسليم: {{ a.deadline }}</p>
+                  <p class="text-[8px] text-slate-400 font-bold mt-1.5">موعد التسليم: {{ a.deadline }}</p>
                 </div>
               </div>
 
@@ -244,7 +271,7 @@
                 <span 
                   [ngClass]="a.status === 'submitted' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'"
                   class="text-[8px] font-black uppercase px-2.5 py-1 border rounded-full">
-                  {{ a.status === 'submitted' ? 'تم التسليم' : 'معلق' }}
+                  {{ a.status === 'submitted' ? 'تم التسليم 🟢' : 'معلق ⏳' }}
                 </span>
               </div>
 
@@ -263,10 +290,10 @@
           <div class="space-y-3">
             <div 
               *ngFor="let q of subject.quizzes"
-              class="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between flex-row-reverse">
+              class="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between flex-row-reverse hover:border-indigo-500/30 transition-all">
               <div class="flex items-center gap-3 flex-row-reverse text-right">
                 <div class="size-10 bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400 shrink-0">
-                  <svg lucideIcon="edit-3" class="size-5"></svg>
+                  <lucide-icon [img]="Edit3" class="size-5"></lucide-icon>
                 </div>
                 <div>
                   <h4 class="text-xs font-black text-white leading-none">{{ q.name }}</h4>
@@ -301,11 +328,11 @@
       
       <button 
         (click)="showAddMaterial.set(false)"
-        class="absolute top-6 left-6 size-9 rounded-full border border-white/10 bg-white/5 text-slate-400 hover:text-white flex items-center justify-center text-xs font-bold transition-all">✕</button>
+        class="absolute top-6 left-6 size-9 rounded-full border border-white/10 bg-white/5 text-slate-400 hover:text-white flex items-center justify-center text-xs font-bold transition-all cursor-pointer">✕</button>
 
       <div class="space-y-1">
         <h3 class="text-lg font-black text-white">إضافة مستند دراسي جديد</h3>
-        <p class="text-[9px] text-slate-500 font-bold uppercase">قم بكتابة عنوان للمستند لادراجه عصبياً.</p>
+        <p class="text-[9px] text-slate-500 font-bold uppercase">قم بكتابة عنوان للمستند لإدراجه عصبياً.</p>
       </div>
 
       <div class="space-y-3">
@@ -321,7 +348,7 @@
       <button 
         (click)="addNewMaterial()"
         [disabled]="!newMaterialName().trim()"
-        class="w-full h-13 bg-indigo-650 hover:bg-indigo-600 disabled:opacity-50 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-500/20 transition-all">
+        class="w-full h-13 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">
         تأكيد إدراج المستند
       </button>
 
@@ -340,11 +367,11 @@
       
       <button 
         (click)="showAddEvent.set(false)"
-        class="absolute top-6 left-6 size-9 rounded-full border border-white/10 bg-white/5 text-slate-400 hover:text-white flex items-center justify-center text-xs font-bold transition-all">✕</button>
+        class="absolute top-6 left-6 size-9 rounded-full border border-white/10 bg-white/5 text-slate-400 hover:text-white flex items-center justify-center text-xs font-bold transition-all cursor-pointer">✕</button>
 
       <div class="space-y-1">
         <h3 class="text-lg font-black text-white">جدولة حدث أكاديمي جديد</h3>
-        <p class="text-[9px] text-slate-500 font-bold uppercase">اضف حدث جديد إلى جدول المواعيد.</p>
+        <p class="text-[9px] text-slate-500 font-bold uppercase">أضف حدث جديد إلى جدول المواعيد.</p>
       </div>
 
       <div class="space-y-4">
@@ -394,9 +421,111 @@
       <button 
         (click)="addNewEvent()"
         [disabled]="!newEventTitle().trim() || !newEventDate().trim() || !newEventTime().trim()"
-        class="w-full h-13 bg-indigo-650 hover:bg-indigo-600 disabled:opacity-50 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-500/20 transition-all animate-bounce">
+        class="w-full h-13 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">
         جدولة الحدث الدراسي
       </button>
+
+    </div>
+  </div>
+
+  <!-- ═══ MODAL OVERLAY 3: ADD ASSIGNMENT ═══ -->
+  <div 
+    *ngIf="showAddAssignment()"
+    class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-300"
+    (click)="showAddAssignment.set(false)">
+    
+    <div 
+      class="bg-slate-950 border border-white/10 w-full max-w-sm rounded-[2.5rem] p-8 space-y-6 text-right relative shadow-2xl"
+      (click)="$event.stopPropagation()">
+      
+      <button 
+        (click)="showAddAssignment.set(false)"
+        class="absolute top-6 left-6 size-9 rounded-full border border-white/10 bg-white/5 text-slate-400 hover:text-white flex items-center justify-center text-xs font-bold transition-all cursor-pointer">✕</button>
+
+      <div class="space-y-1">
+        <h3 class="text-lg font-black text-white">إضافة تكليف أو واجب جديد</h3>
+        <p class="text-[9px] text-slate-500 font-bold uppercase">حدد تفاصيل التكليف وموعد تسليمه.</p>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="text-[10px] font-black text-slate-400 block mb-1">اسم الواجب / التكليف</label>
+          <input 
+            type="text" 
+            [(ngModel)]="newAssignmentName"
+            placeholder="مثال: تصميم شاشة تسجيل الدخول"
+            class="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-indigo-500 font-bold"
+          />
+        </div>
+
+        <div>
+          <label class="text-[10px] font-black text-slate-400 block mb-1">موعد التسليم النهائي</label>
+          <input 
+            type="date" 
+            [(ngModel)]="newAssignmentDeadline"
+            class="w-full h-11 bg-white/5 border border-white/10 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-indigo-500 font-bold"
+          />
+        </div>
+      </div>
+
+      <button 
+        (click)="addNewAssignment()"
+        [disabled]="!newAssignmentName().trim() || !newAssignmentDeadline().trim()"
+        class="w-full h-13 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">
+        تأكيد إدراج الواجب
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ═══ MODAL OVERLAY 4: AI STUDY TUTOR ═══ -->
+  <div 
+    *ngIf="showAiTutorModal()"
+    class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-300"
+    (click)="showAiTutorModal.set(false)">
+    
+    <div 
+      class="bg-slate-950 border border-white/10 w-full max-w-2xl rounded-[2.5rem] p-8 space-y-6 text-right relative shadow-2xl"
+      (click)="$event.stopPropagation()">
+      
+      <button 
+        (click)="showAiTutorModal.set(false)"
+        class="absolute top-6 left-6 size-9 rounded-full border border-white/10 bg-white/5 text-slate-400 hover:text-white flex items-center justify-center text-xs font-bold transition-all cursor-pointer">✕</button>
+
+      <div class="space-y-1">
+        <div class="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
+          <lucide-icon [img]="Sparkles" class="size-3 text-indigo-400"></lucide-icon>
+          <span class="text-[9px] font-black text-indigo-400">Gemini Academic AI</span>
+        </div>
+        <h3 class="text-xl font-black text-white">المساعد الدراسي الذكي 🤖</h3>
+        <p class="text-xs text-slate-400 font-medium">اسأل عن الشروحات، الخوارزميات، أو اطلب تلخيص أي مادة دراسية أكاديمية.</p>
+      </div>
+
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <input 
+            type="text" 
+            [(ngModel)]="aiQuery"
+            (keyup.enter)="askAiTutor()"
+            placeholder="مثال: اشرح لي تعقيد خوارزمية البحث الثنائي QuickSort بالخطوات..."
+            class="flex-1 h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-indigo-500 font-bold"
+          />
+          <button 
+            (click)="askAiTutor()"
+            [disabled]="isGeneratingAi() || !aiQuery().trim()"
+            class="h-12 px-6 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-600/30 transition-all flex items-center gap-2 cursor-pointer shrink-0">
+            <span>{{ isGeneratingAi() ? 'جاري التحليل...' : 'إرسال 🚀' }}</span>
+          </button>
+        </div>
+
+        <!-- Answer Result View -->
+        <div *ngIf="aiAnswer()" class="p-6 bg-slate-900/90 border border-indigo-500/30 rounded-2xl max-h-72 overflow-y-auto custom-scrollbar text-right leading-relaxed text-xs text-slate-200 whitespace-pre-line shadow-inner">
+          <div class="flex items-center gap-2 mb-3 text-indigo-400 font-black text-xs border-b border-white/5 pb-2">
+            <span>إجابة وتلخيص المساعد الدراسي:</span>
+          </div>
+          {{ aiAnswer() }}
+        </div>
+      </div>
 
     </div>
   </div>

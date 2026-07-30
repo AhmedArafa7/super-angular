@@ -47,7 +47,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: "lab", label: "المختبر التجريبي", icon: "microscope", restricted: false, isPermanent: true, category: 'dev' },
   
   { id: "market", label: "المتجر التقني", icon: "shopping-cart", restricted: false, category: 'tools' },
-  { id: "study-ai", label: "المساعد الدراسي", icon: "graduation-cap", restricted: false, category: 'ai' },
+  { id: "study-ai", label: "المساعد الدراسي", icon: "graduation-cap", restricted: false, isPermanent: true, status: 'NEW', route: 'study-ai', category: 'ai' },
   { id: "knowledge", label: "المكتبة المعرفية", icon: "library-big", restricted: false, category: 'ai' },
   { id: "ads", label: "مركز الإعلانات", icon: "megaphone", restricted: false, category: 'tools' },
   { id: "launcher", label: "مشغل المواقع", icon: "rocket", restricted: false, category: 'tools' },
