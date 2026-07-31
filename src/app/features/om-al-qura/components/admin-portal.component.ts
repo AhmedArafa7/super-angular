@@ -2,7 +2,7 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideDynamicIcon } from '@lucide/angular';
-import { OmAlQuraService, OmAlQuraEmployee } from '../../../core/services/om-al-qura.service';
+import { OmAlQuraService, OmAlQuraEmployee, OmAlQuraAisleConfig } from '../../../core/services/om-al-qura.service';
 import { ImageFallbackDirective } from '../../../shared/directives/image-fallback.directive';
 
 @Component({
@@ -280,6 +280,54 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
         </div>
       </div>
 
+      <!-- SECTION 3: Store Layout Sketch & Aisle Customization (تسمية الرفوف والممرات) -->
+      <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+        <div class="flex flex-wrap justify-between items-center gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+          <div>
+            <h2 class="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <svg lucideIcon="map-pin" class="w-6 h-6 text-indigo-600"></svg>
+              <span>تعديل التخطيط الكروكي للمحل وتسمية الممرات والرفوف</span>
+            </h2>
+            <p class="text-xs text-slate-500 mt-1">تحديد أسماء الممرات، الرفوف، المدخل الرئيسي، وملاحظات المشي للعملاء والموظفين.</p>
+          </div>
+
+          <button (click)="openLayoutModal()"
+                  class="px-5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm shadow-md transition-all flex items-center gap-2">
+            <svg lucideIcon="edit-3" class="w-5 h-5"></svg>
+            <span>تعديل الخريطة الكروكية والممرات</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-1">
+            <span class="text-slate-400 font-bold">المدخل الرئيسي:</span>
+            <p class="font-black text-slate-900 dark:text-white text-sm">{{ service.storeLayout().storeEntranceLabel }}</p>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-1">
+            <span class="text-slate-400 font-bold">منطقة الكاشير:</span>
+            <p class="font-black text-slate-900 dark:text-white text-sm">{{ service.storeLayout().checkoutAreaLabel }}</p>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-1">
+            <span class="text-slate-400 font-bold">المخزن الخلفي:</span>
+            <p class="font-black text-slate-900 dark:text-white text-sm">{{ service.storeLayout().warehouseAreaLabel }}</p>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <h4 class="font-black text-xs text-slate-800 dark:text-white">الممرات والرفوف المسجلة بالفرع حالياً:</h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div *ngFor="let aisle of service.storeLayout().aisles" class="p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 space-y-2">
+              <h5 class="font-black text-indigo-900 dark:text-indigo-300 text-sm">{{ aisle.name }}</h5>
+              <div class="text-[11px] text-slate-600 dark:text-slate-400">
+                <span class="font-bold">الرفوف:</span> {{ aisle.shelves.join(' • ') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- HIRE DRIVER MODAL -->
       <div *ngIf="showHireDriverModal()" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-md w-full font-sans dir-rtl space-y-4 border border-slate-200 dark:border-slate-800 shadow-2xl">
@@ -319,6 +367,77 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
               <button type="submit" [disabled]="!newDriverName || !newDriverPhone"
                       class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl text-xs disabled:opacity-40 shadow-md">
                 تعيين وسحب الكارت
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- STORE LAYOUT EDITOR MODAL -->
+      <div *ngIf="openLayoutEditorModal()" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-xl w-full font-sans dir-rtl space-y-4 border border-slate-200 dark:border-slate-800 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+          
+          <div class="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+            <h3 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <svg lucideIcon="map" class="w-5 h-5 text-indigo-600"></svg>
+              <span>تعديل الرسم الكروكي وأسماء الممرات والرفوف</span>
+            </h3>
+            <button (click)="openLayoutEditorModal.set(false)" class="text-slate-400 hover:text-slate-600">
+              <svg lucideIcon="x" class="w-5 h-5"></svg>
+            </button>
+          </div>
+
+          <form (ngSubmit)="saveLayoutForm()" class="space-y-4 text-xs">
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">اسم المدخل الرئيسي للفرع</label>
+              <input type="text" [(ngModel)]="editEntrance" name="editEntrance" class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white">
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">اسم منطقة الكاشير والاستقبال</label>
+              <input type="text" [(ngModel)]="editCheckout" name="editCheckout" class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white">
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">اسم منطقة المخزن الداخلي</label>
+              <input type="text" [(ngModel)]="editWarehouse" name="editWarehouse" class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white">
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">صورة الرسم الكروكي التوضيحي للمحل (اختياري)</label>
+              <input type="file" (change)="onFileSelectedForSketch($event)" accept="image/*" class="w-full p-2 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
+              <p class="text-[10px] text-slate-400 mt-1">التقط صورة لرسمك الكروكي وارفعه ليظهر في خريطة المحل فوراً.</p>
+            </div>
+
+            <div class="space-y-3 pt-2">
+              <div class="flex justify-between items-center">
+                <label class="font-black text-slate-800 dark:text-white">الممرات والرفوف التابعة لها:</label>
+                <button type="button" (click)="addNewAisleRow()" class="px-3 py-1 bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 rounded-xl font-bold text-xs">
+                  + إضافة ممر جديد
+                </button>
+              </div>
+
+              <div *ngFor="let aisle of editAisles; let i = index" class="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+                <div class="flex justify-between items-center gap-2">
+                  <input type="text" [(ngModel)]="aisle.name" [name]="'aisleName_' + i" placeholder="اسم الممر وتصنيفه..." class="flex-1 p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white">
+                  <button type="button" (click)="removeAisleRow(i)" class="text-rose-500 hover:text-rose-700 p-1">
+                    <svg lucideIcon="trash-2" class="w-4 h-4"></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">ملاحظات توجيه الزبائن والموظفين</label>
+              <textarea [(ngModel)]="editNotes" name="editNotes" rows="2" class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white"></textarea>
+            </div>
+
+            <div class="pt-3 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+              <button type="button" (click)="openLayoutEditorModal.set(false)" class="px-4 py-2 rounded-2xl text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-slate-800">
+                إلغاء
+              </button>
+              <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl text-xs shadow-md">
+                حفظ وتعميم الخريطة الكروكية
               </button>
             </div>
           </form>
@@ -399,5 +518,59 @@ export class OmAlQuraAdminPortalComponent {
     this.newDriverPhone = '';
     this.newDriverShift = 'من 8:00 صباحاً حتى 5:00 مساءً';
     this.showHireDriverModal.set(false);
+  }
+
+  // Store Layout Sketch Editor State & Actions
+  openLayoutEditorModal = signal(false);
+  editEntrance = '';
+  editCheckout = '';
+  editWarehouse = '';
+  editNotes = '';
+  editSketchUrl = '';
+  editAisles: OmAlQuraAisleConfig[] = [];
+
+  openLayoutModal() {
+    const layout = this.service.storeLayout();
+    this.editEntrance = layout.storeEntranceLabel;
+    this.editCheckout = layout.checkoutAreaLabel;
+    this.editWarehouse = layout.warehouseAreaLabel;
+    this.editNotes = layout.customSketchNotes || '';
+    this.editSketchUrl = layout.sketchImageUrl || '';
+    this.editAisles = JSON.parse(JSON.stringify(layout.aisles || []));
+    this.openLayoutEditorModal.set(true);
+  }
+
+  addNewAisleRow() {
+    const num = this.editAisles.length + 1;
+    this.editAisles.push({
+      id: 'aisle-' + Math.random().toString(36).substr(2, 6),
+      name: `الممر ${num} (تصنيف جديد)`,
+      shelves: ['الرف 1', 'الرف 2', 'الرف 3']
+    });
+  }
+
+  removeAisleRow(index: number) {
+    this.editAisles.splice(index, 1);
+  }
+
+  async onFileSelectedForSketch(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const uploadedUrl = await this.service.uploadImageToCloudinary(file);
+    if (uploadedUrl) {
+      this.editSketchUrl = uploadedUrl;
+    }
+  }
+
+  saveLayoutForm() {
+    this.service.updateStoreLayout({
+      storeEntranceLabel: this.editEntrance || 'مدخل الفرع الرئيسي',
+      checkoutAreaLabel: this.editCheckout || 'منطقة الكاشير والاستقبال',
+      warehouseAreaLabel: this.editWarehouse || 'المخزن الداخلي الخلفي',
+      aisles: [...this.editAisles],
+      customSketchNotes: this.editNotes,
+      sketchImageUrl: this.editSketchUrl
+    });
+    this.openLayoutEditorModal.set(false);
   }
 }

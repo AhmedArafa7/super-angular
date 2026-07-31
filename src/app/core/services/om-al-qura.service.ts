@@ -1,6 +1,22 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
+import { collection, doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
 import { FirebaseService } from './firebase.service';
 import { ToastService } from './toast.service';
+
+export interface OmAlQuraAisleConfig {
+  id: string;
+  name: string;
+  shelves: string[];
+}
+
+export interface OmAlQuraStoreLayout {
+  storeEntranceLabel: string;
+  checkoutAreaLabel: string;
+  warehouseAreaLabel: string;
+  aisles: OmAlQuraAisleConfig[];
+  customSketchNotes?: string;
+  sketchImageUrl?: string;
+}
 
 export interface OmAlQuraProduct {
   id: string;
@@ -130,6 +146,19 @@ export class OmAlQuraService {
   faqs = signal<OmAlQuraFaq[]>([]);
   categories = signal<string[]>([]);
 
+  // Customizable Store Sketch Layout & Aisle/Shelf Names
+  storeLayout = signal<OmAlQuraStoreLayout>({
+    storeEntranceLabel: 'المدخل الرئيسي للمحل',
+    checkoutAreaLabel: 'منطقة الكاشير والاستقبال',
+    warehouseAreaLabel: 'المخزن الداخلي الخلفي',
+    aisles: [
+      { id: 'aisle-1', name: 'الممر 1 (مساحيق غسيل ومنعمات)', shelves: ['الرف 1 (علوي)', 'الرف 2 (وسط)', 'الرف 3 (سفلي)'] },
+      { id: 'aisle-2', name: 'الممر 2 (منظفات صحون ومطهرات)', shelves: ['الرف 1 (علوي)', 'الرف 2 (وسط)', 'الرف 3 (سفلي)'] },
+      { id: 'aisle-3', name: 'الممر 3 (عناية شخصية وشامبو)', shelves: ['الرف 1 (علوي)', 'الرف 2 (وسط)', 'الرف 3 (سفلي)'] }
+    ],
+    customSketchNotes: 'يرجى اتباع الممرات المضاءة باللون الأصفر للوصول إلى الصنف المطلوب مباشرة.'
+  });
+
   // Customer Cart & Personal State
   cart = signal<OmAlQuraOrderItem[]>([]);
   userFavoriteProductIds = signal<string[]>([]);
@@ -150,6 +179,111 @@ export class OmAlQuraService {
 
   constructor() {
     this.loadInitialData();
+    this.initFirestoreSync();
+  }
+
+  // Real-time Cloud Database Listeners (Firestore Real-time Sync across all browsers/devices)
+  private initFirestoreSync() {
+    try {
+      if (!this.firebase.firestore) return;
+
+      // 1. Real-time Products Sync
+      onSnapshot(collection(this.firebase.firestore, 'omalqura_products'), (snapshot) => {
+        if (!snapshot.empty) {
+          const prods = snapshot.docs.map(d => d.data() as OmAlQuraProduct);
+          this.products.set(prods);
+          localStorage.setItem('omalqura_products', JSON.stringify(prods));
+        }
+      }, (err) => console.warn('[Firestore] Products sync warning:', err));
+
+      // 2. Real-time Orders Sync
+      onSnapshot(collection(this.firebase.firestore, 'omalqura_orders'), (snapshot) => {
+        if (!snapshot.empty) {
+          const ords = snapshot.docs.map(d => d.data() as OmAlQuraOrder);
+          this.orders.set(ords);
+          localStorage.setItem('omalqura_orders', JSON.stringify(ords));
+        }
+      }, (err) => console.warn('[Firestore] Orders sync warning:', err));
+
+      // 3. Real-time Delivery Drivers Sync
+      onSnapshot(collection(this.firebase.firestore, 'omalqura_delivery_drivers'), (snapshot) => {
+        if (!snapshot.empty) {
+          const drvs = snapshot.docs.map(d => d.data() as OmAlQuraDeliveryDriver);
+          this.deliveryDrivers.set(drvs);
+          localStorage.setItem('omalqura_drivers', JSON.stringify(drvs));
+        }
+      }, (err) => console.warn('[Firestore] Drivers sync warning:', err));
+
+      // 4. Real-time Employees Sync
+      onSnapshot(collection(this.firebase.firestore, 'omalqura_employees'), (snapshot) => {
+        if (!snapshot.empty) {
+          const emps = snapshot.docs.map(d => d.data() as OmAlQuraEmployee);
+          this.employees.set(emps);
+          localStorage.setItem('omalqura_employees', JSON.stringify(emps));
+        }
+      }, (err) => console.warn('[Firestore] Employees sync warning:', err));
+
+      // 5. Real-time Customer Debts Sync
+      onSnapshot(collection(this.firebase.firestore, 'omalqura_customer_debts'), (snapshot) => {
+        if (!snapshot.empty) {
+          const debts = snapshot.docs.map(d => d.data() as OmAlQuraCustomerDebt);
+          this.customerDebts.set(debts);
+          localStorage.setItem('omalqura_debts', JSON.stringify(debts));
+        }
+      }, (err) => console.warn('[Firestore] Debts sync warning:', err));
+
+      // 6. Real-time Missing Requests Sync
+      onSnapshot(collection(this.firebase.firestore, 'omalqura_missing_requests'), (snapshot) => {
+        if (!snapshot.empty) {
+          const reqs = snapshot.docs.map(d => d.data() as OmAlQuraMissingProductRequest);
+          this.missingProductRequests.set(reqs);
+          localStorage.setItem('omalqura_missing_requests', JSON.stringify(reqs));
+        }
+      }, (err) => console.warn('[Firestore] Missing requests sync warning:', err));
+
+      // 7. Real-time Staff Suggestions Sync
+      onSnapshot(collection(this.firebase.firestore, 'omalqura_staff_suggestions'), (snapshot) => {
+        if (!snapshot.empty) {
+          const sugs = snapshot.docs.map(d => d.data() as OmAlQuraStaffSuggestion);
+          this.staffSuggestions.set(sugs);
+          localStorage.setItem('omalqura_suggestions', JSON.stringify(sugs));
+        }
+      }, (err) => console.warn('[Firestore] Suggestions sync warning:', err));
+
+      // 8. Real-time FAQs Sync
+      onSnapshot(collection(this.firebase.firestore, 'omalqura_faqs'), (snapshot) => {
+        if (!snapshot.empty) {
+          const faqs = snapshot.docs.map(d => d.data() as OmAlQuraFaq);
+          this.faqs.set(faqs);
+          localStorage.setItem('omalqura_faqs', JSON.stringify(faqs));
+        }
+      }, (err) => console.warn('[Firestore] FAQs sync warning:', err));
+
+      // 9. Real-time Categories Sync
+      onSnapshot(doc(this.firebase.firestore, 'omalqura_config', 'categories'), (snapshot) => {
+        if (snapshot.exists()) {
+          const cats = snapshot.data()['items'] as string[];
+          if (cats && cats.length > 0) {
+            this.categories.set(cats);
+            localStorage.setItem('omalqura_categories', JSON.stringify(cats));
+          }
+        }
+      }, (err) => console.warn('[Firestore] Categories sync warning:', err));
+
+      // 10. Real-time Store Layout Sketch Sync
+      onSnapshot(doc(this.firebase.firestore, 'omalqura_config', 'store_layout'), (snapshot) => {
+        if (snapshot.exists()) {
+          const layout = snapshot.data() as OmAlQuraStoreLayout;
+          if (layout) {
+            this.storeLayout.set(layout);
+            localStorage.setItem('omalqura_store_layout', JSON.stringify(layout));
+          }
+        }
+      }, (err) => console.warn('[Firestore] Layout sync warning:', err));
+
+    } catch (e) {
+      console.warn('[Firestore] Realtime init exception:', e);
+    }
   }
 
   private loadInitialData() {
@@ -292,51 +426,93 @@ export class OmAlQuraService {
         localStorage.removeItem('omalqura_latest_customer_invoice');
       }
     }
+
+    // Load store layout
+    const savedLayout = localStorage.getItem('omalqura_store_layout');
+    if (savedLayout) {
+      try { this.storeLayout.set(JSON.parse(savedLayout)); } catch (e) {}
+    }
   }
 
   private saveProducts(data: OmAlQuraProduct[]) {
     this.products.set(data);
     localStorage.setItem('omalqura_products', JSON.stringify(data));
+    if (this.firebase.firestore) {
+      data.forEach(item => setDoc(doc(this.firebase.firestore, 'omalqura_products', item.id), item).catch(() => {}));
+    }
   }
 
   private saveEmployees(data: OmAlQuraEmployee[]) {
     this.employees.set(data);
     localStorage.setItem('omalqura_employees', JSON.stringify(data));
+    if (this.firebase.firestore) {
+      data.forEach(item => setDoc(doc(this.firebase.firestore, 'omalqura_employees', item.id), item).catch(() => {}));
+    }
   }
 
   private saveOrders(data: OmAlQuraOrder[]) {
     this.orders.set(data);
     localStorage.setItem('omalqura_orders', JSON.stringify(data));
+    if (this.firebase.firestore) {
+      data.forEach(item => setDoc(doc(this.firebase.firestore, 'omalqura_orders', item.id), item).catch(() => {}));
+    }
   }
 
   private saveDrivers(data: OmAlQuraDeliveryDriver[]) {
     this.deliveryDrivers.set(data);
     localStorage.setItem('omalqura_drivers', JSON.stringify(data));
+    if (this.firebase.firestore) {
+      data.forEach(item => setDoc(doc(this.firebase.firestore, 'omalqura_delivery_drivers', item.id), item).catch(() => {}));
+    }
   }
 
   private saveDebts(data: OmAlQuraCustomerDebt[]) {
     this.customerDebts.set(data);
     localStorage.setItem('omalqura_debts', JSON.stringify(data));
+    if (this.firebase.firestore) {
+      data.forEach(item => setDoc(doc(this.firebase.firestore, 'omalqura_customer_debts', item.id), item).catch(() => {}));
+    }
   }
 
   private saveMissingRequests(data: OmAlQuraMissingProductRequest[]) {
     this.missingProductRequests.set(data);
     localStorage.setItem('omalqura_missing_requests', JSON.stringify(data));
+    if (this.firebase.firestore) {
+      data.forEach(item => setDoc(doc(this.firebase.firestore, 'omalqura_missing_requests', item.id), item).catch(() => {}));
+    }
   }
 
   private saveSuggestions(data: OmAlQuraStaffSuggestion[]) {
     this.staffSuggestions.set(data);
     localStorage.setItem('omalqura_suggestions', JSON.stringify(data));
+    if (this.firebase.firestore) {
+      data.forEach(item => setDoc(doc(this.firebase.firestore, 'omalqura_staff_suggestions', item.id), item).catch(() => {}));
+    }
   }
 
   private saveFaqs(data: OmAlQuraFaq[]) {
     this.faqs.set(data);
     localStorage.setItem('omalqura_faqs', JSON.stringify(data));
+    if (this.firebase.firestore) {
+      data.forEach(item => setDoc(doc(this.firebase.firestore, 'omalqura_faqs', item.id), item).catch(() => {}));
+    }
   }
 
   private saveCategories(data: string[]) {
     this.categories.set(data);
     localStorage.setItem('omalqura_categories', JSON.stringify(data));
+    if (this.firebase.firestore) {
+      setDoc(doc(this.firebase.firestore, 'omalqura_config', 'categories'), { items: data }).catch(() => {});
+    }
+  }
+
+  updateStoreLayout(layout: OmAlQuraStoreLayout) {
+    this.storeLayout.set(layout);
+    localStorage.setItem('omalqura_store_layout', JSON.stringify(layout));
+    if (this.firebase.firestore) {
+      setDoc(doc(this.firebase.firestore, 'omalqura_config', 'store_layout'), layout).catch(() => {});
+    }
+    this.toast.show('تم حفظ وتعميم الخريطة الكروكية وتسميات الرفوف والممرات بنجاح!', 'success');
   }
 
   // --- SEED DATA ---

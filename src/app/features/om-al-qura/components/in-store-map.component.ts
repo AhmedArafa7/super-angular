@@ -94,54 +94,53 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
               </div>
             </div>
 
-            <!-- Simulated Visual Store Map Canvas -->
+            <!-- Simulated Visual Store Map Canvas & Manager Custom Sketch -->
             <div class="space-y-3">
               <h4 class="font-black text-slate-900 dark:text-white text-base flex items-center gap-2">
                 <svg lucideIcon="map" class="w-5 h-5 text-indigo-600"></svg>
-                <span>خريطة الرفوف المباشرة وتوجيه الحركة داخل الفرع</span>
+                <span>خريطة الرفوف وتوجيه الحركة داخل الفرع (تخطيط الإدارة)</span>
               </h4>
+
+              <!-- Custom Manager Sketch Image Preview (if uploaded) -->
+              <div *ngIf="service.storeLayout().sketchImageUrl" class="rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
+                <img [src]="service.storeLayout().sketchImageUrl" alt="الرسم الكروكي للفرع" appImageFallback class="w-full h-56 object-cover">
+              </div>
 
               <div class="relative bg-slate-950 rounded-3xl p-6 overflow-hidden min-h-[340px] border border-slate-800 flex flex-col justify-between">
                 <!-- Store Layout Grid Representation -->
-                <div class="grid grid-cols-4 gap-4 text-center text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 text-center text-xs">
                   <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 font-bold">
-                    مدخل الفرع
+                    {{ service.storeLayout().storeEntranceLabel }}
                   </div>
-                  <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 font-bold"
-                       [ngClass]="{'ring-2 ring-amber-400 bg-amber-950/40 text-amber-300': effectiveSelectedProduct()?.locationInStore?.includes('ممر 1')}">
-                    الممر 1 (مساحيق غسيل ومنعمات)
-                  </div>
-                  <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 font-bold"
-                       [ngClass]="{'ring-2 ring-amber-400 bg-amber-950/40 text-amber-300': effectiveSelectedProduct()?.locationInStore?.includes('ممر 2')}">
-                    الممر 2 (منظفات صحون ومطهرات)
-                  </div>
-                  <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 font-bold"
-                       [ngClass]="{'ring-2 ring-amber-400 bg-amber-950/40 text-amber-300': effectiveSelectedProduct()?.locationInStore?.includes('ممر 3')}">
-                    الممر 3 (عناية شخصية وشامبو)
+                  
+                  <div *ngFor="let aisle of service.storeLayout().aisles" 
+                       class="p-4 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 font-bold transition-all"
+                       [ngClass]="{'ring-2 ring-amber-400 bg-amber-950/40 text-amber-300 shadow-lg': effectiveSelectedProduct()?.locationInStore?.includes(aisle.name) || effectiveSelectedProduct()?.locationInStore?.includes(aisle.id)}">
+                    {{ aisle.name }}
                   </div>
                 </div>
 
                 <!-- Product Pin Location Indicator -->
                 <div class="my-8 p-6 bg-slate-900/90 rounded-2xl border border-indigo-500/50 flex flex-wrap justify-between items-center gap-4">
                   <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black animate-bounce shadow-lg">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black animate-bounce shadow-lg shrink-0">
                       <svg lucideIcon="navigation" class="w-6 h-6"></svg>
                     </div>
                     <div>
                       <p class="text-xs text-amber-300 font-bold">المسار الموصى به للمشي:</p>
-                      <p class="text-sm font-black text-white">تحرك من المدخل الرئيسي إلى {{ effectiveSelectedProduct()?.locationInStore }}</p>
+                      <p class="text-sm font-black text-white">تحرك من {{ service.storeLayout().storeEntranceLabel }} إلى {{ effectiveSelectedProduct()?.locationInStore }}</p>
                     </div>
                   </div>
 
                   <div class="text-xs text-slate-300">
-                    <p>صورة توضيحية للرف:</p>
-                    <span class="font-bold text-indigo-400">الرف المضاء باللون الأصفر</span>
+                    <p>إرشادات الخريطة:</p>
+                    <span class="font-bold text-indigo-400">{{ service.storeLayout().customSketchNotes || 'الرف المضاء باللون الأصفر' }}</span>
                   </div>
                 </div>
 
                 <div class="flex justify-between items-center text-xs text-slate-400 pt-3 border-t border-slate-800">
-                  <span>منطقة الكاشير والاستقبال</span>
-                  <span>المخزن الداخلي الخلفي</span>
+                  <span>{{ service.storeLayout().checkoutAreaLabel }}</span>
+                  <span>{{ service.storeLayout().warehouseAreaLabel }}</span>
                 </div>
               </div>
             </div>
