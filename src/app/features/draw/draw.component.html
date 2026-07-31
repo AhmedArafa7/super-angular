@@ -1,0 +1,598 @@
+<div class="draw-studio" [ngClass]="'bg-' + background()">
+  <!-- Top Navigation & Control Bar -->
+  <header class="top-bar">
+    <div class="brand-section">
+      <div class="icon-glow">
+        <lucide-icon [img]="Sparkles" class="w-6 h-6 text-indigo-400"></lucide-icon>
+      </div>
+      <div class="title-wrapper">
+        <input 
+          type="text" 
+          [(ngModel)]="currentProjectTitle" 
+          class="project-title-input" 
+          placeholder="عنوان اللوحة..." 
+        />
+        <span class="badge" *ngIf="isSaving">
+          <lucide-icon [img]="Check" class="w-3 h-3 text-emerald-400"></lucide-icon>
+          تم الحفظ
+        </span>
+      </div>
+    </div>
+
+    <!-- Quick Action Controls -->
+    <div class="top-actions">
+      <button class="btn-top" (click)="createNewProject()" title="لوحة رسم جديدة">
+        <lucide-icon [img]="Plus" class="w-4 h-4"></lucide-icon>
+        <span>جديد</span>
+      </button>
+
+      <button class="btn-top" (click)="showGallery = true" title="فتح معرض الرسومات الحالية">
+        <lucide-icon [img]="FolderOpen" class="w-4 h-4 text-amber-400"></lucide-icon>
+        <span>المعرض</span>
+      </button>
+
+      <button class="btn-top primary" (click)="saveProjectLocally()" title="حفظ اللوحة (Ctrl+S)">
+        <lucide-icon [img]="Save" class="w-4 h-4 text-indigo-300"></lucide-icon>
+        <span>حفظ المشروع</span>
+      </button>
+
+      <div class="divider-v"></div>
+
+      <button class="btn-top icon-only" (click)="undo()" title="تراجع (Ctrl+Z)">
+        <lucide-icon [img]="Undo2" class="w-4 h-4"></lucide-icon>
+      </button>
+      
+      <button class="btn-top icon-only" (click)="redo()" title="إعادة (Ctrl+Y)">
+        <lucide-icon [img]="Redo2" class="w-4 h-4"></lucide-icon>
+      </button>
+
+      <div class="divider-v"></div>
+
+      <label class="btn-top" title="استيراد صورة للوحة">
+        <lucide-icon [img]="ImageIcon" class="w-4 h-4 text-teal-400"></lucide-icon>
+        <span>استيراد صورة</span>
+        <input type="file" accept="image/*" (change)="importImage($event)" class="hidden" />
+      </label>
+
+      <button class="btn-top" (click)="showExportModal = true" title="تصدير وتنزيل اللوحة">
+        <lucide-icon [img]="Download" class="w-4 h-4 text-emerald-400"></lucide-icon>
+        <span>تصدير</span>
+      </button>
+
+      <button class="btn-top icon-only text-red-400 hover:bg-red-500/20" (click)="clearCanvas()" title="مسح اللوحة بالكامل">
+        <lucide-icon [img]="Trash2" class="w-4 h-4"></lucide-icon>
+      </button>
+
+      <button class="btn-top icon-only" (click)="showHelpModal = true" title="اختصارات ومساعدة">
+        <lucide-icon [img]="HelpCircle" class="w-4 h-4 text-sky-400"></lucide-icon>
+      </button>
+    </div>
+  </header>
+
+  <!-- Workspace Main Area -->
+  <main class="workspace-area">
+    <!-- Left Floating Tools Palette -->
+    <aside class="left-palette">
+      <div class="palette-group">
+        <button 
+          class="tool-btn" 
+          [class.active]="activeTool() === 'pencil'"
+          (click)="activeTool.set('pencil')" 
+          title="قلم رصاص (P)"
+        >
+          <lucide-icon [img]="Pencil" class="w-5 h-5"></lucide-icon>
+          <span class="tool-tip">قلم رصاص</span>
+        </button>
+
+        <button 
+          class="tool-btn" 
+          [class.active]="activeTool() === 'brush'"
+          (click)="activeTool.set('brush')" 
+          title="فرشاة رسم (B)"
+        >
+          <lucide-icon [img]="Paintbrush" class="w-5 h-5"></lucide-icon>
+          <span class="tool-tip">فرشاة فنون</span>
+        </button>
+
+        <button 
+          class="tool-btn" 
+          [class.active]="activeTool() === 'eraser'"
+          (click)="activeTool.set('eraser')" 
+          title="ممحاة (E)"
+        >
+          <lucide-icon [img]="Eraser" class="w-5 h-5"></lucide-icon>
+          <span class="tool-tip">ممحاة</span>
+        </button>
+
+        <button 
+          class="tool-btn" 
+          [class.active]="activeTool() === 'bucket'"
+          (click)="activeTool.set('bucket')" 
+          title="دلو تعبئة الألوان (G)"
+        >
+          <lucide-icon [img]="PaintBucket" class="w-5 h-5"></lucide-icon>
+          <span class="tool-tip">تعبئة ألوان</span>
+        </button>
+      </div>
+
+      <div class="palette-divider"></div>
+
+      <!-- Shapes -->
+      <div class="palette-group">
+        <button 
+          class="tool-btn" 
+          [class.active]="activeTool() === 'rectangle'"
+          (click)="activeTool.set('rectangle')" 
+          title="مستطيل"
+        >
+          <lucide-icon [img]="Square" class="w-5 h-5"></lucide-icon>
+          <span class="tool-tip">مستطيل</span>
+        </button>
+
+        <button 
+          class="tool-btn" 
+          [class.active]="activeTool() === 'circle'"
+          (click)="activeTool.set('circle')" 
+          title="دائرة"
+        >
+          <lucide-icon [img]="Circle" class="w-5 h-5"></lucide-icon>
+          <span class="tool-tip">دائرة</span>
+        </button>
+
+        <button 
+          class="tool-btn" 
+          [class.active]="activeTool() === 'triangle'"
+          (click)="activeTool.set('triangle')" 
+          title="مثلث"
+        >
+          <lucide-icon [img]="Triangle" class="w-5 h-5"></lucide-icon>
+          <span class="tool-tip">مثلث</span>
+        </button>
+
+        <button 
+          class="tool-btn" 
+          [class.active]="activeTool() === 'star'"
+          (click)="activeTool.set('star')" 
+          title="نجمة"
+        >
+          <lucide-icon [img]="Star" class="w-5 h-5"></lucide-icon>
+          <span class="tool-tip">نجمة</span>
+        </button>
+
+        <button 
+          class="tool-btn" 
+          [class.active]="activeTool() === 'arrow'"
+          (click)="activeTool.set('arrow')" 
+          title="سهم"
+        >
+          <lucide-icon [img]="ArrowUpRight" class="w-5 h-5"></lucide-icon>
+          <span class="tool-tip">سهم</span>
+        </button>
+      </div>
+
+      <div class="palette-divider"></div>
+
+      <div class="palette-group">
+        <button 
+          class="tool-btn" 
+          [class.active]="activeTool() === 'text'"
+          (click)="activeTool.set('text')" 
+          title="إضافة نص"
+        >
+          <lucide-icon [img]="Type" class="w-5 h-5"></lucide-icon>
+          <span class="tool-tip">نص</span>
+        </button>
+
+        <button 
+          class="tool-btn" 
+          [class.active]="activeTool() === 'select'"
+          (click)="activeTool.set('select')" 
+          title="تحريك واستكشاف اللوحة"
+        >
+          <lucide-icon [img]="Move" class="w-5 h-5"></lucide-icon>
+          <span class="tool-tip">تحريك اللوحة</span>
+        </button>
+      </div>
+
+      <div class="palette-divider"></div>
+
+      <!-- Color Indicator -->
+      <div class="color-preview-btn" title="اللون الحالي">
+        <input 
+          type="color" 
+          [ngModel]="brush().color" 
+          (ngModelChange)="selectColor($event)" 
+          class="color-native-input"
+        />
+        <div class="color-dot" [style.backgroundColor]="brush().color"></div>
+      </div>
+    </aside>
+
+    <!-- Canvas Stage Container -->
+    <div 
+      class="canvas-stage" 
+      (wheel)="onWheel($event)"
+      (pointerdown)="onPointerDown($event)"
+      (pointermove)="onPointerMove($event)"
+      (pointerup)="onPointerUp($event)"
+    >
+      <div 
+        #canvasContainer 
+        class="canvas-container" 
+        [style.transform]="'translate(' + panX() + 'px, ' + panY() + 'px) scale(' + scale() + ')'"
+        [style.width.px]="canvasWidth"
+        [style.height.px]="canvasHeight"
+      >
+        <!-- Shape Preview Canvas Layer -->
+        <canvas 
+          #previewCanvas 
+          class="preview-canvas" 
+          [attr.width]="canvasWidth" 
+          [attr.height]="canvasHeight"
+        ></canvas>
+
+        <!-- Floating Text Input Popup -->
+        <div 
+          *ngIf="textInputOpen" 
+          class="text-input-box" 
+          [style.left.px]="textInputPos.x" 
+          [style.top.px]="textInputPos.y"
+        >
+          <input 
+            type="text" 
+            [(ngModel)]="textInputValue" 
+            placeholder="اكتب النص هنا..." 
+            (keydown.enter)="confirmAddText()" 
+            autoFocus 
+          />
+          <button (click)="confirmAddText()" class="btn-confirm">
+            <lucide-icon [img]="Check" class="w-4 h-4"></lucide-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Inspector / Properties & Layers Panel -->
+    <aside class="right-inspector">
+      <!-- Section 1: Brush & Tool Settings -->
+      <div class="inspector-card">
+        <h3 class="card-title">
+          <lucide-icon [img]="Paintbrush" class="w-4 h-4 text-indigo-400"></lucide-icon>
+          خصائص الأداة
+        </h3>
+
+        <!-- Brush Size -->
+        <div class="setting-row">
+          <div class="row-label">
+            <span>حجم الخط / الفرشاة</span>
+            <span class="val-badge">{{ brush().size }}px</span>
+          </div>
+          <input 
+            type="range" 
+            min="1" 
+            max="100" 
+            [ngModel]="brush().size" 
+            (ngModelChange)="brush.update(b => ({...b, size: $event}))" 
+            class="range-slider" 
+          />
+        </div>
+
+        <!-- Opacity Slider -->
+        <div class="setting-row">
+          <div class="row-label">
+            <span>الشفافية (Opacity)</span>
+            <span class="val-badge">{{ Math.round(brush().opacity * 100) }}%</span>
+          </div>
+          <input 
+            type="range" 
+            min="0.05" 
+            max="1" 
+            step="0.05"
+            [ngModel]="brush().opacity" 
+            (ngModelChange)="brush.update(b => ({...b, opacity: $event}))" 
+            class="range-slider" 
+          />
+        </div>
+
+        <!-- Shape Fill Toggle -->
+        <div class="setting-row checkbox-row" *ngIf="['rectangle', 'circle', 'ellipse', 'triangle', 'star'].includes(activeTool())">
+          <label class="toggle-label">
+            <input 
+              type="checkbox" 
+              [ngModel]="brush().isFilled" 
+              (ngModelChange)="brush.update(b => ({...b, isFilled: $event}))" 
+            />
+            <span>تعبئة الشكل الداخلي</span>
+          </label>
+          <input 
+            type="color" 
+            *ngIf="brush().isFilled"
+            [ngModel]="brush().fillColor" 
+            (ngModelChange)="brush.update(b => ({...b, fillColor: $event}))" 
+            class="fill-color-picker"
+          />
+        </div>
+
+        <!-- Canvas Background Selector -->
+        <div class="setting-row">
+          <span class="row-label-text">خلفية اللوحة</span>
+          <div class="bg-selector">
+            <button 
+              class="bg-btn" 
+              [class.active]="background() === 'dark'" 
+              (click)="background.set('dark')"
+              title="استوديو داكن"
+            >
+              <div class="bg-swatch dark"></div>
+            </button>
+
+            <button 
+              class="bg-btn" 
+              [class.active]="background() === 'white'" 
+              (click)="background.set('white')"
+              title="أبيض ناصع"
+            >
+              <div class="bg-swatch white"></div>
+            </button>
+
+            <button 
+              class="bg-btn" 
+              [class.active]="background() === 'grid'" 
+              (click)="background.set('grid')"
+              title="شبكة مربعات"
+            >
+              <div class="bg-swatch grid"></div>
+            </button>
+
+            <button 
+              class="bg-btn" 
+              [class.active]="background() === 'dots'" 
+              (click)="background.set('dots')"
+              title="نقاط منقطة"
+            >
+              <div class="bg-swatch dots"></div>
+            </button>
+
+            <button 
+              class="bg-btn" 
+              [class.active]="background() === 'parchment'" 
+              (click)="background.set('parchment')"
+              title="ورق بردي"
+            >
+              <div class="bg-swatch parchment"></div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Color Palette -->
+      <div class="inspector-card">
+        <div class="card-header-flex">
+          <h3 class="card-title">
+            <lucide-icon [img]="Palette" class="w-4 h-4 text-pink-400"></lucide-icon>
+            لوحة الألوان
+          </h3>
+          <button class="btn-xs" (click)="openEyedropper()" title="أداة قطارة اللون">
+            قطارة الألوان
+          </button>
+        </div>
+
+        <!-- Recent Colors -->
+        <div class="recent-colors-box">
+          <span class="text-xs text-slate-400 mb-1 block">الألوان المستخدمة مؤخراً:</span>
+          <div class="color-grid">
+            <button 
+              *ngFor="let col of recentColors()" 
+              class="color-chip" 
+              [style.backgroundColor]="col" 
+              [class.selected]="brush().color === col"
+              (click)="selectColor(col)"
+            ></button>
+          </div>
+        </div>
+
+        <!-- Preset Palettes -->
+        <div class="palettes-list">
+          <div *ngFor="let pal of palettes" class="palette-item">
+            <span class="palette-title">{{ pal.name }}</span>
+            <div class="color-grid">
+              <button 
+                *ngFor="let col of pal.colors" 
+                class="color-chip" 
+                [style.backgroundColor]="col" 
+                [class.selected]="brush().color === col"
+                (click)="selectColor(col)"
+              ></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Layers System -->
+      <div class="inspector-card flex-1 flex flex-col min-h-0">
+        <div class="card-header-flex">
+          <h3 class="card-title">
+            <lucide-icon [img]="Layers" class="w-4 h-4 text-emerald-400"></lucide-icon>
+            الطبقات ({{ layers().length }})
+          </h3>
+          <button class="btn-xs primary" (click)="addLayer()" title="إضافة طبقة جديدة">
+            <lucide-icon [img]="Plus" class="w-3 h-3 ml-1"></lucide-icon>
+            إضافة طبقة
+          </button>
+        </div>
+
+        <div class="layers-scroll-list">
+          <div 
+            *ngFor="let layer of layers(); let i = index" 
+            class="layer-item" 
+            [class.active]="activeLayerId() === layer.id"
+            (click)="selectLayer(layer.id)"
+          >
+            <div class="layer-info">
+              <button class="icon-sub-btn" (click)="toggleLayerVisibility(layer, $event)">
+                <lucide-icon [img]="layer.visible ? Eye : EyeOff" class="w-4 h-4" [class.text-slate-500]="!layer.visible"></lucide-icon>
+              </button>
+
+              <button class="icon-sub-btn" (click)="toggleLayerLock(layer, $event)">
+                <lucide-icon [img]="layer.locked ? Lock : Unlock" class="w-4 h-4" [class.text-amber-400]="layer.locked"></lucide-icon>
+              </button>
+
+              <input 
+                type="text" 
+                [(ngModel)]="layer.name" 
+                class="layer-name-input" 
+                (click)="$event.stopPropagation()"
+              />
+            </div>
+
+            <div class="layer-actions">
+              <button class="icon-sub-btn" (click)="moveLayerUp(i, $event)" [disabled]="i === layers().length - 1">
+                <lucide-icon [img]="ChevronUp" class="w-3.5 h-3.5"></lucide-icon>
+              </button>
+              <button class="icon-sub-btn" (click)="moveLayerDown(i, $event)" [disabled]="i === 0">
+                <lucide-icon [img]="ChevronDown" class="w-3.5 h-3.5"></lucide-icon>
+              </button>
+              <button class="icon-sub-btn danger" (click)="deleteLayer(layer.id, $event)">
+                <lucide-icon [img]="Trash2" class="w-3.5 h-3.5"></lucide-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Bottom Floating Viewport Status Bar -->
+  <footer class="bottom-status-bar">
+    <div class="zoom-controls">
+      <button class="zoom-btn" (click)="zoomOut()" title="تصغير">
+        <lucide-icon [img]="ZoomOut" class="w-4 h-4"></lucide-icon>
+      </button>
+      <span class="zoom-val">{{ Math.round(scale() * 100) }}%</span>
+      <button class="zoom-btn" (click)="zoomIn()" title="تكبير">
+        <lucide-icon [img]="ZoomIn" class="w-4 h-4"></lucide-icon>
+      </button>
+      <button class="zoom-btn reset" (click)="resetZoom()" title="إعادة ضبط العرض">
+        <lucide-icon [img]="Maximize2" class="w-3.5 h-3.5"></lucide-icon>
+        <span>إعادة الضبط</span>
+      </button>
+    </div>
+
+    <div class="shortcuts-hint">
+      <span>تراجع: <code>Ctrl + Z</code></span>
+      <span>إعادة: <code>Ctrl + Y</code></span>
+      <span>حفظ: <code>Ctrl + S</code></span>
+    </div>
+  </footer>
+
+  <!-- Modal: Projects Gallery -->
+  <div class="modal-backdrop" *ngIf="showGallery" (click)="showGallery = false">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <lucide-icon [img]="FolderOpen" class="w-5 h-5 text-amber-400 inline ml-2"></lucide-icon>
+          معرض لوحاتك المحفوظة
+        </h2>
+        <button class="close-btn" (click)="showGallery = false">
+          <lucide-icon [img]="X" class="w-5 h-5"></lucide-icon>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="gallery-grid" *ngIf="drawService.projects().length > 0; else emptyGallery">
+          <div *ngFor="let proj of drawService.projects()" class="proj-card">
+            <div class="thumb-wrapper">
+              <img [src]="proj.thumbnail" [alt]="proj.title" class="thumb-img" />
+              <div class="overlay-actions">
+                <button class="btn-card-action primary" (click)="loadProject(proj)">فتح</button>
+                <button class="btn-card-action danger" (click)="drawService.deleteProject(proj.id)">حذف</button>
+              </div>
+            </div>
+            <div class="proj-meta">
+              <h4 class="proj-title">{{ proj.title }}</h4>
+              <span class="proj-date">{{ proj.updatedAt | date:'short' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #emptyGallery>
+          <div class="empty-state">
+            <lucide-icon [img]="Sparkles" class="w-12 h-12 text-slate-500 mb-2"></lucide-icon>
+            <p>لا توجد لوحات محفوظة حالياً في معرضك المحترِف.</p>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Export Dialog -->
+  <div class="modal-backdrop" *ngIf="showExportModal" (click)="showExportModal = false">
+    <div class="modal-card sm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <lucide-icon [img]="Download" class="w-5 h-5 text-emerald-400 inline ml-2"></lucide-icon>
+          تصدير اللوحة
+        </h2>
+        <button class="close-btn" (click)="showExportModal = false">
+          <lucide-icon [img]="X" class="w-5 h-5"></lucide-icon>
+        </button>
+      </div>
+
+      <div class="modal-body space-y-3">
+        <button class="export-option-btn" (click)="exportImage('png', false)">
+          <div class="exp-title">تصدير صورة PNG عالية الجودة</div>
+          <div class="exp-desc">تحفظ الرسمة بنفس خلفية اللوحة الحالية.</div>
+        </button>
+
+        <button class="export-option-btn" (click)="exportImage('png', true)">
+          <div class="exp-title">تصدير صورة PNG بخلفية شفافة (Transparent)</div>
+          <div class="exp-desc">مثالية لاستخدام الرسمة كملصق أو عنصر تصميم.</div>
+        </button>
+
+        <button class="export-option-btn" (click)="exportImage('jpeg', false)">
+          <div class="exp-title">تصدير صورة JPEG</div>
+          <div class="exp-desc">حجم ملف خفيف للمشاركة السريعة.</div>
+        </button>
+
+        <button class="export-option-btn" (click)="exportImage('json')">
+          <div class="exp-title">تصدير ملف مشروع (SuperDraw JSON)</div>
+          <div class="exp-desc">يحفظ الطبقات كاملة لاستكمال التعديل لاحقاً.</div>
+        </button>
+
+        <button class="export-option-btn primary" (click)="copyToClipboard()">
+          <div class="exp-title">نسخ الصورة مباشرة للحافظة</div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Shortcuts Help -->
+  <div class="modal-backdrop" *ngIf="showHelpModal" (click)="showHelpModal = false">
+    <div class="modal-card sm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <lucide-icon [img]="HelpCircle" class="w-5 h-5 text-sky-400 inline ml-2"></lucide-icon>
+          دليل استخدام استوديو الرسم
+        </h2>
+        <button class="close-btn" (click)="showHelpModal = false">
+          <lucide-icon [img]="X" class="w-5 h-5"></lucide-icon>
+        </button>
+      </div>
+
+      <div class="modal-body text-slate-300 text-sm space-y-2 dir-rtl">
+        <p>مرحباً بك في مرسم سوبر الرقمي! يمكنك الرسم والتعديل وسحب وإسقاط الصور بحرية عالية.</p>
+        <ul class="list-disc pr-4 space-y-1">
+          <li><strong>P:</strong> القلم الرصاص.</li>
+          <li><strong>B:</strong> الفرشاة الفنية.</li>
+          <li><strong>E:</strong> الممحاة.</li>
+          <li><strong>G:</strong> دلو تعبئة الألوان (Paint Bucket).</li>
+          <li><strong>Ctrl + Z:</strong> التراجع عن الإجراء السابق.</li>
+          <li><strong>Ctrl + Y:</strong> إعادة الإجراء.</li>
+          <li><strong>Ctrl + S:</strong> حفظ مشروعك في المعرض المحلي.</li>
+          <li><strong>عجلة الماوس:</strong> تكبير وتصغير اللوحة (Zoom).</li>
+          <li><strong>Shift + سحب الماوس:</strong> تحريك واستكشاف اللوحة.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

@@ -66,100 +66,18 @@ export class DealsService {
 
     if (dealsStr && storesStr) {
       try {
-        this.deals.set(JSON.parse(dealsStr) || []);
-        this.stores.set(JSON.parse(storesStr) || []);
+        const cleanDeals = (JSON.parse(dealsStr) || []).filter((d: Deal) => !d.id.startsWith('deal_'));
+        const cleanStores = (JSON.parse(storesStr) || []).filter((s: Store) => !s.id.startsWith('st_'));
+        this.deals.set(cleanDeals);
+        this.stores.set(cleanStores);
         return;
       } catch (e) {
         console.error("Deals Registry Load Error", e);
       }
     }
 
-    // Seed default stores
-    const defaultStores: Store[] = [
-      { id: 'st_1', name: 'كارفور Carrefour', type: 'هايبر ماركت', address: 'سيتي سنتر، الإسكندرية' },
-      { id: 'st_2', name: 'فتح الله Fathalla', type: 'سوبر ماركت كبير', address: 'شارع جلال، وسط البلد' },
-      { id: 'st_3', name: 'بيم BIM', type: 'سوبر ماركت مخفض', address: 'بجوار مدرسة لوران' },
-      { id: 'st_4', name: 'مترو Metro', type: 'سوبر ماركت راقي', address: 'شارع شعراوي، كفر عبده' }
-    ];
-
-    // Seed default deals
-    const defaultDeals: Deal[] = [
-      {
-        id: 'deal_1',
-        storeId: 'st_1',
-        storeName: 'كارفور Carrefour',
-        productName: 'أرز مصري الفيروز 5 كجم',
-        price: 150,
-        originalPrice: 180,
-        category: 'groceries',
-        unit: '5 كجم',
-        addedBy: 'admin',
-        addedByName: 'المهندس المشرف',
-        createdAt: new Date(Date.now() - 3600000 * 3).toISOString(),
-        expiresAt: new Date(Date.now() + 86400000 * 5).toISOString(),
-        confirmations: 12,
-        confirmedBy: [],
-        reports: 0,
-        reportedBy: []
-      },
-      {
-        id: 'deal_2',
-        storeId: 'st_2',
-        storeName: 'فتح الله Fathalla',
-        productName: 'زيت عباد الشمس كريستال 1.6 لتر',
-        price: 110,
-        originalPrice: 130,
-        category: 'groceries',
-        unit: '1.6 لتر',
-        addedBy: 'system',
-        addedByName: 'النواة الذكية',
-        createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
-        expiresAt: new Date(Date.now() + 86400000 * 7).toISOString(),
-        confirmations: 25,
-        confirmedBy: [],
-        reports: 0,
-        reportedBy: []
-      },
-      {
-        id: 'deal_3',
-        storeId: 'st_3',
-        storeName: 'بيم BIM',
-        productName: 'جبنة بيضاء دومتي 500 جم',
-        price: 35,
-        originalPrice: 42,
-        category: 'groceries',
-        unit: '500 جم',
-        addedBy: 'user_node',
-        addedByName: 'أحمد عرفة',
-        createdAt: new Date(Date.now() - 3600000 * 12).toISOString(),
-        expiresAt: new Date(Date.now() + 86400000 * 2).toISOString(),
-        confirmations: 8,
-        confirmedBy: [],
-        reports: 0,
-        reportedBy: []
-      },
-      {
-        id: 'deal_4',
-        storeId: 'st_1',
-        storeName: 'كارفور Carrefour',
-        productName: 'صدور دجاج كوكي 1 كجم',
-        price: 195,
-        originalPrice: 220,
-        category: 'meat',
-        unit: '1 كجم',
-        addedBy: 'admin',
-        addedByName: 'المهندس المشرف',
-        createdAt: new Date(Date.now() - 3600000 * 24).toISOString(),
-        expiresAt: new Date(Date.now() + 86400000 * 3).toISOString(),
-        confirmations: 15,
-        confirmedBy: [],
-        reports: 0,
-        reportedBy: []
-      }
-    ];
-
-    this.stores.set(defaultStores);
-    this.deals.set(defaultDeals);
+    this.stores.set([]);
+    this.deals.set([]);
     this.saveState();
   }
 

@@ -124,88 +124,31 @@ export class BakeryService {
     try {
       const snapshot = await getDocs(collection(this.firebase.db, 'bakery_products'));
       let fetched = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as BakeryProduct));
-      
-      // If empty, seed initial data for today's launch!
-      if (fetched.length === 0) {
-        fetched = await this.seedInitialProducts();
+
+      // Clean up any old dummy seed products if they exist in Firestore
+      const dummyNames = [
+        'فطير مشلتت فلاحي بالمرتة',
+        'خبز بلدي بالردة (طازج 5 أرغفة)',
+        'كيلو بسبوسة مرملة بالسمن البلدي',
+        'كرواسون زبدة فرنسي فاخر',
+        'كيلو كعك العيد السادة الناعم',
+        'رغيف حواوشي بلدي باللحم المفروم'
+      ];
+      const hasDummy = fetched.some(p => dummyNames.includes(p.name));
+      if (hasDummy) {
+        for (const docSnap of snapshot.docs) {
+          const data = docSnap.data() as BakeryProduct;
+          if (dummyNames.includes(data.name)) {
+            await deleteDoc(doc(this.firebase.db, 'bakery_products', docSnap.id)).catch(() => {});
+          }
+        }
+        fetched = fetched.filter(p => !dummyNames.includes(p.name));
       }
+
       this.products.set(fetched);
     } catch (e) {
       console.error('Failed to load bakery products', e);
     }
-  }
-
-  private async seedInitialProducts(): Promise<BakeryProduct[]> {
-    const initialProducts: Omit<BakeryProduct, 'id'>[] = [
-      {
-        name: 'فطير مشلتت فلاحي بالمرتة',
-        description: 'فطير فلاحي مورق ومخبوز بالسمن البلدي الصافي على الطريقة المصرية الأصيلة، يقدم ساخناً ومقرمشاً.',
-        price: 85,
-        imageUrl: 'https://images.unsplash.com/photo-1590301157890-4810ed352733?q=80&w=600&auto=format',
-        category: 'فطير فلاحي',
-        isAvailable: true,
-        isPreorderOnly: false,
-        preparationTimeMins: 30
-      },
-      {
-        name: 'خبز بلدي بالردة (طازج 5 أرغفة)',
-        description: 'خبز بر طازج بالردة مخبوز في فرن الحجر الساخن، مثالي لجميع الوجبات اليومية.',
-        price: 10,
-        imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=600&auto=format',
-        category: 'مخبوزات رئيسية',
-        isAvailable: true,
-        isPreorderOnly: false,
-        preparationTimeMins: 15
-      },
-      {
-        name: 'كيلو بسبوسة مرملة بالسمن البلدي',
-        description: 'بسبوسة مصرية فاخرة غنية بشراب العسل الخفيف والسمن البلدي وتشكيلة من اللوز الطازج.',
-        price: 120,
-        imageUrl: 'https://images.unsplash.com/photo-1601004890684-d8cbf643f5f2?q=80&w=600&auto=format',
-        category: 'حلويات شرقية',
-        isAvailable: true,
-        isPreorderOnly: false,
-        preparationTimeMins: 20
-      },
-      {
-        name: 'كرواسون زبدة فرنسي فاخر',
-        description: 'كرواسون هش ومورق مصنوع بالزبدة الطبيعية 100% ويُخبز طازجاً كل صباح.',
-        price: 35,
-        imageUrl: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=600&auto=format',
-        category: 'معجنات غربية',
-        isAvailable: true,
-        isPreorderOnly: false,
-        preparationTimeMins: 15
-      },
-      {
-        name: 'كيلو كعك العيد السادة الناعم',
-        description: 'كعك ناعم يذوب في الفم، مصنوع بالخلطة السرية والسمن البلدي المقدوح والسكر البودرة ناصع البياض.',
-        price: 160,
-        imageUrl: 'https://images.unsplash.com/photo-1517433670267-08bbd4be890f?q=80&w=600&auto=format',
-        category: 'حلويات شرقية',
-        isAvailable: true,
-        isPreorderOnly: true,
-        preparationTimeMins: 45
-      },
-      {
-        name: 'رغيف حواوشي بلدي باللحم المفروم',
-        description: 'لحم بلدي طازج متبل بالبصل والبهارات والفلفل الحار داخل رغيف خبز بلدي مخبوز في الفرن بالدهن الضأن.',
-        price: 65,
-        imageUrl: 'https://images.unsplash.com/photo-1541518763669-27fef04b14ea?q=80&w=600&auto=format',
-        category: 'معجنات حادقة',
-        isAvailable: true,
-        isPreorderOnly: false,
-        preparationTimeMins: 25
-      }
-    ];
-
-    const seeded: BakeryProduct[] = [];
-    for (const p of initialProducts) {
-      const docRef = doc(collection(this.firebase.db, 'bakery_products'));
-      await setDoc(docRef, p);
-      seeded.push({ id: docRef.id, ...p });
-    }
-    return seeded;
   }
 
   async addBakeryProduct(productData: Omit<BakeryProduct, 'id'>) {

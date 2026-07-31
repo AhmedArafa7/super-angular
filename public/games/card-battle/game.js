@@ -260,12 +260,15 @@ let p1 = { hp: 100, maxHp: 100, deck: [], discard: [], hand: [], status: {} };
 let p2 = { hp: 100, maxHp: 100, deck: [], discard: [], hand: [], status: {} };
 let currentTurn = 'p1';
 
+let savedEnemyDeck = [];
+
 function startBattle(enemyDeckConfig) {
+    if (enemyDeckConfig) savedEnemyDeck = enemyDeckConfig;
     deckScreen.classList.add('hidden');
     battleScreen.classList.remove('hidden');
     
     p1 = { hp: 100, maxHp: 100, deck: [...playerDeck], discard: [], hand: [], status: {} };
-    p2 = { hp: 100, maxHp: 100, deck: [...enemyDeckConfig], discard: [], hand: [], status: {} };
+    p2 = { hp: 100, maxHp: 100, deck: [...(savedEnemyDeck || [])], discard: [], hand: [], status: {} };
     
     updateBattleUI();
     logBattle('بدأت المعركة!');
@@ -600,10 +603,52 @@ function showGameOver(title) {
 
 document.getElementById('rematch-btn').addEventListener('click', () => {
     gameOverScreen.classList.add('hidden');
-    startBattle();
+    startBattle(savedEnemyDeck);
 });
+
+function resetToDeckBuilder() {
+    gameOverScreen.classList.add('hidden');
+    battleScreen.classList.add('hidden');
+    modeScreen.classList.add('hidden');
+    deckScreen.classList.remove('hidden');
+
+    playerDeck = [];
+    player1LocalDeck = null;
+    pointsLeft = 100;
+    amIReady = false;
+    isEnemyReady = false;
+    enemyDeck = [];
+    pendingMyCardIndex = -1;
+    receivedEnemyCard = null;
+
+    if (activeMode === 'local2p') {
+        builderTitle.innerText = "تجهيز أوراق اللاعب الأول (تشكيلة جديدة)";
+    } else {
+        builderTitle.innerText = "جهز مجموعة أوراقك (تشكيلة جديدة)";
+    }
+
+    startBtn.disabled = true;
+    startBtn.innerText = "جاهز للمعركة ⚔️";
+    if (waitingP2PMsg) waitingP2PMsg.classList.add('hidden');
+
+    const p1Hand = document.getElementById('p1-hand');
+    const p2Hand = document.getElementById('p2-hand');
+    const p1Active = document.getElementById('p1-active-card');
+    const p2Active = document.getElementById('p2-active-card');
+    const battleLog = document.getElementById('battle-log');
+
+    if (p1Hand) p1Hand.innerHTML = '';
+    if (p2Hand) p2Hand.innerHTML = '';
+    if (p1Active) p1Active.innerHTML = '';
+    if (p2Active) p2Active.innerHTML = '';
+    if (battleLog) battleLog.innerHTML = '<ul id="log-list"></ul>';
+
+    initDeckBuilder();
+    updateDeckPreview();
+}
+
 document.getElementById('rebuild-btn').addEventListener('click', () => {
-    location.reload();
+    resetToDeckBuilder();
 });
 
 // Start App

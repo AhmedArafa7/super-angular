@@ -49,7 +49,7 @@ export class SettingsService {
 
   // Pro Usage signals
   usageLog = signal<UsageLog[]>([]);
-  totalSavedMB = signal<number>(182.45); // Seed initial value to make UI feel very rich
+  totalSavedMB = signal<number>(0);
 
   constructor() {
     this.loadState();
@@ -79,46 +79,16 @@ export class SettingsService {
     if (usageStr) {
       try {
         const parsedLogs = JSON.parse(usageStr);
-        this.usageLog.set(parsedLogs || []);
-        const total = parsedLogs.reduce((acc: number, log: UsageLog) => acc + (log.bytesSaved / 1024 / 1024), 182.45);
+        const clean = (parsedLogs as UsageLog[] || []).filter(l => !l.id.startsWith('log_'));
+        this.usageLog.set(clean);
+        const total = clean.reduce((acc: number, log: UsageLog) => acc + (log.bytesSaved / 1024 / 1024), 0);
         this.totalSavedMB.set(total);
       } catch (e) {
         console.error("Pro Usage logs load error", e);
       }
     } else {
-      // Seed default pro usage logs to wow the user
-      const defaultLogs: UsageLog[] = [
-        {
-          id: 'log_1',
-          videoId: 'تعلم الآلة في 10 دقائق',
-          timestamp: new Date(Date.now() - 3600000).toISOString(),
-          quality: '1080p',
-          bytesConsumed: 120 * 1024 * 1024,
-          bytesSaved: 48 * 1024 * 1024,
-          method: 'cache'
-        },
-        {
-          id: 'log_2',
-          videoId: 'تطوير تطبيقات الويب السريعة',
-          timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
-          quality: '720p',
-          bytesConsumed: 80 * 1024 * 1024,
-          bytesSaved: 32 * 1024 * 1024,
-          method: 'neural'
-        },
-        {
-          id: 'log_3',
-          videoId: 'فهم بروتوكولات الشبكات الذكية',
-          timestamp: new Date(Date.now() - 3600000 * 24).toISOString(),
-          quality: '1080p',
-          bytesConsumed: 150 * 1024 * 1024,
-          bytesSaved: 75 * 1024 * 1024,
-          method: 'p2p'
-        }
-      ];
-      this.usageLog.set(defaultLogs);
-      const total = defaultLogs.reduce((acc, log) => acc + (log.bytesSaved / 1024 / 1024), 182.45);
-      this.totalSavedMB.set(total);
+      this.usageLog.set([]);
+      this.totalSavedMB.set(0);
       this.saveState();
     }
   }

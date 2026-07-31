@@ -27,17 +27,39 @@ import { OmAlQuraAdminPortalComponent } from './components/admin-portal.componen
       <header class="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 text-white shadow-xl sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-4">
           
-          <!-- Logo & Title -->
-          <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-emerald-500 flex items-center justify-center text-slate-950 font-black shadow-lg">
-              <svg lucideIcon="store" class="w-7 h-7"></svg>
+          <!-- Logo & Title with Custom Cleaning Detergent & Soap Bubbles Icon -->
+          <div class="flex items-center gap-3.5">
+            <div class="relative group">
+              <div class="absolute -inset-1 bg-gradient-to-r from-amber-400 via-emerald-400 to-cyan-400 rounded-2xl blur-xs opacity-80 group-hover:opacity-100 transition duration-300 animate-pulse"></div>
+              <div class="relative w-13 h-13 rounded-2xl bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600 p-2.5 flex items-center justify-center text-white font-black shadow-2xl border border-white/30">
+                <!-- Custom Detergent Spray Bottle + Soap Bubbles & Sparkles SVG -->
+                <svg viewBox="0 0 32 32" fill="none" class="w-8 h-8 text-white drop-shadow-md">
+                  <!-- Spray Bottle Body -->
+                  <path d="M12 9 C12 7 14 6 16 6 C18 6 20 7 20 9 L20 12 L12 12 Z" fill="#67e8f9" opacity="0.9"/>
+                  <path d="M10 12 L22 12 L24 28 C24 29.5 22.5 30 21 30 L11 30 C9.5 30 8 29.5 8 28 Z" fill="white" opacity="0.25"/>
+                  <path d="M10 12 L22 12 L24 28 C24 29.5 22.5 30 21 30 L11 30 C9.5 30 8 29.5 8 28 Z" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+                  <!-- Trigger & Nozzle -->
+                  <path d="M16 6 L16 2 L20 2" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M14 4 L8 6 L12 9" stroke="#fef08a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <!-- Soap Bubbles -->
+                  <circle cx="21" cy="18" r="2.5" fill="#67e8f9" opacity="0.8"/>
+                  <circle cx="14" cy="22" r="3.5" fill="#fef08a" opacity="0.7"/>
+                  <circle cx="18" cy="25" r="2" fill="white" opacity="0.9"/>
+                  <!-- Sparkles -->
+                  <path d="M26 3 L27 5.5 L29.5 6.5 L27 7.5 L26 10 L25 7.5 L22.5 6.5 L25 5.5 Z" fill="#fef08a"/>
+                  <path d="M6 14 L6.8 15.8 L8.6 16.6 L6.8 17.4 L6 19.2 L5.2 17.4 L3.4 16.6 L5.2 15.8 Z" fill="#67e8f9"/>
+                </svg>
+              </div>
             </div>
             <div>
-              <div class="inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-300 bg-white/10 px-2.5 py-0.5 rounded-full mb-0.5">
-                <svg lucideIcon="sparkles" class="w-3 h-3 text-amber-400"></svg>
-                <span>متجر المنظفات وأدوات العناية والنظافة الإلكتروني</span>
+              <div class="inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-300 bg-white/10 px-2.5 py-0.5 rounded-full mb-0.5 border border-white/10">
+                <svg lucideIcon="sparkles" class="w-3 h-3 text-amber-400 animate-spin"></svg>
+                <span>متجر المنظفات والمطهرات وأدوات النظافة</span>
               </div>
-              <h1 class="text-2xl font-black tracking-tight text-white">متجر أم القرى</h1>
+              <h1 class="text-2xl font-black tracking-tight text-white flex items-center gap-2">
+                <span>متجر أم القرى</span>
+                <span class="text-xs px-2 py-0.5 rounded-md bg-emerald-500/30 text-emerald-300 font-bold border border-emerald-400/30">للمنظفات</span>
+              </h1>
             </div>
           </div>
 

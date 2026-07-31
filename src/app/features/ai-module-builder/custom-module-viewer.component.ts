@@ -100,11 +100,11 @@ export class CustomModuleStorageService {
 
       <!-- Main Interactive App Frame Container -->
       <main class="flex-1 w-full bg-slate-950 relative overflow-hidden flex items-center justify-center p-2">
-        @if (safeUrl()) {
+        @if (rawHtmlContent()) {
           <iframe 
-            [src]="safeUrl()" 
+            [srcdoc]="rawHtmlContent()" 
             class="w-full h-full border-0 rounded-2xl bg-slate-950 shadow-2xl" 
-            sandbox="allow-scripts allow-same-origin allow-modals">
+            sandbox="allow-scripts allow-modals allow-forms allow-popups">
           </iframe>
         } @else {
           <div class="text-center space-y-3">
@@ -133,22 +133,21 @@ export class CustomModuleViewerComponent implements OnInit {
   Sparkles = Sparkles;
   Share2 = Share2;
 
-  safeUrl = computed<SafeResourceUrl | null>(() => {
+  rawHtmlContent = computed<string>(() => {
     const item = this.activeModule();
-    if (!item || !item.code) return null;
+    if (!item || !item.code) return '';
 
     let rawHtml = item.code.replace(/^```html\s*/gi, '').replace(/```\s*$/gi, '').trim();
     const headAssets = `<script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"><style>body{margin:0;padding:1rem;background-color:#020617;color:white;font-family:'Cairo',system-ui,sans-serif;}</style>`;
 
-    let fullPage = '';
     if (rawHtml.toLowerCase().includes('<html') || rawHtml.toLowerCase().includes('<!doctype')) {
       if (rawHtml.includes('<head>')) {
-        fullPage = rawHtml.replace('<head>', `<head>${headAssets}`);
+        return rawHtml.replace('<head>', `<head>${headAssets}`);
       } else {
-        fullPage = headAssets + rawHtml;
+        return headAssets + rawHtml;
       }
     } else {
-      fullPage = `<!DOCTYPE html>
+      return `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8">
@@ -159,8 +158,6 @@ export class CustomModuleViewerComponent implements OnInit {
 </body>
 </html>`;
     }
-
-    return this.sanitizer.bypassSecurityTrustResourceUrl('data:text/html;charset=utf-8,' + encodeURIComponent(fullPage));
   });
 
   ngOnInit() {

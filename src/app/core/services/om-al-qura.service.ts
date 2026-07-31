@@ -101,6 +101,35 @@ export interface OmAlQuraCustomerDebt {
   status: 'معلق' | 'مسدد بالكامل' | 'تسديد جزئي';
 }
 
+export interface OmAlQuraSupplier {
+  id: string;
+  name: string;
+  phone: string;
+  companyName: string;
+  suppliedCategories: string[];
+  notes?: string;
+}
+
+export interface OmAlQuraPurchaseOrderItem {
+  productId?: string;
+  productName: string;
+  currentStock: number;
+  requestedQuantity: number;
+  unitPriceEst?: number;
+}
+
+export interface OmAlQuraPurchaseOrder {
+  id: string;
+  supplierId: string;
+  supplierName: string;
+  supplierPhone: string;
+  items: OmAlQuraPurchaseOrderItem[];
+  totalEstPrice: number;
+  status: 'تم الإنشاء' | 'تم الإرسال للمورد' | 'تم الاستلام وزيادة المخزون';
+  createdAt: string;
+  notes?: string;
+}
+
 export interface OmAlQuraMissingProductRequest {
   id: string;
   customerName: string;
@@ -127,6 +156,14 @@ export interface OmAlQuraFaq {
   category: string;
 }
 
+export interface OmAlQuraCustomerInfo {
+  name: string;
+  phone: string;
+  address: string;
+  preferredDriverId?: string | null;
+  preferredPaymentMethod?: 'كاش' | 'فيزا' | 'محفظة إلكترونية';
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -145,6 +182,8 @@ export class OmAlQuraService {
   staffSuggestions = signal<OmAlQuraStaffSuggestion[]>([]);
   faqs = signal<OmAlQuraFaq[]>([]);
   categories = signal<string[]>([]);
+  suppliers = signal<OmAlQuraSupplier[]>([]);
+  purchaseOrders = signal<OmAlQuraPurchaseOrder[]>([]);
 
   // Customizable Store Sketch Layout & Aisle/Shelf Names
   storeLayout = signal<OmAlQuraStoreLayout>({
@@ -164,6 +203,12 @@ export class OmAlQuraService {
   userFavoriteProductIds = signal<string[]>([]);
   selectedDriverId = signal<string | null>(null);
   savedCustomerInvoice = signal<OmAlQuraOrder | null>(null);
+  customerInfo = signal<OmAlQuraCustomerInfo>({
+    name: '',
+    phone: '',
+    address: '',
+    preferredDriverId: null
+  });
 
   // Notifications Signals for Staff Portal
   newNotificationsCount = computed(() => {
@@ -189,8 +234,8 @@ export class OmAlQuraService {
 
       // 1. Real-time Products Sync
       onSnapshot(collection(this.firebase.firestore, 'omalqura_products'), (snapshot) => {
-        if (!snapshot.empty) {
-          const prods = snapshot.docs.map(d => d.data() as OmAlQuraProduct);
+        const prods = snapshot.docs.map(d => d.data() as OmAlQuraProduct);
+        if (prods.length > 0 || !snapshot.metadata.hasPendingWrites) {
           this.products.set(prods);
           localStorage.setItem('omalqura_products', JSON.stringify(prods));
         }
@@ -198,8 +243,8 @@ export class OmAlQuraService {
 
       // 2. Real-time Orders Sync
       onSnapshot(collection(this.firebase.firestore, 'omalqura_orders'), (snapshot) => {
-        if (!snapshot.empty) {
-          const ords = snapshot.docs.map(d => d.data() as OmAlQuraOrder);
+        const ords = snapshot.docs.map(d => d.data() as OmAlQuraOrder);
+        if (ords.length > 0 || !snapshot.metadata.hasPendingWrites) {
           this.orders.set(ords);
           localStorage.setItem('omalqura_orders', JSON.stringify(ords));
         }
@@ -207,8 +252,8 @@ export class OmAlQuraService {
 
       // 3. Real-time Delivery Drivers Sync
       onSnapshot(collection(this.firebase.firestore, 'omalqura_delivery_drivers'), (snapshot) => {
-        if (!snapshot.empty) {
-          const drvs = snapshot.docs.map(d => d.data() as OmAlQuraDeliveryDriver);
+        const drvs = snapshot.docs.map(d => d.data() as OmAlQuraDeliveryDriver);
+        if (drvs.length > 0 || !snapshot.metadata.hasPendingWrites) {
           this.deliveryDrivers.set(drvs);
           localStorage.setItem('omalqura_drivers', JSON.stringify(drvs));
         }
@@ -216,8 +261,8 @@ export class OmAlQuraService {
 
       // 4. Real-time Employees Sync
       onSnapshot(collection(this.firebase.firestore, 'omalqura_employees'), (snapshot) => {
-        if (!snapshot.empty) {
-          const emps = snapshot.docs.map(d => d.data() as OmAlQuraEmployee);
+        const emps = snapshot.docs.map(d => d.data() as OmAlQuraEmployee);
+        if (emps.length > 0 || !snapshot.metadata.hasPendingWrites) {
           this.employees.set(emps);
           localStorage.setItem('omalqura_employees', JSON.stringify(emps));
         }
@@ -225,8 +270,8 @@ export class OmAlQuraService {
 
       // 5. Real-time Customer Debts Sync
       onSnapshot(collection(this.firebase.firestore, 'omalqura_customer_debts'), (snapshot) => {
-        if (!snapshot.empty) {
-          const debts = snapshot.docs.map(d => d.data() as OmAlQuraCustomerDebt);
+        const debts = snapshot.docs.map(d => d.data() as OmAlQuraCustomerDebt);
+        if (debts.length > 0 || !snapshot.metadata.hasPendingWrites) {
           this.customerDebts.set(debts);
           localStorage.setItem('omalqura_debts', JSON.stringify(debts));
         }
@@ -234,8 +279,8 @@ export class OmAlQuraService {
 
       // 6. Real-time Missing Requests Sync
       onSnapshot(collection(this.firebase.firestore, 'omalqura_missing_requests'), (snapshot) => {
-        if (!snapshot.empty) {
-          const reqs = snapshot.docs.map(d => d.data() as OmAlQuraMissingProductRequest);
+        const reqs = snapshot.docs.map(d => d.data() as OmAlQuraMissingProductRequest);
+        if (reqs.length > 0 || !snapshot.metadata.hasPendingWrites) {
           this.missingProductRequests.set(reqs);
           localStorage.setItem('omalqura_missing_requests', JSON.stringify(reqs));
         }
@@ -243,8 +288,8 @@ export class OmAlQuraService {
 
       // 7. Real-time Staff Suggestions Sync
       onSnapshot(collection(this.firebase.firestore, 'omalqura_staff_suggestions'), (snapshot) => {
-        if (!snapshot.empty) {
-          const sugs = snapshot.docs.map(d => d.data() as OmAlQuraStaffSuggestion);
+        const sugs = snapshot.docs.map(d => d.data() as OmAlQuraStaffSuggestion);
+        if (sugs.length > 0 || !snapshot.metadata.hasPendingWrites) {
           this.staffSuggestions.set(sugs);
           localStorage.setItem('omalqura_suggestions', JSON.stringify(sugs));
         }
@@ -252,8 +297,8 @@ export class OmAlQuraService {
 
       // 8. Real-time FAQs Sync
       onSnapshot(collection(this.firebase.firestore, 'omalqura_faqs'), (snapshot) => {
-        if (!snapshot.empty) {
-          const faqs = snapshot.docs.map(d => d.data() as OmAlQuraFaq);
+        const faqs = snapshot.docs.map(d => d.data() as OmAlQuraFaq);
+        if (faqs.length > 0 || !snapshot.metadata.hasPendingWrites) {
           this.faqs.set(faqs);
           localStorage.setItem('omalqura_faqs', JSON.stringify(faqs));
         }
@@ -281,6 +326,24 @@ export class OmAlQuraService {
         }
       }, (err) => console.warn('[Firestore] Layout sync warning:', err));
 
+      // 11. Real-time Suppliers Sync
+      onSnapshot(collection(this.firebase.firestore, 'omalqura_suppliers'), (snapshot) => {
+        const supps = snapshot.docs.map(d => d.data() as OmAlQuraSupplier);
+        if (supps.length > 0 || !snapshot.metadata.hasPendingWrites) {
+          this.suppliers.set(supps);
+          localStorage.setItem('omalqura_suppliers', JSON.stringify(supps));
+        }
+      }, (err) => console.warn('[Firestore] Suppliers sync warning:', err));
+
+      // 12. Real-time Purchase Orders Sync
+      onSnapshot(collection(this.firebase.firestore, 'omalqura_purchase_orders'), (snapshot) => {
+        const pos = snapshot.docs.map(d => d.data() as OmAlQuraPurchaseOrder);
+        if (pos.length > 0 || !snapshot.metadata.hasPendingWrites) {
+          this.purchaseOrders.set(pos);
+          localStorage.setItem('omalqura_purchase_orders', JSON.stringify(pos));
+        }
+      }, (err) => console.warn('[Firestore] Purchase orders sync warning:', err));
+
     } catch (e) {
       console.warn('[Firestore] Realtime init exception:', e);
     }
@@ -291,37 +354,39 @@ export class OmAlQuraService {
     if (savedProducts) {
       try {
         const parsed: OmAlQuraProduct[] = JSON.parse(savedProducts);
-        const realProductsOnly = parsed.filter(p => !['p1', 'p2', 'p3', 'p4', 'p5', 'p6'].includes(p.id));
-        this.products.set(realProductsOnly);
-        localStorage.setItem('omalqura_products', JSON.stringify(realProductsOnly));
+        if (parsed && parsed.length > 0) {
+          this.products.set(parsed);
+        } else {
+          this.seedInitialProducts();
+        }
       } catch (e) {
-        this.saveProducts([]);
+        this.seedInitialProducts();
       }
     } else {
-      this.saveProducts([]);
+      this.seedInitialProducts();
     }
 
     const savedEmployees = localStorage.getItem('omalqura_employees');
     if (savedEmployees) {
       try {
         const parsed: OmAlQuraEmployee[] = JSON.parse(savedEmployees);
-        const realEmployeesOnly = parsed.filter(e => !['e1', 'e2', 'e3', 'e4'].includes(e.id));
-        this.employees.set(realEmployeesOnly);
-        localStorage.setItem('omalqura_employees', JSON.stringify(realEmployeesOnly));
+        if (parsed && parsed.length > 0) {
+          this.employees.set(parsed);
+        } else {
+          this.seedEmployees();
+        }
       } catch (e) {
-        this.saveEmployees([]);
+        this.seedEmployees();
       }
     } else {
-      this.saveEmployees([]);
+      this.seedEmployees();
     }
 
     const savedOrders = localStorage.getItem('omalqura_orders');
     if (savedOrders) {
       try {
         const parsed: OmAlQuraOrder[] = JSON.parse(savedOrders);
-        const realOrdersOnly = parsed.filter(o => !['ord-101', 'ord-468', 'ord-494', 'pos-3047'].includes(o.id));
-        this.orders.set(realOrdersOnly);
-        localStorage.setItem('omalqura_orders', JSON.stringify(realOrdersOnly));
+        this.orders.set(parsed || []);
       } catch (e) {
         this.saveOrders([]);
       }
@@ -333,23 +398,23 @@ export class OmAlQuraService {
     if (savedDrivers) {
       try {
         const parsed: OmAlQuraDeliveryDriver[] = JSON.parse(savedDrivers);
-        const realDriversOnly = parsed.filter(d => !['d1', 'd2', 'd3'].includes(d.id));
-        this.deliveryDrivers.set(realDriversOnly);
-        localStorage.setItem('omalqura_drivers', JSON.stringify(realDriversOnly));
+        if (parsed && parsed.length > 0) {
+          this.deliveryDrivers.set(parsed);
+        } else {
+          this.seedDrivers();
+        }
       } catch (e) {
-        this.saveDrivers([]);
+        this.seedDrivers();
       }
     } else {
-      this.saveDrivers([]);
+      this.seedDrivers();
     }
 
     const savedDebts = localStorage.getItem('omalqura_debts');
     if (savedDebts) {
       try {
         const parsed: OmAlQuraCustomerDebt[] = JSON.parse(savedDebts);
-        const realDebtsOnly = parsed.filter(d => !['debt-1', 'debt-2'].includes(d.id));
-        this.customerDebts.set(realDebtsOnly);
-        localStorage.setItem('omalqura_debts', JSON.stringify(realDebtsOnly));
+        this.customerDebts.set(parsed || []);
       } catch (e) {
         this.saveDebts([]);
       }
@@ -361,9 +426,7 @@ export class OmAlQuraService {
     if (savedRequests) {
       try {
         const parsed: OmAlQuraMissingProductRequest[] = JSON.parse(savedRequests);
-        const realRequestsOnly = parsed.filter(r => !['req-1'].includes(r.id));
-        this.missingProductRequests.set(realRequestsOnly);
-        localStorage.setItem('omalqura_missing_requests', JSON.stringify(realRequestsOnly));
+        this.missingProductRequests.set(parsed || []);
       } catch (e) {
         this.saveMissingRequests([]);
       }
@@ -375,9 +438,7 @@ export class OmAlQuraService {
     if (savedSuggestions) {
       try {
         const parsed: OmAlQuraStaffSuggestion[] = JSON.parse(savedSuggestions);
-        const realSuggestionsOnly = parsed.filter(s => !['sug-1'].includes(s.id));
-        this.staffSuggestions.set(realSuggestionsOnly);
-        localStorage.setItem('omalqura_suggestions', JSON.stringify(realSuggestionsOnly));
+        this.staffSuggestions.set(parsed || []);
       } catch (e) {
         this.saveSuggestions([]);
       }
@@ -389,14 +450,16 @@ export class OmAlQuraService {
     if (savedFaqs) {
       try {
         const parsed: OmAlQuraFaq[] = JSON.parse(savedFaqs);
-        const realFaqsOnly = parsed.filter(f => !['f-1', 'f-2', 'f-3'].includes(f.id));
-        this.faqs.set(realFaqsOnly);
-        localStorage.setItem('omalqura_faqs', JSON.stringify(realFaqsOnly));
+        if (parsed && parsed.length > 0) {
+          this.faqs.set(parsed);
+        } else {
+          this.seedFaqs();
+        }
       } catch (e) {
-        this.saveFaqs([]);
+        this.seedFaqs();
       }
     } else {
-      this.saveFaqs([]);
+      this.seedFaqs();
     }
 
     const savedCategories = localStorage.getItem('omalqura_categories');
@@ -409,6 +472,20 @@ export class OmAlQuraService {
     const savedFavs = localStorage.getItem('omalqura_user_favorites');
     if (savedFavs) {
       try { this.userFavoriteProductIds.set(JSON.parse(savedFavs)); } catch (e) {}
+    }
+
+    // Load customer profile info to auto-fill input fields
+    const savedCustomerInfo = localStorage.getItem('omalqura_customer_info');
+    if (savedCustomerInfo) {
+      try {
+        const parsed: OmAlQuraCustomerInfo = JSON.parse(savedCustomerInfo);
+        if (parsed) {
+          this.customerInfo.set(parsed);
+          if (parsed.preferredDriverId) {
+            this.selectedDriverId.set(parsed.preferredDriverId);
+          }
+        }
+      } catch (e) {}
     }
 
     // Load customer's 24-hour persistent invoice
@@ -432,6 +509,124 @@ export class OmAlQuraService {
     if (savedLayout) {
       try { this.storeLayout.set(JSON.parse(savedLayout)); } catch (e) {}
     }
+
+    const savedSuppliers = localStorage.getItem('omalqura_suppliers');
+    if (savedSuppliers) {
+      try { this.suppliers.set(JSON.parse(savedSuppliers)); } catch (e) { this.seedInitialSuppliers(); }
+    } else {
+      this.seedInitialSuppliers();
+    }
+
+    const savedPOs = localStorage.getItem('omalqura_purchase_orders');
+    if (savedPOs) {
+      try { this.purchaseOrders.set(JSON.parse(savedPOs)); } catch (e) {}
+    }
+  }
+
+  saveSuppliers(data: OmAlQuraSupplier[]) {
+    this.suppliers.set(data);
+    localStorage.setItem('omalqura_suppliers', JSON.stringify(data));
+    if (this.firebase.firestore) {
+      data.forEach(item => setDoc(doc(this.firebase.firestore, 'omalqura_suppliers', item.id), item).catch(() => {}));
+    }
+  }
+
+  addSupplier(data: Omit<OmAlQuraSupplier, 'id'>): OmAlQuraSupplier {
+    const newSupp: OmAlQuraSupplier = {
+      id: 'supp-' + Math.floor(1000 + Math.random() * 9000),
+      ...data
+    };
+    this.saveSuppliers([newSupp, ...this.suppliers()]);
+    this.toast.show(`تم تسجيل المورد (${newSupp.name}) بنجاح!`, 'success');
+    return newSupp;
+  }
+
+  deleteSupplier(id: string) {
+    const updated = this.suppliers().filter(s => s.id !== id);
+    this.suppliers.set(updated);
+    localStorage.setItem('omalqura_suppliers', JSON.stringify(updated));
+    if (this.firebase.firestore) {
+      deleteDoc(doc(this.firebase.firestore, 'omalqura_suppliers', id)).catch(() => {});
+    }
+    this.toast.show('تم حذف بيانات المورد.', 'info');
+  }
+
+  savePurchaseOrders(data: OmAlQuraPurchaseOrder[]) {
+    this.purchaseOrders.set(data);
+    localStorage.setItem('omalqura_purchase_orders', JSON.stringify(data));
+    if (this.firebase.firestore) {
+      data.forEach(item => setDoc(doc(this.firebase.firestore, 'omalqura_purchase_orders', item.id), item).catch(() => {}));
+    }
+  }
+
+  createPurchaseOrder(supplierId: string, items: OmAlQuraPurchaseOrderItem[], notes?: string): OmAlQuraPurchaseOrder | null {
+    const supplier = this.suppliers().find(s => s.id === supplierId);
+    if (!supplier || items.length === 0) return null;
+
+    const totalEst = items.reduce((acc, i) => acc + ((i.unitPriceEst || 0) * i.requestedQuantity), 0);
+
+    const newPO: OmAlQuraPurchaseOrder = {
+      id: 'po-' + Math.floor(1000 + Math.random() * 9000),
+      supplierId: supplier.id,
+      supplierName: supplier.name,
+      supplierPhone: supplier.phone,
+      items,
+      totalEstPrice: totalEst,
+      status: 'تم الإنشاء',
+      createdAt: new Date().toLocaleDateString('ar-EG') + ' ' + new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+      notes
+    };
+
+    this.savePurchaseOrders([newPO, ...this.purchaseOrders()]);
+    this.toast.show(`تم إعداد أمر الشراء رقم #${newPO.id} وتوجيهه للمورد (${supplier.name})`, 'success');
+    return newPO;
+  }
+
+  getWhatsAppPoLink(po: OmAlQuraPurchaseOrder): string {
+    const itemsText = po.items.map((item, idx) => `${idx + 1}. *${item.productName}*: المطلوب (${item.requestedQuantity} قطعة) - (المخزون الحالي بالمحل: ${item.currentStock} قطعة)`).join('\n');
+    const text = `*أمر توريد وبضاعة منظفات جديد - متجر أم القرى* 🧼
+رقم الأمر: #${po.id}
+المورد: *${po.supplierName}*
+التاريخ: ${po.createdAt}
+
+*قائمة الأصناف المطلوبة للفرع:*
+${itemsText}
+
+ملاحظات والتسليم: ${po.notes || 'يرجى التوريد وتأكيد موعد الوصول بالفرع.'}
+
+شكرًا لتعاونكم مع متجر أم القرى للمنظفات!`;
+
+    const cleanPhone = (po.supplierPhone || '').replace(/\D/g, '');
+    const phoneWithCountry = cleanPhone.startsWith('01') ? '2' + cleanPhone : cleanPhone;
+    return `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(text)}`;
+  }
+
+  markPoReceived(poId: string) {
+    const po = this.purchaseOrders().find(p => p.id === poId);
+    if (!po) return;
+
+    // 1. Update PO Status
+    const updatedPOs = this.purchaseOrders().map(p => p.id === poId ? { ...p, status: 'تم الاستلام وزيادة المخزون' as const } : p);
+    this.savePurchaseOrders(updatedPOs);
+
+    // 2. Restock products automatically in inventory!
+    const updatedProducts = this.products().map(product => {
+      const match = po.items.find(i => (i.productId && i.productId === product.id) || i.productName.trim().toLowerCase() === product.name.trim().toLowerCase());
+      if (match) {
+        return { ...product, stockQuantity: product.stockQuantity + match.requestedQuantity };
+      }
+      return product;
+    });
+    this.saveProducts(updatedProducts);
+
+    this.toast.show(`تم تأكيد استلام الشحنة وتزويد رصيد المخزون تلقائياً للأصناف الواردة! 🎉`, 'success');
+  }
+
+  private seedInitialSuppliers() {
+    const defaults: OmAlQuraSupplier[] = [
+      //put real data of suppliers here later 
+    ];
+    this.saveSuppliers(defaults);
   }
 
   private saveProducts(data: OmAlQuraProduct[]) {
@@ -482,6 +677,14 @@ export class OmAlQuraService {
     }
   }
 
+  private saveAttendanceLogs(data: OmAlQuraAttendanceLog[]) {
+    this.attendanceLogs.set(data);
+    localStorage.setItem('omalqura_attendance_logs', JSON.stringify(data));
+    if (this.firebase.firestore) {
+      data.forEach(item => setDoc(doc(this.firebase.firestore, 'omalqura_attendance_logs', item.id), item).catch(() => {}));
+    }
+  }
+
   private saveSuggestions(data: OmAlQuraStaffSuggestion[]) {
     this.staffSuggestions.set(data);
     localStorage.setItem('omalqura_suggestions', JSON.stringify(data));
@@ -506,6 +709,22 @@ export class OmAlQuraService {
     }
   }
 
+  saveCustomerInfo(info: Partial<OmAlQuraCustomerInfo>) {
+    const current = this.customerInfo();
+    const updated: OmAlQuraCustomerInfo = {
+      name: info.name !== undefined ? info.name : current.name,
+      phone: info.phone !== undefined ? info.phone : current.phone,
+      address: info.address !== undefined ? info.address : current.address,
+      preferredDriverId: info.preferredDriverId !== undefined ? info.preferredDriverId : current.preferredDriverId,
+      preferredPaymentMethod: info.preferredPaymentMethod !== undefined ? info.preferredPaymentMethod : current.preferredPaymentMethod
+    };
+    this.customerInfo.set(updated);
+    if (updated.preferredDriverId !== undefined) {
+      this.selectedDriverId.set(updated.preferredDriverId);
+    }
+    localStorage.setItem('omalqura_customer_info', JSON.stringify(updated));
+  }
+
   updateStoreLayout(layout: OmAlQuraStoreLayout) {
     this.storeLayout.set(layout);
     localStorage.setItem('omalqura_store_layout', JSON.stringify(layout));
@@ -516,24 +735,22 @@ export class OmAlQuraService {
   }
 
   // --- SEED DATA ---
-  private seedInitialData() {
-    this.saveProducts([]);
+  private seedInitialProducts() {
+    const defaults: OmAlQuraProduct[] = [
+
+    ];
+    this.saveProducts(defaults);
   }
 
   private seedCategories() {
-    const defaults = [
-      'منظفات ومساحيق غسيل',
-      'أدوات عناية شخصية وشامبو',
-      'مطهرات ومعقمات منزلية',
-      'منظفات صحون وأواني',
-      'أدوات نظافة ومناديل ورقية',
-      'معطرات جو ومفارش'
-    ];
-    this.saveCategories(defaults);
+    this.saveCategories([]);
   }
 
   private seedEmployees() {
-    this.saveEmployees([]);
+    const defaults: OmAlQuraEmployee[] = [
+
+    ];
+    this.saveEmployees(defaults);
   }
 
   private seedOrders() {
@@ -541,7 +758,10 @@ export class OmAlQuraService {
   }
 
   private seedDrivers() {
-    this.saveDrivers([]);
+    const defaults: OmAlQuraDeliveryDriver[] = [
+
+    ];
+    this.saveDrivers(defaults);
   }
 
   private seedDebts() {
@@ -557,7 +777,10 @@ export class OmAlQuraService {
   }
 
   private seedFaqs() {
-    this.saveFaqs([]);
+    const defaults: OmAlQuraFaq[] = [
+
+    ];
+    this.saveFaqs(defaults);
   }
 
   // --- METHODS & ACTIONS ---
@@ -583,7 +806,7 @@ export class OmAlQuraService {
       time: timeStr,
       date: dateStr
     };
-    this.attendanceLogs.update(logs => [newLog, ...logs]);
+    this.saveAttendanceLogs([newLog, ...this.attendanceLogs()]);
     this.toast.show(`تم تسجيل حضور الموظف: ${emp?.name}`, 'success');
   }
 
@@ -607,7 +830,7 @@ export class OmAlQuraService {
       time: timeStr,
       date: dateStr
     };
-    this.attendanceLogs.update(logs => [newLog, ...logs]);
+    this.saveAttendanceLogs([newLog, ...this.attendanceLogs()]);
     this.toast.show(`تم تسجيل انصراف الموظف: ${emp?.name}`, 'info');
   }
 
@@ -663,7 +886,11 @@ export class OmAlQuraService {
   deleteEmployee(employeeId: string) {
     const emp = this.employees().find(e => e.id === employeeId);
     const updated = this.employees().filter(e => e.id !== employeeId);
-    this.saveEmployees(updated);
+    this.employees.set(updated);
+    localStorage.setItem('omalqura_employees', JSON.stringify(updated));
+    if (this.firebase.firestore) {
+      deleteDoc(doc(this.firebase.firestore, 'omalqura_employees', employeeId)).catch(() => {});
+    }
     if (emp) {
       this.toast.show(`تم إنهاء خدمة وحذف الموظف: ${emp.name}`, 'info');
     }
@@ -693,7 +920,11 @@ export class OmAlQuraService {
 
   deleteProduct(id: string) {
     const filtered = this.products().filter(p => p.id !== id);
-    this.saveProducts(filtered);
+    this.products.set(filtered);
+    localStorage.setItem('omalqura_products', JSON.stringify(filtered));
+    if (this.firebase.firestore) {
+      deleteDoc(doc(this.firebase.firestore, 'omalqura_products', id)).catch(() => {});
+    }
     this.toast.show('تم حذف المنتج من النظام.', 'info');
   }
 
@@ -837,7 +1068,7 @@ export class OmAlQuraService {
   }
 
   // POS Direct Invoice Creation
-  createPosInvoice(posItems: OmAlQuraOrderItem[], customerName: string = 'زبون كاشير') {
+  createPosInvoice(posItems: OmAlQuraOrderItem[], customerName: string = 'زبون كاشير', paymentMethod: OmAlQuraOrder['paymentMethod'] = 'كاش') {
     const total = posItems.reduce((acc, curr) => acc + (curr.product.price * curr.quantity), 0);
     const posOrder: OmAlQuraOrder = {
       id: 'pos-' + Math.floor(1000 + Math.random() * 9000),
@@ -847,7 +1078,7 @@ export class OmAlQuraService {
       items: posItems,
       totalPrice: total,
       status: 'completed',
-      paymentMethod: 'كاش',
+      paymentMethod,
       createdAt: 'الآن'
     };
 
@@ -959,7 +1190,11 @@ export class OmAlQuraService {
 
   deleteFaq(faqId: string) {
     const updated = this.faqs().filter(f => f.id !== faqId);
-    this.saveFaqs(updated);
+    this.faqs.set(updated);
+    localStorage.setItem('omalqura_faqs', JSON.stringify(updated));
+    if (this.firebase.firestore) {
+      deleteDoc(doc(this.firebase.firestore, 'omalqura_faqs', faqId)).catch(() => {});
+    }
     this.toast.show('تم حذف السؤال من بنك المعلومات.', 'info');
   }
 
@@ -977,24 +1212,29 @@ export class OmAlQuraService {
   }
 
   renameCategory(oldName: string, newName: string) {
-    const trimmed = newName.trim();
-    if (!trimmed || oldName === trimmed) return;
-    if (this.categories().includes(trimmed)) {
-      this.toast.show('توجد فئة بنفس هذا الاسم الجديد بالفعل!', 'warning');
-      return;
+    const trimmedOld = (oldName || '').trim();
+    const trimmedNew = (newName || '').trim();
+    if (!trimmedNew || trimmedOld === trimmedNew) return;
+
+    let updatedCategories = [...this.categories()];
+    if (updatedCategories.includes(trimmedOld)) {
+      updatedCategories = updatedCategories.map(c => c === trimmedOld ? trimmedNew : c);
+    } else {
+      updatedCategories.push(trimmedNew);
     }
-    const updatedCategories = this.categories().map(c => c === oldName ? trimmed : c);
-    this.saveCategories(updatedCategories);
+
+    const uniqueCategories = Array.from(new Set(updatedCategories));
+    this.saveCategories(uniqueCategories);
 
     // Update all products under this category
     const updatedProducts = this.products().map(p => {
-      if (p.category === oldName) {
-        return { ...p, category: trimmed };
+      if ((p.category || '').trim() === trimmedOld || p.category === oldName) {
+        return { ...p, category: trimmedNew };
       }
       return p;
     });
     this.saveProducts(updatedProducts);
-    this.toast.show(`تم تعديل اسم القسم إلى (${trimmed}) وتحديث المنتجات التابعة له.`, 'success');
+    this.toast.show(`تم تعديل اسم القسم إلى (${trimmedNew}) وتحديث جميع منتجاته التابعة.`, 'success');
   }
 
   deleteCategory(categoryName: string) {
@@ -1062,7 +1302,11 @@ export class OmAlQuraService {
 
   deleteDeliveryDriver(driverId: string) {
     const updated = this.deliveryDrivers().filter(d => d.id !== driverId);
-    this.saveDrivers(updated);
+    this.deliveryDrivers.set(updated);
+    localStorage.setItem('omalqura_drivers', JSON.stringify(updated));
+    if (this.firebase.firestore) {
+      deleteDoc(doc(this.firebase.firestore, 'omalqura_delivery_drivers', driverId)).catch(() => {});
+    }
     this.toast.show('تم حذف سائق التوصيل.', 'info');
   }
 

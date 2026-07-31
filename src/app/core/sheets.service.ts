@@ -46,10 +46,13 @@ export class SheetsService {
     const dataStr = localStorage.getItem(this.STORAGE_KEY);
     if (dataStr) {
       try {
-        const parsed = JSON.parse(dataStr);
-        this.tables.set(parsed || []);
-        if (parsed.length > 0) {
-          this.activeTableId.set(parsed[0].id);
+        const parsed: DataTable[] = JSON.parse(dataStr);
+        const clean = (parsed || []).filter(t => !t.id.startsWith('sheet_seed_'));
+        this.tables.set(clean);
+        if (clean.length > 0) {
+          this.activeTableId.set(clean[0].id);
+        } else {
+          this.activeTableId.set(null);
         }
         return;
       } catch (e) {
@@ -57,27 +60,8 @@ export class SheetsService {
       }
     }
 
-    // Seed default sheets
-    const seedTable: DataTable = {
-      id: 'sheet_seed_1',
-      name: 'موازنة الخوادم والنواة العصبية',
-      description: 'سجل النفقات والمدخلات المالية الافتراضية للنواة عصبياً',
-      category: 'عام',
-      lastModified: new Date().toISOString(),
-      columns: [
-        { id: 'c1', name: 'البيان', type: 'text' },
-        { id: 'c2', name: 'القيمة الفعالة', type: 'number' },
-        { id: 'c3', name: 'تاريخ التسجيل', type: 'date' }
-      ],
-      rows: [
-        { id: 'r1', c1: 'اشتراكات الخوادم السحابية', c2: -2500, c3: '2026-05-01' },
-        { id: 'r2', c1: 'عائدات إعلانات WeTube', c2: 12500, c3: '2026-05-10' },
-        { id: 'r3', c1: 'نفقات صيانة العقد الذكية', c2: -850, c3: '2026-05-18' }
-      ]
-    };
-
-    this.tables.set([seedTable]);
-    this.activeTableId.set(seedTable.id);
+    this.tables.set([]);
+    this.activeTableId.set(null);
     this.saveState();
   }
 

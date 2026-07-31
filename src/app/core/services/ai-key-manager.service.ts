@@ -64,6 +64,19 @@ export class AiKeyManagerService {
     return true;
   }
 
+  public decrementQuota(): void {
+    if (!this.usePlatformKey()) return;
+    const current = this.platformUsageCount();
+    if (current > 0) {
+      const newCount = current - 1;
+      this.platformUsageCount.set(newCount);
+      const today = new Date().toISOString().slice(0, 10);
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(this.USAGE_KEY, JSON.stringify({ date: today, count: newCount }));
+      }
+    }
+  }
+
   public getActiveApiKey(): string {
     if (typeof localStorage === 'undefined') return '';
     if (this.usePlatformKey()) {

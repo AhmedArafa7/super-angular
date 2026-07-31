@@ -19,3 +19,8 @@ Every game must implement **exactly three** play modes. The UI should clearly pr
 
 ## Cost Optimization & Subscriptions Policy
 Any feature or service that incurs actual recurring operational costs (such as Cloud Storage database persistence, continuous server resources, or platform API quotas) must be restricted exclusively to subscribed "Pro" users. Free users should use zero-cost local alternatives (e.g. LocalStorage, Local Play) or bring their own API keys, with clear premium prompts to upgrade for cloud features.
+
+## Database Binding & Integration Rule
+عندما يطلب المستخدم ربط أو استكمال ربط الداتا بيز (Database Integration / Binding):
+1. **الشمولية الكاملة**: لا تكتفِ بتحديث أو ربط الجزء المذكور في الطلب فقط، بل ابحث وفحص جميع الكائنات والنماذج والخدمات (Services, Components, Modals) التي تحتاج إلى ربط ومزامنة لحظية مع الداتا بيز (Firestore / Cloud Storage / LocalStorage).
+2. **التحقق وإعادة البحث**: بعد الانتهاء من العمل، قم بإعادة فحص وبحث كامل في المشروع للتأكد من عدم وجود أي عنصر أو إجراء أو حالة لم تتزامن أو تتربط بالكامل.

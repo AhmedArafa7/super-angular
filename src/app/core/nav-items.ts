@@ -36,6 +36,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: "vault", label: "خزنة الملفات", icon: "hard-drive", restricted: false, isPermanent: true, category: 'core' },
   { id: "sheets", label: "جداول البيانات", icon: "table", restricted: false, isPermanent: true, status: 'BETA', category: 'core' },
   { id: "docs", label: "محرر المستندات", icon: "file-text", restricted: false, isPermanent: true, status: 'NEW', category: 'core' },
+  { id: "draw", label: "مرسم سوبر", icon: "palette", restricted: false, isPermanent: true, status: 'NEW', route: 'draw', category: 'core' },
   { id: "opencode", label: "مساعد البرمجة OpenCode", icon: "terminal", restricted: false, isPermanent: true, status: 'NEW', route: 'opencode', category: 'dev' },
   { id: "ai-module-builder", label: "صانع الأقسام بالذكاء الاصطناعي", icon: "sparkles", restricted: false, isPermanent: true, status: 'NEW', route: 'ai-module-builder', category: 'ai' },
   { id: "deals", label: "عروض المحلات", icon: "tag", restricted: false, category: 'tools' },

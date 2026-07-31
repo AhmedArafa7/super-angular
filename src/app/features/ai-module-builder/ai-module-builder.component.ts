@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { DomSanitizer } from '@angular/platform-browser';
 import { LucideAngularModule, Sparkles, Cpu, Key, Plus, RefreshCw, Layers, CheckCircle2, Trash2, Edit3, Save, History, ChevronLeft, ChevronRight, Image as ImageIcon, X, LayoutTemplate, ShieldCheck, Code, Copy, Download, Maximize2, Cloud, Lock, Smartphone, Tablet, Monitor, RotateCcw, Share2, Wrench, Pin, PinOff } from 'lucide-angular';
 import { AiKeyManagerService } from '../../core/services/ai-key-manager.service';
@@ -386,6 +387,12 @@ export interface CustomModuleItem {
                 <span class="text-indigo-400 font-bold">محرر الكود المباشر والتعديل الفوري (Live Code Sandbox):</span>
                 <div class="flex items-center gap-2">
                   <button 
+                    (click)="saveManualEdits()"
+                    class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition">
+                    <lucide-icon [img]="Save" class="w-3.5 h-3.5"></lucide-icon>
+                    <span>حفظ التعديلات اليدوية 💾</span>
+                  </button>
+                  <button 
                     (click)="downloadHtmlFile()"
                     class="px-3 py-1 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition">
                     <lucide-icon [img]="Download" class="w-3.5 h-3.5 text-indigo-400"></lucide-icon>
@@ -421,7 +428,7 @@ export interface CustomModuleItem {
               <iframe 
                 [srcdoc]="rawHtmlContent()" 
                 class="w-full h-[550px] border-0 bg-slate-950" 
-                sandbox="allow-scripts allow-same-origin allow-modals flex-1">
+                sandbox="allow-scripts allow-modals allow-forms allow-popups">
               </iframe>
             </div>
           </div>
@@ -476,6 +483,7 @@ export class AiModuleBuilderComponent {
   toast = inject(ToastService);
   sanitizer = inject(DomSanitizer);
   moduleStorage = inject(CustomModuleStorageService);
+  route = inject(ActivatedRoute);
 
   private readonly STORAGE_KEY = 'si_neuro_custom_modules_v2';
 
@@ -602,13 +610,24 @@ export class AiModuleBuilderComponent {
       this.userApiKey = localStorage.getItem('Si-Neuro-chat-apiKey') || '';
       this.loadSavedModules();
 
-      const lastActiveId = localStorage.getItem('si_neuro_builder_active_id');
-      if (lastActiveId && this.savedModules().some(m => m.id === lastActiveId)) {
-        const mod = this.savedModules().find(m => m.id === lastActiveId);
-        if (mod) this.selectModule(mod);
-      } else if (this.savedModules().length > 0) {
-        this.selectModule(this.savedModules()[0]);
-      }
+      this.route.queryParams.subscribe(params => {
+        const queryId = params['id'];
+        if (queryId && this.savedModules().some(m => m.id === queryId)) {
+          const mod = this.savedModules().find(m => m.id === queryId);
+          if (mod) {
+            this.selectModule(mod);
+            return;
+          }
+        }
+
+        const lastActiveId = localStorage.getItem('si_neuro_builder_active_id');
+        if (lastActiveId && this.savedModules().some(m => m.id === lastActiveId)) {
+          const mod = this.savedModules().find(m => m.id === lastActiveId);
+          if (mod) this.selectModule(mod);
+        } else if (this.savedModules().length > 0) {
+          this.selectModule(this.savedModules()[0]);
+        }
+      });
     }
   }
 
@@ -631,11 +650,56 @@ export class AiModuleBuilderComponent {
   }
 
   saveSavedModulesToStorage(modules: CustomModuleItem[]) {
+    // Limit maximum versions per module to 10 to avoid LocalStorage QuotaExceededError
+    const cleanedModules = modules.map(m => {
+      if (m.versions && m.versions.length > 10) {
+        const keepVersions = m.versions.slice(-10);
+        return {
+          ...m,
+          versions: keepVersions,
+          activeVersionIndex: Math.min(m.activeVersionIndex, keepVersions.length - 1)
+        };
+      }
+      return m;
+    });
+
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(modules));
+      try {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(cleanedModules));
+      } catch (e) {
+        console.warn('LocalStorage quota exceeded, trimming older versions:', e);
+        const strictModules = cleanedModules.map(m => ({
+          ...m,
+          versions: m.versions.slice(-3),
+          activeVersionIndex: Math.min(m.activeVersionIndex, Math.max(0, m.versions.slice(-3).length - 1))
+        }));
+        try {
+          localStorage.setItem(this.STORAGE_KEY, JSON.stringify(strictModules));
+        } catch (err) {}
+      }
     }
-    this.savedModules.set(modules);
+    this.savedModules.set(cleanedModules);
     this.moduleStorage.loadModules();
+  }
+
+  saveManualEdits() {
+    const code = this.generatedHtml();
+    const activeMod = this.activeModule();
+    if (!activeMod) {
+      this.toast.show('لا يوجد قسم نشط لحفظ التعديلات اليدوية عليه.', 'warning');
+      return;
+    }
+    const list = [...this.savedModules()];
+    const idx = list.findIndex(m => m.id === activeMod.id);
+    if (idx !== -1) {
+      const verIdx = list[idx].activeVersionIndex;
+      if (list[idx].versions[verIdx]) {
+        list[idx].versions[verIdx].htmlContent = code;
+        list[idx].updatedAt = Date.now();
+        this.saveSavedModulesToStorage(list);
+        this.toast.show('💾 تم حفظ التعديلات اليدوية في سجل النسخ بنجاح!', 'success');
+      }
+    }
   }
 
   saveUserApiKey() {
@@ -960,6 +1024,7 @@ DESIGN & ARCHITECTURE REQUIREMENTS:
       const isUpdating = !!this.activeModuleId();
       this.toast.show(isUpdating ? '⚡ تم تحديث اللعبة ونشر النسخة بنجاح!' : '✨ تم بناء وتشغيل اللعبة/القسم بنجاح!', 'success');
     } catch (e: any) {
+      this.keyManager.decrementQuota();
       console.error('Module generation error:', e);
       this.toast.show(`حدث خطأ أثناء الاتصال بـ Gemini AI: ${e.message || ''}`, 'error');
     } finally {

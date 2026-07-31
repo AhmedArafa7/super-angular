@@ -38,7 +38,12 @@ export class StorageService {
     if (dataStr) {
       try {
         const parsed = JSON.parse(dataStr);
-        if (parsed.cachedAssets) this.cachedAssets.set(parsed.cachedAssets);
+        if (parsed.cachedAssets) {
+          const clean = (parsed.cachedAssets as CachedAsset[]).filter(a => !a.id.startsWith('seed_asset_'));
+          this.cachedAssets.set(clean);
+        } else {
+          this.cachedAssets.set([]);
+        }
         if (parsed.categoryLimits) this.categoryLimits.set(parsed.categoryLimits);
         if (parsed.storageLimitMB) this.storageLimitMB.set(parsed.storageLimitMB);
         return;
@@ -47,35 +52,7 @@ export class StorageService {
       }
     }
 
-    // Seed default cached assets for spectacular initial fidelity
-    const seeds: CachedAsset[] = [
-      {
-        id: 'seed_asset_1',
-        type: 'quran',
-        title: 'القرآن الكريم كامل بصوت الشيخ عبد الباسط عبد الصمد',
-        sizeMB: 48.2,
-        timestamp: Date.now() - 3600000 * 2,
-        isFavorite: true
-      },
-      {
-        id: 'seed_asset_2',
-        type: 'video',
-        title: 'كيف يعمل نموذج التفكير المستقل عصبياً؟ - حوار المطورين',
-        sizeMB: 124.5,
-        timestamp: Date.now() - 3600000 * 5,
-        isFavorite: false
-      },
-      {
-        id: 'seed_asset_3',
-        type: 'ai_model_data',
-        title: 'Si-Neuro Core Neural Weights V2.8 (Model Data)',
-        sizeMB: 32.8,
-        timestamp: Date.now() - 3600000 * 10,
-        isFavorite: false
-      }
-    ];
-
-    this.cachedAssets.set(seeds);
+    this.cachedAssets.set([]);
     this.saveState();
   }
 

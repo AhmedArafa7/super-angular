@@ -127,8 +127,11 @@ import { ToastService } from '../../../core/services/toast.service';
                   </div>
 
                   <div class="text-left text-xs space-y-1">
-                    <p class="font-bold text-amber-400">طريقة الدفع المطلوبة:</p>
-                    <p class="text-lg font-black text-emerald-400">{{ selectedOrder()?.paymentMethod }}</p>
+                    <p class="font-bold text-slate-300">طريقة الدفع المطلوبة:</p>
+                    <span class="inline-block px-3 py-1 rounded-xl text-xs font-black shadow-md"
+                          [ngClass]="selectedOrder()?.paymentMethod === 'فيزا' ? 'bg-indigo-600 text-white' : (selectedOrder()?.paymentMethod === 'محفظة إلكترونية' ? 'bg-amber-500 text-slate-950 font-black' : 'bg-emerald-600 text-white')">
+                      {{ selectedOrder()?.paymentMethod === 'فيزا' ? '💳 بطاقة فيزا' : (selectedOrder()?.paymentMethod === 'محفظة إلكترونية' ? '📱 محفظة إلكترونية' : '💵 كاش عند التسليم') }}
+                    </span>
                   </div>
                 </div>
 
@@ -190,6 +193,10 @@ export class OmAlQuraDeliveryPortalComponent {
   }
 
   printElectronicInvoice() {
-    this.toast.show('جاري إرسال الفاتورة الإلكترونية للطباعة وتوليد ملف PDF...', 'success');
+    if (this.selectedOrder()) {
+      this.service.printThermalReceipt(this.selectedOrder()!);
+    } else {
+      this.toast.show('يرجى تحديد طلب لمعاينة الفاتورة الإلكترونية والطباعة.', 'warning');
+    }
   }
 }

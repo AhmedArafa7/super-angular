@@ -185,17 +185,20 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
           </div>
 
           <div class="flex flex-wrap gap-3">
-            <div *ngFor="let cat of service.categories()" class="px-4 py-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700/60 flex items-center gap-3 transition-all">
+            <div *ngFor="let cat of service.categories()" class="px-4 py-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700/60 flex items-center justify-between gap-4 transition-all">
               <div class="space-y-0.5">
                 <span class="font-black text-slate-900 dark:text-white text-xs block">{{ cat }}</span>
                 <span class="text-[10px] text-slate-400 font-bold block">{{ getCategoryProductCount(cat) }} منتجات</span>
               </div>
 
-              <div class="flex items-center gap-1">
-                <button (click)="promptRenameCategory(cat)" title="تعديل تسمية القسم" class="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-950 transition-all">
+              <div class="flex items-center gap-1.5">
+                <button (click)="openRenameCategoryDialog(cat)" title="تغيير وتعديل اسم القسم بدون حذفه"
+                        class="px-3 py-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-xs font-bold hover:bg-emerald-200 transition-all flex items-center gap-1.5 border border-emerald-300 dark:border-emerald-800">
                   <svg lucideIcon="edit-3" class="w-3.5 h-3.5"></svg>
+                  <span>تعديل اسم القسم</span>
                 </button>
-                <button (click)="confirmDeleteCategory(cat)" title="حذف القسم" class="p-1.5 rounded-lg text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950 transition-all">
+
+                <button (click)="confirmDeleteCategory(cat)" title="حذف القسم" class="p-1.5 rounded-xl text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950 transition-all">
                   <svg lucideIcon="trash-2" class="w-3.5 h-3.5"></svg>
                 </button>
               </div>
@@ -301,6 +304,15 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             <div class="flex justify-between text-lg font-black">
               <span>الإجمالي:</span>
               <span class="text-emerald-600">{{ posTotal() }} ج.م</span>
+            </div>
+
+            <div class="space-y-1.5 pt-1">
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">طريقة تحصيل الفاتورة:</label>
+              <select [(ngModel)]="posPaymentMethod" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold">
+                <option value="كاش">💵 كاش (مباشر)</option>
+                <option value="فيزا">💳 فيزا / بطاقة بنكية</option>
+                <option value="محفظة إلكترونية">📱 محفظة إلكترونية (فودافون كاش / إنستا باي)</option>
+              </select>
             </div>
 
             <button (click)="checkoutPos()" [disabled]="posItems().length === 0"
@@ -758,6 +770,21 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
               <input type="text" [(ngModel)]="newProdLocationStore" placeholder="مثال: الممر 2 - رف B3" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
             </div>
 
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">مكان التخزين بالمخزن الداخلي</label>
+              <input type="text" [(ngModel)]="newProdLocationWarehouse" placeholder="مثال: المخزن - رف W-1" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">موعد التوفر المتوقع (عند نفاد المخزون)</label>
+              <input type="text" [(ngModel)]="newProdExpectedRestock" placeholder="مثال: غداً 4 مساءً أو خلال 24 ساعة" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+            </div>
+
+            <div class="flex items-center gap-2 pt-4">
+              <input type="checkbox" [(ngModel)]="newProdIsInWarehouse" id="addWarehouseCheck" class="w-4 h-4 text-emerald-600 rounded">
+              <label for="addWarehouseCheck" class="font-bold text-slate-800 dark:text-slate-200 text-xs">متوفر حالياً بالمخزن الداخلي (وليس العرض فقط)</label>
+            </div>
+
             <div class="sm:col-span-2">
               <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">وصف المنتج</label>
               <textarea [(ngModel)]="newProdDescription" rows="2" placeholder="وصف قصير للمنتج..." class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"></textarea>
@@ -792,9 +819,15 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
                 <label for="boycottCheck" class="font-black text-rose-600 text-xs">علامة: هذا المنتج ضمن قائمة المقاطعة</label>
               </div>
 
-              <div *ngIf="newProdIsBoycott">
-                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">قائمة البدائل الوطنية المطابقة (تفصل بينها بفصلة)</label>
-                <input type="text" [(ngModel)]="newProdAlternatives" placeholder="مثال: سبيرو سباتس كولا، عصير سينا كولا" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <div *ngIf="newProdIsBoycott" class="space-y-2">
+                <div>
+                  <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">سبب المقاطعة</label>
+                  <input type="text" [(ngModel)]="newProdBoycottReason" placeholder="مثال: شركة داعمة بشكل مباشر للمحتل" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">قائمة البدائل الوطنية المطابقة (تفصل بينها بفصلة)</label>
+                  <input type="text" [(ngModel)]="newProdAlternatives" placeholder="مثال: سبيرو سباتس كولا، عصير سينا كولا" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                </div>
               </div>
             </div>
           </div>
@@ -858,6 +891,21 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
               <input type="text" [(ngModel)]="editProdLocationStore" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
             </div>
 
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">مكان التخزين بالمخزن الداخلي</label>
+              <input type="text" [(ngModel)]="editProdLocationWarehouse" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">موعد التوفر المتوقع (عند نفاد المخزون)</label>
+              <input type="text" [(ngModel)]="editProdExpectedRestock" placeholder="مثال: غداً 4 مساءً أو خلال 24 ساعة" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+            </div>
+
+            <div class="flex items-center gap-2 pt-4">
+              <input type="checkbox" [(ngModel)]="editProdIsInWarehouse" id="editWarehouseCheck" class="w-4 h-4 text-emerald-600 rounded">
+              <label for="editWarehouseCheck" class="font-bold text-slate-800 dark:text-slate-200 text-xs">متوفر حالياً بالمخزن الداخلي</label>
+            </div>
+
             <div class="sm:col-span-2">
               <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">وصف المنتج</label>
               <textarea [(ngModel)]="editProdDescription" rows="2" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"></textarea>
@@ -892,9 +940,15 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
                 <label for="editBoycottCheck" class="font-black text-rose-600 text-xs">علامة: هذا المنتج ضمن قائمة المقاطعة</label>
               </div>
 
-              <div *ngIf="editProdIsBoycott">
-                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">قائمة البدائل الوطنية المطابقة (تفصل بينها بفصلة)</label>
-                <input type="text" [(ngModel)]="editProdAlternatives" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <div *ngIf="editProdIsBoycott" class="space-y-2">
+                <div>
+                  <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">سبب المقاطعة</label>
+                  <input type="text" [(ngModel)]="editProdBoycottReason" placeholder="مثال: شركة داعمة بشكل مباشر للمحتل" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">قائمة البدائل الوطنية المطابقة (تفصل بينها بفصلة)</label>
+                  <input type="text" [(ngModel)]="editProdAlternatives" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                </div>
               </div>
             </div>
           </div>
@@ -950,7 +1004,6 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
                         placeholder="اكتب الإجابة التفصيلية النموذجية للموظفين والعملاء..."
                         class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"></textarea>
             </div>
-
             <div class="pt-3 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
               <button type="button" (click)="openAddFaqModal.set(false)" class="px-4 py-2 rounded-2xl text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-slate-800">
                 إلغاء
@@ -962,6 +1015,8 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             </div>
           </form>
         </div>
+      </div>
+
       <!-- ADD DEBT MODAL DIALOG -->
       <div *ngIf="openAddDebtModal()" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-md w-full font-sans dir-rtl space-y-4 border border-slate-200 dark:border-slate-800 shadow-2xl">
@@ -1030,6 +1085,48 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
         </div>
       </div>
 
+      <!-- RENAME CATEGORY MODAL DIALOG -->
+      <div *ngIf="openRenameCategoryModal()" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-md w-full font-sans dir-rtl space-y-4 border border-slate-200 dark:border-slate-800 shadow-2xl">
+          <div class="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+            <h3 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <svg lucideIcon="edit-3" class="w-5 h-5 text-emerald-600"></svg>
+              <span>تعديل اسم القسم للمنتجات (بدون حذفه)</span>
+            </h3>
+            <button (click)="openRenameCategoryModal.set(false)" class="text-slate-400 hover:text-slate-600">
+              <svg lucideIcon="x" class="w-5 h-5"></svg>
+            </button>
+          </div>
+
+          <div class="space-y-3 text-xs">
+            <div class="p-3.5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+              <span class="text-slate-500 font-bold block mb-1">الاسم الحالي للقسم:</span>
+              <span class="font-black text-slate-900 dark:text-white text-sm">{{ targetCategoryToRename() }}</span>
+              <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold block mt-1.5">
+                سيتم تحديث {{ getCategoryProductCount(targetCategoryToRename()) }} منتجات تابعة لهذا القسم تلقائياً لتدخل تحت الاسم الجديد دون إحداث أي حذف!
+              </span>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">اسم القسم الجديد *</label>
+              <input type="text" [(ngModel)]="newCategoryNameInput" placeholder="اكتب اسم القسم الجديد هنا..."
+                     class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <div class="pt-3 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+              <button type="button" (click)="openRenameCategoryModal.set(false)" class="px-4 py-2 rounded-2xl text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-slate-800">
+                إلغاء
+              </button>
+              <button (click)="submitRenameCategory()" type="button"
+                      class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-xs shadow-md transition-all cursor-pointer flex items-center gap-1.5">
+                <svg lucideIcon="check" class="w-4 h-4"></svg>
+                <span>تأكيد وتحديث اسم القسم</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   `
 })
@@ -1064,7 +1161,10 @@ export class OmAlQuraStaffPortalComponent {
   editProdDiscount: number | null = 0;
   editProdLocationStore = '';
   editProdLocationWarehouse = '';
+  editProdIsInWarehouse = false;
+  editProdExpectedRestock = '';
   editProdIsBoycott = false;
+  editProdBoycottReason = '';
   editProdAlternatives = '';
   editProdDescription = '';
   editProdImageUrl = '';
@@ -1083,7 +1183,10 @@ export class OmAlQuraStaffPortalComponent {
   newProdDiscount: number | null = 0;
   newProdLocationStore = '';
   newProdLocationWarehouse = '';
+  newProdIsInWarehouse = false;
+  newProdExpectedRestock = '';
   newProdIsBoycott = false;
+  newProdBoycottReason = '';
   newProdAlternatives = '';
   newProdDescription = '';
   newProdImageUrl = '';
@@ -1124,13 +1227,16 @@ export class OmAlQuraStaffPortalComponent {
     }
   }
 
+  posPaymentMethod: OmAlQuraOrder['paymentMethod'] = 'كاش';
+
   posTotal() {
     return this.posItems().reduce((acc, i) => acc + (i.product.price * i.quantity), 0);
   }
 
   checkoutPos() {
-    this.service.createPosInvoice(this.posItems());
+    this.service.createPosInvoice(this.posItems(), 'زبون كاشير', this.posPaymentMethod);
     this.posItems.set([]);
+    this.posPaymentMethod = 'كاش';
   }
 
   quickUpdateStock(p: OmAlQuraProduct, amount: number) {
@@ -1180,10 +1286,12 @@ export class OmAlQuraStaffPortalComponent {
         stockQuantity: Number(this.newProdStock || 0),
         discountPercent: Number(this.newProdDiscount || 0),
         isBoycott: this.newProdIsBoycott,
+        boycottReason: this.newProdBoycottReason || undefined,
         boycottAlternatives: alts,
         locationInStore: this.newProdLocationStore || 'الممر الرئيسي',
         locationInWarehouse: this.newProdLocationWarehouse || 'المخزن',
-        isInWarehouse: false,
+        isInWarehouse: this.newProdIsInWarehouse,
+        expectedRestockDate: this.newProdExpectedRestock || undefined,
         imageUrl: this.newProdImageUrl || 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=600&auto=format',
         description: this.newProdDescription || 'منتج طازج ومضمون'
       });
@@ -1197,7 +1305,10 @@ export class OmAlQuraStaffPortalComponent {
       this.newProdDiscount = 0;
       this.newProdLocationStore = '';
       this.newProdLocationWarehouse = '';
+      this.newProdIsInWarehouse = false;
+      this.newProdExpectedRestock = '';
       this.newProdIsBoycott = false;
+      this.newProdBoycottReason = '';
       this.newProdAlternatives = '';
       this.newProdDescription = '';
       this.newProdImageUrl = '';
@@ -1206,6 +1317,10 @@ export class OmAlQuraStaffPortalComponent {
   }
 
   // Category Management Methods for Staff
+  openRenameCategoryModal = signal(false);
+  targetCategoryToRename = signal<string>('');
+  newCategoryNameInput = '';
+
   getCategoryProductCount(catName: string) {
     return this.service.products().filter(p => p.category === catName).length;
   }
@@ -1217,11 +1332,33 @@ export class OmAlQuraStaffPortalComponent {
     }
   }
 
-  promptRenameCategory(oldName: string) {
-    const newName = prompt(`تعديل اسم قسم (${oldName}) إلى:`, oldName);
-    if (newName && newName.trim() && newName.trim() !== oldName) {
-      this.service.renameCategory(oldName, newName.trim());
+  openRenameCategoryDialog(catName: string) {
+    const input = window.prompt(`تعديل اسم قسم (${catName}) إلى:`, catName);
+    if (input !== null) {
+      const trimmed = input.trim();
+      if (trimmed && trimmed !== catName) {
+        this.service.renameCategory(catName, trimmed);
+      }
     }
+  }
+
+  submitRenameCategory() {
+    const oldName = this.targetCategoryToRename();
+    const newName = this.newCategoryNameInput.trim();
+    if (!newName) {
+      alert('يرجى إدخال اسم جديد للقسم.');
+      return;
+    }
+    if (oldName === newName) {
+      alert('يرجى تغيير الاسم إلى اسم جديد مختلف عن الاسم الحالي للقسم.');
+      return;
+    }
+    this.service.renameCategory(oldName, newName);
+    this.openRenameCategoryModal.set(false);
+  }
+
+  promptRenameCategory(oldName: string) {
+    this.openRenameCategoryDialog(oldName);
   }
 
   confirmDeleteCategory(catName: string) {
@@ -1245,7 +1382,10 @@ export class OmAlQuraStaffPortalComponent {
     this.editProdDiscount = p.discountPercent || 0;
     this.editProdLocationStore = p.locationInStore || '';
     this.editProdLocationWarehouse = p.locationInWarehouse || '';
+    this.editProdIsInWarehouse = p.isInWarehouse || false;
+    this.editProdExpectedRestock = p.expectedRestockDate || '';
     this.editProdIsBoycott = p.isBoycott || false;
+    this.editProdBoycottReason = p.boycottReason || '';
     this.editProdAlternatives = p.boycottAlternatives ? p.boycottAlternatives.join(' ، ') : '';
     this.editProdDescription = p.description || '';
     this.editProdImageUrl = p.imageUrl || '';
@@ -1273,9 +1413,12 @@ export class OmAlQuraStaffPortalComponent {
       stockQuantity: Number(this.editProdStock || 0),
       discountPercent: Number(this.editProdDiscount || 0),
       isBoycott: this.editProdIsBoycott,
+      boycottReason: this.editProdBoycottReason || undefined,
       boycottAlternatives: alts,
       locationInStore: this.editProdLocationStore || 'الممر الرئيسي',
       locationInWarehouse: this.editProdLocationWarehouse || 'المخزن',
+      isInWarehouse: this.editProdIsInWarehouse,
+      expectedRestockDate: this.editProdExpectedRestock || undefined,
       description: this.editProdDescription,
       imageUrl: this.editProdImageUrl
     });

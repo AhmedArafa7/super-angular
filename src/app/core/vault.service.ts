@@ -45,75 +45,17 @@ export class VaultService {
     const dataStr = localStorage.getItem(this.STORAGE_KEY);
     if (dataStr) {
       try {
-        const parsed = JSON.parse(dataStr);
-        this.assets.set(parsed || []);
+        const parsed: DriveAsset[] = JSON.parse(dataStr);
+        // Filter out old seed assets if cached
+        const clean = (parsed || []).filter(a => !a.id.startsWith('fold_') && !a.id.startsWith('file_'));
+        this.assets.set(clean);
         return;
       } catch (e) {
         console.error("Vault Load Error", e);
       }
     }
 
-    // Seed default assets
-    const seedAssets: DriveAsset[] = [
-      {
-        id: 'fold_1',
-        name: 'مستندات البرمجة والتوثيق',
-        mimeType: 'folder',
-        parentId: 'root',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'fold_2',
-        name: 'الوسائط المتعددة والتصاميم',
-        mimeType: 'folder',
-        parentId: 'root',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'fold_3',
-        name: 'سجلات النواة العميقة',
-        mimeType: 'folder',
-        parentId: 'root',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'file_1',
-        name: 'خطة الهجرة الشاملة للويب.pdf',
-        mimeType: 'pdf',
-        size: '2.4 MB',
-        parentId: 'root',
-        isFavorite: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'file_2',
-        name: 'أيقونة النواة الزجاجية.png',
-        mimeType: 'image',
-        size: '1.2 MB',
-        url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop',
-        parentId: 'fold_2',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'file_3',
-        name: 'تلاوة التراويح الهادئة.mp3',
-        mimeType: 'audio',
-        size: '8.5 MB',
-        parentId: 'fold_2',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'file_4',
-        name: 'تقارير الأداء المالي والتحليل.pdf',
-        mimeType: 'pdf',
-        size: '1.6 MB',
-        parentId: 'fold_3',
-        isFavorite: true,
-        createdAt: new Date().toISOString()
-      }
-    ];
-
-    this.assets.set(seedAssets);
+    this.assets.set([]);
     this.saveState();
   }
 
