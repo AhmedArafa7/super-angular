@@ -648,6 +648,10 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
                 </button>
               </div>
 
+              <button (click)="undoLastAction()" type="button" [disabled]="undoHistory.length <= 1" class="px-3 py-1.5 bg-indigo-950/70 hover:bg-indigo-900 text-indigo-300 disabled:opacity-40 disabled:cursor-not-allowed font-bold rounded-xl border border-indigo-800/60 transition-all flex items-center gap-1 cursor-pointer">
+                <span>↩️ تراجع خطوة (Undo)</span>
+              </button>
+
               <button (click)="clearCanvas()" type="button" class="px-3 py-1.5 bg-rose-950/70 hover:bg-rose-900 text-rose-300 font-bold rounded-xl border border-rose-800/60 transition-all flex items-center gap-1">
                 <svg lucideIcon="rotate-ccw" class="w-3.5 h-3.5"></svg>
                 <span>مسح وإعادة الرسم</span>
@@ -943,10 +947,87 @@ export class OmAlQuraAdminPortalComponent {
   activeTool: 'line' | 'rect' | 'pencil' | 'text' | 'eraser' = 'line';
   brushColor = '#fbbf24';
   brushSize = 3;
+  gridSize = 30;
   isDrawing = false;
   private startX = 0;
   private startY = 0;
   private canvasSnapshot: ImageData | null = null;
+
+  private getSnapPoint(x: number, y: number): { x: number, y: number } {
+    const snappedX = Math.round(x / this.gridSize) * this.gridSize;
+    const snappedY = Math.round(y / this.gridSize) * this.gridSize;
+    return { x: snappedX, y: snappedY };
+  }
+
+  private constrainLineToGridAndDiagonals(
+    start: { x: number; y: number },
+    target: { x: number; y: number }
+  ): { x: number; y: number } {
+    const dx = target.x - start.x;
+    const dy = target.y - start.y;
+
+    if (dx === 0 && dy === 0) return { x: start.x, y: start.y };
+
+    const angle = Math.atan2(dy, dx);
+    const sectorAngle = Math.PI / 4; // 45 degrees
+    const snappedSector = Math.round(angle / sectorAngle);
+    const normalizedSector = ((snappedSector % 8) + 8) % 8;
+
+    const isHorizontal = normalizedSector === 0 || normalizedSector === 4;
+    const isVertical = normalizedSector === 2 || normalizedSector === 6;
+
+    const S = this.gridSize;
+
+    if (isHorizontal) {
+      const steps = Math.round(Math.abs(dx) / S);
+      const dirX = Math.sign(dx) || 1;
+      return {
+        x: start.x + dirX * steps * S,
+        y: start.y
+      };
+    } else if (isVertical) {
+      const steps = Math.round(Math.abs(dy) / S);
+      const dirY = Math.sign(dy) || 1;
+      return {
+        x: start.x,
+        y: start.y + dirY * steps * S
+      };
+    } else {
+      // Square diagonal connecting opposite vertices of grid squares (45°, 135°, 225°, 315°)
+      const avgDist = (Math.abs(dx) + Math.abs(dy)) / 2;
+      const steps = Math.max(1, Math.round(avgDist / S));
+      const dirX = Math.sign(dx) || 1;
+      const dirY = Math.sign(dy) || 1;
+      return {
+        x: start.x + dirX * steps * S,
+        y: start.y + dirY * steps * S
+      };
+    }
+  }
+
+  undoHistory: ImageData[] = [];
+
+  pushUndoState() {
+    const canvas = document.getElementById('storeSketchCanvas') as HTMLCanvasElement;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    this.undoHistory.push(data);
+    if (this.undoHistory.length > 35) this.undoHistory.shift();
+  }
+
+  undoLastAction() {
+    if (this.undoHistory.length <= 1) return;
+    this.undoHistory.pop();
+    const prevState = this.undoHistory[this.undoHistory.length - 1];
+    const canvas = document.getElementById('storeSketchCanvas') as HTMLCanvasElement;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (ctx && prevState) {
+      ctx.putImageData(prevState, 0, 0);
+    }
+  }
 
   openInteractiveCanvas() {
     this.showCanvasDrawer.set(true);
@@ -959,12 +1040,15 @@ export class OmAlQuraAdminPortalComponent {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    if (!this.editSketchUrl || !this.editSketchUrl.startsWith('data:image')) {
-      this.clearCanvas();
-    } else {
+    this.undoHistory = [];
+    this.clearCanvas();
+    this.pushUndoState();
+
+    if (this.editSketchUrl && this.editSketchUrl.startsWith('data:image')) {
       const img = new Image();
       img.onload = () => {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        this.pushUndoState();
       };
       img.src = this.editSketchUrl;
     }
@@ -981,8 +1065,12 @@ export class OmAlQuraAdminPortalComponent {
     const clientX = 'touches' in event ? (event as TouchEvent).touches[0].clientX : (event as MouseEvent).clientX;
     const clientY = 'touches' in event ? (event as TouchEvent).touches[0].clientY : (event as MouseEvent).clientY;
 
-    this.startX = (clientX - rect.left) * (canvas.width / rect.width);
-    this.startY = (clientY - rect.top) * (canvas.height / rect.height);
+    const rawX = (clientX - rect.left) * (canvas.width / rect.width);
+    const rawY = (clientY - rect.top) * (canvas.height / rect.height);
+    const pt = this.getSnapPoint(rawX, rawY);
+
+    this.startX = pt.x;
+    this.startY = pt.y;
 
     if (this.activeTool === 'text') {
       const text = prompt('اكتب اسم الرف أو الممر أو العلامة على الخريطة:');
@@ -990,6 +1078,7 @@ export class OmAlQuraAdminPortalComponent {
         ctx.fillStyle = this.brushColor;
         ctx.font = `bold ${Math.max(14, this.brushSize * 3)}px sans-serif`;
         ctx.fillText(text, this.startX, this.startY);
+        this.pushUndoState();
       }
       this.isDrawing = false;
       return;
@@ -1004,8 +1093,11 @@ export class OmAlQuraAdminPortalComponent {
   }
 
   stopDrawing() {
-    this.isDrawing = false;
-    this.canvasSnapshot = null;
+    if (this.isDrawing) {
+      this.isDrawing = false;
+      this.canvasSnapshot = null;
+      this.pushUndoState();
+    }
   }
 
   draw(event: MouseEvent | TouchEvent) {
@@ -1019,41 +1111,52 @@ export class OmAlQuraAdminPortalComponent {
     const clientX = 'touches' in event ? (event as TouchEvent).touches[0].clientX : (event as MouseEvent).clientX;
     const clientY = 'touches' in event ? (event as TouchEvent).touches[0].clientY : (event as MouseEvent).clientY;
 
-    const currentX = (clientX - rect.left) * (canvas.width / rect.width);
-    const currentY = (clientY - rect.top) * (canvas.height / rect.height);
+    const rawX = (clientX - rect.left) * (canvas.width / rect.width);
+    const rawY = (clientY - rect.top) * (canvas.height / rect.height);
+    const pt = this.getSnapPoint(rawX, rawY);
 
     if (this.activeTool === 'line') {
       if (this.canvasSnapshot) ctx.putImageData(this.canvasSnapshot, 0, 0);
+      const constrained = this.constrainLineToGridAndDiagonals({ x: this.startX, y: this.startY }, pt);
+
       ctx.lineWidth = this.brushSize;
       ctx.strokeStyle = this.brushColor;
       ctx.lineCap = 'round';
       ctx.beginPath();
       ctx.moveTo(this.startX, this.startY);
-      ctx.lineTo(currentX, currentY);
+      ctx.lineTo(constrained.x, constrained.y);
       ctx.stroke();
+
+      // End points indicator dots
+      ctx.fillStyle = this.brushColor;
+      ctx.beginPath();
+      ctx.arc(this.startX, this.startY, 4, 0, Math.PI * 2);
+      ctx.arc(constrained.x, constrained.y, 4, 0, Math.PI * 2);
+      ctx.fill();
+
     } else if (this.activeTool === 'rect') {
       if (this.canvasSnapshot) ctx.putImageData(this.canvasSnapshot, 0, 0);
       ctx.lineWidth = this.brushSize;
       ctx.strokeStyle = this.brushColor;
-      ctx.strokeRect(this.startX, this.startY, currentX - this.startX, currentY - this.startY);
+      ctx.strokeRect(this.startX, this.startY, pt.x - this.startX, pt.y - this.startY);
     } else if (this.activeTool === 'pencil') {
       ctx.lineWidth = this.brushSize;
       ctx.strokeStyle = this.brushColor;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
-      ctx.lineTo(currentX, currentY);
+      ctx.lineTo(pt.x, pt.y);
       ctx.stroke();
       ctx.beginPath();
-      ctx.moveTo(currentX, currentY);
+      ctx.moveTo(pt.x, pt.y);
     } else if (this.activeTool === 'eraser') {
       ctx.lineWidth = this.brushSize * 4;
       ctx.strokeStyle = '#090d16';
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
-      ctx.lineTo(currentX, currentY);
+      ctx.lineTo(pt.x, pt.y);
       ctx.stroke();
       ctx.beginPath();
-      ctx.moveTo(currentX, currentY);
+      ctx.moveTo(pt.x, pt.y);
     }
   }
 
@@ -1067,13 +1170,13 @@ export class OmAlQuraAdminPortalComponent {
     
     ctx.strokeStyle = '#1e293b';
     ctx.lineWidth = 1;
-    for (let x = 0; x < canvas.width; x += 40) {
+    for (let x = 0; x <= canvas.width; x += this.gridSize) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, canvas.height);
       ctx.stroke();
     }
-    for (let y = 0; y < canvas.height; y += 40) {
+    for (let y = 0; y <= canvas.height; y += this.gridSize) {
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(canvas.width, y);

@@ -7,15 +7,18 @@ import { SyncService } from './core/services/sync.service';
 import { GlobalVideoPlayerComponent } from './features/wetube/components/global-video-player/global-video-player.component';
 import { ToastComponent } from './shared/components/toast/toast.component';
 import { LightboxComponent } from './shared/components/lightbox/lightbox.component';
+import { DevAuditPanelComponent } from './shared/components/dev-audit-panel/dev-audit-panel.component';
+import { ButtonInspectorService } from './core/services/button-inspector.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, GlobalVideoPlayerComponent, ToastComponent, LightboxComponent],
+  imports: [RouterOutlet, GlobalVideoPlayerComponent, ToastComponent, LightboxComponent, DevAuditPanelComponent],
   templateUrl: './app.html',
   styleUrls: ['./app.scss']
 })
 export class App implements OnInit {
+  private buttonInspectorService = inject(ButtonInspectorService);
   private syncService = inject(SyncService);
   private router = inject(Router);
   private document = inject(DOCUMENT);

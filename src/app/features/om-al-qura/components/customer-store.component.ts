@@ -21,15 +21,21 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
               <p class="text-xs text-emerald-100">أسعار تنافسية، منظفات عالية الجودة، بدائل مقاطعة معتمدة وتوصيل سريع</p>
             </div>
             
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <button (click)="openFaqModal.set(true)" 
+                      class="px-4 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black rounded-2xl text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer">
+                <svg lucideIcon="help-circle" class="w-4 h-4"></svg>
+                <span>💬 الأسئلة الشائعة ({{ service.faqs().length }})</span>
+              </button>
+
               <button (click)="openStoreLayoutSketchModal.set(true)" 
-                      class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl text-xs flex items-center gap-2 shadow-md transition-all">
+                      class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer">
                 <svg lucideIcon="map" class="w-4 h-4"></svg>
                 <span>عرض الخريطة الكروكية ورسم المحل</span>
               </button>
 
               <button (click)="openMissingProductModal.set(true)" 
-                      class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-2xl text-xs flex items-center gap-2 shadow-md transition-all">
+                      class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-2xl text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer">
                 <svg lucideIcon="plus-circle" class="w-4 h-4"></svg>
                 <span>طلب منظف غير متوفر</span>
               </button>
@@ -233,6 +239,12 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
 
               <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">{{ p.description }}</p>
 
+              <!-- Active Pending Order Badge for Product -->
+              <div *ngIf="orderedProductIdsInPending().has(p.id)" class="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 text-[11px] font-bold text-indigo-800 dark:text-indigo-300 flex items-center gap-1.5">
+                <svg lucideIcon="check-circle-2" class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0"></svg>
+                <span>اشتريته مسبقاً (طلبك الحالي قيد التنفيذ)</span>
+              </div>
+
               <!-- Warehouse Stock Badge if stored in back warehouse -->
               <div *ngIf="p.isInWarehouse || p.locationInWarehouse" class="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 text-[11px] font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
                 <svg lucideIcon="warehouse" class="w-3.5 h-3.5 text-amber-600"></svg>
@@ -427,14 +439,27 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
 
           <!-- Checkout Action -->
           <div class="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+            
+            <!-- Duplicate Order Warning Box -->
+            <div *ngIf="isDuplicateCartOrder()" class="p-3.5 bg-amber-500/15 border-2 border-amber-500/80 rounded-2xl text-xs text-amber-900 dark:text-amber-200 space-y-1 font-bold">
+              <div class="flex items-center gap-1.5 font-black text-amber-800 dark:text-amber-300">
+                <svg lucideIcon="alert-triangle" class="w-4 h-4 text-amber-500 shrink-0"></svg>
+                <span>تنبيه: لقد قمت بطلب نفس هذا الطلب بالفعل!</span>
+              </div>
+              <p class="text-[11px] font-medium text-slate-700 dark:text-slate-300 leading-relaxed">
+                لديك طلب قائم مسبقاً بنفس هذه المنتجات والكميات وهو قيد المراجعة والتنفيذ. يرجى تغيير الطلب أو إضافة أصناف مختلفة قبل الإرسال.
+              </p>
+            </div>
+
             <div class="flex justify-between items-center text-lg font-black">
               <span>مجموع الفاتورة:</span>
               <span class="text-emerald-600">{{ cartTotal() }} ج.م</span>
             </div>
 
             <button (click)="submitOrder()" 
-                    class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-sm shadow-lg transition-all">
-              تأكيد وإرسال طلب الشراء
+                    [disabled]="isDuplicateCartOrder()"
+                    class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-sm shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+              {{ isDuplicateCartOrder() ? 'اشتريت هذا الطلب بالفعل (قيد التنفيذ)' : 'تأكيد وإرسال طلب الشراء' }}
             </button>
           </div>
         </div>
@@ -479,6 +504,15 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             <button (click)="openInvoiceModal.set(false)" class="text-slate-400 hover:text-slate-600">
               <svg lucideIcon="x" class="w-5 h-5"></svg>
             </button>
+          <!-- Order Confirmation Status Banner -->
+          <div class="p-4 bg-emerald-500/10 dark:bg-emerald-950/50 border-2 border-emerald-500/80 rounded-2xl flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black shrink-0 shadow-md">
+              <svg lucideIcon="check-circle-2" class="w-6 h-6"></svg>
+            </div>
+            <div>
+              <h4 class="font-black text-sm text-emerald-800 dark:text-emerald-300">تم الطلب وسيتم مراجعة طلبك وتنفيذه</h4>
+              <p class="text-[11px] font-bold text-slate-600 dark:text-slate-400 mt-0.5">طلبك قيد المتابعة من فريق العمل، وتفاصيل الفاتورة مبينة أدناه.</p>
+            </div>
           </div>
 
           <div class="p-4 bg-slate-50 dark:bg-slate-800/80 rounded-2xl space-y-2 text-xs border border-slate-200 dark:border-slate-700">
@@ -722,6 +756,8 @@ export class OmAlQuraCustomerStoreComponent implements OnInit {
   openMissingProductModal = signal(false);
   openInvoiceModal = signal(false);
   openStoreLayoutSketchModal = signal(false);
+  openFaqModal = signal(false);
+  faqSearchQuery = '';
   selectedMapProduct = signal<OmAlQuraProduct | null>(null);
 
   selectedDriverId: string | null = null;
@@ -785,6 +821,26 @@ export class OmAlQuraCustomerStoreComponent implements OnInit {
     return this.service.orders().filter(o => o.status !== 'completed' && o.status !== 'cancelled');
   });
 
+  orderedProductIdsInPending = computed(() => {
+    const active = this.customerActiveOrders();
+    const ids = new Set<string>();
+    active.forEach(o => {
+      o.items.forEach(i => ids.add(i.product.id));
+    });
+    return ids;
+  });
+
+  isDuplicateCartOrder() {
+    return this.service.isDuplicateActiveOrder(this.service.cart(), this.customerPhone, this.customerName);
+  }
+
+  filteredFaqs = computed(() => {
+    const q = this.faqSearchQuery.toLowerCase().trim();
+    const faqs = this.service.faqs();
+    if (!q) return faqs;
+    return faqs.filter(f => f.question.toLowerCase().includes(q) || f.answer.toLowerCase().includes(q));
+  });
+
   cartItemsCount() {
     return this.service.cart().reduce((acc, i) => acc + i.quantity, 0);
   }
@@ -814,6 +870,7 @@ export class OmAlQuraCustomerStoreComponent implements OnInit {
 
     if (order) {
       this.openCartDrawer.set(false);
+      this.openInvoiceModal.set(true);
     }
   }
 
@@ -830,19 +887,5 @@ export class OmAlQuraCustomerStoreComponent implements OnInit {
       this.missingProdName = '';
       this.missingProdNotes = '';
     }
-  }
-
-  // Floating Customer FAQ Drawer State & Action
-  openFaqModal = signal(false);
-  faqSearchQuery = '';
-
-  filteredFaqs() {
-    const query = (this.faqSearchQuery || '').trim().toLowerCase();
-    const faqs = this.service.faqs();
-    if (!query) return faqs;
-    return faqs.filter(f => 
-      f.question.toLowerCase().includes(query) || 
-      f.answer.toLowerCase().includes(query)
-    );
   }
 }

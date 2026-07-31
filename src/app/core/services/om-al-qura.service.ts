@@ -982,6 +982,29 @@ ${itemsText}
     }
   }
 
+  isDuplicateActiveOrder(cartItems: { product: OmAlQuraProduct; quantity: number }[], customerPhone?: string, customerName?: string): boolean {
+    if (!cartItems || cartItems.length === 0) return false;
+    const phone = customerPhone?.trim() || this.customerInfo()?.phone?.trim();
+    const name = customerName?.trim() || this.customerInfo()?.name?.trim();
+
+    const activeOrders = this.orders().filter(o => o.status !== 'completed' && o.status !== 'cancelled');
+
+    return activeOrders.some(order => {
+      const matchCustomer = (phone && order.customerPhone === phone) || (name && order.customerName === name);
+      if (!matchCustomer) return false;
+
+      if (order.items.length !== cartItems.length) return false;
+
+      const sortedCart = [...cartItems].sort((a, b) => a.product.id.localeCompare(b.product.id));
+      const sortedOrder = [...order.items].sort((a, b) => a.product.id.localeCompare(b.product.id));
+
+      return sortedCart.every((item, idx) => {
+        const orderItem = sortedOrder[idx];
+        return item.product.id === orderItem.product.id && item.quantity === orderItem.quantity;
+      });
+    });
+  }
+
   submitOrder(orderData: {
     orderType: OmAlQuraOrder['orderType'];
     customerName: string;
@@ -994,6 +1017,11 @@ ${itemsText}
     const items = this.cart();
     if (items.length === 0) {
       this.toast.show('سلة الشراء فارغة!', 'warning');
+      return null;
+    }
+
+    if (this.isDuplicateActiveOrder(items, orderData.customerPhone, orderData.customerName)) {
+      this.toast.show('⚠️ لقد قمت بطلب هذه المنتجات بالفعل وهي قيد المراجعة والتنفيذ حالياً! يمكنك تعديل الطلب أو اختيار منتجات جديدة.', 'warning');
       return null;
     }
 
@@ -1048,7 +1076,7 @@ ${itemsText}
     this.clearCart();
     this.playNotificationChime();
     this.saveCustomerInvoice(newOrder);
-    this.toast.show('تم تأكيد وإرسال طلبك بنجاح! حُفظت الفاتورة على جهازك لمدة 24 ساعة.', 'success');
+    this.toast.show('تم الطلب وسيتم مراجعة طلبك وتنفيذه', 'success');
     return newOrder;
   }
 

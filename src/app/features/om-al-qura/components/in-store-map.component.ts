@@ -36,29 +36,29 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
               </div>
             </div>
 
-            <!-- Manager Canvas Line Drawing Quick Trigger -->
+            <!-- Geometric Grid Canvas Line Drawing Quick Trigger -->
             <button (click)="openLineCanvasDrawer()"
                     class="px-5 py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black rounded-2xl text-xs flex items-center gap-2 shadow-xl transition-all shrink-0 cursor-pointer">
               <svg lucideIcon="pen-tool" class="w-4 h-4"></svg>
-              <span>✏️ رسم/تعديل تخطيط الخطوط (خاص بالمدير)</span>
+              <span>📍 رسم خطوط مستقيمة فائقة الدقة بتحديد نقطتين</span>
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Prominent Section: Manager Line Sketch / Floor Plan Layout -->
+      <!-- Prominent Section: Manager Geometric Line Sketch / Floor Plan Layout -->
       <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-md space-y-4">
         <div class="flex flex-wrap justify-between items-center gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
           <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-md shrink-0">
-              <svg lucideIcon="map" class="w-6 h-6"></svg>
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-indigo-600 text-white flex items-center justify-center shadow-md shrink-0">
+              <svg lucideIcon="grid" class="w-6 h-6"></svg>
             </div>
             <div>
               <div class="flex items-center gap-2">
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-indigo-600 text-white">تخطيط هاند ميد بالخطوط 📏</span>
-                <span class="text-xs font-bold text-slate-500">التصميم الهندسي المباشر للمحل</span>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-slate-950">خطوط مستقيمة دقيقة (نقطتين A → B) 📍</span>
+                <span class="text-xs font-bold text-slate-500">رسم كروكي هندسي للمحل</span>
               </div>
-              <h3 class="text-lg font-black text-slate-900 dark:text-white mt-1">الرسم الكروكي والمخطط الهيكلي لتقسيم الفرع بالخطوط</h3>
+              <h3 class="text-lg font-black text-slate-900 dark:text-white mt-1">تخطيط رسم المحل بخطوط مستقيمة دقيقة بين نقطتين</h3>
             </div>
           </div>
 
@@ -72,7 +72,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             <button (click)="openLineCanvasDrawer()"
                     class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-xs flex items-center gap-2 shadow-md transition-all">
               <svg lucideIcon="pen-tool" class="w-4 h-4"></svg>
-              <span>رسم بالخطوط والمستطيلات</span>
+              <span>📍 فتح لوحة رسم الخطوط بالنقطتين</span>
             </button>
           </div>
         </div>
@@ -81,24 +81,26 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
         <div class="relative bg-slate-950 rounded-3xl overflow-hidden border-2 border-slate-800 p-2 min-h-[300px] flex items-center justify-center">
           <div *ngIf="service.storeLayout().sketchImageUrl; else noSketchPlaceholder" class="w-full text-center space-y-2">
             <img [src]="service.storeLayout().sketchImageUrl" 
-                 alt="مخطط رسم المحل بالخطوط" 
+                 alt="مخطط رسم المحل بالخطوط الهندسية المستقيمة" 
                  appImageFallback 
                  class="w-full max-h-[380px] object-contain rounded-2xl bg-slate-950">
-            <p class="text-[11px] text-slate-400 font-medium">💡 المخطط الموضح أعلاه من تصميم إدارة المحل لبيان الممرات والرفوف بالخطوط والألوان.</p>
+            <p class="text-[11px] text-amber-400 font-bold flex items-center justify-center gap-1">
+              <span>💡 المخطط الكروكي موضح بخطوط مستقيمة دقيقة ومقاسات مبينة لتوزيع الرفوف والممرات.</span>
+            </p>
           </div>
 
           <ng-template #noSketchPlaceholder>
             <div class="p-8 text-center space-y-3 text-slate-400">
               <div class="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto text-amber-400">
-                <svg lucideIcon="pen-tool" class="w-7 h-7"></svg>
+                <svg lucideIcon="grid" class="w-7 h-7"></svg>
               </div>
-              <h4 class="font-black text-white text-base">لم يتم رسم كروكي بالخطوط حتى الآن</h4>
+              <h4 class="font-black text-white text-base">لم يتم رسم كروكي بالخطوط المستقيمة حتى الآن</h4>
               <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
-                يمكن لمدير المحل الضغط على زر "رسم بالخطوط والمستطيلات" بالشرائط أعلى الصفحة لرسم تخطيط خطوط المحل وتعيين مكان الرفوف والممرات بسهولة!
+                اضغط على زر "فتح لوحة رسم الخطوط بالنقطتين" لوضع نقطة البداية (A) ونقطة النهاية (B) ليرسم النظام خطاً مستقيماً دقيقاً بينهما!
               </p>
-              <button (click)="openLineCanvasDrawer()" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-2xl text-xs shadow-lg inline-flex items-center gap-2">
+              <button (click)="openLineCanvasDrawer()" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-2xl text-xs shadow-lg inline-flex items-center gap-2 cursor-pointer">
                 <svg lucideIcon="pen-tool" class="w-4 h-4"></svg>
-                <span>بدء رسم كروكي الفرع الآن</span>
+                <span>بدء رسم خطوط المحل دقيقة بالنقطتين</span>
               </button>
             </div>
           </ng-template>
@@ -178,7 +180,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
               </div>
             </div>
 
-            <!-- Simulated Visual Store Map Canvas & Manager Custom Sketch -->
+            <!-- Visual Store Map Representation -->
             <div class="space-y-3">
               <h4 class="font-black text-slate-900 dark:text-white text-base flex items-center gap-2">
                 <svg lucideIcon="map" class="w-5 h-5 text-indigo-600"></svg>
@@ -309,19 +311,10 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
           </div>
         </div>
 
-        <!-- Notes -->
-        <div *ngIf="service.storeLayout().customSketchNotes" class="p-4 bg-amber-50 dark:bg-amber-950/40 rounded-2xl border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 font-bold space-y-1">
-          <p class="font-black flex items-center gap-1.5">
-            <svg lucideIcon="info" class="w-4 h-4 text-amber-500"></svg>
-            <span>إرشادات الإدارة لحركة التسوق:</span>
-          </p>
-          <p class="font-medium text-slate-700 dark:text-slate-300">{{ service.storeLayout().customSketchNotes }}</p>
-        </div>
-
         <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
-          <button (click)="openLineCanvasDrawer()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-2xl shadow-md transition-all flex items-center gap-1.5">
+          <button (click)="openLineCanvasDrawer()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-2xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer">
             <svg lucideIcon="pen-tool" class="w-4 h-4"></svg>
-            <span>✏️ تعديل ومسح الرسم الكروكي بالخطوط</span>
+            <span>📍 فتح رسم الخطوط بالنقطتين A → B</span>
           </button>
 
           <button (click)="openStoreLayoutSketchModal.set(false)" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-2xl shadow-md transition-all">
@@ -332,18 +325,18 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
       </div>
     </div>
 
-    <!-- INTERACTIVE LINE & SHAPE CANVAS DRAWER MODAL -->
-    <div *ngIf="showCanvasDrawer()" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-      <div class="bg-slate-900 rounded-3xl p-6 max-w-3xl w-full font-sans dir-rtl space-y-4 border border-slate-800 shadow-2xl">
+    <!-- PRECISE POINT-TO-POINT STRAIGHT LINE CANVAS DRAWER MODAL -->
+    <div *ngIf="showCanvasDrawer()" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+      <div class="bg-slate-900 rounded-3xl p-6 max-w-4xl w-full font-sans dir-rtl space-y-4 border border-slate-800 shadow-2xl max-h-[95vh] overflow-y-auto custom-scrollbar">
         
         <div class="flex justify-between items-center border-b border-slate-800 pb-3">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-black shrink-0">
-              <svg lucideIcon="pen-tool" class="w-5 h-5"></svg>
+              <svg lucideIcon="navigation" class="w-5 h-5"></svg>
             </div>
             <div>
-              <h3 class="text-lg font-black text-white">رسم كروكي المحل بالخطوط والمستطيلات 📏</h3>
-              <p class="text-xs text-slate-400">ارسم الجدران، الممرات، الرفوف ومواقع الكاشير والمدخل بدقة بالغة</p>
+              <h3 class="text-lg font-black text-white">رسم خطوط مستقيمة دقيقة بتحديد نقطتين A ➔ B 📍</h3>
+              <p class="text-xs text-slate-400">حدد النقطة الأولى A ثم النقطة الثانية B ليرسم النظام خطاً مستقيماً دقيقاً 100% بينهما مع حساب المسافة</p>
             </div>
           </div>
           <button (click)="showCanvasDrawer.set(false)" class="text-slate-400 hover:text-white p-2 rounded-xl">
@@ -351,105 +344,154 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
           </button>
         </div>
 
-        <!-- Drawing Tools Bar (Straight Line, Rectangle, Pencil, Text, Eraser) -->
-        <div class="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-3 text-xs text-white">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <!-- Tool Type Selectors -->
-            <div class="flex flex-wrap items-center gap-1.5">
-              <span class="text-slate-400 font-bold ml-1">أداة الرسم:</span>
+        <!-- Geometric Controls & Mode Bar -->
+        <div class="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-3 text-xs text-white">
+          
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <!-- Line Mode Selector: Two-Point Mode (A->B) vs Drag Mode -->
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-slate-400 font-bold ml-1">طريقة رسم الخط المستقيم:</span>
               
-              <button (click)="activeTool = 'line'"
-                      class="px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5"
-                      [ngClass]="activeTool === 'line' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'">
-                <svg lucideIcon="minus" class="w-4 h-4"></svg>
+              <button (click)="lineMode = 'two_clicks'; cancelPointA();" type="button"
+                      class="px-3.5 py-2 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                      [ngClass]="lineMode === 'two_clicks' ? 'bg-amber-500 text-slate-950 shadow-amber-500/20 ring-2 ring-amber-400' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'">
+                <span>📍 وضع نقطتين (اضغط A ثم اضغط B)</span>
+              </button>
+
+              <button (click)="lineMode = 'drag'; cancelPointA();" type="button"
+                      class="px-3.5 py-2 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                      [ngClass]="lineMode === 'drag' ? 'bg-indigo-600 text-white ring-2 ring-indigo-400' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'">
+                <span>✍️ سحب خط مستقيم من أ لأخرى</span>
+              </button>
+            </div>
+
+            <!-- Orthogonal 90 degree Lock & Clear Controls -->
+            <div class="flex items-center gap-2">
+              <button (click)="orthoMode = !orthoMode" type="button"
+                      class="px-3 py-2 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                      [ngClass]="orthoMode ? 'bg-indigo-600 text-white ring-2 ring-indigo-300' : 'bg-slate-800 text-slate-400'">
+                <span>📐 قفل أفقياً/رأسياً (90°): {{ orthoMode ? 'مفعّل' : 'معطّل' }}</span>
+              </button>
+
+              <button (click)="toggleSnapToGrid()" type="button"
+                      class="px-3 py-2 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                      [ngClass]="snapToGrid ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'">
+                <span>🧲 جذب بالشبكة: {{ snapToGrid ? 'مفعّل' : 'معطّل' }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Secondary Drawing Tools (Straight Line, Rect, Pencil, Text, Eraser) -->
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-slate-800/80">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="text-slate-400 font-bold ml-1">الأداة الفعالة:</span>
+
+              <button (click)="activeTool = 'line'" type="button"
+                      class="px-3 py-1 rounded-lg font-bold text-xs transition-all"
+                      [ngClass]="activeTool === 'line' ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-300'">
                 <span>📏 خط مستقيم</span>
               </button>
 
-              <button (click)="activeTool = 'rect'"
-                      class="px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5"
-                      [ngClass]="activeTool === 'rect' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'">
-                <svg lucideIcon="square" class="w-4 h-4"></svg>
-                <span>⏹️ رف / مستطيل</span>
+              <button (click)="activeTool = 'rect'; cancelPointA();" type="button"
+                      class="px-3 py-1 rounded-lg font-bold text-xs transition-all"
+                      [ngClass]="activeTool === 'rect' ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-300'">
+                <span>⏹️ مستطيل / رف</span>
               </button>
 
-              <button (click)="activeTool = 'pencil'"
-                      class="px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5"
-                      [ngClass]="activeTool === 'pencil' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'">
-                <svg lucideIcon="pencil" class="w-4 h-4"></svg>
+              <button (click)="activeTool = 'pencil'; cancelPointA();" type="button"
+                      class="px-3 py-1 rounded-lg font-bold text-xs transition-all"
+                      [ngClass]="activeTool === 'pencil' ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-300'">
                 <span>✏️ قلم حر</span>
               </button>
 
-              <button (click)="activeTool = 'text'"
-                      class="px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5"
-                      [ngClass]="activeTool === 'text' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'">
-                <svg lucideIcon="type" class="w-4 h-4"></svg>
+              <button (click)="activeTool = 'text'; cancelPointA();" type="button"
+                      class="px-3 py-1 rounded-lg font-bold text-xs transition-all"
+                      [ngClass]="activeTool === 'text' ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-300'">
                 <span>🔤 كتابة نص</span>
               </button>
 
-              <button (click)="activeTool = 'eraser'"
-                      class="px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5"
-                      [ngClass]="activeTool === 'eraser' ? 'bg-rose-600 text-white shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'">
-                <svg lucideIcon="eraser" class="w-4 h-4"></svg>
+              <button (click)="activeTool = 'eraser'; cancelPointA();" type="button"
+                      class="px-3 py-1 rounded-lg font-bold text-xs transition-all"
+                      [ngClass]="activeTool === 'eraser' ? 'bg-rose-600 text-white' : 'bg-slate-800 text-slate-300'">
                 <span>🧹 ممحاة</span>
               </button>
             </div>
 
-            <!-- Clear Canvas Button -->
-            <button (click)="clearCanvas()" class="px-3 py-1.5 bg-rose-950/70 hover:bg-rose-900 text-rose-300 font-bold rounded-xl border border-rose-800/60 transition-all flex items-center gap-1">
-              <svg lucideIcon="rotate-ccw" class="w-3.5 h-3.5"></svg>
-              <span>مسح ورسم جديد</span>
-            </button>
-          </div>
+            <!-- Color Palette & Line Width -->
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-400 font-bold">اللون:</span>
+                <button *ngFor="let c of ['#fbbf24', '#10b981', '#6366f1', '#f43f5e', '#ffffff', '#38bdf8']"
+                        type="button"
+                        (click)="brushColor = c"
+                        class="w-5 h-5 rounded-full border border-slate-700 cursor-pointer"
+                        [style.backgroundColor]="c"
+                        [ngClass]="brushColor === c ? 'scale-125 ring-2 ring-amber-400' : ''"></button>
+              </div>
 
-          <!-- Color Palette & Line Thickness -->
-          <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/80">
-            <!-- Palette Colors -->
-            <div class="flex items-center gap-2">
-              <span class="text-slate-400 font-bold">اللون:</span>
-              <button *ngFor="let c of ['#fbbf24', '#10b981', '#6366f1', '#f43f5e', '#ffffff', '#38bdf8', '#94a3b8']"
-                      (click)="brushColor = c"
-                      class="w-6 h-6 rounded-full border-2 transition-transform cursor-pointer"
-                      [style.backgroundColor]="c"
-                      [ngClass]="brushColor === c ? 'scale-125 border-amber-400 shadow-md' : 'border-slate-700 opacity-80'"></button>
-            </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-400 font-bold">السُمك:</span>
+                <button *ngFor="let s of [2, 4, 8]" type="button" (click)="brushSize = s"
+                        class="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center font-bold text-[11px]"
+                        [ngClass]="brushSize === s ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-300'">
+                  {{ s }}
+                </button>
+              </div>
 
-            <!-- Brush Size -->
-            <div class="flex items-center gap-2">
-              <span class="text-slate-400 font-bold">سُمك الخط:</span>
-              <button *ngFor="let s of [2, 4, 8, 12]" (click)="brushSize = s"
-                      class="w-7 h-7 rounded-xl bg-slate-800 flex items-center justify-center font-bold transition-all"
-                      [ngClass]="brushSize === s ? 'bg-amber-500 text-slate-950 font-black scale-110' : 'text-slate-300'">
-                {{ s }}
+              <button (click)="undoLastAction()" type="button" [disabled]="undoHistory.length <= 1" class="px-3 py-1 bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 disabled:opacity-40 disabled:cursor-not-allowed font-bold rounded-xl border border-indigo-800/60 transition-all text-xs flex items-center gap-1 cursor-pointer">
+                <span>↩️ تراجع خطوة (Undo)</span>
+              </button>
+
+              <button (click)="clearCanvas()" type="button" class="px-3 py-1 bg-rose-950/80 hover:bg-rose-900 text-rose-300 font-bold rounded-xl border border-rose-800/60 transition-all text-xs">
+                مسح الشاشة 🔄
               </button>
             </div>
           </div>
+
+          <!-- Two-Point Status Banner -->
+          <div *ngIf="lineMode === 'two_clicks' && activeTool === 'line'" 
+               class="p-2.5 rounded-xl border text-xs font-bold flex items-center justify-between"
+               [ngClass]="pointA ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300' : 'bg-slate-900 border-slate-800 text-slate-300'">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full animate-ping" [ngClass]="pointA ? 'bg-emerald-400' : 'bg-amber-400'"></span>
+              <span>
+                {{ pointA ? '📍 تم تحديد النقطة (A): اضغط على الخريطة الآن لوضع النقطة (B) ليرسم الخط المستقيم بينهما!' : '📍 اضغط على الخريطة لوضع النقطة الأولى (A)...' }}
+              </span>
+            </div>
+            <button *ngIf="pointA" (click)="cancelPointA()" class="px-2 py-0.5 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 text-[11px]">
+              إلغاء النقطة A
+            </button>
+          </div>
+
         </div>
 
-        <!-- HTML5 Canvas Container with Blueprint Grid -->
-        <div class="relative rounded-2xl overflow-hidden border-2 border-amber-500/40 bg-slate-950 flex justify-center items-center">
+        <!-- Canvas Container with Snap Crosshair & Real-time Line Preview -->
+        <div class="relative rounded-2xl overflow-hidden border-2 border-amber-500/50 bg-slate-950 flex justify-center items-center shadow-2xl">
           <canvas id="inStoreLineCanvas" 
-                  width="680" 
-                  height="400" 
-                  (mousedown)="startDrawing($event)" 
-                  (mousemove)="draw($event)" 
+                  width="760" 
+                  height="440" 
+                  (mousedown)="handleCanvasClick($event)" 
+                  (mousemove)="handleCanvasMouseMove($event)" 
                   (mouseup)="stopDrawing()" 
                   (mouseleave)="stopDrawing()"
-                  (touchstart)="startDrawing($event)" 
-                  (touchmove)="draw($event)" 
+                  (touchstart)="handleCanvasClick($event)" 
+                  (touchmove)="handleCanvasMouseMove($event)" 
                   (touchend)="stopDrawing()"
-                  class="touch-none cursor-crosshair bg-slate-950 block w-full h-[360px] sm:h-[400px]"></canvas>
+                  class="touch-none cursor-crosshair bg-slate-950 block w-full h-[380px] sm:h-[440px]"></canvas>
         </div>
 
         <div class="flex justify-between items-center pt-2">
-          <p class="text-[11px] text-slate-400 font-medium">💡 التمس بالشاشة أو استخدم الماوس لرسم خطوط المحل ثم اضغط "حفظ وتعزيز المخطط".</p>
+          <p class="text-[11px] text-amber-300 font-medium">
+            💡 وضع النقطتين يتيح لك تحديد (Point A) ثم (Point B) ليقوم النظام تلقائياً برسم خط مستقيم هندسي دقيق بـ 100%.
+          </p>
           
           <div class="flex gap-2">
-            <button (click)="showCanvasDrawer.set(false)" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs">
+            <button (click)="showCanvasDrawer.set(false)" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700">
               إلغاء
             </button>
             <button (click)="saveCanvasDrawing()" class="px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer">
               <svg lucideIcon="check" class="w-4 h-4"></svg>
-              <span>حفظ ورسم كروكي الخطوط للمحل</span>
+              <span>حفظ ورسم كروكي الخطوط الهندسية</span>
             </button>
           </div>
         </div>
@@ -467,10 +509,16 @@ export class OmAlQuraInStoreMapComponent {
   openStoreLayoutSketchModal = signal(false);
   showCanvasDrawer = signal(false);
 
-  // Line Drawing Canvas Tools State
+  // Precise Line Drawing & Point-to-Point (A -> B) State
   activeTool: 'line' | 'rect' | 'pencil' | 'text' | 'eraser' = 'line';
+  lineMode: 'two_clicks' | 'drag' = 'two_clicks';
+  orthoMode = false;
+  snapToGrid = true;
+  gridSize = 30; // 30px x 30px equal squares
   brushColor = '#fbbf24';
   brushSize = 3;
+
+  pointA: { x: number; y: number } | null = null;
   private isDrawing = false;
   private startX = 0;
   private startY = 0;
@@ -493,9 +541,106 @@ export class OmAlQuraInStoreMapComponent {
 
   openLineCanvasDrawer() {
     this.showCanvasDrawer.set(true);
+    this.pointA = null;
     setTimeout(() => {
       this.initCanvasGrid();
     }, 100);
+  }
+
+  toggleSnapToGrid() {
+    this.snapToGrid = !this.snapToGrid;
+  }
+
+  cancelPointA() {
+    this.pointA = null;
+    if (this.canvasSnapshot) {
+      const canvas = document.getElementById('inStoreLineCanvas') as HTMLCanvasElement;
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) ctx.putImageData(this.canvasSnapshot, 0, 0);
+      }
+    }
+  }
+
+  // Calculate Snap-to-Grid intersection point
+  private getSnapPoint(x: number, y: number): { x: number, y: number } {
+    if (!this.snapToGrid) return { x: Math.round(x), y: Math.round(y) };
+    const snappedX = Math.round(x / this.gridSize) * this.gridSize;
+    const snappedY = Math.round(y / this.gridSize) * this.gridSize;
+    return { x: snappedX, y: snappedY };
+  }
+
+  // Constrain straight line to strictly grid lines (horizontal/vertical) OR grid square diagonals (45 deg)
+  private constrainLineToGridAndDiagonals(
+    start: { x: number; y: number },
+    target: { x: number; y: number }
+  ): { x: number; y: number } {
+    const dx = target.x - start.x;
+    const dy = target.y - start.y;
+
+    if (dx === 0 && dy === 0) return { x: start.x, y: start.y };
+
+    const angle = Math.atan2(dy, dx);
+    const sectorAngle = Math.PI / 4; // 45 degrees
+    const snappedSector = Math.round(angle / sectorAngle);
+
+    // Normalize sector index to [0..7]
+    const normalizedSector = ((snappedSector % 8) + 8) % 8;
+
+    const isHorizontal = normalizedSector === 0 || normalizedSector === 4;
+    const isVertical = normalizedSector === 2 || normalizedSector === 6;
+
+    const S = this.gridSize;
+
+    if (isHorizontal) {
+      const steps = Math.round(Math.abs(dx) / S);
+      const dirX = Math.sign(dx) || 1;
+      return {
+        x: start.x + dirX * steps * S,
+        y: start.y
+      };
+    } else if (isVertical) {
+      const steps = Math.round(Math.abs(dy) / S);
+      const dirY = Math.sign(dy) || 1;
+      return {
+        x: start.x,
+        y: start.y + dirY * steps * S
+      };
+    } else {
+      // Square diagonal line connecting opposite vertices of grid squares (45°, 135°, 225°, 315°)
+      const avgDist = (Math.abs(dx) + Math.abs(dy)) / 2;
+      const steps = Math.max(1, Math.round(avgDist / S));
+      const dirX = Math.sign(dx) || 1;
+      const dirY = Math.sign(dy) || 1;
+      return {
+        x: start.x + dirX * steps * S,
+        y: start.y + dirY * steps * S
+      };
+    }
+  }
+
+  undoHistory: ImageData[] = [];
+
+  pushUndoState() {
+    const canvas = document.getElementById('inStoreLineCanvas') as HTMLCanvasElement;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    this.undoHistory.push(data);
+    if (this.undoHistory.length > 35) this.undoHistory.shift();
+  }
+
+  undoLastAction() {
+    if (this.undoHistory.length <= 1) return;
+    this.undoHistory.pop();
+    const prevState = this.undoHistory[this.undoHistory.length - 1];
+    const canvas = document.getElementById('inStoreLineCanvas') as HTMLCanvasElement;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (ctx && prevState) {
+      ctx.putImageData(prevState, 0, 0);
+    }
   }
 
   initCanvasGrid() {
@@ -504,43 +649,128 @@ export class OmAlQuraInStoreMapComponent {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    this.undoHistory = [];
+    this.redrawGridBackgroundOnly();
+    this.pushUndoState();
+
     if (this.service.storeLayout().sketchImageUrl) {
       const img = new Image();
       img.onload = () => {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        this.pushUndoState();
+      };
+      img.onerror = () => {
+        this.redrawGridBackgroundOnly();
       };
       img.src = this.service.storeLayout().sketchImageUrl!;
-    } else {
-      this.clearCanvas();
     }
   }
 
-  startDrawing(event: MouseEvent | TouchEvent) {
+  // Canvas Mouse / Touch Click Handler
+  handleCanvasClick(event: MouseEvent | TouchEvent) {
     const canvas = document.getElementById('inStoreLineCanvas') as HTMLCanvasElement;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    this.isDrawing = true;
     const rect = canvas.getBoundingClientRect();
     const clientX = 'touches' in event ? (event as TouchEvent).touches[0].clientX : (event as MouseEvent).clientX;
     const clientY = 'touches' in event ? (event as TouchEvent).touches[0].clientY : (event as MouseEvent).clientY;
 
-    this.startX = (clientX - rect.left) * (canvas.width / rect.width);
-    this.startY = (clientY - rect.top) * (canvas.height / rect.height);
+    const rawX = (clientX - rect.left) * (canvas.width / rect.width);
+    const rawY = (clientY - rect.top) * (canvas.height / rect.height);
+    const pt = this.getSnapPoint(rawX, rawY);
 
     if (this.activeTool === 'text') {
-      const text = prompt('اكتب اسم الرف أو الممر أو العلامة على الخريطة:');
+      const text = prompt('اكتب اسم الرف أو الممر أو العلامة على الخريطة الهندسية:');
       if (text) {
         ctx.fillStyle = this.brushColor;
         ctx.font = `bold ${Math.max(14, this.brushSize * 3)}px sans-serif`;
-        ctx.fillText(text, this.startX, this.startY);
+        ctx.fillText(text, pt.x, pt.y);
+        this.pushUndoState();
       }
-      this.isDrawing = false;
       return;
     }
 
-    // Save snapshot for line / rect previews
+    // TWO-CLICK POINT-TO-POINT STRAIGHT LINE MODE (A -> B)
+    if (this.activeTool === 'line' && this.lineMode === 'two_clicks') {
+      if (!this.pointA) {
+        // Fix Point A
+        this.pointA = { x: pt.x, y: pt.y };
+        this.canvasSnapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        // Draw Point A Indicator Pin
+        ctx.fillStyle = '#10b981';
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('A', pt.x + 8, pt.y - 8);
+      } else {
+        // Point A already set, now Click Point B -> Draw Precise Straight Line
+        let pointB = { x: pt.x, y: pt.y };
+
+        if (this.snapToGrid) {
+          pointB = this.constrainLineToGridAndDiagonals(this.pointA, pointB);
+        } else if (this.orthoMode) {
+          const dx = Math.abs(pointB.x - this.pointA.x);
+          const dy = Math.abs(pointB.y - this.pointA.y);
+          if (dx > dy) {
+            pointB.y = this.pointA.y;
+          } else {
+            pointB.x = this.pointA.x;
+          }
+        }
+
+        // Restore snapshot before drawing final line so point A badge is cleared
+        if (this.canvasSnapshot) ctx.putImageData(this.canvasSnapshot, 0, 0);
+
+        // Draw Straight Line A -> B
+        ctx.lineWidth = this.brushSize;
+        ctx.strokeStyle = this.brushColor;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(this.pointA.x, this.pointA.y);
+        ctx.lineTo(pointB.x, pointB.y);
+        ctx.stroke();
+
+        // Draw Endpoint Dots
+        ctx.fillStyle = this.brushColor;
+        ctx.beginPath();
+        ctx.arc(this.pointA.x, this.pointA.y, 4, 0, Math.PI * 2);
+        ctx.arc(pointB.x, pointB.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Calculate and Draw Length Badge along line
+        const lenPx = Math.hypot(pointB.x - this.pointA.x, pointB.y - this.pointA.y);
+        const meters = (lenPx / 40).toFixed(1); // 40px = 1 meter
+        const midX = (this.pointA.x + pointB.x) / 2;
+        const midY = (this.pointA.y + pointB.y) / 2;
+
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        ctx.fillRect(midX - 22, midY - 14, 44, 18);
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(midX - 22, midY - 14, 44, 18);
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.fillText(`${meters}م`, midX - 14, midY - 1);
+
+        // Save history state after line completion
+        this.pushUndoState();
+
+        // Reset Point A for next line
+        this.pointA = null;
+        this.canvasSnapshot = null;
+      }
+      return;
+    }
+
+    // DRAG LINE OR PENCIL / RECT / ERASER MODES
+    this.isDrawing = true;
+    this.startX = pt.x;
+    this.startY = pt.y;
     this.canvasSnapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
     if (this.activeTool === 'pencil' || this.activeTool === 'eraser') {
@@ -549,13 +779,8 @@ export class OmAlQuraInStoreMapComponent {
     }
   }
 
-  stopDrawing() {
-    this.isDrawing = false;
-    this.canvasSnapshot = null;
-  }
-
-  draw(event: MouseEvent | TouchEvent) {
-    if (!this.isDrawing) return;
+  // Live Canvas Mouse / Touch Motion Handler
+  handleCanvasMouseMove(event: MouseEvent | TouchEvent) {
     const canvas = document.getElementById('inStoreLineCanvas') as HTMLCanvasElement;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -565,10 +790,70 @@ export class OmAlQuraInStoreMapComponent {
     const clientX = 'touches' in event ? (event as TouchEvent).touches[0].clientX : (event as MouseEvent).clientX;
     const clientY = 'touches' in event ? (event as TouchEvent).touches[0].clientY : (event as MouseEvent).clientY;
 
-    const currentX = (clientX - rect.left) * (canvas.width / rect.width);
-    const currentY = (clientY - rect.top) * (canvas.height / rect.height);
+    const rawX = (clientX - rect.left) * (canvas.width / rect.width);
+    const rawY = (clientY - rect.top) * (canvas.height / rect.height);
+    const pt = this.getSnapPoint(rawX, rawY);
+
+    // Live preview for 2-Click Mode when Point A is already placed
+    if (this.activeTool === 'line' && this.lineMode === 'two_clicks' && this.pointA) {
+      if (this.canvasSnapshot) ctx.putImageData(this.canvasSnapshot, 0, 0);
+
+      let currentPt = { x: pt.x, y: pt.y };
+      if (this.snapToGrid) {
+        currentPt = this.constrainLineToGridAndDiagonals(this.pointA, currentPt);
+      } else if (this.orthoMode) {
+        const dx = Math.abs(currentPt.x - this.pointA.x);
+        const dy = Math.abs(currentPt.y - this.pointA.y);
+        if (dx > dy) currentPt.y = this.pointA.y; else currentPt.x = this.pointA.x;
+      }
+
+      // Draw dashed live line preview from A to current mouse position
+      ctx.lineWidth = this.brushSize;
+      ctx.strokeStyle = this.brushColor;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(this.pointA.x, this.pointA.y);
+      ctx.lineTo(currentPt.x, currentPt.y);
+      ctx.stroke();
+      ctx.setLineDash([]); // reset dash
+
+      // Draw Point A Indicator
+      ctx.fillStyle = '#10b981';
+      ctx.beginPath();
+      ctx.arc(this.pointA.x, this.pointA.y, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw current cursor snap dot
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath();
+      ctx.arc(currentPt.x, currentPt.y, 4, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
+
+    if (!this.isDrawing) return;
+
+    let currentX = pt.x;
+    let currentY = pt.y;
 
     if (this.activeTool === 'line') {
+      let constrained = { x: pt.x, y: pt.y };
+      if (this.snapToGrid) {
+        constrained = this.constrainLineToGridAndDiagonals({ x: this.startX, y: this.startY }, { x: pt.x, y: pt.y });
+        currentX = constrained.x;
+        currentY = constrained.y;
+      } else if (this.orthoMode) {
+        const dx = Math.abs(currentX - this.startX);
+        const dy = Math.abs(currentY - this.startY);
+        if (dx > dy) currentY = this.startY; else currentX = this.startX;
+      }
+    } else if (this.orthoMode && this.activeTool === 'rect') {
+      const dx = Math.abs(currentX - this.startX);
+      const dy = Math.abs(currentY - this.startY);
+      if (dx > dy) currentY = this.startY; else currentX = this.startX;
+    }
+
+    if (this.activeTool === 'line' && this.lineMode === 'drag') {
       if (this.canvasSnapshot) ctx.putImageData(this.canvasSnapshot, 0, 0);
       ctx.lineWidth = this.brushSize;
       ctx.strokeStyle = this.brushColor;
@@ -577,11 +862,13 @@ export class OmAlQuraInStoreMapComponent {
       ctx.moveTo(this.startX, this.startY);
       ctx.lineTo(currentX, currentY);
       ctx.stroke();
+
     } else if (this.activeTool === 'rect') {
       if (this.canvasSnapshot) ctx.putImageData(this.canvasSnapshot, 0, 0);
       ctx.lineWidth = this.brushSize;
       ctx.strokeStyle = this.brushColor;
       ctx.strokeRect(this.startX, this.startY, currentX - this.startX, currentY - this.startY);
+
     } else if (this.activeTool === 'pencil') {
       ctx.lineWidth = this.brushSize;
       ctx.strokeStyle = this.brushColor;
@@ -591,9 +878,10 @@ export class OmAlQuraInStoreMapComponent {
       ctx.stroke();
       ctx.beginPath();
       ctx.moveTo(currentX, currentY);
+
     } else if (this.activeTool === 'eraser') {
       ctx.lineWidth = this.brushSize * 4;
-      ctx.strokeStyle = '#090d16';
+      ctx.strokeStyle = '#060a12';
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.lineTo(currentX, currentY);
@@ -603,35 +891,77 @@ export class OmAlQuraInStoreMapComponent {
     }
   }
 
+  stopDrawing() {
+    if (this.isDrawing) {
+      this.isDrawing = false;
+      this.canvasSnapshot = null;
+      this.pushUndoState();
+    }
+  }
+
   clearCanvas() {
     const canvas = document.getElementById('inStoreLineCanvas') as HTMLCanvasElement;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.fillStyle = '#090d16';
+    this.pointA = null;
+    this.redrawGridBackgroundOnly();
+    this.pushUndoState();
+  }
+
+  private redrawGridBackgroundOnly() {
+    const canvas = document.getElementById('inStoreLineCanvas') as HTMLCanvasElement;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Dark blueprint background
+    ctx.fillStyle = '#060a12';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Draw subtle blueprint grid
+    // Equal intersecting grid lines (minor grid)
     ctx.strokeStyle = '#1e293b';
     ctx.lineWidth = 1;
-    for (let x = 0; x < canvas.width; x += 40) {
+
+    for (let x = 0; x <= canvas.width; x += this.gridSize) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, canvas.height);
       ctx.stroke();
     }
-    for (let y = 0; y < canvas.height; y += 40) {
+
+    for (let y = 0; y <= canvas.height; y += this.gridSize) {
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(canvas.width, y);
       ctx.stroke();
     }
 
+    // Major accent grid lines every 4 cells
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 1.5;
+    const majorGrid = this.gridSize * 4;
+
+    for (let x = 0; x <= canvas.width; x += majorGrid) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+
+    for (let y = 0; y <= canvas.height; y += majorGrid) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+
+    // Corner guides text
     ctx.fillStyle = '#fbbf24';
-    ctx.font = 'bold 15px sans-serif';
-    ctx.fillText('🚪 ' + (this.service.storeLayout().storeEntranceLabel || 'المدخل الرئيسي'), 20, 35);
-    ctx.fillText('💵 ' + (this.service.storeLayout().checkoutAreaLabel || 'الكاشير والاستقبال'), canvas.width - 200, 35);
-    ctx.fillText('📦 ' + (this.service.storeLayout().warehouseAreaLabel || 'المخزن الخلفي'), canvas.width - 200, canvas.height - 25);
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('🚪 ' + (this.service.storeLayout().storeEntranceLabel || 'المدخل الرئيسي'), 15, 25);
+    ctx.fillText('💵 ' + (this.service.storeLayout().checkoutAreaLabel || 'الكاشير والاستقبال'), canvas.width - 200, 25);
+    ctx.fillText('📦 ' + (this.service.storeLayout().warehouseAreaLabel || 'المخزن الداخلي'), canvas.width - 200, canvas.height - 15);
   }
 
   saveCanvasDrawing() {
