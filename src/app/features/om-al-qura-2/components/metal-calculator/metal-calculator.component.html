@@ -1,0 +1,361 @@
+<!-- METAL WEIGHT & PRICE CALCULATOR MODAL -->
+<div 
+  *ngIf="isOpen()"
+  class="calc-modal-backdrop animate-in fade-in duration-200"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="calc-modal-title">
+
+  <div class="calc-modal-container bg-white dark:bg-slate-900 p-5 sm:p-7 space-y-5 border border-amber-500/40 shadow-2xl animate-in zoom-in-95 duration-200 custom-scrollbar">
+    
+    <!-- MODAL HEADER -->
+    <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-500/20 text-amber-500 flex items-center justify-center font-black shrink-0">
+          <svg lucideIcon="calculator" class="w-6 h-6"></svg>
+        </div>
+        <div>
+          <h3 id="calc-modal-title" class="text-base sm:text-xl font-black text-slate-900 dark:text-white">🧮 حاسبة أوزان وأسعار خامات المعادن الرسمية</h3>
+          <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5">حسابات دقيقة للمواصفات الرسمية لمصنع محمود عرفة وتوليد عروض أسعار PDF</p>
+        </div>
+      </div>
+
+      <button 
+        (click)="onClose()" 
+        type="button" 
+        aria-label="إغلاق حاسبة الأوزان"
+        class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-colors">
+        <svg lucideIcon="x" class="w-5 h-5"></svg>
+      </button>
+    </div>
+
+    <!-- INTERACTIVE 3D/ISOMETRIC SVG DIAGRAM DISPLAY -->
+    <div class="p-3 sm:p-4 bg-slate-950 rounded-2xl border border-amber-500/40 shadow-inner flex flex-col items-center justify-center relative overflow-hidden">
+      <div class="absolute top-2 right-3 text-[10px] font-black text-amber-400/80 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+        مجسم هندسي ثلاثي الأبعاد 3D (تفاعلي)
+      </div>
+
+      <!-- 1. SHEET / PLATE 3D SVG -->
+      <div *ngIf="calcForm.get('shapeId')?.value === 'sheet'" class="w-full flex justify-center py-1">
+        <svg viewBox="0 0 200 110" class="w-60 sm:w-64 h-28 text-amber-400 stroke-current fill-none stroke-[2] drop-shadow-lg">
+          <path d="M 30 45 L 120 18 L 170 45 L 80 72 Z" class="fill-amber-500/20 stroke-amber-400 stroke-2" />
+          <path d="M 30 45 L 30 60 L 80 87 L 80 72 Z" class="fill-amber-600/40 stroke-amber-500 stroke-2" />
+          <path d="M 80 72 L 80 87 L 170 60 L 170 45 Z" class="fill-amber-700/50 stroke-amber-500 stroke-2" />
+          <text x="45" y="28" class="text-[10px] font-black fill-amber-300 stroke-none">L = {{ calcForm.get('lengthM')?.value || 0 }} م</text>
+          <text x="135" y="70" class="text-[10px] font-black fill-amber-300 stroke-none">W = {{ calcForm.get('widthCm')?.value || 0 }} سم</text>
+          <text x="5" y="65" class="text-[9px] font-black fill-orange-400 stroke-none">T = {{ calcForm.get('thicknessMm')?.value || 0 }} مم</text>
+        </svg>
+      </div>
+
+      <!-- 2. SOLID ROUND BAR 3D SVG -->
+      <div *ngIf="calcForm.get('shapeId')?.value === 'bar'" class="w-full flex justify-center py-1">
+        <svg viewBox="0 0 200 110" class="w-60 sm:w-64 h-28 text-amber-400 stroke-current fill-none stroke-[2] drop-shadow-lg">
+          <path d="M 40 40 C 40 25, 70 25, 70 40 C 70 55, 40 55, 40 40 Z" class="fill-amber-500/30 stroke-amber-400 stroke-2" />
+          <path d="M 40 40 L 140 70 C 140 85, 170 85, 170 70 L 70 40" class="fill-amber-600/20 stroke-amber-500 stroke-2" />
+          <path d="M 140 70 C 140 55, 170 55, 170 70 C 170 85, 140 85, 140 70 Z" class="fill-amber-500/40 stroke-amber-400 stroke-2" />
+          <text x="75" y="42" class="text-[10px] font-black fill-amber-300 stroke-none">L = {{ calcForm.get('lengthM')?.value || 0 }} م</text>
+          <text x="130" y="98" class="text-[10px] font-black fill-orange-400 stroke-none">D = {{ calcForm.get('outerDiameterMm')?.value || 0 }} مم</text>
+        </svg>
+      </div>
+
+      <!-- 3. ROUND TUBE 3D SVG -->
+      <div *ngIf="calcForm.get('shapeId')?.value === 'tube'" class="w-full flex justify-center py-1">
+        <svg viewBox="0 0 200 110" class="w-60 sm:w-64 h-28 text-amber-400 stroke-current fill-none stroke-[2] drop-shadow-lg">
+          <ellipse cx="45" cy="40" rx="22" ry="16" class="fill-amber-500/20 stroke-amber-400 stroke-2" />
+          <ellipse cx="45" cy="40" rx="14" ry="10" class="fill-slate-950 stroke-amber-500 stroke-2" />
+          <path d="M 23 40 L 133 75" class="stroke-amber-400 stroke-2" />
+          <path d="M 67 40 L 177 75" class="stroke-amber-400 stroke-2" />
+          <ellipse cx="155" cy="75" rx="22" ry="16" class="fill-amber-500/30 stroke-amber-400 stroke-2" />
+          <ellipse cx="155" cy="75" rx="14" ry="10" class="fill-slate-950 stroke-amber-500 stroke-2" />
+          <text x="85" y="48" class="text-[10px] font-black fill-amber-300 stroke-none">L = {{ calcForm.get('lengthM')?.value || 0 }} م</text>
+          <text x="115" y="102" class="text-[9px] font-black fill-amber-300 stroke-none">OD = {{ calcForm.get('outerDiameterMm')?.value || 0 }} مم</text>
+          <text x="10" y="22" class="text-[9px] font-black fill-orange-400 stroke-none">T = {{ calcForm.get('thicknessMm')?.value || 0 }} مم</text>
+        </svg>
+      </div>
+
+      <!-- 4. L-SHAPE ANGLE 3D SVG -->
+      <div *ngIf="calcForm.get('shapeId')?.value === 'angle'" class="w-full flex justify-center py-1">
+        <svg viewBox="0 0 200 110" class="w-60 sm:w-64 h-28 text-amber-400 stroke-current fill-none stroke-[2] drop-shadow-lg">
+          <path d="M 30 25 L 30 75 L 70 75 L 70 60 L 45 60 L 45 25 Z" class="fill-amber-500/30 stroke-amber-400 stroke-2" />
+          <path d="M 30 25 L 120 10 L 135 45 L 45 60 Z" class="fill-amber-600/20 stroke-amber-500 stroke-2" />
+          <path d="M 70 75 L 160 60 L 160 45 L 70 60 Z" class="fill-amber-700/30 stroke-amber-500 stroke-2" />
+          <text x="65" y="20" class="text-[10px] font-black fill-amber-300 stroke-none">L = {{ calcForm.get('lengthM')?.value || 0 }} م</text>
+          <text x="5" y="55" class="text-[9px] font-black fill-orange-400 stroke-none">Leg1 = {{ calcForm.get('leg1Cm')?.value || 0 }} سم</text>
+          <text x="75" y="92" class="text-[9px] font-black fill-amber-300 stroke-none">Leg2 = {{ calcForm.get('leg2Cm')?.value || 0 }} سم</text>
+          <text x="145" y="70" class="text-[9px] font-black fill-amber-400 stroke-none">T = {{ calcForm.get('thicknessMm')?.value || 0 }} مم</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- REACTION INPUT FORM FIELDS -->
+    <form [formGroup]="calcForm" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5" (ngSubmit)="$event.preventDefault()">
+      
+      <!-- 1. METAL TYPE -->
+      <div>
+        <label for="metalId" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">نوع المعدن (Metal Type):</label>
+        <select 
+          id="metalId" 
+          formControlName="metalId" 
+          (change)="onMetalChange()"
+          class="calc-input-field bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+          <option *ngFor="let m of calcService.metalsList" [value]="m.id">{{ m.name }} (كثافة: {{ m.density }} جم/سم³)</option>
+        </select>
+      </div>
+
+      <!-- 2. METAL SHAPE -->
+      <div>
+        <label for="shapeId" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">شكل القطاع (Metal Shape):</label>
+        <select 
+          id="shapeId" 
+          formControlName="shapeId" 
+          (change)="onShapeChange()"
+          class="calc-input-field bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+          <option *ngFor="let s of calcService.shapesList" [value]="s.id">{{ s.name }}</option>
+        </select>
+      </div>
+
+      <!-- DYNAMIC INPUT: LENGTH (ALWAYS REQUIRED) -->
+      <div>
+        <label for="lengthM" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">الطول (متر m):</label>
+        <input 
+          id="lengthM" 
+          type="number" 
+          formControlName="lengthM" 
+          min="0.01" 
+          step="0.1" 
+          [class.is-invalid]="isInvalid('lengthM')"
+          aria-describedby="lengthM-error"
+          class="calc-input-field bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+        <p *ngIf="isInvalid('lengthM')" id="lengthM-error" class="text-[11px] text-red-500 font-bold mt-1 flex items-center gap-1">
+          ⚠️ يرجى إدخال طول موجب أكبر من صفر
+        </p>
+      </div>
+
+      <!-- DYNAMIC INPUT: WIDTH (SHEET ONLY) -->
+      <div *ngIf="calcForm.get('shapeId')?.value === 'sheet'">
+        <label for="widthCm" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">العرض (سم cm):</label>
+        <input 
+          id="widthCm" 
+          type="number" 
+          formControlName="widthCm" 
+          min="0.01" 
+          step="1" 
+          [class.is-invalid]="isInvalid('widthCm')"
+          aria-describedby="widthCm-error"
+          class="calc-input-field bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+        <p *ngIf="isInvalid('widthCm')" id="widthCm-error" class="text-[11px] text-red-500 font-bold mt-1 flex items-center gap-1">
+          ⚠️ يرجى إدخال عرض موجب أكبر من صفر
+        </p>
+      </div>
+
+      <!-- DYNAMIC INPUT: THICKNESS (SHEET, TUBE, ANGLE) -->
+      <div *ngIf="['sheet', 'tube', 'angle'].includes(calcForm.get('shapeId')?.value)">
+        <label for="thicknessMm" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+          {{ calcForm.get('shapeId')?.value === 'tube' ? 'سماكة الجدار (مم mm)' : 'السماكة (مم mm)' }}:
+        </label>
+        <input 
+          id="thicknessMm" 
+          type="number" 
+          formControlName="thicknessMm" 
+          min="0.01" 
+          step="0.5" 
+          [class.is-invalid]="isInvalid('thicknessMm')"
+          aria-describedby="thicknessMm-error"
+          class="calc-input-field bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+        <p *ngIf="isInvalid('thicknessMm')" id="thicknessMm-error" class="text-[11px] text-red-500 font-bold mt-1 flex items-center gap-1">
+          ⚠️ يرجى إدخال سماكة موجبة أكبر من صفر
+        </p>
+      </div>
+
+      <!-- DYNAMIC INPUT: DIAMETER (BAR & TUBE) -->
+      <div *ngIf="['bar', 'tube'].includes(calcForm.get('shapeId')?.value)">
+        <label for="outerDiameterMm" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+          {{ calcForm.get('shapeId')?.value === 'tube' ? 'القطر الخارجي (مم mm)' : 'القطر (مم mm)' }}:
+        </label>
+        <input 
+          id="outerDiameterMm" 
+          type="number" 
+          formControlName="outerDiameterMm" 
+          min="0.01" 
+          step="1" 
+          [class.is-invalid]="isInvalid('outerDiameterMm')"
+          aria-describedby="outerDiameterMm-error"
+          class="calc-input-field bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+        <p *ngIf="isInvalid('outerDiameterMm')" id="outerDiameterMm-error" class="text-[11px] text-red-500 font-bold mt-1 flex items-center gap-1">
+          ⚠️ يرجى إدخال قطر موجب أكبر من صفر
+        </p>
+      </div>
+
+      <!-- DYNAMIC INPUTS: ANGLE LEGS -->
+      <div *ngIf="calcForm.get('shapeId')?.value === 'angle'">
+        <label for="leg1Cm" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">عرض الجناح الأول (سم cm):</label>
+        <input 
+          id="leg1Cm" 
+          type="number" 
+          formControlName="leg1Cm" 
+          min="0.01" 
+          step="0.5" 
+          [class.is-invalid]="isInvalid('leg1Cm')"
+          aria-describedby="leg1Cm-error"
+          class="calc-input-field bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+        <p *ngIf="isInvalid('leg1Cm')" id="leg1Cm-error" class="text-[11px] text-red-500 font-bold mt-1 flex items-center gap-1">
+          ⚠️ يرجى إدخال عرض جناح موجب
+        </p>
+      </div>
+
+      <div *ngIf="calcForm.get('shapeId')?.value === 'angle'">
+        <label for="leg2Cm" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">عرض الجناح الثاني (سم cm):</label>
+        <input 
+          id="leg2Cm" 
+          type="number" 
+          formControlName="leg2Cm" 
+          min="0.01" 
+          step="0.5" 
+          [class.is-invalid]="isInvalid('leg2Cm')"
+          aria-describedby="leg2Cm-error"
+          class="calc-input-field bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+        <p *ngIf="isInvalid('leg2Cm')" id="leg2Cm-error" class="text-[11px] text-red-500 font-bold mt-1 flex items-center gap-1">
+          ⚠️ يرجى إدخال عرض جناح موجب
+        </p>
+      </div>
+
+      <!-- INPUT: PRICE PER KG (LOCKED FOR CUSTOMER, EDITABLE FOR ADMIN) -->
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label for="pricePerKg" class="block text-xs font-bold text-slate-700 dark:text-slate-300">سعر الكيلو الرسمي (EGP/kg):</label>
+          
+          <span 
+            *ngIf="!isAdmin()" 
+            class="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 flex items-center gap-1">
+            🔒 محدد رسمياً من المصنع
+          </span>
+
+          <span 
+            *ngIf="isAdmin()" 
+            class="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20 flex items-center gap-1">
+            ✏️ مسموح للتعديل (وضع الأدمن)
+          </span>
+        </div>
+
+        <input 
+          id="pricePerKg" 
+          type="number" 
+          formControlName="pricePerKg" 
+          min="0.01" 
+          step="5" 
+          [readonly]="!isAdmin()"
+          [class.cursor-not-allowed]="!isAdmin()"
+          [class.opacity-80]="!isAdmin()"
+          [class.is-invalid]="isInvalid('pricePerKg')"
+          aria-describedby="pricePerKg-error"
+          class="calc-input-field bg-slate-50 dark:bg-slate-800 border border-amber-500/40 text-amber-600 dark:text-amber-400 font-black">
+
+        <p *ngIf="!isAdmin()" class="text-[10px] text-slate-500 font-medium mt-1">
+          💡 السعر محدد تلقائياً حسب نوع الخامة من إدارة المصنع.
+        </p>
+        <p *ngIf="isInvalid('pricePerKg')" id="pricePerKg-error" class="text-[11px] text-red-500 font-bold mt-1 flex items-center gap-1">
+          ⚠️ يرجى إدخال سعر كيلو موجب أكبر من صفر
+        </p>
+      </div>
+
+      <!-- INPUT: QUANTITY -->
+      <div>
+        <label for="quantity" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">الكمية المطلوب حسابها (قطع):</label>
+        <input 
+          id="quantity" 
+          type="number" 
+          formControlName="quantity" 
+          min="1" 
+          step="1" 
+          [class.is-invalid]="isInvalid('quantity')"
+          aria-describedby="quantity-error"
+          class="calc-input-field bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+        <p *ngIf="isInvalid('quantity')" id="quantity-error" class="text-[11px] text-red-500 font-bold mt-1 flex items-center gap-1">
+          ⚠️ يرجى إدخال كمية سليمة لا تقل عن 1
+        </p>
+      </div>
+
+      <!-- OPTIONAL: CUSTOMER / ENGINEER NAME FOR PDF QUOTE -->
+      <div class="sm:col-span-2">
+        <label for="customerQuoteName" class="block text-xs font-bold text-amber-600 dark:text-amber-400 mb-1">👤 اسم العميل / المهندس / الشركة (طباعة في عرض السعر PDF):</label>
+        <input 
+          id="customerQuoteName" 
+          type="text" 
+          formControlName="customerQuoteName" 
+          placeholder="مثال: م. أحمد مصطفى / شركة المقاولات الهندسية..." 
+          class="calc-input-field bg-slate-50 dark:bg-slate-800 border border-amber-500/40 text-slate-900 dark:text-white placeholder-slate-400">
+      </div>
+    </form>
+
+    <!-- RESULTS CARD (HIGH CONTRAST AMBER/ORANGE) -->
+    <div *ngIf="calculationResult() as res; else invalidResultState" class="p-4 bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-amber-600/15 border-2 border-amber-500/50 rounded-2xl space-y-3 shadow-md">
+      <div class="grid grid-cols-2 gap-3 text-center">
+        <div class="p-3 bg-white/90 dark:bg-slate-950/80 rounded-xl border border-amber-500/30">
+          <span class="text-[11px] font-bold text-slate-600 dark:text-slate-400 block">⚖️ الوزن الإجمالي (Weight):</span>
+          <p class="text-2xl font-black text-amber-600 dark:text-amber-400 mt-0.5">{{ res.totalWeightKg }} كجم</p>
+          <p class="text-[10px] font-bold text-slate-500">({{ res.totalWeightTons }} طن متري)</p>
+        </div>
+
+        <div class="p-3 bg-white/90 dark:bg-slate-950/80 rounded-xl border border-amber-500/30">
+          <span class="text-[11px] font-bold text-slate-600 dark:text-slate-400 block">💰 السعر الإجمالي (Price):</span>
+          <p class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">{{ res.totalPriceEgp }} ج.م</p>
+          <p class="text-[10px] font-bold text-slate-500">({{ calcForm.get('pricePerKg')?.value || 0 }} ج.م/كجم)</p>
+        </div>
+      </div>
+
+      <div class="text-xs text-slate-800 dark:text-slate-200 font-bold border-t border-amber-500/30 pt-2 text-center">
+        ملخص القطاع: {{ res.metal.name }} • {{ res.shape.name }} (العدد: {{ res.quantity }} قطعة)
+      </div>
+    </div>
+
+    <!-- Invalid Result Fallback -->
+    <ng-template #invalidResultState>
+      <div class="p-4 bg-red-500/10 border border-red-500/30 rounded-2xl text-center text-red-500 text-xs font-bold">
+        ⚠️ يرجى التأكد من استكمال كافة البيانات وتصحيح القيم السالبة لحساب الوزن والسعر الإجمالي.
+      </div>
+    </ng-template>
+
+    <!-- ACTION BUTTONS GRID -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+      <!-- 1. ADD TO ORDER / CART -->
+      <button 
+        (click)="addCalculatedItemToCart()" 
+        type="button" 
+        [disabled]="calcForm.invalid"
+        class="py-3 px-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs rounded-2xl shadow-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
+        <svg lucideIcon="shopping-cart" class="w-4 h-4"></svg>
+        <span>🛒 إضافة لطلب التوريد</span>
+      </button>
+
+      <!-- 2. EXPORT OFFICIAL PDF QUOTE -->
+      <button 
+        (click)="exportCalculatorPdf()" 
+        type="button" 
+        [disabled]="calcForm.invalid"
+        class="py-3 px-3 bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-500/40 font-black text-xs rounded-2xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
+        <svg lucideIcon="file-text" class="w-4 h-4 text-amber-400"></svg>
+        <span>📄 تحميل كعرض سعر (PDF)</span>
+      </button>
+
+      <!-- 3. SMART WHATSAPP DISCOUNT LINK -->
+      <button 
+        (click)="sendCalculatorToWhatsApp()" 
+        type="button" 
+        [disabled]="calcForm.invalid"
+        class="py-3 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs rounded-2xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
+        <svg lucideIcon="message-circle" class="w-4 h-4"></svg>
+        <span>💬 واتساب لمناقشة الخصم</span>
+      </button>
+    </div>
+
+    <!-- MODAL FOOTER -->
+    <div class="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800">
+      <button 
+        (click)="onClose()" 
+        type="button" 
+        class="py-2.5 px-6 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-2xl transition-all cursor-pointer">
+        إغلاق
+      </button>
+    </div>
+  </div>
+</div>

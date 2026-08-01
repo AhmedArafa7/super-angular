@@ -66,6 +66,16 @@ export const routes: Routes = [
     loadComponent: () => import('./features/om-al-qura/om-al-qura-home.component').then(c => c.OmAlQuraHomeComponent),
     title: 'متجر أم القرى الإلكتروني'
   },
+  {
+    path: 'om-al-qura-2',
+    loadComponent: () => import('./features/om-al-qura-2/om-al-qura-2-home.component').then(c => c.OmAlQura2HomeComponent),
+    title: 'مصنع محمود عرفه للمعادن'
+  },
+  {
+    path: 'mahmoud-arafa',
+    loadComponent: () => import('./features/om-al-qura-2/om-al-qura-2-home.component').then(c => c.OmAlQura2HomeComponent),
+    title: 'مصنع محمود عرفه للمعادن'
+  },
 
   { path: '**', redirectTo: '/launcher' }
 ];

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { LucideAngularModule, Bell } from 'lucide-angular';
 import { WeTubeService } from '../../../wetube.service';
+import { getInitialAvatarSvg } from '../../../../../core/services/button-inspector.service';
 
 @Component({
   selector: 'app-subscription-bar',
@@ -27,6 +28,18 @@ export class SubscriptionBarComponent {
 
   isMuted(channelId: string): boolean {
     return this.mutedChannels().has(channelId);
+  }
+
+  getAvatarUrl(sub: any): string {
+    if (sub.avatarUrl && sub.avatarUrl.startsWith('http') && !sub.avatarUrl.includes('ui-avatars.com')) {
+      return sub.avatarUrl;
+    }
+    return getInitialAvatarSvg(sub.channelTitle || 'Channel');
+  }
+
+  onAvatarError(event: Event, sub: any) {
+    const imgEl = event.target as HTMLImageElement;
+    imgEl.src = getInitialAvatarSvg(sub.channelTitle || 'Channel');
   }
 
   onBellClick(event: Event, channelId: string) {

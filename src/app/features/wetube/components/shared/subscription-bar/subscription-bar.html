@@ -27,13 +27,12 @@
            [title]="sub.channelTitle">
         
         <!-- Avatar -->
-        <div class="sub-avatar w-8 h-8 rounded-full border border-white/10 bg-slate-800 flex items-center justify-center overflow-hidden shrink-0 group-hover:scale-105 transition-transform"
-             [style.background-image]="sub.avatarUrl ? 'url(' + sub.avatarUrl + ')' : 'none'"
-             style="background-size: cover; background-position: center;">
-          @if (!sub.avatarUrl) {
-            <span class="text-xs font-bold text-white">{{ trackSubAvatar(sub.channelTitle) }}</span>
-          }
-        </div>
+        <img 
+          [src]="getAvatarUrl(sub)" 
+          (error)="onAvatarError($event, sub)" 
+          [alt]="sub.channelTitle" 
+          class="sub-avatar w-8 h-8 rounded-full border border-white/10 bg-slate-800 object-cover shrink-0 group-hover:scale-105 transition-transform"
+        >
         
         <!-- Title -->
         <span class="sub-name text-xs font-bold text-slate-300 flex-1 truncate group-hover:text-white transition-colors"

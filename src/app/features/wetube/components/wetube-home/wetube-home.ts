@@ -13,6 +13,7 @@ import {
   HardDrive, Play, Folder, FileText, Image as ImageIcon, FileAudio, Plus, Download, Compass, Layers 
 } from 'lucide-angular';
 import { IndexedDBService } from '../../../../core/services/indexed-db.service';
+import { getInitialAvatarSvg } from '../../../../core/services/button-inspector.service';
 import { EncryptionService } from '../../../../core/services/encryption.service';
 import { VaultService } from '../../../../core/vault.service';
 import { VideoDownloadService } from '../../../../core/services/video-download.service';
@@ -461,7 +462,7 @@ export class WeTubeHomeComponent implements OnInit {
   }
 
   getAvatarUrl(video: any): string {
-    if (video.channelAvatar) return video.channelAvatar;
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(video.author || 'Channel')}&background=random&color=fff`;
+    if (video.channelAvatar && video.channelAvatar.startsWith('http')) return video.channelAvatar;
+    return getInitialAvatarSvg(video.author || 'Channel');
   }
 }

@@ -5,6 +5,7 @@ import { VideoStateService } from '../../../../core/services/video-state.service
 import { IndexedDBService } from '../../../../core/services/indexed-db.service';
 import { FirebaseService } from '../../../../core/services/firebase.service';
 import { VideoDownloadService } from '../../../../core/services/video-download.service';
+import { getInitialAvatarSvg } from '../../../../core/services/button-inspector.service';
 
 @Component({
   selector: 'app-video-card',
@@ -140,13 +141,13 @@ export class VideoCardComponent {
 
   getAvatarUrl(): string {
     const v = this.video();
-    if (v.channelAvatar) return v.channelAvatar;
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(v.author || 'Channel')}&background=random&color=fff`;
+    if (v.channelAvatar && v.channelAvatar.startsWith('http')) return v.channelAvatar;
+    return getInitialAvatarSvg(v.author || 'Channel');
   }
 
   onAvatarError(event: Event) {
     const imgEl = event.target as HTMLImageElement;
-    imgEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(this.video().author || 'Channel')}&background=random&color=fff`;
+    imgEl.src = getInitialAvatarSvg(this.video().author || 'Channel');
   }
 
   isWatched(): boolean {

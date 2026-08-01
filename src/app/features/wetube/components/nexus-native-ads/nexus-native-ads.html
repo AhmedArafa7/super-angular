@@ -5,7 +5,7 @@
     <div class="ad-info">
       <h4>{{ currentAd.title }}</h4>
       <p>{{ currentAd.description }}</p>
-      <a [href]="currentAd.url" target="_blank" class="ad-cta">
+      <a [href]="currentAd.url" (click)="onAdClick(currentAd, $event)" target="_blank" class="ad-cta">
         <span>{{ currentAd.cta }}</span>
         <lucide-icon [img]="ExternalLink"></lucide-icon>
       </a>

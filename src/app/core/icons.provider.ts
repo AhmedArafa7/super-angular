@@ -11,7 +11,8 @@ import {
   PanelLeft, PanelRight, PanelTop, PanelBottom, Orbit, MoreVertical, ChevronLeft,
   Flame, Plus, ShoppingBag, Receipt, Minus, Trash2, Loader2, Croissant, Coffee,
   Monitor, Edit, CheckCircle2, CheckSquare, Check, UploadCloud, FileText,
-  Terminal, Code2, Server, Key, Wifi, WifiOff, Unlink, AlertCircle, RefreshCw
+  Terminal, Code2, Server, Key, Wifi, WifiOff, Unlink, AlertCircle, RefreshCw,
+  Globe, Link, BookmarkPlus, Github
 } from 'lucide-angular';
 
 import { 
@@ -27,7 +28,8 @@ import {
   LucidePanelLeft, LucidePanelRight, LucidePanelTop, LucidePanelBottom, LucideOrbit, LucideMoreVertical, LucideChevronLeft,
   LucideFlame, LucidePlus, LucideShoppingBag, LucideReceipt, LucideMinus, LucideTrash2, LucideLoader2, LucideCroissant, LucideCoffee,
   LucideMonitor, LucideEdit, LucideCheckCircle2, LucideCheckSquare, LucideCheck, LucideUploadCloud, LucideFileText,
-  LucideTerminal, LucideCode2, LucideServer, LucideKey, LucideWifi, LucideWifiOff, LucideUnlink, LucideAlertCircle, LucideRefreshCw
+  LucideTerminal, LucideCode2, LucideServer, LucideKey, LucideWifi, LucideWifiOff, LucideUnlink, LucideAlertCircle, LucideRefreshCw,
+  LucideGlobe, LucideLink, LucideBookmarkPlus
 } from '@lucide/angular';
 
 export const provideLucideIcons = () => {
@@ -125,7 +127,11 @@ export const provideLucideIcons = () => {
         WifiOff,
         Unlink,
         AlertCircle,
-        RefreshCw
+        RefreshCw,
+        Globe,
+        Link,
+        BookmarkPlus,
+        Github
       })
     ),
     provideNewLucideIcons(
@@ -219,7 +225,10 @@ export const provideLucideIcons = () => {
       LucideWifiOff,
       LucideUnlink,
       LucideAlertCircle,
-      LucideRefreshCw
+      LucideRefreshCw,
+      LucideGlobe,
+      LucideLink,
+      LucideBookmarkPlus
     )
   ];
 };

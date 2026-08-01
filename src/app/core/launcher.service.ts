@@ -78,7 +78,7 @@ export class LauncherService {
   }
 
   // Add listing application request
-  async submitAppRequest(title: string, url: string, description: string, framework: AppFramework, thumbnail?: string): Promise<void> {
+  async submitAppRequest(title: string, url: string, description: string, framework: AppFramework, thumbnail?: string, status: AppStatus = 'approved'): Promise<WebProject> {
     const newAppData = {
       title: title.trim(),
       url: url.trim(),
@@ -89,7 +89,7 @@ export class LauncherService {
       thumbnail: thumbnail || 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=600&auto=format&fit=crop',
       authorId: this.firebaseService.getUserId() || 'me',
       authorName: 'مستخدم نكسوس',
-      status: 'pending' as AppStatus,
+      status,
       createdAt: new Date().toISOString()
     };
 
@@ -98,11 +98,13 @@ export class LauncherService {
       const newApp: WebProject = { id: docRef.id, ...newAppData };
       this.apps.update(list => [newApp, ...list]);
       this.saveState();
+      return newApp;
     } catch (error) {
       console.error("Failed to submit app request to Firebase:", error);
       const newAppLocal: WebProject = { id: `app_${Math.random().toString(36).substr(2, 9)}`, ...newAppData };
       this.apps.update(list => [newAppLocal, ...list]);
       this.saveState();
+      return newAppLocal;
     }
   }
 

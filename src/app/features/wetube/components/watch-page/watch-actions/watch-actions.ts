@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, ThumbsUp, ThumbsDown, Share2, Download, Plus, Scissors, Flag, VolumeX, CheckCircle } from 'lucide-angular';
 import { WeTubeService } from '../../../wetube.service';
+import { getInitialAvatarSvg } from '../../../../../core/services/button-inspector.service';
 
 @Component({
   selector: 'app-watch-actions',
@@ -66,7 +67,7 @@ export class WatchActionsComponent {
       }
     }
 
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(this.channelName || 'Channel')}&background=10b981&color=fff`;
+    return getInitialAvatarSvg(this.channelName || 'Channel', '#10b981');
   }
   
   @Output() like = new EventEmitter<void>();

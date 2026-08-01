@@ -2,55 +2,55 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideDynamicIcon } from '@lucide/angular';
-import { OmAlQuraService, OmAlQuraProduct, OmAlQuraOrder, OmAlQuraOrderItem, OmAlQuraCustomerDebt } from '../../../core/services/om-al-qura.service';
+import { OmAlQura2Service, OmAlQura2Product, OmAlQura2Order, OmAlQura2OrderItem, OmAlQura2CustomerDebt } from '../../../core/services/om-al-qura-2.service';
 import { ImageFallbackDirective } from '../../../shared/directives/image-fallback.directive';
 
 @Component({
-  selector: 'app-om-al-qura-staff-portal',
+  selector: 'app-om-al-qura-2-staff-portal',
   standalone: true,
   imports: [CommonModule, FormsModule, LucideDynamicIcon, ImageFallbackDirective],
   template: `
     <div class="space-y-8 font-sans" dir="rtl">
       
-      <!-- Top Overview Bar -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-3xl p-5 shadow-lg flex items-center justify-between">
+      <!-- Top Overview Bar for Metals Factory -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 font-sans">
+        <div class="bg-gradient-to-br from-slate-900 via-zinc-900 to-amber-950 text-white rounded-3xl p-5 shadow-lg flex items-center justify-between border border-amber-500/30">
           <div>
-            <p class="text-xs text-emerald-100 font-bold mb-1">الموظفون على رأس العمل</p>
-            <h3 class="text-3xl font-black">{{ clockedInEmployeesCount() }} / {{ service.employees().length }}</h3>
+            <p class="text-xs text-amber-200/80 font-bold mb-1">المهندسون والعمال على رأس العمل</p>
+            <h3 class="text-3xl font-black text-white">{{ clockedInEmployeesCount() }} / {{ service.employees().length }}</h3>
           </div>
-          <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
-            <svg lucideIcon="user-check" class="w-6 h-6 text-white"></svg>
+          <div class="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center backdrop-blur-md border border-amber-400/30">
+            <svg lucideIcon="user-check" class="w-6 h-6 text-amber-400"></svg>
           </div>
         </div>
 
-        <div class="bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-3xl p-5 shadow-lg flex items-center justify-between">
+        <div class="bg-gradient-to-br from-amber-600 to-amber-700 text-slate-950 rounded-3xl p-5 shadow-lg flex items-center justify-between">
           <div>
-            <p class="text-xs text-amber-100 font-bold mb-1">طلبات واشعارات جديدة</p>
-            <h3 class="text-3xl font-black">{{ service.newNotificationsCount() }}</h3>
+            <p class="text-xs text-slate-950 font-black mb-1">طلبات التوريد والتفصيل الجديدة</p>
+            <h3 class="text-3xl font-black text-slate-950">{{ service.newNotificationsCount() }}</h3>
           </div>
-          <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
-            <svg lucideIcon="bell-ring" class="w-6 h-6 text-white animate-bounce"></svg>
+          <div class="w-12 h-12 bg-slate-950/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
+            <svg lucideIcon="bell-ring" class="w-6 h-6 text-slate-950 animate-bounce"></svg>
           </div>
         </div>
 
-        <div class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-3xl p-5 shadow-lg flex items-center justify-between">
+        <div class="bg-gradient-to-br from-zinc-800 to-slate-900 text-white rounded-3xl p-5 shadow-lg flex items-center justify-between border border-amber-500/30">
           <div>
-            <p class="text-xs text-blue-100 font-bold mb-1">إجمالي ديون العملاء</p>
-            <h3 class="text-3xl font-black">{{ totalDebtsAmount() }} <span class="text-sm font-normal">ج.م</span></h3>
+            <p class="text-xs text-amber-200/80 font-bold mb-1">إجمالي المستحقات وتسهيلات العملاء</p>
+            <h3 class="text-3xl font-black text-amber-400">{{ totalDebtsAmount() }} <span class="text-sm font-normal text-white">ج.م</span></h3>
           </div>
-          <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
-            <svg lucideIcon="receipt" class="w-6 h-6 text-white"></svg>
+          <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/10">
+            <svg lucideIcon="receipt" class="w-6 h-6 text-amber-400"></svg>
           </div>
         </div>
 
-        <div class="bg-gradient-to-br from-purple-600 to-pink-700 text-white rounded-3xl p-5 shadow-lg flex items-center justify-between">
+        <div class="bg-gradient-to-br from-zinc-900 to-slate-950 text-white rounded-3xl p-5 shadow-lg flex items-center justify-between border border-amber-500/30">
           <div>
-            <p class="text-xs text-purple-100 font-bold mb-1">منتجات منخفضة المخزون</p>
-            <h3 class="text-3xl font-black">{{ service.lowStockProducts().length }}</h3>
+            <p class="text-xs text-amber-200/80 font-bold mb-1">قطاعات ومعادن منخفضة المخزون</p>
+            <h3 class="text-3xl font-black text-amber-500">{{ service.lowStockProducts().length }}</h3>
           </div>
-          <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
-            <svg lucideIcon="alert-triangle" class="w-6 h-6 text-white"></svg>
+          <div class="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center backdrop-blur-md border border-amber-400/30">
+            <svg lucideIcon="alert-triangle" class="w-6 h-6 text-amber-400"></svg>
           </div>
         </div>
       </div>
@@ -70,9 +70,9 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
         </div>
 
         <button (click)="openAddProductModal.set(true); activeSubTab.set('inventory')" 
-                class="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-sm hover:scale-105 transition-all flex items-center gap-2 shadow-lg shrink-0">
+                class="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black text-sm transition-all flex items-center gap-2 shadow-lg shrink-0">
           <svg lucideIcon="plus-circle" class="w-5 h-5"></svg>
-          <span>+ إضافة منتج جديد للمحل والمخزون</span>
+          <span>+ إضافة قطاع/منتج معدني جديد للمصنع</span>
         </button>
       </div>
 
@@ -157,12 +157,12 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
       <div *ngIf="activeSubTab() === 'inventory'" class="space-y-6">
         <div class="flex flex-wrap justify-between items-center bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm gap-4">
           <div>
-            <h2 class="text-xl font-black text-slate-900 dark:text-white">إدارة المنتجات والمخزون الأقسام</h2>
-            <p class="text-xs text-slate-500">إضافة المنتجات والأسعار وتخصيص قائمة المقاطعة وإدارة وتسمية أقسام المتجر</p>
+            <h2 class="text-xl font-black text-slate-900 dark:text-white">إدارة مخزون المعادن والصاج والقطاعات</h2>
+            <p class="text-xs text-slate-500">إضافة القطاعات والمعادن والأسعار وتخصيص وتسمية أقسام المعرض والمخزن الهندسي للمصنع</p>
           </div>
-          <button (click)="openAddProductModal.set(true)" class="px-5 py-2.5 rounded-2xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 transition-all flex items-center gap-2">
+          <button (click)="openAddProductModal.set(true)" class="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black text-sm transition-all flex items-center gap-2 shadow-md">
             <svg lucideIcon="plus" class="w-4 h-4"></svg>
-            <span>إضافة منتج جديد</span>
+            <span>إضافة قطاع/خام جديد</span>
           </button>
         </div>
 
@@ -171,14 +171,14 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
           <div class="flex flex-wrap justify-between items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
             <div>
               <h3 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <svg lucideIcon="tags" class="w-5 h-5 text-emerald-600"></svg>
-                <span>إدارة وتسمية أقسام المنظفات والمنتجات</span>
+                <svg lucideIcon="tags" class="w-5 h-5 text-amber-500"></svg>
+                <span>إدارة وتسمية أقسام القطاعات والمنتجات المعدنية</span>
               </h3>
               <p class="text-xs text-slate-500">يمكن للموظفين إضافة أقسام جديدة، إعادة تسميتها وتعديل أسمائها، أو حذفها نهائياً.</p>
             </div>
 
             <button (click)="promptAddCategory()"
-                    class="px-4 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 shrink-0">
+                    class="px-4 py-2 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md transition-all flex items-center gap-1.5 shrink-0">
               <svg lucideIcon="plus" class="w-4 h-4"></svg>
               <span>+ إضافة قسم جديد</span>
             </button>
@@ -237,7 +237,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
                   <span class="font-bold" [ngClass]="p.stockQuantity <= 5 ? 'text-rose-600' : 'text-slate-800 dark:text-white'">{{ p.stockQuantity }} قطعة</span>
                 </div>
                 <div class="flex justify-between">
-                  <span>مكان المنتج بالمحل:</span>
+                  <span>موقع القطاع بالمصنع:</span>
                   <span class="font-bold text-slate-800 dark:text-white">{{ p.locationInStore }}</span>
                 </div>
                 <div *ngIf="p.isBoycott" class="text-rose-600 font-bold border-t border-rose-100 pt-1.5 mt-1.5">
@@ -247,14 +247,14 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             </div>
 
             <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <button (click)="openEditProduct(p)" class="flex-1 py-1.5 px-3 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-bold hover:bg-blue-200 transition-all flex items-center justify-center gap-1">
-                <svg lucideIcon="edit-3" class="w-3.5 h-3.5"></svg>
-                <span>تعديل المنتج والتصنيف</span>
+              <button (click)="openEditProduct(p)" class="flex-1 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black transition-all flex items-center justify-center gap-1 shadow-xs cursor-pointer">
+                <svg lucideIcon="edit-3" class="w-3.5 h-3.5 text-white"></svg>
+                <span class="text-white">تعديل المنتج والتصنيف</span>
               </button>
-              <button (click)="quickUpdateStock(p, 10)" class="py-1.5 px-3 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 text-xs font-bold hover:bg-emerald-200 shrink-0">
+              <button (click)="quickUpdateStock(p, 10)" class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black transition-all shrink-0 cursor-pointer shadow-xs">
                 +10 مخزون
               </button>
-              <button (click)="service.deleteProduct(p.id)" class="py-1.5 px-3 rounded-xl bg-rose-100 text-rose-700 text-xs font-bold hover:bg-rose-200 shrink-0">
+              <button (click)="service.deleteProduct(p.id)" class="py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black transition-all shrink-0 cursor-pointer shadow-xs">
                 حذف
               </button>
             </div>
@@ -368,7 +368,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             <button (click)="orderFilterStatus.set('preparing')"
                     class="px-4 py-2 rounded-2xl text-xs font-bold transition-all border shrink-0"
                     [ngClass]="orderFilterStatus() === 'preparing' ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200'">
-              قيد التجهيز بالمحل
+              قيد التجهيز والتقطيع بالمصنع
             </button>
 
             <button (click)="orderFilterStatus.set('on_the_way')"
@@ -510,7 +510,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
                 <button (click)="service.updateOrderStatus(ord.id, 'preparing')" *ngIf="ord.status === 'pending'"
                         class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-2xl shadow-md transition-all flex items-center gap-1.5">
                   <svg lucideIcon="check-circle" class="w-4 h-4"></svg>
-                  <span>تأكيد وبدء تجهيز المنتجات بالمحل</span>
+                  <span>تأكيد وبدء التقطيع والتجهيز بالمصنع</span>
                 </button>
 
                 <button (click)="service.updateOrderStatus(ord.id, 'on_the_way')" *ngIf="ord.status === 'preparing'"
@@ -562,9 +562,9 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             <div>
               <h3 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
                 <svg lucideIcon="package-plus" class="w-5 h-5 text-amber-500"></svg>
-                <span>رغبات العملاء بالمنتجات غير المتوفرة بالمتجر</span>
+                <span>رغبات العملاء للقطاعات والخامات المعدنية المخصصة</span>
               </h3>
-              <p class="text-xs text-slate-500">طلبات المراجعة الواردة من الزبائن لتوفير منظفات أو أصناف ناقصة</p>
+              <p class="text-xs text-slate-500">طلبات التوريد والمواصفات الخاصة الواردة من العملاء والشركات والمصانع</p>
             </div>
           </div>
 
@@ -724,7 +724,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
           <div class="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
             <h3 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
               <svg lucideIcon="package-plus" class="w-5 h-5 text-emerald-600"></svg>
-              <span>إضافة منتج جديد للمخزون والمحل</span>
+              <span>إضافة منتج / قطاع معدني جديد للمصنع</span>
             </h3>
             <button (click)="openAddProductModal.set(false)" class="text-slate-400 hover:text-slate-600">
               <svg lucideIcon="x" class="w-5 h-5"></svg>
@@ -733,8 +733,8 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">اسم المنظف / المنتج *</label>
-              <input type="text" [(ngModel)]="newProdName" placeholder="مثال: مسحوق غسيل أوتوماتيك أريال/وفير..." class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">اسم المنتج أو القطاع المعدني *</label>
+              <input type="text" [(ngModel)]="newProdName" placeholder="مثال: قطاع ألومنيوم 6063، صاج بارد 2مم، مواسير حديد صلب..." class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold">
             </div>
 
             <div>
@@ -766,7 +766,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             </div>
 
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">مكان المنتج بالمحل (الرف/الممر) *</label>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">موقع القطاع بالمصنع (الرف/الممر) *</label>
               <input type="text" [(ngModel)]="newProdLocationStore" placeholder="مثال: الممر 2 - رف B3" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
             </div>
 
@@ -813,23 +813,19 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
               </div>
             </div>
 
-            <div class="sm:col-span-2 p-3 bg-rose-50 dark:bg-rose-950/20 rounded-2xl border border-rose-200 dark:border-rose-900/40 space-y-2">
-              <div class="flex items-center gap-2">
-                <input type="checkbox" [(ngModel)]="newProdIsBoycott" id="boycottCheck" class="w-4 h-4 text-rose-600 rounded">
-                <label for="boycottCheck" class="font-black text-rose-600 text-xs">علامة: هذا المنتج ضمن قائمة المقاطعة</label>
-              </div>
-
-              <div *ngIf="newProdIsBoycott" class="space-y-2">
-                <div>
-                  <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">سبب المقاطعة</label>
-                  <input type="text" [(ngModel)]="newProdBoycottReason" placeholder="مثال: شركة داعمة بشكل مباشر للمحتل" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                </div>
-                <div>
-                  <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">قائمة البدائل الوطنية المطابقة (تفصل بينها بفصلة)</label>
-                  <input type="text" [(ngModel)]="newProdAlternatives" placeholder="مثال: سبيرو سباتس كولا، عصير سينا كولا" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+            <!-- Gallery Images Input -->
+            <div class="sm:col-span-2 space-y-1">
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">روابط الصور الإضافية لألبوم المعرض (مفصولة بفاصلة)</label>
+              <textarea [(ngModel)]="newProdImagesStr" placeholder="رابط1, رابط2, رابط3..." rows="2" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-mono"></textarea>
+              
+              <!-- Thumbnails preview -->
+              <div *ngIf="newProdImagesStr" class="flex flex-wrap gap-2 pt-1">
+                <div *ngFor="let url of newProdImagesStr.split('،').flatMap(a => a.split(','))">
+                  <img *ngIf="url.trim()" [src]="url.trim()" appImageFallback class="w-12 h-12 rounded-xl object-cover border border-slate-300 shadow-sm">
                 </div>
               </div>
             </div>
+
           </div>
 
           <button (click)="saveNewProduct(); openAddProductModal.set(false)" [disabled]="!newProdName || !newProdPrice"
@@ -854,7 +850,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">اسم المنتج / المنظف *</label>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">اسم القطاع المعدني أو المنتج *</label>
               <input type="text" [(ngModel)]="editProdName" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold">
             </div>
 
@@ -887,7 +883,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             </div>
 
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">مكان المنتج بالمحل (الرف/الممر) *</label>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">موقع القطاع بالمصنع (الرف/الممر) *</label>
               <input type="text" [(ngModel)]="editProdLocationStore" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
             </div>
 
@@ -934,23 +930,19 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
               </div>
             </div>
 
-            <div class="sm:col-span-2 p-3 bg-rose-50 dark:bg-rose-950/20 rounded-2xl border border-rose-200 dark:border-rose-900/40 space-y-2">
-              <div class="flex items-center gap-2">
-                <input type="checkbox" [(ngModel)]="editProdIsBoycott" id="editBoycottCheck" class="w-4 h-4 text-rose-600 rounded">
-                <label for="editBoycottCheck" class="font-black text-rose-600 text-xs">علامة: هذا المنتج ضمن قائمة المقاطعة</label>
-              </div>
-
-              <div *ngIf="editProdIsBoycott" class="space-y-2">
-                <div>
-                  <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">سبب المقاطعة</label>
-                  <input type="text" [(ngModel)]="editProdBoycottReason" placeholder="مثال: شركة داعمة بشكل مباشر للمحتل" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                </div>
-                <div>
-                  <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">قائمة البدائل الوطنية المطابقة (تفصل بينها بفصلة)</label>
-                  <input type="text" [(ngModel)]="editProdAlternatives" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+            <!-- Edit Gallery Images Input -->
+            <div class="sm:col-span-2 space-y-1">
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">روابط الصور الإضافية لألبوم المعرض (مفصولة بفاصلة)</label>
+              <textarea [(ngModel)]="editProdImagesStr" placeholder="رابط1, رابط2, رابط3..." rows="2" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-mono"></textarea>
+              
+              <!-- Thumbnails preview -->
+              <div *ngIf="editProdImagesStr" class="flex flex-wrap gap-2 pt-1">
+                <div *ngFor="let url of editProdImagesStr.split('،').flatMap(a => a.split(','))">
+                  <img *ngIf="url.trim()" [src]="url.trim()" appImageFallback class="w-12 h-12 rounded-xl object-cover border border-slate-300 shadow-sm">
                 </div>
               </div>
             </div>
+
           </div>
 
           <div class="pt-3 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
@@ -1130,8 +1122,8 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
     </div>
   `
 })
-export class OmAlQuraStaffPortalComponent {
-  service = inject(OmAlQuraService);
+export class OmAlQura2StaffPortalComponent {
+  service = inject(OmAlQura2Service);
 
   activeSubTab = signal<'attendance' | 'inventory' | 'pos' | 'notifications' | 'debts' | 'suggestions'>('inventory');
   orderFilterStatus = signal<'all' | 'pending' | 'preparing' | 'on_the_way' | 'completed' | 'cancelled'>('all');
@@ -1150,11 +1142,11 @@ export class OmAlQuraStaffPortalComponent {
   newDebtCustomerPhone = '';
   newDebtAmount: number | null = null;
   newDebtNotes = '';
-  newDebtStatus: OmAlQuraCustomerDebt['status'] = 'معلق';
+  newDebtStatus: OmAlQura2CustomerDebt['status'] = 'معلق';
 
   // Edit Product Form state
   editProdName = '';
-  editProdCategory = 'منظفات ومساحيق غسيل';
+  editProdCategory = 'ألومنيوم 6063';
   customEditCategory = '';
   editProdPrice: number | null = null;
   editProdStock: number | null = 10;
@@ -1168,6 +1160,7 @@ export class OmAlQuraStaffPortalComponent {
   editProdAlternatives = '';
   editProdDescription = '';
   editProdImageUrl = '';
+  editProdImagesStr = ''; // comma separated additional image URLs
 
   // FAQ State
   newFaqQuestion = '';
@@ -1176,7 +1169,7 @@ export class OmAlQuraStaffPortalComponent {
 
   // New Product Form state
   newProdName = '';
-  newProdCategory = 'منظفات ومساحيق غسيل';
+  newProdCategory = 'ألومنيوم 6063';
   customProdCategory = '';
   newProdPrice: number | null = null;
   newProdStock: number | null = 10;
@@ -1190,18 +1183,19 @@ export class OmAlQuraStaffPortalComponent {
   newProdAlternatives = '';
   newProdDescription = '';
   newProdImageUrl = '';
+  newProdImagesStr = ''; // comma separated additional image URLs
 
   staffTabs: { id: 'attendance' | 'inventory' | 'pos' | 'notifications' | 'debts' | 'suggestions'; label: string; icon: string }[] = [
-    { id: 'attendance', label: 'الحضور والانصراف', icon: 'clock' },
-    { id: 'inventory', label: 'إدارة المنتجات والمخزون', icon: 'package' },
-    { id: 'pos', label: 'الفواتير والكاشير (POS)', icon: 'shopping-bag' },
-    { id: 'notifications', label: 'إشعارات الطلبات والحجز', icon: 'bell' },
-    { id: 'debts', label: 'دفتر ديون العملاء', icon: 'receipt' },
-    { id: 'suggestions', label: 'المقترحات والأسئلة الشائعة', icon: 'lightbulb' }
+    { id: 'attendance', label: 'حضور وانصراف عمال ومهندسي المصنع', icon: 'clock' },
+    { id: 'inventory', label: 'إدارة مخزون المعادن والصاج والقطاعات', icon: 'package' },
+    { id: 'pos', label: 'فواتير التوريد المباشر والخزينة (POS)', icon: 'shopping-bag' },
+    { id: 'notifications', label: 'إشعارات الطلبات والتفصيل', icon: 'bell' },
+    { id: 'debts', label: 'دفتر مستحقات وتسهيلات العملاء', icon: 'receipt' },
+    { id: 'suggestions', label: 'استفسارات ومقترحات التصنيع', icon: 'lightbulb' }
   ];
 
   // POS State
-  posItems = signal<OmAlQuraOrderItem[]>([]);
+  posItems = signal<OmAlQura2OrderItem[]>([]);
   
   // Suggestion State
   newSugTitle = '';
@@ -1215,7 +1209,7 @@ export class OmAlQuraStaffPortalComponent {
     return this.service.customerDebts().reduce((acc, d) => acc + d.debtAmount, 0);
   }
 
-  addPosItem(product: OmAlQuraProduct) {
+  addPosItem(product: OmAlQura2Product) {
     const current = this.posItems();
     const idx = current.findIndex(i => i.product.id === product.id);
     if (idx > -1) {
@@ -1227,7 +1221,7 @@ export class OmAlQuraStaffPortalComponent {
     }
   }
 
-  posPaymentMethod: OmAlQuraOrder['paymentMethod'] = 'كاش';
+  posPaymentMethod: OmAlQura2Order['paymentMethod'] = 'كاش';
 
   posTotal() {
     return this.posItems().reduce((acc, i) => acc + (i.product.price * i.quantity), 0);
@@ -1239,7 +1233,7 @@ export class OmAlQuraStaffPortalComponent {
     this.posPaymentMethod = 'كاش';
   }
 
-  quickUpdateStock(p: OmAlQuraProduct, amount: number) {
+  quickUpdateStock(p: OmAlQura2Product, amount: number) {
     this.service.updateProduct(p.id, { stockQuantity: p.stockQuantity + amount });
   }
 
@@ -1279,6 +1273,10 @@ export class OmAlQuraStaffPortalComponent {
       }
 
       const alts = this.newProdAlternatives ? this.newProdAlternatives.split('،').flatMap(a => a.split(',')).map(a => a.trim()).filter(Boolean) : [];
+      const galleryImages = this.newProdImagesStr 
+        ? this.newProdImagesStr.split('،').flatMap(a => a.split(',')).flatMap(a => a.split('\n')).map(a => a.trim()).filter(Boolean) 
+        : [];
+
       this.service.addProduct({
         name: this.newProdName,
         category: finalCategory,
@@ -1292,13 +1290,14 @@ export class OmAlQuraStaffPortalComponent {
         locationInWarehouse: this.newProdLocationWarehouse || 'المخزن',
         isInWarehouse: this.newProdIsInWarehouse,
         expectedRestockDate: this.newProdExpectedRestock || undefined,
-        imageUrl: this.newProdImageUrl || 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=600&auto=format',
-        description: this.newProdDescription || 'منتج طازج ومضمون'
+        imageUrl: this.newProdImageUrl || 'https://images.unsplash.com/photo-1535813547-99c456a41d4a?w=500&auto=format&fit=crop&q=60',
+        images: galleryImages,
+        description: this.newProdDescription || 'قطاع معدني عالي الجودة مقطوع وفقاً للمواصفات الهندسية'
       });
 
       // Reset form & close modal
       this.newProdName = '';
-      this.newProdCategory = 'منظفات ومساحيق غسيل';
+      this.newProdCategory = 'قطاعات وإكسسوارات الألومنيوم';
       this.customProdCategory = '';
       this.newProdPrice = null;
       this.newProdStock = 10;
@@ -1312,6 +1311,7 @@ export class OmAlQuraStaffPortalComponent {
       this.newProdAlternatives = '';
       this.newProdDescription = '';
       this.newProdImageUrl = '';
+      this.newProdImagesStr = '';
       this.openAddProductModal.set(false);
     }
   }
@@ -1372,7 +1372,7 @@ export class OmAlQuraStaffPortalComponent {
   }
 
   // Edit Product Handlers
-  openEditProduct(p: OmAlQuraProduct) {
+  openEditProduct(p: OmAlQura2Product) {
     this.editingProductId.set(p.id);
     this.editProdName = p.name;
     this.editProdCategory = p.category;
@@ -1389,6 +1389,7 @@ export class OmAlQuraStaffPortalComponent {
     this.editProdAlternatives = p.boycottAlternatives ? p.boycottAlternatives.join(' ، ') : '';
     this.editProdDescription = p.description || '';
     this.editProdImageUrl = p.imageUrl || '';
+    this.editProdImagesStr = p.images ? p.images.join(', ') : '';
     this.openEditProductModal.set(true);
   }
 
@@ -1405,6 +1406,9 @@ export class OmAlQuraStaffPortalComponent {
     }
 
     const alts = this.editProdAlternatives ? this.editProdAlternatives.split('،').flatMap(a => a.split(',')).map(a => a.trim()).filter(Boolean) : [];
+    const galleryImages = this.editProdImagesStr 
+      ? this.editProdImagesStr.split('،').flatMap(a => a.split(',')).flatMap(a => a.split('\n')).map(a => a.trim()).filter(Boolean) 
+      : [];
 
     this.service.updateProduct(id, {
       name: this.editProdName,
@@ -1420,7 +1424,8 @@ export class OmAlQuraStaffPortalComponent {
       isInWarehouse: this.editProdIsInWarehouse,
       expectedRestockDate: this.editProdExpectedRestock || undefined,
       description: this.editProdDescription,
-      imageUrl: this.editProdImageUrl
+      imageUrl: this.editProdImageUrl,
+      images: galleryImages
     });
 
     this.openEditProductModal.set(false);
@@ -1490,7 +1495,7 @@ export class OmAlQuraStaffPortalComponent {
   getStatusText(status: string) {
     switch (status) {
       case 'pending': return 'جديد - بانتظار التأكيد والتجهيز';
-      case 'preparing': return 'قيد التجهيز بالمحل';
+      case 'preparing': return 'قيد التجهيز والتقطيع بالمصنع';
       case 'on_the_way': return 'مع سائق الدليفري';
       case 'completed': return 'تم التوصيل واكتمال الطلب';
       case 'cancelled': return 'طلب ملغي';
