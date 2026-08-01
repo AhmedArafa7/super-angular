@@ -6,7 +6,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import { LauncherService, WebProject, AppFramework } from '../../core/launcher.service';
 import { WalletService } from '../../core/wallet.service';
 
-export type LaunchEngine = 'stackblitz' | 'gh-pages' | 'githack' | 'direct';
+export type LaunchEngine = 'stackblitz' | 'codesandbox' | 'gh-pages' | 'githack' | 'direct';
 
 export interface GithubRepoMetadata {
   owner: string;
@@ -41,7 +41,8 @@ export class LauncherComponent {
   githubInputUrl = signal<string>('');
   isFetchingGithub = signal<boolean>(false);
   githubMetadata = signal<GithubRepoMetadata | null>(null);
-  selectedEngine = signal<LaunchEngine>('stackblitz');
+  selectedEngine = signal<LaunchEngine>('codesandbox');
+  isDevCodeMode = signal<boolean>(false); // False by default = Regular user Live App Preview mode!
   customTitle = signal<string>('');
   customDescription = signal<string>('');
 
@@ -63,10 +64,11 @@ export class LauncherComponent {
 
   // Engine options
   engines: { id: LaunchEngine; label: string; desc: string; icon: string }[] = [
-    { id: 'stackblitz', label: 'StackBlitz IDE', desc: 'محرك سحابي كامل لـ JS/TS/React/Vue/Node', icon: 'zap' },
+    { id: 'stackblitz', label: 'StackBlitz App', desc: 'تشغيل المعاينة المباشرة للتطبيق', icon: 'zap' },
+    { id: 'codesandbox', label: 'CodeSandbox App', desc: 'معاينة مباشرة عبر حاويات CodeSandbox', icon: 'box' },
     { id: 'gh-pages', label: 'GitHub Pages', desc: 'تشغيل الموقع المستضاف مباشرة', icon: 'globe' },
     { id: 'githack', label: 'GitHack RAW HTML', desc: 'معاينة ملفات HTML المباشرة', icon: 'code-2' },
-    { id: 'direct', label: 'رابط مباشر (Direct)', desc: 'فتح الرابط كما هو بالضبط', icon: 'link' }
+    { id: 'direct', label: 'رابط مباشر (Direct)', desc: 'فتح الرابط الأصلي مباشرة', icon: 'link' }
   ];
 
   // Computed lists of approved apps
@@ -80,12 +82,12 @@ export class LauncherComponent {
     );
   });
 
-  // Safe resource url mapping
-  get safeUrl(): SafeResourceUrl {
+  // Safe resource url mapping computed signal to prevent iframe continuous re-rendering / flickering
+  safeUrl = computed<SafeResourceUrl | null>(() => {
     const active = this.activeProject();
-    if (!active) return '';
+    if (!active?.url) return null;
     return this.sanitizer.bypassSecurityTrustResourceUrl(active.url);
-  }
+  });
 
   // Monitor URL input and auto-detect GitHub Repos
   async onGithubUrlInput(url: string): Promise<void> {
@@ -130,7 +132,7 @@ export class LauncherComponent {
           if (data.homepage && data.homepage.includes('github.io')) {
             this.selectedEngine.set('gh-pages');
           } else {
-            this.selectedEngine.set('stackblitz');
+            this.selectedEngine.set('codesandbox');
           }
         } else {
           // Graceful fallback if API limit reached or repo private
@@ -169,14 +171,32 @@ export class LauncherComponent {
     this.githubMetadata.set(meta);
     this.customTitle.set(meta.title);
     this.customDescription.set(meta.description);
-    this.selectedEngine.set('stackblitz');
+    this.selectedEngine.set('codesandbox');
   }
 
-  // Calculate final iframe URL based on engine
+  toggleDevCodeMode(): void {
+    const currentMode = this.isDevCodeMode();
+    this.isDevCodeMode.set(!currentMode);
+    
+    // Refresh active project URL dynamically
+    const current = this.activeProject();
+    if (current) {
+      const newUrl = this.getCalculatedRunUrl();
+      if (newUrl) {
+        this.activeProject.set({
+          ...current,
+          url: newUrl
+        });
+      }
+    }
+  }
+
+  // Calculate final iframe URL based on engine and mode
   getCalculatedRunUrl(): string {
     const meta = this.githubMetadata();
     const rawUrl = this.githubInputUrl().trim();
     const engine = this.selectedEngine();
+    const devMode = this.isDevCodeMode();
 
     if (!rawUrl) return '';
 
@@ -190,7 +210,12 @@ export class LauncherComponent {
       const { owner, repo } = meta;
       switch (engine) {
         case 'stackblitz':
-          return `https://stackblitz.com/github/${owner}/${repo}?embed=1&theme=dark`;
+          const sbView = devMode ? 'both' : 'preview';
+          const sbParams = devMode ? '' : '&hideExplorer=1&hideNavigation=1';
+          return `https://stackblitz.com/github/${owner}/${repo}?embed=1&file=README.md&hideNavigation=1&theme=dark&view=${sbView}${sbParams}`;
+        case 'codesandbox':
+          const csView = devMode ? 'editor' : 'preview';
+          return `https://codesandbox.io/embed/github/${owner}/${repo}?view=${csView}&hidedevtools=1`;
         case 'gh-pages':
           return meta.homepage && meta.homepage.startsWith('http') 
             ? meta.homepage 
@@ -207,7 +232,9 @@ export class LauncherComponent {
     if (engine === 'stackblitz' && formattedUrl.includes('github.com')) {
       const ghMatch = formattedUrl.match(/github\.com\/([^\/]+)\/([^\/#?]+)/i);
       if (ghMatch) {
-        return `https://stackblitz.com/github/${ghMatch[1]}/${ghMatch[2].replace(/\.git$/, '')}?embed=1&theme=dark`;
+        const sbView = devMode ? 'both' : 'preview';
+        const sbParams = devMode ? '' : '&hideExplorer=1&hideNavigation=1';
+        return `https://stackblitz.com/github/${ghMatch[1]}/${ghMatch[2].replace(/\.git$/, '')}?embed=1&file=README.md&hideNavigation=1&theme=dark&view=${sbView}${sbParams}`;
       }
     }
 

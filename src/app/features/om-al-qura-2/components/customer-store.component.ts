@@ -78,7 +78,8 @@ import { MetalCalculatorComponent } from './metal-calculator/metal-calculator.co
           <!-- Search Box for Metals & Materials -->
           <div class="relative max-w-2xl">
             <input type="text" 
-                   [(ngModel)]="searchQuery" 
+                   [ngModel]="searchQuery()" 
+                   (ngModelChange)="searchQuery.set($event)" 
                    placeholder="ابحث عن ألومنيوم، حديد صلب، صاج مجلفن، مواسير، إستانلس، مسامير، أو زوايا معدنية..." 
                    class="w-full pl-4 pr-12 py-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-amber-400/30 text-white placeholder-amber-200/50 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
             <div class="absolute right-4 top-1/2 -translate-y-1/2 text-amber-400">
@@ -688,7 +689,7 @@ import { MetalCalculatorComponent } from './metal-calculator/metal-calculator.co
 
           <!-- Search FAQs input -->
           <div class="relative shrink-0">
-            <input type="text" [(ngModel)]="faqSearchQuery" placeholder="ابحث في الاستفسارات السابقة وإجابات المهندسين..."
+            <input type="text" [ngModel]="faqSearchQuery()" (ngModelChange)="faqSearchQuery.set($event)" placeholder="ابحث في الاستفسارات السابقة وإجابات المهندسين..."
                    class="w-full pl-4 pr-10 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white placeholder-slate-400">
             <svg lucideIcon="search" class="w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"></svg>
           </div>
@@ -1401,14 +1402,14 @@ ${ds.description}
   // Alias for backward-compat with laser cost template references
   get selectedMetalMaterial() { return this.selectedMetalObj; }
 
-  searchQuery = '';
+  searchQuery = signal('');
   selectedCategory = signal<string>('الكل');
   openCartDrawer = signal(false);
   openMissingProductModal = signal(false);
   openInvoiceModal = signal(false);
   openStoreLayoutSketchModal = signal(false);
   openFaqModal = signal(false);
-  faqSearchQuery = '';
+  faqSearchQuery = signal('');
   newFaqText = '';
   selectedMapProduct = signal<OmAlQura2Product | null>(null);
 
@@ -1423,7 +1424,7 @@ ${ds.description}
   }
 
   filteredFaqs = computed(() => {
-    const q = this.faqSearchQuery.toLowerCase().trim();
+    const q = this.faqSearchQuery().toLowerCase().trim();
     const allFaqs = this.service.faqs();
     if (!q) return allFaqs;
     return allFaqs.filter(f => f.question.toLowerCase().includes(q) || f.answer.toLowerCase().includes(q));
@@ -1470,8 +1471,8 @@ ${ds.description}
     if (this.selectedCategory() !== 'الكل') {
       prods = prods.filter(p => p.category === this.selectedCategory());
     }
-    if (this.searchQuery.trim()) {
-      const q = this.searchQuery.toLowerCase();
+    const q = this.searchQuery().toLowerCase().trim();
+    if (q) {
       prods = prods.filter(p => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q) || p.boycottAlternatives.some(a => a.toLowerCase().includes(q)));
     }
     return prods;

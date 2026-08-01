@@ -49,9 +49,6 @@ export class ButtonInspectorService {
   private router = inject(Router);
   private toastService = inject(ToastService);
 
-  /** Track elements that have actual click event listeners attached via addEventListener */
-  private elementsWithListeners = new WeakSet<Element>();
-  
   /** Track broken images that failed to load */
   private brokenImages = new WeakSet<HTMLImageElement>();
 
@@ -62,33 +59,11 @@ export class ButtonInspectorService {
   private activeHighlightEl: HTMLElement | null = null;
   private highlightTimeout: any = null;
   private scanDebounceTimer: any = null;
-  private mutationObserver: MutationObserver | null = null;
 
   constructor() {
-    this.hookEventListener();
     this.hookImageErrorListeners();
     this.initNavigationListener();
     this.initGlobalClickListener();
-    this.initMutationObserver();
-  }
-
-  private hookEventListener() {
-    if (typeof window === 'undefined' || !window.EventTarget) return;
-
-    const self = this;
-    const originalAddEventListener = EventTarget.prototype.addEventListener;
-
-    EventTarget.prototype.addEventListener = function (
-      type: string,
-      listener: EventListenerOrEventListenerObject,
-      options?: boolean | AddEventListenerOptions
-    ) {
-      if (type === 'click' && this instanceof Element) {
-        self.elementsWithListeners.add(this);
-        (this as HTMLElement).dataset['hasClickListener'] = 'true';
-      }
-      return originalAddEventListener.call(this, type, listener, options);
-    };
   }
 
   private hookImageErrorListeners() {
@@ -98,8 +73,7 @@ export class ButtonInspectorService {
       const target = event.target as HTMLElement;
       if (target && target.tagName === 'IMG') {
         this.brokenImages.add(target as HTMLImageElement);
-        target.dataset['imageBroken'] = 'true';
-        this.scheduleScan(300);
+        this.scheduleScan(1000);
       }
     }, true);
   }
@@ -108,27 +82,11 @@ export class ButtonInspectorService {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe(() => {
-      this.scheduleScan(500);
-      this.scheduleScan(1500);
-    });
-  }
-
-  private initMutationObserver() {
-    if (typeof window === 'undefined' || typeof MutationObserver === 'undefined') return;
-
-    this.mutationObserver = new MutationObserver(() => {
       this.scheduleScan(800);
     });
-
-    if (document.body) {
-      this.mutationObserver.observe(document.body, {
-        childList: true,
-        subtree: true
-      });
-    }
   }
 
-  private scheduleScan(delayMs: number = 500) {
+  private scheduleScan(delayMs: number = 800) {
     if (this.scanDebounceTimer) clearTimeout(this.scanDebounceTimer);
     this.scanDebounceTimer = setTimeout(() => {
       this.scanCurrentPage();
@@ -195,7 +153,7 @@ export class ButtonInspectorService {
         };
       }
 
-      if (this.brokenImages.has(img) || img.dataset['imageBroken'] === 'true') {
+      if (this.brokenImages.has(img)) {
         return {
           arabic: 'صورة أو أيقونة معطلة وفشل تحميلها من السيرفر (Broken Image URL)',
           english: 'Image failed to load (network/CORS/404 error)',
@@ -270,7 +228,7 @@ export class ButtonInspectorService {
     // CATEGORY 2: UX SUGGESTIONS & BEST-PRACTICES (تلميحات واقتراحات تحسين)
     // =========================================================================
 
-    // 2.1 Angular-Aware Accessibility Check (Strict & Non-Intrusive)
+    // 2.1 Angular-Aware Accessibility Check
     if (tagName === 'button' || el.getAttribute('role') === 'button') {
       const innerText = el.innerText?.trim() || '';
       const ariaLabel = el.getAttribute('aria-label') || 
@@ -285,9 +243,7 @@ export class ButtonInspectorService {
                              el.querySelector('mat-icon') !== null || 
                              el.querySelector('i') !== null;
 
-      // If button has text or title/aria-label or tooltip binding, it's completely valid
       if (!innerText && hasAngularIcon && !ariaLabel) {
-        // Skip if button has title on child element or parent title
         const childTitle = el.querySelector('[title], [aria-label]') !== null;
         if (!childTitle) {
           return {
@@ -303,29 +259,49 @@ export class ButtonInspectorService {
   }
 
   private hasClickEventListener(el: HTMLElement): boolean {
-    if (this.elementsWithListeners.has(el) || el.dataset['hasClickListener'] === 'true') {
-      return true;
-    }
-    let parent = el.parentElement;
-    let depth = 0;
-    while (parent && depth < 3) {
-      if (this.elementsWithListeners.has(parent) || parent.dataset['hasClickListener'] === 'true') {
-        return true;
-      }
-      parent = parent.parentElement;
-      depth++;
+    // 1. Check Angular DevTools / Debug API (available in Angular runtime)
+    if (typeof (window as any).ng?.getListeners === 'function') {
+      try {
+        const listeners = (window as any).ng.getListeners(el);
+        if (listeners && listeners.some((l: any) => l.name === 'click')) {
+          return true;
+        }
+      } catch {}
     }
 
+    // 2. Direct inline handlers or attributes
     if (el.hasAttribute('ng-reflect-click') || el.getAttribute('onclick') || (el as any).__onclick__) {
       return true;
     }
 
+    // 3. Angular Ivy __ngContext__ inspection
     if ((el as any).__ngContext__) {
       const ctx = (el as any).__ngContext__;
       if (Array.isArray(ctx)) {
-        const hasLViewListeners = ctx.some(item => typeof item === 'function' || (item && typeof item === 'object' && item.length > 0));
-        if (hasLViewListeners) return true;
+        return true; // Any element attached to Angular Ivy component view context with button/click tag
       }
+    }
+
+    // 4. Check parent containers up to 3 levels
+    let parent = el.parentElement;
+    let depth = 0;
+    while (parent && depth < 3) {
+      if (typeof (window as any).ng?.getListeners === 'function') {
+        try {
+          const listeners = (window as any).ng.getListeners(parent);
+          if (listeners && listeners.some((l: any) => l.name === 'click')) {
+            return true;
+          }
+        } catch {}
+      }
+      if (parent.hasAttribute('ng-reflect-click') || parent.getAttribute('onclick')) {
+        return true;
+      }
+      if ((parent as any).__ngContext__) {
+        return true;
+      }
+      parent = parent.parentElement;
+      depth++;
     }
 
     return false;

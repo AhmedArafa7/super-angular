@@ -28,7 +28,8 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
           <div class="flex flex-wrap items-center gap-3">
             <div class="relative flex-1 min-w-[280px]">
               <input type="text" 
-                     [(ngModel)]="searchQuery" 
+                     [ngModel]="searchQuery()" 
+                     (ngModelChange)="searchQuery.set($event)" 
                      placeholder="اكتب اسم المنتج الذي تبحث عنه الآن داخل المحل..." 
                      class="w-full pl-4 pr-12 py-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
               <div class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
@@ -503,7 +504,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
 export class OmAlQura2InStoreMapComponent {
   service = inject(OmAlQura2Service);
 
-  searchQuery = '';
+  searchQuery = signal('');
   selectedProduct = signal<OmAlQura2Product | null>(null);
 
   openStoreLayoutSketchModal = signal(false);
@@ -525,7 +526,7 @@ export class OmAlQura2InStoreMapComponent {
   private canvasSnapshot: ImageData | null = null;
 
   matchingProducts = computed(() => {
-    const q = this.searchQuery.toLowerCase().trim();
+    const q = this.searchQuery().toLowerCase().trim();
     const prods = this.service.products();
     if (!q) return prods;
     return prods.filter(p => p.name.toLowerCase().includes(q) || (p.locationInStore && p.locationInStore.toLowerCase().includes(q)));

@@ -22,20 +22,23 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             </div>
             
             <div class="flex flex-wrap items-center gap-2">
-              <button (click)="openFaqModal.set(true)" 
-                      class="px-4 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black rounded-2xl text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer">
+              <button type="button"
+                      (click)="openFaqModal.set(true)" 
+                      class="px-4 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black rounded-2xl text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer hover:scale-105 active:scale-95">
                 <svg lucideIcon="help-circle" class="w-4 h-4"></svg>
                 <span>💬 الأسئلة الشائعة ({{ service.faqs().length }})</span>
               </button>
 
-              <button (click)="openStoreLayoutSketchModal.set(true)" 
-                      class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer">
+              <button type="button"
+                      (click)="openStoreLayoutSketchModal.set(true)" 
+                      class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer hover:scale-105 active:scale-95">
                 <svg lucideIcon="map" class="w-4 h-4"></svg>
                 <span>عرض الخريطة الكروكية ورسم المحل</span>
               </button>
 
-              <button (click)="openMissingProductModal.set(true)" 
-                      class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-2xl text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer">
+              <button type="button"
+                      (click)="openMissingProductModal.set(true)" 
+                      class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-2xl text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer hover:scale-105 active:scale-95">
                 <svg lucideIcon="plus-circle" class="w-4 h-4"></svg>
                 <span>طلب منظف غير متوفر</span>
               </button>
@@ -45,7 +48,8 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
           <!-- Search Box with alternatives auto-suggestion -->
           <div class="relative max-w-2xl">
             <input type="text" 
-                   [(ngModel)]="searchQuery" 
+                   [ngModel]="searchQuery()" 
+                   (ngModelChange)="searchQuery.set($event)" 
                    placeholder="ابحث عن مسحوق غسيل، صابون، شامبو، مطهرات، منظف صحون، أو بدائل المقاطعة..." 
                    class="w-full pl-4 pr-12 py-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-white placeholder-emerald-100/70 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
             <div class="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-200">
@@ -566,7 +570,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
       </div>
 
       <!-- FLOATING FAQ CIRCLE BUTTON FOR CUSTOMER -->
-      <div class="fixed bottom-6 left-6 z-40">
+      <div class="fixed bottom-24 left-6 z-40">
         <button (click)="openFaqModal.set(!openFaqModal())"
                 class="relative group w-14 h-14 rounded-full bg-gradient-to-br from-emerald-600 via-teal-600 to-indigo-700 text-white flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all border-2 border-white/40 cursor-pointer">
           
@@ -589,8 +593,8 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
       </div>
 
       <!-- FLOATING FAQ MODAL DIALOG -->
-      <div *ngIf="openFaqModal()" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-lg w-full font-sans dir-rtl space-y-4 border border-slate-200 dark:border-slate-800 shadow-2xl max-h-[85vh] flex flex-col">
+      <div *ngIf="openFaqModal()" class="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 cursor-pointer" (click)="openFaqModal.set(false)">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-lg w-full font-sans dir-rtl space-y-4 border border-slate-200 dark:border-slate-800 shadow-2xl max-h-[85vh] flex flex-col cursor-default" (click)="$event.stopPropagation()">
           
           <div class="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
             <div class="flex items-center gap-2">
@@ -609,7 +613,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
 
           <!-- Search FAQs input -->
           <div class="relative shrink-0">
-            <input type="text" [(ngModel)]="faqSearchQuery" placeholder="ابحث في الأسئلة والإجابات..."
+            <input type="text" [ngModel]="faqSearchQuery()" (ngModelChange)="faqSearchQuery.set($event)" placeholder="ابحث في الأسئلة والإجابات..."
                    class="w-full pl-4 pr-10 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white">
             <svg lucideIcon="search" class="w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"></svg>
           </div>
@@ -638,8 +642,8 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
       </div>
 
       <!-- STORE LAYOUT SKETCH MODAL DIALOG FOR CUSTOMERS -->
-      <div *ngIf="openStoreLayoutSketchModal()" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-2xl w-full font-sans dir-rtl space-y-4 border border-slate-200 dark:border-slate-800 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+      <div *ngIf="openStoreLayoutSketchModal()" class="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 cursor-pointer" (click)="openStoreLayoutSketchModal.set(false)">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-2xl w-full font-sans dir-rtl space-y-4 border border-slate-200 dark:border-slate-800 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar cursor-default" (click)="$event.stopPropagation()">
           
           <div class="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
             <div class="flex items-center gap-2">
@@ -750,14 +754,14 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
 export class OmAlQuraCustomerStoreComponent implements OnInit {
   service = inject(OmAlQuraService);
 
-  searchQuery = '';
+  searchQuery = signal('');
   selectedCategory = signal<string>('الكل');
   openCartDrawer = signal(false);
   openMissingProductModal = signal(false);
   openInvoiceModal = signal(false);
   openStoreLayoutSketchModal = signal(false);
   openFaqModal = signal(false);
-  faqSearchQuery = '';
+  faqSearchQuery = signal('');
   selectedMapProduct = signal<OmAlQuraProduct | null>(null);
 
   selectedDriverId: string | null = null;
@@ -801,8 +805,8 @@ export class OmAlQuraCustomerStoreComponent implements OnInit {
     if (this.selectedCategory() !== 'الكل') {
       prods = prods.filter(p => p.category === this.selectedCategory());
     }
-    if (this.searchQuery.trim()) {
-      const q = this.searchQuery.toLowerCase();
+    const q = this.searchQuery().toLowerCase().trim();
+    if (q) {
       prods = prods.filter(p => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q) || p.boycottAlternatives.some(a => a.toLowerCase().includes(q)));
     }
     return prods;
@@ -835,7 +839,7 @@ export class OmAlQuraCustomerStoreComponent implements OnInit {
   }
 
   filteredFaqs = computed(() => {
-    const q = this.faqSearchQuery.toLowerCase().trim();
+    const q = this.faqSearchQuery().toLowerCase().trim();
     const faqs = this.service.faqs();
     if (!q) return faqs;
     return faqs.filter(f => f.question.toLowerCase().includes(q) || f.answer.toLowerCase().includes(q));

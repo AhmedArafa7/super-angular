@@ -1,15 +1,15 @@
-import { ApplicationConfig, provideZoneChangeDetection, provideBrowserGlobalErrorListeners, isDevMode } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection, provideBrowserGlobalErrorListeners, isDevMode, ErrorHandler } from '@angular/core';
 import { provideRouter, withComponentInputBinding, withViewTransitions, withPreloading } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors, withInterceptorsFromDi } from '@angular/common/http';
 import { provideServiceWorker } from '@angular/service-worker';
 
 import { routes } from './app.routes';
+import { GlobalErrorHandlerService } from './core/services/global-error-handler.service';
 import { CriticalPreloadingStrategy } from './core/strategies/critical-preloading.strategy';
 import { networkInterceptor } from './core/interceptors/network.interceptor';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { provideLucideIcons } from './core/icons.provider';
-
 import { youtubeAuthInterceptor } from './core/interceptors/youtube-auth.interceptor';
 
 export const appConfig: ApplicationConfig = {
@@ -17,7 +17,13 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideLucideIcons(),
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes, withComponentInputBinding(), withViewTransitions(), withPreloading(CriticalPreloadingStrategy)),
+    { provide: ErrorHandler, useClass: GlobalErrorHandlerService },
+    provideRouter(
+      routes, 
+      withComponentInputBinding(), 
+      withViewTransitions(), 
+      withPreloading(CriticalPreloadingStrategy)
+    ),
     provideHttpClient(
       withFetch(),
       withInterceptors([networkInterceptor, authInterceptor, errorInterceptor, youtubeAuthInterceptor]),
