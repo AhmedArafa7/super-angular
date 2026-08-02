@@ -382,6 +382,15 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
                     [ngClass]="orderFilterStatus() === 'completed' ? 'bg-teal-600 text-white border-teal-600 shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200'">
               طلبات مكتملة
             </button>
+
+            <button (click)="orderFilterStatus.set('cancelled')"
+                    class="px-4 py-2 rounded-2xl text-xs font-bold transition-all border shrink-0 flex items-center gap-1.5"
+                    [ngClass]="orderFilterStatus() === 'cancelled' ? 'bg-rose-600 text-white border-rose-600 shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200'">
+              <span>طلبات ملغاة</span>
+              <span *ngIf="cancelledOrdersCount() > 0" class="bg-rose-950 text-white text-[10px] px-1.5 py-0.5 rounded-full font-black">
+                {{ cancelledOrdersCount() }}
+              </span>
+            </button>
           </div>
         </div>
 
@@ -417,13 +426,27 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
                         'bg-emerald-600 text-white': ord.status === 'completed',
                         'bg-rose-600 text-white': ord.status === 'cancelled'
                       }">
-                  {{ getStatusText(ord.status) }}
+                  {{ getStatusText(ord.status, ord.cancellationReason) }}
                 </span>
               </div>
 
               <div class="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1">
                 <svg lucideIcon="clock" class="w-3.5 h-3.5 text-amber-500"></svg>
                 <span>وقت الطلب: {{ ord.createdAt }}</span>
+              </div>
+            </div>
+
+            <!-- Cancellation Warning Alert Banner for Staff -->
+            <div *ngIf="ord.status === 'cancelled'" class="p-3.5 bg-rose-500/15 border-2 border-rose-500/80 rounded-2xl text-xs text-rose-900 dark:text-rose-200 font-bold flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center font-black shrink-0 shadow-md">
+                <svg lucideIcon="ban" class="w-5 h-5 animate-pulse"></svg>
+              </div>
+              <div>
+                <p class="font-black text-rose-800 dark:text-rose-300 text-sm">🛑 تم إلغاء هذا الطلب من قبل العميل</p>
+                <p class="text-[11px] font-bold text-slate-600 dark:text-slate-300 mt-0.5">
+                  السبب: <span class="text-rose-700 dark:text-rose-300 font-black">{{ ord.cancellationReason || 'قام العميل بإلغاء الطلب من متجر العملاء' }}</span>
+                  • وقت الإلغاء: {{ ord.cancelledAt || ord.createdAt }} (تم إرجاع كميات الأصناف لمخزون المحل تلقائياً)
+                </p>
               </div>
             </div>
 
@@ -507,6 +530,11 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
 
               <!-- Main State Advancement Buttons -->
               <div class="flex items-center gap-2 mr-auto">
+                <div *ngIf="ord.status === 'cancelled'" class="px-4 py-2 rounded-2xl bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-200 font-black text-xs border border-rose-300 dark:border-rose-800 flex items-center gap-1.5 shadow-sm">
+                  <svg lucideIcon="ban" class="w-4 h-4 text-rose-600 animate-pulse"></svg>
+                  <span>🛑 الطلب ملغي من قبل العميل - محظور التنفيذ</span>
+                </div>
+
                 <button (click)="service.updateOrderStatus(ord.id, 'preparing')" *ngIf="ord.status === 'pending'"
                         class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-2xl shadow-md transition-all flex items-center gap-1.5">
                   <svg lucideIcon="check-circle" class="w-4 h-4"></svg>
@@ -537,7 +565,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
                   <span>واتساب العميل</span>
                 </a>
 
-                <button (click)="service.updateOrderStatus(ord.id, 'cancelled')" *ngIf="ord.status !== 'completed' && ord.status !== 'cancelled'"
+                <button (click)="service.cancelOrder(ord.id, 'تم الإلغاء بواسطة طاقم العمل')" *ngIf="ord.status !== 'completed' && ord.status !== 'cancelled'"
                         class="px-3.5 py-2.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 text-xs font-bold rounded-2xl transition-all">
                   إلغاء الطلب
                 </button>
@@ -1481,19 +1509,23 @@ export class OmAlQuraStaffPortalComponent {
     return this.service.orders().filter(o => o.status === 'pending').length;
   }
 
+  cancelledOrdersCount() {
+    return this.service.orders().filter(o => o.status === 'cancelled').length;
+  }
+
   filteredOrders() {
     const status = this.orderFilterStatus();
     if (status === 'all') return this.service.orders();
     return this.service.orders().filter(o => o.status === status);
   }
 
-  getStatusText(status: string) {
+  getStatusText(status: string, reason?: string) {
     switch (status) {
       case 'pending': return 'جديد - بانتظار التأكيد والتجهيز';
       case 'preparing': return 'قيد التجهيز بالمحل';
       case 'on_the_way': return 'مع سائق الدليفري';
       case 'completed': return 'تم التوصيل واكتمال الطلب';
-      case 'cancelled': return 'طلب ملغي';
+      case 'cancelled': return 'تم إلغاء هذا الطلب من قبل العميل 🛑';
       default: return status;
     }
   }

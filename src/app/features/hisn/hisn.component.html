@@ -15,7 +15,7 @@
     <div class="glass border-white/10 p-4 rounded-[2rem] flex flex-col gap-3 min-w-[260px]">
       <div class="flex items-center justify-between flex-row-reverse">
         <div class="flex items-center gap-2 flex-row-reverse">
-          <svg lucideIcon="database" class="size-4 text-indigo-400"></svg>
+          <svg lucideIcon="hard-drive" class="size-4 text-indigo-400"></svg>
           <span class="text-[10px] uppercase font-bold text-white">التخزين المحلي</span>
         </div>
         <span class="text-[10px] font-mono text-indigo-400">{{ calculateStorageUsed() }} KB</span>
@@ -78,6 +78,18 @@
         [class]="activeTab === 'storage' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'"
         class="rounded-xl px-6 py-3 flex-1 sm:flex-none font-bold transition-all text-center text-sm">
         إدارة الذاكرة
+      </button>
+      <button 
+        (click)="activeTab = 'qibla'"
+        [class]="activeTab === 'qibla' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'"
+        class="rounded-xl px-6 py-3 flex-1 sm:flex-none font-bold transition-all text-center text-sm">
+        اتجاه القبلة 🕋
+      </button>
+      <button 
+        (click)="activeTab = 'khatma'"
+        [class]="activeTab === 'khatma' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'"
+        class="rounded-xl px-6 py-3 flex-1 sm:flex-none font-bold transition-all text-center text-sm">
+        مخطط الختمة 📖
       </button>
     </div>
 
@@ -384,11 +396,11 @@
           <!-- Prayer Times Grid -->
           <div *ngIf="!isLoadingPrayer() && timings()" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
             <div *ngFor="let prayer of [
-              { name: 'الفجر', time: timings()!.Fajr, icon: 'cloud-moon' },
-              { name: 'الشروق', time: timings()!.Sunrise, icon: 'sunrise' },
+              { name: 'الفجر', time: timings()!.Fajr, icon: 'moon' },
+              { name: 'الشروق', time: timings()!.Sunrise, icon: 'sun' },
               { name: 'الظهر', time: timings()!.Dhuhr, icon: 'sun' },
-              { name: 'العصر', time: timings()!.Asr, icon: 'sun-dim' },
-              { name: 'المغرب', time: timings()!.Maghrib, icon: 'sunset' },
+              { name: 'العصر', time: timings()!.Asr, icon: 'sun' },
+              { name: 'المغرب', time: timings()!.Maghrib, icon: 'sun' },
               { name: 'العشاء', time: timings()!.Isha, icon: 'moon' }
             ]"
               class="glass border-white/5 rounded-2xl p-5 text-center hover:border-indigo-500/20 transition-all">
@@ -400,7 +412,7 @@
 
           <div *ngIf="!isLoadingPrayer() && !timings()" class="text-center py-12">
             <p class="text-slate-400 font-bold">لم يتم تحديد المواقيت بعد</p>
-            <button (click)="fetchPrayerTimes(latitude()!, longitude()!)" class="mt-4 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold transition-all">
+            <button (click)="fetchPrayerTimes()" class="mt-4 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold transition-all">
               إعادة المحاولة
             </button>
           </div>
@@ -410,10 +422,23 @@
       <!-- 2. Azkar Tab -->
       <div *ngSwitchCase="'azkar'" class="space-y-6">
         
+        <!-- Global Azkar Search Bar -->
+        <div *ngIf="!selectedCategory" class="mb-8 max-w-xl">
+          <div class="relative">
+            <svg lucideIcon="search" class="absolute right-4 top-1/2 -translate-y-1/2 size-5 text-slate-500"></svg>
+            <input
+              type="text"
+              [(ngModel)]="azkarSearchTerm"
+              placeholder="ابحث في جميع الأذكار والأدعية..."
+              class="w-full pr-12 pl-4 bg-white/5 border-white/10 text-white placeholder:text-slate-500 rounded-xl h-12 focus:outline-none focus:border-indigo-500/50"
+            />
+          </div>
+        </div>
+
         <!-- Categories List -->
         <div *ngIf="!selectedCategory" class="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div 
-            *ngFor="let cat of categories" 
+            *ngFor="let cat of filteredCategories" 
             (click)="selectCategory(cat)"
             class="group glass border-white/5 rounded-[3rem] p-10 text-right hover:border-indigo-500/40 transition-all duration-500 cursor-pointer shadow-2xl relative overflow-hidden">
             <div class="absolute top-0 right-0 size-32 bg-indigo-500/5 blur-3xl -mr-16 -mt-16 group-hover:bg-indigo-500/10 transition-all"></div>
@@ -509,8 +534,15 @@
                   
                   <button 
                     (click)="resetZikr(item)"
-                    class="size-14 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all flex items-center justify-center">
+                    class="size-14 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all flex items-center justify-center" title="إعادة تعيين العداد">
                     <svg lucideIcon="rotate-ccw" class="size-6 text-slate-400"></svg>
+                  </button>
+
+                  <button 
+                    (click)="shareText(item.text)"
+                    class="size-14 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all flex items-center justify-center text-slate-400 hover:text-white"
+                    title="مشاركة الذكر">
+                    <svg lucideIcon="share-2" class="size-6"></svg>
                   </button>
                 </div>
               </div>
@@ -883,6 +915,66 @@
               class="rounded-xl h-12 font-bold text-sm bg-purple-500/20 text-purple-400 border border-purple-500/30 hover:bg-opacity-100 transition-all">
               لا إله إلا الله
             </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Qibla Compass Tab -->
+      <div *ngSwitchCase="'qibla'" class="space-y-8 animate-in fade-in duration-700">
+        <div class="glass border-white/5 rounded-[2.5rem] p-10 text-center flex flex-col items-center justify-center">
+          <h3 class="text-3xl font-black text-white mb-2">اتجاه القبلة 🕋</h3>
+          <p class="text-slate-400 mb-8 max-w-md">اضغط على زر تحديد الموقع لمعرفة زاوية واتجاه الكعبة المشرفة بدقة.</p>
+          
+          <div class="relative w-64 h-64 rounded-full border-4 border-indigo-500/30 flex items-center justify-center mb-8 bg-black/40 shadow-2xl">
+            <div class="absolute inset-0 rounded-full border border-dashed border-white/10 animate-spin-slow"></div>
+            <div class="absolute top-2 text-xs font-bold text-indigo-300">شمال (N)</div>
+            <div class="absolute bottom-2 text-xs font-bold text-slate-500">جنوب (S)</div>
+            <div class="absolute left-2 text-xs font-bold text-slate-500">غرب (W)</div>
+            <div class="absolute right-2 text-xs font-bold text-slate-500">شرق (E)</div>
+            
+            <!-- Compass Needle / Qibla Pointer -->
+            <div class="w-2 h-36 bg-gradient-to-t from-transparent via-red-500 to-emerald-400 rounded-full transition-transform duration-1000 origin-bottom absolute bottom-1/2" [style.transform]="'rotate(' + qiblaDirection + 'deg)'"></div>
+            <div class="size-6 rounded-full bg-indigo-600 border-2 border-white shadow-lg z-10 flex items-center justify-center text-[10px] font-bold">🕋</div>
+          </div>
+
+          <div class="mb-6 text-xl font-bold text-indigo-400">الزاوية: <span class="font-mono">{{ qiblaDirection | number:'1.1-1' }}°</span></div>
+
+          <button (click)="locateQibla()" [disabled]="isLocatingQibla" class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold py-4 px-10 rounded-2xl transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-3">
+            <svg lucideIcon="compass" class="size-5"></svg>
+            {{ isLocatingQibla ? 'جاري تحديد الموقع...' : 'تحديد اتجاه القبلة الآن' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Khatma Planner Tab -->
+      <div *ngSwitchCase="'khatma'" class="space-y-8 animate-in fade-in duration-700">
+        <div class="glass border-white/5 rounded-[2.5rem] p-10">
+          <h3 class="text-3xl font-black text-white mb-2 text-right">مخطط ختمة القرآن الكريم 📖</h3>
+          <p class="text-indigo-300 font-bold mb-8 text-right">خطط لختم القرآن الكريم بسهولة وتتبع عدد الصفحات اليومية المطلوبة.</p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="glass border-white/5 rounded-2xl p-6 text-right">
+              <span class="text-xs text-slate-400 block mb-1">المدة المطلوبة للختمة</span>
+              <select [(ngModel)]="khatmaDays" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold">
+                <option [value]="7">7 أيام (ختمة أسبوعية)</option>
+                <option [value]="15">15 يوماً</option>
+                <option [value]="30">30 يوماً (شهرية)</option>
+                <option [value]="60">60 يوماً (شهرين)</option>
+              </select>
+            </div>
+            <div class="glass border-white/5 rounded-2xl p-6 text-right">
+              <span class="text-xs text-slate-400 block mb-1">إجمالي صفحات القرآن</span>
+              <p class="text-2xl font-black text-white mt-2">604 صفحة</p>
+            </div>
+            <div class="glass border-white/5 rounded-2xl p-6 text-right">
+              <span class="text-xs text-slate-400 block mb-1">القراءة المطلوبة يومياً</span>
+              <p class="text-2xl font-black text-emerald-400 mt-2">{{ (604 / khatmaDays) | number:'1.1-1' }} صفحة / يومياً</p>
+            </div>
+          </div>
+
+          <div class="glass border-white/5 rounded-2xl p-6 text-center bg-indigo-950/20">
+            <h4 class="font-bold text-white mb-2">نصيحة إيمانية للختمة</h4>
+            <p class="text-sm text-slate-300 max-w-xl mx-auto">قراءة {{ ((604 / khatmaDays) / 20) | number:'1.1-1' }} جزء أو حوالي {{ (604 / khatmaDays) | number:'1.0-0' }} صفحة بعد كل صلاة ستجعلك تختم القرآن بكل يسر وسهولة بإذن الله.</p>
           </div>
         </div>
       </div>

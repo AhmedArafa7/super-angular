@@ -100,8 +100,8 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3 } from 'lucide-ang
       <div class="relative mb-12 rounded-[2.5rem] overflow-hidden border border-white/5 bg-slate-900 shadow-2xl">
         <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent z-10"></div>
         <div class="w-full h-[400px] bg-slate-800 flex items-center justify-center opacity-50 grayscale hover:grayscale-0 transition-all duration-1000">
-           <img src="https://images.unsplash.com/photo-1596515828859-e9ceec5c4839?q=80&w=1000&auto=format&fit=crop" class="w-full h-full object-cover" alt="Tank Battle Feature" />
-        </div>
+            <img src="https://images.unsplash.com/photo-1596515828859-e9ceec5c4839?q=80&w=1000&auto=format&fit=crop" class="w-full h-full object-cover" alt="Tank Battle Feature" (error)="onImageError($event)" />
+         </div>
         
         <div class="absolute bottom-0 inset-x-0 p-8 md:p-12 z-20 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
            <div class="max-w-2xl text-right">
@@ -157,7 +157,7 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3 } from 'lucide-ang
         <div *ngFor="let game of games" class="group relative">
           <div class="aspect-[4/3] rounded-[2rem] overflow-hidden border border-white/5 bg-slate-900 transition-all duration-500 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-indigo-500/10 flex flex-col">
             <div class="flex-1 bg-slate-800 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity">
-                <img *ngIf="game.thumbnail" [src]="game.thumbnail" class="w-full h-full object-cover" [alt]="game.title" />
+                 <img *ngIf="game.thumbnail" [src]="game.thumbnail" class="w-full h-full object-cover" [alt]="game.title" (error)="game.thumbnail = ''" />
                 <svg *ngIf="!game.thumbnail" xmlns="http://www.w3.org/2000/svg" class="size-20 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             </div>
             
@@ -431,5 +431,10 @@ export class ArcadeHubComponent implements OnInit {
 
   async declineInvite(invite: any) {
     await this.firebaseService.updateGameInviteStatus(invite.id, 'declined');
+  }
+
+  onImageError(event: Event) {
+    const el = event.target as HTMLElement;
+    el.style.display = 'none';
   }
 }

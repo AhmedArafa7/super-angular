@@ -89,7 +89,9 @@ import { OmAlQuraAdminPortalComponent } from './components/admin-portal.componen
         <app-om-al-qura-staff-portal *ngIf="activeTab() === 'staff'"></app-om-al-qura-staff-portal>
 
         <!-- PAGE 2: Customer Store -->
-        <app-om-al-qura-customer-store *ngIf="activeTab() === 'customer'"></app-om-al-qura-customer-store>
+        <app-om-al-qura-customer-store *ngIf="activeTab() === 'customer'"
+          (navigateToStoreMap)="activeTab.set('in_store_map')">
+        </app-om-al-qura-customer-store>
 
         <!-- PAGE 3: In-Store Map -->
         <app-om-al-qura-in-store-map *ngIf="activeTab() === 'in_store_map'"></app-om-al-qura-in-store-map>

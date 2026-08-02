@@ -80,6 +80,8 @@ export interface OmAlQuraOrder {
   paymentMethod: 'كاش' | 'فيزا' | 'محفظة إلكترونية';
   notes?: string;
   createdAt: string;
+  cancellationReason?: string;
+  cancelledAt?: string;
 }
 
 export interface OmAlQuraDeliveryDriver {
@@ -778,7 +780,66 @@ ${itemsText}
 
   private seedFaqs() {
     const defaults: OmAlQuraFaq[] = [
-
+      {
+        id: 'faq-1',
+        question: 'ما هي ساعات عمل متجر أم القرى للمنظفات؟',
+        answer: 'يعمل المتجر من الساعة 9 صباحاً حتى 11 مساءً طوال أيام الأسبوع، بما فيها أيام الجمعة والعطلات الرسمية.',
+        category: 'عام'
+      },
+      {
+        id: 'faq-2',
+        question: 'هل يتوفر خدمة التوصيل للمنازل؟ وما هي مناطق التغطية؟',
+        answer: 'نعم، نوفر خدمة توصيل سريعة لجميع المناطق. يمكنك تحديد عنوانك عند تقديم الطلب وسيتواصل معك مندوب التوصيل لتأكيد الموعد. مدة التوصيل تتراوح بين 30 دقيقة وساعتين حسب المنطقة.',
+        category: 'توصيل'
+      },
+      {
+        id: 'faq-3',
+        question: 'ما هي طرق الدفع المتاحة في المتجر؟',
+        answer: 'نقبل الدفع بالكاش عند التسليم، وبطاقات الفيزا والماستركارد عبر ماكينة POS مع المندوب، وكذلك المحافظ الإلكترونية (فودافون كاش - إنستاباي - فوري) على رقم 01033567292.',
+        category: 'دفع'
+      },
+      {
+        id: 'faq-4',
+        question: 'هل يمكنني إرجاع منتج أو استبداله؟',
+        answer: 'نعم، نقبل إرجاع المنتجات خلال 7 أيام من تاريخ الشراء بشرط أن يكون المنتج في حالته الأصلية ومغلقاً وغير مستخدم، مع الاحتفاظ بإيصال الشراء. للتواصل: اتصل بنا أو أرسل الطلب عبر الواتس أب.',
+        category: 'إرجاع'
+      },
+      {
+        id: 'faq-5',
+        question: 'ما هي البدائل الوطنية لمساحيق الغسيل الخاضعة للمقاطعة؟',
+        answer: 'من أفضل البدائل المتوفرة لدينا: (1) مسحوق بيرسيل ايجيبت - جودة مطابقة 100%. (2) مسحوق برسيت الوطني - سعر منخفض وجودة عالية. (3) مسحوق تايد المصري. كلها متوفرة في المتجر بأسعار تنافسية.',
+        category: 'مقاطعة'
+      },
+      {
+        id: 'faq-6',
+        question: 'هل يتوفر عروض وخصومات دورية؟',
+        answer: 'نعم! نقدم عروضاً أسبوعية على مجموعات مختلفة من المنتجات. تابع قسم "العروض" في التطبيق للاطلاع على أحدث التخفيضات. كما نقدم خصماً 10% على الطلبات التي تتجاوز 200 ج.م.',
+        category: 'عروض'
+      },
+      {
+        id: 'faq-7',
+        question: 'كيف أعرف مكان المنتج على رفوف المتجر؟',
+        answer: 'يمكنك الضغط على زر "الرف" الظاهر تحت كل منتج في القائمة وسيعطيك التطبيق الموقع الدقيق على خريطة الرفوف. كما يمكنك الضغط على "عرض الخريطة الكروكية" في الأعلى لرؤية مخطط المتجر الكامل.',
+        category: 'تسوق'
+      },
+      {
+        id: 'faq-8',
+        question: 'ما هو الحد الأدنى للطلب لاستحقاق خدمة التوصيل؟',
+        answer: 'الحد الأدنى للطلب للحصول على خدمة التوصيل هو 50 ج.م. للطلبات أقل من ذلك، يمكنك زيارة المتجر مباشرة أو الاستلام شخصياً.',
+        category: 'توصيل'
+      },
+      {
+        id: 'faq-9',
+        question: 'هل يمكنني طلب منتج غير موجود في القائمة؟',
+        answer: 'بالطبع! اضغط على زر "طلب منظف غير متوفر" واكتب اسم المنتج الذي تبحث عنه. سيراجع فريقنا الطلب ويحاول توفيره في أقرب وقت ممكن وسنتواصل معك فور توفره.',
+        category: 'منتجات'
+      },
+      {
+        id: 'faq-10',
+        question: 'هل منتجاتكم أصلية ومعتمدة؟',
+        answer: 'نعم، جميع منتجات متجر أم القرى أصلية 100% ومستوردة من موردين معتمدين. نحرص على جودة كل منتج قبل عرضه. في حال وجود أي شك، يمكنك مراجعة الموظفين مباشرة للاطلاع على شهادات الجودة.',
+        category: 'منتجات'
+      }
     ];
     this.saveFaqs(defaults);
   }
@@ -1129,6 +1190,75 @@ ${itemsText}
     const updated = this.orders().map(o => o.id === orderId ? { ...o, status } : o);
     this.saveOrders(updated);
     this.toast.show(`تم تحديث حالة الطلب #${orderId} إلى (${status})`, 'info');
+  }
+
+  // Cancel order (by customer or staff) and notify staff
+  cancelOrder(orderId: string, reason: string = 'تم إلغاء الطلب من قبل العميل') {
+    const order = this.orders().find(o => o.id === orderId);
+    if (!order) {
+      this.toast.show('الطلب غير موجود بالسجلات', 'warning');
+      return false;
+    }
+
+    if (order.status === 'completed') {
+      this.toast.show('عذراً، هذا الطلب مكتمل ومستلم بالفعل ولا يمكن إلغاؤه.', 'warning');
+      return false;
+    }
+
+    if (order.status === 'cancelled') {
+      this.toast.show('هذا الطلب تم إلغاؤه مسبقاً!', 'info');
+      return false;
+    }
+
+    // 1. Restore product stock quantities
+    const updatedProducts = this.products().map(p => {
+      const item = order.items.find(i => i.product.id === p.id);
+      if (item) {
+        return {
+          ...p,
+          stockQuantity: p.stockQuantity + item.quantity,
+          salesCount: Math.max(0, p.salesCount - item.quantity)
+        };
+      }
+      return p;
+    });
+    this.saveProducts(updatedProducts);
+
+    const nowTime = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+
+    // 2. Update order status to 'cancelled' with cancellation details
+    const updatedOrders = this.orders().map(o => {
+      if (o.id === orderId) {
+        return {
+          ...o,
+          status: 'cancelled' as const,
+          cancellationReason: reason,
+          cancelledAt: nowTime
+        };
+      }
+      return o;
+    });
+    this.saveOrders(updatedOrders);
+
+    // 3. Sync customer saved invoice if it matches
+    if (this.savedCustomerInvoice()?.id === orderId) {
+      const updatedInvoice: OmAlQuraOrder = {
+        ...this.savedCustomerInvoice()!,
+        status: 'cancelled',
+        cancellationReason: reason,
+        cancelledAt: nowTime
+      };
+      this.savedCustomerInvoice.set(updatedInvoice);
+      localStorage.setItem('omalqura_latest_customer_invoice', JSON.stringify({
+        order: updatedInvoice,
+        savedAt: Date.now()
+      }));
+    }
+
+    // 4. Play chime & trigger staff alert notification
+    this.playNotificationChime();
+    this.toast.show(`🚫 تم إلغاء الطلب #${orderId} وإرسال إشعار فوري لطاقم العمل والموظفين!`, 'warning');
+    return true;
   }
 
   assignDriverToOrder(orderId: string, driverId: string, driverName: string) {

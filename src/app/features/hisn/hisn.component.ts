@@ -65,7 +65,67 @@ export class HisnComponent {
   surahSearchTerm = '';
 
   // View tabs state
-  activeTab: 'quran' | 'prayers' | 'azkar' | 'wird' | 'names' | 'tasbih' | 'storage' = 'quran';
+  activeTab: 'quran' | 'prayers' | 'azkar' | 'wird' | 'names' | 'tasbih' | 'storage' | 'qibla' | 'khatma' = 'quran';
+  azkarSearchTerm = '';
+  qiblaDirection = 135;
+  isLocatingQibla = false;
+
+  // Khatma state
+  khatmaDays = 30;
+  khatmaCurrentPage = 1;
+  totalQuranPages = 604;
+
+  get filteredCategories() {
+    if (!this.azkarSearchTerm.trim()) return this.categories;
+    const term = this.azkarSearchTerm.trim().toLowerCase();
+    return this.categories.filter(c => 
+      c.title.toLowerCase().includes(term) ||
+      c.items.some(i => i.text.toLowerCase().includes(term) || (i.description && i.description.toLowerCase().includes(term)))
+    );
+  }
+
+  showAppToast(message: string) {
+    this.toastMessage = message;
+    this.showToast = true;
+    setTimeout(() => this.showToast = false, 4000);
+  }
+
+  locateQibla() {
+    this.isLocatingQibla = true;
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        const kaabaLat = 21.4225;
+        const kaabaLon = 39.8262;
+        const dLon = (kaabaLon - lon) * Math.PI / 180;
+        const lat1 = lat * Math.PI / 180;
+        const lat2 = kaabaLat * Math.PI / 180;
+        const y = Math.sin(dLon) * Math.cos(lat2);
+        const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+        let brng = Math.atan2(y, x) * 180 / Math.PI;
+        this.qiblaDirection = (brng + 360) % 360;
+        this.isLocatingQibla = false;
+        this.showAppToast('تم تحديد اتجاه القبلة بنجاح 🕋');
+      }, () => {
+        this.isLocatingQibla = false;
+        this.qiblaDirection = 135;
+        this.showAppToast('تعذر جلب الموقع الجغرافي، تم عرض الاتجاه التقريبي');
+      });
+    } else {
+      this.isLocatingQibla = false;
+      this.showAppToast('المتصفح لا يدعم تحديد الموقع');
+    }
+  }
+
+  shareText(text: string) {
+    if (navigator.share) {
+      navigator.share({ title: 'حصن المسلم', text: text }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(text);
+      this.showAppToast('تم نسخ النص إلى الحافظة 📋');
+    }
+  }
 
   // Wird / Quran states
   wirdItems = this.hisnService.wird;
@@ -263,8 +323,10 @@ export class HisnComponent {
   latitude = this.prayerQuranService.latitude;
   longitude = this.prayerQuranService.longitude;
 
-  fetchPrayerTimes(lat: number, lng: number) {
-    this.prayerQuranService.fetchPrayerTimes(lat, lng);
+  fetchPrayerTimes(lat?: number, lng?: number) {
+    const lLat = lat ?? this.latitude() ?? 31.0379;
+    const lLng = lng ?? this.longitude() ?? 31.3815;
+    this.prayerQuranService.fetchPrayerTimes(lLat, lLng);
   }
 
   setCalculationMethod(method: number) {

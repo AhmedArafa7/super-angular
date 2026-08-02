@@ -142,12 +142,12 @@ export class VideoCardComponent {
   getAvatarUrl(): string {
     const v = this.video();
     if (v.channelAvatar && v.channelAvatar.startsWith('http')) return v.channelAvatar;
-    return getInitialAvatarSvg(v.author || 'Channel');
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(v.author || 'Channel')}&background=random&color=fff&bold=true`;
   }
 
   onAvatarError(event: Event) {
     const imgEl = event.target as HTMLImageElement;
-    imgEl.src = getInitialAvatarSvg(this.video().author || 'Channel');
+    imgEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(this.video().author || 'Channel')}&background=random&color=fff&bold=true`;
   }
 
   isWatched(): boolean {

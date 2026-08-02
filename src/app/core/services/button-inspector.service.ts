@@ -75,7 +75,38 @@ export class ButtonInspectorService {
         this.brokenImages.add(target as HTMLImageElement);
         this.scheduleScan(1000);
       }
+      
+      // Catch icon resolution or runtime UI errors
+      if (event.message && (event.message.includes('Unable to resolve icon') || event.message.includes('lucide'))) {
+        this.addRuntimeErrorIssue('أيقونة غير معتمدة أو فشل حل الأيقونة (Icon Resolution Error)', event.message);
+      }
     }, true);
+
+    // Also catch unhandled promise rejections
+    window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+      const msg = event.reason?.message || String(event.reason);
+      if (msg && (msg.includes('Unable to resolve icon') || msg.includes('lucide'))) {
+        this.addRuntimeErrorIssue('أيقونة غير معتمدة أو فشل حل الأيقونة (Icon Resolution Error)', msg);
+      }
+    });
+  }
+
+  private addRuntimeErrorIssue(reason: string, details: string) {
+    const current = this.detectedIssues();
+    const newIssue: ButtonIssue = {
+      id: `runtime-error-${Math.random().toString(36).substr(2, 6)}`,
+      element: document.body,
+      tagName: 'svg',
+      text: details.substring(0, 40),
+      reason: reason,
+      englishReason: details,
+      category: 'error',
+      severity: 'error',
+      selector: 'svg[lucideIcon]'
+    };
+    if (!current.some(i => i.englishReason === details)) {
+      this.detectedIssues.set([...current, newIssue]);
+    }
   }
 
   private initNavigationListener() {

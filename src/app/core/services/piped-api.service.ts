@@ -298,6 +298,7 @@ export class PipedApiService {
                   thumbnail: item.thumbnail || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
                   author: item.uploaderName || item.author || '',
                   authorId: item.uploaderUrl ? item.uploaderUrl.replace('/channel/', '') : '',
+                  channelAvatar: item.uploaderAvatar || item.uploaderThumbnails?.[0]?.url || item.avatar || '',
                   source: 'youtube' as const,
                   isShorts: item.duration > 0 && item.duration <= 65
                 });
@@ -308,6 +309,29 @@ export class PipedApiService {
         }
       } catch (err) {
         console.warn(`[PipedApiService] Search failed for instance ${instance}`, err);
+      }
+    }
+    return [];
+  }
+
+  async searchChannels(query: string): Promise<any[]> {
+    for (const instance of this.instances) {
+      try {
+        const url = `${instance}/search?q=${encodeURIComponent(query)}&filter=all`;
+        const res = await this.smartFetch<any>(url);
+        const items = res?.items || res || [];
+        if (Array.isArray(items) && items.length > 0) {
+          const channels = items
+            .filter((item: any) => item.type === 'channel' || (item.url && item.url.includes('/channel/')))
+            .map((item: any) => ({
+              channelId: item.url ? item.url.replace('/channel/', '') : item.id,
+              name: item.name || item.uploaderName || '',
+              avatarUrl: item.thumbnail || item.avatarUrl || ''
+            }));
+          if (channels.length > 0) return channels;
+        }
+      } catch (err) {
+        console.warn(`[PipedApiService] Channel search failed for instance ${instance}`, err);
       }
     }
     return [];

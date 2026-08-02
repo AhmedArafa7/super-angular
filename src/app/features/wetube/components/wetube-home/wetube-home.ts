@@ -462,7 +462,8 @@ export class WeTubeHomeComponent implements OnInit {
   }
 
   getAvatarUrl(video: any): string {
+    if (video.channelAvatar && video.channelAvatar.sourcesize || (video.channelAvatar && video.channelAvatar.startsWith('http'))) return video.channelAvatar;
     if (video.channelAvatar && video.channelAvatar.startsWith('http')) return video.channelAvatar;
-    return getInitialAvatarSvg(video.author || 'Channel');
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(video.author || 'Channel')}&background=random&color=fff&bold=true`;
   }
 }

@@ -65,36 +65,101 @@ import { SkeletonLoaderComponent } from '../skeleton-loader/skeleton-loader.comp
         <!-- Navigation Tabs -->
         <div class="border-b border-gray-800 mb-6">
           <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-8">
-            <button class="pb-3 border-b-2 border-white text-white font-medium">الفيديوهات</button>
-            <button class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white font-medium">قوائم التشغيل</button>
-            <button class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white font-medium">المنتدى</button>
+            <button 
+              (click)="activeTab.set('videos')"
+              [class]="activeTab() === 'videos' ? 'pb-3 border-b-2 border-white text-white font-medium' : 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white font-medium'"
+            >الفيديوهات</button>
+            <button 
+              (click)="activeTab.set('playlists')"
+              [class]="activeTab() === 'playlists' ? 'pb-3 border-b-2 border-white text-white font-medium' : 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white font-medium'"
+            >قوائم التشغيل</button>
+            <button 
+              (click)="activeTab.set('community')"
+              [class]="activeTab() === 'community' ? 'pb-3 border-b-2 border-white text-white font-medium' : 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white font-medium'"
+            >المنتدى</button>
+            <button 
+              (click)="activeTab.set('about')"
+              [class]="activeTab() === 'about' ? 'pb-3 border-b-2 border-white text-white font-medium' : 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white font-medium'"
+            >حول</button>
           </div>
         </div>
 
-        <!-- Videos Grid -->
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-x-4 md:gap-y-8">
-            @for (video of videos(); track video.id) {
-              <app-video-card 
-                [video]="video" 
-                (click)="playVideo(video.id)"
-              ></app-video-card>
-            }
-            
-            @if (isLoadingFeed()) {
-              @for (i of [1,2,3,4,5,6,7,8]; track i) {
-                <app-skeleton-loader type="video-card"></app-skeleton-loader>
+        @if (activeTab() === 'videos') {
+          <!-- Videos Grid -->
+          <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-x-4 md:gap-y-8">
+              @for (video of videos(); track video.id) {
+                <app-video-card 
+                  [video]="video" 
+                  (click)="playVideo(video.id)"
+                ></app-video-card>
               }
+              
+              @if (isLoadingFeed()) {
+                @for (i of [1,2,3,4,5,6,7,8]; track i) {
+                  <app-skeleton-loader type="video-card"></app-skeleton-loader>
+                }
+              }
+            </div>
+            
+            <!-- Infinite Scroll Trigger -->
+            <div #scrollTrigger class="w-full h-20 flex items-center justify-center mt-4">
+              @if (isLoadingFeed()) {
+                <div class="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+              }
+            </div>
+          </div>
+        } @else if (activeTab() === 'playlists') {
+          <!-- Playlists Section -->
+          <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            @if (playlists().length > 0) {
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-x-4 md:gap-y-8">
+                @for (playlist of playlists(); track playlist.id) {
+                  <div class="group cursor-pointer flex flex-col gap-2" (click)="openPlaylist(playlist.id)">
+                    <div class="aspect-video w-full bg-gray-800 rounded-xl overflow-hidden relative">
+                      <img [src]="playlist.thumbnail" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="Playlist">
+                      <div class="absolute bottom-2 right-2 bg-black/80 px-2 py-1 rounded text-xs font-bold text-white flex items-center gap-1">
+                        <span>{{ playlist.videoCount || 0 }} فيديو</span>
+                      </div>
+                    </div>
+                    <h3 class="font-medium text-white line-clamp-2 text-sm group-hover:text-indigo-400 transition">{{ playlist.title }}</h3>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="w-full min-h-[40vh] flex flex-col items-center justify-center p-8 text-center">
+                <div class="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                  <lucide-icon [img]="Play" class="w-8 h-8 text-gray-400"></lucide-icon>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">لا توجد قوائم تشغيل متاحة</h3>
+                <p class="text-gray-400 text-sm max-w-sm">لا تحتوي هذه القناة على قوائم تشغيل عامة حالياً.</p>
+              </div>
             }
           </div>
-          
-          <!-- Infinite Scroll Trigger -->
-          <div #scrollTrigger class="w-full h-20 flex items-center justify-center mt-4">
-            @if (isLoadingFeed()) {
-              <div class="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-            }
+        } @else if (activeTab() === 'community') {
+          <!-- Community Section -->
+          <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
+            <div class="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+              <lucide-icon [img]="Bell" class="w-8 h-8 text-gray-400"></lucide-icon>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-2">قسم المنتدى فارغ</h3>
+            <p class="text-gray-400 text-sm">لا توجد منشورات جديدة في منتدى هذه القناة حالياً.</p>
           </div>
-        </div>
+        } @else if (activeTab() === 'about') {
+          <!-- About Section -->
+          <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-white">
+            <h3 class="text-xl font-bold mb-4">الوصف</h3>
+            <p class="text-gray-300 whitespace-pre-line leading-relaxed mb-8">{{ channelData()?.description || 'لا يوجد وصف متاح لهذه القناة.' }}</p>
+            <div class="border-t border-gray-800 pt-6">
+              <h4 class="font-bold mb-3">إحصائيات القناة</h4>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm text-gray-400">
+                <div>المشتركون: <span class="text-white font-medium">{{ channelData()?.subscriberCount | number }}</span></div>
+                <div>عدد الفيديوهات: <span class="text-white font-medium">{{ channelData()?.videoCount | number }}</span></div>
+                <div>معرف القناة: <span class="text-white font-medium select-all">{{ channelData()?.channelId }}</span></div>
+              </div>
+            </div>
+          </div>
+        }
       } @else {
         <!-- Error State -->
         <div class="w-full h-full min-h-[60vh] flex flex-col items-center justify-center p-8 text-center">
@@ -137,7 +202,9 @@ export class WeTubeChannelComponent implements OnInit {
   channelId = signal<string>('');
   channelData = signal<any>(null);
   videos = signal<any[]>([]);
+  playlists = signal<any[]>([]);
   nextpage = signal<string>('');
+  activeTab = signal<'videos' | 'playlists' | 'community' | 'about'>('videos');
   
   isLoadingMeta = signal<boolean>(true);
   isLoadingFeed = signal<boolean>(false);
@@ -160,7 +227,9 @@ export class WeTubeChannelComponent implements OnInit {
   private resetState() {
     this.channelData.set(null);
     this.videos.set([]);
+    this.playlists.set([]);
     this.nextpage.set('');
+    this.activeTab.set('videos');
     this.isLoadingMeta.set(true);
     if (this.observer) {
       this.observer.disconnect();
@@ -171,17 +240,38 @@ export class WeTubeChannelComponent implements OnInit {
     this.isLoadingMeta.set(true);
     this.checkSubscriptionStatus(id);
 
-    const META_TTL = 30 * 24 * 60 * 60 * 1000; // 14 days TTL for channel meta
-    const FEED_TTL = 2 * 60 * 60 * 1000;       // 2 hours TTL for video feeds
+    const META_TTL = 30 * 24 * 60 * 60 * 1000;
+    const FEED_TTL = 2 * 60 * 60 * 1000;
 
-    // 1. Try Cache for Meta (TTL 14 days)
-    const cachedMeta = await this.idb.getWithTTL('channel_meta', id, META_TTL);
-    
-    // 2. Try Cache for Feed (TTL 2 hours)
-    const cachedFeed = await this.idb.getWithTTL('channel_feed', id, FEED_TTL);
+    let realChannelId = id;
+
+    if (id.startsWith('title_')) {
+      const raw = id.replace('title_', '');
+      let channelName = '';
+      try {
+        channelName = decodeURIComponent(raw);
+      } catch {
+        channelName = raw;
+      }
+      channelName = channelName.replace(/\s*-\s*/, ' ').trim();
+      console.log('[Channel] Resolving title_ ID:', id, '→ channelName:', channelName);
+
+      const resolved = await this.resolveChannelByName(channelName);
+      if (resolved) {
+        console.log('[Channel] Resolved to real channel:', resolved.channelId);
+        realChannelId = resolved.channelId;
+        this.channelData.set(resolved.meta);
+      } else {
+        console.warn('[Channel] Could not resolve channel name, showing error');
+        this.isLoadingMeta.set(false);
+        return;
+      }
+    }
+
+    const cachedMeta = await this.idb.getWithTTL('channel_meta', realChannelId, META_TTL);
+    const cachedFeed = await this.idb.getWithTTL('channel_feed', realChannelId, FEED_TTL);
 
     if (cachedMeta) {
-      // Renew TTL on visit so active channels stay cached
       await this.idb.setWithTTL('channel_meta', cachedMeta);
     }
 
@@ -190,21 +280,21 @@ export class WeTubeChannelComponent implements OnInit {
       this.videos.set(cachedFeed.videos || []);
       this.nextpage.set(cachedFeed.nextpage || '');
       this.isLoadingMeta.set(false);
+      this.updateSubscriptionWithRealId(id, realChannelId, cachedMeta.name, cachedMeta.avatarUrl);
       this.setupIntersectionObserver();
       return;
     }
 
-    // 3. Fetch from Piped API if cache is missing or expired
     try {
-      const data = await this.piped.getChannelDetails(id);
+      const data = await this.piped.getChannelDetails(realChannelId);
       
       const meta = {
-        channelId: id,
+        channelId: realChannelId,
         name: data.name,
         avatarUrl: data.avatarUrl,
         bannerUrl: data.bannerUrl,
-        subscriberCount: data.subscriberCount,
-        videoCount: 0, // Not always provided by Piped directly, keep generic
+        subscriberCount: data.subscriberCount || 0,
+        videoCount: data.videoCount || data.relatedStreams?.length || 0,
         description: data.description
       };
       
@@ -215,7 +305,7 @@ export class WeTubeChannelComponent implements OnInit {
         title: v.title,
         thumbnail: v.thumbnail,
         author: meta.name,
-        authorId: id,
+        authorId: realChannelId,
         views: v.views,
         time: v.uploadedDate || '',
         duration: v.duration > 0 ? this.formatDuration(v.duration) : '',
@@ -225,15 +315,79 @@ export class WeTubeChannelComponent implements OnInit {
       this.videos.set(mappedVideos);
       this.nextpage.set(data.nextpage || '');
 
-      // Save to Cache
-      await this.idb.setWithTTL('channel_meta', meta);
-      await this.idb.setWithTTL('channel_feed', { channelId: id, videos: mappedVideos, nextpage: data.nextpage });
+      const mappedPlaylists = (data.playlists || []).map((p: any) => ({
+        id: p.url?.split('/playlist/')[1] || p.playlistId || p.id,
+        title: p.title,
+        thumbnail: p.thumbnail,
+        videoCount: p.videoCount || p.videos || 0,
+        isPrivate: p.isPrivate || false
+      }));
+      this.playlists.set(mappedPlaylists);
 
+      await this.idb.setWithTTL('channel_meta', meta);
+      await this.idb.setWithTTL('channel_feed', { channelId: realChannelId, videos: mappedVideos, nextpage: data.nextpage });
+
+      this.updateSubscriptionWithRealId(id, realChannelId, meta.name, meta.avatarUrl);
       this.isLoadingMeta.set(false);
       this.setupIntersectionObserver();
     } catch (e) {
       console.error('Failed to load channel details', e);
       this.isLoadingMeta.set(false);
+    }
+  }
+
+  private async resolveChannelByName(name: string): Promise<{ channelId: string; meta: any } | null> {
+    try {
+      const searchTerms = name.split(/\s+/).filter(Boolean);
+      let channels = await this.piped.searchChannels(name);
+      
+      if (channels.length === 0 && searchTerms.length > 1) {
+        channels = await this.piped.searchChannels(searchTerms[0]);
+      }
+
+      const match = channels.find((c: any) => {
+        const cn = (c.name || '').toLowerCase();
+        const sn = name.toLowerCase();
+        return cn.includes(sn) || sn.includes(cn) || searchTerms.some(t => cn.includes(t.toLowerCase()));
+      });
+
+      const best = match || channels[0];
+      if (best?.channelId) {
+        const data = await this.piped.getChannelDetails(best.channelId);
+        return {
+          channelId: best.channelId,
+          meta: {
+            channelId: best.channelId,
+            name: data.name,
+            avatarUrl: data.avatarUrl,
+            bannerUrl: data.bannerUrl,
+            subscriberCount: data.subscriberCount,
+            videoCount: 0,
+            description: data.description
+          }
+        };
+      }
+    } catch (e) {
+      console.warn('Failed to resolve channel by name:', name, e);
+    }
+    return null;
+  }
+
+  private async updateSubscriptionWithRealId(oldId: string, newId: string, name: string, avatar: string) {
+    if (oldId === newId) return;
+    try {
+      const sub = await this.idb.get('subscriptions', oldId);
+      if (sub) {
+        await this.idb.delete('subscriptions', oldId);
+        const updated = { ...sub, id: newId, channelId: newId, avatarUrl: avatar || sub.avatarUrl };
+        await this.idb.put('subscriptions', updated);
+        this.wetube.subscriptions.update(subs =>
+          subs.map(s => (s.id === oldId || s.channelId === oldId) ? { ...s, id: newId, channelId: newId, avatarUrl: avatar || s.avatarUrl } : s)
+        );
+        this.router.navigate(['/stream/channel', newId], { replaceUrl: true });
+      }
+    } catch (e) {
+      console.warn('Failed to update subscription ID:', e);
     }
   }
 
@@ -256,7 +410,7 @@ export class WeTubeChannelComponent implements OnInit {
     
     this.isLoadingFeed.set(true);
     try {
-      const id = this.channelId();
+      const id = this.channelData()?.channelId || this.channelId();
       const data = await this.piped.getChannelDetails(id, this.nextpage());
       
       const meta = this.channelData();
@@ -291,6 +445,12 @@ export class WeTubeChannelComponent implements OnInit {
 
   playVideo(id: string) {
     this.router.navigate(['/stream/watch', id]);
+  }
+
+  openPlaylist(id: string) {
+    if (id) {
+      this.router.navigate(['/stream/playlist', id]);
+    }
   }
 
   private checkSubscriptionStatus(id: string) {

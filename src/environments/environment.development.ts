@@ -18,16 +18,15 @@ export const environment = {
     scopes: 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/userinfo.profile'
   },
   pipedInstances: [
-    '/piped-proxy-kavin',
-    '/piped-proxy-garuda',
-    '/piped-proxy-yt',
-    '/piped-proxy-privacydev',
-    '/piped-proxy-smnz',
-    '/piped-proxy-r4fo',
-    '/piped-proxy-projectsegfault',
-    '/piped-proxy-adminforge',
-    '/piped-proxy-leptons',
-    '/piped-proxy-pfcd'
+    'https://pipedapi.kavin.rocks',
+    'https://piped-api.garudalinux.org',
+    'https://api.piped.yt',
+    'https://api.piped.privacydev.net',
+    'https://pipedapi.smnz.de',
+    'https://pipedapi.r4fo.com',
+    'https://pipedapi.us.projectsegfau.lt',
+    'https://pipedapi.adminforge.de',
+    'https://pipedapi.leptons.xyz',
+    'https://pipedapi.pfcd.me'
   ]
 };
-

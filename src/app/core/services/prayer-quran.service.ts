@@ -258,8 +258,8 @@ export class PrayerQuranService {
     this.isLoadingPrayer.set(true);
     try {
       const date = new Date();
-      const day = date.getDate();
-      const month = date.getMonth() + 1;
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
       const year = date.getFullYear();
 
       const url = `https://api.aladhan.com/v1/timings/${day}-${month}-${year}`;
@@ -267,8 +267,7 @@ export class PrayerQuranService {
         latitude: lat.toString(),
         longitude: lng.toString(),
         method: this.calculationMethod().toString(),
-        school: this.asrMethod().toString(),
-        timezonestring: 'auto'
+        school: this.asrMethod().toString()
       };
 
       const res = await this.http.get<any>(url, { params }).pipe(

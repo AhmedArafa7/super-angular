@@ -438,13 +438,10 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
   }
 
   private async checkLocalInteractions() {
-    const subs = await this.idb.getAll('subscriptions') || [];
-    const targetId = this.video().authorId || this.video().author;
-    if (subs.some(s => s.channelId === targetId)) {
-      this.isSubscribed.set(true);
-    }
+    const vid = this.video();
+    this.isSubscribed.set(this.wetube.isSubscribedToChannel(vid.authorId, vid.author));
 
-    const saved = await this.idb.get('saved_videos', this.video().id);
+    const saved = await this.idb.get('saved_videos', vid.id);
     if (saved) {
       this.isLiked.set(true);
     }
@@ -480,31 +477,14 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
   async toggleSubscription(event: Event) {
     event.stopPropagation();
     const currentState = this.isSubscribed();
-    const newState = !currentState;
+    const vid = this.video();
+    
+    const channelId = vid.authorId || '';
+    const channelTitle = vid.author || 'قناة';
+    const avatarUrl = vid.thumbnail || '';
+
+    const newState = await this.wetube.toggleSubscription(channelId, channelTitle, avatarUrl);
     this.isSubscribed.set(newState);
-
-    const targetId = this.video().authorId || this.video().author;
-
-    try {
-      if (newState) {
-        const newSub = { 
-          id: targetId, 
-          channelId: targetId, 
-          channelTitle: this.video().author, 
-          avatarUrl: this.video().thumbnail || '', 
-          subscribedAt: Date.now() 
-        };
-        await this.idb.put('subscriptions', newSub);
-        this.displayToast('تم الاشتراك بالقناة');
-      } else {
-        await this.idb.delete('subscriptions', targetId);
-        this.displayToast('تم إلغاء الاشتراك');
-      }
-      this.wetube.loadMySubscriptions(true);
-    } catch (e) {
-      console.error('Failed to sync subscription locally', e);
-      this.isSubscribed.set(currentState);
-    }
   }
 
   private displayToast(message: string) {

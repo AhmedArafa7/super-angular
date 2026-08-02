@@ -1,61 +1,64 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { OmAlQuraService, OmAlQuraProduct, OmAlQuraDeliveryDriver, OmAlQuraOrder } from '../../../core/services/om-al-qura.service';
 import { ImageFallbackDirective } from '../../../shared/directives/image-fallback.directive';
+import { AppModalComponent } from '../../../shared/components/modal/app-modal.component';
 
 @Component({
   selector: 'app-om-al-qura-customer-store',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideDynamicIcon, ImageFallbackDirective],
+  imports: [CommonModule, FormsModule, LucideDynamicIcon, ImageFallbackDirective, AppModalComponent],
   template: `
     <div class="space-y-8 font-sans" dir="rtl">
       
-      <!-- Customer Search & Filter Bar -->
-      <div class="bg-gradient-to-r from-emerald-800 to-teal-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
-        <div class="relative z-10 space-y-4">
-          <div class="flex flex-wrap justify-between items-center gap-4">
-            <div>
-              <h2 class="text-2xl font-black mb-1">تسوق أفضل مساحيق المنظفات وأدوات العناية والنظافة</h2>
-              <p class="text-xs text-emerald-100">أسعار تنافسية، منظفات عالية الجودة، بدائل مقاطعة معتمدة وتوصيل سريع</p>
-            </div>
-            
-            <div class="flex flex-wrap items-center gap-2">
-              <button type="button"
-                      (click)="openFaqModal.set(true)" 
-                      class="px-4 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black rounded-2xl text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer hover:scale-105 active:scale-95">
-                <svg lucideIcon="help-circle" class="w-4 h-4"></svg>
-                <span>💬 الأسئلة الشائعة ({{ service.faqs().length }})</span>
-              </button>
-
-              <button type="button"
-                      (click)="openStoreLayoutSketchModal.set(true)" 
-                      class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer hover:scale-105 active:scale-95">
-                <svg lucideIcon="map" class="w-4 h-4"></svg>
-                <span>عرض الخريطة الكروكية ورسم المحل</span>
-              </button>
-
-              <button type="button"
-                      (click)="openMissingProductModal.set(true)" 
-                      class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-2xl text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer hover:scale-105 active:scale-95">
-                <svg lucideIcon="plus-circle" class="w-4 h-4"></svg>
-                <span>طلب منظف غير متوفر</span>
-              </button>
-            </div>
+      <!-- Customer Search & Filter Bar (المربع الفيروزي الأصلي) -->
+      <div class="bg-gradient-to-r from-emerald-800 via-teal-800 to-emerald-900 rounded-3xl p-6 sm:p-8 border border-emerald-600/40 shadow-2xl space-y-5">
+        
+        <!-- Store Header Row -->
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 class="text-2xl sm:text-3xl font-black text-white leading-tight">
+              تسوق أفضل مساحيق المنظفات وأدوات العناية والنظافة
+            </h2>
+            <p class="text-sm text-emerald-200/80 mt-1.5 font-medium">
+              أسعار تنافسية، منظفات عالية الجودة، بدائل مقاطعة معتمدة وتوصيل سريع
+            </p>
           </div>
 
-          <!-- Search Box with alternatives auto-suggestion -->
-          <div class="relative max-w-2xl">
-            <input type="text" 
-                   [ngModel]="searchQuery()" 
-                   (ngModelChange)="searchQuery.set($event)" 
-                   placeholder="ابحث عن مسحوق غسيل، صابون، شامبو، مطهرات، منظف صحون، أو بدائل المقاطعة..." 
-                   class="w-full pl-4 pr-12 py-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-white placeholder-emerald-100/70 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
-            <div class="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-200">
-              <svg lucideIcon="search" class="w-5 h-5"></svg>
-            </div>
+          <!-- Quick Action Buttons -->
+          <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+            <!-- Store Map Button -->
+            <button (click)="openStoreMap()"
+                    type="button"
+                    class="px-4 py-2.5 rounded-full font-black text-xs flex items-center gap-2 transition-all bg-indigo-600 hover:bg-indigo-700 text-white shadow-md cursor-pointer">
+              <svg lucideIcon="map" class="w-4 h-4"></svg>
+              <span>عرض الخريطة الكروكية ورسم المحل</span>
+            </button>
+
+            <!-- Missing Product Button -->
+            <button (click)="openMissingProductModal.set(true)"
+                    type="button"
+                    class="px-4 py-2.5 rounded-full font-black text-xs flex items-center gap-2 transition-all bg-amber-400 hover:bg-amber-500 text-slate-950 shadow-md cursor-pointer">
+              <svg lucideIcon="package-plus" class="w-4 h-4 text-slate-950"></svg>
+              <span>طلب منتج غير متوفر</span>
+            </button>
           </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="relative">
+          <svg lucideIcon="search" class="w-5 h-5 absolute right-4 top-1/2 -translate-y-1/2 text-emerald-200/70 pointer-events-none"></svg>
+          <input type="text"
+                 [ngModel]="searchQuery()"
+                 (ngModelChange)="searchQuery.set($event)"
+                 placeholder="ابحث عن مسحوق، غسيل، شامبو، منظف صحون، أو بدائل المقاطعة..."
+                 class="w-full pr-12 pl-4 py-4 rounded-2xl bg-emerald-950/40 backdrop-blur-sm border border-emerald-500/40 text-white placeholder-emerald-200/60 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400/60 transition-all">
+          <button *ngIf="searchQuery()" (click)="searchQuery.set('')"
+                  class="absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-emerald-900/80 text-emerald-200 hover:text-white flex items-center justify-center transition-all">
+            <svg lucideIcon="x" class="w-3.5 h-3.5"></svg>
+          </button>
         </div>
       </div>
 
@@ -114,9 +117,18 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
                 </span>
                 <span class="text-xs font-bold text-slate-500">مبلغ الطلب: {{ ord.totalPrice }} ج.م</span>
               </div>
-              <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                الوقت المتوقع للوصول: {{ ord.deliveryEta }}
-              </span>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  الوقت المتوقع للوصول: {{ ord.deliveryEta }}
+                </span>
+                <button *ngIf="ord.status !== 'completed' && ord.status !== 'cancelled'"
+                        (click)="cancelOrderDirectly(ord)"
+                        type="button"
+                        class="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center gap-1 cursor-pointer hover:scale-105 active:scale-95">
+                  <svg lucideIcon="ban" class="w-3.5 h-3.5"></svg>
+                  <span>إلغاء الطلب 🚫</span>
+                </button>
+              </div>
             </div>
 
             <!-- 4 Step Progress Bar -->
@@ -297,11 +309,20 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
           </div>
 
           <!-- Add to Cart Action -->
-          <div class="p-5 pt-0">
-            <button (click)="service.addToCart(p)" [disabled]="p.stockQuantity <= 0"
+          <div class="p-5 pt-0 space-y-2">
+            <div *ngIf="cartQuantities().get(p.id) as inCart" class="flex items-center justify-center gap-2 text-[11px] font-bold">
+              <span class="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-300/40">
+                في السلة: {{ inCart }} قطعة
+              </span>
+              <span class="text-slate-400">•</span>
+              <span class="text-slate-500 dark:text-slate-400">
+                متبقي: {{ p.stockQuantity - inCart }} قطعة
+              </span>
+            </div>
+            <button (click)="service.addToCart(p)" [disabled]="p.stockQuantity <= 0 || (cartQuantities().get(p.id) || 0) >= p.stockQuantity"
                     class="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
               <svg lucideIcon="shopping-cart" class="w-4 h-4"></svg>
-              <span>{{ p.stockQuantity > 0 ? 'إضافة لسلة الشراء' : 'المنتج غير متوفر حالياً' }}</span>
+              <span>{{ p.stockQuantity > 0 ? ((cartQuantities().get(p.id) || 0) >= p.stockQuantity ? 'وصلت للحد الأقصى' : 'إضافة لسلة الشراء') : 'المنتج غير متوفر حالياً' }}</span>
             </button>
           </div>
         </div>
@@ -469,32 +490,27 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
         </div>
       </div>
 
-      <!-- MISSING PRODUCT REQUEST MODAL -->
-      <div *ngIf="openMissingProductModal()" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-md w-full font-sans dir-rtl space-y-4 border border-slate-200 dark:border-slate-800 shadow-2xl">
-          <div class="flex justify-between items-center">
-            <h3 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-              <svg lucideIcon="package-plus" class="w-5 h-5 text-amber-500"></svg>
-              <span>طلب منتج غير متوفر بالمتجر</span>
-            </h3>
-            <button (click)="openMissingProductModal.set(false)" class="text-slate-400 hover:text-slate-600">
-              <svg lucideIcon="x" class="w-5 h-5"></svg>
-            </button>
-          </div>
+      <!-- MISSING PRODUCT REQUEST MODAL — using shared app-modal shell -->
+      <app-modal
+        [isOpen]="openMissingProductModal()"
+        title="طلب منتج غير متوفر بالمتجر"
+        subtitle="اكتب اسم المنتج الذي ترغب في شراءه ولم تجده لدينا، وسيقوم الموظفون بمراجعته وتوفيره فوراً."
+        icon="package-plus"
+        iconClass="text-amber-500"
+        (closed)="openMissingProductModal.set(false)">
 
-          <p class="text-xs text-slate-500">اكتب اسم المنتج الذي ترغب في شراءه ولم تجده لدينا، وسيقوم الموظفون بمراجعته وتوفيره فوراً.</p>
-
+        <div class="space-y-3">
           <input type="text" [(ngModel)]="missingProdName" placeholder="اسم المنتج المطلوب بالتفصيل..." class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm">
           <input type="text" [(ngModel)]="customerName" (ngModelChange)="saveCustomerData()" placeholder="اسمك الكريم..." class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm">
           <input type="tel" [(ngModel)]="customerPhone" (ngModelChange)="saveCustomerData()" placeholder="رقم هاتفك للتواصل..." class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm">
           <textarea [(ngModel)]="missingProdNotes" rows="2" placeholder="ملاحظات إضافية أو الكمية المطلوبة..." class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm"></textarea>
-
           <button (click)="sendMissingRequest()" [disabled]="!missingProdName"
                   class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-sm disabled:opacity-40 transition-all">
             إرسال الإشعار للموظفين
           </button>
         </div>
-      </div>
+
+      </app-modal>
 
       <!-- CUSTOMER SAVED INVOICE MODAL DIALOG -->
       <div *ngIf="openInvoiceModal() && service.savedCustomerInvoice()" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
@@ -508,14 +524,27 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             <button (click)="openInvoiceModal.set(false)" class="text-slate-400 hover:text-slate-600">
               <svg lucideIcon="x" class="w-5 h-5"></svg>
             </button>
-          <!-- Order Confirmation Status Banner -->
-          <div class="p-4 bg-emerald-500/10 dark:bg-emerald-950/50 border-2 border-emerald-500/80 rounded-2xl flex items-center gap-3">
+          <!-- Order Confirmation / Cancelled Status Banner -->
+          <div *ngIf="service.savedCustomerInvoice()?.status !== 'cancelled'"
+               class="p-4 bg-emerald-500/10 dark:bg-emerald-950/50 border-2 border-emerald-500/80 rounded-2xl flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black shrink-0 shadow-md">
               <svg lucideIcon="check-circle-2" class="w-6 h-6"></svg>
             </div>
             <div>
               <h4 class="font-black text-sm text-emerald-800 dark:text-emerald-300">تم الطلب وسيتم مراجعة طلبك وتنفيذه</h4>
               <p class="text-[11px] font-bold text-slate-600 dark:text-slate-400 mt-0.5">طلبك قيد المتابعة من فريق العمل، وتفاصيل الفاتورة مبينة أدناه.</p>
+            </div>
+          </div>
+
+          <!-- Order Cancelled Banner -->
+          <div *ngIf="service.savedCustomerInvoice()?.status === 'cancelled'"
+               class="p-4 bg-rose-500/15 dark:bg-rose-950/60 border-2 border-rose-500/80 rounded-2xl flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center font-black shrink-0 shadow-md">
+              <svg lucideIcon="ban" class="w-6 h-6"></svg>
+            </div>
+            <div>
+              <h4 class="font-black text-sm text-rose-900 dark:text-rose-200">تم إلغاء هذا الطلب وإرسال إشعار فوري للموظفين 🚫</h4>
+              <p class="text-[11px] font-bold text-slate-600 dark:text-slate-400 mt-0.5">تم إرجاع كميات جميع الأصناف للمخزون تلقائياً، وتلقى طاقم العمل إشعار الإلغاء.</p>
             </div>
           </div>
 
@@ -557,9 +586,20 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
           </div>
 
           <div class="pt-2 flex justify-between items-center gap-3">
-            <button (click)="openInvoiceModal.set(false)" class="px-5 py-2.5 rounded-2xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
-              إغلاق
-            </button>
+            <div class="flex items-center gap-2">
+              <button (click)="openInvoiceModal.set(false)" class="px-5 py-2.5 rounded-2xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+                إغلاق
+              </button>
+
+              <button *ngIf="service.savedCustomerInvoice()?.status !== 'completed' && service.savedCustomerInvoice()?.status !== 'cancelled'"
+                      (click)="cancelOrderDirectly(service.savedCustomerInvoice()!)"
+                      type="button"
+                      class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs rounded-2xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95">
+                <svg lucideIcon="ban" class="w-4 h-4"></svg>
+                <span>إلغاء هذا الطلب 🚫</span>
+              </button>
+            </div>
+
             <button (click)="service.printThermalReceipt(service.savedCustomerInvoice()!)"
                     class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-2xl shadow-md transition-all flex items-center gap-2">
               <svg lucideIcon="printer" class="w-4 h-4"></svg>
@@ -569,9 +609,48 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
         </div>
       </div>
 
+      <!-- ORDER CANCELLATION CONFIRMATION MODAL -->
+      <app-modal
+        [isOpen]="!!orderToCancel()"
+        title="تأكيد إلغاء الطلب وإرسال إشعار للموظفين"
+        subtitle="سيتم إلغاء الطلب فورياً، استرجاع الأصناف للمخزون، وتنبيه طاقم العمل بملاحظة الإلغاء."
+        icon="alert-triangle"
+        iconClass="text-rose-500"
+        maxWidth="max-w-md"
+        (closed)="orderToCancel.set(null)">
+
+        <div class="space-y-4">
+          <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl text-xs space-y-1 border border-slate-200 dark:border-slate-700">
+            <p class="font-bold text-slate-900 dark:text-white">رقم الطلب: <span class="font-mono text-rose-500 font-black">#{{ orderToCancel()?.id }}</span></p>
+            <p class="text-slate-600 dark:text-slate-300">الإجمالي: {{ orderToCancel()?.totalPrice }} ج.م</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">سبب الإلغاء (اختياري للإدارة):</label>
+            <input type="text"
+                   [(ngModel)]="cancellationReasonInput"
+                   placeholder="مثال: تغيير الرأي، تأخر التوصيل، إلخ..."
+                   class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white">
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-2">
+            <button (click)="orderToCancel.set(null)"
+                    class="px-4 py-2.5 rounded-2xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+              تراجع
+            </button>
+            <button (click)="executeOrderCancellation()"
+                    class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs rounded-2xl shadow-md transition-all flex items-center gap-1.5">
+              <svg lucideIcon="ban" class="w-4 h-4"></svg>
+              <span>تأكيد الإلغاء والتنبيه</span>
+            </button>
+          </div>
+        </div>
+
+      </app-modal>
+
       <!-- FLOATING FAQ CIRCLE BUTTON FOR CUSTOMER -->
       <div class="fixed bottom-24 left-6 z-40">
-        <button (click)="openFaqModal.set(!openFaqModal())"
+        <button (click)="openFaq()"
                 class="relative group w-14 h-14 rounded-full bg-gradient-to-br from-emerald-600 via-teal-600 to-indigo-700 text-white flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all border-2 border-white/40 cursor-pointer">
           
           <div class="absolute -inset-1 bg-gradient-to-r from-emerald-400 to-amber-400 rounded-full blur-xs opacity-75 group-hover:opacity-100 transition duration-300 animate-pulse"></div>
@@ -592,74 +671,87 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
         </button>
       </div>
 
-      <!-- FLOATING FAQ MODAL DIALOG -->
-      <div *ngIf="openFaqModal()" class="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 cursor-pointer" (click)="openFaqModal.set(false)">
-        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-lg w-full font-sans dir-rtl space-y-4 border border-slate-200 dark:border-slate-800 shadow-2xl max-h-[85vh] flex flex-col cursor-default" (click)="$event.stopPropagation()">
-          
-          <div class="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
-            <div class="flex items-center gap-2">
-              <div class="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                <svg lucideIcon="help-circle" class="w-5 h-5"></svg>
-              </div>
-              <div>
-                <h3 class="text-lg font-black text-slate-900 dark:text-white">الأسئلة الشائعة وإجابات الفرع</h3>
-                <p class="text-[11px] text-slate-500">استفسارات وإرشادات تم إعدادها بواسطة طاقم عمل متجر أم القرى</p>
-              </div>
-            </div>
-            <button (click)="openFaqModal.set(false)" class="text-slate-400 hover:text-slate-600">
-              <svg lucideIcon="x" class="w-5 h-5"></svg>
-            </button>
-          </div>
+      <!-- FAQ MODAL — shared shell + content from this page -->
+      <app-modal
+        [isOpen]="openFaqModal()"
+        title="مركز الأسئلة الشائعة للمتجر"
+        subtitle="استفسارات وإرشادات تم إعدادها بواسطة طاقم عمل متجر أم القرى"
+        icon="help-circle"
+        iconClass="text-emerald-600"
+        maxWidth="max-w-lg"
+        (closed)="openFaqModal.set(false)">
 
-          <!-- Search FAQs input -->
-          <div class="relative shrink-0">
-            <input type="text" [ngModel]="faqSearchQuery()" (ngModelChange)="faqSearchQuery.set($event)" placeholder="ابحث في الأسئلة والإجابات..."
-                   class="w-full pl-4 pr-10 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white">
-            <svg lucideIcon="search" class="w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"></svg>
-          </div>
-
-          <!-- FAQ Items List -->
-          <div class="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-1">
-            <div *ngFor="let faq of filteredFaqs()" class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-2">
-              <div class="flex items-start gap-2">
-                <span class="px-2 py-0.5 rounded-lg bg-emerald-600 text-white text-[10px] font-black shrink-0 mt-0.5">سؤال</span>
-                <h4 class="font-black text-slate-900 dark:text-white text-xs sm:text-sm leading-relaxed">{{ faq.question }}</h4>
-              </div>
-
-              <div class="flex items-start gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 text-xs text-slate-600 dark:text-slate-300">
-                <span class="px-2 py-0.5 rounded-lg bg-indigo-600 text-white text-[10px] font-black shrink-0 mt-0.5">إجابة</span>
-                <p class="leading-relaxed font-medium">{{ faq.answer }}</p>
-              </div>
-            </div>
-
-            <div *ngIf="filteredFaqs().length === 0" class="text-center py-10 text-slate-400 space-y-2">
-              <svg lucideIcon="help-circle" class="w-10 h-10 mx-auto text-slate-300 dark:text-slate-700"></svg>
-              <p class="text-xs font-bold">لا توجد أسئلة تطابق بحثك حالياً</p>
-            </div>
-          </div>
-
+        <!-- Search bar -->
+        <div class="relative mb-4">
+          <svg lucideIcon="search" class="w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></svg>
+          <input type="text"
+                 [ngModel]="faqSearchQuery()" (ngModelChange)="faqSearchQuery.set($event)"
+                 placeholder="ابحث في الأسئلة والإجابات..."
+                 class="w-full pr-10 pl-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all">
         </div>
-      </div>
 
-      <!-- STORE LAYOUT SKETCH MODAL DIALOG FOR CUSTOMERS -->
-      <div *ngIf="openStoreLayoutSketchModal()" class="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 cursor-pointer" (click)="openStoreLayoutSketchModal.set(false)">
-        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-2xl w-full font-sans dir-rtl space-y-4 border border-slate-200 dark:border-slate-800 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar cursor-default" (click)="$event.stopPropagation()">
-          
-          <div class="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
-            <div class="flex items-center gap-2">
-              <div class="w-10 h-10 rounded-2xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                <svg lucideIcon="map" class="w-5 h-5"></svg>
-              </div>
-              <div>
-                <h3 class="text-lg font-black text-slate-900 dark:text-white">الرسم الكروكي وخريطة الرفوف بالفرع</h3>
-                <p class="text-[11px] text-slate-500">تم إعداد التخطيط والتوجيه بواسطة إدارة متجر أم القرى</p>
-              </div>
-            </div>
-            <button (click)="openStoreLayoutSketchModal.set(false)" class="text-slate-400 hover:text-slate-600">
-              <svg lucideIcon="x" class="w-5 h-5"></svg>
-            </button>
+        <!-- FAQ list -->
+        <div class="space-y-3 max-h-[50vh] overflow-y-auto" style="scrollbar-width:thin">
+
+          <!-- Empty: no FAQs -->
+          <div *ngIf="service.faqs().length === 0" class="text-center py-10 space-y-2">
+            <svg lucideIcon="help-circle" class="w-10 h-10 mx-auto text-slate-300 dark:text-slate-700"></svg>
+            <p class="text-xs font-bold text-slate-400">لا توجد أسئلة شائعة بعد</p>
+            <p class="text-[11px] text-slate-500">يقوم الموظفون بإضافتها من لوحة التحكم</p>
           </div>
 
+          <!-- Empty: no search results -->
+          <div *ngIf="service.faqs().length > 0 && filteredFaqs().length === 0" class="text-center py-8 space-y-2">
+            <svg lucideIcon="search-x" class="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600"></svg>
+            <p class="text-xs font-bold text-slate-400">لا توجد نتائج تطابق "{{ faqSearchQuery() }}"</p>
+          </div>
+
+          <!-- FAQ cards -->
+          <div *ngFor="let faq of filteredFaqs()"
+               class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-2">
+
+            <!-- Question -->
+            <div class="flex items-start gap-2">
+              <span class="px-2 py-0.5 rounded-lg bg-emerald-600 text-white text-[10px] font-black shrink-0 mt-0.5">سؤال</span>
+              <h4 class="font-black text-slate-900 dark:text-white text-xs sm:text-sm leading-relaxed">
+                {{ faq.question }}
+              </h4>
+            </div>
+
+            <!-- Answer -->
+            <div class="flex items-start gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+              <span class="px-2 py-0.5 rounded-lg bg-amber-500 text-white text-[10px] font-black shrink-0 mt-0.5">إجابة</span>
+              <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                {{ faq.answer }}
+              </p>
+            </div>
+
+            <!-- Category -->
+            <div *ngIf="faq.category" class="flex justify-end">
+              <span class="px-2 py-0.5 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[10px] font-bold">
+                {{ faq.category }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer count -->
+        <p class="text-[11px] text-slate-400 text-center mt-3">
+          {{ filteredFaqs().length }} من {{ service.faqs().length }} سؤال وإجابة
+        </p>
+
+      </app-modal>
+
+      <!-- STORE LAYOUT SKETCH MODAL — using shared app-modal shell -->
+      <app-modal
+        [isOpen]="openStoreLayoutSketchModal()"
+        title="الرسم الكروكي وخريطة الرفوف بالفرع"
+        subtitle="تم إعداد التخطيط والتوجيه بواسطة إدارة متجر أم القرى"
+        icon="map"
+        iconClass="text-indigo-600"
+        (closed)="openStoreLayoutSketchModal.set(false)">
+
+        <div class="space-y-4">
           <!-- Manager Sketch Image Preview (if uploaded) -->
           <div *ngIf="service.storeLayout().sketchImageUrl" class="rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
             <img [src]="service.storeLayout().sketchImageUrl" alt="الرسم الكروكي المرفوع من المدير" appImageFallback class="w-full max-h-72 object-contain bg-slate-950">
@@ -696,14 +788,9 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
           <div *ngIf="service.storeLayout().customSketchNotes" class="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-2xl border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300 font-bold">
             ملاحظات توجيه الزبائن: {{ service.storeLayout().customSketchNotes }}
           </div>
-
-          <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-            <button (click)="openStoreLayoutSketchModal.set(false)" class="px-5 py-2 bg-slate-900 dark:bg-slate-800 text-white font-black text-xs rounded-2xl">
-              إغلاق الخريطة
-            </button>
-          </div>
         </div>
-      </div>
+
+      </app-modal>
 
       <!-- SINGLE PRODUCT LOCATION MAP MODAL -->
       <div *ngIf="selectedMapProduct()" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
@@ -754,6 +841,8 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
 export class OmAlQuraCustomerStoreComponent implements OnInit {
   service = inject(OmAlQuraService);
 
+  @Output() navigateToStoreMap = new EventEmitter<void>();
+
   searchQuery = signal('');
   selectedCategory = signal<string>('الكل');
   openCartDrawer = signal(false);
@@ -764,6 +853,14 @@ export class OmAlQuraCustomerStoreComponent implements OnInit {
   faqSearchQuery = signal('');
   selectedMapProduct = signal<OmAlQuraProduct | null>(null);
 
+  openFaq() {
+    this.openFaqModal.set(true);
+  }
+
+  openStoreMap() {
+    this.openStoreLayoutSketchModal.set(true);
+  }
+
   selectedDriverId: string | null = null;
   customerName = '';
   customerPhone = '';
@@ -772,6 +869,25 @@ export class OmAlQuraCustomerStoreComponent implements OnInit {
 
   missingProdName = '';
   missingProdNotes = '';
+
+  orderToCancel = signal<OmAlQuraOrder | null>(null);
+  cancellationReasonInput = '';
+
+  executeOrderCancellation() {
+    const order = this.orderToCancel();
+    if (order) {
+      this.cancelOrderDirectly(order);
+    }
+  }
+
+  cancelOrderDirectly(order: OmAlQuraOrder) {
+    if (!order) return;
+    const success = this.service.cancelOrder(order.id, 'تم إلغاء هذا الطلب من قبل العميل');
+    if (success) {
+      this.orderToCancel.set(null);
+      this.openInvoiceModal.set(false);
+    }
+  }
 
   ngOnInit() {
     this.loadCustomerData();
@@ -817,6 +933,12 @@ export class OmAlQuraCustomerStoreComponent implements OnInit {
     return this.service.products().filter(p => favIds.includes(p.id));
   });
 
+  cartQuantities = computed(() => {
+    const map = new Map<string, number>();
+    this.service.cart().forEach(item => map.set(item.product.id, item.quantity));
+    return map;
+  });
+
   mostOrderedProducts = computed(() => {
     return [...this.service.products()].sort((a, b) => b.salesCount - a.salesCount).slice(0, 3);
   });
@@ -842,7 +964,11 @@ export class OmAlQuraCustomerStoreComponent implements OnInit {
     const q = this.faqSearchQuery().toLowerCase().trim();
     const faqs = this.service.faqs();
     if (!q) return faqs;
-    return faqs.filter(f => f.question.toLowerCase().includes(q) || f.answer.toLowerCase().includes(q));
+    return faqs.filter(f =>
+      f.question.toLowerCase().includes(q) ||
+      f.answer.toLowerCase().includes(q) ||
+      (f.category || '').toLowerCase().includes(q)
+    );
   });
 
   cartItemsCount() {
