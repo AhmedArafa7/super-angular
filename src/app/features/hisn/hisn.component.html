@@ -363,7 +363,7 @@
           </div>
 
           <!-- Settings -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <div>
               <label class="text-xs text-slate-400 font-bold mb-1 block">طريقة الحساب</label>
               <select (change)="setCalculationMethod(+$any($event.target).value)"
@@ -384,6 +384,17 @@
                 <button (click)="setTimeFormat('12h')" [class]="timeFormat() === '12h' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'" class="flex-1 h-10 rounded-xl text-xs font-bold border border-white/10 transition-all">12 ساعة</button>
                 <button (click)="setTimeFormat('24h')" [class]="timeFormat() === '24h' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'" class="flex-1 h-10 rounded-xl text-xs font-bold border border-white/10 transition-all">24 ساعة</button>
               </div>
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 font-bold mb-1 block">التنبيه قبل الصلاة</label>
+              <select (change)="setNotificationMinutes(+$any($event.target).value)"
+                class="w-full bg-white/5 border-white/10 text-white rounded-xl h-10 px-3 text-xs font-bold focus:outline-none focus:border-indigo-500/50">
+                <option [value]="0" [selected]="notificationMinutes() === 0">عند الأذان فقط</option>
+                <option [value]="5" [selected]="notificationMinutes() === 5">قبل بـ 5 دقائق</option>
+                <option [value]="10" [selected]="notificationMinutes() === 10">قبل بـ 10 دقائق</option>
+                <option [value]="15" [selected]="notificationMinutes() === 15">قبل بـ 15 دقيقة</option>
+                <option [value]="30" [selected]="notificationMinutes() === 30">قبل بـ 30 دقيقة</option>
+              </select>
             </div>
           </div>
 

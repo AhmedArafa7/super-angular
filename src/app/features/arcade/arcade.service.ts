@@ -49,6 +49,26 @@ export class ArcadeService {
   // Local Mock Data representing games until Firebase is integrated
     private games: ArcadeGame[] = [
     {
+      id: 'flashcards',
+      category: 'mental',
+      title: 'البطاقات التعليمية (Flashcards) 🧠',
+      description: 'لعبة حفظ وتدريب ذكية (تتضمن أشهر السنة، أيام الأسبوع، أو أي محتوى تخصصه بنفسك وجه وظهر لتختبر حفظك ومعرفتك).',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%231e1b4b%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22300%22%20font-size%3D%22100%22%20text-anchor%3D%22middle%22%3E%F0%9F%A7%A0%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22420%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2250%22%20font-weight%3D%22900%22%20fill%3D%22%23a5b4fc%22%20text-anchor%3D%22middle%22%3EFLASHCARDS%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'Puzzle',
+      platforms: ['browser', 'pc', 'android'],
+      status: 'available'
+    },
+    {
+      id: 'word-chain',
+      category: 'mental',
+      title: 'سلسلة الكلمات 🔗',
+      description: 'لعبة ذكاء وسرعة بديهة إنجليزية! اكتب كلمة تبدأ بآخر حرف من الكلمة السابقة دون تكرار ومع مؤقت زمني وتحدي جماعي (Pass & Play) أو ضد الذكاء الاصطناعي.',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%230f172a%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22300%22%20font-size%3D%22100%22%20text-anchor%3D%22middle%22%3E%F0%9F%94%97%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22420%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2250%22%20font-weight%3D%22900%22%20fill%3D%22%2338bdf8%22%20text-anchor%3D%22middle%22%3EWORD%20CHAIN%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'Puzzle',
+      platforms: ['browser', 'pc', 'android'],
+      status: 'available'
+    },
+    {
       id: 'openttd',
       category: 'mental',
       title: 'OpenTTD 🚂',

@@ -392,9 +392,14 @@ export class ArcadeHubComponent implements OnInit {
   playGame(id: string) {
     if (id === 'openttd') {
       this.showOpenTTDModal = true;
+    } else if (id === 'word-chain') {
+      this.router.navigate(['/arcade/word-chain']);
+    } else if (id === 'flashcards') {
+      this.router.navigate(['/arcade/flashcards']);
     } else {
       this.router.navigate(['/arcade/arena', id]);
     }
+  }
   }
 
   playOpenTTD(version: 'original' | 'modified') {

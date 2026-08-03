@@ -29,6 +29,8 @@ export const routes: Routes = [
         ]
       },
       { path: 'arcade', loadComponent: () => import('./features/arcade/arcade-hub.component').then(c => c.ArcadeHubComponent), title: 'الألعاب' },
+      { path: 'arcade/word-chain', loadComponent: () => import('./features/arcade/word-chain/word-chain.component').then(c => c.WordChainComponent), title: 'لعبة سلسلة الكلمات - Word Chain' },
+      { path: 'arcade/flashcards', loadComponent: () => import('./features/arcade/flashcards/flashcards.component').then(c => c.FlashcardsComponent), title: 'نظام البطاقات التعليمية الذكية' },
       { path: 'arcade/ai-builder', loadComponent: () => import('./features/arcade/ai-game-builder.component').then(c => c.AiGameBuilderComponent), title: 'استوديو صانع الألعاب الذكي' },
       { path: 'arcade/arena/:id', loadComponent: () => import('./features/arcade/arcade-arena.component').then(c => c.ArcadeArenaComponent) },
       { path: 'time', loadComponent: () => import('./features/time/time.component').then(c => c.TimeComponent), title: 'تنظيم الوقت والتركيز' },
@@ -43,6 +45,7 @@ export const routes: Routes = [
       { path: 'vault', loadComponent: () => import('./features/vault/vault.component').then(c => c.VaultComponent), title: 'خزنة الملفات' },
       { path: 'opencode', loadComponent: () => import('./features/opencode/opencode.component').then(c => c.OpencodeComponent), title: 'مساعد البرمجة - OpenCode' },
       { path: 'library', loadComponent: () => import('./features/library/library.component').then(c => c.LibraryComponent), title: 'المكتبة العامة' },
+      { path: 'external-tabs', loadComponent: () => import('./features/external-tabs/external-tabs.component').then(c => c.ExternalTabsComponent), title: 'أرشيف التبويبات الخارجية' },
       { path: 'html-editor', loadComponent: () => import('./features/html-editor/html-editor.component').then(c => c.HtmlEditorComponent), title: 'محرر HTML الشامل' },
       { path: 'text-fixer', loadComponent: () => import('./features/text-fixer/text-fixer.component').then(c => c.TextFixerComponent), title: 'مصحح اتجاه النصوص (RTL/LTR)' },
       { path: 'ai-module-builder', loadComponent: () => import('./features/ai-module-builder/ai-module-builder.component').then(c => c.AiModuleBuilderComponent), title: 'صانع الأقسام بالذكاء الاصطناعي', data: { preload: true, preloadDelay: 1000 } },
