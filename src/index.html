@@ -1,14 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8">
-  <title>SuperAngular</title>
+  <title>Super - Si-Neuro Central Hub</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#1976d2">
+  <meta name="theme-color" content="#4f46e5">
   <script src="assets/coi-serviceworker.js"></script>
+  <script>
+    window.addEventListener('error', function (e) {
+      var msg = (e && e.message) || '';
+      var src = (e && e.target && e.target.src) || '';
+      if (msg.indexOf('Failed to load module script') !== -1 || msg.indexOf('MIME type') !== -1 || src.indexOf('chunk-') !== -1 || src.indexOf('.css') !== -1) {
+        var reloadKey = 'si_neuro_auto_chunk_reload';
+        if (!sessionStorage.getItem(reloadKey)) {
+          sessionStorage.setItem(reloadKey, 'true');
+          window.location.reload(true);
+        }
+      }
+    }, true);
+  </script>
 </head>
 <body>
   <app-root></app-root>

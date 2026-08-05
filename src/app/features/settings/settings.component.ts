@@ -46,14 +46,16 @@ export class SettingsComponent implements OnInit, OnDestroy {
   private loadSystemVoices(): void {
     if (!this.synth) return;
     const voices = this.synth.getVoices();
-    this.availableVoices.set(voices);
+    if (voices.length === 0) return;
+
+    if (this.availableVoices().length !== voices.length) {
+      this.availableVoices.set(voices);
+    }
 
     // Set first voice as preferred if empty
     if (!this.settingsService.preferredVoice() && voices.length > 0) {
-      // Prioritize Arabic if available
       const arVoice = voices.find(v => v.lang.startsWith('ar'));
       this.settingsService.preferredVoice.set(arVoice ? arVoice.name : voices[0].name);
-      this.settingsService.saveState();
     }
   }
 
