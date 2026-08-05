@@ -59,7 +59,7 @@ export class GlobalStateService {
           if (unsubscribe) unsubscribe();
         });
       }
-    }, { allowSignalWrites: true });
+    });
   }
 
   private async fetchFriends(uids: string[]) {

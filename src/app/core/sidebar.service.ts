@@ -10,7 +10,7 @@ export type SidebarPosition = "left" | "right" | "top" | "bottom" | "floating";
 export class SidebarService {
   // State Signals
   readonly showAllUnpinnedAtBottom = signal<boolean>(false);
-  readonly pinnedItems = signal<string[]>(["dashboard", "qa", "time", "health", "chat", "vault", "agent-ai", "deals", "peer-chat", "stream", "market", "arcade", "launcher", "lab", "ads", "downloads", "wallet", "hisn", "microcontroller-lab", "sheets", "settings", "admin"]);
+  readonly pinnedItems = signal<string[]>(["dashboard", "profile", "qa", "time", "health", "chat", "vault", "agent-ai", "deals", "peer-chat", "stream", "market", "arcade", "launcher", "lab", "ads", "downloads", "wallet", "hisn", "microcontroller-lab", "sheets", "settings", "admin"]);
   readonly isCollapsed = signal<boolean>(false);
   readonly isVisible = signal<boolean>(true);
   readonly isHeaderVisible = signal<boolean>(true);

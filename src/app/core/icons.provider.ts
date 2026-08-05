@@ -16,7 +16,8 @@ import {
   Map, PackageOpen, Heart, Warehouse, Eye, Printer, HelpCircle, Info, CreditCard, ShieldAlert,
   UserCheck, BellRing, Tags, Edit3, Ban, User, Phone, Package, CheckCircle, BellOff,
   PackagePlus, Camera, PenTool, Grid, Maximize2, Pause, VolumeX, Volume2, LoaderCircle,
-  Maximize, Star, Timer, Sun, Moon, Chrome, CloudCog, CloudUpload, CloudRain, Flag, Lock, BarChart3
+  Maximize, Star, Timer, Sun, Moon, Chrome, CloudCog, CloudUpload, CloudRain, Flag, Lock, BarChart3,
+  Type, Code, Bookmark
 } from 'lucide-angular';
 
 import { 
@@ -189,7 +190,10 @@ export const provideLucideIcons = () => {
         CloudRain,
         Flag,
         Lock,
-        BarChart3
+        BarChart3,
+        Type,
+        Code,
+        Bookmark
       })
     ),
     provideNewLucideIcons(

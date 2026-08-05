@@ -467,12 +467,14 @@ export class ArcadeService {
     {
       id: 'mindustry',
       category: 'mental',
-      title: 'Mindustry Simulator',
-      description: 'لعبة بناء مصانع ودفاع عن الأبراج. ابنِ شبكات التوريد المعقدة لنقل الموارد إلى أبراجك الدفاعية.',
-      thumbnail: 'https://images.unsplash.com/photo-1584433144859-1fc3ab64a957?q=80&w=800&auto=format&fit=crop',
+      title: 'ماينداستري 🏭 Mindustry',
+      description: 'لعبة بناء المصانع والدفاع عن القاعدة الأسطورية! ابنِ آلات الاستخراج، سير النقل، شبكات الطاقة، والأبراج الدفاعية لتصدّي لموجات الأعداء الفضائيين.',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%230f172a%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23020617%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22glow%22%3E%3CfeGaussianBlur%20stdDeviation%3D%226%22%20result%3D%22blur%22%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D%22blur%22%2F%3E%3CfeMergeNode%20in%3D%22SourceGraphic%22%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22url(%23bg)%22%2F%3E%3Crect%20x%3D%22350%22%20y%3D%22250%22%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23f59e0b%22%20rx%3D%2216%22%20filter%3D%22url(%23glow)%22%2F%3E%3Cpath%20d%3D%22M200%20300%20L350%20300%20M450%20300%20L600%20300%22%20stroke%3D%22%2338bdf8%22%20stroke-width%3D%2212%22%20stroke-dasharray%3D%2215%2C10%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22460%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2255%22%20font-weight%3D%22900%22%20fill%3D%22%23fbbf24%22%20text-anchor%3D%22middle%22%20filter%3D%22url(%23glow)%22%3EMINDUSTRY%3C%2Ftext%3E%3C%2Fsvg%3E',
       genre: 'Strategy',
-      platforms: ['browser', 'android'],
-      status: 'coming_soon'
+      platforms: ['browser', 'pc', 'android'],
+      localUrl: '/games/mindustry/index.html',
+      status: 'available',
+      hasCustomMenu: true
     }
   ];
 

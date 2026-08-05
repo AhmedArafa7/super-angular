@@ -36,6 +36,7 @@ export const routes: Routes = [
       { path: 'time', loadComponent: () => import('./features/time/time.component').then(c => c.TimeComponent), title: 'تنظيم الوقت والتركيز' },
       { path: 'health', loadComponent: () => import('./features/health/health.component').then(c => c.HealthComponent), title: 'الصحة والرياضة' },
       { path: 'settings', loadComponent: () => import('./features/settings/settings.component').then(c => c.SettingsComponent) },
+      { path: 'profile', loadComponent: () => import('./features/profile/profile.component').then(c => c.ProfileComponent), title: 'الملف الشخصي' },
       { path: 'chat', loadComponent: () => import('./features/chat/chat.component').then(c => c.ChatComponent), title: 'الدردشة الذكية' },
       { path: 'peer-chat', loadComponent: () => import('./features/peer-chat/peer-chat.component').then(c => c.PeerChatComponent), title: 'التواصل المباشر' },
       { path: 'downloads', loadComponent: () => import('./features/downloads/downloads.component').then(c => c.DownloadsComponent), title: 'مركز التحميل وإدارة الذاكرة' },

@@ -257,7 +257,7 @@ export class OmAlQuraService {
       // 1. Real-time Products Sync
       onSnapshot(collection(this.firebase.firestore, 'omalqura_products'), (snapshot) => {
         const prods = snapshot.docs.map(d => d.data() as OmAlQuraProduct);
-        if (prods.length > 0 || !snapshot.metadata.hasPendingWrites) {
+        if (prods.length > 0) {
           this.products.set(prods);
           localStorage.setItem('omalqura_products', JSON.stringify(prods));
         }
@@ -266,7 +266,7 @@ export class OmAlQuraService {
       // 2. Real-time Orders Sync
       onSnapshot(collection(this.firebase.firestore, 'omalqura_orders'), (snapshot) => {
         const ords = snapshot.docs.map(d => d.data() as OmAlQuraOrder);
-        if (ords.length > 0 || !snapshot.metadata.hasPendingWrites) {
+        if (ords.length > 0) {
           this.orders.set(ords);
           localStorage.setItem('omalqura_orders', JSON.stringify(ords));
         }
@@ -275,7 +275,7 @@ export class OmAlQuraService {
       // 3. Real-time Delivery Drivers Sync
       onSnapshot(collection(this.firebase.firestore, 'omalqura_delivery_drivers'), (snapshot) => {
         const drvs = snapshot.docs.map(d => d.data() as OmAlQuraDeliveryDriver);
-        if (drvs.length > 0 || !snapshot.metadata.hasPendingWrites) {
+        if (drvs.length > 0) {
           this.deliveryDrivers.set(drvs);
           localStorage.setItem('omalqura_drivers', JSON.stringify(drvs));
         }
@@ -284,7 +284,7 @@ export class OmAlQuraService {
       // 4. Real-time Employees Sync
       onSnapshot(collection(this.firebase.firestore, 'omalqura_employees'), (snapshot) => {
         const emps = snapshot.docs.map(d => d.data() as OmAlQuraEmployee);
-        if (emps.length > 0 || !snapshot.metadata.hasPendingWrites) {
+        if (emps.length > 0) {
           this.employees.set(emps);
           localStorage.setItem('omalqura_employees', JSON.stringify(emps));
         }
@@ -293,7 +293,7 @@ export class OmAlQuraService {
       // 5. Real-time Customer Debts Sync
       onSnapshot(collection(this.firebase.firestore, 'omalqura_customer_debts'), (snapshot) => {
         const debts = snapshot.docs.map(d => d.data() as OmAlQuraCustomerDebt);
-        if (debts.length > 0 || !snapshot.metadata.hasPendingWrites) {
+        if (debts.length > 0) {
           this.customerDebts.set(debts);
           localStorage.setItem('omalqura_debts', JSON.stringify(debts));
         }
@@ -302,7 +302,7 @@ export class OmAlQuraService {
       // 6. Real-time Missing Requests Sync
       onSnapshot(collection(this.firebase.firestore, 'omalqura_missing_requests'), (snapshot) => {
         const reqs = snapshot.docs.map(d => d.data() as OmAlQuraMissingProductRequest);
-        if (reqs.length > 0 || !snapshot.metadata.hasPendingWrites) {
+        if (reqs.length > 0) {
           this.missingProductRequests.set(reqs);
           localStorage.setItem('omalqura_missing_requests', JSON.stringify(reqs));
         }
@@ -311,7 +311,7 @@ export class OmAlQuraService {
       // 7. Real-time Staff Suggestions Sync
       onSnapshot(collection(this.firebase.firestore, 'omalqura_staff_suggestions'), (snapshot) => {
         const sugs = snapshot.docs.map(d => d.data() as OmAlQuraStaffSuggestion);
-        if (sugs.length > 0 || !snapshot.metadata.hasPendingWrites) {
+        if (sugs.length > 0) {
           this.staffSuggestions.set(sugs);
           localStorage.setItem('omalqura_suggestions', JSON.stringify(sugs));
         }
@@ -320,7 +320,7 @@ export class OmAlQuraService {
       // 8. Real-time FAQs Sync
       onSnapshot(collection(this.firebase.firestore, 'omalqura_faqs'), (snapshot) => {
         const faqs = snapshot.docs.map(d => d.data() as OmAlQuraFaq);
-        if (faqs.length > 0 || !snapshot.metadata.hasPendingWrites) {
+        if (faqs.length > 0) {
           this.faqs.set(faqs);
           localStorage.setItem('omalqura_faqs', JSON.stringify(faqs));
         }
@@ -351,7 +351,7 @@ export class OmAlQuraService {
       // 11. Real-time Suppliers Sync
       onSnapshot(collection(this.firebase.firestore, 'omalqura_suppliers'), (snapshot) => {
         const supps = snapshot.docs.map(d => d.data() as OmAlQuraSupplier);
-        if (supps.length > 0 || !snapshot.metadata.hasPendingWrites) {
+        if (supps.length > 0) {
           this.suppliers.set(supps);
           localStorage.setItem('omalqura_suppliers', JSON.stringify(supps));
         }
@@ -360,7 +360,7 @@ export class OmAlQuraService {
       // 12. Real-time Purchase Orders Sync
       onSnapshot(collection(this.firebase.firestore, 'omalqura_purchase_orders'), (snapshot) => {
         const pos = snapshot.docs.map(d => d.data() as OmAlQuraPurchaseOrder);
-        if (pos.length > 0 || !snapshot.metadata.hasPendingWrites) {
+        if (pos.length > 0) {
           this.purchaseOrders.set(pos);
           localStorage.setItem('omalqura_purchase_orders', JSON.stringify(pos));
         }

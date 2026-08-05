@@ -1,16 +1,95 @@
-const emojis = [
-    "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", 
-    "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🐤", "🦆", 
-    "🦅", "🦉", "🦇", "🐺", "🐗", "🐴", "🦄", "🐝", "🐛", "🦋", 
-    "🐌", "🐞", "🐜", "🦟", "🦗", "🕷", "🦂", "🐢", "🐍", "🦎", 
-    "🦖", "🦕", "🐙", "🦑", "🦐", "🦞", "🦀", "🐡", "🐠", "🐟", 
-    "🐬", "🐳", "🐋", "🦈", "🐊", "🐅", "🐆", "🦓", "🦍", "🦧", 
-    "🐘", "🦛", "🦏", "🐪", "🐫", "🦒", "🦘", "🐃", "🐂", "🐄"
-];
+const themeCategories = {
+    animals: ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🐤", "🦆", "🦅", "🦉", "🦇", "🐺", "🐗", "🐴", "🦄", "🐝", "🐛", "🦋", "🐌", "🐞", "🐜", "🦟", "🦗", "🕷", "🐢", "🐍", "🦎", "🦖", "🦕", "🐙", "🦑", "🦐", "🦞", "🦀", "🐡", "🐠", "🐟", "🐬", "🐳", "🐋", "🦈", "🐊", "🐅", "🐆", "🐘", "🦛", "🦏", "🐪"],
+    fruits: ["🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🫐", "🍈", "🍒", "🍑", "🥭", "🍍", "🥥", "🥝", "🍅", "🍆", "🥑", "🥦", "🥬", "🥒", "🌶", "🫑", "🌽", "🥕", "🫒", "🧄", "🧅", "🥔", "🍠", "🥐", "🥯", "🍞", "🥖", "🥨", "🧀", "🥚", "🍳", "🧈", "🥞", "<ctrl42>", "🥓", "🥩", "🍗", "🍖", "🌭", "🍔", "🍟", "🍕", "🫓", "🥪", "🥙", "🧆", "🌮", "🌯", "🫔", "🥗", "🥘", "🫕"],
+    space: ["🚀", "🛸", "🛰", "🪐", "🌟", "⭐", "🌌", "☄️", "🌙", "☀️", "🌍", "🌕", "🌠", "👾", "🤖", "👽", "🔮", "⚡", "🔥", "💥", "✨", "💫", "🎯", "🧩", "🎲", "♟️", "🕹️", "🎮", "🔮", "💎", "👑", "🏆", "🥇", "🎗️", "🏵️", "🎖️", "⚔️", "🛡️", "🔮", "🧿", "🪄", "🧬", "🧪", "🧫", "🔬", "🔭", "📡", "💡", "🔦", "🕯️", "🎆", "🎇"],
+    sports: ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🪃", "🥅", "⛳", "🪁", "🏹", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "🛷", "⛸", "🥌", "🎿", "⛷", "🏂", "🪂", "🏋️", "🤼", "🤸", "⛹️", "🤺", "🤾", "🏌️", "🏇", "🧘", "🏄", "🏊", "<ctrl42>", "🚣", "🧗", "🚵", "🚴", "🏆", "🥇", "🥈", "🥉", "🏅", "🎖", "🏵", "🎗"],
+    vehicles: ["🚗", "🚕", "🚙", "🚌", "🚎", "🏎", "🚓", "🚑", "🚒", "🚐", "🛻", "🚚", "🚛", "🚜", "🦯", "🦽", "🦼", "<ctrl42>", "🚲", "🛵", "🏍", "🛺", "🚨", "🚔", "🚘", "🚍", "🚖", "🚡", "<ctrl42>", "🚟", "🚃", "🚋", "🪂", "🚁", "🛶", "⛵", "🚤", "🛥", "🛳", "⚙️", "🔧", "⚓", "🚦", "🛑", "⛵", "🚢", "✈️", "🛫", "🛬", "🪂", "💺", "🚁", "🚟", "<ctrl42>", "🚡", "🛰", "🚀", "🛸", "🛎", "🧳"]
+};
 
-function generateDeck() {
-    const n = 7;
+let currentTheme = 'random'; // 'random', 'animals', 'fruits', 'space', 'sports', 'vehicles'
+
+function getActiveEmojiPool() {
+    if (currentTheme !== 'random' && themeCategories[currentTheme]) {
+        return themeCategories[currentTheme];
+    }
+    // Random pool pick per round
+    const keys = Object.keys(themeCategories);
+    const randomKey = keys[Math.floor(Math.random() * keys.length)];
+    return themeCategories[randomKey];
+}
+
+// --- WEB AUDIO API SYNTHESIZER ---
+let audioCtx = null;
+
+function getAudioContext() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    return audioCtx;
+}
+
+function playMatchSound() {
+    try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(650, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1300, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.12);
+    } catch(e) {}
+}
+
+function playWrongSound() {
+    try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(200, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(100, ctx.currentTime + 0.18);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.18);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.18);
+    } catch(e) {}
+}
+
+function playWinSound() {
+    try {
+        const ctx = getAudioContext();
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.25, ctx.currentTime + idx * 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + idx * 0.1 + 0.22);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime + idx * 0.1);
+            osc.stop(ctx.currentTime + idx * 0.1 + 0.22);
+        });
+    } catch(e) {}
+}
+
+// --- DECK GENERATOR (DOBBLE PROJECTIVE PLANE) ---
+let itemsPerCard = 8;
+
+function generateDobbleDeck(itemsCount = 8) {
+    const n = itemsCount - 1;
     const cards = [];
+    
     for (let i = 0; i <= n; i++) {
         let card = [0];
         for (let j = 0; j < n; j++) {
@@ -18,6 +97,7 @@ function generateDeck() {
         }
         cards.push(card);
     }
+    
     for (let i = 0; i < n; i++) {
         for (let j = 0; j < n; j++) {
             let card = [i + 1];
@@ -28,169 +108,236 @@ function generateDeck() {
             cards.push(card);
         }
     }
-    const shuffledEmojis = [...emojis].sort(() => 0.5 - Math.random());
+
+    const pool = getActiveEmojiPool();
+    const shuffledEmojis = [...pool].sort(() => 0.5 - Math.random());
     return cards.map(cardIndexes => cardIndexes.map(idx => shuffledEmojis[idx % shuffledEmojis.length]));
 }
 
+// --- UI SCREENS & NAVIGATION ---
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(screenId).classList.add('active');
+    const target = document.getElementById(screenId);
+    if (target) target.classList.add('active');
 }
 
-let playMode = 'online';
+function showProModal() { document.getElementById('pro-modal').classList.remove('hidden'); }
+function closeProModal() { document.getElementById('pro-modal').classList.add('hidden'); }
 
-// --- LOCAL LOGIC ---
-let localDeck = [];
-let localCenterCard = [];
-let localTopCard = [];
-let localBottomCard = [];
-let localScoreTop = 0;
-let localScoreBottom = 0;
-let localMaxScore = 10;
+let currentGameMode = 'ai';
+let aiDifficulty = 'easy';
+let maxScore = 10;
 
-function saveProgress() {
-    localStorage.setItem('dobbleProgress', JSON.stringify({ localScoreTop, localScoreBottom }));
+function showAiSetup() { currentGameMode = 'ai'; showScreen('ai-setup-screen'); }
+function showLocalSetup() { currentGameMode = 'local'; showScreen('local-setup-screen'); }
+
+function setTheme(theme) {
+    currentTheme = theme;
+    document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll(`.theme-btn[data-theme="${theme}"]`).forEach(b => b.classList.add('active'));
 }
-function loadProgress() {
-    const saved = localStorage.getItem('dobbleProgress');
-    if (saved) {
-        try {
-            const data = JSON.parse(saved);
-            localScoreTop = data.localScoreTop || 0;
-            localScoreBottom = data.localScoreBottom || 0;
-        } catch(e) {}
+
+function setAiDifficulty(diff) {
+    aiDifficulty = diff;
+    document.querySelectorAll('#ai-setup-screen .players-mode-selector button').forEach(b => b.classList.remove('active'));
+    document.getElementById(`ai-${diff}-btn`).classList.add('active');
+}
+
+function setItemCount(count) {
+    itemsPerCard = count;
+    document.querySelectorAll('.players-mode-selector button[id*="item"]').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll(`button[id*="item${count}"]`).forEach(b => b.classList.add('active'));
+}
+
+function changeMaxScore(delta) {
+    maxScore += delta;
+    if (maxScore < 5) maxScore = 5;
+    if (maxScore > 50) maxScore = 50;
+    const aiDisp = document.getElementById('ai-max-score-display');
+    const localDisp = document.getElementById('local-max-score-display');
+    if (aiDisp) aiDisp.innerText = maxScore;
+    if (localDisp) localDisp.innerText = maxScore;
+}
+
+// --- GAME STATE ---
+let deck = [];
+let topCard = [];
+let bottomCard = [];
+let scoreTop = 0;
+let scoreBottom = 0;
+let currentMatchingEmoji = null;
+let aiTimer = null;
+
+function findMatchingEmoji(card1, card2) {
+    for (let item of card1) {
+        if (card2.includes(item)) return item;
     }
-}
-function clearProgress() {
-    localStorage.removeItem('dobbleProgress');
+    return null;
 }
 
-function showLocalSetup() {
-    playMode = 'local';
-    showScreen('local-setup-screen');
-}
-
-function changeLocalMaxScore(delta) {
-    localMaxScore += delta;
-    if (localMaxScore < 5) localMaxScore = 5;
-    if (localMaxScore > 50) localMaxScore = 50;
-    document.getElementById('local-max-score-display').innerText = localMaxScore;
+function startAiGame() {
+    currentGameMode = 'ai';
+    initGameSession('الروبوت الذكي 🤖', 'أنت 👤');
 }
 
 function startLocalGame() {
-    localScoreTop = 0;
-    localScoreBottom = 0;
-    loadProgress(); // Resume if it exists
+    currentGameMode = 'local';
+    initGameSession('اللاعب العلوي 👤', 'اللاعب السفلي 👤', true);
+}
 
-    localDeck = generateDeck();
+function initGameSession(nameTop, nameBottom, isTopRotated = false) {
+    scoreTop = 0;
+    scoreBottom = 0;
+    deck = generateDobbleDeck(itemsPerCard);
     
-    localCenterCard = localDeck.pop();
-    localTopCard = localDeck.pop();
-    localBottomCard = localDeck.pop();
-    
-    document.getElementById('game-screen').classList.remove('online-mode');
-    document.getElementById('game-screen').classList.add('local-mode');
-    
-    document.getElementById('top-area').classList.remove('hidden');
-    document.getElementById('local-center-area').classList.remove('hidden');
-    document.getElementById('score-bottom-container').classList.remove('hidden');
-    
-    document.getElementById('online-card-label').classList.add('hidden');
-    document.getElementById('online-center-label').classList.add('hidden');
-    document.getElementById('online-center-card').classList.add('hidden');
-    
+    topCard = deck.pop();
+    bottomCard = deck.pop();
+    currentMatchingEmoji = findMatchingEmoji(topCard, bottomCard);
+
+    document.getElementById('name-top').innerHTML = `${nameTop}: <span id="score-top">0</span>`;
+    document.getElementById('name-bottom').innerHTML = `${nameBottom}: <span id="score-bottom">0</span>`;
+    document.getElementById('target-score-num').innerText = maxScore;
+
+    const slotTop = document.getElementById('slot-top');
+    if (isTopRotated) slotTop.classList.add('player-top-rotated');
+    else slotTop.classList.remove('player-top-rotated');
+
     showScreen('game-screen');
-    updateLocalView();
-}
+    renderRoundView();
 
-function updateLocalView() {
-    document.getElementById('score-top').innerText = localScoreTop;
-    document.getElementById('score-bottom').innerText = localScoreBottom;
-    
-    renderCard('card-top', localTopCard, true, 'top');
-    renderCard('my-card', localBottomCard, true, 'bottom');
-    renderCard('local-center-card', localCenterCard, false);
-}
-
-function handleLocalClick(player, emoji) {
-    if (localCenterCard.includes(emoji)) {
-        if (player === 'top') {
-            if (!localTopCard.includes(emoji)) return;
-            localScoreTop++;
-            localTopCard = localCenterCard;
-        } else {
-            if (!localBottomCard.includes(emoji)) return;
-            localScoreBottom++;
-            localBottomCard = localCenterCard;
-        }
-        saveProgress();
-        
-        if (localScoreTop >= localMaxScore || localScoreBottom >= localMaxScore) {
-            endLocalGame(localScoreTop >= localMaxScore ? 'اللاعب العلوي' : 'اللاعب السفلي');
-            return;
-        }
-        
-        if (localDeck.length === 0) localDeck = generateDeck();
-        localCenterCard = localDeck.pop();
-        
-        updateLocalView();
+    if (currentGameMode === 'ai') {
+        scheduleAiTurn();
     }
 }
 
-function endLocalGame(winnerName) {
-    clearProgress();
+function renderRoundView() {
+    renderCircularCard('card-top', topCard, 'top');
+    renderCircularCard('card-bottom', bottomCard, 'bottom');
+
+    document.getElementById('score-top').innerText = scoreTop;
+    document.getElementById('score-bottom').innerText = scoreBottom;
+}
+
+// RADIAL EMOJI PLACEMENT ENGINE WITH DYNAMIC SCALE AND ROTATION VARIATIONS
+function renderCircularCard(containerId, cardArray, playerSlot) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = '';
+
+    const total = cardArray.length;
+    const ringCount = total - 1;
+    const radiusPercent = total >= 9 ? 34 : 32;
+
+    // Center Emoji (Index 0)
+    createEmojiNode(container, cardArray[0], 50, 50, playerSlot);
+
+    // Outer Ring Emojis
+    const angleStep = (2 * Math.PI) / ringCount;
+    const randomOffset = Math.random() * Math.PI;
+
+    for (let i = 1; i < total; i++) {
+        const angle = (i - 1) * angleStep + randomOffset;
+        const x = 50 + radiusPercent * Math.cos(angle);
+        const y = 50 + radiusPercent * Math.sin(angle);
+        createEmojiNode(container, cardArray[i], x, y, playerSlot);
+    }
+}
+
+function createEmojiNode(container, emoji, xPercent, yPercent, playerSlot) {
+    const span = document.createElement('span');
+    span.className = 'emoji-item';
+    span.innerText = emoji;
+    span.style.left = `${xPercent}%`;
+    span.style.top = `${yPercent}%`;
+
+    const fontPx = Math.floor(Math.min(window.innerHeight * 0.045, 36));
+    span.style.fontSize = `${fontPx}px`;
+
+    // Dynamic random scale (0.75x to 1.45x) and rotation (-40deg to +40deg) as requested by user
+    const randomScale = (0.75 + Math.random() * 0.7).toFixed(2);
+    const randomRotate = Math.floor((Math.random() * 80) - 40);
+    span.style.transform = `translate(-50%, -50%) scale(${randomScale}) rotate(${randomRotate}deg)`;
+
+    span.onclick = (e) => {
+        e.stopPropagation();
+        handleEmojiClick(playerSlot, emoji);
+    };
+
+    container.appendChild(span);
+}
+
+function handleEmojiClick(playerSlot, emoji) {
+    if (emoji === currentMatchingEmoji) {
+        if (aiTimer) clearTimeout(aiTimer);
+
+        playMatchSound();
+        const winnerCardId = playerSlot === 'top' ? 'card-top' : 'card-bottom';
+        const cardElem = document.getElementById(winnerCardId);
+        if (cardElem) {
+            cardElem.classList.add('success-glow');
+            setTimeout(() => cardElem.classList.remove('success-glow'), 400);
+        }
+
+        if (playerSlot === 'top') scoreTop++;
+        else scoreBottom++;
+
+        if (scoreTop >= maxScore || scoreBottom >= maxScore) {
+            playWinSound();
+            endGame(scoreTop >= maxScore ? 'اللاعب العلوي (الخصم)' : 'أنت (اللاعب السفلي)');
+            return;
+        }
+
+        // Draw next card for round
+        if (deck.length === 0) deck = generateDobbleDeck(itemsPerCard);
+        if (playerSlot === 'top') {
+            topCard = deck.pop();
+        } else {
+            bottomCard = deck.pop();
+        }
+
+        currentMatchingEmoji = findMatchingEmoji(topCard, bottomCard);
+        renderRoundView();
+
+        if (currentGameMode === 'ai') {
+            scheduleAiTurn();
+        }
+    } else {
+        playWrongSound();
+        const cardElem = document.getElementById(playerSlot === 'top' ? 'card-top' : 'card-bottom');
+        if (cardElem) {
+            cardElem.classList.add('wrong-shake');
+            setTimeout(() => cardElem.classList.remove('wrong-shake'), 350);
+        }
+    }
+}
+
+function scheduleAiTurn() {
+    if (aiTimer) clearTimeout(aiTimer);
+    let delay = 2500;
+    if (aiDifficulty === 'medium') delay = 1700;
+    if (aiDifficulty === 'hard') delay = 1100;
+
+    aiTimer = setTimeout(() => {
+        if (currentGameMode === 'ai' && currentMatchingEmoji) {
+            handleEmojiClick('top', currentMatchingEmoji);
+        }
+    }, delay + Math.random() * 500);
+}
+
+function endGame(winnerName) {
+    if (aiTimer) clearTimeout(aiTimer);
     showScreen('winner-screen');
     document.getElementById('winner-name').innerText = winnerName;
-    document.getElementById('host-restart-controls').classList.add('hidden');
-    document.getElementById('guest-restart-wait').classList.add('hidden');
-    document.getElementById('local-restart-controls').classList.remove('hidden');
 }
 
-function renderCard(containerId, cardArray, isClickable, localPlayer = null) {
-    const container = document.getElementById(containerId);
-    container.innerHTML = '';
-    
-    cardArray.forEach(emoji => {
-        const span = document.createElement('span');
-        span.className = 'emoji-item';
-        span.innerText = emoji;
-        
-        const scale = 0.5 + Math.random() * 1.5;
-        const rotate = Math.random() * 360;
-        span.style.transform = `scale(${scale}) rotate(${rotate}deg)`;
-        
-        if (isClickable) {
-            span.style.cursor = 'pointer';
-            span.onclick = () => {
-                if (playMode === 'local') {
-                    handleLocalClick(localPlayer, emoji);
-                } else {
-                    onOnlineEmojiClick(emoji);
-                }
-            };
-        }
-        container.appendChild(span);
-    });
+function restartCurrentGame() {
+    if (currentGameMode === 'ai') startAiGame();
+    else if (currentGameMode === 'local') startLocalGame();
+    else if (currentGameMode === 'online') startOnlineGame();
 }
 
-// --- ONLINE LOGIC ---
-let peer = null;
-let myId = null;
-let myName = null;
-let isHost = false;
-
-let connections = [];
-let hostConn = null;
-
-let gameState = {
-    phase: 'lobby',
-    players: [],
-    centerCard: [],
-    maxScore: 10,
-    winnerId: null
-};
-
-let deck = [];
+// --- ONLINE P2P (STRICTLY 2 PLAYERS, NO CENTER CARD) ---
+let peer = null, myId = null, myName = null, isHost = false, hostConn = null;
 
 function generateRoomCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -200,78 +347,48 @@ function generateRoomCode() {
 }
 
 function showCreateRoom() {
-    playMode = 'online';
+    currentGameMode = 'online';
     isHost = true;
     myName = "المضيف (أنت)";
     const roomCode = generateRoomCode();
-    myId = "DOBBLE-" + roomCode;
+    myId = "DOBBLE2P-" + roomCode;
     document.getElementById('room-code-display').innerText = roomCode;
     showScreen('host-screen');
     initPeer(myId);
 }
 
+function copyRoomCode() {
+    const code = document.getElementById('room-code-display').innerText;
+    navigator.clipboard.writeText(code);
+    const status = document.getElementById('copy-status');
+    status.innerText = '✓ تم نسخ كود الغرفة!';
+    setTimeout(() => status.innerText = '', 2500);
+}
+
 function showJoinRoom() {
-    playMode = 'online';
+    currentGameMode = 'online';
     isHost = false;
     showScreen('join-screen');
 }
 
 function initPeer(id) {
     peer = new Peer(id);
-    peer.on('open', (id) => {
-        if (isHost) {
-            connections.push({ id: myId, name: myName, conn: null });
-            gameState.players.push({ id: myId, name: myName, score: 0, card: [] });
-            updateHostLobby();
-        }
+    peer.on('open', () => {
+        if (isHost) updateHostLobby();
     });
     peer.on('connection', (conn) => {
-        if (isHost) setupHostConnection(conn);
-    });
-    peer.on('error', (err) => {
-        if (isHost) alert("خطأ في الإنشاء.");
-        else document.getElementById('join-status').innerText = "خطأ: الغرفة غير موجودة.";
-    });
-}
-
-function setupHostConnection(conn) {
-    conn.on('open', () => {
-        conn.on('data', (data) => {
-            if (data.type === 'JOIN') {
-                connections.push({ id: conn.peer, name: data.name, conn: conn });
-                gameState.players.push({ id: conn.peer, name: data.name, score: 0, card: [] });
-                updateHostLobby();
-                broadcastState();
-            } else if (data.type === 'CLICK' && gameState.phase === 'playing') {
-                handlePlayerClick(conn.peer, data.emoji);
-            }
-        });
-    });
-    conn.on('close', () => {
-        connections = connections.filter(c => c.id !== conn.peer);
-        gameState.players = gameState.players.filter(p => p.id !== conn.peer);
-        updateHostLobby();
-        broadcastState();
-    });
-}
-
-function updateHostLobby() {
-    document.getElementById('host-players-count').innerText = connections.length;
-    const list = document.getElementById('host-players-list');
-    list.innerHTML = '';
-    connections.forEach(c => {
-        const li = document.createElement('li');
-        li.innerText = c.name;
-        list.appendChild(li);
-    });
-    document.getElementById('start-online-btn').disabled = (connections.length < 2);
-}
-
-function broadcastState() {
-    if (!isHost) return;
-    connections.forEach(c => {
-        if (c.conn) {
-            c.conn.send({ type: 'STATE_UPDATE', state: gameState });
+        if (isHost) {
+            hostConn = conn;
+            conn.on('open', () => {
+                conn.on('data', (data) => {
+                    if (data.type === 'MATCH_CLICK') {
+                        handleEmojiClick('top', data.emoji);
+                    }
+                });
+                document.getElementById('host-players-count').innerText = '2';
+                document.getElementById('host-players-list').innerHTML = '<li>أنت (المضيف)</li><li>صديقك (منضم) ✅</li>';
+                document.getElementById('start-online-btn').disabled = false;
+            });
         }
     });
 }
@@ -279,140 +396,37 @@ function broadcastState() {
 function joinRoom() {
     const nameInput = document.getElementById('player-name-input').value.trim();
     const codeInput = document.getElementById('room-code-input').value.trim().toUpperCase();
-    if (!nameInput) { document.getElementById('join-status').innerText = "أدخل اسمك!"; return; }
-    if (codeInput.length !== 4) { document.getElementById('join-status').innerText = "كود الغرفة 4 أحرف!"; return; }
+    if (!nameInput || codeInput.length !== 4) return;
     
-    myName = nameInput;
-    document.getElementById('join-status').innerText = "جاري الاتصال...";
-    
+    document.getElementById('join-status').innerText = "جاري الاتصال بالسيرفر...";
     peer = new Peer();
-    peer.on('open', (id) => {
-        myId = id;
-        hostConn = peer.connect('DOBBLE-' + codeInput);
+    peer.on('open', () => {
+        hostConn = peer.connect('DOBBLE2P-' + codeInput);
         hostConn.on('open', () => {
-            hostConn.send({ type: 'JOIN', name: myName });
             document.getElementById('guest-room-id').innerText = codeInput;
             showScreen('guest-waiting-screen');
         });
         hostConn.on('data', (data) => {
-            if (data.type === 'STATE_UPDATE') handleStateUpdate(data.state);
+            if (data.type === 'SYNC_ROUND') {
+                topCard = data.topCard;
+                bottomCard = data.bottomCard;
+                scoreTop = data.scoreTop;
+                scoreBottom = data.scoreBottom;
+                currentMatchingEmoji = data.matching;
+                showScreen('game-screen');
+                renderRoundView();
+            }
         });
-        hostConn.on('close', () => { alert("الغرفة أغلقت"); leaveRoom(); });
     });
-}
-
-function changeMaxScore(delta) {
-    gameState.maxScore += delta;
-    if (gameState.maxScore < 5) gameState.maxScore = 5;
-    if (gameState.maxScore > 50) gameState.maxScore = 50;
-    document.getElementById('max-score-display').innerText = gameState.maxScore;
-}
-
-function drawCardFromDeck() {
-    if (deck.length === 0) deck = generateDeck();
-    return deck.pop();
 }
 
 function startOnlineGame() {
     if (!isHost) return;
-    deck = generateDeck();
-    gameState.phase = 'playing';
-    gameState.winnerId = null;
-    gameState.players.forEach(p => {
-        p.score = 0;
-        p.card = drawCardFromDeck();
-    });
-    gameState.centerCard = drawCardFromDeck();
-    
-    broadcastState();
-    handleStateUpdate(JSON.parse(JSON.stringify(gameState)));
-}
-
-function handlePlayerClick(playerId, emoji) {
-    if (!isHost || gameState.phase !== 'playing') return;
-    
-    const player = gameState.players.find(p => p.id === playerId);
-    if (!player) return;
-    
-    if (gameState.centerCard.includes(emoji) && player.card.includes(emoji)) {
-        player.score++;
-        if (player.score >= gameState.maxScore) {
-            gameState.phase = 'winner';
-            gameState.winnerId = playerId;
-        } else {
-            player.card = gameState.centerCard;
-            gameState.centerCard = drawCardFromDeck();
-        }
-        broadcastState();
-        handleStateUpdate(JSON.parse(JSON.stringify(gameState)));
-    }
-}
-
-function onOnlineEmojiClick(emoji) {
-    if (isHost) {
-        handlePlayerClick(myId, emoji);
-    } else {
-        hostConn.send({ type: 'CLICK', emoji: emoji });
-    }
-}
-
-function handleStateUpdate(state) {
-    gameState = state;
-    
-    if (state.phase === 'lobby') {
-        const list = document.getElementById('guest-players-list');
-        list.innerHTML = '';
-        state.players.forEach(p => {
-            const li = document.createElement('li');
-            li.innerText = p.name + (p.id === myId ? " (أنت)" : "");
-            list.appendChild(li);
-        });
-        showScreen('guest-waiting-screen');
-    } else if (state.phase === 'playing') {
-        document.getElementById('game-screen').classList.add('online-mode');
-        document.getElementById('game-screen').classList.remove('local-mode');
-        
-        document.getElementById('top-area').classList.add('hidden');
-        document.getElementById('local-center-area').classList.add('hidden');
-        document.getElementById('score-bottom-container').classList.add('hidden');
-        
-        document.getElementById('online-card-label').classList.remove('hidden');
-        document.getElementById('online-center-label').classList.remove('hidden');
-        document.getElementById('online-center-card').classList.remove('hidden');
-        
-        showScreen('game-screen');
-        
-        const scoresList = document.getElementById('live-scores');
-        scoresList.innerHTML = '';
-        state.players.forEach(p => {
-            const li = document.createElement('li');
-            li.innerText = `${p.name}: ${p.score}`;
-            if (p.id === myId) li.style.fontWeight = 'bold';
-            scoresList.appendChild(li);
-        });
-        
-        const myPlayer = state.players.find(p => p.id === myId);
-        if (myPlayer) {
-            renderCard('my-card', myPlayer.card, true);
-        }
-        renderCard('online-center-card', state.centerCard, false);
-    } else if (state.phase === 'winner') {
-        showScreen('winner-screen');
-        const winner = state.players.find(p => p.id === state.winnerId);
-        document.getElementById('winner-name').innerText = winner ? winner.name : "...";
-        
-        document.getElementById('local-restart-controls').classList.add('hidden');
-        if (isHost) {
-            document.getElementById('host-restart-controls').classList.remove('hidden');
-            document.getElementById('guest-restart-wait').classList.add('hidden');
-        } else {
-            document.getElementById('host-restart-controls').classList.add('hidden');
-            document.getElementById('guest-restart-wait').classList.remove('hidden');
-        }
-    }
+    initGameSession('صديقك 👤', 'أنت (المضيف) 👤');
 }
 
 function leaveRoom() {
+    if (aiTimer) clearTimeout(aiTimer);
     if (peer) { peer.destroy(); peer = null; }
     window.location.reload();
 }

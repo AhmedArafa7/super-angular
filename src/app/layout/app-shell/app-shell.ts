@@ -26,8 +26,9 @@ import { SessionPurgeService } from '../../core/services/session-purge.service';
 export class AppShellComponent {
   sidebar = inject(SidebarService);
   router = inject(Router);
-  sessionPurge = inject(SessionPurgeService); // Initialize session purge monitoring
+  sessionPurge = inject(SessionPurgeService);
   isWeTubeRoute = signal(false);
+  isArcadeArenaRoute = signal(false);
   isInitialized = signal(false);
 
   constructor() {
@@ -35,11 +36,13 @@ export class AppShellComponent {
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       this.isWeTubeRoute.set(event.url.includes('/stream'));
+      this.isArcadeArenaRoute.set(event.url.includes('/arcade/arena/'));
       this.isInitialized.set(true);
     });
     
     if (this.router.navigated) {
       this.isWeTubeRoute.set(this.router.url.includes('/stream'));
+      this.isArcadeArenaRoute.set(this.router.url.includes('/arcade/arena/'));
       this.isInitialized.set(true);
     }
   }

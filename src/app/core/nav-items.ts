@@ -27,6 +27,7 @@ export interface NavItem {
 
 export const ALL_NAV_ITEMS: NavItem[] = [
   { id: "dashboard", label: "لوحة التحكم", icon: "layout-dashboard", restricted: false, isPermanent: true, status: 'BETA', category: 'core' },
+  { id: "profile", label: "الملف الشخصي", icon: "user", restricted: false, isPermanent: true, status: 'NEW', route: 'profile', category: 'core' },
   { id: "qa", label: "الأسئلة والطلبات", icon: "message-circle-question", restricted: false, isPermanent: true, status: 'BETA', category: 'core' },
   { id: "arcade", label: "Si-Neuro Arcade", icon: "gamepad-2", restricted: false, isPermanent: true, category: 'core' },
   { id: "time", label: "تنظيم الوقت", icon: "clock", restricted: false, isPermanent: true, category: 'core' },

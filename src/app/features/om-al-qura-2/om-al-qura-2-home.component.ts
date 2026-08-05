@@ -18,7 +18,6 @@ export type MetalFactoryTheme = 'dark' | 'gray' | 'beige';
   imports: [
     CommonModule,
     LucideDynamicIcon,
-    OmAlQura2AttendanceComponent,
     OmAlQura2StaffPortalComponent,
     OmAlQura2CustomerStoreComponent,
     OmAlQura2InStoreMapComponent,

@@ -47,7 +47,7 @@
     </button>
 
     <!-- User Profile -->
-    <button class="flex items-center gap-2 hover:opacity-80 transition-opacity ml-2 flex-row-reverse">
+    <button [routerLink]="['/profile']" class="flex items-center gap-2 hover:opacity-80 transition-opacity ml-2 flex-row-reverse cursor-pointer" title="الانتقال إلى الملف الشخصي">
       @if (globalState.userProfile().avatarUrl && globalState.userProfile().avatarUrl !== 'https://i.pravatar.cc/150?u=a042581f4e29026704d') {
         <img [src]="globalState.userProfile().avatarUrl" alt="Profile" class="w-9 h-9 rounded-full border border-white/10 object-cover shadow-sm" />
       } @else {

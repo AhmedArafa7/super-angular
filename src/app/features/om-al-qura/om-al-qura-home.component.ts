@@ -16,7 +16,6 @@ import { OmAlQuraAdminPortalComponent } from './components/admin-portal.componen
   imports: [
     CommonModule,
     LucideDynamicIcon,
-    OmAlQuraAttendanceComponent,
     OmAlQuraStaffPortalComponent,
     OmAlQuraCustomerStoreComponent,
     OmAlQuraInStoreMapComponent,

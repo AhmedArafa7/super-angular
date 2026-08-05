@@ -145,6 +145,10 @@ export class AppSidebarComponent {
 
   onItemClick(item: NavItem) {
     this.sidebar.addRecentItem(item.id);
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+      this.sidebar.isCollapsed.set(true);
+      this.showUserProfileDropdown = false;
+    }
   }
 
   // Keyboard Shortcut: Ctrl + K or Cmd + K to focus search

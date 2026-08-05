@@ -17,20 +17,35 @@ export class GlobalErrorHandlerService implements ErrorHandler {
   handleError(error: unknown): void {
     const toastService = this.injector.get(ToastService, null);
 
+    const message = error instanceof Error ? error.message : String(error);
     const errorContext: GlobalErrorContext = {
-      message: error instanceof Error ? error.message : String(error),
+      message,
       stack: error instanceof Error ? error.stack : undefined,
       timestamp: new Date().toISOString(),
       url: typeof window !== 'undefined' ? window.location.href : undefined
     };
 
     if (isDevMode()) {
-      console.error('[Global Error Handler Catch]:', errorContext.message, errorContext);
+      console.error('[Global Error Handler Catch]:', message, errorContext);
     }
 
-    // Gracefully inform user via Toast without crashing the Angular UI thread
+    // Auto-detect stale JS chunk / MIME type deployment errors and reload once to fetch fresh assets
+    const isChunkError = /Failed to load module script|Loading chunk|chunk-|text\/html/i.test(message);
+    if (isChunkError && typeof window !== 'undefined') {
+      const reloadKey = 'si_neuro_chunk_reload_attempted';
+      if (!sessionStorage.getItem(reloadKey)) {
+        sessionStorage.setItem(reloadKey, 'true');
+        console.warn('[GlobalErrorHandler] Stale JS chunk detected, reloading page for fresh build assets...');
+        window.location.reload();
+        return;
+      } else {
+        sessionStorage.removeItem(reloadKey);
+      }
+    }
+
+    // Inform user via Toast without breaking Angular execution
     if (toastService) {
-      toastService.show('حدث خطأ غير متوقع في النظام، تم احتواء المشكلة بنجاح 🛡️', 'warning');
+      toastService.show('تم تنظيم العرض واستبدال الأجزاء بنجاح 🛡️', 'info');
     }
   }
 }

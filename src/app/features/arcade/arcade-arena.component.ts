@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener, ElementRef, ViewChild, inject, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, ElementRef, ViewChild, inject, effect, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -217,7 +217,7 @@ import { ArcadeAudioService } from '../../core/services/arcade-audio.service';
              [style.height]="isRotated ? '100vw' : '100%'"
              [style.transform]="isRotated ? 'rotate(90deg)' : 'none'"
              (load)="onIframeLoad()"
-             sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+             sandbox="allow-scripts allow-forms allow-popups allow-modals"
              [title]="game?.title">
            </iframe>
         </div>
@@ -398,6 +398,7 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private arcadeService = inject(ArcadeService);
   private sanitizer = inject(DomSanitizer);
+  private cdr = inject(ChangeDetectorRef);
   globalState = inject(GlobalStateService);
   multiplayer = inject(MultiplayerService);
   private firebaseService = inject(FirebaseService);
@@ -498,6 +499,7 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
       themeLink = document.createElement('link');
       themeLink.id = 'game-menu-theme';
       themeLink.rel = 'stylesheet';
+      themeLink.onerror = () => themeLink?.remove();
       head.appendChild(themeLink);
     }
     themeLink.href = `/games/${gameId}/menu-theme.css`;
@@ -814,6 +816,7 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
   onIframeLoad() {
     this.isLoading = false;
     this.gameState = 'Ready';
+    this.cdr.detectChanges();
 
     // Inject global scroll fix for current and future games
     try {
