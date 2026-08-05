@@ -8,7 +8,8 @@ import { GlobalStateService } from '../../core/services/global-state.service';
 import { OfflineQueueService } from '../../core/services/offline-queue.service';
 import { FirebaseService } from '../../core/services/firebase.service';
 import { CustomModuleStorageService } from '../../features/ai-module-builder/custom-module-viewer.component';
-import { LucideAngularModule, LogOut, User, Settings, LayoutDashboard, CloudUpload, CheckCircle2, XCircle, CloudCog, Chrome, UserPlus, Users, Search, ChevronDown, ChevronRight, Moon, Sun, PanelLeftClose, PanelLeftOpen } from 'lucide-angular';
+import { SettingsService } from '../../core/settings.service';
+import { LucideAngularModule, LogOut, User, Settings, LayoutDashboard, CloudUpload, CheckCircle2, XCircle, CloudCog, Chrome, UserPlus, Users, Search, ChevronDown, ChevronRight, Moon, Sun, PanelLeftClose, PanelLeftOpen, Languages } from 'lucide-angular';
 
 import { SidebarItemComponent } from './sidebar-item/sidebar-item.component';
 import { FloatingOrbComponent } from './floating-orb/floating-orb.component';
@@ -38,6 +39,11 @@ export class AppSidebarComponent {
   firebase = inject(FirebaseService);
   globalState = inject(GlobalStateService);
   moduleStorage = inject(CustomModuleStorageService);
+  settingsService = inject(SettingsService);
+
+  toggleLanguage() {
+    this.settingsService.toggleLanguage();
+  }
   
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
   
@@ -108,6 +114,18 @@ export class AppSidebarComponent {
         items.push(found);
       }
     }
+
+    const q = this.searchQuery().trim().toLowerCase();
+    if (q) {
+      items = items.filter(item => item.label.toLowerCase().includes(q));
+    }
+    return items;
+  }
+
+  get unpinnedItems(): NavItem[] {
+    const pinnedList = this.sidebar.pinnedItems();
+    const visible = this.visibleItems;
+    let items = visible.filter(item => !pinnedList.includes(item.id));
 
     const q = this.searchQuery().trim().toLowerCase();
     if (q) {

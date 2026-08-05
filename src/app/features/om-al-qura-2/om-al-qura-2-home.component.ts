@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit, ViewEncapsulation } from '@angular/c
 import { CommonModule } from '@angular/common';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { OmAlQura2Service } from '../../core/services/om-al-qura-2.service';
+import { OmAlQura2AttendanceComponent } from './components/attendance.component';
 import { OmAlQura2StaffPortalComponent } from './components/staff-portal.component';
 import { OmAlQura2CustomerStoreComponent } from './components/customer-store.component';
 import { OmAlQura2InStoreMapComponent } from './components/in-store-map.component';
@@ -17,6 +18,7 @@ export type MetalFactoryTheme = 'dark' | 'gray' | 'beige';
   imports: [
     CommonModule,
     LucideDynamicIcon,
+    OmAlQura2AttendanceComponent,
     OmAlQura2StaffPortalComponent,
     OmAlQura2CustomerStoreComponent,
     OmAlQura2InStoreMapComponent,
@@ -318,7 +320,7 @@ export type MetalFactoryTheme = 'dark' | 'gray' | 'beige';
       <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8" [style.background-color]="getBgColor()">
         
         <!-- PAGE 1: Staff Portal -->
-        <app-om-al-qura-2-staff-portal *ngIf="activeTab() === 'staff'"></app-om-al-qura-2-staff-portal>
+        <app-om-al-qura-2-staff-portal *ngIf="activeTab() === 'staff' || activeTab() === 'attendance'"></app-om-al-qura-2-staff-portal>
 
         <!-- PAGE 2: Customer Store -->
         <app-om-al-qura-2-customer-store *ngIf="activeTab() === 'customer'" (openMapTab)="activeTab.set('in_store_map')"></app-om-al-qura-2-customer-store>
@@ -345,10 +347,10 @@ export type MetalFactoryTheme = 'dark' | 'gray' | 'beige';
 export class OmAlQura2HomeComponent implements OnInit {
   service = inject(OmAlQura2Service);
 
-  activeTab = signal<'staff' | 'customer' | 'in_store_map' | 'delivery' | 'admin'>('customer');
+  activeTab = signal<'attendance' | 'staff' | 'customer' | 'in_store_map' | 'delivery' | 'admin'>('customer');
   themeMode = signal<MetalFactoryTheme>('dark');
 
-  mainTabs: { id: 'staff' | 'customer' | 'in_store_map' | 'delivery' | 'admin'; label: string; icon: string }[] = [
+  mainTabs: { id: 'attendance' | 'staff' | 'customer' | 'in_store_map' | 'delivery' | 'admin'; label: string; icon: string }[] = [
     { id: 'customer', label: '1. معارض المعادن وشراء المنتجات', icon: 'shopping-bag' },
     { id: 'staff', label: '2. الموظفين والمهندسين بالنظام الداخلي', icon: 'user-cog' },
     { id: 'in_store_map', label: '3. مخطط المصنع والمخازن الهندسية', icon: 'map-pin' },

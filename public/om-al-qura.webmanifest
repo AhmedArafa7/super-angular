@@ -1,0 +1,19 @@
+{
+  "name": "متجر أم القرى ",
+  "short_name": "متجر أم القرى",
+  "description": "تطبيق متجر أم القرى الإلكتروني المتكامل  وأدوات النظافة",
+  "theme_color": "#064e3b",
+  "background_color": "#022c22",
+  "display": "standalone",
+  "orientation": "any",
+  "scope": "/om-al-qura",
+  "start_url": "/om-al-qura",
+  "icons": [
+    {
+      "src": "assets/icons/om-al-qura-favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    }
+  ]
+}

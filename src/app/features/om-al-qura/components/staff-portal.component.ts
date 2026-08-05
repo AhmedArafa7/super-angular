@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideDynamicIcon } from '@lucide/angular';
@@ -68,45 +68,75 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             </span>
           </button>
         </div>
-
-        <button (click)="openAddProductModal.set(true); activeSubTab.set('inventory')" 
-                class="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-sm hover:scale-105 transition-all flex items-center gap-2 shadow-lg shrink-0">
-          <svg lucideIcon="plus-circle" class="w-5 h-5"></svg>
-          <span>+ إضافة منتج جديد للمحل والمخزون</span>
-        </button>
       </div>
 
       <!-- TAB 1: Attendance & Shift Clocking -->
       <div *ngIf="activeSubTab() === 'attendance'" class="space-y-6">
-        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <h2 class="text-xl font-black text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            <svg lucideIcon="clock" class="w-5 h-5 text-emerald-600"></svg>
-            <span>تسجيل حضور وانصراف الموظفين</span>
-          </h2>
+        <!-- Attendance Hero Header -->
+        <div class="bg-gradient-to-br from-emerald-700 via-teal-700 to-emerald-800 text-white rounded-3xl p-6 md:p-8 shadow-xl border border-emerald-400/20">
+          <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-4">
+              <div class="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-lg">
+                <svg lucideIcon="clock" class="w-9 h-9 text-white"></svg>
+              </div>
+              <div>
+                <h2 class="text-2xl md:text-3xl font-black text-white flex items-center gap-2">
+                  <span>تسجيل الحضور والانصراف</span>
+                </h2>
+                <p class="text-emerald-100 text-sm mt-1">اضغط على اسمك ثم أدخل كود اليوم من المدير لتثبيت وجودك في المتجر</p>
+              </div>
+            </div>
 
-          <div *ngIf="service.employees().length > 0; else noAttendanceEmployees" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div *ngFor="let emp of service.employees()" class="p-5 rounded-2xl border transition-all"
-                 [ngClass]="emp.isSuspended ? 'bg-rose-50 border-rose-200 opacity-60' : (emp.shiftStatus === 'clocked_in' ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700')">
-              <div class="flex items-center justify-between mb-3">
-                <span class="font-black text-slate-900 dark:text-white text-lg">{{ emp.name }}</span>
-                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold"
-                      [ngClass]="emp.shiftStatus === 'clocked_in' ? 'bg-emerald-600 text-white' : 'bg-slate-400 text-white'">
-                  {{ emp.shiftStatus === 'clocked_in' ? 'حاضر' : 'منصرف' }}
-                </span>
+            <div class="flex flex-wrap items-center gap-4">
+              <div class="px-4 py-2.5 bg-emerald-500/20 border border-emerald-400/30 rounded-2xl text-xs font-bold text-emerald-100 flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>الحاضرون الآن: {{ clockedInEmployeesCount() }} موظف</span>
               </div>
-              <p class="text-xs text-slate-500 mb-4">الوظيفة: {{ emp.role }} | الهاتف: {{ emp.phone }}</p>
+
+              <div class="text-left bg-black/20 rounded-2xl px-6 py-3 border border-white/10 backdrop-blur-md">
+                <div class="text-xs text-emerald-200 font-bold uppercase tracking-wider">الوقت الحالي</div>
+                <div class="text-2xl font-black font-mono text-amber-300 mt-0.5" dir="ltr">{{ nowLabel }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div *ngIf="service.employees().length > 0; else noAttendanceEmployees" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div *ngFor="let emp of service.employees()"
+                 (click)="openAttendanceModal(emp.id)"
+                 class="bg-slate-50 dark:bg-slate-800/80 rounded-3xl p-5 border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all cursor-pointer group relative overflow-hidden">
               
-              <div *ngIf="!emp.isSuspended" class="flex gap-2">
-                <button (click)="service.clockIn(emp.id)" [disabled]="emp.shiftStatus === 'clocked_in'"
-                        class="flex-1 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition-all">
-                  تسجيل حضور
-                </button>
-                <button (click)="service.clockOut(emp.id)" [disabled]="emp.shiftStatus === 'clocked_out'"
-                        class="flex-1 py-2 rounded-xl text-xs font-bold bg-slate-700 text-white hover:bg-slate-800 disabled:opacity-40 transition-all">
-                  تسجيل انصراف
-                </button>
+              <div class="flex items-center justify-between mb-3">
+                <span class="px-3 py-1 rounded-full text-xs font-black"
+                      [ngClass]="emp.shiftStatus === 'clocked_in' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300'">
+                  {{ emp.shiftStatus === 'clocked_in' ? 'حاضر الآن' : 'منصرف' }}
+                </span>
+                <span class="text-xs font-bold text-slate-400">{{ emp.role }}</span>
               </div>
-              <div *ngIf="emp.isSuspended" class="text-xs font-bold text-rose-600 text-center py-1">
+
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-black text-lg border border-emerald-300 dark:border-emerald-800">
+                  {{ emp.name.charAt(0) }}
+                </div>
+                <div>
+                  <h3 class="font-black text-slate-900 dark:text-white text-base group-hover:text-emerald-600 transition-colors">{{ emp.name }}</h3>
+                  <p class="text-xs text-slate-500 mt-0.5" *ngIf="emp.lastClockIn">آخر حضور: {{ emp.lastClockIn }}</p>
+                  <p class="text-xs text-slate-400 mt-0.5" *ngIf="!emp.lastClockIn">الهاتف: {{ emp.phone }}</p>
+                </div>
+              </div>
+
+              <button *ngIf="!emp.isSuspended"
+                      type="button"
+                      (click)="openAttendanceModal(emp.id); $event.stopPropagation()"
+                      class="w-full mt-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm relative z-10"
+                      [ngClass]="emp.shiftStatus === 'clocked_in' ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 hover:bg-rose-100' : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'">
+                <svg lucideIcon="log-in" class="w-4 h-4" *ngIf="emp.shiftStatus !== 'clocked_in'"></svg>
+                <svg lucideIcon="log-out" class="w-4 h-4" *ngIf="emp.shiftStatus === 'clocked_in'"></svg>
+                <span>{{ emp.shiftStatus === 'clocked_in' ? 'تسجيل انصراف' : 'تسجيل حضور' }}</span>
+              </button>
+
+              <div *ngIf="emp.isSuspended" class="text-xs font-bold text-rose-600 text-center py-2.5 mt-4 bg-rose-50 dark:bg-rose-950/40 rounded-xl">
                 حساب هذا الموظف موقوف
               </div>
             </div>
@@ -136,13 +166,13 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
                 <tr *ngFor="let log of service.attendanceLogs()">
                   <td class="p-3 font-bold text-slate-900 dark:text-white">{{ log.employeeName }}</td>
                   <td class="p-3">
-                    <span class="px-2 py-0.5 rounded-full text-xs font-bold"
-                          [ngClass]="log.type === 'in' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-700'">
+                    <span class="px-2.5 py-1 rounded-full text-xs font-black"
+                          [ngClass]="log.type === 'in' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'">
                       {{ log.type === 'in' ? 'حضور' : 'انصراف' }}
                     </span>
                   </td>
-                  <td class="p-3 text-slate-500">{{ log.date }}</td>
-                  <td class="p-3 font-mono dir-ltr text-right text-slate-600 dark:text-slate-400">{{ log.time }}</td>
+                  <td class="p-3 text-slate-500 text-xs">{{ log.date }}</td>
+                  <td class="p-3 font-mono text-xs text-right text-slate-600 dark:text-slate-400" dir="ltr">{{ log.time }}</td>
                 </tr>
                 <tr *ngIf="service.attendanceLogs().length === 0">
                   <td colspan="4" class="p-6 text-center text-slate-400">لا توجد سجلات حضور حتى الآن اليوم</td>
@@ -157,12 +187,12 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
       <div *ngIf="activeSubTab() === 'inventory'" class="space-y-6">
         <div class="flex flex-wrap justify-between items-center bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm gap-4">
           <div>
-            <h2 class="text-xl font-black text-slate-900 dark:text-white">إدارة المنتجات والمخزون الأقسام</h2>
+            <h2 class="text-xl font-black text-slate-900 dark:text-white">إدارة المنتجات والمخزون والأقسام</h2>
             <p class="text-xs text-slate-500">إضافة المنتجات والأسعار وتخصيص قائمة المقاطعة وإدارة وتسمية أقسام المتجر</p>
           </div>
-          <button (click)="openAddProductModal.set(true)" class="px-5 py-2.5 rounded-2xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 transition-all flex items-center gap-2">
+          <button (click)="openAddProductModal.set(true)" type="button" class="px-5 py-2.5 rounded-2xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-md cursor-pointer">
             <svg lucideIcon="plus" class="w-4 h-4"></svg>
-            <span>إضافة منتج جديد</span>
+            <span>+ إضافة منتج جديد</span>
           </button>
         </div>
 
@@ -264,38 +294,112 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
 
       <!-- TAB 3: POS & Bills Generator -->
       <div *ngIf="activeSubTab() === 'pos'" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Products selector for POS -->
+        <!-- Products selector for POS with Instant Search & Category Filter -->
         <div class="lg:col-span-2 space-y-4">
-          <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-            <h2 class="text-lg font-black text-slate-900 dark:text-white mb-4">اختيار المنتجات لنقطة البيع (POS)</h2>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div *ngFor="let p of service.products()" (click)="addPosItem(p)"
-                   class="p-3 bg-slate-50 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-2xl border border-slate-200 dark:border-slate-700 cursor-pointer transition-all">
-                <p class="font-bold text-slate-900 dark:text-white text-sm line-clamp-1">{{ p.name }}</p>
-                <div class="flex justify-between items-center mt-2">
-                  <span class="text-xs text-emerald-600 font-black">{{ p.price }} ج.م</span>
-                  <span class="text-[10px] text-slate-500">المخزون: {{ p.stockQuantity }}</span>
+          <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+            
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <h2 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <svg lucideIcon="shopping-bag" class="w-5 h-5 text-emerald-600"></svg>
+                <span>اختيار المنتجات لنقطة البيع (POS)</span>
+              </h2>
+              <span class="text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700">
+                {{ filteredPosProducts().length }} منتج متاح
+              </span>
+            </div>
+
+            <!-- Instant Search Input & Category Filter Bar -->
+            <div class="flex flex-wrap items-center gap-3">
+              <div class="relative flex-1 min-w-[240px]">
+                <input type="text"
+                       [ngModel]="posSearchQuery()"
+                       (ngModelChange)="posSearchQuery.set($event)"
+                       placeholder="🔍 ابحث عن اسم المنتج، السعر، أو الكود سريعا الكاشير..."
+                       class="w-full pl-4 pr-11 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+                <div class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                  <svg lucideIcon="search" class="w-4 h-4"></svg>
+                </div>
+                <button *ngIf="posSearchQuery()" (click)="posSearchQuery.set('')" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-black cursor-pointer">
+                  ✕
+                </button>
+              </div>
+
+              <!-- Quick Category Filter Buttons -->
+              <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar shrink-0 max-w-full">
+                <button (click)="posCategoryFilter.set('all')"
+                        class="px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer"
+                        [ngClass]="posCategoryFilter() === 'all' ? 'bg-emerald-600 text-white shadow-sm font-black' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'">
+                  الكل
+                </button>
+                <button *ngFor="let cat of posCategories()"
+                        (click)="posCategoryFilter.set(cat)"
+                        class="px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer"
+                        [ngClass]="posCategoryFilter() === cat ? 'bg-emerald-600 text-white shadow-sm font-black' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'">
+                  {{ cat }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Filtered Product Cards Grid -->
+            <div *ngIf="filteredPosProducts().length > 0; else noPosResults" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[460px] overflow-y-auto pr-1 custom-scrollbar">
+              <div *ngFor="let p of filteredPosProducts()" (click)="addPosItem(p)"
+                   class="p-3 bg-slate-50 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-2xl border border-slate-200 dark:border-slate-700 cursor-pointer transition-all hover:scale-[1.02] shadow-xs hover:border-emerald-400 group">
+                <div class="flex items-center gap-2">
+                  <img *ngIf="p.imageUrl" [src]="p.imageUrl" [alt]="p.name" appImageFallback class="w-9 h-9 rounded-xl object-cover shrink-0">
+                  <div class="min-w-0 flex-1">
+                    <p class="font-black text-slate-900 dark:text-white text-xs truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400">{{ p.name }}</p>
+                    <span class="text-[10px] text-slate-400 block truncate">{{ p.category || 'عام' }}</span>
+                  </div>
+                </div>
+                <div class="flex justify-between items-center mt-2.5 pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                  <span class="text-xs text-emerald-600 dark:text-emerald-400 font-black">{{ p.price }} ج.م</span>
+                  <span class="text-[10px] font-bold" [ngClass]="p.stockQuantity > 0 ? 'text-slate-500' : 'text-rose-500 font-black'">
+                    {{ p.stockQuantity > 0 ? 'المخزون: ' + p.stockQuantity : 'نفد!' }}
+                  </span>
                 </div>
               </div>
             </div>
+
+            <ng-template #noPosResults>
+              <div class="text-center py-10 text-slate-400 space-y-2">
+                <svg lucideIcon="search-x" class="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600"></svg>
+                <p class="font-bold text-xs">لا توجد منتجات تطابق بحثك "{{ posSearchQuery() }}"</p>
+                <button (click)="posSearchQuery.set(''); posCategoryFilter.set('all')" class="text-xs text-emerald-600 font-bold underline cursor-pointer">إعادة ضبط البحث</button>
+              </div>
+            </ng-template>
+
           </div>
         </div>
 
-        <!-- POS Invoice Summary -->
+        <!-- POS Invoice Summary & Quantity Controls -->
         <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
           <div>
-            <h3 class="text-lg font-black text-slate-900 dark:text-white mb-4">فاتورة الكاشير المباشرة</h3>
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-black text-slate-900 dark:text-white">فاتورة الكاشير المباشرة</h3>
+              <button *ngIf="posItems().length > 0" (click)="posItems.set([])" class="text-xs font-bold text-rose-500 hover:text-rose-700 underline cursor-pointer">
+                تفريغ السلة
+              </button>
+            </div>
             
-            <div class="space-y-3 max-h-60 overflow-y-auto mb-4">
-              <div *ngFor="let item of posItems()" class="flex justify-between items-center text-sm p-2 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                <div>
-                  <p class="font-bold text-slate-900 dark:text-white">{{ item.product.name }}</p>
-                  <p class="text-xs text-slate-500">{{ item.product.price }} × {{ item.quantity }}</p>
+            <div class="space-y-2.5 max-h-72 overflow-y-auto mb-4 custom-scrollbar pr-0.5">
+              <div *ngFor="let item of posItems()" class="flex justify-between items-center text-xs p-2.5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/60">
+                <div class="min-w-0 flex-1 pr-1">
+                  <p class="font-black text-slate-900 dark:text-white truncate">{{ item.product.name }}</p>
+                  <p class="text-[11px] text-emerald-600 font-bold mt-0.5">{{ item.product.price }} ج.م × {{ item.quantity }} = {{ item.product.price * item.quantity }} ج.م</p>
                 </div>
-                <span class="font-black text-emerald-600">{{ item.product.price * item.quantity }} ج.م</span>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <button (click)="decrementPosItem(item.product.id)" class="w-6 h-6 rounded-lg bg-slate-200 dark:bg-slate-700 hover:bg-rose-100 text-slate-700 dark:text-slate-200 font-black flex items-center justify-center text-xs transition-all cursor-pointer">-</button>
+                  <span class="font-black text-xs px-1 text-slate-900 dark:text-white">{{ item.quantity }}</span>
+                  <button (click)="incrementPosItem(item.product.id)" class="w-6 h-6 rounded-lg bg-slate-200 dark:bg-slate-700 hover:bg-emerald-100 text-slate-700 dark:text-slate-200 font-black flex items-center justify-center text-xs transition-all cursor-pointer">+</button>
+                  <button (click)="removePosItem(item.product.id)" class="text-slate-400 hover:text-rose-500 p-1 mr-1 transition-all cursor-pointer" title="حذف المنتج من الفاتورة">
+                    <svg lucideIcon="trash-2" class="w-3.5 h-3.5"></svg>
+                  </button>
+                </div>
               </div>
-              <div *ngIf="posItems().length === 0" class="text-center text-slate-400 py-8 text-sm">
-                لم يتم إضافة منتجات بعد
+              <div *ngIf="posItems().length === 0" class="text-center text-slate-400 py-12 text-xs font-bold space-y-1">
+                <svg lucideIcon="shopping-cart" class="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600 mb-2"></svg>
+                <p>لم يتم إضافة منتجات بعد</p>
+                <p class="text-[10px] font-normal text-slate-400">اضغط على أي منتج من القائمة لإضافته للفاتورة</p>
               </div>
             </div>
           </div>
@@ -303,7 +407,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
           <div class="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
             <div class="flex justify-between text-lg font-black">
               <span>الإجمالي:</span>
-              <span class="text-emerald-600">{{ posTotal() }} ج.م</span>
+              <span class="text-emerald-600 dark:text-emerald-400">{{ posTotal() }} ج.م</span>
             </div>
 
             <div class="space-y-1.5 pt-1">
@@ -316,8 +420,8 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             </div>
 
             <button (click)="checkoutPos()" [disabled]="posItems().length === 0"
-                    class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl disabled:opacity-40 transition-all">
-              طباعة وإصدار الفاتورة
+                    class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl disabled:opacity-40 transition-all shadow-md cursor-pointer">
+              🖨️ طباعة وإصدار الفاتورة
             </button>
           </div>
         </div>
@@ -748,78 +852,98 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
 
       <!-- ADD PRODUCT MODAL DIALOG -->
       <div *ngIf="openAddProductModal()" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-xl w-full font-sans dir-rtl space-y-4 border border-slate-200 dark:border-slate-800 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 max-w-2xl w-full font-sans dir-rtl space-y-5 border border-slate-200 dark:border-slate-800 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
           <div class="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
             <h3 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-              <svg lucideIcon="package-plus" class="w-5 h-5 text-emerald-600"></svg>
+              <svg lucideIcon="package-plus" class="w-5 h-5 text-emerald-600 dark:text-emerald-400"></svg>
               <span>إضافة منتج جديد للمخزون والمحل</span>
             </h3>
-            <button (click)="openAddProductModal.set(false)" class="text-slate-400 hover:text-slate-600">
+            <button (click)="openAddProductModal.set(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-xl">
               <svg lucideIcon="x" class="w-5 h-5"></svg>
             </button>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">اسم المنظف / المنتج *</label>
-              <input type="text" [(ngModel)]="newProdName" placeholder="مثال: مسحوق غسيل أوتوماتيك أريال/وفير..." class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">اسم المنظف / المنتج *</label>
+              <input type="text" [(ngModel)]="newProdName" placeholder="مثال: مسحوق غسيل أوتوماتيك أريال/وفير..."
+                     class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:outline-hidden focus:ring-2 focus:ring-emerald-500">
             </div>
 
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">القسم / التصنيف *</label>
-              <select [(ngModel)]="newProdCategory" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold">
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">القسم / التصنيف *</label>
+              <select [(ngModel)]="newProdCategory" class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500">
                 <option *ngFor="let cat of service.categories()" [value]="cat">{{ cat }}</option>
                 <option value="أخرى">أخرى (كتابة قسم جديد)</option>
               </select>
 
               <div *ngIf="newProdCategory === 'أخرى'" class="mt-2">
                 <input type="text" [(ngModel)]="customProdCategory" placeholder="اكتب اسم القسم الجديد هنا..." required
-                       class="w-full p-2.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-700 text-slate-900 dark:text-white text-xs font-bold">
+                       class="w-full p-2.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-700 text-slate-900 dark:text-white text-xs font-bold focus:outline-hidden focus:ring-2 focus:ring-emerald-500">
               </div>
             </div>
 
-            <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">السعر (ج.م) *</label>
-              <input type="number" [(ngModel)]="newProdPrice" min="0" placeholder="0" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+            <div class="sm:col-span-2 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+              <div class="flex justify-between items-center">
+                <label class="block font-black text-slate-900 dark:text-white text-xs">🏷️ الكود التسلسلي / الباركود (Serial / Barcode)</label>
+                <button type="button" (click)="generateNewBarcode()" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer flex items-center gap-1">
+                  <svg lucideIcon="sparkles" class="w-3.5 h-3.5"></svg>
+                  <span>توليد باركود تلقائي</span>
+                </button>
+              </div>
+              <input type="text" [(ngModel)]="newProdBarcode" placeholder="مثال: 690123456789 (أو امسح بقارئ الأكواد)"
+                     class="w-full p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-xs font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
             </div>
 
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">العدد / الكمية المتاحة *</label>
-              <input type="number" [(ngModel)]="newProdStock" min="0" placeholder="0" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">السعر (ج.م) *</label>
+              <input type="number" [(ngModel)]="newProdPrice" min="0" placeholder="0"
+                     class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
             </div>
 
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">نسبة الخصم (%)</label>
-              <input type="number" [(ngModel)]="newProdDiscount" min="0" max="100" placeholder="0" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">العدد / الكمية المتاحة *</label>
+              <input type="number" [(ngModel)]="newProdStock" min="0" placeholder="0"
+                     class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
             </div>
 
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">مكان المنتج بالمحل (الرف/الممر) *</label>
-              <input type="text" [(ngModel)]="newProdLocationStore" placeholder="مثال: الممر 2 - رف B3" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">نسبة الخصم (%)</label>
+              <input type="number" [(ngModel)]="newProdDiscount" min="0" max="100" placeholder="0"
+                     class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
             </div>
 
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">مكان التخزين بالمخزن الداخلي</label>
-              <input type="text" [(ngModel)]="newProdLocationWarehouse" placeholder="مثال: المخزن - رف W-1" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">مكان المنتج بالمحل (الرف/الممر) *</label>
+              <input type="text" [(ngModel)]="newProdLocationStore" placeholder="مثال: الممر 2 - رف B3"
+                     class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500">
             </div>
 
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">موعد التوفر المتوقع (عند نفاد المخزون)</label>
-              <input type="text" [(ngModel)]="newProdExpectedRestock" placeholder="مثال: غداً 4 مساءً أو خلال 24 ساعة" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">مكان التخزين بالمخزن الداخلي</label>
+              <input type="text" [(ngModel)]="newProdLocationWarehouse" placeholder="مثال: المخزن - رف W-1"
+                     class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500">
             </div>
 
-            <div class="flex items-center gap-2 pt-4">
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">موعد التوفر المتوقع (عند نفاد المخزون)</label>
+              <input type="text" [(ngModel)]="newProdExpectedRestock" placeholder="مثال: غداً 4 مساءً أو خلال 24 ساعة"
+                     class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <div class="sm:col-span-2 flex items-center gap-3 pt-2">
               <input type="checkbox" [(ngModel)]="newProdIsInWarehouse" id="addWarehouseCheck" class="w-4 h-4 text-emerald-600 rounded">
-              <label for="addWarehouseCheck" class="font-bold text-slate-800 dark:text-slate-200 text-xs">متوفر حالياً بالمخزن الداخلي (وليس العرض فقط)</label>
+              <label for="addWarehouseCheck" class="font-bold text-slate-800 dark:text-slate-200 text-xs cursor-pointer">متوفر حالياً بالمخزن الداخلي (وليس العرض فقط)</label>
             </div>
 
             <div class="sm:col-span-2">
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">وصف المنتج</label>
-              <textarea [(ngModel)]="newProdDescription" rows="2" placeholder="وصف قصير للمنتج..." class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"></textarea>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">وصف المنتج</label>
+              <textarea [(ngModel)]="newProdDescription" rows="2" placeholder="وصف قصير للمنتج..."
+                        class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500"></textarea>
             </div>
 
             <div class="sm:col-span-2 space-y-2">
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">صورة المنتج (من الهاتف / الكاميرا عبر Cloudinary)</label>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">صورة المنتج (من الهاتف / الكاميرا عبر Cloudinary)</label>
               
               <div class="flex flex-wrap items-center gap-3">
                 <label class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-md transition-all cursor-pointer flex items-center gap-2">
@@ -830,7 +954,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
 
                 <span class="text-xs text-slate-400 font-bold">أو رابط صورة:</span>
 
-                <input type="text" [(ngModel)]="newProdImageUrl" placeholder="https://..." class="flex-1 min-w-[200px] p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
+                <input type="text" [(ngModel)]="newProdImageUrl" placeholder="https://..." class="flex-1 min-w-[200px] p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white">
               </div>
 
               <div *ngIf="newProdImageUrl" class="flex items-center gap-3 pt-2">
@@ -841,106 +965,180 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
               </div>
             </div>
 
-            <div class="sm:col-span-2 p-3 bg-rose-50 dark:bg-rose-950/20 rounded-2xl border border-rose-200 dark:border-rose-900/40 space-y-2">
+            <div class="sm:col-span-2 p-4 bg-rose-50 dark:bg-rose-950/20 rounded-2xl border border-rose-200 dark:border-rose-900/40 space-y-3">
               <div class="flex items-center gap-2">
                 <input type="checkbox" [(ngModel)]="newProdIsBoycott" id="boycottCheck" class="w-4 h-4 text-rose-600 rounded">
-                <label for="boycottCheck" class="font-black text-rose-600 text-xs">علامة: هذا المنتج ضمن قائمة المقاطعة</label>
+                <label for="boycottCheck" class="font-black text-rose-600 text-xs cursor-pointer">علامة: هذا المنتج ضمن قائمة المقاطعة</label>
               </div>
 
               <div *ngIf="newProdIsBoycott" class="space-y-2">
                 <div>
                   <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">سبب المقاطعة</label>
-                  <input type="text" [(ngModel)]="newProdBoycottReason" placeholder="مثال: شركة داعمة بشكل مباشر للمحتل" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                  <input type="text" [(ngModel)]="newProdBoycottReason" placeholder="مثال: شركة داعمة بشكل مباشر للمحتل" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
                 </div>
                 <div>
                   <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">قائمة البدائل الوطنية المطابقة (تفصل بينها بفصلة)</label>
-                  <input type="text" [(ngModel)]="newProdAlternatives" placeholder="مثال: سبيرو سباتس كولا، عصير سينا كولا" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                  <input type="text" [(ngModel)]="newProdAlternatives" placeholder="مثال: سبيرو سباتس كولا، عصير سينا كولا" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
                 </div>
               </div>
             </div>
           </div>
 
-          <button (click)="saveNewProduct(); openAddProductModal.set(false)" [disabled]="!newProdName || !newProdPrice"
-                  class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-sm disabled:opacity-40 transition-all shadow-md">
-            حفظ وإضافة للمخزون
-          </button>
+          <div class="pt-3 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
+            <button type="button" (click)="openAddProductModal.set(false)" class="px-5 py-2.5 rounded-2xl text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 text-xs">
+              إلغاء
+            </button>
+            <button type="button" (click)="saveNewProduct()" [disabled]="!newProdName || newProdPrice === null || newProdPrice === undefined"
+                    class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-xs disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md flex items-center gap-2 cursor-pointer">
+              <svg lucideIcon="check" class="w-4 h-4"></svg>
+              <span>حفظ وإضافة للمخزون</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADD SUPPLIER MODAL DIALOG -->
+      <div *ngIf="openAddSupplierModal()" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 max-w-lg w-full font-sans dir-rtl space-y-5 border border-slate-200 dark:border-slate-800 shadow-2xl">
+          <div class="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+            <h3 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <svg lucideIcon="truck" class="w-5 h-5 text-emerald-600 dark:text-emerald-400"></svg>
+              <span>إضافة شركة / مورد جديد للشراء والتوريد</span>
+            </h3>
+            <button (click)="openAddSupplierModal.set(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-xl">
+              <svg lucideIcon="x" class="w-5 h-5"></svg>
+            </button>
+          </div>
+
+          <form (ngSubmit)="submitAddSupplier()" class="space-y-4 text-xs">
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">اسم الشركة / المصنع المورد *</label>
+              <input type="text" [(ngModel)]="newSuppCompanyName" name="suppCompanyName" required
+                     placeholder="مثال: شركة النيل للمنظفات / مصنع الأهرام للبلاستيك"
+                     class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">اسم المندوب / المسؤول المباشر *</label>
+              <input type="text" [(ngModel)]="newSuppName" name="suppName" required
+                     placeholder="مثال: أ/ محمد عبد الرحمن"
+                     class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">رقم الهاتف للاتصال والواتساب *</label>
+              <input type="tel" [(ngModel)]="newSuppPhone" name="suppPhone" required dir="ltr"
+                     placeholder="010XXXXXXXX"
+                     class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-right font-mono font-bold focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">الأقسام والمنتجات الموردة (مفصولة بفاصلة)</label>
+              <input type="text" [(ngModel)]="newSuppCategoriesStr" name="suppCategories"
+                     placeholder="مثال: مساحيق غسيل، مطهرات، أدوات نظافة"
+                     class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <div class="pt-3 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
+              <button type="button" (click)="openAddSupplierModal.set(false)" class="px-5 py-2.5 rounded-2xl text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 text-xs">
+                إلغاء
+              </button>
+              <button type="submit" [disabled]="!newSuppCompanyName || !newSuppName || !newSuppPhone"
+                      class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-xs disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md flex items-center gap-2 cursor-pointer">
+                <svg lucideIcon="check" class="w-4 h-4"></svg>
+                <span>حفظ وتسجيل المورد</span>
+              </button>
+            </div>
+          </form>
         </div>
       </div>
 
       <!-- EDIT PRODUCT MODAL DIALOG -->
       <div *ngIf="openEditProductModal()" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-xl w-full font-sans dir-rtl space-y-4 border border-slate-200 dark:border-slate-800 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 max-w-2xl w-full font-sans dir-rtl space-y-5 border border-slate-200 dark:border-slate-800 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
           <div class="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
             <h3 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-              <svg lucideIcon="edit-3" class="w-5 h-5 text-emerald-600"></svg>
+              <svg lucideIcon="edit-3" class="w-5 h-5 text-emerald-600 dark:text-emerald-400"></svg>
               <span>تعديل تفاصيل المنتج وتصنيفه</span>
             </h3>
-            <button (click)="openEditProductModal.set(false)" class="text-slate-400 hover:text-slate-600 p-1 rounded-xl">
+            <button (click)="openEditProductModal.set(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-xl">
               <svg lucideIcon="x" class="w-5 h-5"></svg>
             </button>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">اسم المنتج / المنظف *</label>
-              <input type="text" [(ngModel)]="editProdName" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold">
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">اسم المنتج / المنظف *</label>
+              <input type="text" [(ngModel)]="editProdName" class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
             </div>
 
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">القسم / التصنيف *</label>
-              <select [(ngModel)]="editProdCategory" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold">
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">القسم / التصنيف *</label>
+              <select [(ngModel)]="editProdCategory" class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
                 <option *ngFor="let cat of service.categories()" [value]="cat">{{ cat }}</option>
                 <option value="أخرى">أخرى (كتابة قسم جديد)</option>
               </select>
 
               <div *ngIf="editProdCategory === 'أخرى'" class="mt-2">
                 <input type="text" [(ngModel)]="customEditCategory" placeholder="اكتب اسم القسم الجديد هنا..." required
-                       class="w-full p-2.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-700 text-slate-900 dark:text-white text-xs font-bold">
+                       class="w-full p-2.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-700 text-slate-900 dark:text-white text-xs font-bold focus:ring-2 focus:ring-emerald-500">
               </div>
             </div>
 
-            <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">السعر (ج.م) *</label>
-              <input type="number" [(ngModel)]="editProdPrice" min="0" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold">
+            <div class="sm:col-span-2 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+              <div class="flex justify-between items-center">
+                <label class="block font-black text-slate-900 dark:text-white text-xs">🏷️ الكود التسلسلي / الباركود (Serial / Barcode)</label>
+                <button type="button" (click)="generateEditBarcode()" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer flex items-center gap-1">
+                  <svg lucideIcon="sparkles" class="w-3.5 h-3.5"></svg>
+                  <span>توليد باركود جديد</span>
+                </button>
+              </div>
+              <input type="text" [(ngModel)]="editProdBarcode" placeholder="مثال: 690123456789"
+                     class="w-full p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-xs font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
             </div>
 
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">العدد / الكمية المتاحة *</label>
-              <input type="number" [(ngModel)]="editProdStock" min="0" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold">
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">السعر (ج.م) *</label>
+              <input type="number" [(ngModel)]="editProdPrice" min="0" class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
             </div>
 
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">نسبة الخصم (%)</label>
-              <input type="number" [(ngModel)]="editProdDiscount" min="0" max="100" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold">
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">العدد / الكمية المتاحة *</label>
+              <input type="number" [(ngModel)]="editProdStock" min="0" class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
             </div>
 
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">مكان المنتج بالمحل (الرف/الممر) *</label>
-              <input type="text" [(ngModel)]="editProdLocationStore" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">نسبة الخصم (%)</label>
+              <input type="number" [(ngModel)]="editProdDiscount" min="0" max="100" class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
             </div>
 
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">مكان التخزين بالمخزن الداخلي</label>
-              <input type="text" [(ngModel)]="editProdLocationWarehouse" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">مكان المنتج بالمحل (الرف/الممر) *</label>
+              <input type="text" [(ngModel)]="editProdLocationStore" class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500">
             </div>
 
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">موعد التوفر المتوقع (عند نفاد المخزون)</label>
-              <input type="text" [(ngModel)]="editProdExpectedRestock" placeholder="مثال: غداً 4 مساءً أو خلال 24 ساعة" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">مكان التخزين بالمخزن الداخلي</label>
+              <input type="text" [(ngModel)]="editProdLocationWarehouse" class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500">
             </div>
 
-            <div class="flex items-center gap-2 pt-4">
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">موعد التوفر المتوقع (عند نفاد المخزون)</label>
+              <input type="text" [(ngModel)]="editProdExpectedRestock" placeholder="مثال: غداً 4 مساءً أو خلال 24 ساعة" class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <div class="sm:col-span-2 flex items-center gap-3 pt-2">
               <input type="checkbox" [(ngModel)]="editProdIsInWarehouse" id="editWarehouseCheck" class="w-4 h-4 text-emerald-600 rounded">
-              <label for="editWarehouseCheck" class="font-bold text-slate-800 dark:text-slate-200 text-xs">متوفر حالياً بالمخزن الداخلي</label>
+              <label for="editWarehouseCheck" class="font-bold text-slate-800 dark:text-slate-200 text-xs cursor-pointer">متوفر حالياً بالمخزن الداخلي (وليس العرض فقط)</label>
             </div>
 
             <div class="sm:col-span-2">
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">وصف المنتج</label>
-              <textarea [(ngModel)]="editProdDescription" rows="2" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"></textarea>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">وصف المنتج</label>
+              <textarea [(ngModel)]="editProdDescription" rows="2" class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500"></textarea>
             </div>
 
             <div class="sm:col-span-2 space-y-2">
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">صورة المنتج (تعديل من الهاتف / الكاميرا عبر Cloudinary)</label>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">صورة المنتج (تعديل من الهاتف / الكاميرا عبر Cloudinary)</label>
               
               <div class="flex flex-wrap items-center gap-3">
                 <label class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs shadow-md transition-all cursor-pointer flex items-center gap-2">
@@ -951,7 +1149,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
 
                 <span class="text-xs text-slate-400 font-bold">أو رابط صورة:</span>
 
-                <input type="text" [(ngModel)]="editProdImageUrl" placeholder="https://..." class="flex-1 min-w-[200px] p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
+                <input type="text" [(ngModel)]="editProdImageUrl" placeholder="https://..." class="flex-1 min-w-[200px] p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white">
               </div>
 
               <div *ngIf="editProdImageUrl" class="flex items-center gap-3 pt-2">
@@ -962,20 +1160,20 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
               </div>
             </div>
 
-            <div class="sm:col-span-2 p-3 bg-rose-50 dark:bg-rose-950/20 rounded-2xl border border-rose-200 dark:border-rose-900/40 space-y-2">
+            <div class="sm:col-span-2 p-4 bg-rose-50 dark:bg-rose-950/20 rounded-2xl border border-rose-200 dark:border-rose-900/40 space-y-3">
               <div class="flex items-center gap-2">
                 <input type="checkbox" [(ngModel)]="editProdIsBoycott" id="editBoycottCheck" class="w-4 h-4 text-rose-600 rounded">
-                <label for="editBoycottCheck" class="font-black text-rose-600 text-xs">علامة: هذا المنتج ضمن قائمة المقاطعة</label>
+                <label for="editBoycottCheck" class="font-black text-rose-600 text-xs cursor-pointer">علامة: هذا المنتج ضمن قائمة المقاطعة</label>
               </div>
 
               <div *ngIf="editProdIsBoycott" class="space-y-2">
                 <div>
                   <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">سبب المقاطعة</label>
-                  <input type="text" [(ngModel)]="editProdBoycottReason" placeholder="مثال: شركة داعمة بشكل مباشر للمحتل" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                  <input type="text" [(ngModel)]="editProdBoycottReason" placeholder="مثال: شركة داعمة بشكل مباشر للمحتل" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
                 </div>
                 <div>
                   <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">قائمة البدائل الوطنية المطابقة (تفصل بينها بفصلة)</label>
-                  <input type="text" [(ngModel)]="editProdAlternatives" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                  <input type="text" [(ngModel)]="editProdAlternatives" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
                 </div>
               </div>
             </div>
@@ -1155,18 +1353,121 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
         </div>
       </div>
 
+      <!-- Daily Attendance Code Modal -->
+      <div *ngIf="showAttendanceCodeModal()" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-6 font-sans">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <svg lucideIcon="shield-check" class="w-6 h-6"></svg>
+              </div>
+              <div>
+                <h3 class="text-lg font-black text-slate-900 dark:text-white">{{ attendanceCodeAction === 'in' ? 'تسجيل حضور' : 'تسجيل انصراف' }}</h3>
+                <p class="text-xs text-slate-500">أدخل الكود المتغير لتأكيد وجودك في المتجر</p>
+              </div>
+            </div>
+            <button (click)="showAttendanceCodeModal.set(false)" aria-label="إغلاق النافذة" title="إغلاق" class="text-slate-400 hover:text-slate-600 p-2 rounded-xl">
+              <svg lucideIcon="x" class="w-6 h-6"></svg>
+            </button>
+          </div>
+
+          <div class="text-center">
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">كود الحضور (يتغير كل 5 دقائق من المدير)</label>
+            <input #attendanceInput type="text" [(ngModel)]="attendanceCodeInput" name="attendanceCode" inputmode="numeric" maxlength="4" dir="ltr"
+                   placeholder="0000"
+                   (keyup.enter)="confirmAttendanceCode()"
+                   class="w-32 mx-auto text-center text-2xl font-black tracking-[0.3em] px-4 py-3 rounded-2xl border-2 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                   [ngClass]="attendanceCodeError() ? 'border-rose-500' : 'border-slate-200 dark:border-slate-700'">
+            <div *ngIf="attendanceCodeError()" class="mt-2 text-xs font-bold text-rose-600">
+              الكود غير صحيح أو انتهت صلاحيته! يرجى طلب الكود الحالي من المدير
+            </div>
+          </div>
+
+          <div class="flex gap-3">
+            <button (click)="confirmAttendanceCode()" type="button"
+                    class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5">
+              <svg lucideIcon="check-circle" class="w-4 h-4"></svg>
+              <span>{{ attendanceCodeAction === 'in' ? 'تأكيد الحضور' : 'تأكيد الانصراف' }}</span>
+            </button>
+            <button (click)="showAttendanceCodeModal.set(false)" type="button"
+                    class="px-5 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black rounded-2xl text-sm transition-all cursor-pointer">
+              إلغاء
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
   `
 })
 export class OmAlQuraStaffPortalComponent {
   service = inject(OmAlQuraService);
 
-  activeSubTab = signal<'attendance' | 'inventory' | 'pos' | 'notifications' | 'debts' | 'suggestions'>('inventory');
+  activeSubTab = signal<'attendance' | 'inventory' | 'pos' | 'notifications' | 'debts' | 'suggestions'>('attendance');
   orderFilterStatus = signal<'all' | 'pending' | 'preparing' | 'on_the_way' | 'completed' | 'cancelled'>('all');
   openAddProductModal = signal(false);
   openAddDebtModal = signal(false);
   openAddFaqModal = signal(false);
   openEditProductModal = signal(false);
+
+  // Daily Attendance Code modal state
+  showAttendanceCodeModal = signal(false);
+  attendanceCodeInput = '';
+  attendanceCodeAction: 'in' | 'out' = 'in';
+  attendanceCodeEmployeeId: string | null = null;
+  attendanceCodeError = signal(false);
+
+  nowLabel = '';
+  private clockTimer: any;
+
+  constructor() {
+    this.updateClock();
+    this.clockTimer = setInterval(() => this.updateClock(), 1000);
+  }
+
+  ngOnDestroy() {
+    if (this.clockTimer) clearInterval(this.clockTimer);
+  }
+
+  private updateClock() {
+    this.nowLabel = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  @ViewChild('attendanceInput') set attendanceInput(ref: ElementRef<HTMLInputElement>) {
+    if (ref) {
+      setTimeout(() => ref.nativeElement.focus(), 50);
+    }
+  }
+
+  openAttendanceModal(employeeId: string) {
+    const emp = this.service.employees().find(e => e.id === employeeId);
+    if (!emp || emp.isSuspended) return;
+    this.openAttendanceCodeModal(employeeId, emp.shiftStatus === 'clocked_in' ? 'out' : 'in');
+  }
+
+  openAttendanceCodeModal(employeeId: string, action: 'in' | 'out') {
+    this.attendanceCodeEmployeeId = employeeId;
+    this.attendanceCodeAction = action;
+    this.attendanceCodeInput = '';
+    this.attendanceCodeError.set(false);
+    this.showAttendanceCodeModal.set(true);
+  }
+
+  confirmAttendanceCode() {
+    if (!this.attendanceCodeEmployeeId) return;
+    if (!this.service.validateAttendanceCode(this.attendanceCodeInput)) {
+      this.attendanceCodeError.set(true);
+      return;
+    }
+    if (this.attendanceCodeAction === 'in') {
+      this.service.clockIn(this.attendanceCodeEmployeeId, this.attendanceCodeInput);
+    } else {
+      this.service.clockOut(this.attendanceCodeEmployeeId, this.attendanceCodeInput);
+    }
+    this.showAttendanceCodeModal.set(false);
+    this.attendanceCodeInput = '';
+    this.attendanceCodeEmployeeId = null;
+  }
 
   uploadingAddImage = signal(false);
   uploadingEditImage = signal(false);
@@ -1218,6 +1519,16 @@ export class OmAlQuraStaffPortalComponent {
   newProdAlternatives = '';
   newProdDescription = '';
   newProdImageUrl = '';
+  newProdBarcode = '';
+  editProdBarcode = '';
+
+  generateNewBarcode() {
+    this.newProdBarcode = `690${Math.floor(100000000 + Math.random() * 900000000)}`;
+  }
+
+  generateEditBarcode() {
+    this.editProdBarcode = `690${Math.floor(100000000 + Math.random() * 900000000)}`;
+  }
 
   staffTabs: { id: 'attendance' | 'inventory' | 'pos' | 'notifications' | 'debts' | 'suggestions'; label: string; icon: string }[] = [
     { id: 'attendance', label: 'الحضور والانصراف', icon: 'clock' },
@@ -1228,9 +1539,6 @@ export class OmAlQuraStaffPortalComponent {
     { id: 'suggestions', label: 'المقترحات والأسئلة الشائعة', icon: 'lightbulb' }
   ];
 
-  // POS State
-  posItems = signal<OmAlQuraOrderItem[]>([]);
-  
   // Suggestion State
   newSugTitle = '';
   newSugDetails = '';
@@ -1243,6 +1551,30 @@ export class OmAlQuraStaffPortalComponent {
     return this.service.customerDebts().reduce((acc, d) => acc + d.debtAmount, 0);
   }
 
+  // POS State & Instant Search Filter
+  posItems = signal<OmAlQuraOrderItem[]>([]);
+  posSearchQuery = signal<string>('');
+  posCategoryFilter = signal<string>('all');
+
+  posCategories = computed(() => {
+    const cats = new Set(this.service.products().map(p => p.category).filter(Boolean));
+    return Array.from(cats);
+  });
+
+  filteredPosProducts = computed(() => {
+    const query = this.posSearchQuery().trim().toLowerCase();
+    const cat = this.posCategoryFilter();
+    return this.service.products().filter(p => {
+      const matchesCategory = cat === 'all' || p.category === cat;
+      const matchesQuery = !query || 
+        p.name.toLowerCase().includes(query) || 
+        (p.category && p.category.toLowerCase().includes(query)) ||
+        (p.locationInStore && p.locationInStore.toLowerCase().includes(query)) ||
+        p.price.toString().includes(query);
+      return matchesCategory && matchesQuery;
+    });
+  });
+
   addPosItem(product: OmAlQuraProduct) {
     const current = this.posItems();
     const idx = current.findIndex(i => i.product.id === product.id);
@@ -1253,6 +1585,31 @@ export class OmAlQuraStaffPortalComponent {
     } else {
       this.posItems.set([...current, { product, quantity: 1 }]);
     }
+  }
+
+  incrementPosItem(productId: string) {
+    const updated = this.posItems().map(i => {
+      if (i.product.id === productId) {
+        return { ...i, quantity: i.quantity + 1 };
+      }
+      return i;
+    });
+    this.posItems.set(updated);
+  }
+
+  decrementPosItem(productId: string) {
+    const current = this.posItems();
+    const target = current.find(i => i.product.id === productId);
+    if (target && target.quantity > 1) {
+      const updated = current.map(i => i.product.id === productId ? { ...i, quantity: i.quantity - 1 } : i);
+      this.posItems.set(updated);
+    } else {
+      this.removePosItem(productId);
+    }
+  }
+
+  removePosItem(productId: string) {
+    this.posItems.set(this.posItems().filter(i => i.product.id !== productId));
   }
 
   posPaymentMethod: OmAlQuraOrder['paymentMethod'] = 'كاش';
@@ -1307,8 +1664,11 @@ export class OmAlQuraStaffPortalComponent {
       }
 
       const alts = this.newProdAlternatives ? this.newProdAlternatives.split('،').flatMap(a => a.split(',')).map(a => a.trim()).filter(Boolean) : [];
+      const barcodeToSave = this.newProdBarcode.trim() || `690${Math.floor(100000000 + Math.random() * 900000000)}`;
+
       this.service.addProduct({
         name: this.newProdName,
+        barcode: barcodeToSave,
         category: finalCategory,
         price: Number(this.newProdPrice),
         stockQuantity: Number(this.newProdStock || 0),
@@ -1326,6 +1686,7 @@ export class OmAlQuraStaffPortalComponent {
 
       // Reset form & close modal
       this.newProdName = '';
+      this.newProdBarcode = '';
       this.newProdCategory = 'منظفات ومساحيق غسيل';
       this.customProdCategory = '';
       this.newProdPrice = null;
@@ -1403,6 +1764,7 @@ export class OmAlQuraStaffPortalComponent {
   openEditProduct(p: OmAlQuraProduct) {
     this.editingProductId.set(p.id);
     this.editProdName = p.name;
+    this.editProdBarcode = p.barcode || '';
     this.editProdCategory = p.category;
     this.customEditCategory = '';
     this.editProdPrice = p.price;
@@ -1433,9 +1795,11 @@ export class OmAlQuraStaffPortalComponent {
     }
 
     const alts = this.editProdAlternatives ? this.editProdAlternatives.split('،').flatMap(a => a.split(',')).map(a => a.trim()).filter(Boolean) : [];
+    const barcodeToSave = this.editProdBarcode.trim() || `690${Math.floor(100000000 + Math.random() * 900000000)}`;
 
     this.service.updateProduct(id, {
       name: this.editProdName,
+      barcode: barcodeToSave,
       category: finalCategory,
       price: Number(this.editProdPrice),
       stockQuantity: Number(this.editProdStock || 0),
@@ -1554,5 +1918,34 @@ export class OmAlQuraStaffPortalComponent {
     this.newProdName = productName;
     this.activeSubTab.set('inventory');
     this.openAddProductModal.set(true);
+  }
+
+  // Add Supplier Modal State & Methods
+  openAddSupplierModal = signal(false);
+  newSuppName = '';
+  newSuppCompanyName = '';
+  newSuppPhone = '';
+  newSuppCategoriesStr = '';
+
+  submitAddSupplier() {
+    if (!this.newSuppName.trim() || !this.newSuppCompanyName.trim() || !this.newSuppPhone.trim()) {
+      return;
+    }
+    const cats = this.newSuppCategoriesStr
+      ? this.newSuppCategoriesStr.split('،').flatMap(c => c.split(',')).map(c => c.trim()).filter(Boolean)
+      : ['منظفات ومطهرات عامة'];
+
+    this.service.addSupplier({
+      name: this.newSuppName.trim(),
+      companyName: this.newSuppCompanyName.trim(),
+      phone: this.newSuppPhone.trim(),
+      suppliedCategories: cats
+    });
+
+    this.newSuppName = '';
+    this.newSuppCompanyName = '';
+    this.newSuppPhone = '';
+    this.newSuppCategoriesStr = '';
+    this.openAddSupplierModal.set(false);
   }
 }

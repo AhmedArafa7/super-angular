@@ -29,7 +29,12 @@
             </div>
           </div>
           
-          <div class="flex gap-1">
+          <div class="flex gap-1 items-center">
+            <!-- Instant 1-Click Language Switcher (EN / ع) -->
+            <button (click)="toggleLanguage()" class="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-mono font-black text-indigo-400 hover:text-white transition-all cursor-pointer flex items-center gap-1" [title]="settingsService.language() === 'ar' ? 'التحويل للغة الإنجليزية (English)' : 'Switch to Arabic (العربية)'">
+              <span>🌐</span>
+              <span>{{ settingsService.language() === 'ar' ? 'EN' : 'ع' }}</span>
+            </button>
             <button (click)="sidebar.setPosition('floating')" class="p-1.5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors" title="تحويل لدائرة عائمة">
               <lucide-icon name="layers" class="w-4 h-4 text-indigo-400"></lucide-icon>
             </button>
@@ -118,6 +123,20 @@
               <div class="text-xs text-slate-500 text-center py-6">لا توجد أقسام مثبتة</div>
             }
           </div>
+
+          <!-- Unpinned Nav Items at Bottom (If Enabled via Customization Dialog) -->
+          @if (sidebar.showAllUnpinnedAtBottom() && unpinnedItems.length > 0) {
+            <div class="space-y-1 pt-4 mt-4 border-t border-white/5">
+              @if (!sidebar.isCollapsed()) {
+                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-2 mb-1 flex items-center justify-between">
+                  <span>الأقسام الأخرى غير المثبتة ({{ unpinnedItems.length }})</span>
+                </div>
+              }
+              @for (item of unpinnedItems; track item.id) {
+                <app-sidebar-item [item]="item" (click)="onItemClick(item)"></app-sidebar-item>
+              }
+            </div>
+          }
         </div>
       }
     </div>
@@ -238,9 +257,14 @@
               <lucide-icon [img]="Settings" class="w-4 h-4 text-slate-400"></lucide-icon> الإعدادات
             </a>
             <!-- Quick Theme Switcher Button -->
-            <button (click)="toggleTheme()" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors w-full text-right">
+            <button (click)="toggleTheme()" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors w-full text-right cursor-pointer">
               <lucide-icon [img]="isDarkMode() ? Sun : Moon" class="w-4 h-4 text-amber-400"></lucide-icon>
               <span>{{ isDarkMode() ? 'التحويل للوضع الفاتح' : 'التحويل للوضع الداكن' }}</span>
+            </button>
+            <!-- Instant 1-Click Language Switcher -->
+            <button (click)="toggleLanguage()" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors w-full text-right cursor-pointer">
+              <span class="text-indigo-400 font-bold text-base">🌐</span>
+              <span>{{ settingsService.language() === 'ar' ? 'تغيير اللغة إلى English 🇬🇧' : 'Switch Language to العربية 🇸🇦' }}</span>
             </button>
             <div class="h-px bg-white/10 my-1 mx-4"></div>
             @if (!firebase.currentUser() || firebase.currentUser()?.isAnonymous) {

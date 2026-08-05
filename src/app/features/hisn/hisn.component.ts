@@ -1,4 +1,4 @@
-import { Component, inject, effect, HostListener } from '@angular/core';
+import { Component, inject, effect, HostListener, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideDynamicIcon } from '@lucide/angular';
@@ -13,9 +13,21 @@ import { PrayerQuranService, ReadingMode, ReciterId, RECITERS } from '../../core
   templateUrl: './hisn.component.html',
   styleUrls: ['./hisn.component.scss']
 })
-export class HisnComponent {
+export class HisnComponent implements OnDestroy {
   private hisnService = inject(HisnService);
   private prayerQuranService = inject(PrayerQuranService);
+
+  private toastListener = ((event: any) => {
+    this.toastMessage = event.detail;
+    this.showToast = true;
+    setTimeout(() => this.showToast = false, 4000);
+  }) as EventListener;
+
+  ngOnDestroy() {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('hisn-toast', this.toastListener);
+    }
+  }
 
   // Expose signals from services
   wird = this.hisnService.wird;
@@ -111,6 +123,10 @@ export class HisnComponent {
         this.isLocatingQibla = false;
         this.qiblaDirection = 135;
         this.showAppToast('تعذر جلب الموقع الجغرافي، تم عرض الاتجاه التقريبي');
+      }, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000
       });
     } else {
       this.isLocatingQibla = false;
@@ -122,8 +138,11 @@ export class HisnComponent {
     if (navigator.share) {
       navigator.share({ title: 'حصن المسلم', text: text }).catch(() => {});
     } else {
-      navigator.clipboard.writeText(text);
-      this.showAppToast('تم نسخ النص إلى الحافظة 📋');
+      navigator.clipboard.writeText(text).then(() => {
+        this.showAppToast('تم نسخ النص إلى الحافظة 📋');
+      }).catch(() => {
+        this.showAppToast('تعذر نسخ النص');
+      });
     }
   }
 
@@ -140,7 +159,14 @@ export class HisnComponent {
   // Names of Allah States
   namesOfAllah = NAMES_OF_ALLAH;
   searchTerm = '';
-  filteredNames = NAMES_OF_ALLAH;
+
+  get filteredNames() {
+    if (!this.searchTerm.trim()) return this.namesOfAllah;
+    const term = this.searchTerm.trim();
+    return this.namesOfAllah.filter(item =>
+      item.name.includes(term) || item.meaning.includes(term)
+    );
+  }
 
   // Wird form state
   showAddWird = false;
@@ -181,18 +207,8 @@ export class HisnComponent {
 
   constructor() {
     if (typeof window !== 'undefined') {
-      window.addEventListener('hisn-toast', ((event: any) => {
-        this.toastMessage = event.detail;
-        this.showToast = true;
-        setTimeout(() => this.showToast = false, 4000);
-      }) as EventListener);
+      window.addEventListener('hisn-toast', this.toastListener);
     }
-
-    effect(() => {
-      this.filteredNames = this.namesOfAllah.filter(item =>
-        item.name.includes(this.searchTerm) || item.meaning.includes(this.searchTerm)
-      );
-    });
   }
 
   // Wird methods
@@ -448,8 +464,9 @@ export class HisnComponent {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const reader = new FileReader();
-      reader.onload = () => {
-        this.hisnService.showToast('تم استيراد البيانات الشاملة');
+      reader.onload = (e) => {
+        const result = this.prayerQuranService.importAllData(e.target?.result as string);
+        this.hisnService.showToast(result ? 'تم استيراد البيانات الشاملة بنجاح' : 'فشل الاستيراد - ملف غير صالح');
       };
       reader.readAsText(input.files[0]);
     }
@@ -467,15 +484,20 @@ export class HisnComponent {
 
   // Storage calculation
   calculateStorageUsed(): number {
-    let total = 0;
-    total += Object.values(this.counts).reduce((a, b) => a + b, 0);
-    total += this.tasbihTotal();
-    total += this.wirdItems().reduce((sum, w) => sum + w.progress, 0);
-    return total;
+    if (typeof window === 'undefined') return 0;
+    let totalBytes = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) {
+        const val = localStorage.getItem(key) || '';
+        totalBytes += (key.length + val.length) * 2;
+      }
+    }
+    return Math.round((totalBytes / 1024) * 10) / 10;
   }
 
   calculateStoragePercent(): number {
-    return Math.min(100, Math.round((this.calculateStorageUsed() / 1000) * 100));
+    return Math.min(100, Math.round((this.calculateStorageUsed() / 512) * 100));
   }
 
   getTotalAzkarCounts(): number {

@@ -253,6 +253,8 @@ import { MetalCalculatorComponent } from './metal-calculator/metal-calculator.co
               </div>
               
               <button (click)="service.toggleFavorite(p.id)" 
+                      [attr.aria-label]="service.userFavoriteProductIds().includes(p.id) ? 'إزالة من المفضلة' : 'إضافة للمفضلة'"
+                      [title]="service.userFavoriteProductIds().includes(p.id) ? 'إزالة من المفضلة' : 'إضافة للمفضلة'"
                       class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex items-center justify-center text-rose-500 shadow-md hover:scale-110 transition-all">
                 <svg lucideIcon="heart" class="w-5 h-5" [ngClass]="{'fill-rose-500': service.userFavoriteProductIds().includes(p.id)}"></svg>
               </button>

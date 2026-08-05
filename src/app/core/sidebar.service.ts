@@ -9,6 +9,7 @@ export type SidebarPosition = "left" | "right" | "top" | "bottom" | "floating";
 })
 export class SidebarService {
   // State Signals
+  readonly showAllUnpinnedAtBottom = signal<boolean>(false);
   readonly pinnedItems = signal<string[]>(["dashboard", "qa", "time", "health", "chat", "vault", "agent-ai", "deals", "peer-chat", "stream", "market", "arcade", "launcher", "lab", "ads", "downloads", "wallet", "hisn", "microcontroller-lab", "sheets", "settings", "admin"]);
   readonly isCollapsed = signal<boolean>(false);
   readonly isVisible = signal<boolean>(true);
@@ -25,6 +26,11 @@ export class SidebarService {
 
   constructor() {
     this.loadState();
+  }
+
+  toggleShowAllUnpinnedAtBottom(): void {
+    this.showAllUnpinnedAtBottom.update(v => !v);
+    this.markUnsaved();
   }
 
   // Check if an item ID is pinned
@@ -133,6 +139,7 @@ export class SidebarService {
     if (typeof window !== 'undefined') {
       const state = {
         pinnedItems: this.pinnedItems(),
+        showAllUnpinnedAtBottom: this.showAllUnpinnedAtBottom(),
         isCollapsed: this.isCollapsed(),
         isVisible: this.isVisible(),
         isHeaderVisible: this.isHeaderVisible(),
@@ -153,6 +160,7 @@ export class SidebarService {
         try {
           const parsed = JSON.parse(stored);
           if (parsed.pinnedItems !== undefined) this.pinnedItems.set(parsed.pinnedItems);
+          if (parsed.showAllUnpinnedAtBottom !== undefined) this.showAllUnpinnedAtBottom.set(parsed.showAllUnpinnedAtBottom);
           if (parsed.isCollapsed !== undefined) this.isCollapsed.set(parsed.isCollapsed);
           if (parsed.isVisible !== undefined) this.isVisible.set(parsed.isVisible);
           if (parsed.isHeaderVisible !== undefined) this.isHeaderVisible.set(parsed.isHeaderVisible);

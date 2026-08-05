@@ -1,0 +1,80 @@
+appId: com.super.angular
+productName: Super
+copyright: Copyright © 2024 Super Team
+
+# Output directory
+directories:
+  output: dist-electron
+  buildResources: electron/assets
+
+# Files to include in the package
+files:
+  - electron/**/*
+  - dist/Super-Angular/browser/**/*
+  - "!node_modules/**/*"
+  - "!src/**/*"
+  - "!.git/**/*"
+  - "!*.log"
+
+# Extra resources to bundle
+extraResources:
+  - from: electron/assets
+    to: assets
+    filter:
+      - "**/*"
+
+# Windows configuration
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: electron/assets/icon.ico
+  artifactName: "Super-Setup-${version}.exe"
+
+# NSIS installer configuration
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  allowElevation: true
+  installerIcon: electron/assets/icon.ico
+  uninstallerIcon: electron/assets/icon.ico
+  installerHeaderIcon: electron/assets/icon.ico
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Super
+  displayLanguageSelector: false
+  language: Arabic
+  runAfterFinish: true
+  installerLanguages:
+    - Arabic
+
+# macOS configuration
+mac:
+  target:
+    - target: dmg
+      arch: x64
+    - target: dmg
+      arch: arm64
+  icon: electron/assets/icon.icns
+  artifactName: "Super-${version}-mac.dmg"
+  category: public.app-category.productivity
+
+# Linux configuration
+linux:
+  target:
+    - AppImage
+    - deb
+  icon: electron/assets/icons
+  category: Office
+  artifactName: "Super-${version}.AppImage"
+
+# Compression
+compression: maximum
+
+# Publish (optional - for auto-update)
+# publish:
+#   provider: github
+#   owner: AhmedArafa7
+#   repo: super-angular

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Three Monkeys - القردة الثلاثة</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&family=Fredoka+One&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=8">
+    <link rel="stylesheet" href="styles.css?v=9">
     <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
 </head>
 <body>
@@ -169,61 +169,19 @@
                     <div class="mute-layout">
                         <div class="manual-book-container">
                             <div class="manual-book">
-                                <!-- Binder Cover (background) -->
                                 <div class="manual-cover"></div>
-                                
-                                <!-- Pages container -->
-                                <div class="manual-pages">
-                                    <!-- Left Page -->
-                                    <div class="manual-page left-page">
-                                        <h3 class="page-title">الوحدة 1: الأسلاك ✂️</h3>
-                                        <div class="module-rules">
-                                            <ul>
-                                                <li>- <b>3 أسلاك:</b> إذا لم يكن هناك أحمر، اقطع <b>الثاني</b>. وإلا <b>الأخير</b>.</li>
-                                                <li>- <b>4 أسلاك:</b> إذا كان الأول أصفر، اقطع <b>الأول</b>. وإلا <b>الثالث</b>.</li>
-                                                <li>- <b>5 أسلاك:</b> إذا كان الأخير أسود، اقطع <b>الرابع</b>. وإلا <b>الثاني</b>.</li>
-                                            </ul>
-                                        </div>
-
-                                        <h3 class="page-title mt-10">الوحدة 2: الأرقام 🔢</h3>
-                                        <div class="module-rules">
-                                            <ul>
-                                                <li>- <b>الرقم زوجي:</b> اضغط <code>&lt;</code> (أصغر من)</li>
-                                                <li>- <b>الرقم فردي:</b> اضغط <code>&gt;</code> (أكبر من)</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Center Binder Rings -->
-                                    <div class="binder-rings">
-                                        <div class="ring"></div>
-                                        <div class="ring"></div>
-                                        <div class="ring"></div>
-                                        <div class="ring"></div>
-                                    </div>
-
-                                    <!-- Right Page -->
-                                    <div class="manual-page right-page">
-                                        <h3 class="page-title">الوحدة 3: الألوان 🎨</h3>
-                                        <div class="module-rules">
-                                            <p>إذا كان الزر العلوي الأيمن <b>أحمر</b>، اضغط بترتيب:</p>
-                                            <div class="color-sequence">
-                                                <div class="c-dot red"></div>
-                                                <div class="c-dot blue"></div>
-                                                <div class="c-dot yellow"></div>
-                                                <div class="c-dot green"></div>
-                                            </div>
-                                            <p>وإلا، اضغط بترتيب:</p>
-                                            <div class="color-sequence">
-                                                <div class="c-dot green"></div>
-                                                <div class="c-dot yellow"></div>
-                                                <div class="c-dot blue"></div>
-                                                <div class="c-dot red"></div>
-                                            </div>
-                                            <p style="font-size:0.85rem; color:#666; margin-top: 10px;"><em>ملاحظة: اضغط الأزرار الموجودة فقط.</em></p>
-                                        </div>
-                                    </div>
+                                <div class="binder-rings">
+                                    <div class="ring"></div>
+                                    <div class="ring"></div>
+                                    <div class="ring"></div>
+                                    <div class="ring"></div>
                                 </div>
+                                <div id="manual-content" class="manual-pages-inner"></div>
+                            </div>
+                            <div class="manual-nav">
+                                <button type="button" id="manual-prev" class="manual-nav-btn">◀ السابق</button>
+                                <span id="manual-page-label">1 / 2</span>
+                                <button type="button" id="manual-next" class="manual-nav-btn">التالي ▶</button>
                             </div>
                         </div>
                         
@@ -235,9 +193,17 @@
                                 <button class="btn-gesture" data-g="3️⃣">3️⃣</button>
                                 <button class="btn-gesture" data-g="4️⃣">4️⃣</button>
                                 <button class="btn-gesture" data-g="5️⃣">5️⃣</button>
+                                <button class="btn-gesture" data-g="0️⃣">0️⃣</button>
+                                <button class="btn-gesture" data-g="🔴">🔴</button>
+                                <button class="btn-gesture" data-g="🔵">🔵</button>
+                                <button class="btn-gesture" data-g="🟡">🟡</button>
+                                <button class="btn-gesture" data-g="🟢">🟢</button>
+                                <button class="btn-gesture" data-g="⬆️">⬆️</button>
+                                <button class="btn-gesture" data-g="⬇️">⬇️</button>
+                                <button class="btn-gesture" data-g="⬅️">⬅️</button>
+                                <button class="btn-gesture" data-g="➡️">➡️</button>
+                                <button class="btn-gesture" data-g="✂️">✂️</button>
                                 <button class="btn-gesture" data-g="👍">👍</button>
-                                <button class="btn-gesture" data-g="👎">👎</button>
-                                <button class="btn-gesture" data-g="✋">✋</button>
                             </div>
                         </div>
                     </div>

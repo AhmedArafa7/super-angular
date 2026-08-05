@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dragon & Dungeons - RPG</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Main Menu / Hero Selection -->
+        <div id="menu-screen" class="screen">
+            <h1 class="glow-title">🐉 DRAGON & DUNGEONS ⚔️</h1>
+            <p class="subtitle">اختر بطلك المغامر وانطلق في زنزانة التنانين الأسطورية!</p>
+            
+            <div class="heroes-grid">
+                <div class="hero-card" data-hero="warrior">
+                    <div class="hero-icon">🛡️</div>
+                    <h3>محارب الحديد (Warrior)</h3>
+                    <p>صحة عالية، دفاع قوي، ضربات سيف فتاكة.</p>
+                    <button class="select-btn">اختر البطل</button>
+                </div>
+                <div class="hero-card" data-hero="mage">
+                    <div class="hero-icon">🔮</div>
+                    <h3>ساحر العناصر (Mage)</h3>
+                    <p>قوة مانا عالية، تعويذات نارية ومهارات عناصر مدمرة.</p>
+                    <button class="select-btn">اختر البطل</button>
+                </div>
+                <div class="hero-card" data-hero="rogue">
+                    <div class="hero-icon">🗡️</div>
+                    <h3>سارق الظلال (Rogue)</h3>
+                    <p>سرعة فائقة، ضربات حرجة مضاعفة وتفادي.</p>
+                    <button class="select-btn">اختر البطل</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dungeon Adventure Screen -->
+        <div id="battle-screen" class="screen hidden">
+            <header class="battle-header">
+                <div class="dungeon-level">الزنزانة: <span id="level-display">1</span> / 5</div>
+                <div class="hero-status">
+                    <span id="hero-name-display">البطل</span> | 
+                    ❤️ HP: <span id="hero-hp-display">100</span>/<span id="hero-maxhp-display">100</span> | 
+                    🔵 MP: <span id="hero-mp-display">50</span>/<span id="hero-maxmp-display">50</span> | 
+                    🪙 الذهب: <span id="gold-display">0</span>
+                </div>
+            </header>
+
+            <div class="arena-stage">
+                <div class="monster-box">
+                    <div id="monster-avatar" class="monster-avatar">🐲</div>
+                    <h2 id="monster-name">تنين الظلام الأصغر</h2>
+                    <div class="hp-bar-container">
+                        <div id="monster-hp-bar" class="hp-bar" style="width: 100%;"></div>
+                    </div>
+                    <p>❤️ <span id="monster-hp-display">150</span> / <span id="monster-monster-maxhp">150</span></p>
+                </div>
+
+                <div id="battle-log" class="battle-log">
+                    <p>⚔️ بدأت المواجهة! اختر هجومك بحكمة...</p>
+                </div>
+            </div>
+
+            <div class="action-controls">
+                <button id="attack-btn" class="action-btn attack">⚔️ هجوم عادي</button>
+                <button id="skill-btn" class="action-btn skill">✨ تعويذة سحرية (-20 MP)</button>
+                <button id="potion-btn" class="action-btn potion">🧪 شرب جرعة شفاء (+50 HP)</button>
+                <button id="flee-btn" class="action-btn flee">🏃 هروب</button>
+            </div>
+        </div>
+
+        <!-- Victory / Defeat Modal -->
+        <div id="modal-screen" class="screen hidden">
+            <div class="modal-content">
+                <h2 id="modal-title">نتيجة المعركة</h2>
+                <p id="modal-desc">أحسنت صنعاً!</p>
+                <button id="modal-btn" class="action-btn primary">تابع المغامرة</button>
+            </div>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>

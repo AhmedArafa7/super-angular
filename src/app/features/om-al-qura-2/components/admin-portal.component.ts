@@ -39,6 +39,43 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
         </div>
       </div>
 
+      <!-- SECTION 0: Daily Attendance Code (Manager Only) -->
+      <div class="bg-gradient-to-br from-amber-600 to-orange-700 text-white rounded-3xl p-6 md:p-8 shadow-xl border border-amber-400/30 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div>
+          <div class="flex items-center gap-2 mb-2 flex-wrap">
+            <span class="px-3 py-1 rounded-full text-xs font-black bg-black/20 text-amber-50 border border-white/20">
+              خاص بالمدير فقط
+            </span>
+            <span class="px-3 py-1 rounded-full text-xs font-black bg-amber-400 text-amber-950 flex items-center gap-1 shadow-sm">
+              <svg lucideIcon="timer" class="w-3.5 h-3.5"></svg>
+              يتغير تلقائياً كل 5 دقائق
+            </span>
+          </div>
+          <h2 class="text-2xl font-black text-white flex items-center gap-2">
+            <svg lucideIcon="shield-check" class="w-7 h-7"></svg>
+            <span>كود الحضور للعمال والمهندسين (متغير كل 5 دقائق)</span>
+          </h2>
+          <p class="text-xs text-amber-100 mt-2 leading-relaxed">
+            أعطِ هذا الكود للعمال والمهندسين المتواجدين فعلياً في المصنع. الكود يتغير تلقائياً كل 5 دقائق،
+            ولا يمكن لأي عامل تسجيل حضور أو انصراف من خارج المصنع بدونه.
+          </p>
+          <p class="text-xs text-amber-200 mt-2 font-bold flex items-center gap-1.5 bg-black/20 w-fit px-3 py-1 rounded-lg border border-amber-300/30">
+            <svg lucideIcon="clock" class="w-4 h-4 text-amber-300 animate-spin" style="animation-duration: 4s;"></svg>
+            يتجدد الكود بعد: <span class="font-mono text-amber-300 text-sm font-black" dir="ltr">{{ service.attendanceCodeTimeRemaining() }}</span>
+          </p>
+        </div>
+
+        <div class="text-center bg-black/25 border border-white/20 rounded-3xl px-10 py-6 backdrop-blur-md">
+          <p class="text-[11px] font-bold text-amber-100 uppercase tracking-widest mb-2">الكود الحالي (5 دقائق)</p>
+          <div class="text-5xl font-black tracking-[0.35em] font-mono text-white select-all" dir="ltr">{{ service.dailyAttendanceCode() }}</div>
+          <button (click)="copyDailyCode()"
+                  class="mt-4 px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs transition-all flex items-center gap-1.5 mx-auto">
+            <svg lucideIcon="copy" class="w-4 h-4"></svg>
+            <span>{{ codeCopied ? 'تم النسخ ✅' : 'نسخ الكود' }}</span>
+          </button>
+        </div>
+      </div>
+
       <!-- SECTION 1: Staff HR & Payroll Table + Manager Actions -->
       <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
         <div class="flex flex-wrap justify-between items-center gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
@@ -394,7 +431,14 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
 
         <!-- SUPPLIERS DIRECTORY -->
         <div class="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-          <h4 class="font-black text-xs text-slate-800 dark:text-white">سجل شركات الموردين المسجلين:</h4>
+          <div class="flex items-center justify-between gap-4">
+            <h4 class="font-black text-xs text-slate-800 dark:text-white">سجل شركات الموردين المسجلين:</h4>
+            <button (click)="openAddSupplierModal.set(true)" type="button"
+                    class="px-4 py-2 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer">
+              <svg lucideIcon="plus-circle" class="w-4 h-4"></svg>
+              <span>+ إضافة شركة توريد جديدة</span>
+            </button>
+          </div>
           
           <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div *ngFor="let supp of service.suppliers()" class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex flex-col justify-between space-y-3">
@@ -412,6 +456,62 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- ADD SUPPLIER MODAL DIALOG -->
+        <div *ngIf="openAddSupplierModal()" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 max-w-lg w-full font-sans dir-rtl space-y-5 border border-slate-200 dark:border-slate-800 shadow-2xl">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+              <h3 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <svg lucideIcon="truck" class="w-5 h-5 text-amber-600 dark:text-amber-400"></svg>
+                <span>إضافة شركة / مورد جديد للقطاعات والمواد الخام</span>
+              </h3>
+              <button (click)="openAddSupplierModal.set(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-xl">
+                <svg lucideIcon="x" class="w-5 h-5"></svg>
+              </button>
+            </div>
+
+            <form (ngSubmit)="submitAddSupplierForm()" class="space-y-4 text-xs">
+              <div>
+                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">اسم الشركة / المصنع المورد *</label>
+                <input type="text" [(ngModel)]="newSupplierCompany" name="suppCompanyName" required
+                       placeholder="مثال: مصنع النيل للألومنيوم / شركة الأهرام للصلب"
+                       class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-amber-500">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">اسم المندوب / المسؤول المباشر *</label>
+                <input type="text" [(ngModel)]="newSupplierName" name="suppName" required
+                       placeholder="مثال: مهندس/ أحمد محمود"
+                       class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-amber-500">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">رقم الهاتف للاتصال والواتساب *</label>
+                <input type="tel" [(ngModel)]="newSupplierPhone" name="suppPhone" required dir="ltr"
+                       placeholder="010XXXXXXXX"
+                       class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-right font-mono font-bold focus:ring-2 focus:ring-amber-500">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">الأقسام والمنتجات الموردة (مفصولة بفاصلة)</label>
+                <input type="text" [(ngModel)]="newSupplierCategoriesStr" name="suppCategories"
+                       placeholder="مثال: قطاعات ألومنيوم، صاج بارد، مواسير حديد"
+                       class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-amber-500">
+              </div>
+
+              <div class="pt-3 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" (click)="openAddSupplierModal.set(false)" class="px-5 py-2.5 rounded-2xl text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 text-xs">
+                  إلغاء
+                </button>
+                <button type="submit" [disabled]="!newSupplierCompany || !newSupplierName || !newSupplierPhone"
+                        class="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-black rounded-2xl text-xs disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md flex items-center gap-2 cursor-pointer">
+                  <svg lucideIcon="check" class="w-4 h-4"></svg>
+                  <span>حفظ وتسجيل المورد</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
 
@@ -838,6 +938,17 @@ export class OmAlQura2AdminPortalComponent {
   newHireRole: OmAlQura2Employee['role'] = 'مبيعات';
   newHirePhone = '';
   newHireSalary: number | null = null;
+
+  codeCopied = false;
+  todayDateLabel = new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  copyDailyCode() {
+    if (!navigator.clipboard) return;
+    navigator.clipboard.writeText(this.service.dailyAttendanceCode()).then(() => {
+      this.codeCopied = true;
+      setTimeout(() => (this.codeCopied = false), 2000);
+    });
+  }
 
   activeEmployeesCount = computed(() => {
     return this.service.employees().filter(e => !e.isSuspended).length;

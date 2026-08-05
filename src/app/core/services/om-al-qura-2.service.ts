@@ -21,6 +21,7 @@ export interface OmAlQura2StoreLayout {
 export interface OmAlQura2Product {
   id: string;
   name: string;
+  barcode?: string; // الكود التسلسلي / الباركود الخاصة بالمنتج أو القطاع
   category: string;
   price: number;
   stockQuantity: number;
@@ -301,6 +302,24 @@ export class OmAlQura2Service {
   products = signal<OmAlQura2Product[]>([]);
   employees = signal<OmAlQura2Employee[]>([]);
   attendanceLogs = signal<OmAlQura2AttendanceLog[]>([]);
+
+  // Realtime clock signal to drive 5-minute attendance code updates
+  currentTime = signal<Date>(new Date());
+
+  // Daily Attendance Code (visible only to the manager, changes every 5 minutes)
+  private attendanceCodeSalt = 'omalqura2_2026_attendance_secret';
+  dailyAttendanceCode = computed(() => this.generateDailyAttendanceCode(this.currentTime()));
+
+  // Time remaining until the next 5-minute code refresh (formatted MM:SS)
+  attendanceCodeTimeRemaining = computed(() => {
+    const now = this.currentTime();
+    const secondsInWindow = 5 * 60;
+    const elapsedSeconds = Math.floor(now.getTime() / 1000) % secondsInWindow;
+    const remainingSeconds = secondsInWindow - elapsedSeconds;
+    const mins = Math.floor(remainingSeconds / 60);
+    const secs = remainingSeconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  });
   orders = signal<OmAlQura2Order[]>([]);
   deliveryDrivers = signal<OmAlQura2DeliveryDriver[]>([]);
   customerDebts = signal<OmAlQura2CustomerDebt[]>([]);
@@ -353,6 +372,7 @@ export class OmAlQura2Service {
   constructor() {
     this.loadInitialData();
     this.initFirestoreSync();
+    setInterval(() => this.currentTime.set(new Date()), 1000);
   }
 
   // Real-time Cloud Database Listeners (Firestore Real-time Sync across all browsers/devices)
@@ -1097,8 +1117,36 @@ ${itemsText}
 
   // --- METHODS & ACTIONS ---
 
+  // Generate a unique code based on 5-minute intervals + secret salt (deterministic so it matches across devices)
+  generateDailyAttendanceCode(date: Date = new Date()): string {
+    const windowIndex = Math.floor(date.getTime() / (5 * 60 * 1000));
+    const seed = `${this.attendanceCodeSalt}_${windowIndex}`;
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+      hash = (hash << 5) - hash + seed.charCodeAt(i);
+      hash |= 0;
+    }
+    const code = Math.abs(hash) % 10000;
+    return String(code).padStart(4, '0');
+  }
+
+  // Validate the code entered by an employee against current or previous 5-minute window
+  validateAttendanceCode(code: string | null | undefined): boolean {
+    if (!code?.trim()) return false;
+    const normalized = code.trim().replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString());
+    const now = this.currentTime();
+    const currentCode = this.generateDailyAttendanceCode(now);
+    const prevWindowDate = new Date(now.getTime() - 5 * 60 * 1000);
+    const prevCode = this.generateDailyAttendanceCode(prevWindowDate);
+    return normalized === currentCode || normalized === prevCode;
+  }
+
   // Employees & Attendance
-  clockIn(employeeId: string) {
+  clockIn(employeeId: string, attendanceCode?: string) {
+    if (!this.validateAttendanceCode(attendanceCode)) {
+      this.toast.show('كود الحضور غير صحيح أو انتهت صلاحيته! يرجى الحصول على الكود الحالي من المدير', 'error');
+      return;
+    }
     const timeStr = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
     const dateStr = new Date().toLocaleDateString('ar-EG');
     const updatedEmployees = this.employees().map(emp => {
@@ -1122,7 +1170,11 @@ ${itemsText}
     this.toast.show(`تم تسجيل حضور الموظف: ${emp?.name}`, 'success');
   }
 
-  clockOut(employeeId: string) {
+  clockOut(employeeId: string, attendanceCode?: string) {
+    if (!this.validateAttendanceCode(attendanceCode)) {
+      this.toast.show('كود الانصراف غير صحيح أو انتهت صلاحيته! يرجى الحصول على الكود الحالي من المدير', 'error');
+      return;
+    }
     const timeStr = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
     const dateStr = new Date().toLocaleDateString('ar-EG');
     const updatedEmployees = this.employees().map(emp => {
@@ -1716,7 +1768,6 @@ ${itemsText}
       <body>
         <h2>مصنع محمود عرفه للمعادن</h2>
         <p>العنوان: المنطقة الصناعية - مصنع محمود عرفه للمعادن</p>
-        <p>الهاتف: 01000000000</p>
         <div class="divider"></div>
         <p><strong>رقم الفاتورة: #${order.id}</strong></p>
         <p>التاريخ: ${new Date().toLocaleString('ar-EG')}</p>

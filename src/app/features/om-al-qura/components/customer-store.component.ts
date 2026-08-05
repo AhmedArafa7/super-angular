@@ -29,13 +29,7 @@ import { AppModalComponent } from '../../../shared/components/modal/app-modal.co
 
           <!-- Quick Action Buttons -->
           <div class="flex flex-wrap items-center gap-2.5 shrink-0">
-            <!-- Store Map Button -->
-            <button (click)="openStoreMap()"
-                    type="button"
-                    class="px-4 py-2.5 rounded-full font-black text-xs flex items-center gap-2 transition-all bg-indigo-600 hover:bg-indigo-700 text-white shadow-md cursor-pointer">
-              <svg lucideIcon="map" class="w-4 h-4"></svg>
-              <span>عرض الخريطة الكروكية ورسم المحل</span>
-            </button>
+
 
             <!-- Missing Product Button -->
             <button (click)="openMissingProductModal.set(true)"
@@ -206,6 +200,8 @@ import { AppModalComponent } from '../../../shared/components/modal/app-modal.co
               <img [src]="p.imageUrl" [alt]="p.name" appImageFallback class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
               
               <button (click)="service.toggleFavorite(p.id)" 
+                      [attr.aria-label]="service.userFavoriteProductIds().includes(p.id) ? 'إزالة من المفضلة' : 'إضافة للمفضلة'"
+                      [title]="service.userFavoriteProductIds().includes(p.id) ? 'إزالة من المفضلة' : 'إضافة للمفضلة'"
                       class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex items-center justify-center text-rose-500 shadow-md hover:scale-110 transition-all">
                 <svg lucideIcon="heart" class="w-5 h-5" [ngClass]="{'fill-rose-500': service.userFavoriteProductIds().includes(p.id)}"></svg>
               </button>

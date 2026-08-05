@@ -1,7 +1,9 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { OmAlQuraService } from '../../core/services/om-al-qura.service';
+import { FaviconService } from '../../core/services/favicon.service';
+import { OmAlQuraAttendanceComponent } from './components/attendance.component';
 import { OmAlQuraStaffPortalComponent } from './components/staff-portal.component';
 import { OmAlQuraCustomerStoreComponent } from './components/customer-store.component';
 import { OmAlQuraInStoreMapComponent } from './components/in-store-map.component';
@@ -14,6 +16,7 @@ import { OmAlQuraAdminPortalComponent } from './components/admin-portal.componen
   imports: [
     CommonModule,
     LucideDynamicIcon,
+    OmAlQuraAttendanceComponent,
     OmAlQuraStaffPortalComponent,
     OmAlQuraCustomerStoreComponent,
     OmAlQuraInStoreMapComponent,
@@ -62,7 +65,18 @@ import { OmAlQuraAdminPortalComponent } from './components/admin-portal.componen
               </h1>
             </div>
           </div>
-
+          <!-- Standalone App Installation & Status Badge -->
+          <div class="flex items-center gap-2 sm:gap-3">
+            <button *ngIf="deferredPrompt" (click)="installApp()"
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs sm:text-sm shadow-xl transition-all border border-amber-200/50 hover:scale-105 active:scale-95 animate-pulse cursor-pointer">
+              <svg lucideIcon="download" class="w-4 h-4"></svg>
+              <span>تثبيت برنامج "أم القرى" 📱</span>
+            </button>
+            <div *ngIf="isStandalone()" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 font-bold text-xs border border-emerald-400/30 backdrop-blur-md">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+              <span>برنامج أم القرى مفعّل 💻</span>
+            </div>
+          </div>
 
         </div>
 
@@ -86,7 +100,7 @@ import { OmAlQuraAdminPortalComponent } from './components/admin-portal.componen
       <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
         
         <!-- PAGE 1: Staff Portal -->
-        <app-om-al-qura-staff-portal *ngIf="activeTab() === 'staff'"></app-om-al-qura-staff-portal>
+        <app-om-al-qura-staff-portal *ngIf="activeTab() === 'staff' || activeTab() === 'attendance'"></app-om-al-qura-staff-portal>
 
         <!-- PAGE 2: Customer Store -->
         <app-om-al-qura-customer-store *ngIf="activeTab() === 'customer'"
@@ -106,22 +120,59 @@ import { OmAlQuraAdminPortalComponent } from './components/admin-portal.componen
 
       <!-- Footer -->
       <footer class="bg-slate-900 border-t border-slate-800 py-6 text-center text-xs text-slate-500 font-medium">
-        متجر "أم القرى" الإلكتروني المتكامل © 2026 - جميع الحقوق محفوظة
+        برنامج "متجر أم القرى للمنظفات" المستقل © 2026 - جميع الحقوق محفوظة
       </footer>
 
     </div>
   `
 })
-export class OmAlQuraHomeComponent {
+export class OmAlQuraHomeComponent implements OnInit, OnDestroy {
   service = inject(OmAlQuraService);
+  private faviconService = inject(FaviconService);
 
-  activeTab = signal<'staff' | 'customer' | 'in_store_map' | 'delivery' | 'admin'>('customer');
+  activeTab = signal<'attendance' | 'staff' | 'customer' | 'in_store_map' | 'delivery' | 'admin'>('customer');
+  deferredPrompt: any = null;
+  isStandalone = signal<boolean>(false);
 
-  mainTabs: { id: 'staff' | 'customer' | 'in_store_map' | 'delivery' | 'admin'; label: string; icon: string }[] = [
+  mainTabs: { id: 'attendance' | 'staff' | 'customer' | 'in_store_map' | 'delivery' | 'admin'; label: string; icon: string }[] = [
     { id: 'customer', label: '1.  الزبائن والعملاء', icon: 'shopping-bag' },
     { id: 'staff', label: '2.  الموظفين والنظام الداخلي', icon: 'user-cog' },
     { id: 'in_store_map', label: '3. خريطة المحل للزبائن داخل الفرع', icon: 'map-pin' },
     { id: 'delivery', label: '4.  الدليفري والتوصيل', icon: 'truck' },
     { id: 'admin', label: '5.  الإدارة والآدمن (HR)', icon: 'shield-check' }
   ];
+
+  ngOnInit(): void {
+    // 1. Activate standalone identity for Om Al Qura (Manifest, Title, Theme Color, Favicon)
+    this.faviconService.setOmAlQuraIdentity();
+
+    // 2. Check if running as a installed standalone app or listen for PWA install prompt
+    if (typeof window !== 'undefined') {
+      this.isStandalone.set(
+        window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true
+      );
+
+      window.addEventListener('beforeinstallprompt', (e: Event) => {
+        e.preventDefault();
+        this.deferredPrompt = e;
+      });
+    }
+  }
+
+  async installApp(): Promise<void> {
+    if (this.deferredPrompt) {
+      this.deferredPrompt.prompt();
+      const { outcome } = await this.deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        this.deferredPrompt = null;
+      }
+    }
+  }
+
+  ngOnDestroy(): void {
+    // Restore default site identity when navigating away
+    this.faviconService.restoreDefaultIdentity();
+  }
 }
+
+

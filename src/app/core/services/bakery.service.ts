@@ -125,24 +125,77 @@ export class BakeryService {
       const snapshot = await getDocs(collection(this.firebase.db, 'bakery_products'));
       let fetched = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as BakeryProduct));
 
-      // Clean up any old dummy seed products if they exist in Firestore
-      const dummyNames = [
-        'فطير مشلتت فلاحي بالمرتة',
-        'خبز بلدي بالردة (طازج 5 أرغفة)',
-        'كيلو بسبوسة مرملة بالسمن البلدي',
-        'كرواسون زبدة فرنسي فاخر',
-        'كيلو كعك العيد السادة الناعم',
-        'رغيف حواوشي بلدي باللحم المفروم'
-      ];
-      const hasDummy = fetched.some(p => dummyNames.includes(p.name));
-      if (hasDummy) {
-        for (const docSnap of snapshot.docs) {
-          const data = docSnap.data() as BakeryProduct;
-          if (dummyNames.includes(data.name)) {
-            await deleteDoc(doc(this.firebase.db, 'bakery_products', docSnap.id)).catch(() => {});
-          }
+      // If empty or if we want to ensure gorgeous high-quality real mock products matching their images
+      const realProducts: Omit<BakeryProduct, 'id'>[] = [
+        {
+          name: 'فطير مشلتت فلاحي بالسمن البلدي',
+          description: 'فطير فلاحي مورق ومقرمش من برة وطري من جوة، محضر بالسمن البلدي الأصلي والقشطة الطازجة.',
+          price: 65,
+          imageUrl: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?q=80&w=800&auto=format',
+          category: 'فطير مشلتت',
+          isAvailable: true,
+          isPreorderOnly: false,
+          preparationTimeMins: 20
+        },
+        {
+          name: 'كرواسون زبدة فرنسي طازج',
+          description: 'كرواسون هش ومقرمش محشو بالزبدة الفرنسية الطبيعية، يخبز طازجاً كل صباح.',
+          price: 25,
+          imageUrl: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=800&auto=format',
+          category: 'مخبوزات غربية',
+          isAvailable: true,
+          isPreorderOnly: false,
+          preparationTimeMins: 10
+        },
+        {
+          name: 'خبز بلدي طازج بالردة (5 أرغفة)',
+          description: 'خبز بلدي مصري أصلي ساخن ومطحون بالردة الطازجة، مخبوز في الفرن الحجري.',
+          price: 10,
+          imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=800&auto=format',
+          category: 'خبز ومخبوزات',
+          isAvailable: true,
+          isPreorderOnly: false,
+          preparationTimeMins: 5
+        },
+        {
+          name: 'بسبوسة مرملة بالسمن البلدي والمكسرات',
+          description: 'بسبوسة شرقية دايبة بالسمن البلدي الفاخر ومغطاة بالمكسرات المقرمشة ومسقية بالشربات الساخن.',
+          price: 90,
+          imageUrl: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?q=80&w=800&auto=format',
+          category: 'حلويات شرقية',
+          isAvailable: true,
+          isPreorderOnly: false,
+          preparationTimeMins: 15
+        },
+        {
+          name: 'بيتزا إيطالية بالجبنة الموزاريلا',
+          description: 'عجينة بيتزا هشة مخبوزة طازجة مع صوص الطماطم الإيطالي وطبقة كثيفة من جبنة الموزاريلا السائحة.',
+          price: 120,
+          imageUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=800&auto=format',
+          category: 'معجنات وبيتزا',
+          isAvailable: true,
+          isPreorderOnly: false,
+          preparationTimeMins: 25
+        },
+        {
+          name: 'كيك الشوكولاتة الفاخر بالصوص الغني',
+          description: 'قطع كيك شوكولاتة طرية وغنية بصوص الشوكولاتة البلجيكية الساخنة واللذيذة.',
+          price: 45,
+          imageUrl: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?q=80&w=800&auto=format',
+          category: 'حلويات شرقية',
+          isAvailable: true,
+          isPreorderOnly: false,
+          preparationTimeMins: 10
         }
-        fetched = fetched.filter(p => !dummyNames.includes(p.name));
+      ];
+
+      // If fetched is empty, seed them
+      if (fetched.length === 0) {
+        for (const p of realProducts) {
+          await addDoc(collection(this.firebase.db, 'bakery_products'), p);
+        }
+        const snapshot2 = await getDocs(collection(this.firebase.db, 'bakery_products'));
+        fetched = snapshot2.docs.map(d => ({ id: d.id, ...d.data() } as BakeryProduct));
       }
 
       this.products.set(fetched);

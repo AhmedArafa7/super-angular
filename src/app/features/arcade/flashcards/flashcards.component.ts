@@ -1,8 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { LucideAngularModule, ArrowRight, Sparkles, RotateCcw, Plus, Trash2, CheckCircle2, XCircle, Brain } from 'lucide-angular';
+import { LucideAngularModule, ArrowRight, Sparkles, RotateCcw, Plus, Trash2, CheckCircle2, XCircle, Brain, Volume2 } from 'lucide-angular';
 
 interface Flashcard {
   front: string;
@@ -104,18 +104,23 @@ interface Flashcard {
             <span class="bg-indigo-500/10 text-indigo-400 px-3 py-1 rounded-full border border-indigo-500/20">{{ activeDeck.title }}</span>
           </div>
 
-          <!-- Direction Toggle -->
-          <div class="flex justify-center gap-3">
-            <button (click)="quizMode = 'front-to-back'" [ngClass]="quizMode === 'front-to-back' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400'" class="px-4 py-2 rounded-xl text-xs font-bold transition-all">
-              الوجه ← الظهر (عرض الاسم واكتب الرقم/المعنى)
-            </button>
-            <button (click)="quizMode = 'back-to-front'" [ngClass]="quizMode === 'back-to-front' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400'" class="px-4 py-2 rounded-xl text-xs font-bold transition-all">
-              الظهر ← الوجه (عرض الرقم واكتب الاسم)
-            </button>
-          </div>
+           <!-- Direction Toggle -->
+           <div class="flex justify-center gap-3">
+             <button (click)="quizMode = 'front-to-back'" [ngClass]="quizMode === 'front-to-back' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400'" class="px-4 py-2 rounded-xl text-xs font-bold transition-all">
+               الوجه ← الظهر
+             </button>
+             <button (click)="quizMode = 'back-to-front'" [ngClass]="quizMode === 'back-to-front' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400'" class="px-4 py-2 rounded-xl text-xs font-bold transition-all">
+               الظهر ← الوجه
+             </button>
+           </div>
+           
+           <!-- Audio trigger -->
+           <button *ngIf="activeDeck.id === 'years'" (click)="playAudio(getCurrentPrompt())" class="mx-auto bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 px-4 py-2 rounded-xl text-xs font-bold mb-4 flex items-center gap-2 transition-all">
+              <lucide-icon [img]="Volume2" class="w-4 h-4"></lucide-icon> استمع للسنة
+           </button>
 
-          <!-- The Flashcard -->
-          <div (click)="flipCard()" class="w-full aspect-[16/9] bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-indigo-500/30 rounded-[2.5rem] p-8 flex flex-col items-center justify-center cursor-pointer shadow-2xl relative overflow-hidden group hover:border-indigo-500 transition-all">
+           <!-- The Flashcard -->
+           <div (click)="flipCard()" class="w-full aspect-[16/9] bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-indigo-500/30 rounded-[2.5rem] p-8 flex flex-col items-center justify-center cursor-pointer shadow-2xl relative overflow-hidden group hover:border-indigo-500 transition-all">
             
             <div class="absolute top-4 right-6 text-xs text-slate-500 font-mono">
               اضغط على البطاقة لقلبها ⟳
@@ -203,6 +208,7 @@ export class FlashcardsComponent {
   CheckCircle2 = CheckCircle2;
   XCircle = XCircle;
   Brain = Brain;
+  Volume2 = Volume2;
 
   gameState = signal<'select' | 'create' | 'playing' | 'summary'>('select');
 
@@ -241,6 +247,20 @@ export class FlashcardsComponent {
         { front: 'Wednesday', back: 'الأربعاء', category: 'weekdays' },
         { front: 'Thursday', back: 'الخميس', category: 'weekdays' },
         { front: 'Friday', back: 'الجمعة', category: 'weekdays' },
+      ]
+    },
+    {
+      id: 'years',
+      title: 'اختبار السنين (Years)',
+      description: 'استمع إلى السنة واكتبها بالأرقام.',
+      icon: '⏳',
+      cards: [
+        { front: '2009', back: '2009', category: 'years' },
+        { front: '2002', back: '2002', category: 'years' },
+        { front: '2030', back: '2030', category: 'years' },
+        { front: '1991', back: '1991', category: 'years' },
+        { front: '1986', back: '1986', category: 'years' },
+        { front: '1960', back: '1960', category: 'years' },
       ]
     }
   ];
@@ -343,6 +363,15 @@ export class FlashcardsComponent {
       this.currentIndex++;
     } else {
       this.gameState.set('summary');
+    }
+  }
+
+  playAudio(text: string) {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      window.speechSynthesis.speak(utterance);
     }
   }
 }

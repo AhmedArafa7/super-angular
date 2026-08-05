@@ -400,7 +400,6 @@ export class ArcadeHubComponent implements OnInit {
       this.router.navigate(['/arcade/arena', id]);
     }
   }
-  }
 
   playOpenTTD(version: 'original' | 'modified') {
     this.showOpenTTDModal = false;

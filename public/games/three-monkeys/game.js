@@ -68,29 +68,139 @@ const CALC_DIGIT_TABLE = {
 };
 
 const DIRECTION_TABLE = {
-    '1': { red: 'up', yellow: 'down', green: 'left', blue: 'left' },
-    '4': { red: 'up', yellow: 'down', green: 'left', blue: 'left' },
-    '2': { red: 'right', yellow: 'left', green: 'up', blue: 'up' },
-    '7': { red: 'right', yellow: 'left', green: 'up', blue: 'up' },
-    '5': { red: 'left', yellow: 'right', green: 'down', blue: 'down' },
-    '3': { red: 'left', yellow: 'right', green: 'down', blue: 'down' },
-    '6': { red: 'up', yellow: 'right', green: 'down', blue: 'left' },
-    '9': { red: 'up', yellow: 'right', green: 'down', blue: 'left' }
+    '1': { red: 'up', yellow: 'down', green: 'left', blue: 'right' },
+    '4': { red: 'left', yellow: 'right', green: 'up', blue: 'down' },
+    '2': { red: 'right', yellow: 'left', green: 'up', blue: 'down' },
+    '7': { red: 'up', yellow: 'down', green: 'left', blue: 'right' },
+    '5': { red: 'left', yellow: 'up', green: 'right', blue: 'down' },
+    '3': { red: 'right', yellow: 'left', green: 'down', blue: 'left' },
+    '6': { red: 'up', yellow: 'right', green: 'down', blue: 'up' },
+    '9': { red: 'down', yellow: 'up', green: 'right', blue: 'left' }
 };
 
-function pickLightColor() {
-    return LIGHT_COLORS[Math.floor(Math.random() * LIGHT_COLORS.length)];
+const DIRECTION_BRAILLE_DIGITS = ['1', '4', '2', '7', '5', '3', '6', '9'];
+
+let manualSpreadIndex = 0;
+
+function manualLight(color) {
+    return `<span class="manual-light ${color}" aria-label="${color}"></span>`;
+}
+
+function manualWireDot(color) {
+    return `<span class="c-dot ${color}"></span>`;
+}
+
+function manualCutCell(wireColor) {
+    return `<span class="manual-cut-cell">${manualWireDot(wireColor)}<span class="manual-scissors">✂</span></span>`;
+}
+
+function manualArrow(dir) {
+    const map = { up: '▲', down: '▼', left: '◀', right: '▶' };
+    return `<span class="manual-arrow">${map[dir] || '?'}</span>`;
+}
+
+function cableCountIcon(count) {
+    const bars = Array.from({ length: count }, () => '<i></i>').join('');
+    return `<span class="cable-count-icon" aria-label="${count} cables">${bars}</span>`;
+}
+
+function buildCableManualPage() {
+    const lights = LIGHT_COLORS.map(manualLight).join('');
+    const rows = [4, 5].map(count => {
+        const cells = LIGHT_COLORS.map(light => manualCutCell(CABLE_CUT_TABLE[count][light])).join('');
+        return `<tr><th>${cableCountIcon(count)}</th>${LIGHT_COLORS.map(l => `<td>${manualCutCell(CABLE_CUT_TABLE[count][l])}</td>`).join('')}</tr>`;
+    }).join('');
+    return `
+        <div class="manual-spread manual-spread-single">
+            <div class="manual-page manual-page-full">
+                <h3 class="page-title">CABLE MODULE</h3>
+                <p class="manual-hint">اقطع السلك حسب <b>عدد الأسلاك</b> و<b>لون المصباح</b>.</p>
+                <table class="manual-table manual-table-cable">
+                    <thead><tr><th></th>${LIGHT_COLORS.map(l => `<th>${manualLight(l)}</th>`).join('')}</tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        </div>`;
+}
+
+function buildCalcDirectionManualPage() {
+    const calcHeader = LIGHT_COLORS.map(manualLight).join('');
+    const calcRows = ['even', 'odd'].map(parity => {
+        const label = parity === 'even' ? 'EVEN' : 'ODD';
+        const cells = LIGHT_COLORS.map(l => `<td><strong>${CALC_DIGIT_TABLE[parity][l]}</strong></td>`).join('');
+        return `<tr><th>${label}</th>${cells}</tr>`;
+    }).join('');
+
+    const dirHeader = LIGHT_COLORS.map(manualLight).join('');
+    const dirRows = DIRECTION_BRAILLE_DIGITS.map(digit => {
+        const cells = LIGHT_COLORS.map(l => `<td>${manualArrow(DIRECTION_TABLE[digit][l])}</td>`).join('');
+        return `<tr><th><span class="manual-braille-digit">${toBraille(digit)}</span></th>${cells}</tr>`;
+    }).join('');
+
+    return `
+        <div class="manual-spread manual-spread-double">
+            <div class="manual-page left-page">
+                <h3 class="page-title">CALCULATION</h3>
+                <p class="manual-hint">اضغط الرقم حسب <b>زوجي/فردي</b> للنتيجة ولون المصباح.</p>
+                <table class="manual-table">
+                    <thead><tr><th></th>${LIGHT_COLORS.map(l => `<th>${manualLight(l)}</th>`).join('')}</tr></thead>
+                    <tbody>${calcRows}</tbody>
+                </table>
+            </div>
+            <div class="manual-page right-page">
+                <h3 class="page-title">DIRECTION</h3>
+                <p class="manual-hint">اضغط الاتجاه حسب <b>رقم البرايل</b> ولون المصباح.</p>
+                <table class="manual-table manual-table-direction">
+                    <thead><tr><th>⠿</th>${LIGHT_COLORS.map(l => `<th>${manualLight(l)}</th>`).join('')}</tr></thead>
+                    <tbody>${dirRows}</tbody>
+                </table>
+            </div>
+        </div>`;
+}
+
+function renderManualBook() {
+    const el = $('manual-content');
+    if (!el) return;
+    const spreads = [buildCableManualPage(), buildCalcDirectionManualPage()];
+    el.innerHTML = spreads[manualSpreadIndex] || spreads[0];
+    const label = $('manual-page-label');
+    if (label) label.innerText = `${manualSpreadIndex + 1} / ${spreads.length}`;
+    const prev = $('manual-prev');
+    const next = $('manual-next');
+    if (prev) prev.disabled = manualSpreadIndex <= 0;
+    if (next) next.disabled = manualSpreadIndex >= spreads.length - 1;
+}
+
+function setupManualNavigation() {
+    if (window.manualNavSetup) return;
+    window.manualNavSetup = true;
+    const prev = $('manual-prev');
+    const next = $('manual-next');
+    if (prev) {
+        prev.addEventListener('click', () => {
+            if (manualSpreadIndex > 0) {
+                manualSpreadIndex--;
+                renderManualBook();
+            }
+        });
+    }
+    if (next) {
+        next.addEventListener('click', () => {
+            if (manualSpreadIndex < 1) {
+                manualSpreadIndex++;
+                renderManualBook();
+            }
+        });
+    }
 }
 
 function updateManualUI() {
-    const el = $('manual-content');
-    if (!el) return;
-    el.innerHTML = `
-        <div class="manual-pages">
-            <img src="manual-cable.png" alt="Cable Module Manual" class="manual-page-img">
-            <img src="manual-modules.png" alt="Calculation and Direction Manual" class="manual-page-img">
-        </div>
-    `;
+    setupManualNavigation();
+    renderManualBook();
+}
+
+function pickLightColor() {
+    return LIGHT_COLORS[Math.floor(Math.random() * LIGHT_COLORS.length)];
 }
 
 const LEVELS = [
@@ -541,7 +651,8 @@ function showGameOverScreen() {
     const lobbyBtn = $('lobby-btn');
     const gameOverScreen = $('game-over-screen');
 
-    const elapsed = 300 - gameState.timeRemaining;
+    const levelData = LEVELS[Math.min((gameState.missionLevel || 1) - 1, LEVELS.length - 1)];
+    const elapsed = levelData.time - gameState.timeRemaining;
     const isWin = gameState.resultMsg === 'win';
 
     if (reportLevel) reportLevel.innerText = String(gameState.missionLevel || 1);
@@ -978,6 +1089,11 @@ function renderDeafBomb() {
         }
         
         if (mod.type === 'cables') {
+            let title = document.createElement('div');
+            title.className = 'module-label';
+            title.innerText = `${mod.wires.length} WIRES`;
+            modDiv.appendChild(title);
+
             mod.wires.forEach((w, wIdx) => {
                 let wireDiv = document.createElement('div');
                 wireDiv.className = 'wire';
@@ -988,22 +1104,25 @@ function renderDeafBomb() {
         }
         
         if (mod.type === 'calculation') {
+            let title = document.createElement('div');
+            title.className = 'module-label';
+            title.innerText = 'CALC';
+            modDiv.appendChild(title);
+
             let exprDiv = document.createElement('div');
-            exprDiv.style.textAlign = 'center';
-            exprDiv.style.marginTop = '25px';
-            exprDiv.style.fontSize = '1.5rem';
-            exprDiv.style.fontWeight = 'bold';
-            exprDiv.style.color = '#1e293b';
-            exprDiv.innerText = mod.expression;
+            exprDiv.className = 'calc-display-deaf';
+            exprDiv.innerText = `${mod.expression} = ${mod.result}`;
             modDiv.appendChild(exprDiv);
         }
         
         if (mod.type === 'direction') {
+            let title = document.createElement('div');
+            title.className = 'module-label';
+            title.innerText = 'DIR';
+            modDiv.appendChild(title);
+
             let brailleDiv = document.createElement('div');
-            brailleDiv.style.textAlign = 'center';
-            brailleDiv.style.marginTop = '25px';
-            brailleDiv.style.fontSize = '2.5rem';
-            brailleDiv.style.color = '#1e293b';
+            brailleDiv.className = 'braille-display-deaf';
             brailleDiv.innerText = toBraille(mod.brailleDigit);
             modDiv.appendChild(brailleDiv);
         }

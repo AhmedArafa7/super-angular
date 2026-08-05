@@ -112,8 +112,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
   }
 
   setLanguage(lang: 'ar' | 'en'): void {
-    this.settingsService.language.set(lang);
-    this.settingsService.saveState();
+    this.settingsService.setLanguage(lang);
   }
 
   toggleMusicFilter(hide: boolean): void {

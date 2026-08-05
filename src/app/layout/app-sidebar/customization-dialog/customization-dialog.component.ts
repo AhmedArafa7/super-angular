@@ -12,7 +12,7 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
   imports: [CommonModule, LucideDynamicIcon, DragDropModule],
   template: `
     <div class="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" dir="rtl">
-      <div class="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+      <div class="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
         
         <!-- Header -->
         <div class="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
@@ -26,36 +26,62 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
         </div>
         
         <!-- Content List -->
-        <div class="p-4 overflow-y-auto flex-1">
-          <p class="text-sm text-slate-400 mb-4">اسحب العناصر لإعادة ترتيبها أو انقر لتثبيتها، ثم اضغط على "حفظ التغييرات".</p>
+        <div class="p-6 overflow-y-auto flex-1 space-y-6">
           
-          <div cdkDropList class="space-y-2" (cdkDropListDropped)="drop($event)">
-            @for (item of sortedItems; track item.id) {
-              <div cdkDrag class="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 transition-colors cursor-move group">
-                <div class="flex items-center gap-3">
-                  <svg lucideIcon="grip-vertical" class="w-4 h-4 text-slate-500 opacity-50 group-hover:opacity-100"></svg>
-                  <div class="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-                    <svg [lucideIcon]="item.icon" class="w-4 h-4 text-indigo-400"></svg>
+
+
+          <div>
+            <p class="text-sm text-slate-400 mb-3">اسحب العناصر لإعادة ترتيبها أو انقر لتثبيتها، ثم اضغط على "حفظ التغييرات".</p>
+            
+            <div cdkDropList class="space-y-2" (cdkDropListDropped)="drop($event)">
+              @for (item of sortedItems; track item.id) {
+                <div cdkDrag class="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 transition-colors cursor-move group">
+                  <div class="flex items-center gap-3">
+                    <svg lucideIcon="grip-vertical" class="w-4 h-4 text-slate-500 opacity-50 group-hover:opacity-100"></svg>
+                    <div class="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                      <svg [lucideIcon]="item.icon" class="w-4 h-4 text-indigo-400"></svg>
+                    </div>
+                    <span class="text-white font-medium">{{ item.label }}</span>
                   </div>
-                  <span class="text-white font-medium">{{ item.label }}</span>
+                  
+                  <button (click)="togglePin(item.id)" 
+                          class="p-2 rounded-lg transition-colors cursor-pointer hover:bg-white/10"
+                          [title]="isPinned(item.id) ? 'إلغاء التثبيت' : 'تثبيت في القائمة'">
+                    <svg [lucideIcon]="isPinned(item.id) ? 'pin-off' : 'pin'" 
+                         [ngClass]="isPinned(item.id) ? 'text-indigo-400' : 'text-slate-500'" 
+                         class="w-5 h-5"></svg>
+                  </button>
                 </div>
-                
-                <button (click)="togglePin(item.id)" 
-                        class="p-2 rounded-lg transition-colors cursor-pointer hover:bg-white/10"
-                        [title]="isPinned(item.id) ? 'إلغاء التثبيت' : 'تثبيت في القائمة'">
-                  <svg [lucideIcon]="isPinned(item.id) ? 'pin-off' : 'pin'" 
-                       [ngClass]="isPinned(item.id) ? 'text-indigo-400' : 'text-slate-500'" 
-                       class="w-5 h-5"></svg>
-                </button>
-              </div>
-            }
+              }
+
+                        <!-- Mode Toggle Section (The new requested feature) -->
+          <div class="bg-indigo-950/40 border border-indigo-500/30 rounded-2xl p-4 flex items-center justify-between">
+            <div class="space-y-1">
+              <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                <span>وضع إظهار جميع الأقسام (غير المثبتة أسفل القائمة)</span>
+                <span class="bg-indigo-500 text-white text-[9px] px-2 py-0.5 rounded-full font-black">جديد ⚡</span>
+              </h4>
+              <p class="text-xs text-slate-400 leading-relaxed">عند التفعيل، تظهر كل الأقسام في الشريط الجانبي دائماً، بحيث تكون الأقسام غير المثبتة في الأسفل ليسهل تثبيتها بنقرة واحدة.</p>
+            </div>
+            <button (click)="sidebar.toggleShowAllUnpinnedAtBottom()" 
+                    [ngClass]="sidebar.showAllUnpinnedAtBottom() ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'bg-white/10 text-slate-400'"
+                    class="relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none">
+              <span [ngClass]="sidebar.showAllUnpinnedAtBottom() ? 'translate-x-0' : '-translate-x-5'"
+                    class="pointer-events-none inline-block size-6 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out"></span>
+            </button>
+          </div>
+
+
+            </div>
           </div>
         </div>
+
+        
 
         <!-- Footer Action Toolbar with Save Button -->
         <div class="p-4 border-t border-white/10 bg-slate-950 flex items-center justify-between gap-3">
           <div class="flex items-center gap-2">
-            @if (hasUnsavedChanges()) {
+            @if (hasUnsavedChanges() || sidebar.hasUnsavedChanges()) {
               <span class="flex h-2 w-2 relative">
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
@@ -74,9 +100,7 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
               إلغاء
             </button>
             <button (click)="saveChanges()" 
-                    [disabled]="!hasUnsavedChanges()"
-                    [ngClass]="hasUnsavedChanges() ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 cursor-pointer' : 'bg-slate-800 text-slate-500 cursor-not-allowed'"
-                    class="px-5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 cursor-pointer px-5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
               <svg lucideIcon="save" class="w-4 h-4"></svg>
               <span>حفظ التغييرات</span>
             </button>

@@ -42,6 +42,7 @@ export const routes: Routes = [
       { path: 'hisn', loadComponent: () => import('./features/hisn/hisn.component').then(c => c.HisnComponent), title: 'حصن المسلم', data: { preload: true, preloadDelay: 2500 } },
       { path: 'docs', loadComponent: () => import('./features/docs/docs.component').then(c => c.DocsComponent), title: 'محرر المستندات SuperDoc' },
       { path: 'draw', loadComponent: () => import('./features/draw/draw.component').then(c => c.DrawComponent), title: 'استوديو الرسم - SuperDraw' },
+      { path: 'inkscape', loadComponent: () => import('./features/inkscape/inkscape.component').then(c => c.InkscapeComponent), title: 'محرر الرسوميات المتجهية - Inkscape SVG' },
       { path: 'vault', loadComponent: () => import('./features/vault/vault.component').then(c => c.VaultComponent), title: 'خزنة الملفات' },
       { path: 'opencode', loadComponent: () => import('./features/opencode/opencode.component').then(c => c.OpencodeComponent), title: 'مساعد البرمجة - OpenCode' },
       { path: 'library', loadComponent: () => import('./features/library/library.component').then(c => c.LibraryComponent), title: 'المكتبة العامة' },

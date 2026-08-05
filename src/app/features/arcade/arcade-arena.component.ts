@@ -265,11 +265,50 @@ import { ArcadeAudioService } from '../../core/services/arcade-audio.service';
            <div class="flex items-center gap-2 bg-black/50 px-3 py-1.5 rounded-full border border-white/10 backdrop-blur-md">
               <div class="font-mono text-[10px] text-white/80 uppercase tracking-widest">Time: {{ formatPlayTime(playTime) }}</div>
            </div>
-           <div *ngIf="lastWinner" class="flex items-center gap-2 bg-indigo-500/20 px-3 py-1.5 rounded-full border border-indigo-500/50 backdrop-blur-md text-indigo-200 text-xs font-bold animate-in slide-in-from-right">
-              Latest Result: {{ lastWinner }}
-           </div>
-        </div>
+         <div *ngIf="lastWinner" class="flex items-center gap-2 bg-indigo-500/20 px-3 py-1.5 rounded-full border border-indigo-500/50 backdrop-blur-md text-indigo-200 text-xs font-bold animate-in slide-in-from-right">
+               Latest Result: {{ lastWinner }}
+            </div>
+         </div>
       </div>
+
+      <!-- Team Deployment Modal (علامة انتشار الفريق) -->
+      @if (showTeamDeploymentModal) {
+        <div class="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md flex items-center justify-center p-4" dir="rtl">
+          <div class="bg-slate-900 border border-indigo-500/40 rounded-[2.5rem] w-full max-w-lg p-8 shadow-2xl animate-in zoom-in-95 duration-300">
+            <div class="flex items-center justify-between mb-6 border-b border-white/10 pb-4">
+              <h3 class="text-2xl font-black text-white flex items-center gap-3">
+                <span class="p-2.5 bg-indigo-600/20 rounded-2xl text-indigo-400">🛡️</span>
+                علامة انتشار الفريق (Team Deployment)
+              </h3>
+            </div>
+            <p class="text-slate-300 text-sm mb-6 leading-relaxed">
+              بما أن هذه اللعبة تدعم أكثر من لاعبين، يرجى اختيار وتوزيع الفرق بين اللاعبين المنضمين قبل بدء اللعب رسمياً:
+            </p>
+            
+            <div class="space-y-4 mb-8">
+              <label class="block p-4 rounded-2xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-all flex items-center justify-between">
+                <div>
+                  <span class="block font-bold text-white text-base">التوزيع المتوازن (Balanced Squads)</span>
+                  <span class="text-xs text-slate-400">توزيع اللاعبين بالتساوي على الفرق المتاحة</span>
+                </div>
+                <input type="radio" name="teamSetup" [(ngModel)]="selectedTeamSetup" value="balanced" class="accent-indigo-500 size-4">
+              </label>
+
+              <label class="block p-4 rounded-2xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-all flex items-center justify-between">
+                <div>
+                  <span class="block font-bold text-white text-base">اللاعب ضد الجميع (Free For All)</span>
+                  <span class="text-xs text-slate-400">كل لاعب يلعب بشكل مستقل بذاته</span>
+                </div>
+                <input type="radio" name="teamSetup" [(ngModel)]="selectedTeamSetup" value="ffa" class="accent-indigo-500 size-4">
+              </label>
+            </div>
+
+            <button (click)="confirmTeamDeployment()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4 rounded-2xl shadow-xl shadow-indigo-600/30 transition-all text-base">
+              تأكيد الانتشار وبدء اللعبة ⚡
+            </button>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -365,6 +404,9 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
 
   copied = false;
   invitedFriends: string[] = [];
+  showTeamDeploymentModal = false;
+  selectedTeamSetup = 'balanced';
+  teamDeploymentCompleted = false;
 
   constructor() {
     effect(() => {
@@ -621,10 +663,22 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
     this.multiplayer.joinRoom(code);
   }
 
+  confirmTeamDeployment() {
+    this.teamDeploymentCompleted = true;
+    this.showTeamDeploymentModal = false;
+    this.launchGame();
+  }
+
   launchGame() {
     this.showPrivateRoomModal = false;
     this.isLoading = true;
     this.gameState = 'Launching...';
+
+    const maxPlayers = this.game?.maxPlayers || 2;
+    if (maxPlayers > 2 && this.privateRoomRole === 'host' && !this.teamDeploymentCompleted) {
+      this.showTeamDeploymentModal = true;
+      return;
+    }
 
     if (this.game) {
       if (this.game.id.startsWith('custom_game_')) {

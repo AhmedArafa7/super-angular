@@ -100,6 +100,10 @@ export class PrayerQuranService {
   selectedReciter = signal<ReciterId>('alafasy');
   reciters = RECITERS;
 
+  private db: any = null;
+  private readonly DB_NAME = 'QuranDB';
+  private readonly STORE_NAME = 'Surahs';
+
   // Reading mode
   readingMode = signal<ReadingMode>('normal');
 
@@ -118,15 +122,83 @@ export class PrayerQuranService {
     }).format(new Date(ts));
   });
 
-  private db: IDBDatabase | null = null;
-  private readonly DB_NAME = 'QuranDB';
-  private readonly STORE_NAME = 'Surahs';
+  private checkPrayerNotificationsInterval: any = null;
+  private notifiedPrayersToday: string = '';
 
-  constructor() {
-    this.initDB();
-    this.loadPersistedData();
-    this.initLocationAndPrayer();
-    this.loadSurahs();
+  private initPrayerChecker() {
+    if (this.checkPrayerNotificationsInterval) clearInterval(this.checkPrayerNotificationsInterval);
+
+    this.checkPrayerNotificationsInterval = setInterval(() => {
+      const timings = this.timings();
+      if (!timings) return;
+
+      const now = new Date();
+      const todayStr = now.toDateString();
+      if (this.notifiedPrayersToday !== todayStr) {
+        this.notifiedPrayersToday = todayStr;
+        localStorage.setItem('notified_prayers_date', todayStr);
+        localStorage.removeItem('notified_prayers_list');
+      }
+
+      const currentHours = now.getHours();
+      const currentMinutes = now.getMinutes();
+      const currentSeconds = now.getSeconds();
+
+      if (currentSeconds > 5) return;
+
+      const prayers = [
+        { key: 'Fajr', name: 'الفجر' },
+        { key: 'Dhuhr', name: 'الظهر' },
+        { key: 'Asr', name: 'العصر' },
+        { key: 'Maghrib', name: 'المغرب' },
+        { key: 'Isha', name: 'العشاء' }
+      ];
+
+      const notifiedListJson = localStorage.getItem('notified_prayers_list') || '[]';
+      let notifiedList: string[] = [];
+      try { notifiedList = JSON.parse(notifiedListJson); } catch {}
+
+      for (const p of prayers) {
+        const timeStr = (timings as any)[p.key];
+        if (!timeStr) continue;
+
+        const [pHours, pMinutes] = timeStr.split(':').map(Number);
+        const prayerTotalMinutes = pHours * 60 + pMinutes;
+        const currentTotalMinutes = currentHours * 60 + currentMinutes;
+
+        const offsetMin = this.notificationMinutes();
+        const targetTotalMinutes = prayerTotalMinutes - offsetMin;
+
+        const notificationKey = `${todayStr}_${p.key}_${offsetMin}`;
+
+        if (currentTotalMinutes === targetTotalMinutes && !notifiedList.includes(notificationKey)) {
+          this.triggerNotification(p.name, offsetMin);
+          notifiedList.push(notificationKey);
+          localStorage.setItem('notified_prayers_list', JSON.stringify(notifiedList));
+        }
+      }
+    }, 10000);
+  }
+
+  private triggerNotification(prayerName: string, minutesBefore: number) {
+    const title = minutesBefore === 0 ? `حَانَ الآن موعد أذان ${prayerName} 🕌` : `تنبيه: اقترب موعد أذان ${prayerName} (${minutesBefore} دقائق) ⏰`;
+    const body = minutesBefore === 0 ? `حان وقت الصلاة في مدينة ${this.city()}. تقبل الله منا ومنكم.` : `استعد لصلاة ${prayerName} في مدينة ${this.city()}.`;
+
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification(title, { body, icon: '/favicon.ico' });
+      } catch (e) {
+        console.error('Notification error', e);
+      }
+    }
+
+    try {
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+      audio.volume = 0.8;
+      audio.play().catch(err => console.log('Audio playback prevented by browser policy:', err));
+    } catch (e) {
+      console.error('Audio alert error', e);
+    }
   }
 
   private initDB() {
@@ -718,6 +790,36 @@ export class PrayerQuranService {
       },
       timestamp: Date.now()
     }, null, 2);
+  }
+
+  importAllData(json: string): boolean {
+    try {
+      const data = JSON.parse(json);
+      if (data.quran) {
+        if (data.quran.bookmarks) {
+          this.bookmarks.set(data.quran.bookmarks);
+          localStorage.setItem('quran_bookmarks', JSON.stringify(data.quran.bookmarks));
+        }
+        if (data.quran.progress) {
+          this.readingProgress.set(data.quran.progress);
+          localStorage.setItem('quran_progress', JSON.stringify(data.quran.progress));
+        }
+      }
+      if (data.prayer) {
+        this.calculationMethod.set(data.prayer.method ?? 3);
+        this.asrMethod.set(data.prayer.asr ?? 0);
+        this.timeFormat.set(data.prayer.format ?? '12h');
+        this.notificationMinutes.set(data.prayer.notifications ?? 10);
+        this.savePrayerSettings();
+      }
+      if (data.settings) {
+        if (data.settings.reciter) this.setReciter(data.settings.reciter);
+        if (data.settings.readingMode) this.setReadingMode(data.settings.readingMode);
+      }
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   // For compatibility with HisnComponent

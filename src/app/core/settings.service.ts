@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, effect } from '@angular/core';
 
 export interface VoiceCatalogItem {
   id: string;
@@ -53,6 +53,38 @@ export class SettingsService {
 
   constructor() {
     this.loadState();
+    this.applyDOMDirection(this.language());
+
+    effect(() => {
+      const currentLang = this.language();
+      this.applyDOMDirection(currentLang);
+    });
+  }
+
+  applyDOMDirection(lang: 'ar' | 'en'): void {
+    if (typeof document === 'undefined') return;
+    const dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+    document.documentElement.dir = dir;
+    document.documentElement.lang = lang;
+    document.documentElement.setAttribute('dir', dir);
+    document.documentElement.setAttribute('lang', lang);
+
+    if (document.body) {
+      document.body.dir = dir;
+      document.body.setAttribute('dir', dir);
+    }
+  }
+
+  setLanguage(lang: 'ar' | 'en'): void {
+    this.language.set(lang);
+    this.applyDOMDirection(lang);
+    this.saveState();
+  }
+
+  toggleLanguage(): void {
+    const nextLang = this.language() === 'ar' ? 'en' : 'ar';
+    this.setLanguage(nextLang);
   }
 
   private loadState(): void {

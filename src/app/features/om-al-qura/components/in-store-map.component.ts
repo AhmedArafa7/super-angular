@@ -36,13 +36,6 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
                 <svg lucideIcon="search" class="w-5 h-5"></svg>
               </div>
             </div>
-
-            <!-- Geometric Grid Canvas Line Drawing Quick Trigger -->
-            <button (click)="openLineCanvasDrawer()"
-                    class="px-5 py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black rounded-2xl text-xs flex items-center gap-2 shadow-xl transition-all shrink-0 cursor-pointer">
-              <svg lucideIcon="pen-tool" class="w-4 h-4"></svg>
-              <span>📍 رسم خطوط مستقيمة فائقة الدقة بتحديد نقطتين</span>
-            </button>
           </div>
         </div>
       </div>
@@ -56,7 +49,6 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             </div>
             <div>
               <div class="flex items-center gap-2">
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-slate-950">خطوط مستقيمة دقيقة (نقطتين A → B) 📍</span>
                 <span class="text-xs font-bold text-slate-500">رسم كروكي هندسي للمحل</span>
               </div>
               <h3 class="text-lg font-black text-slate-900 dark:text-white mt-1">تخطيط رسم المحل بخطوط مستقيمة دقيقة بين نقطتين</h3>
@@ -70,11 +62,6 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
               <span>تكبير الخريطة الكاملة</span>
             </button>
 
-            <button (click)="openLineCanvasDrawer()"
-                    class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-xs flex items-center gap-2 shadow-md transition-all">
-              <svg lucideIcon="pen-tool" class="w-4 h-4"></svg>
-              <span>📍 فتح لوحة رسم الخطوط بالنقطتين</span>
-            </button>
           </div>
         </div>
 
@@ -313,11 +300,6 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
         </div>
 
         <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
-          <button (click)="openLineCanvasDrawer()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-2xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer">
-            <svg lucideIcon="pen-tool" class="w-4 h-4"></svg>
-            <span>📍 فتح رسم الخطوط بالنقطتين A → B</span>
-          </button>
-
           <button (click)="openStoreLayoutSketchModal.set(false)" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-2xl shadow-md transition-all">
             إغلاق الخريطة
           </button>
@@ -345,126 +327,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
           </button>
         </div>
 
-        <!-- Geometric Controls & Mode Bar -->
-        <div class="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-3 text-xs text-white">
-          
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <!-- Line Mode Selector: Two-Point Mode (A->B) vs Drag Mode -->
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="text-slate-400 font-bold ml-1">طريقة رسم الخط المستقيم:</span>
-              
-              <button (click)="lineMode = 'two_clicks'; cancelPointA();" type="button"
-                      class="px-3.5 py-2 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
-                      [ngClass]="lineMode === 'two_clicks' ? 'bg-amber-500 text-slate-950 shadow-amber-500/20 ring-2 ring-amber-400' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'">
-                <span>📍 وضع نقطتين (اضغط A ثم اضغط B)</span>
-              </button>
 
-              <button (click)="lineMode = 'drag'; cancelPointA();" type="button"
-                      class="px-3.5 py-2 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
-                      [ngClass]="lineMode === 'drag' ? 'bg-indigo-600 text-white ring-2 ring-indigo-400' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'">
-                <span>✍️ سحب خط مستقيم من أ لأخرى</span>
-              </button>
-            </div>
-
-            <!-- Orthogonal 90 degree Lock & Clear Controls -->
-            <div class="flex items-center gap-2">
-              <button (click)="orthoMode = !orthoMode" type="button"
-                      class="px-3 py-2 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer"
-                      [ngClass]="orthoMode ? 'bg-indigo-600 text-white ring-2 ring-indigo-300' : 'bg-slate-800 text-slate-400'">
-                <span>📐 قفل أفقياً/رأسياً (90°): {{ orthoMode ? 'مفعّل' : 'معطّل' }}</span>
-              </button>
-
-              <button (click)="toggleSnapToGrid()" type="button"
-                      class="px-3 py-2 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer"
-                      [ngClass]="snapToGrid ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'">
-                <span>🧲 جذب بالشبكة: {{ snapToGrid ? 'مفعّل' : 'معطّل' }}</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Secondary Drawing Tools (Straight Line, Rect, Pencil, Text, Eraser) -->
-          <div class="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-slate-800/80">
-            <div class="flex flex-wrap items-center gap-1.5">
-              <span class="text-slate-400 font-bold ml-1">الأداة الفعالة:</span>
-
-              <button (click)="activeTool = 'line'" type="button"
-                      class="px-3 py-1 rounded-lg font-bold text-xs transition-all"
-                      [ngClass]="activeTool === 'line' ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-300'">
-                <span>📏 خط مستقيم</span>
-              </button>
-
-              <button (click)="activeTool = 'rect'; cancelPointA();" type="button"
-                      class="px-3 py-1 rounded-lg font-bold text-xs transition-all"
-                      [ngClass]="activeTool === 'rect' ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-300'">
-                <span>⏹️ مستطيل / رف</span>
-              </button>
-
-              <button (click)="activeTool = 'pencil'; cancelPointA();" type="button"
-                      class="px-3 py-1 rounded-lg font-bold text-xs transition-all"
-                      [ngClass]="activeTool === 'pencil' ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-300'">
-                <span>✏️ قلم حر</span>
-              </button>
-
-              <button (click)="activeTool = 'text'; cancelPointA();" type="button"
-                      class="px-3 py-1 rounded-lg font-bold text-xs transition-all"
-                      [ngClass]="activeTool === 'text' ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-300'">
-                <span>🔤 كتابة نص</span>
-              </button>
-
-              <button (click)="activeTool = 'eraser'; cancelPointA();" type="button"
-                      class="px-3 py-1 rounded-lg font-bold text-xs transition-all"
-                      [ngClass]="activeTool === 'eraser' ? 'bg-rose-600 text-white' : 'bg-slate-800 text-slate-300'">
-                <span>🧹 ممحاة</span>
-              </button>
-            </div>
-
-            <!-- Color Palette & Line Width -->
-            <div class="flex items-center gap-3">
-              <div class="flex items-center gap-1.5">
-                <span class="text-slate-400 font-bold">اللون:</span>
-                <button *ngFor="let c of ['#fbbf24', '#10b981', '#6366f1', '#f43f5e', '#ffffff', '#38bdf8']"
-                        type="button"
-                        (click)="brushColor = c"
-                        class="w-5 h-5 rounded-full border border-slate-700 cursor-pointer"
-                        [style.backgroundColor]="c"
-                        [ngClass]="brushColor === c ? 'scale-125 ring-2 ring-amber-400' : ''"></button>
-              </div>
-
-              <div class="flex items-center gap-1.5">
-                <span class="text-slate-400 font-bold">السُمك:</span>
-                <button *ngFor="let s of [2, 4, 8]" type="button" (click)="brushSize = s"
-                        class="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center font-bold text-[11px]"
-                        [ngClass]="brushSize === s ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-300'">
-                  {{ s }}
-                </button>
-              </div>
-
-              <button (click)="undoLastAction()" type="button" [disabled]="undoHistory.length <= 1" class="px-3 py-1 bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 disabled:opacity-40 disabled:cursor-not-allowed font-bold rounded-xl border border-indigo-800/60 transition-all text-xs flex items-center gap-1 cursor-pointer">
-                <span>↩️ تراجع خطوة (Undo)</span>
-              </button>
-
-              <button (click)="clearCanvas()" type="button" class="px-3 py-1 bg-rose-950/80 hover:bg-rose-900 text-rose-300 font-bold rounded-xl border border-rose-800/60 transition-all text-xs">
-                مسح الشاشة 🔄
-              </button>
-            </div>
-          </div>
-
-          <!-- Two-Point Status Banner -->
-          <div *ngIf="lineMode === 'two_clicks' && activeTool === 'line'" 
-               class="p-2.5 rounded-xl border text-xs font-bold flex items-center justify-between"
-               [ngClass]="pointA ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300' : 'bg-slate-900 border-slate-800 text-slate-300'">
-            <div class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded-full animate-ping" [ngClass]="pointA ? 'bg-emerald-400' : 'bg-amber-400'"></span>
-              <span>
-                {{ pointA ? '📍 تم تحديد النقطة (A): اضغط على الخريطة الآن لوضع النقطة (B) ليرسم الخط المستقيم بينهما!' : '📍 اضغط على الخريطة لوضع النقطة الأولى (A)...' }}
-              </span>
-            </div>
-            <button *ngIf="pointA" (click)="cancelPointA()" class="px-2 py-0.5 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 text-[11px]">
-              إلغاء النقطة A
-            </button>
-          </div>
-
-        </div>
 
         <!-- Canvas Container with Snap Crosshair & Real-time Line Preview -->
         <div class="relative rounded-2xl overflow-hidden border-2 border-amber-500/50 bg-slate-950 flex justify-center items-center shadow-2xl">

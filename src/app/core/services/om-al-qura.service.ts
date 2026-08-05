@@ -21,6 +21,7 @@ export interface OmAlQuraStoreLayout {
 export interface OmAlQuraProduct {
   id: string;
   name: string;
+  barcode?: string; // الكود التسلسلي / الباركود الخاص بالمنتج
   category: string;
   price: number;
   stockQuantity: number;
@@ -177,6 +178,24 @@ export class OmAlQuraService {
   products = signal<OmAlQuraProduct[]>([]);
   employees = signal<OmAlQuraEmployee[]>([]);
   attendanceLogs = signal<OmAlQuraAttendanceLog[]>([]);
+
+  // Realtime clock signal to drive 5-minute attendance code updates
+  currentTime = signal<Date>(new Date());
+
+  // Daily Attendance Code (visible only to the manager, changes every 5 minutes)
+  private attendanceCodeSalt = 'omalqura_2026_attendance_secret';
+  dailyAttendanceCode = computed(() => this.generateDailyAttendanceCode(this.currentTime()));
+
+  // Time remaining until the next 5-minute code refresh (formatted MM:SS)
+  attendanceCodeTimeRemaining = computed(() => {
+    const now = this.currentTime();
+    const secondsInWindow = 5 * 60;
+    const elapsedSeconds = Math.floor(now.getTime() / 1000) % secondsInWindow;
+    const remainingSeconds = secondsInWindow - elapsedSeconds;
+    const mins = Math.floor(remainingSeconds / 60);
+    const secs = remainingSeconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  });
   orders = signal<OmAlQuraOrder[]>([]);
   deliveryDrivers = signal<OmAlQuraDeliveryDriver[]>([]);
   customerDebts = signal<OmAlQuraCustomerDebt[]>([]);
@@ -227,6 +246,7 @@ export class OmAlQuraService {
   constructor() {
     this.loadInitialData();
     this.initFirestoreSync();
+    setInterval(() => this.currentTime.set(new Date()), 1000);
   }
 
   // Real-time Cloud Database Listeners (Firestore Real-time Sync across all browsers/devices)
@@ -739,18 +759,153 @@ ${itemsText}
   // --- SEED DATA ---
   private seedInitialProducts() {
     const defaults: OmAlQuraProduct[] = [
-
+      {
+        id: 'oq-p1',
+        name: 'مسحوق برسيل أوتوماتيك (2.5 كجم)',
+        barcode: '622101234561',
+        category: 'مساحيق غسيل ومنعمات',
+        price: 185,
+        stockQuantity: 45,
+        discountPercent: 10,
+        isBoycott: false,
+        boycottAlternatives: ['برسيل ايجيبت', 'أريال وطني'],
+        locationInStore: 'الممر 1 - الرف A1 (جهة اليمين)',
+        isInWarehouse: false,
+        imageUrl: 'https://images.unsplash.com/photo-1585421514284-efb74c2b69ba?w=500&auto=format&fit=crop&q=60',
+        description: 'مسحوق غسيل ممتاز للغسالات الأوتوماتيك، نظافة فائقة ورائحة منعشة تدوم طويلاً.',
+        salesCount: 32
+      },
+      {
+        id: 'oq-p2',
+        name: 'سائل غسيل الأطباق فيري (1.5 لتر)',
+        barcode: '622101234562',
+        category: 'منظفات الصحون والمطابخ',
+        price: 75,
+        stockQuantity: 50,
+        discountPercent: 5,
+        isBoycott: false,
+        boycottAlternatives: ['فاخر منظف', 'سائل اكلين'],
+        locationInStore: 'الممر 2 - الرف B2 (وسط)',
+        isInWarehouse: false,
+        imageUrl: 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=500&auto=format&fit=crop&q=60',
+        description: 'عملاق إزالة الدهون والصحون، رغوة كثيفة تدوم طويلاً ولطيف على اليدين.',
+        salesCount: 48
+      },
+      {
+        id: 'oq-p3',
+        name: 'مطهر ومعقم ديتول الأصلي (500 مل)',
+        barcode: '622101234563',
+        category: 'مطهرات ومعقمات عامة',
+        price: 120,
+        stockQuantity: 30,
+        discountPercent: 0,
+        isBoycott: false,
+        boycottAlternatives: ['مطهر بلمرز', 'سودو كلين'],
+        locationInStore: 'الممر 2 - الرف B1 (علوي)',
+        isInWarehouse: false,
+        imageUrl: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?w=500&auto=format&fit=crop&q=60',
+        description: 'مطهر عام يقضي على 99.9% من الجراثيم والبكتيريا، مثالي للأسطح والأرضيات.',
+        salesCount: 25
+      },
+      {
+        id: 'oq-p4',
+        name: 'كلور مركز لتطهير وتبييض الملابس والأسطح (1 لتر)',
+        barcode: '622101234564',
+        category: 'مطهرات ومعقمات عامة',
+        price: 35,
+        stockQuantity: 80,
+        discountPercent: 0,
+        isBoycott: false,
+        boycottAlternatives: [],
+        locationInStore: 'الممر 2 - الرف B3 (سفلي)',
+        isInWarehouse: true,
+        imageUrl: 'https://images.unsplash.com/photo-1563453392212-326f5e854473?w=500&auto=format&fit=crop&q=60',
+        description: 'كلور مركز عالي الفعالية لتبييض الملابس البيضاء وتطهير الحمامات والأرضيات.',
+        salesCount: 60
+      },
+      {
+        id: 'oq-p5',
+        name: 'معطر جو وفراش برائحة اللافندر (450 مل)',
+        barcode: '622101234565',
+        category: 'العناية الشخصية والشامبو',
+        price: 55,
+        stockQuantity: 40,
+        discountPercent: 15,
+        isBoycott: false,
+        boycottAlternatives: [],
+        locationInStore: 'الممر 3 - الرف C1 (علوي)',
+        isInWarehouse: false,
+        imageUrl: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=500&auto=format&fit=crop&q=60',
+        description: 'معطر جو يدوم طويلاً برائحة اللافندر المنعشة للمنازل والمكاتب.',
+        salesCount: 19
+      },
+      {
+        id: 'oq-p6',
+        name: 'مجموعة إسفنج تنظيف الصحون (طقم 5 قطع)',
+        barcode: '622101234566',
+        category: 'الإكسسوارات وأدوات النظافة',
+        price: 25,
+        stockQuantity: 100,
+        discountPercent: 0,
+        isBoycott: false,
+        boycottAlternatives: [],
+        locationInStore: 'الممر 3 - الرف C2 (وسط)',
+        isInWarehouse: false,
+        imageUrl: 'https://images.unsplash.com/photo-1616401784845-180882ba9ba8?w=500&auto=format&fit=crop&q=60',
+        description: 'إسفنج تنظيف عالي الجودة مع طبقة تنظيف خشنة لإزالة الدهون والصحون الصعبة.',
+        salesCount: 75
+      }
     ];
     this.saveProducts(defaults);
   }
 
   private seedCategories() {
-    this.saveCategories([]);
+    this.saveCategories([
+      'مساحيق غسيل ومنعمات',
+      'منظفات الصحون والمطابخ',
+      'مطهرات ومعقمات عامة',
+      'العناية الشخصية والشامبو',
+      'الإكسسوارات وأدوات النظافة'
+    ]);
   }
 
   private seedEmployees() {
     const defaults: OmAlQuraEmployee[] = [
-
+      {
+        id: 'emp-1',
+        name: 'أحمد حسن',
+        role: 'مبيعات',
+        phone: '01011223344',
+        salary: 4500,
+        workingHoursThisMonth: 160,
+        holidaysTaken: 2,
+        isSuspended: false,
+        shiftStatus: 'clocked_in',
+        lastClockIn: '09:00 ص'
+      },
+      {
+        id: 'emp-2',
+        name: 'محمود عبد الله',
+        role: 'أمينات مخزن',
+        phone: '01022334455',
+        salary: 5000,
+        workingHoursThisMonth: 170,
+        holidaysTaken: 1,
+        isSuspended: false,
+        shiftStatus: 'clocked_in',
+        lastClockIn: '08:30 ص'
+      },
+      {
+        id: 'emp-3',
+        name: 'إبراهيم علي',
+        role: 'دليفري',
+        phone: '01033445566',
+        salary: 4000,
+        workingHoursThisMonth: 150,
+        holidaysTaken: 3,
+        isSuspended: false,
+        shiftStatus: 'clocked_out'
+      }
     ];
     this.saveEmployees(defaults);
   }
@@ -761,7 +916,14 @@ ${itemsText}
 
   private seedDrivers() {
     const defaults: OmAlQuraDeliveryDriver[] = [
-
+      {
+        id: 'drv-1',
+        name: 'إبراهيم علي',
+        phone: '01033445566',
+        status: 'متاح',
+        workingHoursInfo: 'وردية صباحية ومسائية (9 ص - 10 م)',
+        activeDeliveriesCount: 0
+      }
     ];
     this.saveDrivers(defaults);
   }
@@ -846,8 +1008,36 @@ ${itemsText}
 
   // --- METHODS & ACTIONS ---
 
+  // Generate a unique code based on 5-minute intervals + secret salt (deterministic so it matches across devices)
+  generateDailyAttendanceCode(date: Date = new Date()): string {
+    const windowIndex = Math.floor(date.getTime() / (5 * 60 * 1000));
+    const seed = `${this.attendanceCodeSalt}_${windowIndex}`;
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+      hash = (hash << 5) - hash + seed.charCodeAt(i);
+      hash |= 0;
+    }
+    const code = Math.abs(hash) % 10000;
+    return String(code).padStart(4, '0');
+  }
+
+  // Validate the code entered by an employee against current or previous 5-minute window
+  validateAttendanceCode(code: string | null | undefined): boolean {
+    if (!code?.trim()) return false;
+    const normalized = code.trim().replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString());
+    const now = this.currentTime();
+    const currentCode = this.generateDailyAttendanceCode(now);
+    const prevWindowDate = new Date(now.getTime() - 5 * 60 * 1000);
+    const prevCode = this.generateDailyAttendanceCode(prevWindowDate);
+    return normalized === currentCode || normalized === prevCode;
+  }
+
   // Employees & Attendance
-  clockIn(employeeId: string) {
+  clockIn(employeeId: string, attendanceCode?: string) {
+    if (!this.validateAttendanceCode(attendanceCode)) {
+      this.toast.show('كود الحضور غير صحيح أو انتهت صلاحيته! يرجى الحصول على الكود الحالي من المدير', 'error');
+      return;
+    }
     const timeStr = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
     const dateStr = new Date().toLocaleDateString('ar-EG');
     const updatedEmployees = this.employees().map(emp => {
@@ -871,7 +1061,11 @@ ${itemsText}
     this.toast.show(`تم تسجيل حضور الموظف: ${emp?.name}`, 'success');
   }
 
-  clockOut(employeeId: string) {
+  clockOut(employeeId: string, attendanceCode?: string) {
+    if (!this.validateAttendanceCode(attendanceCode)) {
+      this.toast.show('كود الانصراف غير صحيح أو انتهت صلاحيته! يرجى الحصول على الكود الحالي من المدير', 'error');
+      return;
+    }
     const timeStr = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
     const dateStr = new Date().toLocaleDateString('ar-EG');
     const updatedEmployees = this.employees().map(emp => {
@@ -1183,6 +1377,7 @@ ${itemsText}
 
     this.saveOrders([posOrder, ...this.orders()]);
     this.toast.show(`تم إصدار فاتورة كاشير رقم #${posOrder.id} بمبلغ ${total} ج.م`, 'success');
+    this.printThermalReceipt(posOrder);
   }
 
   // Update order status (for staff & delivery driver)
@@ -1531,9 +1726,8 @@ ${itemsText}
         </style>
       </head>
       <body>
-        <h2>متجر أم القرى للمنظفات والعناية</h2>
+        <h2>متجر أم القرى</h2>
         <p>العنوان: الشارع الرئيسي - فرع أم القرى</p>
-        <p>الهاتف: 01000000000</p>
         <div class="divider"></div>
         <p><strong>رقم الفاتورة: #${order.id}</strong></p>
         <p>التاريخ: ${new Date().toLocaleString('ar-EG')}</p>
