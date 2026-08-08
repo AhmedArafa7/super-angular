@@ -203,6 +203,261 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
         </div>
       </div>
 
+      <!-- SECTION 3: Profit & Loss (P&L) Financial Center (مركز حساب الأرباح والخسائر والفواتير) -->
+      <div class="bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 text-white rounded-3xl p-6 md:p-8 border border-slate-800 shadow-2xl space-y-6">
+        
+        <!-- Header -->
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-6">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-3 py-1 rounded-full text-xs font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                مركز الحسابات المالية والربحية
+              </span>
+              <span class="px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                مزامنة لحظية تلقائية
+              </span>
+            </div>
+            <h2 class="text-2xl font-black text-white flex items-center gap-2.5 mt-2">
+              <svg lucideIcon="trending-up" class="w-7 h-7 text-emerald-400"></svg>
+              <span>حساب الأرباح والخسائر والفواتير (P&L Financial Calculator)</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">حساب دقيق لصافي أرباح أو خسائر المحل شاملة المبيعات، مشتريات البضائع من الموردين، فواتير الكهرباء والإنترنت، ومرتبات الموظفين.</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button (click)="openQuickBillModal('كهرباء')"
+                    class="px-4 py-2.5 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer">
+              <span>⚡ + إضافة فاتورة كهرباء</span>
+            </button>
+
+            <button (click)="openQuickBillModal('إنترنت')"
+                    class="px-4 py-2.5 rounded-2xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer">
+              <span>🌐 + إضافة فاتورة إنترنت</span>
+            </button>
+
+            <button (click)="openQuickBillModal('إيجار')"
+                    class="px-4 py-2.5 rounded-2xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer">
+              <span>🏠 + إضافة إيجار المحل</span>
+            </button>
+
+            <button (click)="showAddBillModal.set(true)"
+                    class="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs shadow-xl transition-all flex items-center gap-2 cursor-pointer">
+              <svg lucideIcon="receipt" class="w-4 h-4"></svg>
+              <span>+ تسجيل فاتورة أو مصروف آخر</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Big Profit / Loss Result Banner -->
+        <div class="p-6 md:p-8 rounded-3xl border transition-all shadow-inner flex flex-col md:flex-row items-center justify-between gap-6"
+             [ngClass]="service.isProfit() ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-100' : 'bg-rose-950/40 border-rose-500/40 text-rose-100'">
+          <div class="flex items-center gap-4">
+            <div class="size-16 rounded-2xl flex items-center justify-center text-3xl shadow-xl shrink-0"
+                 [ngClass]="service.isProfit() ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-400' : 'bg-rose-500/20 border border-rose-500/40 text-rose-400'">
+              {{ service.isProfit() ? '📈' : '📉' }}
+            </div>
+            <div>
+              <p class="text-xs font-bold uppercase tracking-wider opacity-80 mb-1">
+                {{ service.isProfit() ? 'صافي أرباح المحل الفعلية (Net Profit)' : 'عجز / صافي خسارة المحل (Net Loss Warning)' }}
+              </p>
+              <h3 class="text-4xl font-black font-mono tracking-tight flex items-baseline gap-2">
+                <span>{{ service.netProfitOrLoss() | number:'1.0-2' }}</span>
+                <span class="text-lg font-normal">ج.م</span>
+              </h3>
+              <p class="text-xs mt-2 font-bold flex items-center gap-2">
+                <span [ngClass]="service.isProfit() ? 'text-emerald-400' : 'text-rose-400'">
+                  {{ service.isProfit() ? 'هامش الربح الصافي: ' + service.profitMarginPercent() + '%' : 'تنبيه: المصروفات الكلية تجاوزت إجمالي المبيعات!' }}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <div class="w-full md:w-auto bg-black/40 p-4 rounded-2xl border border-white/10 text-xs space-y-2 min-w-[240px]">
+            <div class="flex justify-between items-center text-slate-300">
+              <span>إجمالي المبيعات (+):</span>
+              <span class="font-mono font-bold text-emerald-400">{{ service.totalSalesRevenue() | number:'1.0-0' }} ج.م</span>
+            </div>
+            <div class="flex justify-between items-center text-slate-300">
+              <span>إجمالي التكاليف (-):</span>
+              <span class="font-mono font-bold text-rose-400">{{ service.totalExpenses() | number:'1.0-0' }} ج.م</span>
+            </div>
+            <div class="border-t border-white/10 pt-2 flex justify-between items-center font-black">
+              <span>النتيجة المالية:</span>
+              <span [ngClass]="service.isProfit() ? 'text-emerald-400' : 'text-rose-400'">{{ service.isProfit() ? 'ربح صافٍ' : 'خسارة' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detailed 4-Column Financial Breakdown Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          
+          <!-- Card 1: Revenue from Product Sales -->
+          <div class="bg-slate-900/90 p-5 rounded-2xl border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between text-slate-400">
+              <span class="text-xs font-bold">1. إجمالي مبيعات المنتجات</span>
+              <span class="text-lg">🛒</span>
+            </div>
+            <div class="text-2xl font-black font-mono text-emerald-400">{{ service.totalSalesRevenue() | number:'1.0-0' }} <span class="text-xs text-slate-400">ج.م</span></div>
+            <p class="text-[11px] text-slate-400">المحصل من إجمالي طلبات المحل المكتملة</p>
+          </div>
+
+          <!-- Card 2: Inventory Purchase Costs -->
+          <div class="bg-slate-900/90 p-5 rounded-2xl border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between text-slate-400">
+              <span class="text-xs font-bold">2. ثمن المشتريات من الشركات</span>
+              <span class="text-lg">🏭</span>
+            </div>
+            <div class="text-2xl font-black font-mono text-amber-400">{{ service.totalInventoryPurchaseCost() | number:'1.0-0' }} <span class="text-xs text-slate-400">ج.م</span></div>
+            <p class="text-[11px] text-slate-400">تكلفة البضائع المشتراة من الموردين</p>
+          </div>
+
+          <!-- Card 3: Utility Bills & Expenses -->
+          <div class="bg-slate-900/90 p-5 rounded-2xl border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between text-slate-400">
+              <span class="text-xs font-bold">3. فواتير كهرباء وإنترنت ومرافق</span>
+              <span class="text-lg">🧾</span>
+            </div>
+            <div class="text-2xl font-black font-mono text-rose-400">{{ service.totalUtilityBillsCost() | number:'1.0-0' }} <span class="text-xs text-slate-400">ج.م</span></div>
+            <p class="text-[11px] text-slate-400">{{ service.utilityBills().length }} فواتير ومصروفات دورية مسجلة</p>
+          </div>
+
+          <!-- Card 4: Staff Salaries -->
+          <div class="bg-slate-900/90 p-5 rounded-2xl border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between text-slate-400">
+              <span class="text-xs font-bold">4. مرتبات الموظفين والعمال</span>
+              <span class="text-lg">👥</span>
+            </div>
+            <div class="text-2xl font-black font-mono text-sky-400">{{ service.totalStaffSalaries() | number:'1.0-0' }} <span class="text-xs text-slate-400">ج.م</span></div>
+            <p class="text-[11px] text-slate-400">كشف رواتب الموظفين النشطين بالخدمة</p>
+          </div>
+
+        </div>
+
+        <!-- Utility Bills Management Table -->
+        <div class="bg-slate-950/60 rounded-2xl p-5 border border-slate-800 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-black text-slate-200 flex items-center gap-2">
+              <svg lucideIcon="receipt" class="w-4 h-4 text-emerald-400"></svg>
+              <span>سجل فواتير المحل والمصروفات التشغيلية (الكهرباء، الإنترنت، الإيجار، الصيانة)</span>
+            </h3>
+            <span class="text-xs text-slate-400 font-mono">{{ service.utilityBills().length }} فاتورة</span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-right border-collapse">
+              <thead class="bg-slate-900 text-slate-300 font-bold border-b border-slate-800">
+                <tr>
+                  <th class="p-3">عنوان الفاتورة / المصروف</th>
+                  <th class="p-3">الفئة</th>
+                  <th class="p-3">المبلغ المدفوع</th>
+                  <th class="p-3">تاريخ الدفع</th>
+                  <th class="p-3">ملاحظات</th>
+                  <th class="p-3 text-center">إجراء</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60">
+                <tr *ngFor="let b of service.utilityBills()" class="hover:bg-slate-900/40">
+                  <td class="p-3 font-bold text-white">{{ b.title }}</td>
+                  <td class="p-3">
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-black"
+                          [ngClass]="{
+                            'bg-amber-500/20 text-amber-300 border border-amber-500/30': b.category === 'كهرباء',
+                            'bg-sky-500/20 text-sky-300 border border-sky-500/30': b.category === 'إنترنت',
+                            'bg-teal-500/20 text-teal-300 border border-teal-500/30': b.category === 'مياه',
+                            'bg-purple-500/20 text-purple-300 border border-purple-500/30': b.category === 'إيجار',
+                            'bg-rose-500/20 text-rose-300 border border-rose-500/30': b.category === 'صيانة',
+                            'bg-slate-500/20 text-slate-300 border border-slate-500/30': b.category === 'نثريات وأخرى'
+                          }">
+                      {{ b.category }}
+                    </span>
+                  </td>
+                  <td class="p-3 font-black text-rose-400 font-mono text-sm">{{ b.amount | number:'1.0-0' }} ج.م</td>
+                  <td class="p-3 font-mono text-slate-400">{{ b.paidDate }}</td>
+                  <td class="p-3 text-slate-400">{{ b.notes || '-' }}</td>
+                  <td class="p-3 text-center">
+                    <button (click)="service.deleteUtilityBill(b.id)" class="text-rose-400 hover:text-rose-300 font-bold hover:underline cursor-pointer">حذف</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- MODAL: Add Utility Bill / Expense (تسجيل فاتورة جديدة) -->
+      <div *ngIf="showAddBillModal()" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 max-w-lg w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-6 font-sans">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <svg lucideIcon="receipt" class="w-6 h-6"></svg>
+              </div>
+              <div>
+                <h3 class="text-lg font-black text-slate-900 dark:text-white">تسجيل فاتورة أو مصروف جديد</h3>
+                <p class="text-xs text-slate-500">إضافة تكاليف التشغيل والكهرباء والإنترنت والإيجار</p>
+              </div>
+            </div>
+            <button (click)="showAddBillModal.set(false)" class="text-slate-400 hover:text-slate-600 p-2 rounded-xl">
+              <svg lucideIcon="x" class="w-6 h-6"></svg>
+            </button>
+          </div>
+
+          <form (ngSubmit)="submitAddBill()" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">عنوان الفاتورة أو المصروف *</label>
+              <input type="text" [(ngModel)]="newBillTitle" name="billTitle" required
+                     placeholder="مثال: فاتورة الكهرباء لشهر أغسطس"
+                     class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">نوع الفئة *</label>
+                <select [(ngModel)]="newBillCategory" name="billCategory"
+                        class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500">
+                  <option value="كهرباء">كهرباء ⚡</option>
+                  <option value="إنترنت">إنترنت 🌐</option>
+                  <option value="مياه">مياه 💧</option>
+                  <option value="إيجار">إيجار المحل 🏠</option>
+                  <option value="صيانة">صيانة وإصلاحات 🔧</option>
+                  <option value="نثريات وأخرى">نثريات ومصروفات أخرى 🧾</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">المبلغ المدفوع (بالجنيه) *</label>
+                <input type="number" [(ngModel)]="newBillAmount" name="billAmount" required min="1"
+                       placeholder="مثال: 1500"
+                       class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-mono focus:outline-hidden focus:ring-2 focus:ring-emerald-500">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">تاريخ الدفع *</label>
+              <input type="date" [(ngModel)]="newBillPaidDate" name="billPaidDate" required
+                     class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-mono focus:outline-hidden focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">ملاحظات إضافية</label>
+              <input type="text" [(ngModel)]="newBillNotes" name="billNotes"
+                     placeholder="تفاصيل الاختيار أو رقم العداد أو القاطر..."
+                     class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <button type="button" (click)="showAddBillModal.set(false)" class="px-5 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs">
+                إلغاء
+              </button>
+              <button type="submit" class="px-6 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md transition-all">
+                حفظ وتسجيل الفاتورة 🧾
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
       <!-- MODAL: Hire New Worker (حصرية للمدير) -->
       <div *ngIf="showHireModal()" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 max-w-lg w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-6 font-sans">
@@ -908,6 +1163,13 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             </div>
 
             <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">ثمن الطلبية الكلي المشتراة من الشركة (تحدده الشركة الموردة بالجنية)</label>
+              <input type="number" [(ngModel)]="poCustomTotalCost" min="1" placeholder="مثال: 12500 ج.م"
+                     class="w-full p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 font-bold text-amber-900 dark:text-amber-200 font-mono text-sm focus:ring-2 focus:ring-amber-500">
+              <p class="text-[10px] text-slate-400 mt-1">يُحسب هذا المبلغ مباشرة في ميزانية المشتريات وحساب الأرباح والخسائر للمحل.</p>
+            </div>
+
+            <div>
               <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">ملاحظات وتعليمات للتسليم بالفرع</label>
               <textarea [(ngModel)]="poNotes" rows="2" placeholder="ملاحظات حول طريقة الشحن، التوريد العاجل، أو مواعيد التسليم..."
                         class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white"></textarea>
@@ -1378,6 +1640,8 @@ export class OmAlQura2AdminPortalComponent {
     this.showPoModal.set(true);
   }
 
+  poCustomTotalCost: number | null = null;
+
   submitCreatePo() {
     if (!this.selectedPoSupplierId) return;
 
@@ -1392,7 +1656,7 @@ export class OmAlQura2AdminPortalComponent {
             productName: prod.name,
             currentStock: prod.stockQuantity,
             requestedQuantity: qty,
-            unitPriceEst: prod.price
+            unitPriceEst: prod.price * 0.75
           });
         }
       }
@@ -1403,7 +1667,51 @@ export class OmAlQura2AdminPortalComponent {
       return;
     }
 
-    this.service.createPurchaseOrder(this.selectedPoSupplierId, itemsToRequest, this.poNotes);
+    const newPo = this.service.createPurchaseOrder(this.selectedPoSupplierId, itemsToRequest, this.poNotes);
+    if (newPo && this.poCustomTotalCost && this.poCustomTotalCost > 0) {
+      this.service.updatePoWholesaleCost(newPo.id, Number(this.poCustomTotalCost));
+    }
+
     this.showPoModal.set(false);
+    this.poCustomTotalCost = null;
+  }
+
+  // Utility Bills State & Modal
+  showAddBillModal = signal(false);
+  newBillTitle = '';
+  newBillCategory: 'كهرباء' | 'إنترنت' | 'مياه' | 'إيجار' | 'صيانة' | 'نثريات وأخرى' = 'كهرباء';
+  newBillAmount: number | null = null;
+  newBillPaidDate = new Date().toISOString().split('T')[0];
+  newBillNotes = '';
+
+  openQuickBillModal(cat: 'كهرباء' | 'إنترنت' | 'مياه' | 'إيجار' | 'صيانة' | 'نثريات وأخرى') {
+    const monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+    const monthName = monthNames[new Date().getMonth()];
+    this.newBillCategory = cat;
+    this.newBillTitle = `فاتورة ${cat} لشهر ${monthName}`;
+    this.newBillAmount = null;
+    this.newBillPaidDate = new Date().toISOString().split('T')[0];
+    this.newBillNotes = '';
+    this.showAddBillModal.set(true);
+  }
+
+  submitAddBill() {
+    if (!this.newBillTitle.trim() || !this.newBillAmount || this.newBillAmount <= 0) {
+      alert('يرجى كتابة عنوان الفاتورة ومبلغ صحيح أكبر من صفر');
+      return;
+    }
+
+    this.service.addUtilityBill({
+      title: this.newBillTitle.trim(),
+      category: this.newBillCategory,
+      amount: Number(this.newBillAmount),
+      paidDate: this.newBillPaidDate,
+      notes: this.newBillNotes.trim()
+    });
+
+    this.showAddBillModal.set(false);
+    this.newBillTitle = '';
+    this.newBillAmount = null;
+    this.newBillNotes = '';
   }
 }

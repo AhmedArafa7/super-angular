@@ -1,0 +1,247 @@
+<div class="flex flex-col h-full bg-slate-950 text-white p-6 md:p-8 overflow-y-auto hide-scrollbar">
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+    <div class="space-y-1">
+      <h1 class="text-3xl font-black tracking-tight flex items-center gap-3">
+        <lucide-icon [img]="LayoutDashboard" class="w-8 h-8 text-indigo-500"></lucide-icon>
+        halaltube Studio
+      </h1>
+      <p class="text-slate-400 font-medium">أهلاً بك في مركز التحكم الخاص بك. هنا يمكنك إدارة محتواك ومتابعة أداء قناتك.</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <button 
+        (click)="togglePreviewMode()"
+        class="border border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl px-6 h-12 flex items-center gap-2 transition-all mr-2"
+      >
+        <lucide-icon [img]="Eye" class="w-5 h-5"></lucide-icon>
+        {{ isPreviewMode() ? 'إيقاف المعاينة' : 'وضع المعاينة' }}
+      </button>
+
+      <button 
+        (click)="openUploadModal()"
+        class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl px-6 h-12 flex items-center gap-2 shadow-lg shadow-indigo-500/20 transition-all hover:scale-105 active:scale-95"
+      >
+        <lucide-icon [img]="PlusCircle" class="w-5 h-5"></lucide-icon>
+        رفع فيديو جديد
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+    <div class="bg-slate-900/40 border border-white/5 backdrop-blur-xl p-6 rounded-[2rem] hover:border-white/10 transition-all group">
+      <div class="flex items-start justify-between">
+        <div class="space-y-3">
+          <p class="text-sm font-bold text-slate-400">إجمالي المشاهدات</p>
+          <p class="text-3xl font-black">
+            @if (isLoadingStats()) {
+              <span class="inline-block w-16 h-8 bg-white/10 rounded-md animate-pulse"></span>
+            } @else {
+              {{ formatNumber(channelStats()?.viewCount || '0') }}
+            }
+          </p>
+        </div>
+        <div class="p-3 rounded-2xl bg-blue-500/10 text-blue-500 group-hover:scale-110 transition-transform">
+          <lucide-icon [img]="Eye" class="w-6 h-6"></lucide-icon>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-slate-900/40 border border-white/5 backdrop-blur-xl p-6 rounded-[2rem] hover:border-white/10 transition-all group">
+      <div class="flex items-start justify-between">
+        <div class="space-y-3">
+          <p class="text-sm font-bold text-slate-400">المشتركون</p>
+          <p class="text-3xl font-black">
+            @if (isLoadingStats()) {
+              <span class="inline-block w-16 h-8 bg-white/10 rounded-md animate-pulse"></span>
+            } @else {
+              {{ formatNumber(channelStats()?.subscriberCount || '0') }}
+            }
+          </p>
+        </div>
+        <div class="p-3 rounded-2xl bg-purple-500/10 text-purple-500 group-hover:scale-110 transition-transform">
+          <lucide-icon [img]="Users" class="w-6 h-6"></lucide-icon>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-slate-900/40 border border-white/5 backdrop-blur-xl p-6 rounded-[2rem] hover:border-white/10 transition-all group">
+      <div class="flex items-start justify-between">
+        <div class="space-y-3">
+          <p class="text-sm font-bold text-slate-400">عدد الفيديوهات</p>
+          <p class="text-3xl font-black">
+            @if (isLoadingStats()) {
+              <span class="inline-block w-16 h-8 bg-white/10 rounded-md animate-pulse"></span>
+            } @else {
+              {{ formatNumber(channelStats()?.videoCount || '0') }}
+            }
+          </p>
+        </div>
+        <div class="p-3 rounded-2xl bg-amber-500/10 text-amber-500 group-hover:scale-110 transition-transform">
+          <lucide-icon [img]="Video" class="w-6 h-6"></lucide-icon>
+        </div>
+      </div>
+    </div>
+
+    <!-- Locked Stats -->
+    <div class="relative bg-slate-900/20 border border-white/5 backdrop-blur-md p-6 rounded-[2rem] overflow-hidden group">
+      @if (!isPreviewMode()) {
+        <div class="absolute inset-0 z-10 bg-slate-950/60 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 text-center">
+          <lucide-icon [img]="Lock" class="w-6 h-6 text-slate-400 mb-2"></lucide-icon>
+          <p class="text-[10px] text-slate-300 font-bold leading-tight">بانتظار ربط خادم بيئة الإنتاج لتفعيل البيانات المالية</p>
+        </div>
+      }
+      <div class="flex items-start justify-between opacity-30">
+        <div class="space-y-3">
+          <p class="text-sm font-bold text-slate-400">الإيرادات</p>
+          <p class="text-3xl font-black">$1,250</p>
+        </div>
+        <div class="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500">
+          <lucide-icon [img]="BarChart3" class="w-6 h-6"></lucide-icon>
+        </div>
+      </div>
+    </div>
+
+    <div class="relative bg-slate-900/20 border border-white/5 backdrop-blur-md p-6 rounded-[2rem] overflow-hidden group">
+      @if (!isPreviewMode()) {
+        <div class="absolute inset-0 z-10 bg-slate-950/60 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 text-center">
+          <lucide-icon [img]="Lock" class="w-6 h-6 text-slate-400 mb-2"></lucide-icon>
+          <p class="text-[10px] text-slate-300 font-bold leading-tight">بانتظار التحليل الذكي للتفاعل</p>
+        </div>
+      }
+      <div class="flex items-start justify-between opacity-30">
+        <div class="space-y-3">
+          <p class="text-sm font-bold text-slate-400">التفاعل</p>
+          <p class="text-3xl font-black">8.5%</p>
+        </div>
+        <div class="p-3 rounded-2xl bg-rose-500/10 text-rose-500">
+          <lucide-icon [img]="Heart" class="w-6 h-6"></lucide-icon>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Areas -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Recent Videos -->
+    <div class="lg:col-span-2 space-y-6">
+      <div class="flex items-center justify-between px-2">
+        <h2 class="text-xl font-black tracking-tight">آخر الفيديوهات المرفوعة</h2>
+        <button class="text-indigo-400 font-bold hover:text-indigo-300 transition-colors">عرض الكل</button>
+      </div>
+      <div class="space-y-4">
+        @if (!isLoadingStats() && videos().length === 0) {
+          <div class="flex flex-col items-center justify-center py-12 bg-slate-900/20 rounded-[2rem] border border-dashed border-white/10 text-slate-500">
+            <lucide-icon [img]="Video" class="w-12 h-12 mb-4 opacity-20"></lucide-icon>
+            <p class="font-bold">لا يوجد فيديوهات مرفوعة حتى الآن</p>
+          </div>
+        } @else if (isLoadingStats()) {
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="h-24 bg-white/5 rounded-2xl animate-pulse"></div>
+            <div class="h-24 bg-white/5 rounded-2xl animate-pulse"></div>
+          </div>
+        } @else {
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            @for (vid of videos(); track vid.id) {
+              <div class="bg-slate-900/40 p-3 rounded-2xl border border-white/5 flex gap-4 hover:border-indigo-500/30 transition-all group cursor-pointer">
+                <div class="relative shrink-0 overflow-hidden rounded-xl w-20 h-20">
+                  <img crossorigin="anonymous" [src]="vid.thumbnail" [alt]="vid.title" class="object-cover w-full h-full group-hover:scale-110 transition-transform" />
+                </div>
+                <div class="flex flex-col justify-center min-w-0">
+                  <h4 class="text-sm font-bold text-white truncate mb-1">{{vid.title}}</h4>
+                  <span class="text-[10px] text-slate-400 font-medium">الآن</span>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Exclusive Si-Neuro Features -->
+    <div class="space-y-6">
+      <h2 class="text-xl font-black tracking-tight px-2 text-indigo-400">مزايا Si-Neuro Studio الحصرية</h2>
+      <div class="space-y-4">
+        
+        <div class="p-5 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10 hover:bg-indigo-500/10 transition-all cursor-pointer group">
+          <div class="flex items-center gap-4 mb-3">
+            <div class="w-10 h-10 rounded-2xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+              <lucide-icon [img]="BarChart3" class="w-5 h-5"></lucide-icon>
+            </div>
+            <h3 class="font-bold text-sm text-white">التحسين بالذكاء الاصطناعي</h3>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed font-medium">تحسين جودة الفيديو تلقائياً باستخدام خوارزميات Si-Neuro.</p>
+        </div>
+
+        <div class="p-5 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10 hover:bg-indigo-500/10 transition-all cursor-pointer group">
+          <div class="flex items-center gap-4 mb-3">
+            <div class="w-10 h-10 rounded-2xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+              <lucide-icon [img]="CloudLightning" class="w-5 h-5"></lucide-icon>
+            </div>
+            <h3 class="font-bold text-sm text-white">التوزيع العابر للمنصات</h3>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed font-medium">نشر المحتوى على عدة منصات بضغطة زر واحدة.</p>
+        </div>
+
+        <div class="p-5 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10 hover:bg-indigo-500/10 transition-all cursor-pointer group">
+          <div class="flex items-center gap-4 mb-3">
+            <div class="w-10 h-10 rounded-2xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+              <lucide-icon [img]="PlusCircle" class="w-5 h-5"></lucide-icon>
+            </div>
+            <h3 class="font-bold text-sm text-white">نظام الأرباح الذكي</h3>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed font-medium">تتبع أرباحك وعوائدك بشكل لحظي ودقيق.</p>
+        </div>
+
+      </div>
+    </div>
+    
+    <!-- Connected Accounts Section -->
+    <div class="space-y-6 lg:col-span-3 pb-8">
+      <div class="flex items-center justify-between px-2">
+        <h2 class="text-xl font-black tracking-tight">الحسابات المربوطة (Token Bridge)</h2>
+        <button 
+          class="border border-white/10 text-white font-bold h-9 px-4 rounded-xl flex items-center gap-2 bg-white/5 hover:bg-white/10 transition-colors"
+        >
+          <lucide-icon [img]="Link2" class="w-4 h-4"></lucide-icon>
+          ربط حساب جديد
+        </button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        @for (platform of connectedPlatforms(); track platform.id) {
+          <div class="p-5 rounded-[2rem] border bg-slate-900/40 backdrop-blur-xl flex items-center justify-between transition-all hover:bg-slate-900/60"
+            [ngClass]="platform.connected ? 'border-emerald-500/20' : 'border-white/5'">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 rounded-2xl flex items-center justify-center"
+                [ngClass]="{
+                  'bg-red-500/10 text-red-500': platform.id === 'youtube',
+                  'bg-cyan-500/10 text-cyan-500': platform.id === 'tiktok',
+                  'bg-blue-500/10 text-blue-500': platform.id === 'facebook'
+                }">
+                <lucide-icon [img]="platform.icon" class="w-6 h-6"></lucide-icon>
+              </div>
+              <div>
+                <h3 class="font-bold text-white text-sm">{{ platform.name }}</h3>
+                <p class="text-xs text-slate-400 font-medium mt-0.5">
+                  {{ platform.connected ? 'متصل' : 'غير متصل' }}
+                </p>
+              </div>
+            </div>
+            
+            @if (platform.connected) {
+              <div class="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+                <lucide-icon [img]="CheckCircle2" class="w-4 h-4"></lucide-icon>
+              </div>
+            } @else {
+              <button 
+                class="h-8 px-4 rounded-xl font-bold text-xs bg-white/5 hover:bg-white/10 transition-colors"
+                (click)="connectPlatform(platform.id)">
+                ربط
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

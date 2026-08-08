@@ -113,6 +113,15 @@ export interface OmAlQuraSupplier {
   notes?: string;
 }
 
+export interface OmAlQuraUtilityBill {
+  id: string;
+  title: string;
+  category: 'كهرباء' | 'إنترنت' | 'مياه' | 'إيجار' | 'صيانة' | 'نثريات وأخرى';
+  amount: number;
+  paidDate: string;
+  notes?: string;
+}
+
 export interface OmAlQuraPurchaseOrderItem {
   productId?: string;
   productName: string;
@@ -167,12 +176,33 @@ export interface OmAlQuraCustomerInfo {
   preferredPaymentMethod?: 'كاش' | 'فيزا' | 'محفظة إلكترونية';
 }
 
+export interface OmAlQuraCctvCamera {
+  id: string;
+  name: string;
+  location: string;
+  sourceType: 'webcam' | 'ip' | 'video' | 'simulation';
+  streamUrl?: string;
+  ipAddress?: string;
+  port?: number;
+  username?: string;
+  password?: string;
+  resolution?: string;
+  fps?: number;
+  isOnline: boolean;
+  nightVision: boolean;
+  panX: number;
+  panY: number;
+  zoom: number;
+  motionDetected: boolean;
+  createdAt: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class OmAlQuraService {
   private firebase = inject(FirebaseService);
-  private toast = inject(ToastService);
+  toast = inject(ToastService);
 
   // State Signals
   products = signal<OmAlQuraProduct[]>([]);
@@ -205,6 +235,49 @@ export class OmAlQuraService {
   categories = signal<string[]>([]);
   suppliers = signal<OmAlQuraSupplier[]>([]);
   purchaseOrders = signal<OmAlQuraPurchaseOrder[]>([]);
+  utilityBills = signal<OmAlQuraUtilityBill[]>([]);
+  cctvCameras = signal<OmAlQuraCctvCamera[]>([]);
+
+  // Profit & Loss (P&L) Financial Computation Signals
+  totalSalesRevenue = computed(() => {
+    return this.orders()
+      .filter(o => o.status === 'completed')
+      .reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+  });
+
+  totalInventoryPurchaseCost = computed(() => {
+    return this.purchaseOrders()
+      .reduce((sum, po) => sum + (po.totalEstPrice || 0), 0);
+  });
+
+  totalUtilityBillsCost = computed(() => {
+    return this.utilityBills()
+      .reduce((sum, b) => sum + (b.amount || 0), 0);
+  });
+
+  totalStaffSalaries = computed(() => {
+    return this.employees()
+      .filter(e => !e.isSuspended)
+      .reduce((sum, e) => sum + (e.salary || 0), 0);
+  });
+
+  totalExpenses = computed(() => {
+    return this.totalInventoryPurchaseCost() + this.totalUtilityBillsCost() + this.totalStaffSalaries();
+  });
+
+  netProfitOrLoss = computed(() => {
+    return this.totalSalesRevenue() - this.totalExpenses();
+  });
+
+  isProfit = computed(() => {
+    return this.netProfitOrLoss() >= 0;
+  });
+
+  profitMarginPercent = computed(() => {
+    const rev = this.totalSalesRevenue();
+    if (rev <= 0) return 0;
+    return Number(((this.netProfitOrLoss() / rev) * 100).toFixed(1));
+  });
 
   // Customizable Store Sketch Layout & Aisle/Shelf Names
   storeLayout = signal<OmAlQuraStoreLayout>({
@@ -444,6 +517,22 @@ export class OmAlQuraService {
       this.saveDebts([]);
     }
 
+    const savedBills = localStorage.getItem('omalqura_utility_bills');
+    if (savedBills) {
+      try {
+        const parsed: OmAlQuraUtilityBill[] = JSON.parse(savedBills);
+        if (parsed && parsed.length > 0) {
+          this.utilityBills.set(parsed);
+        } else {
+          this.seedUtilityBills();
+        }
+      } catch (e) {
+        this.seedUtilityBills();
+      }
+    } else {
+      this.seedUtilityBills();
+    }
+
     const savedRequests = localStorage.getItem('omalqura_missing_requests');
     if (savedRequests) {
       try {
@@ -543,6 +632,22 @@ export class OmAlQuraService {
     if (savedPOs) {
       try { this.purchaseOrders.set(JSON.parse(savedPOs)); } catch (e) {}
     }
+
+    const savedCctv = localStorage.getItem('omalqura_cctv_cameras');
+    if (savedCctv) {
+      try {
+        const parsed = JSON.parse(savedCctv);
+        if (parsed && parsed.length > 0) {
+          this.cctvCameras.set(parsed);
+        } else {
+          this.seedDefaultCctvCameras();
+        }
+      } catch (e) {
+        this.seedDefaultCctvCameras();
+      }
+    } else {
+      this.seedDefaultCctvCameras();
+    }
   }
 
   saveSuppliers(data: OmAlQuraSupplier[]) {
@@ -579,6 +684,91 @@ export class OmAlQuraService {
     if (this.firebase.firestore) {
       data.forEach(item => setDoc(doc(this.firebase.firestore, 'omalqura_purchase_orders', item.id), item).catch(() => {}));
     }
+  }
+
+  saveCctvCameras(cameras: OmAlQuraCctvCamera[]) {
+    this.cctvCameras.set(cameras);
+    localStorage.setItem('omalqura_cctv_cameras', JSON.stringify(cameras));
+    if (this.firebase.firestore) {
+      cameras.forEach(c => setDoc(doc(this.firebase.firestore, 'omalqura_cctv_cameras', c.id), c).catch(() => {}));
+    }
+  }
+
+  addCctvCamera(data: Omit<OmAlQuraCctvCamera, 'id' | 'createdAt'>): OmAlQuraCctvCamera {
+    const newCam: OmAlQuraCctvCamera = {
+      ...data,
+      id: 'cam-' + Math.floor(100 + Math.random() * 900),
+      createdAt: new Date().toLocaleDateString('ar-EG')
+    };
+    const updated = [newCam, ...this.cctvCameras()];
+    this.saveCctvCameras(updated);
+    this.toast.show(`تمت إضافة وتوصيل الكاميرا (${newCam.name}) بنجاح! 📹`, 'success');
+    return newCam;
+  }
+
+  deleteCctvCamera(id: string) {
+    const updated = this.cctvCameras().filter(c => c.id !== id);
+    this.saveCctvCameras(updated);
+    if (this.firebase.firestore) {
+      deleteDoc(doc(this.firebase.firestore, 'omalqura_cctv_cameras', id)).catch(() => {});
+    }
+    this.toast.show('تم فصل وإزالة الكاميرا من النظام.', 'info');
+  }
+
+  private seedDefaultCctvCameras() {
+    const defaults: OmAlQuraCctvCamera[] = [
+      {
+        id: 'cam-webcam-1',
+        name: '📷 كاميرا الموبايل / الجهاز الحقيقية المباشرة (WebCam)',
+        location: 'بوابة المحل - بث كاميرا جهازك',
+        sourceType: 'webcam',
+        resolution: '1920x1080',
+        fps: 60,
+        isOnline: true,
+        nightVision: false,
+        panX: 0,
+        panY: 0,
+        zoom: 1,
+        motionDetected: false,
+        createdAt: 'الآن'
+      },
+      {
+        id: 'cam-ip-2',
+        name: 'الكاميرا 2: منطقة الكاشير والخزينة (IP Camera)',
+        location: 'طاولة المحاسبة والخزينة',
+        sourceType: 'video',
+        streamUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+        ipAddress: '192.168.1.102',
+        port: 554,
+        resolution: '3840x2160',
+        fps: 60,
+        isOnline: true,
+        nightVision: false,
+        panX: 0,
+        panY: 0,
+        zoom: 1,
+        motionDetected: true,
+        createdAt: 'الآن'
+      },
+      {
+        id: 'cam-sim-3',
+        name: 'الكاميرا 3: المخزن الداخلي الخلفي (DVR Connection)',
+        location: 'رفوف وتخزين البضائع',
+        sourceType: 'simulation',
+        ipAddress: '192.168.1.105',
+        port: 8080,
+        resolution: '2560x1440',
+        fps: 30,
+        isOnline: true,
+        nightVision: false,
+        panX: 0,
+        panY: 0,
+        zoom: 1,
+        motionDetected: false,
+        createdAt: 'الآن'
+      }
+    ];
+    this.saveCctvCameras(defaults);
   }
 
   createPurchaseOrder(supplierId: string, items: OmAlQuraPurchaseOrderItem[], notes?: string): OmAlQuraPurchaseOrder | null {
@@ -644,19 +834,17 @@ ${itemsText}
     this.toast.show(`تم تأكيد استلام الشحنة وتزويد رصيد المخزون تلقائياً للأصناف الواردة! 🎉`, 'success');
   }
 
+  updatePoWholesaleCost(poId: string, newTotalCost: number) {
+    const updatedPOs = this.purchaseOrders().map(p => p.id === poId ? { ...p, totalEstPrice: newTotalCost } : p);
+    this.savePurchaseOrders(updatedPOs);
+    this.toast.show(`تم تحديث ثمن الشراء المحدد من الشركة إلى ${newTotalCost} ج.م بنجاح 🏷️`, 'success');
+  }
+
   private seedInitialSuppliers() {
     const defaults: OmAlQuraSupplier[] = [
       //put real data of suppliers here later 
     ];
     this.saveSuppliers(defaults);
-  }
-
-  private saveProducts(data: OmAlQuraProduct[]) {
-    this.products.set(data);
-    localStorage.setItem('omalqura_products', JSON.stringify(data));
-    if (this.firebase.firestore) {
-      data.forEach(item => setDoc(doc(this.firebase.firestore, 'omalqura_products', item.id), item).catch(() => {}));
-    }
   }
 
   private saveEmployees(data: OmAlQuraEmployee[]) {
@@ -1157,6 +1345,15 @@ ${itemsText}
   }
 
   // Products & Inventory Management
+  saveProducts(prods: OmAlQuraProduct[]) {
+    this.products.set(prods);
+    localStorage.setItem('omalqura_products', JSON.stringify(prods));
+    if (this.firebase.firestore) {
+      prods.forEach(item => setDoc(doc(this.firebase.firestore, 'omalqura_products', item.id), item).catch(() => {}));
+    }
+    this.validateAndSyncCartWithStock();
+  }
+
   addProduct(product: Omit<OmAlQuraProduct, 'id' | 'salesCount'>) {
     const newProd: OmAlQuraProduct = {
       ...product,
@@ -1184,37 +1381,84 @@ ${itemsText}
   }
 
   // Shopping Cart & Orders
+  validateAndSyncCartWithStock() {
+    const currentCart = this.cart();
+    if (currentCart.length === 0) return;
+
+    let modified = false;
+    const syncedCart: OmAlQuraOrderItem[] = [];
+
+    for (const item of currentCart) {
+      const liveProd = this.products().find(p => p.id === item.product.id);
+      if (!liveProd || liveProd.stockQuantity <= 0) {
+        modified = true;
+        this.toast.show(`تمت إزالة صنف (${item.product.name}) تلقائياً من السلة لنفاد المخزون.`, 'info');
+      } else if (item.quantity > liveProd.stockQuantity) {
+        modified = true;
+        syncedCart.push({ product: liveProd, quantity: liveProd.stockQuantity });
+        this.toast.show(`تم تعديل كمية (${liveProd.name}) بالسلة إلى (${liveProd.stockQuantity}) لعدم توفر كمية أكثر.`, 'warning');
+      } else {
+        syncedCart.push({ product: liveProd, quantity: item.quantity });
+      }
+    }
+
+    if (modified) {
+      this.cart.set(syncedCart);
+    }
+  }
+
   addToCart(product: OmAlQuraProduct) {
-    if (product.stockQuantity <= 0) {
-      this.toast.show('المنتج نفد من المخزون! يمكنك الاطلاع على البدائل المتاحة.', 'warning');
+    const liveProduct = this.products().find(p => p.id === product.id) || product;
+    if (liveProduct.stockQuantity <= 0) {
+      this.toast.show(`المنتج (${liveProduct.name}) نفد من المخزون! لا يمكن إضافته للسلة.`, 'warning');
+      this.validateAndSyncCartWithStock();
       return;
     }
 
     const currentCart = this.cart();
-    const existingIndex = currentCart.findIndex(item => item.product.id === product.id);
+    const existingIndex = currentCart.findIndex(item => item.product.id === liveProduct.id);
 
     if (existingIndex > -1) {
-      const updated = [...currentCart];
-      if (updated[existingIndex].quantity >= product.stockQuantity) {
-        this.toast.show('وصلت للحد الأقصى المتاح في المخزون لهذا المنتج!', 'warning');
+      const currentQty = currentCart[existingIndex].quantity;
+      if (currentQty >= liveProduct.stockQuantity) {
+        this.toast.show(`وصلت للحد الأقصى المتاح بالمخزون لصنف (${liveProduct.name})! المتاح: ${liveProduct.stockQuantity} قطعة.`, 'warning');
         return;
       }
-      updated[existingIndex].quantity += 1;
+      const updated = [...currentCart];
+      updated[existingIndex] = {
+        product: liveProduct,
+        quantity: currentQty + 1
+      };
       this.cart.set(updated);
     } else {
-      this.cart.set([...currentCart, { product, quantity: 1 }]);
+      this.cart.set([...currentCart, { product: liveProduct, quantity: 1 }]);
     }
-    this.toast.show(`تمت إضافة ${product.name} لسلة الشراء.`, 'success');
+    this.toast.show(`تمت إضافة ${liveProduct.name} لسلة الشراء.`, 'success');
   }
 
   updateCartQuantity(productId: string, delta: number) {
+    const liveProduct = this.products().find(p => p.id === productId);
+    const maxStock = liveProduct ? liveProduct.stockQuantity : 0;
+
+    if (maxStock <= 0) {
+      this.toast.show('هذا المنتج نفد من المخزون وتمت إزالته من السلة!', 'warning');
+      const updated = this.cart().filter(item => item.product.id !== productId);
+      this.cart.set(updated);
+      return;
+    }
+
     const updated = this.cart().map(item => {
       if (item.product.id === productId) {
         const newQty = item.quantity + delta;
-        return newQty > 0 ? { ...item, quantity: newQty } : null;
+        if (delta > 0 && newQty > maxStock) {
+          this.toast.show(`وصلت للحد الأقصى المتاح بالمخزون (${maxStock} قطعة)!`, 'warning');
+          return { ...item, product: liveProduct || item.product, quantity: maxStock };
+        }
+        return newQty > 0 ? { ...item, product: liveProduct || item.product, quantity: newQty } : null;
       }
       return item;
     }).filter(Boolean) as OmAlQuraOrderItem[];
+
     this.cart.set(updated);
   }
 
@@ -1269,10 +1513,28 @@ ${itemsText}
     notes?: string;
     assignedDriverId?: string;
   }) {
+    // Validate live stock before placing order
+    this.validateAndSyncCartWithStock();
+
     const items = this.cart();
     if (items.length === 0) {
-      this.toast.show('سلة الشراء فارغة!', 'warning');
+      this.toast.show('سلة الشراء فارغة أو نفدت منتجاتها من المخزون!', 'warning');
       return null;
+    }
+
+    // Verify no out-of-stock items remain
+    for (const item of items) {
+      const liveProduct = this.products().find(p => p.id === item.product.id);
+      if (!liveProduct || liveProduct.stockQuantity <= 0) {
+        this.toast.show(`عذراً! صنف (${item.product.name}) نفد من المخزون حالياً ولا يمكن إتمام الطلب به.`, 'warning');
+        this.validateAndSyncCartWithStock();
+        return null;
+      }
+      if (item.quantity > liveProduct.stockQuantity) {
+        this.toast.show(`عذراً! الكمية المطلوبة من (${liveProduct.name}) تتجاوز المتاح بـ (${liveProduct.stockQuantity} قطعة).`, 'warning');
+        this.validateAndSyncCartWithStock();
+        return null;
+      }
     }
 
     if (this.isDuplicateActiveOrder(items, orderData.customerPhone, orderData.customerName)) {
@@ -1760,5 +2022,45 @@ ${itemsText}
       printWindow.print();
       printWindow.close();
     }, 250);
+  }
+
+  // Utility Bills Management & Seed
+  addUtilityBill(billData: Omit<OmAlQuraUtilityBill, 'id'>) {
+    const newBill: OmAlQuraUtilityBill = {
+      ...billData,
+      id: 'bill-' + Date.now() + '-' + Math.floor(Math.random() * 1000)
+    };
+    const updated = [newBill, ...this.utilityBills()];
+    this.saveUtilityBills(updated);
+    this.toast.show(`تم تسجيل فاتورة (${billData.title}) بقيمة ${billData.amount} ج.م بنجاح 🧾`, 'success');
+  }
+
+  deleteUtilityBill(id: string) {
+    const updated = this.utilityBills().filter(b => b.id !== id);
+    this.saveUtilityBills(updated);
+    this.toast.show('تم حذف الفاتورة وإعادة توازن الميزانية', 'info');
+  }
+
+  saveUtilityBills(bills: OmAlQuraUtilityBill[]) {
+    this.utilityBills.set(bills);
+    localStorage.setItem('omalqura_utility_bills', JSON.stringify(bills));
+    try {
+      if (this.firebase.firestore) {
+        setDoc(doc(this.firebase.firestore, 'omalqura_config', 'utility_bills'), { items: bills });
+      }
+    } catch (e) {
+      console.warn('[Firestore] Save utility bills warning:', e);
+    }
+  }
+
+  private seedUtilityBills() {
+    const seeds: OmAlQuraUtilityBill[] = [
+      { id: 'b1', title: 'فاتورة الكهرباء للمحل والثلاجات', category: 'كهرباء', amount: 1850, paidDate: '2026-08-01', notes: 'شاملة استهلاك التكييفات وثلاجات العرض' },
+      { id: 'b2', title: 'اشتراك الإنترنت الفايبر', category: 'إنترنت', amount: 450, paidDate: '2026-08-02', notes: 'اشتراك خط 100 ميجا فايبر' },
+      { id: 'b3', title: 'فاتورة المياه والخدمات العامة', category: 'مياه', amount: 210, paidDate: '2026-08-03', notes: 'رسوم النظافة والمياه' },
+      { id: 'b4', title: 'إيجار مقر المتجر الشهري', category: 'إيجار', amount: 6000, paidDate: '2026-08-01', notes: 'مقر المتجر بالفرع الرئيسي' },
+      { id: 'b5', title: 'صيانة وتعبئة فريون ثلاجات المنظفات', category: 'صيانة', amount: 750, paidDate: '2026-08-04', notes: 'صيانة دورية للمبردات' }
+    ];
+    this.saveUtilityBills(seeds);
   }
 }

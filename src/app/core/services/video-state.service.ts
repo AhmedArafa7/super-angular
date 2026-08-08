@@ -2,8 +2,8 @@ import { Injectable, signal, inject } from '@angular/core';
 import { PipedApiService, PipedVideoDetails } from './piped-api.service';
 import { IndexedDBService } from './indexed-db.service';
 import { VideoDownloadService } from './video-download.service';
-import { WeTubeService } from '../../features/wetube/wetube.service';
-import { checkIsShorts } from '../../features/wetube/wetube.model';
+import { halaltubeService } from '../../features/halaltube/halaltube.service';
+import { checkIsShorts } from '../../features/halaltube/halaltube.model';
 
 export type PlayerMode = 'hidden' | 'floating' | 'full' | 'pip';
 export type PlayerType = 'native' | 'iframe';
@@ -25,7 +25,7 @@ export class VideoStateService {
   private pipedService = inject(PipedApiService);
   private dbService = inject(IndexedDBService);
   private downloadService = inject(VideoDownloadService);
-  private wetubeService = inject(WeTubeService);
+  private halaltubeService = inject(halaltubeService);
 
   // Player UI State
   readonly playerMode = signal<PlayerMode>('hidden');
@@ -136,9 +136,9 @@ export class VideoStateService {
 
       await this.dbService.put('watch_history', {
         videoId: video.id,
-        title: video.title || 'فيديو WeTube',
+        title: video.title || 'فيديو halaltube',
         thumbnail: safeThumb,
-        author: video.author || 'قناة WeTube',
+        author: video.author || 'قناة halaltube',
         duration: (video as any).duration || '',
         isShorts: checkIsShorts(video),
         progress: this.watchedProgress().get(video.id) || 5,
@@ -189,7 +189,7 @@ export class VideoStateService {
 
       // ── Data Saver Direct Offline Loading Mode ──
       // If Data Saver is enabled, we download the lowest stream (144p) with real percentage feedback, store in IndexedDB cache, then play as a local blob URL.
-      if (this.wetubeService.algoConfig().dataSaverEnabled) {
+      if (this.halaltubeService.algoConfig().dataSaverEnabled) {
         const cachedBlobUrl = await this.downloadService.getCachedBlobUrl(targetId);
         if (cachedBlobUrl) {
           this.rawStreamUrl.set(cachedBlobUrl);
@@ -261,7 +261,7 @@ export class VideoStateService {
 
     } catch (error) {
       console.warn('[VideoStateService] Piped failed, switching to fallback iframe player', error);
-      if (!this.wetubeService.algoConfig().dataSaverEnabled) {
+      if (!this.halaltubeService.algoConfig().dataSaverEnabled) {
         this.switchToIframe();
       } else {
         this.isLoading.set(false);

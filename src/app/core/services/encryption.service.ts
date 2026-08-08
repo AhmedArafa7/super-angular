@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 })
 export class EncryptionService {
   private key: CryptoKey | null = null;
-  private readonly DB_NAME = 'WeTubeKeysDB';
+  private readonly DB_NAME = 'halaltubeKeysDB';
   private readonly STORE_NAME = 'keys';
 
   private async getDB(): Promise<IDBDatabase> {

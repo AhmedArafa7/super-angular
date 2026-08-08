@@ -29,7 +29,7 @@ export class DownloadsComponent implements OnInit {
   // Section categories definitions
   sectionsList = [
     { id: 'quran' as AssetType, label: 'القرآن الكريم', icon: 'book-open', color: 'text-emerald-400' },
-    { id: 'video' as AssetType, label: 'WeTube (فيديو)', icon: 'video', color: 'text-indigo-400' },
+    { id: 'video' as AssetType, label: 'halaltube (فيديو)', icon: 'video', color: 'text-indigo-400' },
     { id: 'learning_asset' as AssetType, label: 'المكتبة التعليمية', icon: 'graduation-cap', color: 'text-blue-400' },
     { id: 'ai_model_data' as AssetType, label: 'النبضات العصبية (AI)', icon: 'cpu', color: 'text-rose-400' },
   ];

@@ -10,9 +10,9 @@ export interface CacheEntry<T> {
 })
 export class YoutubeCacheService {
   private readonly KEYS = {
-    FEED: 'wetube_feed_cache',
-    SUBS: 'wetube_subs_cache',
-    RANDOM_VIDEOS: 'wetube_random_videos_cache'
+    FEED: 'halaltube_feed_cache',
+    SUBS: 'halaltube_subs_cache',
+    RANDOM_VIDEOS: 'halaltube_random_videos_cache'
   };
 
   private readonly TTL = {

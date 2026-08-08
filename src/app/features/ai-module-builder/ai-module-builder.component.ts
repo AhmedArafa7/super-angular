@@ -428,7 +428,7 @@ export interface CustomModuleItem {
               <iframe 
                 [srcdoc]="rawHtmlContent()" 
                 class="w-full h-[550px] border-0 bg-slate-950" 
-                sandbox="allow-scripts allow-modals allow-forms allow-popups">
+                sandbox="allow-scripts allow-same-origin allow-modals allow-forms allow-popups">
               </iframe>
             </div>
           </div>

@@ -4,7 +4,7 @@ import { Observable, of, from } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { ProxyService } from './proxy.service';
-import { FeedVideo } from '../../features/wetube/wetube.model';
+import { FeedVideo } from '../../features/halaltube/halaltube.model';
 import { PipedApiService } from './piped-api.service';
 
 export interface VideoDetails extends FeedVideo {

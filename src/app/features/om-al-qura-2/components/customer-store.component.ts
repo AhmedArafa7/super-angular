@@ -381,7 +381,7 @@ import { MetalCalculatorComponent } from './metal-calculator/metal-calculator.co
 
       <!-- Floating Cart Drawer Button & Delivery Driver Selection -->
       <div *ngIf="service.cart().length > 0" class="fixed bottom-6 left-6 z-40">
-        <button (click)="openCartDrawer.set(true)" 
+        <button (click)="toggleCartDrawer(true)" 
                 class="px-6 py-4 bg-emerald-700 hover:bg-emerald-800 text-white font-black rounded-3xl shadow-2xl flex items-center gap-3 border-2 border-emerald-400/50 animate-bounce">
           <div class="relative">
             <svg lucideIcon="shopping-bag" class="w-6 h-6"></svg>
@@ -402,7 +402,7 @@ import { MetalCalculatorComponent } from './metal-calculator/metal-calculator.co
                 <svg lucideIcon="shopping-cart" class="w-6 h-6 text-emerald-600"></svg>
                 <span>سلة مشترياتك وفاتورة الطلب</span>
               </h3>
-              <button (click)="openCartDrawer.set(false)" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400">
+              <button (click)="toggleCartDrawer(false)" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400">
                 <svg lucideIcon="x" class="w-5 h-5"></svg>
               </button>
             </div>
@@ -1514,6 +1514,13 @@ ${ds.description}
 
   cartTotal() {
     return this.service.cart().reduce((acc, i) => acc + (i.product.price * i.quantity), 0);
+  }
+
+  toggleCartDrawer(open: boolean) {
+    if (open) {
+      this.service.validateAndSyncCartWithStock();
+    }
+    this.openCartDrawer.set(open);
   }
 
   selectedDriver() {

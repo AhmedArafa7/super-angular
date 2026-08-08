@@ -7,13 +7,13 @@ import { AdsService, Ad } from '../../core/ads.service';
 import { MarketService, MarketItem } from '../../core/market.service';
 import { LauncherService, WebProject } from '../../core/launcher.service';
 import { ToastService } from '../../core/services/toast.service';
-import { WeTubeModerationComponent } from './components/wetube-moderation/wetube-moderation.component';
+import { halaltubeModerationComponent } from './components/halaltube-moderation/halaltube-moderation.component';
 import { BakeryAdminComponent } from './components/bakery-admin.component';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideDynamicIcon, WeTubeModerationComponent, BakeryAdminComponent],
+  imports: [CommonModule, FormsModule, LucideDynamicIcon, halaltubeModerationComponent, BakeryAdminComponent],
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.scss']
 })

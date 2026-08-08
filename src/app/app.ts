@@ -4,7 +4,7 @@ import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { RouterOutlet } from '@angular/router';
 import { SyncService } from './core/services/sync.service';
-import { GlobalVideoPlayerComponent } from './features/wetube/components/global-video-player/global-video-player.component';
+import { GlobalVideoPlayerComponent } from './features/halaltube/components/global-video-player/global-video-player.component';
 import { ToastComponent } from './shared/components/toast/toast.component';
 import { LightboxComponent } from './shared/components/lightbox/lightbox.component';
 import { DevAuditPanelComponent } from './shared/components/dev-audit-panel/dev-audit-panel.component';

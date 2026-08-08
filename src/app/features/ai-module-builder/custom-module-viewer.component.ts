@@ -104,7 +104,7 @@ export class CustomModuleStorageService {
           <iframe 
             [srcdoc]="rawHtmlContent()" 
             class="w-full h-full border-0 rounded-2xl bg-slate-950 shadow-2xl" 
-            sandbox="allow-scripts allow-modals allow-forms allow-popups">
+            sandbox="allow-scripts allow-same-origin allow-modals allow-forms allow-popups">
           </iframe>
         } @else {
           <div class="text-center space-y-3">

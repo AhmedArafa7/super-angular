@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, from, map, catchError, of, concatMap } from 'rxjs';
 import { VideoProvider } from './video-provider.interface';
-import { FeedVideo } from '../../../features/wetube/wetube.model';
+import { FeedVideo } from '../../../features/halaltube/halaltube.model';
 import { VideoDetails } from '../youtube-discovery.service';
 
 @Injectable({ providedIn: 'root' })

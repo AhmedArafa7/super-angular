@@ -8,6 +8,7 @@ import { OmAlQura2CustomerStoreComponent } from './components/customer-store.com
 import { OmAlQura2InStoreMapComponent } from './components/in-store-map.component';
 import { OmAlQura2DeliveryPortalComponent } from './components/delivery-portal.component';
 import { OmAlQura2AdminPortalComponent } from './components/admin-portal.component';
+import { OmAlQura2SecurityCctvComponent } from './components/security-cctv.component';
 
 export type MetalFactoryTheme = 'dark' | 'gray' | 'beige';
 
@@ -22,7 +23,8 @@ export type MetalFactoryTheme = 'dark' | 'gray' | 'beige';
     OmAlQura2CustomerStoreComponent,
     OmAlQura2InStoreMapComponent,
     OmAlQura2DeliveryPortalComponent,
-    OmAlQura2AdminPortalComponent
+    OmAlQura2AdminPortalComponent,
+    OmAlQura2SecurityCctvComponent
   ],
   styles: [`
     @keyframes marquee {
@@ -333,6 +335,9 @@ export type MetalFactoryTheme = 'dark' | 'gray' | 'beige';
         <!-- PAGE 5: Admin Portal -->
         <app-om-al-qura-2-admin-portal *ngIf="activeTab() === 'admin'"></app-om-al-qura-2-admin-portal>
 
+        <!-- PAGE 6: CCTV & Security Cameras -->
+        <app-om-al-qura-2-security-cctv *ngIf="activeTab() === 'cctv'"></app-om-al-qura-2-security-cctv>
+
       </main>
 
       <!-- Footer -->
@@ -346,15 +351,16 @@ export type MetalFactoryTheme = 'dark' | 'gray' | 'beige';
 export class OmAlQura2HomeComponent implements OnInit {
   service = inject(OmAlQura2Service);
 
-  activeTab = signal<'attendance' | 'staff' | 'customer' | 'in_store_map' | 'delivery' | 'admin'>('customer');
+  activeTab = signal<'attendance' | 'staff' | 'customer' | 'in_store_map' | 'delivery' | 'admin' | 'cctv'>('customer');
   themeMode = signal<MetalFactoryTheme>('dark');
 
-  mainTabs: { id: 'attendance' | 'staff' | 'customer' | 'in_store_map' | 'delivery' | 'admin'; label: string; icon: string }[] = [
+  mainTabs: { id: 'attendance' | 'staff' | 'customer' | 'in_store_map' | 'delivery' | 'admin' | 'cctv'; label: string; icon: string }[] = [
     { id: 'customer', label: '1. معارض المعادن وشراء المنتجات', icon: 'shopping-bag' },
     { id: 'staff', label: '2. الموظفين والمهندسين بالنظام الداخلي', icon: 'user-cog' },
     { id: 'in_store_map', label: '3. مخطط المصنع والمخازن الهندسية', icon: 'map-pin' },
     { id: 'delivery', label: '4. شاحنات السائقين والتوريد الثقيل', icon: 'truck' },
-    { id: 'admin', label: '5. إدارة المصنع والإنتاج (HR)', icon: 'shield-check' }
+    { id: 'admin', label: '5. إدارة المصنع والإنتاج (HR)', icon: 'shield-check' },
+    { id: 'cctv', label: '6. 📹 كاميرات المراقبة والأمن', icon: 'video' }
   ];
 
   ngOnInit() {

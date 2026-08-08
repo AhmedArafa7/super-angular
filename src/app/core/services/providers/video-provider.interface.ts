@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { FeedVideo } from '../../../features/wetube/wetube.model';
+import { FeedVideo } from '../../../features/halaltube/halaltube.model';
 import { VideoDetails } from '../youtube-discovery.service';
 
 export interface VideoProvider {

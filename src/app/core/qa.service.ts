@@ -68,7 +68,7 @@ export class QAService {
         {
           id: 'qa_2',
           category: 'request',
-          text: 'يرجى إضافة خيار تصفية ذكي في محرك البحث WeTube لتصفية الفيديوهات التي تزيد مدتها عن ساعة.',
+          text: 'يرجى إضافة خيار تصفية ذكي في محرك البحث halaltube لتصفية الفيديوهات التي تزيد مدتها عن ساعة.',
           authorId: 'user_2',
           authorName: 'سارة خالد',
           isAnonymous: true,

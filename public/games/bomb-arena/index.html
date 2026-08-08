@@ -1,322 +1,104 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bomb Arena</title>
-    <style>
-        body { margin: 0; background: #111827; color: white; display: flex; flex-direction: column; height: 100vh; overflow: hidden; font-family: system-ui, sans-serif; align-items: center; justify-content: center; }
-        canvas { background: #1f2937; border: 4px solid #374151; border-radius: 10px; max-width: 100%; max-height: 80vh; object-fit: contain; }
-        .controls { margin-top: 20px; text-align: center; color: #9ca3af; }
-        .controls kbd { background: #374151; padding: 2px 6px; border-radius: 4px; font-family: monospace; color: white; }
-        #setup { position: absolute; inset: 0; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
-        #setup h1 { font-size: 48px; font-weight: 900; color: #ef4444; margin: 0 0 10px 0; text-shadow: 0 4px 10px rgba(239,68,68,0.5); }
-        .btn { background: #ef4444; color: white; border: none; padding: 15px 40px; border-radius: 30px; font-size: 24px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 20px; }
-        .btn:hover { background: #dc2626; transform: scale(1.05); }
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #facc15; color: black; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 20px; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 200; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>حرب القنابل - Bomb Arena</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&family=Fredoka+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/games/bomb-arena/styles.css?v=3">
 </head>
 <body>
-    
-    <div id="setup">
-        <h1>BOMB ARENA</h1>
-        <p id="players-count" style="font-size: 20px;">Players: 1/8</p>
-        <p id="host-badge" style="font-size: 14px; color: #fca5a5; margin: 6px 0 0 0;">You are a guest</p>
-        <div id="players-list" style="margin-top: 14px; width: min(90vw, 360px); max-height: 200px; overflow: auto; text-align: left; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 10px;"></div>
-        <button id="start-btn" class="btn" style="display: none;" onclick="startGame()">START (2+ PLAYERS)</button>
-    </div>
-
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
-    
-    <div class="controls">
-        Move: <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or Arrows | Place Bomb: <kbd>SPACE</kbd>
-    </div>
-
-    <div class="toast" id="toast"></div>
-
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+    <div id="game-container">
         
-        let state = {
-            status: 'waiting',
-            hostId: null,
-            players: {}, // { id: {x, y, color, alive, name} }
-            bombs: [], // {x, y, timer, owner}
-            explosions: [] // {x, y, timer}
-        };
-
-        const colors = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#ec4899'];
-        let myId = 'p_' + Math.floor(Math.random() * 1000);
-        const myName = (localStorage.getItem('arcade_player_name') || `Player-${myId.slice(-3)}`).slice(0, 24);
-        let isHost = false;
-        const urlParams = new URLSearchParams(window.location.search);
-        const mode = urlParams.get('mode');
-        const role = urlParams.get('role');
-
-        // Keys
-        const keys = {};
-        window.addEventListener('keydown', e => { keys[e.code] = true; if(e.code==='Space') placeBomb(); });
-        window.addEventListener('keyup', e => keys[e.code] = false);
-
-        // WebRTC Bridge
-        window.addEventListener('message', (event) => {
-            const data = event.data;
-            if (!data || !data.type) return;
-
-            if (data.type === 'SYNC_STATE' && !isHost) { // Host is authority
-                state = data.state;
-                if (!state.players[myId]) {
-                    state.players[myId] = {
-                        x: Math.random() * 700 + 50,
-                        y: Math.random() * 500 + 50,
-                        color: colors[Object.keys(state.players).length % colors.length],
-                        alive: true,
-                        name: myName
-                    };
-                }
-                updateSetupUI();
-                if(state.status === 'playing') document.getElementById('setup').style.display = 'none';
-            } else if (data.type === 'PLAYER_JOINED' && isHost) {
-                if (!state.players[data.playerId]) {
-                    state.players[data.playerId] = {
-                        x: Math.random() * 700 + 50,
-                        y: Math.random() * 500 + 50,
-                        color: colors[Object.keys(state.players).length % colors.length],
-                        alive: true,
-                        name: data.playerName || `Player-${data.playerId.slice(-3)}`
-                    };
-                    updateSetupUI();
-                }
-            } else if (data.type === 'INPUT' && isHost) {
-                // Directly apply guest input to host state
-                if(state.players[data.playerId] && state.players[data.playerId].alive) {
-                    state.players[data.playerId].x = data.x;
-                    state.players[data.playerId].y = data.y;
-                }
-            } else if (data.type === 'PLACE_BOMB' && isHost) {
-                placeBombServer(data.playerId, data.x, data.y);
-            }
-        });
-
-        setTimeout(() => {
-            window.parent.postMessage({ type: 'PLAYER_JOINED', playerId: myId, playerName: myName }, '*');
-        }, 500);
-
-        function ensureSelfPlayer() {
-            if (!state.players[myId]) {
-                state.players[myId] = {
-                    x: Math.random() * 700 + 50,
-                    y: Math.random() * 500 + 50,
-                    color: colors[Object.keys(state.players).length % colors.length],
-                    alive: true,
-                    name: myName
-                };
-            }
-        }
-
-        // Initialize role
-        if (mode === 'local') {
-            isHost = true;
-            state.hostId = myId;
-            ensureSelfPlayer();
-            updateSetupUI();
-        } else if (mode === 'private') {
-            isHost = role === 'host';
-            if (isHost) state.hostId = myId;
-            ensureSelfPlayer();
-            updateSetupUI();
-            if (isHost) broadcastState();
-        }
-
-        function updateSetupUI() {
-            const count = Object.keys(state.players).length;
-            const hostBadge = document.getElementById('host-badge');
-            const startBtn = document.getElementById('start-btn');
-            const playersList = document.getElementById('players-list');
-            document.getElementById('players-count').innerText = `Players: ${count}/8`;
-            hostBadge.textContent = isHost ? 'You are the host' : 'Waiting for host to start';
-
-            const escapeHtml = (value) => String(value)
-                .replaceAll('&', '&amp;')
-                .replaceAll('<', '&lt;')
-                .replaceAll('>', '&gt;')
-                .replaceAll('"', '&quot;')
-                .replaceAll("'", '&#39;');
-
-            playersList.innerHTML = Object.entries(state.players).map(([pid, player], index) => {
-                const marker = pid === myId ? ' (You)' : '';
-                const hostTag = pid === state.hostId ? ' 👑' : '';
-                const safeName = escapeHtml(player.name || `Player-${pid.slice(-3)}`);
-                return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.08);">
-                    <span style="font-weight:600;">${safeName}${marker}${hostTag}</span>
-                    <span style="font-size:12px;opacity:0.8;">${player.alive ? 'Ready' : 'Out'}</span>
-                </div>`;
-            }).join('') || '<div style="opacity:.7;">No players yet...</div>';
-
-            startBtn.style.display = isHost && count >= 2 ? 'block' : 'none';
-        }
-
-        function startGame() {
-            if(!isHost) return;
-            if (Object.keys(state.players).length < 2) {
-                showToast('Need at least 2 players');
-                return;
-            }
-            state.status = 'playing';
-            document.getElementById('setup').style.display = 'none';
-            broadcastState();
-        }
-
-        function broadcastState() {
-            if(!isHost) return;
-            window.parent.postMessage({ type: 'SYNC_STATE', state }, '*');
-        }
-
-        function placeBomb() {
-            if(state.status !== 'playing') return;
-            const me = state.players[myId];
-            if(!me || !me.alive) return;
-            
-            if(isHost) placeBombServer(myId, me.x, me.y);
-            else window.parent.postMessage({ type: 'PLACE_BOMB', playerId: myId, x: me.x, y: me.y }, '*');
-        }
-
-        function placeBombServer(ownerId, x, y) {
-            state.bombs.push({ x, y, timer: 180, owner: ownerId }); // ~3 seconds at 60fps
-        }
-
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.innerText = msg;
-            t.style.opacity = '1';
-            setTimeout(() => t.style.opacity = '0', 2000);
-        }
-
-        // Game Loop
-        function gameLoop() {
-            // Logic (Host & Client for prediction, but Host is authority)
-            if (state.status === 'playing') {
-                const me = state.players[myId];
-                if (me && me.alive) {
-                    const speed = 4;
-                    let moved = false;
-                    if (keys['ArrowUp'] || keys['KeyW']) { me.y -= speed; moved = true; }
-                    if (keys['ArrowDown'] || keys['KeyS']) { me.y += speed; moved = true; }
-                    if (keys['ArrowLeft'] || keys['KeyA']) { me.x -= speed; moved = true; }
-                    if (keys['ArrowRight'] || keys['KeyD']) { me.x += speed; moved = true; }
-                    
-                    // Boundaries
-                    me.x = Math.max(20, Math.min(canvas.width - 20, me.x));
-                    me.y = Math.max(20, Math.min(canvas.height - 20, me.y));
-
-                    if(moved && !isHost) {
-                        window.parent.postMessage({ type: 'INPUT', playerId: myId, x: me.x, y: me.y }, '*');
-                    }
-                }
-
-                if (isHost) {
-                    // Update Bombs
-                    for (let i = state.bombs.length - 1; i >= 0; i--) {
-                        let b = state.bombs[i];
-                        b.timer--;
-                        if (b.timer <= 0) {
-                            state.bombs.splice(i, 1);
-                            createExplosion(b.x, b.y);
-                        }
-                    }
-
-                    // Update Explosions
-                    for (let i = state.explosions.length - 1; i >= 0; i--) {
-                        let e = state.explosions[i];
-                        e.timer--;
-                        if (e.timer <= 0) state.explosions.splice(i, 1);
-                        else {
-                            // Check death
-                            Object.keys(state.players).forEach(pid => {
-                                let p = state.players[pid];
-                                if(p.alive && Math.hypot(p.x - e.x, p.y - e.y) < 60) {
-                                    p.alive = false;
-                                    showToast(pid === myId ? 'You died!' : `Player ${pid.substring(0,3)} died!`);
-                                }
-                            });
-                        }
-                    }
-                    
-                    // Check Win Condition
-                    const alivePlayers = Object.values(state.players).filter(p => p.alive);
-                    if(Object.keys(state.players).length > 1 && alivePlayers.length <= 1) {
-                        state.status = 'over';
-                        showToast('GAME OVER! Winner: ' + (alivePlayers[0] ? alivePlayers[0].color : 'Draw'));
-                    }
-
-                    broadcastState(); // Sync 60fps (in production use lower tick rate)
-                }
-            }
-
-            if (state.status === 'waiting') {
-                updateSetupUI();
-            }
-
-            // Draw
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Grid background
-            ctx.strokeStyle = '#374151';
-            ctx.lineWidth = 1;
-            for(let i=0; i<800; i+=50) {
-                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 600); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(800, i); ctx.stroke();
-            }
-
-            // Draw Bombs
-            state.bombs.forEach(b => {
-                ctx.beginPath();
-                ctx.arc(b.x, b.y, 15 + Math.sin(b.timer * 0.2) * 3, 0, Math.PI * 2);
-                ctx.fillStyle = b.timer < 30 ? '#ef4444' : '#000';
-                ctx.fill();
-                ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            });
-
-            // Draw Explosions
-            state.explosions.forEach(e => {
-                ctx.beginPath();
-                ctx.arc(e.x, e.y, 60, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(239, 68, 68, ${e.timer / 20})`;
-                ctx.fill();
-            });
-
-            // Draw Players
-            Object.keys(state.players).forEach(pid => {
-                const p = state.players[pid];
-                if (!p.alive) return;
+        <!-- Setup Screen -->
+        <div id="setup-screen" class="screen active">
+            <div class="glass-panel text-center">
+                <h1 class="glow-text">حرب القنابل 💣</h1>
+                <p class="subtitle">مرّر القنبلة الموقوتة للمنافسين قبل انفجارها أو ازرع القنابل!</p>
                 
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 20, 0, Math.PI * 2);
-                ctx.fillStyle = p.color;
-                ctx.fill();
-                ctx.strokeStyle = pid === myId ? '#fff' : '#000';
-                ctx.lineWidth = 3;
-                ctx.stroke();
+                <div id="local-setup" class="setup-section">
+                    <h3>نمط التحدي:</h3>
+                    <div class="mode-select-grid">
+                        <button class="mode-tab-btn active" id="tab-potato-btn" onclick="selectSubMode('potato')">
+                            <span class="icon">💣</span>
+                            <span class="label">القنبلة الموقوتة 🔥 (تمرير)</span>
+                        </button>
+                        <button class="mode-tab-btn" id="tab-classic-btn" onclick="selectSubMode('classic')">
+                            <span class="icon">💥</span>
+                            <span class="label">زرع القنابل الكلاسيكي</span>
+                        </button>
+                    </div>
 
-                if(pid === myId) {
-                    ctx.fillStyle = '#fff';
-                    ctx.font = '12px sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('YOU', p.x, p.y - 30);
-                }
-            });
+                    <h3>عدد اللاعبين محلياً:</h3>
+                    <div class="player-count-buttons">
+                        <button class="btn btn-primary" onclick="initLocalGame(2)">لاعبين (2P)</button>
+                        <button class="btn btn-primary" onclick="initLocalGame(3)">3 لاعبين</button>
+                        <button class="btn btn-primary" onclick="initLocalGame(4)">4 لاعبين</button>
+                    </div>
 
-            requestAnimationFrame(gameLoop);
-        }
+                    <div class="controls-hint">
+                        التحكم محلياً: <kbd>WASD</kbd> (لـ 1) | <kbd>الأسهم</kbd> (لـ 2) | <kbd>IJKL</kbd> (لـ 3)
+                    </div>
+                </div>
 
-        function createExplosion(x, y) {
-            state.explosions.push({ x, y, timer: 20 });
-        }
+                <div id="online-setup" class="setup-section hidden">
+                    <p class="status-text">انتظار ربط اللاعبين في الغرفة...</p>
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
 
-        requestAnimationFrame(gameLoop);
-    </script>
+        <!-- Play Screen -->
+        <div id="play-screen" class="screen">
+            <div id="play-area">
+                <!-- Header Info Bar -->
+                <div class="play-header">
+                    <div class="info-panel">
+                        <span class="label">عداد القنبلة:</span>
+                        <span id="bomb-timer-display" class="time-glow">💣 18s</span>
+                    </div>
+
+                    <div class="info-panel">
+                        <span class="label">حامل القنبلة:</span>
+                        <span id="current-holder-display" class="turn-badge">اللاعب 1</span>
+                    </div>
+                    
+                    <div class="room-info hidden" id="room-code-display">
+                        <span>غرفة: <strong id="room-id-val">------</strong></span>
+                    </div>
+                </div>
+
+                <!-- Canvas Game Arena -->
+                <div id="canvas-container">
+                    <canvas id="gameCanvas"></canvas>
+                </div>
+
+                <!-- Scoreboard Panel -->
+                <div id="scoreboard">
+                    <!-- Player status badges -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="screen">
+            <div class="glass-panel text-center">
+                <h1 class="glow-text text-emerald-400">انتهت الجولة! 💥</h1>
+                <p id="winner-subtitle" class="subtitle">الناجي الأخير من الانفجار! 🎉</p>
+                
+                <div id="leaderboard-list">
+                    <!-- Leaderboard injected dynamically -->
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-success" onclick="restartGame()">العب مرة أخرى 🔄</button>
+                    <button class="btn btn-danger" onclick="exitGame()">العودة للقائمة 👆</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="/games/bomb-arena/game.js?v=3"></script>
 </body>
 </html>

@@ -10,7 +10,7 @@ export interface VideoDownloadStatus {
   cachedAt?: number;
 }
 
-const VIDEO_CACHE_DB = 'WeTubeVideoCacheDB';
+const VIDEO_CACHE_DB = 'halaltubeVideoCacheDB';
 const VIDEO_CACHE_VERSION = 1;
 const VIDEO_CACHE_STORE = 'video_blobs';
 const MAX_CACHE_BYTES = 2 * 1024 * 1024 * 1024; // 2 GB

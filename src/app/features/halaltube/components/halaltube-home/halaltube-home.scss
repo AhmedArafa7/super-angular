@@ -1,0 +1,95 @@
+/* halaltube-home.scss */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.shorts-horizontal-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 150px; /* Width of each short video column */
+  overflow-x: auto;
+  gap: 1.25rem 0.75rem; /* Vertical and horizontal gap */
+  padding-bottom: 0.75rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  direction: rtl; /* Scroll from right to left */
+
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 99px;
+  }
+}
+
+.short-card-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: right;
+  gap: 0.5rem;
+  cursor: pointer;
+  text-decoration: none;
+  width: 150px;
+
+  .short-card-thumbnail {
+    width: 100%;
+    aspect-ratio: 9 / 16;
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background-color: #0f172a;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+  }
+
+  .short-card-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    max-width: 100%;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.4;
+    transition: color 0.2s ease;
+  }
+
+  .short-card-views {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #64748b;
+  }
+
+  &:hover {
+    .short-card-thumbnail {
+      border-color: #6366f1;
+      transform: translateY(-4px);
+      box-shadow: 0 0 16px rgba(99, 102, 241, 0.25);
+
+      img {
+        transform: scale(1.05);
+      }
+    }
+    .short-card-title {
+      color: #818cf8;
+    }
+  }
+}

@@ -1,0 +1,571 @@
+<div class="home-container bg-slate-950/40 relative h-full flex flex-col" dir="rtl">
+  
+  <!-- Onboarding Prompt for new users -->
+  @if (showOnboardingBanner()) {
+    <div class="onboarding-banner mx-4 mt-4" (click)="goToOnboarding()">
+      <div class="banner-icon">
+        <lucide-icon [img]="Sparkles"></lucide-icon>
+      </div>
+      <div class="banner-content">
+        <h3>عرّفنا على اهتماماتك</h3>
+        <p>ساعدنا نلاقي أفضل المحتوى ليك من خلال اختيار مواضيعك المفضلة</p>
+      </div>
+      <button class="banner-cta">
+        ابدأ الآن
+        <lucide-icon [img]="ArrowLeft"></lucide-icon>
+      </button>
+    </div>
+  }
+
+  <!-- Categories Bar -->
+  <div class="categories-bar hide-scrollbar bg-slate-950/80 backdrop-blur-md sticky top-0 z-20 py-3 px-6 flex items-center justify-between border-b border-white/5 shadow-sm" style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+    <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar" style="display: flex; gap: 8px; flex-grow: 1; overflow-x: auto;">
+      @for (category of categories; track category) {
+        <button
+          class="category-chip px-4 py-1.5 rounded-lg whitespace-nowrap text-sm font-semibold transition-all border"
+          [ngClass]="halaltube.activeCategory() === category ? 'bg-white text-slate-950 border-white shadow-lg scale-105' : 'bg-slate-900/50 text-slate-300 border-white/10 hover:bg-white/10 hover:text-white'"
+          (click)="onCategoryClick(category)">
+          {{ category }}
+        </button>
+      }
+    </div>
+    
+    <div class="flex items-center gap-2" style="display: flex; align-items: center; gap: 8px;">
+      @if (isFounder()) {
+        <button 
+          (click)="toggleDebugModal()"
+          class="px-3 py-1.5 bg-slate-900 border border-amber-500/30 hover:border-amber-500 text-amber-400 hover:text-amber-300 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 shadow-md shadow-amber-950/20 whitespace-nowrap"
+          style="border: 1px solid rgba(245, 158, 11, 0.3); cursor: pointer; display: flex; align-items: center; gap: 6px;">
+          <lucide-icon [img]="ShieldCheck" class="w-3.5 h-3.5 text-amber-400"></lucide-icon>
+          <span>لوحة الفحص 🛠️</span>
+        </button>
+      }
+      
+      <button 
+        (click)="toggleAlgoModal()"
+        class="px-3 py-1.5 bg-slate-900 border border-white/10 hover:border-indigo-500/50 text-indigo-400 hover:text-indigo-300 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 shadow-md shadow-indigo-950/20 whitespace-nowrap"
+        style="border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; display: flex; align-items: center; gap: 6px;">
+        <lucide-icon [img]="Sliders" class="w-3.5 h-3.5 text-indigo-400"></lucide-icon>
+        <span>ضبط الخوارزمية</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Search Filters Bar (Visible when searching) -->
+  @if (halaltube.searchResults().length > 0 && halaltube.searchQuery()) {
+    <div class="search-filters-bar hide-scrollbar bg-slate-950/90 backdrop-blur-md sticky top-[60px] z-10 py-2 px-6 flex gap-2 border-b border-white/5 overflow-x-auto shadow-sm">
+      @for (filter of searchFilters; track filter.label) {
+        <button
+          class="px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border whitespace-nowrap"
+          [ngClass]="halaltube.searchSp() === filter.sp ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-500/20' : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20 hover:text-slate-300'"
+          (click)="onSearchFilterClick(filter.sp)">
+          {{ filter.label }}
+        </button>
+      }
+    </div>
+  }
+
+  <div class="home-layout flex flex-1 overflow-hidden p-6 gap-6">
+    <!-- Subscriptions Sidebar (Hidden on small screens) -->
+    <div class="subs-sidebar hidden lg:block w-56 flex-shrink-0">
+      <app-subscription-bar></app-subscription-bar>
+    </div>
+
+    <!-- Main Content Layout -->
+    <div class="main-content flex-1 min-w-0 overflow-y-auto hide-scrollbar pb-10 space-y-10">
+      
+      <!-- Hero Native Ad -->
+      <app-nexus-native-ads adSlot="home-hero" category="الكل" class="block mb-4"></app-nexus-native-ads>
+
+      <!-- Loading State (Skeleton Cards) -->
+      @if (halaltube.isFeedLoading()) {
+        <div class="video-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 gap-y-8 animate-pulse">
+          @for (i of [1,2,3,4,5,6,7,8]; track i) {
+            <div class="flex flex-col gap-3">
+              <div class="w-full aspect-video bg-[#222222] rounded-xl border border-white/5 flex items-center justify-center">
+                <lucide-icon [img]="Video" class="w-12 h-12 text-slate-700"></lucide-icon>
+              </div>
+              <div class="flex gap-3 px-1">
+                <div class="w-9 h-9 rounded-full bg-[#222222] shrink-0 mt-0.5"></div>
+                <div class="flex flex-col flex-1 gap-2 pt-1">
+                  <div class="h-4 bg-[#222222] rounded w-[90%]"></div>
+                  <div class="h-4 bg-[#222222] rounded w-[60%]"></div>
+                  <div class="h-3 bg-transparent flex gap-2 mt-1">
+                    <div class="h-full bg-[#222222] rounded w-[30%]"></div>
+                    <div class="h-full bg-[#222222] rounded w-[20%]"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Offline / Cache Banner -->
+      @if (halaltube.isUsingCachedData()) {
+        <div class="flex items-center justify-between bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-4 py-2.5 mx-2">
+          <div class="flex items-center gap-2 text-indigo-300 text-xs font-bold">
+            <div class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
+            <span>تطبيق يعمل بالبيانات المحفوظة مؤقتاً لعدم توفر اتصال أو لحماية الحصة (Offline/Cache Mode)</span>
+          </div>
+          <button class="flex items-center gap-1.5 text-indigo-400 hover:text-white bg-indigo-500/20 hover:bg-indigo-500/40 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors" (click)="halaltube.forceRefresh()">
+            <lucide-icon [img]="RefreshCcw" class="w-3.5 h-3.5"></lucide-icon>
+            تحديث يدوي
+          </button>
+        </div>
+      }
+
+      <!-- ========================================================== -->
+      <!-- SECTION 1: SHORTS SHELF (قسم الشورتس)                     -->
+      <!-- ========================================================== -->
+      @if (!halaltube.isFeedLoading() && shortsList().length > 0) {
+        <div class="bg-slate-900/40 border border-white/5 rounded-3xl p-5 space-y-4 text-right animate-in fade-in duration-300">
+          <div class="flex flex-row-reverse justify-between items-center" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="flex items-center gap-2" style="display: flex; align-items: center; gap: 8px;">
+              <h3 class="text-base font-black text-white">Shorts halaltube ⚡</h3>
+              <lucide-icon [img]="Video" class="w-5 h-5 text-red-500"></lucide-icon>
+            </div>
+            
+            <!-- Rows Controller -->
+            <div class="flex items-center gap-2" style="display: flex; align-items: center; gap: 8px;">
+              <span class="text-xs text-slate-400 font-bold">التنسيق:</span>
+              <div class="flex items-center bg-slate-950 border border-white/10 rounded-xl p-1" style="display: flex; align-items: center; border-radius: 12px; background: #020617; border: 1px solid rgba(255, 255, 255, 0.1); padding: 4px;">
+                <button 
+                  (click)="decreaseShortsRows()" 
+                  [disabled]="shortsRows() <= 1"
+                  class="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition disabled:opacity-40 disabled:hover:bg-transparent"
+                  style="width: 28px; height: 28px; border: none; background: transparent; cursor: pointer; color: #94a3b8;">
+                  -
+                </button>
+                <span class="w-8 text-center text-xs font-black text-white" style="width: 32px; text-align: center; font-weight: 900;">{{ shortsRows() }}</span>
+                <button 
+                  (click)="increaseShortsRows()" 
+                  [disabled]="shortsRows() >= 3"
+                  class="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition disabled:opacity-40 disabled:hover:bg-transparent"
+                  style="width: 28px; height: 28px; border: none; background: transparent; cursor: pointer; color: #94a3b8;">
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div 
+            class="shorts-horizontal-grid"
+            [style.grid-template-rows]="'repeat(' + shortsRows() + ', minmax(0, auto))'">
+            
+            <a 
+              *ngFor="let video of shortsList()"
+              [routerLink]="['/stream/watch', video.id]"
+              class="short-card-item group"
+              [title]="video.title">
+              
+              <div class="short-card-thumbnail">
+                <img crossorigin="anonymous" [src]="getSafeThumbnail(video)" [alt]="video.title" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105" loading="lazy">
+                <span class="absolute top-2 right-2 bg-gradient-to-br from-red-600 to-red-800 text-white px-2 py-0.5 rounded text-[8px] font-black uppercase shadow-lg">SHORTS</span>
+              </div>
+              
+              <span class="short-card-title">{{ video.title }}</span>
+              <span class="short-card-views" *ngIf="video.views">{{ video.views }}</span>
+            </a>
+
+          </div>
+        </div>
+      }
+
+      <!-- ========================================================== -->
+      <!-- SECTION 2: EXPLORE TOPICS (استكشاف المزيد من المواضيع)     -->
+      <!-- ========================================================== -->
+      @if (!halaltube.isFeedLoading()) {
+        <div class="bg-gradient-to-br from-slate-900/60 via-slate-900/30 to-indigo-950/20 border border-white/5 rounded-3xl p-6 space-y-5 text-right shadow-xl">
+          <div class="flex items-center justify-between border-b border-white/5 pb-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                <lucide-icon [img]="Compass" class="w-5 h-5"></lucide-icon>
+              </div>
+              <div>
+                <h3 class="text-base font-black text-white">استكشاف المزيد من المواضيع ✨</h3>
+                <p class="text-xs text-slate-400">تصفح محتوى قنوات موثوقة حسب اهتماماتك المفضلة</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Topic Filter Pills -->
+          <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar py-1">
+            @for (topic of exploreTopics; track topic) {
+              <button 
+                (click)="setExploreTopic(topic)"
+                class="px-4 py-2 rounded-xl text-xs font-bold transition-all border whitespace-nowrap"
+                [ngClass]="activeExploreTopic() === topic ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-500/20 scale-105' : 'bg-slate-950/50 border-white/10 text-slate-400 hover:border-white/20 hover:text-white'">
+                {{ topic }}
+              </button>
+            }
+          </div>
+
+          <!-- Topic Cards Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pt-2">
+            @for (video of exploreTopicVideos(); track video.id) {
+              <div class="video-card group cursor-pointer relative flex flex-col gap-2.5 bg-slate-950/50 p-3 rounded-2xl border border-white/5 hover:border-indigo-500/30 transition-all duration-300" [routerLink]="['/stream/watch', video.id]">
+                <div class="thumbnail-wrapper relative w-full aspect-video rounded-xl overflow-hidden bg-slate-900 border border-white/5">
+                  <img crossorigin="anonymous" [src]="getSafeThumbnail(video)" [alt]="video.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                  <span class="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm text-white px-2 py-0.5 rounded text-[10px] font-bold">{{ video.duration || '12:00' }}</span>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <h4 class="text-xs font-bold text-white leading-snug line-clamp-2 group-hover:text-indigo-400 transition-colors">{{ video.title }}</h4>
+                  <div class="flex items-center justify-between text-[10px] text-slate-400 mt-1">
+                    <span>{{ video.author }}</span>
+                    <span>{{ video.views || '100K' }}</span>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ========================================================== -->
+      <!-- SECTION 3: QURAN RECITATIONS (قسم القرآن الكريم والتلاوات) -->
+      <!-- ========================================================== -->
+      @if (!halaltube.isFeedLoading()) {
+        <div class="bg-gradient-to-br from-emerald-950/30 via-slate-900/40 to-slate-950 border border-emerald-500/20 rounded-3xl p-6 space-y-5 text-right shadow-2xl">
+          <div class="flex items-center justify-between border-b border-emerald-500/10 pb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shadow-md shadow-emerald-950/40">
+                <lucide-icon [img]="BookOpen" class="w-5 h-5"></lucide-icon>
+              </div>
+              <div>
+                <h3 class="text-base font-black text-emerald-300">القرآن الكريم والتلاوات الخاشعة 📖</h3>
+                <p class="text-xs text-slate-400">تلاوات عذبة وتدبر لآيات الذكر الحكيم بصوت كبار القراء</p>
+              </div>
+            </div>
+            <span class="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">تلاوات نادرة وموثوقة</span>
+          </div>
+
+          <!-- Quran Cards Horizontal / Grid Shelf -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            @for (video of quranList(); track video.id) {
+              <div class="group cursor-pointer relative flex flex-col gap-2.5 bg-slate-950/60 p-3 rounded-2xl border border-emerald-500/10 hover:border-emerald-500/40 transition-all duration-300 hover:-translate-y-1 shadow-lg shadow-emerald-950/20" [routerLink]="['/stream/watch', video.id]">
+                <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-900 border border-white/5">
+                  <img crossorigin="anonymous" [src]="getSafeThumbnail(video)" [alt]="video.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                  <span class="absolute top-2 right-2 bg-emerald-600/90 backdrop-blur-md text-white px-2 py-0.5 rounded text-[9px] font-black shadow-lg">قرآن كريم</span>
+                  <span class="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm text-emerald-300 px-1.5 py-0.5 rounded text-[10px] font-bold">{{ video.duration }}</span>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <h4 class="text-xs font-bold text-white leading-snug line-clamp-2 group-hover:text-emerald-400 transition-colors">{{ video.title }}</h4>
+                  <p class="text-[11px] text-emerald-400/90 font-medium truncate">{{ video.author }}</p>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ========================================================== -->
+      <!-- SECTION 4: ANSHEED & NASHEED (قسم أناشيد وابتهالات - بديل الأغاني) -->
+      <!-- ========================================================== -->
+      @if (!halaltube.isFeedLoading()) {
+        <div class="bg-gradient-to-br from-purple-950/30 via-slate-900/40 to-slate-950 border border-purple-500/20 rounded-3xl p-6 space-y-5 text-right shadow-2xl">
+          <div class="flex items-center justify-between border-b border-purple-500/10 pb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-2xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400 shadow-md shadow-purple-950/40">
+                <lucide-icon [img]="Music" class="w-5 h-5"></lucide-icon>
+              </div>
+              <div>
+                <h3 class="text-base font-black text-purple-300">أناشيد وابتهالات إسلامية 🎵 (بدون موسيقى)</h3>
+                <p class="text-xs text-slate-400">أعذب الأناشيد الروحانية والكلمات الهادفة المعتمدة للأسرة المسلمة</p>
+              </div>
+            </div>
+            <span class="text-xs font-bold text-purple-400 bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/20">محتوى هادف نقياً 100%</span>
+          </div>
+
+          <!-- Ansheed Cards Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            @for (video of ansheedList(); track video.id) {
+              <div class="group cursor-pointer relative flex flex-col gap-2.5 bg-slate-950/60 p-3 rounded-2xl border border-purple-500/10 hover:border-purple-500/40 transition-all duration-300 hover:-translate-y-1 shadow-lg shadow-purple-950/20" [routerLink]="['/stream/watch', video.id]">
+                <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-900 border border-white/5">
+                  <img crossorigin="anonymous" [src]="getSafeThumbnail(video)" [alt]="video.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                  <span class="absolute top-2 right-2 bg-purple-600/90 backdrop-blur-md text-white px-2 py-0.5 rounded text-[9px] font-black shadow-lg">أناشيد</span>
+                  <span class="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm text-purple-300 px-1.5 py-0.5 rounded text-[10px] font-bold">{{ video.duration }}</span>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <h4 class="text-xs font-bold text-white leading-snug line-clamp-2 group-hover:text-purple-400 transition-colors">{{ video.title }}</h4>
+                  <p class="text-[11px] text-purple-400/90 font-medium truncate">{{ video.author }}</p>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ========================================================== -->
+      <!-- SECTION 5: RECOMMENDED MAIN FEED (الفيديوهات المقترحة)      -->
+      <!-- ========================================================== -->
+      @if (!halaltube.isFeedLoading() && standardVideosList().length > 0) {
+        <div class="space-y-4 text-right">
+          <div class="flex items-center gap-2 px-1">
+            <lucide-icon [img]="Layers" class="w-5 h-5 text-indigo-400"></lucide-icon>
+            <h3 class="text-lg font-black text-white">مقترحات القنوات التفاعلية 🌟</h3>
+          </div>
+
+          <div class="video-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 gap-y-8">
+            @for (video of standardVideosList().slice(0, visibleCount()); track trackByVideoId($index, video)) {
+              <div class="video-card group cursor-pointer relative flex flex-col gap-3" [routerLink]="['/stream/watch', video.id]">
+                
+                <!-- Thumbnail Wrapper -->
+                <div class="thumbnail-wrapper relative w-full rounded-xl overflow-hidden bg-slate-900 border border-white/5 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-indigo-500/10 group-hover:-translate-y-1" [ngClass]="video.isShorts ? 'aspect-[9/16]' : 'aspect-video'">
+                  <img crossorigin="anonymous" [src]="getSafeThumbnail(video)" [alt]="video.title" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy">
+                  
+                  @if (video.isShorts) {
+                    <span class="absolute top-2 right-2 bg-gradient-to-br from-red-600 to-red-800 text-white px-2 py-0.5 rounded text-[10px] font-black shadow-lg">SHORTS</span>
+                  }
+                  
+                  @if (video.duration) {
+                    <span class="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-[10px] font-bold">{{ video.duration }}</span>
+                  }
+                </div>
+
+                <!-- Info Section -->
+                <div class="video-info flex gap-3 items-start px-1">
+                  <img crossorigin="anonymous" [src]="getAvatarUrl(video)" class="w-9 h-9 rounded-full bg-slate-800 border border-white/10 shrink-0 object-cover mt-0.5" [alt]="video.author">
+                  
+                  <div class="info-text flex flex-col min-w-0 flex-1">
+                    <h3 class="text-sm font-bold text-white leading-snug line-clamp-2 mb-1 group-hover:text-indigo-400 transition-colors">{{ video.title }}</h3>
+                    <p class="text-xs text-slate-400 font-medium truncate hover:text-slate-300">{{ video.author }}</p>
+                    <p class="text-[11px] text-slate-500 font-medium mt-0.5">
+                      @if (video.views) { <span>{{ video.views }} مشاهدة</span> }
+                      @if (video.time) { <span> • {{ video.time }}</span> }
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Insert Native Ad every 8 videos -->
+              @if (($index + 1) % 8 === 0) {
+                <app-nexus-native-ads adSlot="home-grid" class="col-span-full my-4"></app-nexus-native-ads>
+              }
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Infinite Scroll Trigger -->
+      <div id="infinite-scroll-trigger" class="h-16 w-full flex items-center justify-center mt-6">
+        @if (visibleCount() < standardVideosList().length || (halaltube.hasMoreFeed() && halaltube.isFeedLoading())) {
+          <div class="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin opacity-50"></div>
+        }
+      </div>
+
+      <!-- ========================================================== -->
+      <!-- SECTION 6: THE LOCAL VAULT (قسم المخزن المحلي - آخر الصفحة) -->
+      <!-- ========================================================== -->
+      <div id="local-vault-section" class="bg-gradient-to-br from-slate-900 via-slate-950 to-indigo-950 border-2 border-indigo-500/30 rounded-3xl p-6 sm:p-8 space-y-6 text-right shadow-2xl relative overflow-hidden mt-12 animate-in fade-in">
+        
+        <!-- Ambient Decorative Glow -->
+        <div class="absolute -top-24 -left-24 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -right-24 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-white/10 pb-5 gap-4 relative z-10">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-500 border border-indigo-400/40 flex items-center justify-center text-white shadow-xl shadow-indigo-500/30">
+              <lucide-icon [img]="HardDrive" class="w-6 h-6"></lucide-icon>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-lg sm:text-xl font-black text-white">المخزن المحلي والشخصي 💾</h3>
+                <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-0.5 rounded-full text-[10px] font-black">0-Cost Local Storage</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-1">كافة الملفات ومقاطع الفيديو المحفوظة محلياً على جهازك دون أي استهلاك للسيرفرات</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 w-full sm:w-auto">
+            <button 
+              (click)="goToVault()"
+              class="flex-1 sm:flex-none px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 border border-indigo-400/30">
+              <lucide-icon [img]="Folder" class="w-4 h-4"></lucide-icon>
+              <span>إدارة كامل المخزن</span>
+            </button>
+            <button 
+              (click)="openUpload()"
+              class="flex-1 sm:flex-none px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 border border-white/10">
+              <lucide-icon [img]="Plus" class="w-4 h-4"></lucide-icon>
+              <span>إضافة للمخزن</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Displays ALL Vault Items (كل محتويات المخزن) -->
+        @if (allVaultItems().length > 0) {
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 relative z-10">
+            @for (item of allVaultItems(); track item.id) {
+              <div 
+                (click)="openVaultItem(item)"
+                class="group cursor-pointer bg-slate-900/80 border border-white/10 hover:border-indigo-500/50 rounded-2xl p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-500/10 flex flex-col justify-between gap-3">
+                
+                <div class="flex items-start justify-between gap-2">
+                  <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0 group-hover:scale-110 transition-transform">
+                    @if (item.source === 'offline' || item.mimeType === 'video') {
+                      <lucide-icon [img]="Video" class="w-5 h-5 text-indigo-400"></lucide-icon>
+                    } @else if (item.mimeType === 'audio') {
+                      <lucide-icon [img]="FileAudio" class="w-5 h-5 text-purple-400"></lucide-icon>
+                    } @else if (item.mimeType === 'image') {
+                      <lucide-icon [img]="ImageIcon" class="w-5 h-5 text-emerald-400"></lucide-icon>
+                    } @else {
+                      <lucide-icon [img]="FileText" class="w-5 h-5 text-amber-400"></lucide-icon>
+                    }
+                  </div>
+
+                  <span class="text-[9px] font-black px-2 py-0.5 rounded-full border bg-slate-950 text-indigo-300 border-indigo-500/20">
+                    {{ item.source === 'offline' ? 'أوفلاين' : 'محلي 100%' }}
+                  </span>
+                </div>
+
+                <div>
+                  <h4 class="text-xs font-bold text-white line-clamp-2 leading-snug group-hover:text-indigo-400 transition-colors">{{ item.title }}</h4>
+                  <div class="flex items-center justify-between text-[10px] text-slate-400 mt-2 pt-2 border-t border-white/5">
+                    <span>{{ item.size }}</span>
+                    <span class="text-indigo-400 font-bold flex items-center gap-1">
+                      <lucide-icon [img]="Play" class="w-3 h-3"></lucide-icon>
+                      تشغيل
+                    </span>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="text-center py-10 bg-slate-950/60 rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-3">
+            <lucide-icon [img]="HardDrive" class="w-10 h-10 text-slate-600"></lucide-icon>
+            <h4 class="text-sm font-bold text-slate-300">لا توجد ملفات في المخزن المحلي حالياً</h4>
+            <p class="text-xs text-slate-500 max-w-sm">قم برفع مقاطع فيديو أو ملفاتك المفضلة لتظهر هنا بصفة دائمة على جهازه وبدون استهلاك للإنترنت</p>
+            <button (click)="openUpload()" class="mt-2 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-500 transition">
+              رفع ملف الآن
+            </button>
+          </div>
+        }
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Algorithm Modal -->
+  @if (showAlgoModal()) {
+    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[99999] flex items-center justify-center p-4 transition-all duration-300 animate-in fade-in" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; z-index: 99999;">
+      
+      <div class="bg-slate-900/90 border border-white/10 rounded-3xl w-full max-w-xl p-6 md:p-8 space-y-6 text-right shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] transition-all duration-300 transform scale-100 animate-in zoom-in-95 duration-200">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-white/5 pb-4" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 16px;">
+          <button 
+            (click)="toggleAlgoModal()"
+            class="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition"
+            style="border: none; cursor: pointer; color: white;">
+            ✕
+          </button>
+          <div class="flex items-center gap-2" style="display: flex; align-items: center; gap: 8px;">
+            <h2 class="text-lg md:text-xl font-black text-white">خوارزمية اقتراح الفيديو الذكية ⚙️</h2>
+            <lucide-icon [img]="Sliders" class="text-indigo-400 w-5 h-5"></lucide-icon>
+          </div>
+        </div>
+
+        <!-- Body Scrollable -->
+        <div class="space-y-6 max-h-[60vh] overflow-y-auto pr-1 hide-scrollbar" style="max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column; gap: 24px;">
+          
+          <!-- Mix Ratio Option -->
+          <div class="space-y-3 bg-slate-950/40 border border-white/5 rounded-2xl p-4" style="background: rgba(2, 6, 23, 0.4); padding: 16px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05); display: flex; flex-direction: column; gap: 12px;">
+            <div class="flex items-center justify-between" style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="text-xs font-black text-indigo-400">{{ halaltube.algoConfig().subscriptionWeight }}% قنواتي</span>
+              <label class="text-xs font-bold text-white block">نسبة خلط المحتوى بالخلاصة:</label>
+              <span class="text-xs font-black text-slate-400">{{ 100 - halaltube.algoConfig().subscriptionWeight }}% القائمة البيضاء</span>
+            </div>
+            <input 
+              type="range" 
+              min="0" 
+              max="100" 
+              [value]="halaltube.algoConfig().subscriptionWeight"
+              (input)="updateSubscriptionWeight($event)"
+              class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+              style="width: 100%; cursor: pointer;"
+            />
+            <p class="text-[10px] text-slate-400 leading-relaxed font-semibold">
+              اسحب لتحديد نسبة خلط الفيديوهات المرفوعة حديثاً من قنواتك المشترك بها مقابل فيديوهات القائمة البيضاء العامة المعتمدة من المشرفين.
+            </p>
+          </div>
+
+          <!-- History Filter Option -->
+          <div class="bg-slate-950/40 border border-white/5 rounded-2xl p-4 flex items-center justify-between" style="background: rgba(2, 6, 23, 0.4); padding: 16px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05); display: flex; justify-content: space-between; align-items: center;">
+            <div class="text-right flex-grow pr-4">
+              <label class="text-xs font-bold text-white block mb-1">تصفية الفيديوهات المشاهدة سابقاً:</label>
+              <span class="text-[10px] text-slate-400 font-semibold block">عند تفعيلها، لن تظهر في تغذيتك أي فيديوهات قمت بمشاهدتها من قبل.</span>
+            </div>
+            
+            <button 
+              (click)="toggleHideWatched()"
+              class="w-12 h-6 rounded-full p-1 transition-colors duration-200 ease-in-out shrink-0"
+              [ngClass]="halaltube.algoConfig().hideWatched ? 'bg-indigo-600' : 'bg-slate-800'"
+              style="cursor: pointer;">
+              <div 
+                class="w-4 h-4 rounded-full bg-white transition-transform duration-200 ease-in-out"
+                [ngClass]="halaltube.algoConfig().hideWatched ? 'translate-x-0' : '-translate-x-6'">
+              </div>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Debug Modal for Founders -->
+  @if (showDebugModal()) {
+    <div class="fixed inset-0 bg-slate-950/90 backdrop-blur-xl z-[99999] flex items-center justify-center p-4" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; z-index: 99999;">
+      <div class="bg-slate-900 border border-amber-500/30 rounded-3xl w-full max-w-4xl p-6 space-y-4 text-right shadow-2xl max-h-[90vh] flex flex-col">
+        <div class="flex items-center justify-between border-b border-amber-500/20 pb-3">
+          <button (click)="toggleDebugModal()" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+          <div class="flex items-center gap-2">
+            <h3 class="text-base font-black text-amber-400">لوحة فحص بيانات التشفير والنواة 🛠️</h3>
+            <lucide-icon [img]="ShieldCheck" class="w-5 h-5 text-amber-400"></lucide-icon>
+          </div>
+        </div>
+
+        <div class="flex gap-2 border-b border-white/10 pb-2">
+          <button (click)="setDebugTab('encrypted')" [class.bg-amber-500/20]="debugTab() === 'encrypted'" class="px-3 py-1.5 rounded-lg text-xs font-bold text-amber-300">البيانات المشفرة بالخام</button>
+          <button (click)="setDebugTab('history')" [class.bg-amber-500/20]="debugTab() === 'history'" class="px-3 py-1.5 rounded-lg text-xs font-bold text-amber-300">سجل المشاهدة (مفكوك)</button>
+          <button (click)="setDebugTab('saved')" [class.bg-amber-500/20]="debugTab() === 'saved'" class="px-3 py-1.5 rounded-lg text-xs font-bold text-amber-300">المحفوظات (مفكوك)</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-4 bg-slate-950 rounded-2xl border border-white/5 font-mono text-xs text-slate-300 text-left hide-scrollbar" dir="ltr">
+          @if (debugTab() === 'encrypted') {
+            <pre>{{ rawEncryptedData() | json }}</pre>
+          } @else if (debugTab() === 'history') {
+            <pre>{{ decryptedHistory() | json }}</pre>
+          } @else if (debugTab() === 'saved') {
+            <pre>{{ decryptedSaved() | json }}</pre>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Upload Modal -->
+  @if (showUploadModal()) {
+    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
+      <div class="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-lg p-6 space-y-4 text-right shadow-2xl">
+        <div class="flex items-center justify-between border-b border-white/5 pb-3">
+          <button (click)="showUploadModal.set(false)" class="text-slate-400 hover:text-white font-bold">✕</button>
+          <h3 class="text-base font-black text-white">إضافة محتوى جديد للمخزن المحلي</h3>
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          يمكنك إدخال رابط فيديو أو ملف محلي لإضافته فوراً إلى المخزن المحلي بحفظ تام على جهازه دون أي رسوم أو قيود.
+        </p>
+        <div class="flex justify-end gap-3 pt-2">
+          <button (click)="goToVault()" class="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-xs hover:bg-indigo-500 transition">
+            الانتقال لمدير المخزن الكامل
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { WeTubeService } from '../../features/wetube/wetube.service';
+import { halaltubeService } from '../../features/halaltube/halaltube.service';
 import { IndexedDBService } from './indexed-db.service';
 import { YoutubeDiscoveryService } from './youtube-discovery.service';
 
@@ -16,7 +16,7 @@ export interface ShortVideo {
   providedIn: 'root'
 })
 export class ShortsQueueService {
-  private wetube = inject(WeTubeService);
+  private halaltube = inject(halaltubeService);
   private idb = inject(IndexedDBService);
   private discovery = inject(YoutubeDiscoveryService);
 
@@ -30,8 +30,8 @@ export class ShortsQueueService {
     const queue: ShortVideo[] = [];
 
     // Fetch all available data sources
-    const allHomeContent = this.wetube.allHomeContent(); // Includes videos and shorts
-    const shortsFeed = this.wetube.shortsFeed(); // Use dedicated shorts feed if available
+    const allHomeContent = this.halaltube.allHomeContent(); // Includes videos and shorts
+    const shortsFeed = this.halaltube.shortsFeed(); // Use dedicated shorts feed if available
 
     // Combine shorts from both sources, with priority to shortsFeed
     let allShorts = [...shortsFeed];

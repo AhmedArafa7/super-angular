@@ -5,7 +5,7 @@ import { EncryptionService } from './encryption.service';
   providedIn: 'root'
 })
 export class IndexedDBService {
-  private readonly DB_NAME = 'WeTubeDB';
+  private readonly DB_NAME = 'halaltubeDB';
   private readonly DB_VERSION = 6; // Incremented for personal PDF books store
   private db: IDBDatabase | null = null;
   private encryption = inject(EncryptionService);

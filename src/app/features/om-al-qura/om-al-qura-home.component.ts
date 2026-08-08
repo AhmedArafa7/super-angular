@@ -9,6 +9,7 @@ import { OmAlQuraCustomerStoreComponent } from './components/customer-store.comp
 import { OmAlQuraInStoreMapComponent } from './components/in-store-map.component';
 import { OmAlQuraDeliveryPortalComponent } from './components/delivery-portal.component';
 import { OmAlQuraAdminPortalComponent } from './components/admin-portal.component';
+import { OmAlQuraSecurityCctvComponent } from './components/security-cctv.component';
 
 @Component({
   selector: 'app-om-al-qura-home',
@@ -20,7 +21,8 @@ import { OmAlQuraAdminPortalComponent } from './components/admin-portal.componen
     OmAlQuraCustomerStoreComponent,
     OmAlQuraInStoreMapComponent,
     OmAlQuraDeliveryPortalComponent,
-    OmAlQuraAdminPortalComponent
+    OmAlQuraAdminPortalComponent,
+    OmAlQuraSecurityCctvComponent
   ],
   template: `
     <div class="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans" dir="rtl">
@@ -115,6 +117,9 @@ import { OmAlQuraAdminPortalComponent } from './components/admin-portal.componen
         <!-- PAGE 5: Admin Portal -->
         <app-om-al-qura-admin-portal *ngIf="activeTab() === 'admin'"></app-om-al-qura-admin-portal>
 
+        <!-- PAGE 6: CCTV & Security Cameras -->
+        <app-om-al-qura-security-cctv *ngIf="activeTab() === 'cctv'"></app-om-al-qura-security-cctv>
+
       </main>
 
       <!-- Footer -->
@@ -129,16 +134,17 @@ export class OmAlQuraHomeComponent implements OnInit, OnDestroy {
   service = inject(OmAlQuraService);
   private faviconService = inject(FaviconService);
 
-  activeTab = signal<'attendance' | 'staff' | 'customer' | 'in_store_map' | 'delivery' | 'admin'>('customer');
+  activeTab = signal<'attendance' | 'staff' | 'customer' | 'in_store_map' | 'delivery' | 'admin' | 'cctv'>('customer');
   deferredPrompt: any = null;
   isStandalone = signal<boolean>(false);
 
-  mainTabs: { id: 'attendance' | 'staff' | 'customer' | 'in_store_map' | 'delivery' | 'admin'; label: string; icon: string }[] = [
+  mainTabs: { id: 'attendance' | 'staff' | 'customer' | 'in_store_map' | 'delivery' | 'admin' | 'cctv'; label: string; icon: string }[] = [
     { id: 'customer', label: '1.  الزبائن والعملاء', icon: 'shopping-bag' },
     { id: 'staff', label: '2.  الموظفين والنظام الداخلي', icon: 'user-cog' },
     { id: 'in_store_map', label: '3. خريطة المحل للزبائن داخل الفرع', icon: 'map-pin' },
     { id: 'delivery', label: '4.  الدليفري والتوصيل', icon: 'truck' },
-    { id: 'admin', label: '5.  الإدارة والآدمن (HR)', icon: 'shield-check' }
+    { id: 'admin', label: '5.  الإدارة والآدمن (HR)', icon: 'shield-check' },
+    { id: 'cctv', label: '6. 📹 كاميرات المراقبة والأمن', icon: 'video' }
   ];
 
   ngOnInit(): void {

@@ -217,7 +217,7 @@ import { ArcadeAudioService } from '../../core/services/arcade-audio.service';
              [style.height]="isRotated ? '100vw' : '100%'"
              [style.transform]="isRotated ? 'rotate(90deg)' : 'none'"
              (load)="onIframeLoad()"
-             sandbox="allow-scripts allow-forms allow-popups allow-modals"
+             sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads"
              [title]="game?.title">
            </iframe>
         </div>
@@ -493,16 +493,25 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
   }
 
   loadGameMenuTheme(gameId: string) {
-    const head = document.getElementsByTagName('head')[0];
-    let themeLink = document.getElementById('game-menu-theme') as HTMLLinkElement;
-    if (!themeLink) {
-      themeLink = document.createElement('link');
-      themeLink.id = 'game-menu-theme';
-      themeLink.rel = 'stylesheet';
-      themeLink.onerror = () => themeLink?.remove();
-      head.appendChild(themeLink);
-    }
-    themeLink.href = `/games/${gameId}/menu-theme.css`;
+    const url = `/games/${gameId}/menu-theme.css`;
+    fetch(url, { method: 'HEAD' }).then(res => {
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('css')) {
+        const head = document.getElementsByTagName('head')[0];
+        let themeLink = document.getElementById('game-menu-theme') as HTMLLinkElement;
+        if (!themeLink) {
+          themeLink = document.createElement('link');
+          themeLink.id = 'game-menu-theme';
+          themeLink.rel = 'stylesheet';
+          head.appendChild(themeLink);
+        }
+        themeLink.href = url;
+      } else {
+        this.removeGameMenuTheme();
+      }
+    }).catch(() => {
+      this.removeGameMenuTheme();
+    });
   }
 
   removeGameMenuTheme() {

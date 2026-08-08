@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>صدع الزمن - Temporal Rift</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&family=Orbitron:wght@600;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=1">
+</head>
+<body>
+    <div id="game-container">
+        
+        <!-- Setup Screen -->
+        <div id="setup-screen" class="screen active">
+            <div class="glass-panel text-center">
+                <h1 class="glow-text">صدع الزمن ⏳</h1>
+                <p class="subtitle">تفادَ الثقوب الزمنية واجمع بلورات الطاقة لفتح الفجوات!</p>
+                
+                <div id="local-setup" class="setup-section">
+                    <h3>عدد اللاعبين محلياً:</h3>
+                    <div class="player-count-buttons">
+                        <button class="btn btn-primary" onclick="initLocalGame(2)">لاعبين (2P)</button>
+                        <button class="btn btn-primary" onclick="initLocalGame(3)">3 لاعبين</button>
+                        <button class="btn btn-primary" onclick="initLocalGame(4)">4 لاعبين</button>
+                    </div>
+                </div>
+
+                <div id="online-setup" class="setup-section hidden">
+                    <p class="status-text">انتظار ربط اللاعبين في الغرفة...</p>
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Play Screen -->
+        <div id="play-screen" class="screen">
+            <div id="play-area">
+                <!-- Header Info Bar -->
+                <div class="play-header">
+                    <div class="info-panel">
+                        <span class="label">الزمن المتبقي:</span>
+                        <span id="game-timer" class="time-glow">60s</span>
+                    </div>
+
+                    <div class="info-panel">
+                        <span class="label">الدور:</span>
+                        <span id="current-turn-display" class="turn-badge">اللاعب 1</span>
+                    </div>
+                    
+                    <div class="room-info hidden" id="room-code-display">
+                        <span>غرفة: <strong id="room-id-val">------</strong></span>
+                    </div>
+                </div>
+
+                <!-- Canvas Game Arena -->
+                <div id="canvas-container">
+                    <canvas id="rift-canvas"></canvas>
+                </div>
+
+                <!-- Scoreboard Panel -->
+                <div id="scoreboard">
+                    <!-- Scores injected dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="screen">
+            <div class="glass-panel text-center">
+                <h1 class="glow-text text-emerald-400">انتهى الصدع الزمني! ⌛</h1>
+                <p id="winner-subtitle" class="subtitle">النتائج النهائية للمتسابقين</p>
+                
+                <div id="leaderboard-list">
+                    <!-- Leaderboard injected dynamically -->
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-success" onclick="restartGame()">العب مرة أخرى 🔄</button>
+                    <button class="btn btn-danger" onclick="exitGame()">العودة للقائمة 👆</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="game.js?v=1"></script>
+</body>
+</html>

@@ -16,7 +16,7 @@ export interface AlgoliaSearchResult {
 export class AlgoliaSearchService {
   private appId = '0508K3LII1';
   private searchApiKey = '8fce7f118c59497bfab56cc65087ebc8';
-  private indexName = 'wetube_videos';
+  private indexName = 'halaltube_videos';
 
   readonly suggestions = signal<AlgoliaSearchResult[]>([]);
   readonly isSearchingAlgolia = signal<boolean>(false);

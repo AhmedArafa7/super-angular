@@ -27,7 +27,7 @@ export class AppShellComponent {
   sidebar = inject(SidebarService);
   router = inject(Router);
   sessionPurge = inject(SessionPurgeService);
-  isWeTubeRoute = signal(false);
+  ishalaltubeRoute = signal(false);
   isArcadeArenaRoute = signal(false);
   isInitialized = signal(false);
 
@@ -35,13 +35,13 @@ export class AppShellComponent {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
-      this.isWeTubeRoute.set(event.url.includes('/stream'));
+      this.ishalaltubeRoute.set(event.url.includes('/stream'));
       this.isArcadeArenaRoute.set(event.url.includes('/arcade/arena/'));
       this.isInitialized.set(true);
     });
     
     if (this.router.navigated) {
-      this.isWeTubeRoute.set(this.router.url.includes('/stream'));
+      this.ishalaltubeRoute.set(this.router.url.includes('/stream'));
       this.isArcadeArenaRoute.set(this.router.url.includes('/arcade/arena/'));
       this.isInitialized.set(true);
     }

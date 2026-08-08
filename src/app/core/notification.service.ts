@@ -53,7 +53,7 @@ export class NotificationService {
       },
       {
         id: 'notif_2',
-        title: 'فيديو جديد في WeTube',
+        title: 'فيديو جديد في halaltube',
         message: 'تم إضافة حلقة جديدة: "كيف تبني معالجاً عصبياً متكاملاً في مختبرك المنزلي؟" شاهدها الآن.',
         type: 'content_new',
         priority: 'info',

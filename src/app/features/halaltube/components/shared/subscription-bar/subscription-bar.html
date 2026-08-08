@@ -1,0 +1,59 @@
+<div class="subscription-bar flex flex-col gap-2 p-4">
+  <div class="subs-header flex items-center justify-between px-2 mb-2">
+    <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">الاشتراكات</h3>
+    @if (halaltube.subscriptions().length > 0) {
+      <span class="subs-count bg-indigo-500/20 text-indigo-400 text-[10px] font-bold px-2 py-0.5 rounded-full">{{ halaltube.subscriptions().length }}</span>
+    }
+  </div>
+
+  <div class="subs-list space-y-1 hover-scrollbar">
+    @if (halaltube.subscriptions().length === 0 && !halaltube.isFeedLoading()) {
+      <div class="empty-subs flex flex-col items-center justify-center p-4 text-center border border-white/5 rounded-xl bg-slate-900/50">
+        <p class="text-sm font-bold text-slate-300">لا توجد اشتراكات</p>
+        <p class="text-xs text-slate-500 mt-1">قم بتسجيل الدخول بحسابك</p>
+      </div>
+    }
+
+    @if (halaltube.isFeedLoading()) {
+      <div class="loading-subs text-center p-4">
+        <p class="text-xs text-slate-500 font-bold animate-pulse">جارٍ تحميل الاشتراكات...</p>
+      </div>
+    }
+
+    @for (sub of halaltube.subscriptions(); track sub.channelId) {
+      <div class="sub-item group flex items-center gap-3 p-2 rounded-xl transition-all cursor-pointer hover:bg-white/10"
+           [ngClass]="isChannelSelected(sub.channelId) ? 'bg-white/10 shadow-inner' : ''"
+           [routerLink]="['/stream/channel', sub.channelId]" 
+           [title]="sub.channelTitle">
+        
+        <!-- Avatar -->
+        <img 
+          [src]="getAvatarUrl(sub)" 
+          (error)="onAvatarError($event, sub)" 
+          [alt]="sub.channelTitle" 
+          class="sub-avatar w-8 h-8 rounded-full border border-white/10 bg-slate-800 object-cover shrink-0 group-hover:scale-105 transition-transform"
+        >
+        
+        <!-- Title -->
+        <span class="sub-name text-xs font-bold text-slate-300 flex-1 truncate group-hover:text-white transition-colors"
+              [ngClass]="isChannelSelected(sub.channelId) ? 'text-white' : ''">
+          {{ sub.channelTitle }}
+        </span>
+        
+        <!-- Action Bell -->
+        <button class="sub-action opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white" 
+                (click)="onBellClick($event, sub.channelId)" 
+                title="إعدادات الإشعارات">
+          <lucide-icon [img]="Bell" class="w-4 h-4"></lucide-icon>
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (halaltube.subscriptions().length > 3) {
+    <a class="manage-link mt-2 text-center text-xs font-bold text-indigo-400 hover:text-indigo-300 hover:underline p-2" 
+       [routerLink]="['/stream/subscriptions']">
+      عرض الكل ({{ halaltube.subscriptions().length }})
+    </a>
+  }
+</div>
