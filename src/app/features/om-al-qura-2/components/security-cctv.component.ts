@@ -50,6 +50,12 @@ export interface SecurityEventLog2 {
             <span>➕ إضافة وتوصيل كاميرا حقيقية جديدة</span>
           </button>
 
+          <button (click)="toggleAllCamerasPower()"
+                  class="px-4 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer">
+            <svg lucideIcon="power" class="w-4 h-4" [ngClass]="allCamerasPoweredOn() ? 'text-emerald-400' : 'text-rose-400'"></svg>
+            <span>{{ allCamerasPoweredOn() ? 'إيقاف جميع الكاميرات' : 'تشغيل جميع الكاميرات' }}</span>
+          </button>
+
           <button (click)="toggleNightVisionAll()"
                   class="px-4 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer">
             <svg lucideIcon="moon" class="w-4 h-4 text-emerald-400"></svg>
@@ -102,10 +108,18 @@ export interface SecurityEventLog2 {
             </div>
 
             <div class="flex items-center gap-1">
-              <button (click)="service.deleteCctvCamera(cam.id)" class="p-1.5 text-rose-400 hover:text-rose-300 rounded-lg hover:bg-rose-950/60" title="فصل وإزالة الكاميرا">
+              <button (click)="toggleCameraPower(cam)"
+                      class="px-2.5 py-1 rounded-xl transition-all flex items-center gap-1 font-black text-xs cursor-pointer"
+                      [ngClass]="cam.isOnline ? 'text-emerald-400 hover:bg-emerald-950/60 bg-emerald-500/10 border border-emerald-500/30' : 'text-rose-400 hover:bg-rose-950/60 bg-rose-500/10 border border-rose-500/30'"
+                      [title]="cam.isOnline ? 'إيقاف / إغلاق بث الكاميرا' : 'تشغيل بث الكاميرا'">
+                <svg lucideIcon="power" class="w-4 h-4"></svg>
+                <span>{{ cam.isOnline ? 'إيقاف البث' : 'تشغيل البث' }}</span>
+              </button>
+
+              <button (click)="service.deleteCctvCamera(cam.id)" class="p-1.5 text-rose-400 hover:text-rose-300 rounded-lg hover:bg-rose-950/60 cursor-pointer" title="فصل وإزالة الكاميرا">
                 <svg lucideIcon="trash-2" class="w-4 h-4"></svg>
               </button>
-              <button (click)="maximizeCamera(cam)" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800" title="تكبير الكاميرا">
+              <button (click)="maximizeCamera(cam)" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 cursor-pointer" title="تكبير الكاميرا">
                 <svg lucideIcon="maximize-2" class="w-4 h-4"></svg>
               </button>
             </div>
@@ -137,12 +151,25 @@ export interface SecurityEventLog2 {
             </div>
 
             <!-- WebCam Permission Prompt Overlay if WebCam not granted -->
-            <div *ngIf="cam.sourceType === 'webcam' && !webcamActive()" class="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center p-4 text-center z-10">
+            <div *ngIf="cam.isOnline && cam.sourceType === 'webcam' && !webcamActive()" class="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center p-4 text-center z-10">
               <svg lucideIcon="camera" class="w-10 h-10 text-emerald-400 mb-2 animate-bounce"></svg>
               <h4 class="font-black text-sm text-white">توصيل كاميرا الموبايل / الكمبيوتر</h4>
               <p class="text-xs text-slate-400 max-w-xs mt-1 mb-3">اضغط على زر السماح لتوصيل الكاميرا الحقيقية المباشرة بجهازك الآن.</p>
               <button (click)="startWebcamStream()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-lg">
                 تشغيل كاميرا الجهاز الحقيقية 📷
+              </button>
+            </div>
+
+            <!-- Standby Overlay when Camera is Powered OFF -->
+            <div *ngIf="!cam.isOnline" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-4 text-center z-20 font-sans">
+              <div class="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center justify-center mb-3 animate-pulse">
+                <svg lucideIcon="video-off" class="w-6 h-6"></svg>
+              </div>
+              <h4 class="font-black text-sm text-white">الكاميرا مغلقة حالياً (FEED OFF)</h4>
+              <p class="text-[11px] text-slate-400 max-w-xs mt-1 mb-4">تم إيقاف بث هذه الكاميرا بطلب منك. اضغط على الزر أدناه لتشغيلها مجدداً.</p>
+              <button (click)="toggleCameraPower(cam)" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-lg flex items-center gap-2 transition-all hover:scale-105 cursor-pointer">
+                <svg lucideIcon="power" class="w-4 h-4"></svg>
+                <span>تشغيل بث الكاميرا الآن 🟢</span>
               </button>
             </div>
 
@@ -428,6 +455,39 @@ export class OmAlQura2SecurityCctvComponent implements OnInit, OnDestroy, AfterV
     cam.panX = Math.max(-40, Math.min(40, cam.panX + deltaX));
     cam.panY = Math.max(-30, Math.min(30, cam.panY + deltaY));
     this.drawCanvasFeeds();
+  }
+
+  toggleCameraPower(cam: OmAlQura2CctvCamera) {
+    cam.isOnline = !cam.isOnline;
+    const updated = this.service.cctvCameras().map(c => c.id === cam.id ? { ...c, isOnline: cam.isOnline } : c);
+    this.service.saveCctvCameras(updated);
+
+    if (cam.isOnline) {
+      this.toast.show(`تم تشغيل بث الكاميرا (${cam.name}) بنجاح 🟢`, 'success');
+      if (cam.sourceType === 'webcam') {
+        this.startWebcamStream();
+      }
+    } else {
+      this.toast.show(`تم إغلاق وإيقاف بث الكاميرا (${cam.name}) 🔴`, 'info');
+    }
+  }
+
+  allCamerasPoweredOn(): boolean {
+    const cams = this.service.cctvCameras();
+    return cams.length > 0 && cams.every(c => c.isOnline);
+  }
+
+  toggleAllCamerasPower() {
+    const newState = !this.allCamerasPoweredOn();
+    const updated = this.service.cctvCameras().map(c => ({ ...c, isOnline: newState }));
+    this.service.saveCctvCameras(updated);
+
+    if (newState) {
+      this.toast.show('تم تشغيل جميع كاميرات المصنع بنجاح 🟢', 'success');
+      this.startWebcamStream();
+    } else {
+      this.toast.show('تم إغلاق وإيقاف جميع بث الكاميرات 🔴', 'info');
+    }
   }
 
   toggleNightVision(cam: OmAlQura2CctvCamera) {

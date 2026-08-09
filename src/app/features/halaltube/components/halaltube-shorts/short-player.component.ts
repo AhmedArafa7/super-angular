@@ -37,7 +37,8 @@ import { FirebaseService } from '../../../../core/services/firebase.service';
           <iframe 
             [src]="iframeUrl" 
             class="w-full h-full border-none pointer-events-auto" 
-            allow="autoplay; encrypted-media; picture-in-picture"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin"
             allowfullscreen
           ></iframe>
         } @else if (!isLoading()) {
@@ -243,7 +244,7 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
   get iframeUrl(): SafeResourceUrl {
     const id = this.video().id;
     const mute = this.videoState.isShortsMuted() ? 1 : 0;
-    const url = `https://www.youtube.com/embed/${id}?autoplay=1&mute=${mute}&loop=1&playlist=${id}&controls=0&modestbranding=1&playsinline=1&rel=0`;
+    const url = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=${mute}&playsinline=1&enablejsapi=1&rel=0`;
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 
@@ -276,7 +277,7 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
   private async onVisible() {
     this.videoState.notifyShortsStarted();
 
-    if (!this.hasLoadedStream && !this.useIframeFallback()) {
+    if (!this.hasLoadedStream) {
       await this.loadStream();
     }
     
@@ -303,6 +304,7 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
     }
     const vid = this.videoEl?.nativeElement;
     if (vid) {
+      this.savedCurrentTime = vid.currentTime;
       vid.pause();
       vid.src = '';
       vid.load();
@@ -311,12 +313,59 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
 
   async loadStream(retryCount = 0) {
     this.isLoading.set(true);
-    
-    // For now, just use iframe fallback directly since Piped instances are failing
-    console.log('Using YouTube Embed for short:', this.video().id);
-    this.useIframeFallback.set(true);
-    this.hasLoadedStream = true;
-    this.isLoading.set(false);
+    const v = this.video();
+
+    // 1. Handle Local Videos or videos with direct MP4 URL
+    if (v.source === 'local' || v.url || v.id.startsWith('local_')) {
+      const src = v.url || '/videos/لماذا يجعلك الأكل ضعيفا ؟ - كيف يجعلك الجوع بصحة افضل(240P).mp4';
+      console.log('[ShortPlayer] Playing local video stream:', src);
+      this.streamUrl.set(src);
+      this.useIframeFallback.set(false);
+      this.hasLoadedStream = true;
+      this.isLoading.set(false);
+      return;
+    }
+
+    // 2. Validate YouTube Video ID format (standard 11 characters)
+    const isYouTubeId = /^[a-zA-Z0-9_-]{11}$/.test(v.id);
+    if (!isYouTubeId) {
+      console.warn('[ShortPlayer] Invalid YouTube ID, falling back to default local video:', v.id);
+      this.streamUrl.set('/videos/لماذا يجعلك الأكل ضعيفا ؟ - كيف يجعلك الجوع بصحة افضل(240P).mp4');
+      this.useIframeFallback.set(false);
+      this.hasLoadedStream = true;
+      this.isLoading.set(false);
+      return;
+    }
+
+    // 3. YouTube Shorts: Try Piped API for direct HTML5 video stream, fallback to iframe
+    try {
+      if (this.abortController) this.abortController.abort();
+      this.abortController = new AbortController();
+
+      console.log('[ShortPlayer] Attempting Piped stream fetch for YouTube ID:', v.id);
+      const details = await this.piped.getVideoDetails(v.id);
+      
+      if (details?.hls) {
+        this.streamUrl.set(details.hls);
+        this.useIframeFallback.set(false);
+      } else if (details?.videoStreams && details.videoStreams.length > 0) {
+        const combined = details.videoStreams.find(s => !s.videoOnly) || details.videoStreams[0];
+        if (combined?.url) {
+          this.streamUrl.set(combined.url);
+          this.useIframeFallback.set(false);
+        } else {
+          this.useIframeFallback.set(true);
+        }
+      } else {
+        this.useIframeFallback.set(true);
+      }
+    } catch (e) {
+      console.warn(`[ShortPlayer] Piped stream load failed for ${v.id}, using YouTube Embed fallback:`, e);
+      this.useIframeFallback.set(true);
+    } finally {
+      this.hasLoadedStream = true;
+      this.isLoading.set(false);
+    }
   }
 
   retryLoad() {

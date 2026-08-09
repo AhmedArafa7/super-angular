@@ -72,12 +72,28 @@ import { SafePipe } from '../../../../core/pipes/safe.pipe'; // Need to ensure w
 
         <!-- Fallback IFrame Player (YouTube API) -->
         @if (videoState.playerType() === 'iframe') {
-          <iframe 
-            [src]="getIframeUrl() | safe:'resourceUrl'" 
-            class="w-full h-full bg-black border-0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-            allowfullscreen>
-          </iframe>
+          <div class="relative w-full h-full bg-black">
+            <iframe 
+              [src]="getIframeUrl() | safe:'resourceUrl'" 
+              class="w-full h-full bg-black border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+              referrerpolicy="strict-origin-when-cross-origin"
+              allowfullscreen>
+            </iframe>
+
+            <!-- Quick Action Floating Overlay for Brave / Localhost origin blocking -->
+            <div class="absolute bottom-3 left-3 z-30 flex items-center gap-2 bg-slate-900/90 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-xl opacity-40 hover:opacity-100 transition-opacity">
+              <a 
+                [href]="getDirectYoutubeLink()" 
+                target="_blank" 
+                rel="noopener"
+                class="text-[11px] font-bold text-indigo-400 hover:text-white flex items-center gap-1 transition"
+                title="فتح في يوتيوب في حال تعذر التشغيل محلياً بسبب حظر متصفح Brave أو الأمان"
+              >
+                <span>مشاهدة على YouTube ↗</span>
+              </a>
+            </div>
+          </div>
         }
 
         <!-- Floating Mode Custom Controls Overlay -->
@@ -349,7 +365,7 @@ export class GlobalVideoPlayerComponent {
     if (!str) return null;
     if (str.length === 11 && /^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
     const match = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/|live\/))([^&?\n]+)/);
-    return match ? match[1] : null;
+    return (match && match[1] && match[1].length === 11) ? match[1] : null;
   }
 
   getIframeUrl(): string {
@@ -357,9 +373,18 @@ export class GlobalVideoPlayerComponent {
     if (!video) return '';
     const ytId = this.extractYoutubeId(video.url) ||
                  this.extractYoutubeId((video as any).externalUrl) ||
-                 this.extractYoutubeId(video.id) ||
-                 video.id;
-    return `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`;
+                 this.extractYoutubeId(video.id);
+    if (!ytId || ytId.length !== 11) return '';
+    return `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1`;
+  }
+
+  getDirectYoutubeLink(): string {
+    const video = this.videoState.activeVideo();
+    if (!video) return '#';
+    const ytId = this.extractYoutubeId(video.url) ||
+                 this.extractYoutubeId((video as any).externalUrl) ||
+                 this.extractYoutubeId(video.id);
+    return ytId ? `https://www.youtube.com/watch?v=${ytId}` : '#';
   }
 
   closePlayer() {

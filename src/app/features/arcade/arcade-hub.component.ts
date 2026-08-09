@@ -396,6 +396,8 @@ export class ArcadeHubComponent implements OnInit {
       this.router.navigate(['/arcade/word-chain']);
     } else if (id === 'flashcards') {
       this.router.navigate(['/arcade/flashcards']);
+    } else if (id === 'number-guesser') {
+      this.router.navigate(['/arcade/number-guesser']);
     } else {
       this.router.navigate(['/arcade/arena', id]);
     }

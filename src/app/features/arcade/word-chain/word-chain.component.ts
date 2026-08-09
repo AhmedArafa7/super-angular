@@ -159,7 +159,7 @@ interface PlayerScore {
               </button>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div *ngFor="let p of players; let i = index" class="flex items-center gap-2">
+              <div *ngFor="let p of players; let i = index; trackBy: trackByIndex" class="flex items-center gap-2">
                 <input type="text" [(ngModel)]="players[i]" placeholder="اسم اللاعب..." class="w-full h-11 bg-white/5 border border-white/10 rounded-2xl px-4 text-xs text-white text-right focus:outline-none focus:border-indigo-500 font-bold" />
                 <button *ngIf="players.length > 2" (click)="removePlayer(i)" class="text-red-400 hover:bg-red-500/10 p-2 rounded-xl">✕</button>
               </div>
@@ -362,6 +362,10 @@ export class WordChainComponent implements OnInit, OnDestroy {
   scores: { [name: string]: number } = {};
   rankedPlayers: PlayerScore[] = [];
   gameOverReason = '';
+
+  trackByIndex(index: number): number {
+    return index;
+  }
 
   ngOnInit() {
     const savedName = localStorage.getItem('arcade_player_name');

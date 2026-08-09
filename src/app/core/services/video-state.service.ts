@@ -16,6 +16,7 @@ export interface ActiveVideo {
   url?: string;
   source?: string;
   channelAvatar?: string | null;
+  category?: string;
 }
 
 @Injectable({
@@ -162,13 +163,8 @@ export class VideoStateService {
 
     const targetId = ytId;
 
-    if (forceIframe) {
-      this.switchToIframe();
-      return;
-    }
-
     // ── Local Video Fast Track ──
-    if (video.source === 'local' && video.url) {
+    if (video.source === 'local' && video.url && !video.url.includes('youtube.com') && !video.url.includes('youtu.be')) {
       this.playerType.set('native');
       this.rawStreamUrl.set(video.url);
       this.isLoading.set(false);
@@ -177,96 +173,47 @@ export class VideoStateService {
       return;
     }
 
+    // Check if video is cached locally (Offline / Data Saver Mode)
     try {
-      this.playerType.set('native');
-      
-      // Attempt to load related videos from cache first
-      const cachedRelated = await this.dbService.getWithTTL('related_videos', targetId, 2 * 60 * 60 * 1000);
-      if (cachedRelated) {
-        this.relatedVideos.set(cachedRelated.streams || []);
-        this.isLoadingRelated.set(false);
-      }
-
-      // ── Data Saver Direct Offline Loading Mode ──
-      // If Data Saver is enabled, we download the lowest stream (144p) with real percentage feedback, store in IndexedDB cache, then play as a local blob URL.
-      if (this.halaltubeService.algoConfig().dataSaverEnabled) {
-        const cachedBlobUrl = await this.downloadService.getCachedBlobUrl(targetId);
-        if (cachedBlobUrl) {
-          this.rawStreamUrl.set(cachedBlobUrl);
-          this.playerType.set('native');
-          this.isLoading.set(false);
-          this.isPlaying.set(true);
-          return;
-        }
-
-        // Trigger real download with progress tracking
-        this.isLoading.set(true);
-        const downloadedBlobUrl = await this.downloadService.downloadVideo(
-          targetId,
-          video.title || '',
-          video.author || '',
-          video.thumbnail || '',
-          '144p'
-        );
-
-        if (downloadedBlobUrl) {
-          this.rawStreamUrl.set(downloadedBlobUrl);
-          this.playerType.set('native');
-          this.isLoading.set(false);
-          this.isPlaying.set(true);
-          return;
-        }
-      }
-
-      // Standard Piped Stream Fetch
       const cachedBlobUrl = await this.downloadService.getCachedBlobUrl(targetId);
       if (cachedBlobUrl) {
         this.rawStreamUrl.set(cachedBlobUrl);
         this.playerType.set('native');
         this.isLoading.set(false);
         this.isPlaying.set(true);
-        // Still load related in background
-        this.pipedService.getVideoDetails(targetId).then(details => {
-          if (details?.relatedStreams) {
-            this.relatedVideos.set(details.relatedStreams);
-            this.dbService.setWithTTL('related_videos', { videoId: targetId, streams: details.relatedStreams });
-          }
-          this.isLoadingRelated.set(false);
-        }).catch(() => this.isLoadingRelated.set(false));
+        this.isLoadingRelated.set(false);
         return;
       }
+    } catch (e) {
+      console.warn('[VideoStateService] Cache check error:', e);
+    }
 
-      const details = await this.pipedService.getVideoDetails(targetId);
-      this.pipedDetails.set(details);
-      
-      // Update related videos and cache them
-      if (details.relatedStreams) {
-        this.relatedVideos.set(details.relatedStreams);
+    // ── Primary YouTube Playback Track: Direct YouTube Embed ──
+    // Direct embed is 100% reliable, supports HD, and avoids dead third-party Piped proxies.
+    this.switchToIframe();
+
+    // Attempt to load related videos from cache first
+    try {
+      const cachedRelated = await this.dbService.getWithTTL('related_videos', targetId, 2 * 60 * 60 * 1000);
+      if (cachedRelated?.streams?.length) {
+        this.relatedVideos.set(cachedRelated.streams);
         this.isLoadingRelated.set(false);
-        await this.dbService.setWithTTL('related_videos', { videoId: targetId, streams: details.relatedStreams });
       }
-      
-      if (details.hls) {
-        this.rawStreamUrl.set(details.hls);
-      } else {
-        const combinedStream = details.videoStreams.find(s => !s.videoOnly && s.mimeType.includes('mp4')) || details.videoStreams[0];
-        if (combinedStream) {
-          this.rawStreamUrl.set(combinedStream.url);
-        } else {
-          this.switchToIframe();
+    } catch (e) {}
+
+    // Fetch related videos & details in the background (Piped metadata only)
+    this.pipedService.getVideoDetails(targetId).then(details => {
+      if (details) {
+        this.pipedDetails.set(details);
+        if (details.relatedStreams?.length) {
+          this.relatedVideos.set(details.relatedStreams);
+          this.dbService.setWithTTL('related_videos', { videoId: targetId, streams: details.relatedStreams });
         }
       }
-      this.isLoading.set(false);
-      this.isPlaying.set(true);
-
-    } catch (error) {
-      console.warn('[VideoStateService] Piped failed, switching to fallback iframe player', error);
-      if (!this.halaltubeService.algoConfig().dataSaverEnabled) {
-        this.switchToIframe();
-      } else {
-        this.isLoading.set(false);
-      }
-    }
+      this.isLoadingRelated.set(false);
+    }).catch(() => {
+      this.isLoadingRelated.set(false);
+    });
   }
 
   private switchToIframe() {

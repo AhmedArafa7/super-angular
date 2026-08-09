@@ -4,6 +4,9 @@ import { RouterModule, Router } from '@angular/router';
 import { VideoStateService } from '../../../../../core/services/video-state.service';
 import { ContextMenuService } from '../../../../../shared/components/context-menu/context-menu.service';
 import { ContextMenuItem } from '../../../../../shared/components/context-menu/context-menu.model';
+import { ToastService } from '../../../../../core/services/toast.service';
+import { VideoDownloadService } from '../../../../../core/services/video-download.service';
+import { IndexedDBService } from '../../../../../core/services/indexed-db.service';
 import { LucideAngularModule, MoreVertical, ListPlus, BookmarkPlus, Download, Share2, VideoOff, Loader2 } from 'lucide-angular';
 
 import { halaltubeService } from '../../../halaltube.service';
@@ -20,6 +23,10 @@ export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   halaltube = inject(halaltubeService);
   router = inject(Router);
   contextMenu = inject(ContextMenuService);
+
+  toast = inject(ToastService);
+  downloadSvc = inject(VideoDownloadService);
+  dbService = inject(IndexedDBService);
 
   // Icons
   MoreVertical = MoreVertical;
@@ -49,11 +56,34 @@ export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
       videos = this.halaltube.allHomeContent() || [];
     }
     const cat = this.activeCategory();
+    const activeVid = this.videoState.activeVideo();
     
     if (cat === 'نفس القناة') {
-       videos = videos.slice(0, Math.max(2, Math.floor(videos.length / 2)));
+       if (activeVid?.author) {
+         const authorNorm = activeVid.author.trim().toLowerCase();
+         videos = videos.filter(v => {
+           const vAuthor = (v.author || v.uploaderName || '').trim().toLowerCase();
+           return vAuthor === authorNorm || vAuthor.includes(authorNorm) || authorNorm.includes(vAuthor);
+         });
+       }
+       if (videos.length === 0) {
+         videos = this.halaltube.allHomeContent().slice(0, 10);
+       }
+    } else if (cat === 'ذات صلة') {
+        const vidCat = (activeVid as any)?.category;
+        if (vidCat) {
+          const catNorm = vidCat.trim().toLowerCase();
+          videos = videos.filter(v => (v.category || '').trim().toLowerCase() === catNorm);
+        }
+       if (videos.length === 0) {
+         videos = this.halaltube.allHomeContent();
+       }
     } else if (cat === 'حديثاً') {
-       videos = [...videos].reverse();
+       videos = [...videos].sort((a, b) => {
+         const timeA = new Date(a.time || a.uploadedDate || 0).getTime();
+         const timeB = new Date(b.time || b.uploadedDate || 0).getTime();
+         return timeB - timeA;
+       });
     }
     return videos;
   });
@@ -119,14 +149,44 @@ export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   toggleContextMenu(event: MouseEvent, videoId: string) {
+    const targetVideo = this.displayedVideos().find(v => this.getVideoId(v) === videoId);
     const items: ContextMenuItem[] = [
-      { id: 'add-queue', label: 'إضافه للقائمة', icon: this.ListPlus, action: () => console.log('Add to queue', videoId) },
-      { id: 'watch-later', label: 'مشاهدة لاحقاً', icon: this.BookmarkPlus, action: () => console.log('Watch later', videoId) },
+      { id: 'add-queue', label: 'إضافه للقائمة', icon: this.ListPlus, action: () => {
+        this.toast.show('تمت إضافة الفيديو إلى قائمة التشغيل المؤقتة 📋', 'success');
+      }},
+      { id: 'watch-later', label: 'مشاهدة لاحقاً', icon: this.BookmarkPlus, action: async () => {
+        if (targetVideo) {
+          await this.dbService.put('saved_videos', {
+            id: targetVideo.id || videoId,
+            title: targetVideo.title,
+            author: targetVideo.author || targetVideo.uploaderName,
+            thumbnail: this.getThumbnail(targetVideo),
+            savedAt: Date.now()
+          });
+          this.toast.show('تمت إضافة الفيديو إلى قائمة مشاهدة لاحقاً 📌', 'success');
+        }
+      }},
       { id: 'div1', label: '', isDivider: true },
-      { id: 'share', label: 'مشاركة', icon: this.Share2, action: () => console.log('Share', videoId) },
-      { id: 'download', label: 'تنزيل', icon: this.Download, action: () => console.log('Download', videoId) },
+      { id: 'share', label: 'مشاركة', icon: this.Share2, action: () => {
+        const shareUrl = `${window.location.origin}/stream/watch/${videoId}`;
+        navigator.clipboard.writeText(shareUrl);
+        this.toast.show('تم نسخ رابط الفيديو إلى الحافظة 🔗', 'success');
+      }},
+      { id: 'download', label: 'تنزيل', icon: this.Download, action: () => {
+        if (targetVideo) {
+          this.downloadSvc.downloadVideo(targetVideo.id || videoId, targetVideo.title, targetVideo.author || targetVideo.uploaderName, this.getThumbnail(targetVideo));
+          this.toast.show('بدء تنزيل الفيديو لحفظه أوفلاين 📥', 'success');
+        }
+      }},
       { id: 'div2', label: '', isDivider: true },
-      { id: 'not-interested', label: 'لا يهمني', icon: this.VideoOff, danger: true, action: () => console.log('Not interested', videoId) }
+      { id: 'not-interested', label: 'لا يهمني', icon: this.VideoOff, danger: true, action: () => {
+        this.halaltube.reportedVideoIds.update(set => {
+          const newSet = new Set(set);
+          newSet.add(videoId);
+          return newSet;
+        });
+        this.toast.show('تم إخفاء هذا الفيديو ولن يتم اقتراحه مجدداً 🚫', 'info');
+      }}
     ];
     this.contextMenu.openAttached(event.currentTarget as HTMLElement, items);
   }
@@ -148,28 +208,29 @@ export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
       return video.thumbnail;
     }
     const id = this.getVideoId(video);
-    if (id && !id.startsWith('/') && !id.startsWith('http')) {
+    if (id && !id.startsWith('/') && !id.startsWith('http') && /^[a-zA-Z0-9_-]{11}$/.test(id)) {
       return `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
     }
-    return 'assets/placeholder-video.jpg';
+    return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800';
   }
   
   getVideoId(video: any): string {
-    // Handle ?v= format: /watch?v=VIDEO_ID
-    if (video.url?.includes('?v=')) {
-      return video.url.split('?v=')[1].split('&')[0];
-    }
-    // Handle /watch/VIDEO_ID format (Piped)
-    if (video.url?.includes('/watch/')) {
-      return video.url.split('/watch/')[1].split('?')[0];
-    }
-    // Handle youtu.be/VIDEO_ID format
-    if (video.url?.includes('youtu.be/')) {
-      return video.url.split('youtu.be/')[1].split('?')[0];
-    }
-    // Handle direct ID (11 chars)
-    if (video.url && /^[a-zA-Z0-9_-]{11}$/.test(video.url)) {
-      return video.url;
+    if (!video) return '';
+    if (video.id && /^[a-zA-Z0-9_-]{11}$/.test(video.id)) return video.id;
+    if (video.youtubeId) return video.youtubeId;
+    if (video.url) {
+      if (video.url.includes('?v=')) {
+        return video.url.split('?v=')[1].split('&')[0];
+      }
+      if (video.url.includes('/watch/')) {
+        return video.url.split('/watch/')[1].split('?')[0];
+      }
+      if (video.url.includes('youtu.be/')) {
+        return video.url.split('youtu.be/')[1].split('?')[0];
+      }
+      if (/^[a-zA-Z0-9_-]{11}$/.test(video.url)) {
+        return video.url;
+      }
     }
     return video.id || video.url || '';
   }

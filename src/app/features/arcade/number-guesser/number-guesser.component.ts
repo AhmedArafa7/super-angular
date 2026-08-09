@@ -1,0 +1,680 @@
+import { Component, OnInit, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { LucideAngularModule, Trophy, Clock, Zap, RotateCcw, ArrowRight, Sparkles, Lock, Key, Eye, EyeOff, Hash, AlertTriangle, ShieldCheck, Copy, Check } from 'lucide-angular';
+
+export interface GuessRecord {
+  player: string;
+  guess: string;
+  bulls: number; // صح في مكانه صح (Right digit, right position)
+  cows: number;  // صح في مكانه غلط (Right digit, wrong position)
+  misses: number;// أرقام خاطئة
+  timestamp: string;
+}
+
+export interface PlayerSession {
+  name: string;
+  secretCode: string;
+  isSecretConfirmed: boolean;
+  score: number;
+}
+
+@Component({
+  selector: 'app-number-guesser',
+  standalone: true,
+  imports: [CommonModule, FormsModule, LucideAngularModule],
+  template: `
+    <div class="min-h-screen bg-slate-950 text-white p-4 md:p-10 flex flex-col items-center justify-start select-none font-sans dir-rtl">
+      
+      <!-- Top Navigation Header -->
+      <div class="w-full max-w-4xl flex items-center justify-between mb-8 border-b border-white/10 pb-4">
+        <button (click)="goBack()" class="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white px-5 py-2.5 rounded-2xl transition-all font-bold text-sm cursor-pointer">
+          <lucide-icon [img]="ArrowRight" class="w-4 h-4"></lucide-icon>
+          العودة لمعرض الألعاب
+        </button>
+
+        <div class="flex items-center gap-3">
+          <div class="bg-amber-500/10 border border-amber-500/30 text-amber-400 px-4 py-1.5 rounded-2xl text-xs font-black flex items-center gap-2">
+            <lucide-icon [img]="Sparkles" class="w-4 h-4"></lucide-icon>
+            تخمين رقم الخصم 🔢 (3، 4، 5 أرقام)
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN CONTAINER -->
+      <div class="w-full max-w-3xl">
+
+        <!-- 1. SETUP STAGE -->
+        <div *ngIf="gameState() === 'setup'" class="bg-slate-900 border border-white/10 rounded-[2.5rem] p-6 md:p-10 shadow-2xl space-y-8 animate-in zoom-in-95 duration-300">
+          <div class="text-center space-y-3">
+            <h1 class="text-3xl md:text-5xl font-black bg-gradient-to-l from-white via-amber-200 to-amber-400 bg-clip-text text-transparent">
+              تخمين رقم الخصم 🔢
+            </h1>
+            <p class="text-slate-400 text-xs md:text-sm max-w-lg mx-auto leading-relaxed">
+              اختر طول الرقم السري (3، 4، أو 5 أرقام)، حدد رمزك السري، وحاول تخمين رقم الخصم بناءً على ردود الفعل: <br>
+              <span class="text-emerald-400 font-bold">🎯 صح مكانه صح</span> | 
+              <span class="text-amber-400 font-bold">🔄 صح مكانه غلط</span> | 
+              <span class="text-rose-400 font-bold">❌ خاطئ تماماً</span>
+            </p>
+          </div>
+
+          <!-- Standardized 3 Play Modes Selection -->
+          <div class="space-y-3">
+            <label class="text-xs font-bold text-slate-400 uppercase tracking-widest block text-right">اختر نمط اللعب (3 أنماط قياسية)</label>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              
+              <!-- Mode 1: Local Play -->
+              <button (click)="selectMode('local')"
+                      class="p-5 rounded-2xl border text-right transition-all flex flex-col justify-between space-y-3 cursor-pointer"
+                      [ngClass]="selectedMode === 'local' ? 'bg-amber-600/20 border-amber-500 text-white shadow-lg shadow-amber-600/20' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'">
+                <div class="flex justify-between items-center">
+                  <span class="text-2xl">📱</span>
+                  <span *ngIf="selectedMode === 'local'" class="text-[10px] font-black bg-amber-500 text-slate-950 px-2 py-0.5 rounded-full">مُحدد</span>
+                </div>
+                <div>
+                  <h3 class="font-black text-sm text-white">1. اللعب محلياً</h3>
+                  <p class="text-[11px] text-slate-400 mt-1">فردي ضد الكمبيوتر 🤖 أو Pass & Play جماعي</p>
+                </div>
+              </button>
+
+              <!-- Mode 2: Private Room P2P -->
+              <button (click)="selectMode('p2p')"
+                      class="p-5 rounded-2xl border text-right transition-all flex flex-col justify-between space-y-3 cursor-pointer"
+                      [ngClass]="selectedMode === 'p2p' ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-lg shadow-indigo-600/20' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'">
+                <div class="flex justify-between items-center">
+                  <span class="text-2xl">🔑</span>
+                  <span *ngIf="selectedMode === 'p2p'" class="text-[10px] font-black bg-indigo-500 text-white px-2 py-0.5 rounded-full">مُحدد</span>
+                </div>
+                <div>
+                  <h3 class="font-black text-sm text-white">2. إنشاء غرفة (P2P)</h3>
+                  <p class="text-[11px] text-slate-400 mt-1">غرفة خاصة مع أصدقائك عبر كود الدعوة</p>
+                </div>
+              </button>
+
+              <!-- Mode 3: Online Matchmaking Pro -->
+              <button (click)="selectMode('online_pro')"
+                      class="p-5 rounded-2xl border text-right transition-all flex flex-col justify-between space-y-3 relative overflow-hidden cursor-pointer"
+                      [ngClass]="selectedMode === 'online_pro' ? 'bg-purple-600/20 border-purple-500 text-white shadow-lg shadow-purple-600/20' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'">
+                <div class="flex justify-between items-center">
+                  <span class="text-2xl">🌐</span>
+                  <span class="text-[10px] font-black bg-purple-500 text-white px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <lucide-icon [img]="Lock" class="w-3 h-3"></lucide-icon> Pro
+                  </span>
+                </div>
+                <div>
+                  <h3 class="font-black text-sm text-white">3. لعب أونلاين Pro</h3>
+                  <p class="text-[11px] text-slate-400 mt-1">مطابقة أونلاين للمشتركين Pro</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- P2P Room Configuration Details -->
+          <div *ngIf="selectedMode === 'p2p'" class="p-5 bg-indigo-950/40 border border-indigo-500/30 rounded-3xl space-y-4">
+            <div class="flex justify-between items-center">
+              <h4 class="font-bold text-xs text-indigo-300">تفاصيل الغرفة الخاصة (P2P):</h4>
+              <span class="text-xs font-mono font-bold bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-xl">كود الغرفة: {{ p2pRoomCode() }}</span>
+            </div>
+            <p class="text-xs text-slate-300">شارك هذا الكود مع أصدقائك لينضموا إليك في التحدي مباشرة!</p>
+            <div class="flex gap-2">
+              <input type="text" readonly [value]="'https://super-app.com/arcade/number-guesser?room=' + p2pRoomCode()" class="flex-1 bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-slate-300" />
+              <button (click)="copyRoomLink()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all">
+                {{ copiedLink() ? '✓ تم النسخ' : 'نسخ الرابط' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Code Length Configuration (3, 4, 5 Digits) -->
+          <div class="space-y-4 bg-black/30 p-6 rounded-3xl border border-white/5">
+            <label class="text-xs font-bold text-slate-400 uppercase tracking-widest block text-right">🔢 اختر طول الرقم السري للخصم</label>
+            <div class="grid grid-cols-3 gap-3">
+              <button *ngFor="let digits of [3, 4, 5]" 
+                      (click)="codeLength = digits"
+                      class="py-4 rounded-2xl border text-center transition-all font-black cursor-pointer"
+                      [ngClass]="codeLength === digits ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-lg shadow-amber-500/30 text-lg' : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 text-base'">
+                {{ digits }} أرقام {{ digits === 4 ? '⭐ (قياسي)' : '' }}
+              </button>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-white/5">
+              <span class="text-xs text-slate-400 font-bold">السماح بتكرار الأرقام في الكود (مثال: 442)</span>
+              <button (click)="allowDuplicates = !allowDuplicates" class="px-4 py-1.5 rounded-xl text-xs font-bold transition-all" [ngClass]="allowDuplicates ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-white/5 text-slate-400 border border-white/10'">
+                {{ allowDuplicates ? 'مسموح بالتكرار' : 'أرقام فريدة غير مكررة 🔒' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Local Mode Type Selection -->
+          <div *ngIf="selectedMode === 'local'" class="space-y-3">
+            <label class="text-xs font-bold text-slate-400 uppercase tracking-widest block text-right">نوع التحدي المحلي</label>
+            <div class="flex items-center gap-3">
+              <button (click)="isVsAi = true" [ngClass]="isVsAi ? 'bg-amber-600 text-slate-950 font-black shadow-md' : 'bg-white/5 text-slate-400 font-bold'" class="flex-1 py-3 rounded-2xl text-xs transition-all cursor-pointer">
+                فردي ضد الذكاء الاصطناعي 🤖
+              </button>
+              <button (click)="isVsAi = false" [ngClass]="!isVsAi ? 'bg-amber-600 text-slate-950 font-black shadow-md' : 'bg-white/5 text-slate-400 font-bold'" class="flex-1 py-3 rounded-2xl text-xs transition-all cursor-pointer">
+                لاعبين متعددين (Pass & Play) 👥
+              </button>
+            </div>
+          </div>
+
+          <!-- Multiplayer Players List Setup -->
+          <div *ngIf="selectedMode === 'local' && !isVsAi" class="space-y-4 bg-black/30 p-6 rounded-3xl border border-white/5">
+            <div class="flex justify-between items-center">
+              <label class="text-xs font-bold text-slate-400 uppercase tracking-widest">أسماء المتنافسين (2 إلى 6 لاعبين)</label>
+              <button (click)="addPlayer()" [disabled]="playerList.length >= 6" class="text-xs font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/20 disabled:opacity-40">
+                + إضافة لاعب
+              </button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div *ngFor="let p of playerList; let i = index; trackBy: trackByIndex" class="flex items-center gap-2">
+                <input type="text" [(ngModel)]="playerList[i]" placeholder="اسم اللاعب..." class="w-full h-11 bg-white/5 border border-white/10 rounded-2xl px-4 text-xs text-white text-right focus:outline-none focus:border-amber-500 font-bold" />
+                <button *ngIf="playerList.length > 2" (click)="removePlayer(i)" class="text-rose-400 hover:bg-rose-500/10 p-2 rounded-xl">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Start Game Button -->
+          <button (click)="proceedToSecretSetup()" class="w-full h-14 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-2xl font-black text-base shadow-xl shadow-amber-500/20 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+            <lucide-icon [img]="Zap" class="w-5 h-5"></lucide-icon>
+            <span>الانتقال لمرحلة تحديد الرقم السري ({{ codeLength }} أرقام) 🔐</span>
+          </button>
+        </div>
+
+        <!-- 2. SECRET CODE SETUP STAGE -->
+        <div *ngIf="gameState() === 'secret_setup'" class="bg-slate-900 border border-white/10 rounded-[2.5rem] p-6 md:p-10 shadow-2xl space-y-8 animate-in fade-in duration-300">
+          <div class="text-center space-y-2">
+            <div class="size-16 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-3xl flex items-center justify-center mx-auto mb-3">
+              <lucide-icon [img]="Key" class="w-8 h-8"></lucide-icon>
+            </div>
+            <h2 class="text-2xl md:text-3xl font-black text-white">تحديد الرمز السري 🔐</h2>
+            <p class="text-slate-400 text-xs md:text-sm">
+              دور اللاعب: <span class="text-amber-400 font-bold">{{ playerList[currentSetupIndex] }}</span> <br>
+              أدخل رقمك السري المكون من <span class="text-amber-400 font-bold font-mono">{{ codeLength }}</span> أرقام واحرص ألا يراه خصمك!
+            </p>
+          </div>
+
+          <div class="bg-black/40 p-6 md:p-8 rounded-3xl border border-white/5 space-y-6 max-w-md mx-auto">
+            <div class="space-y-2 text-right">
+              <label class="text-xs font-bold text-slate-400 block">الرمز السري الخاص بك:</label>
+              <div class="relative">
+                <input 
+                  [type]="showSecretInput ? 'text' : 'password'" 
+                  [(ngModel)]="tempSecretCode"
+                  [attr.maxlength]="codeLength"
+                  (keyup.enter)="confirmPlayerSecret()"
+                  placeholder="أدخل {{ codeLength }} أرقام..." 
+                  class="w-full h-14 bg-white/5 border-2 border-white/10 rounded-2xl px-5 text-center text-2xl font-mono text-amber-300 font-black tracking-widest focus:outline-none focus:border-amber-500"
+                />
+                <button (click)="showSecretInput = !showSecretInput" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-2">
+                  <lucide-icon [img]="showSecretInput ? EyeOff : Eye" class="w-5 h-5"></lucide-icon>
+                </button>
+              </div>
+              <p *ngIf="secretSetupError" class="text-xs text-rose-400 font-bold text-center mt-2">
+                ⚠️ {{ secretSetupError }}
+              </p>
+            </div>
+
+            <button (click)="confirmPlayerSecret()" class="w-full h-12 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-2xl font-black text-sm transition-all shadow-lg shadow-amber-500/20 cursor-pointer">
+              تأكيد الرمز السري والحفظ 🔒
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. MAIN PLAYING & GUESSING STAGE -->
+        <div *ngIf="gameState() === 'playing'" class="bg-slate-900 border border-white/10 rounded-[2.5rem] p-6 md:p-10 shadow-2xl space-y-8 animate-in fade-in duration-300">
+          
+          <!-- Turn Banner & Scoreboard -->
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-black/40 p-6 rounded-3xl border border-white/5">
+            <div>
+              <span class="text-xs text-slate-400 font-bold block mb-1">دور التخمين الآن:</span>
+              <h2 class="text-2xl font-black text-amber-400 flex items-center gap-2">
+                <span>👤 {{ currentTurnPlayer }}</span>
+              </h2>
+            </div>
+
+            <div class="flex items-center gap-3 bg-white/5 px-5 py-2.5 rounded-2xl border border-white/5">
+              <span class="text-xs text-slate-400 font-bold">طول الكود:</span>
+              <span class="font-mono text-base font-black text-amber-400 bg-amber-500/10 px-3 py-0.5 rounded-lg border border-amber-500/20">
+                {{ codeLength }} أرقام
+              </span>
+            </div>
+          </div>
+
+          <!-- Main Input Section for Guessing Opponent's Code -->
+          <div class="bg-gradient-to-r from-amber-950/40 via-slate-900 to-amber-950/40 border-2 border-amber-500/30 p-6 md:p-8 rounded-3xl space-y-4 shadow-xl">
+            <div class="text-center space-y-1">
+              <span class="text-xs font-black text-amber-400 uppercase tracking-widest">🎯 الخانة الرئيسية لتخمين رقم الخصم</span>
+              <p class="text-xs text-slate-400">اكتب الرقم النهائي المكون من {{ codeLength }} أرقام واضغط إرسال للحصول على النتيجة</p>
+            </div>
+
+            <div class="relative max-w-md mx-auto">
+              <input 
+                type="text" 
+                [(ngModel)]="currentGuessInput" 
+                [attr.maxlength]="codeLength"
+                (keyup.enter)="submitGuess()"
+                placeholder="أدخل تخمينك (مثال: {{ sampleGuessPlaceholder() }})..." 
+                autofocus
+                class="w-full h-16 bg-slate-950 border-2 border-amber-500/50 rounded-2xl px-6 text-center text-2xl font-mono text-white font-black tracking-widest focus:outline-none focus:border-amber-400 shadow-inner"
+              />
+              <button (click)="submitGuess()" class="absolute left-2 top-1/2 -translate-y-1/2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black h-12 px-6 rounded-xl text-sm transition-all shadow cursor-pointer">
+                تخمين ↵
+              </button>
+            </div>
+            
+            <p *ngIf="guessError" class="text-xs text-rose-400 font-bold text-center">
+              ⚠️ {{ guessError }}
+            </p>
+          </div>
+
+          <!-- Recent Feedback Card (If Available) -->
+          <div *ngIf="lastFeedback" class="bg-slate-950 border border-white/10 p-5 rounded-2xl text-center space-y-3 animate-in zoom-in-95">
+            <span class="text-xs font-bold text-slate-400">نتيجة المحاولة الأخيرة ({{ lastFeedback.guess }}):</span>
+            <div class="grid grid-cols-3 gap-3 max-w-md mx-auto">
+              <div class="bg-emerald-950/50 border border-emerald-500/30 p-3 rounded-xl">
+                <span class="text-2xl block mb-1">🎯</span>
+                <span class="text-xs font-bold text-emerald-400 block">صح مكانه صح</span>
+                <span class="font-mono text-xl font-black text-white">{{ lastFeedback.bulls }}</span>
+              </div>
+              <div class="bg-amber-950/50 border border-amber-500/30 p-3 rounded-xl">
+                <span class="text-2xl block mb-1">🔄</span>
+                <span class="text-xs font-bold text-amber-400 block">صح مكانه غلط</span>
+                <span class="font-mono text-xl font-black text-white">{{ lastFeedback.cows }}</span>
+              </div>
+              <div class="bg-rose-950/50 border border-rose-500/30 p-3 rounded-xl">
+                <span class="text-2xl block mb-1">❌</span>
+                <span class="text-xs font-bold text-rose-400 block">أرقام خاطئة</span>
+                <span class="font-mono text-xl font-black text-white">{{ lastFeedback.misses }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- History Table of Previous Guesses -->
+          <div class="space-y-3">
+            <div class="flex justify-between items-center">
+              <h3 class="text-sm font-bold text-slate-300">جدول سجل التخمينات ({{ guessHistory.length }}):</h3>
+              <span class="text-xs text-slate-500"> مرتبة من الأحدث إلى الأقدم</span>
+            </div>
+
+            <div *ngIf="guessHistory.length === 0" class="bg-black/20 border border-white/5 rounded-2xl p-8 text-center text-slate-500 text-xs">
+              لم يتم تقديم أي تخمينات بعد. أدخل التخمين الأول في الخانة الرئيسية أعلاه! 🚀
+            </div>
+
+            <div *ngIf="guessHistory.length > 0" class="overflow-hidden rounded-2xl border border-white/10 bg-slate-950/80">
+              <table class="w-full text-right text-xs">
+                <thead class="bg-white/5 text-slate-400 font-bold border-b border-white/10">
+                  <tr>
+                    <th class="p-3 text-center">اللاعب</th>
+                    <th class="p-3 text-center">الرقم المترشح</th>
+                    <th class="p-3 text-center">🎯 صح مكانه صح</th>
+                    <th class="p-3 text-center">🔄 صح مكانه غلط</th>
+                    <th class="p-3 text-center">❌ أرقام خاطئة</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5 font-mono">
+                  <tr *ngFor="let h of guessHistory" class="hover:bg-white/5 transition-colors">
+                    <td class="p-3 text-center font-sans font-bold text-amber-300">{{ h.player }}</td>
+                    <td class="p-3 text-center font-black text-base text-white tracking-widest">{{ h.guess }}</td>
+                    <td class="p-3 text-center text-emerald-400 font-bold">{{ h.bulls }}</td>
+                    <td class="p-3 text-center text-amber-400 font-bold">{{ h.cows }}</td>
+                    <td class="p-3 text-center text-rose-400 font-bold">{{ h.misses }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. GAME OVER / WINNER STAGE -->
+        <div *ngIf="gameState() === 'gameover'" class="bg-slate-900 border border-white/10 rounded-[2.5rem] p-8 md:p-12 shadow-2xl space-y-8 text-center animate-in zoom-in-95 duration-300">
+          <div class="size-24 bg-amber-500/10 border border-amber-500/40 rounded-3xl flex items-center justify-center mx-auto text-amber-400 shadow-xl shadow-amber-500/10">
+            <lucide-icon [img]="Trophy" class="w-12 h-12"></lucide-icon>
+          </div>
+
+          <div class="space-y-3">
+            <span class="text-xs font-bold text-amber-400 uppercase tracking-widest block">🎉 انتهت الجولة بنجاح!</span>
+            <h1 class="text-3xl md:text-5xl font-black text-white">
+              الفائز: <span class="text-amber-400">{{ winnerName }}</span>! 🏆
+            </h1>
+            <p class="text-slate-300 text-sm max-w-md mx-auto leading-relaxed bg-amber-950/30 p-4 rounded-2xl border border-amber-500/20">
+              تم تخمين الرقم السري للخصم <span class="font-mono font-black text-amber-300 text-lg">({{ winningCode }})</span> بنجاح بعد <span class="font-black text-white">{{ totalAttempts }}</span> محاولة!
+            </p>
+          </div>
+
+          <!-- Winner Actions -->
+          <div class="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto pt-4">
+            <button (click)="restartGame()" class="flex-1 h-12 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl text-sm transition-all shadow-lg shadow-amber-500/20 cursor-pointer">
+              لعب جولة جديدة 🔄
+            </button>
+            <button (click)="resetToSetup()" class="flex-1 h-12 bg-white/10 hover:bg-white/20 text-white font-bold rounded-2xl text-sm transition-all border border-white/10 cursor-pointer">
+              تغيير الإعدادات ⚙️
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `
+})
+export class NumberGuesserComponent implements OnInit {
+
+  // Icons
+  Trophy = Trophy;
+  Clock = Clock;
+  Zap = Zap;
+  RotateCcw = RotateCcw;
+  ArrowRight = ArrowRight;
+  Sparkles = Sparkles;
+  Lock = Lock;
+  Key = Key;
+  Eye = Eye;
+  EyeOff = EyeOff;
+  Hash = Hash;
+  AlertTriangle = AlertTriangle;
+  ShieldCheck = ShieldCheck;
+  Copy = Copy;
+  Check = Check;
+
+  // Signals for reactivity
+  gameState = signal<'setup' | 'secret_setup' | 'playing' | 'gameover'>('setup');
+  p2pRoomCode = signal<string>('');
+  copiedLink = signal<boolean>(false);
+
+  // Setup properties
+  selectedMode: 'local' | 'p2p' | 'online_pro' = 'local';
+  codeLength: number = 4; // 3, 4, or 5
+  allowDuplicates: boolean = false;
+  isVsAi: boolean = true;
+  playerList: string[] = ['اللاعب 1', 'الكمبيوتر (AI)'];
+
+  // Secret setup phase
+  currentSetupIndex: number = 0;
+  tempSecretCode: string = '';
+  showSecretInput: boolean = false;
+  secretSetupError: string = '';
+  secretsMap: { [player: string]: string } = {};
+
+  // Playing phase
+  currentTurnPlayer: string = '';
+  currentGuessInput: string = '';
+  guessError: string = '';
+  lastFeedback: GuessRecord | null = null;
+  guessHistory: GuessRecord[] = [];
+
+  // Victory
+  winnerName: string = '';
+  winningCode: string = '';
+  totalAttempts: number = 0;
+
+  constructor(private router: Router) {}
+
+  ngOnInit() {
+    this.p2pRoomCode.set('NUM-' + Math.floor(1000 + Math.random() * 9000));
+    const savedName = localStorage.getItem('arcade_player_name');
+    if (savedName) {
+      this.playerList[0] = savedName;
+    }
+  }
+
+  trackByIndex(index: number): number {
+    return index;
+  }
+
+  goBack() {
+    this.router.navigate(['/arcade']);
+  }
+
+  selectMode(mode: 'local' | 'p2p' | 'online_pro') {
+    this.selectedMode = mode;
+    if (mode === 'online_pro') {
+      alert('🔒 هذا النمط مخصص حصرياً للمشتركين Pro! يمكنك اللعب محلياً أو عبر إنشاء غرفة P2P مجاناً.');
+      return;
+    }
+    if (mode === 'local' && this.isVsAi) {
+      this.playerList = [this.playerList[0] || 'اللاعب 1', 'الكمبيوتر (AI)'];
+    }
+  }
+
+  addPlayer() {
+    if (this.playerList.length < 6) {
+      this.playerList.push(`اللاعب ${this.playerList.length + 1}`);
+    }
+  }
+
+  removePlayer(index: number) {
+    if (this.playerList.length > 2) {
+      this.playerList.splice(index, 1);
+    }
+  }
+
+  copyRoomLink() {
+    const link = `https://super-app.com/arcade/number-guesser?room=${this.p2pRoomCode()}`;
+    navigator.clipboard.writeText(link);
+    this.copiedLink.set(true);
+    setTimeout(() => this.copiedLink.set(false), 2500);
+  }
+
+  sampleGuessPlaceholder(): string {
+    if (this.codeLength === 3) return '123';
+    if (this.codeLength === 5) return '12345';
+    return '1234';
+  }
+
+  // --- Step 1 -> Step 2: Secret Setup ---
+  proceedToSecretSetup() {
+    if (this.selectedMode === 'local' && this.isVsAi) {
+      this.playerList = [this.playerList[0] || 'اللاعب 1', 'الكمبيوتر (AI)'];
+      // Generate AI Secret Code automatically
+      this.secretsMap['الكمبيوتر (AI)'] = this.generateRandomCode(this.codeLength, this.allowDuplicates);
+    }
+
+    this.currentSetupIndex = 0;
+    this.tempSecretCode = '';
+    this.secretSetupError = '';
+    this.gameState.set('secret_setup');
+  }
+
+  confirmPlayerSecret() {
+    const pName = this.playerList[this.currentSetupIndex];
+    const code = this.tempSecretCode.trim();
+
+    // Validate Code
+    if (!this.isValidCode(code)) {
+      return;
+    }
+
+    this.secretsMap[pName] = code;
+    this.tempSecretCode = '';
+    this.secretSetupError = '';
+
+    // Move to next player secret setup if any
+    this.currentSetupIndex++;
+
+    // Skip AI if any
+    if (this.currentSetupIndex < this.playerList.length && this.playerList[this.currentSetupIndex] === 'الكمبيوتر (AI)') {
+      this.currentSetupIndex++;
+    }
+
+    // Check if all players confirmed secrets
+    if (this.currentSetupIndex >= this.playerList.length) {
+      this.startMatch();
+    }
+  }
+
+  isValidCode(code: string): boolean {
+    if (code.length !== this.codeLength) {
+      this.secretSetupError = `يجب أن يتكون الكود من ${this.codeLength} أرقام تماماً.`;
+      return false;
+    }
+    if (!/^\d+$/.test(code)) {
+      this.secretSetupError = 'يجب إدخال أرقام فقط (0-9).';
+      return false;
+    }
+    if (!this.allowDuplicates && new Set(code).size !== code.length) {
+      this.secretSetupError = 'خيار الأرقام المكررة غير مفعل. يجب إدخال أرقام فريدة.';
+      return false;
+    }
+    return true;
+  }
+
+  generateRandomCode(length: number, allowDup: boolean): string {
+    const digits = ['0','1','2','3','4','5','6','7','8','9'];
+    if (!allowDup) {
+      let shuffled = [...digits].sort(() => 0.5 - Math.random());
+      return shuffled.slice(0, length).join('');
+    } else {
+      let res = '';
+      for (let i = 0; i < length; i++) {
+        res += digits[Math.floor(Math.random() * 10)];
+      }
+      return res;
+    }
+  }
+
+  // --- Step 3: Start Playing ---
+  startMatch() {
+    this.guessHistory = [];
+    this.lastFeedback = null;
+    this.currentGuessInput = '';
+    this.guessError = '';
+    this.currentTurnPlayer = this.playerList[0];
+    this.gameState.set('playing');
+  }
+
+  // --- Submit candidate guess from Main Input Box ---
+  submitGuess() {
+    const guess = this.currentGuessInput.trim();
+
+    if (guess.length !== this.codeLength || !/^\d+$/.test(guess)) {
+      this.guessError = `الرجاء إدخال رقم سري مكون من ${this.codeLength} أرقام.`;
+      return;
+    }
+
+    if (!this.allowDuplicates && new Set(guess).size !== guess.length) {
+      this.guessError = 'الرجاء إدخال أرقام غير مكررة.';
+      return;
+    }
+
+    this.guessError = '';
+
+    // Determine target secret code (opponent's code)
+    const opponentName = this.getOpponentName(this.currentTurnPlayer);
+    const targetCode = this.secretsMap[opponentName];
+
+    // Compute Bulls & Cows & Misses
+    const feedback = this.evaluateGuess(guess, targetCode);
+
+    const record: GuessRecord = {
+      player: this.currentTurnPlayer,
+      guess: guess,
+      bulls: feedback.bulls,
+      cows: feedback.cows,
+      misses: feedback.misses,
+      timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    };
+
+    this.lastFeedback = record;
+    this.guessHistory.unshift(record);
+    this.currentGuessInput = '';
+
+    // Check Win Condition (Bulls === codeLength)
+    if (feedback.bulls === this.codeLength) {
+      this.triggerWin(this.currentTurnPlayer, targetCode);
+      return;
+    }
+
+    // Switch Turn
+    this.switchTurn();
+  }
+
+  evaluateGuess(guess: string, secret: string): { bulls: number; cows: number; misses: number } {
+    let bulls = 0;
+    let cows = 0;
+
+    let secretArray = secret.split('');
+    let guessArray = guess.split('');
+
+    // First pass: Find Bulls (Exact position matches)
+    for (let i = 0; i < this.codeLength; i++) {
+      if (guessArray[i] === secretArray[i]) {
+        bulls++;
+        secretArray[i] = '#'; // Mark used
+        guessArray[i] = '*';
+      }
+    }
+
+    // Second pass: Find Cows (Wrong position matches)
+    for (let i = 0; i < this.codeLength; i++) {
+      if (guessArray[i] !== '*') {
+        const foundIdx = secretArray.indexOf(guessArray[i]);
+        if (foundIdx !== -1) {
+          cows++;
+          secretArray[foundIdx] = '#';
+        }
+      }
+    }
+
+    const misses = this.codeLength - (bulls + cows);
+    return { bulls, cows, misses };
+  }
+
+  getOpponentName(currentPlayer: string): string {
+    const idx = this.playerList.indexOf(currentPlayer);
+    const oppIdx = (idx + 1) % this.playerList.length;
+    return this.playerList[oppIdx];
+  }
+
+  switchTurn() {
+    const idx = this.playerList.indexOf(this.currentTurnPlayer);
+    const nextIdx = (idx + 1) % this.playerList.length;
+    this.currentTurnPlayer = this.playerList[nextIdx];
+
+    // If next player is AI bot, trigger AI turn automatically
+    if (this.currentTurnPlayer === 'الكمبيوتر (AI)') {
+      setTimeout(() => this.handleAiTurn(), 1200);
+    }
+  }
+
+  handleAiTurn() {
+    const aiGuess = this.generateRandomCode(this.codeLength, this.allowDuplicates);
+    const humanPlayer = this.playerList[0];
+    const humanSecret = this.secretsMap[humanPlayer];
+
+    const feedback = this.evaluateGuess(aiGuess, humanSecret);
+
+    const record: GuessRecord = {
+      player: 'الكمبيوتر (AI)',
+      guess: aiGuess,
+      bulls: feedback.bulls,
+      cows: feedback.cows,
+      misses: feedback.misses,
+      timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    };
+
+    this.lastFeedback = record;
+    this.guessHistory.unshift(record);
+
+    if (feedback.bulls === this.codeLength) {
+      this.triggerWin('الكمبيوتر (AI)', humanSecret);
+      return;
+    }
+
+    this.switchTurn();
+  }
+
+  triggerWin(winner: string, winningCode: string) {
+    this.winnerName = winner;
+    this.winningCode = winningCode;
+    this.totalAttempts = this.guessHistory.filter(h => h.player === winner).length;
+    this.gameState.set('gameover');
+  }
+
+  restartGame() {
+    this.proceedToSecretSetup();
+  }
+
+  resetToSetup() {
+    this.gameState.set('setup');
+  }
+}

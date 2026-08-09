@@ -31,6 +31,7 @@ export const routes: Routes = [
       { path: 'arcade', loadComponent: () => import('./features/arcade/arcade-hub.component').then(c => c.ArcadeHubComponent), title: 'الألعاب' },
       { path: 'arcade/word-chain', loadComponent: () => import('./features/arcade/word-chain/word-chain.component').then(c => c.WordChainComponent), title: 'لعبة سلسلة الكلمات - Word Chain' },
       { path: 'arcade/flashcards', loadComponent: () => import('./features/arcade/flashcards/flashcards.component').then(c => c.FlashcardsComponent), title: 'نظام البطاقات التعليمية الذكية' },
+      { path: 'arcade/number-guesser', loadComponent: () => import('./features/arcade/number-guesser/number-guesser.component').then(c => c.NumberGuesserComponent), title: 'لعبة تخمين رقم الخصم' },
       { path: 'arcade/ai-builder', loadComponent: () => import('./features/arcade/ai-game-builder.component').then(c => c.AiGameBuilderComponent), title: 'استوديو صانع الألعاب الذكي' },
       { path: 'arcade/arena/:id', loadComponent: () => import('./features/arcade/arcade-arena.component').then(c => c.ArcadeArenaComponent) },
       { path: 'time', loadComponent: () => import('./features/time/time.component').then(c => c.TimeComponent), title: 'تنظيم الوقت والتركيز' },

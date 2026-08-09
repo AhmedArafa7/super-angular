@@ -172,38 +172,42 @@ export interface SavedGameItem {
 
           <!-- Game Assets & Physics Configurator Tabs -->
           <div class="bg-slate-900/80 border border-white/10 rounded-3xl p-6 space-y-4">
-            <h3 class="text-xs font-black text-white flex items-center gap-2">
-              <lucide-icon [img]="Sliders" class="w-4 h-4 text-amber-400"></lucide-icon>
-              <span>معدِّل فيزياء وأصول اللعبة (Assets & Physics)</span>
-            </h3>
-
-            <div class="space-y-3">
-              <div>
-                <label class="text-[11px] font-bold text-slate-300 block mb-1">سرعة الحركة والفيزياء (Game Speed Factor):</label>
-                <div class="flex items-center gap-3">
-                  <input type="range" min="0.5" max="2.5" step="0.1" [(ngModel)]="physicsConfig.speed" (change)="updateGameAssetsPrompt()" class="w-full accent-indigo-500" />
-                  <span class="text-xs font-mono font-bold text-indigo-400">{{ physicsConfig.speed }}x</span>
-                </div>
-              </div>
-
-              <div>
-                <label class="text-[11px] font-bold text-slate-300 block mb-1">عدد الأرواح/الصحة (Player Lives):</label>
-                <div class="flex items-center gap-3">
-                  <input type="number" min="1" max="10" [(ngModel)]="physicsConfig.lives" (change)="updateGameAssetsPrompt()" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white" />
-                  <span class="text-xs font-bold text-rose-400">❤️ {{ physicsConfig.lives }}</span>
-                </div>
-              </div>
-
-              <div>
-                <label class="text-[11px] font-bold text-slate-300 block mb-1">رابط صورة البطل/السفينة (Custom Hero Sprite):</label>
-                <input type="text" [(ngModel)]="physicsConfig.heroSprite" (change)="updateGameAssetsPrompt()" placeholder="https://..." class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-indigo-300 placeholder-slate-600" dir="ltr" />
-              </div>
-
-              <div>
-                <label class="text-[11px] font-bold text-slate-300 block mb-1">رابط المؤثرات الصوتية (Custom Audio BGM):</label>
-                <input type="text" [(ngModel)]="physicsConfig.audioUrl" (change)="updateGameAssetsPrompt()" placeholder="https://..." class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-indigo-300 placeholder-slate-600" dir="ltr" />
-              </div>
+            <div class="flex gap-4 border-b border-white/10 pb-2 mb-2">
+              <button (click)="activeWorkspaceTab.set('physics')" [class.text-indigo-400]="activeWorkspaceTab() === 'physics'" class="text-[11px] font-black uppercase tracking-widest pb-1 transition-all">الفيزياء</button>
+              <button (click)="activeWorkspaceTab.set('assets')" [class.text-indigo-400]="activeWorkspaceTab() === 'assets'" class="text-[11px] font-black uppercase tracking-widest pb-1 transition-all">الأصول</button>
+              <button (click)="activeWorkspaceTab.set('factory')" [class.text-indigo-400]="activeWorkspaceTab() === 'factory'" class="text-[11px] font-black uppercase tracking-widest pb-1 transition-all">مصنع AI</button>
             </div>
+
+            @if (activeWorkspaceTab() === 'physics') {
+                <div class="space-y-3 animate-in fade-in">
+                  <div>
+                    <label class="text-[11px] font-bold text-slate-300 block mb-1">سرعة الحركة (Game Speed):</label>
+                    <input type="range" min="0.5" max="2.5" step="0.1" [(ngModel)]="physicsConfig.speed" (change)="updateGameAssetsPrompt()" class="w-full accent-indigo-500" />
+                  </div>
+                  <div>
+                    <label class="text-[11px] font-bold text-slate-300 block mb-1">عدد الأرواح:</label>
+                    <input type="number" min="1" max="10" [(ngModel)]="physicsConfig.lives" (change)="updateGameAssetsPrompt()" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white" />
+                  </div>
+                </div>
+            } @else if (activeWorkspaceTab() === 'assets') {
+                <div class="space-y-2 animate-in fade-in">
+                    <p class="text-[10px] text-slate-400 mb-2">أصول جاهزة ومجانية:</p>
+                    <div class="grid grid-cols-1 gap-2">
+                        <button (click)="physicsConfig.heroSprite = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png'; updateGameAssetsPrompt()" class="p-2 bg-slate-950 border border-white/10 rounded-xl text-[10px] font-bold hover:border-indigo-500 text-right">🚀 سفينة/بطل (Hero Sprite)</button>
+                        <button (click)="physicsConfig.audioUrl = 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg'; updateGameAssetsPrompt()" class="p-2 bg-slate-950 border border-white/10 rounded-xl text-[10px] font-bold hover:border-indigo-500 text-right">🔊 مؤثر صوتي (SFX)</button>
+                    </div>
+                </div>
+            } @else if (activeWorkspaceTab() === 'factory') {
+                 <div class="space-y-2 animate-in fade-in">
+                    <p class="text-[10px] text-slate-400 mb-2">توليد أصول بواسطة Gemini:</p>
+                    <button (click)="generateAsset('Sprite')" [disabled]="isGeneratingAsset()" class="w-full p-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-black text-white mb-1 disabled:opacity-50">
+                       {{ isGeneratingAsset() ? 'جاري التوليد...' : 'توليد شخصية (Sprite AI)' }}
+                    </button>
+                    <button (click)="generateAsset('Background')" [disabled]="isGeneratingAsset()" class="w-full p-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-black text-white disabled:opacity-50">
+                       {{ isGeneratingAsset() ? 'جاري التوليد...' : 'توليد خلفية (BG AI)' }}
+                    </button>
+                 </div>
+            }
           </div>
 
           <!-- Quick Templates -->
@@ -477,9 +481,11 @@ export class AiGameBuilderComponent implements OnInit {
 
   promptText = '';
   isGenerating = signal<boolean>(false);
+  isGeneratingAsset = signal<boolean>(false);
   generatedHtml = signal<string>('');
   savedGames = signal<SavedGameItem[]>([]);
   activeGameId = signal<string | null>(null);
+  activeWorkspaceTab = signal<'physics' | 'assets' | 'factory'>('physics');
   showCodeViewer = signal<boolean>(false);
   viewportMode = signal<'desktop' | 'tablet' | 'mobile'>('desktop');
 
@@ -771,6 +777,52 @@ export class AiGameBuilderComponent implements OnInit {
       this.createNewGame();
     }
     this.toast.show('تم حذف اللعبة بالكامل 🗑️', 'info');
+  }
+
+  async generateAsset(type: string) {
+    const apiKey = localStorage.getItem('Si-Neuro-chat-apiKey') || '';
+    if (!apiKey) {
+      this.toast.show('⚠️ يرجى إدخال مفتاح Gemini API أولاً!', 'warning');
+      return;
+    }
+
+    this.isGeneratingAsset.set(true);
+    this.toast.show(`🔍 يتم الآن توليد أصل جديد من نوع: ${type} بواسطة Imagen...`, 'info');
+    
+    const assetPrompts: Record<string, string> = {
+        'Sprite': 'Professional 2D game sprite, top-down view, centered, transparent background, clean edges, pixel art style, high contrast.',
+        'Background': 'High-quality 2D game background, sci-fi theme, detailed, suitable for arcade games, 16:9 aspect ratio.'
+    };
+    
+    try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                instances: [{ prompt: assetPrompts[type] }],
+                parameters: { sampleCount: 1 }
+            })
+        });
+
+        if (!res.ok) throw new Error('API Error');
+
+        const data = await res.json();
+        const imageUrl = data.predictions[0].bytesBase64Encoded; 
+        // ملاحظة: قد تحتاج لتحويل الـ base64 إلى رابط فعلي أو استخدامه مباشرة
+        const finalUrl = `data:image/png;base64,${imageUrl}`;
+
+        if(type === 'Sprite') {
+            this.physicsConfig.heroSprite = finalUrl;
+        }
+        
+        this.updateGameAssetsPrompt();
+        this.toast.show(`✅ تم توليد ${type} بنجاح!`, 'success');
+
+    } catch (e) {
+        this.toast.show(`❌ فشل توليد الأصول. تأكد من صلاحيات API Key الخاص بك.`, 'error');
+    } finally {
+        this.isGeneratingAsset.set(false);
+    }
   }
 
   updateGameAssetsPrompt() {

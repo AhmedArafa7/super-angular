@@ -81,6 +81,16 @@ export class ArcadeService {
       status: 'available'
     },
     {
+      id: 'number-guesser',
+      category: 'mental',
+      title: 'تخمين رقم الخصم 🔢',
+      description: 'لعبة الذكاء والاستنتاج! حدد طول الرقم السري (3، 4، أو 5 أرقام)، اختر رمزك السري، وحاول تخمين رقم الخصم بناءً على ردود الفعل والتلميحات (صح مكانه صح، صح مكانه غلط).',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%230f172a%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22300%22%20font-size%3D%22100%22%20text-anchor%3D%22middle%22%3E%F0%9F%90%AE%F0%9F%90%82%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22420%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2250%22%20font-weight%3D%22900%22%20fill%3D%22%23f59e0b%22%20text-anchor%3D%22middle%22%3ECODE%20GUESSER%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'Puzzle',
+      platforms: ['browser', 'pc', 'android'],
+      status: 'available'
+    },
+    {
       id: 'openttd',
       category: 'mental',
       title: 'OpenTTD 🚂',

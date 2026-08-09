@@ -103,85 +103,11 @@ export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
     if (!str) return null;
     if (str.length === 11 && /^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
     const match = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/|live\/))([^&?\n]+)/);
-    return match ? match[1] : null;
+    return (match && match[1] && match[1].length === 11) ? match[1] : null;
   }
 
   ngOnInit() {
     this.sidebar.setCollapsed(true);
-    const rawId = this.id();
-
-    // 1. Find in home content / Firestore whitelisted videos
-    const homeVideo = this.halaltube.allHomeContent().find(v => 
-      v.id === rawId || 
-      (v as any).docId === rawId || 
-      (v as any).youtubeId === rawId
-    );
-
-    // Determine actual video ID and YouTube ID
-    const targetUrl = homeVideo?.url || (homeVideo as any)?.externalUrl || '';
-    const ytId = this.extractYoutubeId(targetUrl) || 
-                 this.extractYoutubeId(rawId) || 
-                 this.extractYoutubeId((homeVideo as any)?.youtubeId);
-
-    const playingId = ytId || homeVideo?.id || rawId;
-    const playingSource = homeVideo?.source || (ytId ? 'youtube' : 'platform');
-
-    // Compute dynamic likes initially based on video ID hash so it's not hardcoded 12,500
-    const hash = playingId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const initialLikes = (homeVideo as any)?.likes || ((homeVideo as any)?.views ? Math.floor((homeVideo as any).views * 0.08) : (520 + (hash * 43) % 9400));
-    this.likes.set(initialLikes);
-
-    if (homeVideo) {
-      this.videoState.playVideo({
-        id: playingId,
-        title: homeVideo.title,
-        author: homeVideo.author,
-        thumbnail: homeVideo.thumbnail || '',
-        url: targetUrl || homeVideo.url,
-        source: playingSource
-      });
-    } else {
-      this.videoState.playVideo({
-        id: playingId,
-        title: 'فيديو halaltube المميز',
-        author: 'قناة halaltube',
-        thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800',
-        url: targetUrl,
-        source: playingSource
-      });
-    }
-
-    // Load full details & comments asynchronously if it's a YouTube video
-    if (ytId) {
-      // 1. YouTube oEmbed for 100% free, keyless, instant real channel name resolution
-      fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${ytId}&format=json`)
-        .then(res => res.json())
-        .then((data: any) => {
-          if (data && data.author_name) {
-            this.videoState.activeVideo.update(current => current ? { ...current, author: data.author_name } : current);
-          }
-        }).catch(() => {});
-
-      this.piped.getVideoDetails(ytId).then(details => {
-        if (details) {
-          if ((details as any).likes) this.likes.set((details as any).likes);
-          const subCount = (details as any).uploaderSubscriberCount || (details as any).subscribers;
-          if (subCount) {
-            this.subscriberCount.set(typeof subCount === 'number' ? this.formatSubscribers(subCount) : subCount);
-          }
-          if (details.title) {
-            this.videoState.activeVideo.update(current => current ? { ...current, title: details.title, author: details.uploader || current.author } : current);
-          }
-        }
-      }).catch(() => {});
-
-      this.discovery.fetchVideoComments(ytId).subscribe({
-        next: (comments) => this.comments.set(comments),
-        error: () => this.comments.set([])
-      });
-    }
-
-    this.isLoading.set(false);
     setTimeout(() => {
       this.updatePlayerRect();
       const scrollTargets = [window, document, document.body, document.querySelector('.watch-view-container'), document.querySelector('.main-content'), document.querySelector('main')];
@@ -193,8 +119,105 @@ export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
     }, 50);
   }
 
+  async loadVideoById(rawId: string) {
+    if (!rawId) return;
+    this.isLoading.set(true);
+
+    // 1. Check if rawId is already a valid 11-character YouTube ID
+    let ytId = this.extractYoutubeId(rawId);
+    let targetUrl = '';
+    let videoTitle = '';
+    let videoAuthor = '';
+    let videoThumb = '';
+    let homeVideo: any = null;
+
+    // 2. Find in home content / Firestore whitelisted videos cache
+    homeVideo = this.halaltube.allHomeContent().find(v => 
+      v.id === rawId || 
+      (v as any).docId === rawId || 
+      (v as any).youtubeId === rawId
+    );
+
+    // 3. If not in home content and rawId is not an 11-char YT ID, fetch from Firestore directly
+    if (!homeVideo && !ytId) {
+      try {
+        homeVideo = await this.firebase.getVideoById(rawId);
+      } catch (e) {
+        console.warn('[WatchView] Firestore fetch error for docId:', rawId, e);
+      }
+    }
+
+    if (homeVideo) {
+      targetUrl = homeVideo.url || homeVideo.externalUrl || '';
+      ytId = this.extractYoutubeId(targetUrl) || 
+             this.extractYoutubeId(homeVideo.youtubeId) || 
+             ytId;
+      videoTitle = homeVideo.title;
+      videoAuthor = homeVideo.author || homeVideo.uploaderName;
+      videoThumb = homeVideo.thumbnail;
+    }
+
+    const playingId = ytId || homeVideo?.id || rawId;
+    const playingSource = homeVideo?.source || (ytId ? 'youtube' : 'platform');
+
+    // Compute dynamic likes initially based on video ID hash so it's not hardcoded 12,500
+    const hash = playingId.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+    const initialLikes = homeVideo?.likes || (homeVideo?.views ? Math.floor(homeVideo.views * 0.08) : (520 + (hash * 43) % 9400));
+    this.likes.set(initialLikes);
+
+    this.videoState.playVideo({
+      id: playingId,
+      title: videoTitle || (ytId ? `فيديو يوتيوب (${ytId})` : 'فيديو halaltube المميز'),
+      author: videoAuthor || 'قناة halaltube',
+      thumbnail: videoThumb || (ytId ? `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg` : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800'),
+      url: targetUrl || (ytId ? `https://www.youtube.com/watch?v=${ytId}` : ''),
+      source: playingSource
+    });
+
+    // Load full details & comments asynchronously if it's a YouTube video
+    if (ytId) {
+      // 1. YouTube oEmbed for 100% free, keyless, instant real channel name & title resolution
+      fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${ytId}&format=json`)
+        .then(res => res.json())
+        .then((data: any) => {
+          if (data && data.author_name) {
+            this.videoState.activeVideo.update(current => current ? { 
+              ...current, 
+              author: data.author_name,
+              title: data.title || current.title
+            } : current);
+          }
+        }).catch(() => {});
+
+      this.piped.getVideoDetails(ytId).then(details => {
+        if (details) {
+          if ((details as any).likes) this.likes.set((details as any).likes);
+          const subCount = (details as any).uploaderSubscriberCount || (details as any).subscribers;
+          if (subCount) {
+            this.subscriberCount.set(typeof subCount === 'number' ? this.formatSubscribers(subCount) : subCount);
+          }
+          if (details.title) {
+            this.videoState.activeVideo.update(current => current ? { 
+              ...current, 
+              title: details.title, 
+              author: details.uploader || current.author,
+              thumbnail: details.thumbnailUrl || current.thumbnail
+            } : current);
+          }
+        }
+      }).catch(() => {});
+
+      this.discovery.fetchVideoComments(ytId).subscribe({
+        next: (comments) => this.comments.set(comments),
+        error: () => this.comments.set([])
+      });
+    }
+
+    this.isLoading.set(false);
+  }
+
   playFallbackVideo() {
-    this.ngOnInit();
+    this.loadVideoById(this.id());
   }
 
   ngOnDestroy() {
@@ -234,6 +257,13 @@ export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
   }
 
   constructor() {
+    effect(() => {
+      const videoId = this.id();
+      if (videoId) {
+        this.loadVideoById(videoId);
+      }
+    }, { allowSignalWrites: true });
+
     effect(() => {
       const vid = this.video();
       if (vid) {

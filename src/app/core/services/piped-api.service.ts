@@ -35,12 +35,13 @@ export class PipedApiService {
   private http = inject(HttpClient);
   private proxyBase = environment.apiBaseUrl !== undefined && environment.apiBaseUrl !== null ? environment.apiBaseUrl : 'https://super-axd.pages.dev';
   private instances = environment.pipedInstances || [
-    'https://pipedapi.kavin.rocks',
-    'https://pipedapi.tokhmi.xyz',
-    'https://api.piped.privacydev.net',
-    'https://pipedapi.palvelut.me',
-    'https://pipedapi.mha.fi',
-    'https://pipedapi.drgns.space'
+    'https://pipedapi.adminforge.de',
+    'https://pipedapi.resonate.is',
+    'https://pipedapi.rhea.pub',
+    'https://pipedapi.astral.autistici.org',
+    'https://pipedapi.yt.artemislena.eu',
+    'https://pipedapi.drgns.space',
+    'https://pipedapi.mha.fi'
   ];
 
   private async smartFetch<T>(targetUrl: string, timeoutMs = 8000): Promise<T> {
@@ -109,11 +110,12 @@ export class PipedApiService {
 
     // Secondary Fallback: Multi-instance Invidious API
     const invidiousInstances = [
-      'https://inv.tux.pizza',
+      'https://invidious.projectsegfau.lt',
+      'https://inv.nadeko.net',
+      'https://invidious.privacydev.net',
+      'https://iv.melmac.space',
       'https://invidious.nerdvpn.de',
-      'https://invidious.drgns.space',
-      'https://vid.puffyan.us',
-      'https://invidious.fdn.fr'
+      'https://invidious.drgns.space'
     ];
 
     for (const inv of invidiousInstances) {
@@ -163,8 +165,18 @@ export class PipedApiService {
       }
     }
 
-    console.error(`[PipedApiService] ALL instances failed for video ${videoId}. Triggering Kill Switch.`);
-    throw new Error('All Piped instances failed to fetch stream');
+    console.warn(`[PipedApiService] All Piped/Invidious instances unavailable for video ${videoId}. Using fallback YouTube metadata.`);
+    return {
+      title: '',
+      description: '',
+      uploader: '',
+      uploaderAvatar: '',
+      thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+      hls: null,
+      videoStreams: [],
+      audioStreams: [],
+      relatedStreams: []
+    };
   }
 
   async getChannelDetails(channelId: string, nextpage?: string): Promise<any> {

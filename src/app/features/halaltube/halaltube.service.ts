@@ -297,10 +297,16 @@ export class halaltubeService {
 
   async loadTrending(force = false): Promise<void> {
     if (!force) {
-      const cached = await this.idb.getWithTTL('whitelist_feed', 'main', 60 * 60 * 1000); // 60 mins TTL
+      const cached = await this.idb.getWithTTL('whitelist_feed', 'main', 5 * 60 * 1000); // 5 mins TTL
       if (cached && cached.videos && cached.videos.length > 0) {
-        this.trendingVideos.set(cached.videos);
-        this.feedVideos.set(cached.videos);
+        // Dynamically shuffle feed items on every load to ensure recommendation freshness
+        const shuffled = [...cached.videos];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        this.trendingVideos.set(shuffled);
+        this.feedVideos.set(shuffled);
         this.isUsingCachedData.set(true);
         return;
       }

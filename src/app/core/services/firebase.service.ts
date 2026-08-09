@@ -519,6 +519,21 @@ export class FirebaseService {
     return this.userData()?.onboardingComplete === true;
   }
 
+  async getVideoById(videoId: string): Promise<any | null> {
+    try {
+      if (!videoId) return null;
+      const docRef = doc(this.firestore, 'videos', videoId);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        return { id: snap.id, ...snap.data() };
+      }
+      return null;
+    } catch (err) {
+      console.warn('[FirebaseService] getVideoById failed:', err);
+      return null;
+    }
+  }
+
   async getPublishedVideos(lastDoc?: QueryDocumentSnapshot, pageSize: number = 20): Promise<{ videos: any[], lastVisible: QueryDocumentSnapshot | null }> {
     try {
       const videosRef = collection(this.firestore, 'videos');
