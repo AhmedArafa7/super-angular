@@ -3,93 +3,373 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ludo Party</title>
+    <title>POLO 🎲 - POLO Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --red: #ef4444;
-            --green: #22c55e;
-            --yellow: #eab308;
-            --blue: #3b82f6;
-            --bg: #1e293b;
-            --grid-line: #cbd5e1;
-            --path-bg: #f8fafc;
+            /* 4 Custom Player Colors: Mauve, Pink, Black, Brown */
+            --mauve: #a855f7;
+            --mauve-dark: #7e22ce;
+            --pink: #ec4899;
+            --pink-dark: #be185d;
+            --black: #334155;
+            --black-dark: #0f172a;
+            --brown: #8b4513;
+            --brown-dark: #5c2c06;
+
+            /* Handcrafted Slender Metallic Gold Palette */
+            --gold-real: #d4af37;
+            --gold-light: #fcf6ba;
+            --gold-dark: #aa771c;
+
+            /* Slot Mapping */
+            --red: var(--mauve);
+            --red-dark: var(--mauve-dark);
+            --green: var(--pink);
+            --green-dark: var(--pink-dark);
+            --yellow: var(--black);
+            --yellow-dark: var(--black-dark);
+            --blue: var(--brown);
+            --blue-dark: var(--brown-dark);
+
+            --bg-dark: #080112;
+            --card-bg: rgba(15, 23, 42, 0.88);
+            --cell-bg: #151d30;
+            --cell-border: rgba(255, 255, 255, 0.08);
+            --path-bg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         body {
             margin: 0;
-            background-color: var(--bg);
+            background: #080112;
             color: white;
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: 'Tajawal', system-ui, -apple-system, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
             overflow: hidden;
-            user-select: none;
+            position: relative;
         }
 
+        /* --- GAMEPLAY WALLPAPER BACKGROUND --- */
+        #game-bg-wallpaper {
+            position: fixed;
+            inset: 0;
+            background-image: url('bg.png');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.95;
+            filter: brightness(0.85) contrast(1.15);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        #floating-dice-bg {
+            position: fixed;
+            inset: 0;
+            font-size: 3.5rem;
+            color: rgba(168, 85, 247, 0.2);
+            letter-spacing: 65px;
+            word-spacing: 110px;
+            line-height: 160px;
+            pointer-events: none;
+            user-select: none;
+            animation: floatingLudoTokens 22s linear infinite;
+            z-index: 1;
+        }
+
+        @keyframes floatingLudoTokens {
+            0% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-35px) rotate(4deg); }
+            100% { transform: translateY(0) rotate(0deg); }
+        }
+
+        /* --- SETUP MODAL --- */
         #setup-screen {
             position: absolute;
             inset: 0;
-            background: rgba(15, 23, 42, 0.95);
+            background: rgba(8, 1, 18, 0.94);
+            backdrop-filter: blur(16px);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 100;
+            text-align: center;
+            padding: 20px;
         }
 
         #setup-screen h1 {
-            font-size: 3rem;
+            font-size: 4rem;
             font-weight: 900;
-            color: var(--yellow);
+            color: var(--gold-real);
             margin: 0 0 1rem 0;
-            text-shadow: 0 4px 20px rgba(234, 179, 8, 0.4);
+            text-shadow: 0 4px 30px rgba(212, 175, 55, 0.6);
+            letter-spacing: 2px;
+        }
+
+        /* LOCAL PLAYER COUNT SELECTOR */
+        .player-count-selector {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .count-btn {
+            background: rgba(255, 255, 255, 0.06);
+            color: white;
+            border: 2px solid var(--gold-real);
+            padding: 0.85rem 1.8rem;
+            border-radius: 18px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        .count-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            background: rgba(212, 175, 55, 0.2);
+        }
+
+        .count-btn.active {
+            background: linear-gradient(135deg, #a855f7, #7e22ce);
+            border-color: #fcf6ba;
+            box-shadow: 0 8px 25px rgba(168, 85, 247, 0.6);
         }
 
         .btn {
-            background: var(--blue);
+            background: linear-gradient(135deg, #a855f7, #7e22ce);
             color: white;
             border: none;
-            padding: 1rem 2rem;
+            padding: 1.15rem 3rem;
             border-radius: 100px;
-            font-size: 1.5rem;
-            font-weight: bold;
+            font-size: 1.45rem;
+            font-weight: 900;
             cursor: pointer;
-            transition: 0.2s;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 8px 25px rgba(168, 85, 247, 0.5);
+            font-family: 'Tajawal', sans-serif;
         }
         .btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            background: #2563eb;
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 12px 35px rgba(168, 85, 247, 0.75);
         }
         .btn:disabled {
-            background: #475569;
+            background: #334155;
             cursor: not-allowed;
             box-shadow: none;
+            opacity: 0.6;
         }
 
+        /* --- MAIN GAME CONTAINER --- */
         #game-container {
-            display: flex;
-            gap: 2rem;
+            direction: ltr;
+            position: relative;
+            z-index: 10;
+            display: grid;
+            grid-template-areas:
+                "mauve-player   board  pink-player"
+                "brown-player   board  black-player";
+            grid-template-columns: 215px auto 215px;
+            grid-template-rows: 1fr 1fr;
+            gap: 1.2rem;
             align-items: center;
-            max-width: 100vw;
-            max-height: 100vh;
-            padding: 1rem;
+            justify-content: center;
+            max-width: 99vw;
+            max-height: 99vh;
+            padding: 0.6rem;
             box-sizing: border-box;
         }
 
+        /* CORNER PLAYER CARDS */
+        .corner-card {
+            direction: rtl;
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(16px);
+            border-radius: 22px;
+            border: 1.5px solid var(--gold-real);
+            padding: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.7rem;
+            opacity: 0.88;
+            transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .corner-card.active {
+            opacity: 1;
+            transform: scale(1.05);
+            border-color: currentColor;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.6), 0 0 25px currentColor;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            width: 100%;
+        }
+
+        .avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #ccc;
+            border: 2px solid white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+        }
+        .info h3 { margin: 0; font-size: 1.05rem; font-weight: 900; }
+        .info p { margin: 2px 0 0 0; font-size: 0.82rem; opacity: 0.85; font-weight: bold; }
+
+        .dice-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        /* --- TRUE 3D CUBE DICE WITH STRICT ACTIVE PLAYER CLICKING --- */
+        .mini-dice-3d-scene {
+            width: 68px;
+            height: 68px;
+            perspective: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            pointer-events: none;
+        }
+
+        .corner-card.active .mini-dice-3d-scene {
+            pointer-events: auto;
+            animation: scenePulse 1s infinite alternate;
+        }
+
+        @keyframes scenePulse {
+            0% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(212, 175, 55, 0.8)); }
+            100% { transform: scale(1.12); filter: drop-shadow(0 0 18px rgba(212, 175, 55, 0.95)); }
+        }
+
+        .cube-3d {
+            width: 58px;
+            height: 58px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.65s cubic-bezier(0.2, 0.85, 0.32, 1.2);
+            opacity: 1 !important;
+        }
+
+        .face {
+            position: absolute;
+            width: 58px;
+            height: 58px;
+            background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 60%, #e2e8f0 100%);
+            border: 2px solid var(--gold-real);
+            border-radius: 14px;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.15), inset 0 2px 4px rgba(255,255,255,0.9), 0 6px 15px rgba(0,0,0,0.4);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            padding: 7px;
+            box-sizing: border-box;
+            backface-visibility: hidden;
+        }
+
+        /* 3D Cube Face Transforms (translateZ = 29px) */
+        .face.front  { transform: rotateY(0deg) translateZ(29px); }
+        .face.back   { transform: rotateY(180deg) translateZ(29px); }
+        .face.right  { transform: rotateY(90deg) translateZ(29px); }
+        .face.left   { transform: rotateY(-90deg) translateZ(29px); }
+        .face.top    { transform: rotateX(90deg) translateZ(29px); }
+        .face.bottom { transform: rotateX(-90deg) translateZ(29px); }
+
+        /* 3D Rotation for Dice Values 1..6 */
+        .cube-3d[data-value="1"] { transform: rotateX(0deg) rotateY(0deg); }
+        .cube-3d[data-value="6"] { transform: rotateY(180deg); }
+        .cube-3d[data-value="2"] { transform: rotateY(-90deg); }
+        .cube-3d[data-value="5"] { transform: rotateY(90deg); }
+        .cube-3d[data-value="3"] { transform: rotateX(-90deg); }
+        .cube-3d[data-value="4"] { transform: rotateX(90deg); }
+
+        /* Tumbling 3D Roll Animation */
+        .cube-3d.rolling {
+            animation: rollCube3D 0.65s linear infinite !important;
+        }
+
+        @keyframes rollCube3D {
+            0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+            25% { transform: rotateX(180deg) rotateY(90deg) rotateZ(45deg); }
+            50% { transform: rotateX(360deg) rotateY(180deg) rotateZ(90deg); }
+            75% { transform: rotateX(540deg) rotateY(270deg) rotateZ(135deg); }
+            100% { transform: rotateX(720deg) rotateY(360deg) rotateZ(180deg); }
+        }
+
+        /* 3D Face Dots */
+        .dot {
+            background: #0f172a;
+            border-radius: 50%;
+            width: 10px;
+            height: 10px;
+            margin: auto;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
+        }
+
+        .dot.center    { grid-area: 2 / 2; }
+        .dot.top-left  { grid-area: 1 / 1; }
+        .dot.top-right { grid-area: 1 / 3; }
+        .dot.mid-left  { grid-area: 2 / 1; }
+        .dot.mid-right { grid-area: 2 / 3; }
+        .dot.bot-left  { grid-area: 3 / 1; }
+        .dot.bot-right { grid-area: 3 / 3; }
+
+        /* 10-SECOND AUTO ROLL TIMER BADGE */
+        .timer-badge {
+            position: absolute;
+            top: -5px;
+            right: -8px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 900;
+            padding: 3px 9px;
+            border-radius: 999px;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.6);
+            display: none;
+            z-index: 20;
+            animation: badgePulse 0.5s infinite alternate;
+        }
+
+        @keyframes badgePulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.15); }
+        }
+
+        /* --- LUXURIOUS BOARD WITH SLENDER HANDCRAFTED REAL GOLD BORDER --- */
         .board-wrapper {
             direction: ltr;
             position: relative;
-            width: min(90vw, 80vh);
-            height: min(90vw, 80vh);
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: min(84vw, 75vh);
+            height: min(84vw, 75vh);
+            background: #0f172a;
+            border-radius: 36px;
+            box-shadow: 0 35px 100px rgba(0,0,0,0.95), 0 0 35px rgba(212, 175, 55, 0.35), inset 0 0 25px rgba(0,0,0,0.8);
             overflow: hidden;
-            border: 4px solid #0f172a;
+            border: 3px solid var(--gold-real);
+            padding: 4px;
         }
 
         #ludo-grid {
@@ -102,27 +382,47 @@
         }
 
         .cell {
-            border: 1px solid rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.15);
             position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        /* Colors for cells */
-        .bg-red { background-color: var(--red) !important; }
-        .bg-green { background-color: var(--green) !important; }
-        .bg-yellow { background-color: var(--yellow) !important; }
-        .bg-blue { background-color: var(--blue) !important; }
-        .bg-path { background-color: var(--path-bg); }
-
-        .safe-zone::after {
-            content: '⭐';
-            font-size: clamp(10px, 2vw, 20px);
-            opacity: 0.5;
+        /* MATTE UNPOLISHED POLYMER / CLOTH TEXTURE PATH TILES */
+        .bg-path {
+            background: repeating-linear-gradient(
+                45deg,
+                #f8fafc,
+                #f8fafc 4px,
+                #f1f5f9 4px,
+                #f1f5f9 8px
+            ) !important;
+            box-shadow: inset 0 0 4px rgba(0,0,0,0.12) !important;
         }
 
-        /* Base Home Areas */
+        /* 4 Player Colors (Mauve, Pink, Black, Brown) */
+        .bg-red { background: linear-gradient(145deg, #a855f7, #7e22ce) !important; }
+        .bg-green { background: linear-gradient(145deg, #ec4899, #be185d) !important; }
+        .bg-yellow { background: linear-gradient(145deg, #334155, #1e293b) !important; }
+        .bg-blue { background: linear-gradient(145deg, #8b4513, #5c2c06) !important; }
+
+        .safe-zone {
+            background: linear-gradient(145deg, #fef08a, #d4af37) !important;
+            border: 1px solid #c5a059 !important;
+        }
+        .safe-zone::after {
+            content: '⭐';
+            font-size: clamp(14px, 2.2vw, 24px);
+            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.4));
+            animation: starGlow 2s ease-in-out infinite;
+        }
+        @keyframes starGlow {
+            0%, 100% { transform: scale(1); opacity: 0.85; }
+            50% { transform: scale(1.25); opacity: 1; }
+        }
+
+        /* 3D HOME BASES WITH SLENDER REAL METALLIC GOLD BORDERS */
         .home-base {
             position: absolute;
             width: 40%;
@@ -130,30 +430,41 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            border: 2px solid var(--gold-real) !important;
+            box-shadow: inset 0 4px 14px rgba(0,0,0,0.4), 0 0 10px rgba(212, 175, 55, 0.3) !important;
         }
-        .home-base.red { top: 0; left: 0; background: var(--red); }
-        .home-base.green { top: 0; right: 0; background: var(--green); }
-        .home-base.yellow { bottom: 0; right: 0; background: var(--yellow); }
-        .home-base.blue { bottom: 0; left: 0; background: var(--blue); }
+        .home-base.red { top: 0; left: 0; background: linear-gradient(145deg, #a855f7, #6b21a8); border-radius: 24px 0 0 0; }
+        .home-base.green { top: 0; right: 0; background: linear-gradient(145deg, #ec4899, #9d174d); border-radius: 0 24px 0 0; }
+        .home-base.yellow { bottom: 0; right: 0; background: linear-gradient(145deg, #334155, #0f172a); border-radius: 0 0 24px 0; }
+        .home-base.blue { bottom: 0; left: 0; background: linear-gradient(145deg, #8b4513, #3b1903); border-radius: 0 0 0 24px; }
 
         .home-inner {
-            width: 70%;
-            height: 70%;
-            background: white;
-            border-radius: 15%;
+            width: 74%;
+            height: 74%;
+            background: linear-gradient(145deg, #ffffff, #f1f5f9);
+            border-radius: 26px;
             display: grid;
             grid-template-columns: 1fr 1fr;
             grid-template-rows: 1fr 1fr;
-            padding: 10%;
-            gap: 10%;
+            padding: 12%;
+            gap: 12%;
+            border: 1.5px solid #c5a059;
+            box-shadow: inset 0 6px 14px rgba(0,0,0,0.35), 0 8px 18px rgba(0,0,0,0.3);
         }
 
         .home-spot {
-            background: rgba(0,0,0,0.1);
+            background: radial-gradient(circle, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.45) 100%);
             border-radius: 50%;
             position: relative;
+            border: 1.5px solid var(--gold-real);
+            box-shadow: inset 0 3px 6px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
         }
 
+        /* 3D Center Victory Square with Slender Real Gold Border */
         .center-home {
             position: absolute;
             top: 40%;
@@ -162,264 +473,259 @@
             height: 20%;
             background: conic-gradient(
                 from 45deg,
-                var(--yellow) 0deg 90deg,   /* Right triangle -> Yellow */
-                var(--blue) 90deg 180deg,   /* Bottom triangle -> Blue */
-                var(--red) 180deg 270deg,   /* Left triangle -> Red */
-                var(--green) 270deg 360deg  /* Top triangle -> Green */
+                var(--black) 0deg 90deg,   /* Right -> Black */
+                var(--brown) 90deg 180deg,  /* Bottom -> Brown */
+                var(--mauve) 180deg 270deg, /* Left -> Mauve */
+                var(--pink) 270deg 360deg  /* Top -> Pink */
             );
-            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-            border: 1px solid rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--gold-real);
+            box-shadow: inset 0 0 16px rgba(0,0,0,0.6), 0 0 15px rgba(212, 175, 55, 0.35);
+            z-index: 5;
         }
 
-        .center-home::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to top right, transparent 49%, rgba(0,0,0,0.3) 50%, transparent 51%),
-                        linear-gradient(to bottom right, transparent 49%, rgba(0,0,0,0.3) 50%, transparent 51%);
+        .center-home::before {
+            content: '🏆';
+            font-size: clamp(18px, 3vw, 34px);
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.8));
+            animation: trophyFloat 3s ease-in-out infinite;
         }
 
-        /* Tokens */
+        @keyframes trophyFloat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.18); }
+        }
+
+        /* --- PURE GEMSTONE PAWNS --- */
         #tokens-layer {
             position: absolute;
             inset: 0;
             pointer-events: none;
+            z-index: 20;
         }
 
         .token {
             position: absolute;
-            width: calc(100% / 15 * 0.7);
-            height: calc(100% / 15 * 0.7);
+            width: calc(100% / 15 * 0.76);
+            height: calc(100% / 15 * 0.76);
             border-radius: 50%;
-            border: 2px solid white;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.4), inset 0 -3px 6px rgba(0,0,0,0.2);
+            border: none !important;
+            outline: none !important;
             transform: translate(-50%, -50%);
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
             pointer-events: auto;
             cursor: pointer;
             z-index: 10;
         }
+
+        /* Gem Specular Glare */
+        .token::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 15%;
+            width: 42%;
+            height: 32%;
+            border-radius: 50% 50% 60% 40%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.2) 65%, transparent 100%);
+            transform: rotate(-15deg);
+            pointer-events: none;
+        }
+
+        /* Gem Inner Cut Facet Contour */
+        .token::after {
+            content: '';
+            position: absolute;
+            inset: 14%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.3) 0%, transparent 60%);
+            box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.5), inset 0 -4px 8px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+
         .token:hover {
-            transform: translate(-50%, -60%) scale(1.1);
-            z-index: 20;
+            transform: translate(-50%, -68%) scale(1.28);
+            z-index: 30;
         }
+
         .token.highlight {
-            animation: pulse 1s infinite;
-        }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(255,255,255,0); }
-            100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+            animation: gemPulse 0.9s infinite alternate cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        .token.red { background: radial-gradient(circle at 30% 30%, #f87171, #dc2626); }
-        .token.green { background: radial-gradient(circle at 30% 30%, #4ade80, #16a34a); }
-        .token.yellow { background: radial-gradient(circle at 30% 30%, #fde047, #ca8a04); }
-        .token.blue { background: radial-gradient(circle at 30% 30%, #60a5fa, #2563eb); }
-
-        /* UI Panel */
-        .side-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            width: 250px;
-            background: rgba(255,255,255,0.05);
-            padding: 1.5rem;
-            border-radius: 16px;
-            border: 1px solid rgba(255,255,255,0.1);
+        @keyframes gemPulse {
+            0% { transform: translate(-50%, -50%) scale(1.08); box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.9), 0 0 22px currentColor; }
+            100% { transform: translate(-50%, -70%) scale(1.32); box-shadow: 0 0 0 16px rgba(212, 175, 55, 0), 0 0 35px currentColor, 0 18px 36px rgba(0,0,0,0.9); }
         }
 
-        .player-card {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem;
-            border-radius: 12px;
-            background: rgba(0,0,0,0.3);
-            border: 2px solid transparent;
-            opacity: 0.5;
-            transition: 0.3s;
-        }
-        .player-card.active {
-            opacity: 1;
-            border-color: currentColor;
-            background: rgba(255,255,255,0.1);
-            transform: scale(1.05);
+        /* 1. Mauve Amethyst Gem (🔴 slot) */
+        .token.red {
+            background: radial-gradient(circle at 35% 35%, #e9d5ff 0%, #a855f7 42%, #7e22ce 75%, #3b0764 100%);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.85), 0 0 14px rgba(168, 85, 247, 0.6);
         }
 
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #ccc;
-        }
-        .info h3 { margin: 0; font-size: 1rem; }
-        .info p { margin: 0; font-size: 0.8rem; opacity: 0.7; }
-
-        .dice-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-            margin-top: auto;
+        /* 2. Pink Rose Quartz Gem (🟢 slot) */
+        .token.green {
+            background: radial-gradient(circle at 35% 35%, #fbcfe8 0%, #ec4899 42%, #be185d 75%, #831843 100%);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.85), 0 0 14px rgba(236, 72, 153, 0.6);
         }
 
-        #dice {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(145deg, #ffffff, #f1f5f9);
-            border: 3px solid #cbd5e1;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.4), inset 0 -4px 8px rgba(0,0,0,0.15);
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            padding: 10px;
-            box-sizing: border-box;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        #dice:hover:not(.disabled) {
-            transform: scale(1.06) rotate(3deg);
-            box-shadow: 0 14px 30px rgba(0,0,0,0.5), inset 0 -4px 8px rgba(0,0,0,0.15);
-        }
-        #dice.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        #dice.rolling {
-            animation: roll 0.5s linear infinite;
-        }
-        @keyframes roll {
-            0% { transform: rotate(0deg) scale(1.1); }
-            100% { transform: rotate(360deg) scale(1.1); }
+        /* 3. Black Obsidian Gem (🟡 slot) */
+        .token.yellow {
+            background: radial-gradient(circle at 35% 35%, #cbd5e1 0%, #475569 42%, #1e293b 75%, #020617 100%);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.85), 0 0 14px rgba(100, 116, 139, 0.6);
         }
 
-        .dot {
-            background: #0f172a;
-            border-radius: 50%;
-            width: 14px;
-            height: 14px;
-            margin: auto;
-            visibility: hidden;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+        /* 4. Brown Tiger Eye Gem (🔵 slot) */
+        .token.blue {
+            background: radial-gradient(circle at 35% 35%, #fde68a 0%, #b45309 42%, #78350f 75%, #291202 100%);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.85), 0 0 14px rgba(180, 83, 9, 0.6);
         }
 
-        /* Standard Real 3D Dice Faces (Grid based visibility) */
-        #dice[data-value="1"] .dot:nth-child(5) { visibility: visible; }
-        
-        #dice[data-value="2"] .dot:nth-child(3),
-        #dice[data-value="2"] .dot:nth-child(7) { visibility: visible; }
-        
-        #dice[data-value="3"] .dot:nth-child(3),
-        #dice[data-value="3"] .dot:nth-child(5),
-        #dice[data-value="3"] .dot:nth-child(7) { visibility: visible; }
-        
-        #dice[data-value="4"] .dot:nth-child(1),
-        #dice[data-value="4"] .dot:nth-child(3),
-        #dice[data-value="4"] .dot:nth-child(7),
-        #dice[data-value="4"] .dot:nth-child(9) { visibility: visible; }
-        
-        #dice[data-value="5"] .dot:nth-child(1),
-        #dice[data-value="5"] .dot:nth-child(3),
-        #dice[data-value="5"] .dot:nth-child(5),
-        #dice[data-value="5"] .dot:nth-child(7),
-        #dice[data-value="5"] .dot:nth-child(9) { visibility: visible; }
-        
-        #dice[data-value="6"] .dot:nth-child(1),
-        #dice[data-value="6"] .dot:nth-child(3),
-        #dice[data-value="6"] .dot:nth-child(4),
-        #dice[data-value="6"] .dot:nth-child(6),
-        #dice[data-value="6"] .dot:nth-child(7),
-        #dice[data-value="6"] .dot:nth-child(9) { visibility: visible; }
-
+        /* TOAST & NOTIFICATIONS */
         .toast {
             position: fixed;
             top: 2rem;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 1rem 2rem;
+            background: rgba(15, 23, 42, 0.95);
+            color: var(--gold-real);
+            border: 1.5px solid var(--gold-real);
+            padding: 1rem 2.4rem;
             border-radius: 100px;
-            font-size: 1.2rem;
-            font-weight: bold;
+            font-size: 1.35rem;
+            font-weight: 900;
             pointer-events: none;
             opacity: 0;
-            transition: 0.3s;
+            transition: all 0.3s ease;
             z-index: 200;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.85);
         }
 
-        /* Notifications layer */
         .event-text {
             position: absolute;
             color: white;
             font-weight: 900;
-            font-size: 2rem;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+            font-size: 2.4rem;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.95);
             pointer-events: none;
-            animation: floatUp 1s forwards;
+            animation: floatUp 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
             z-index: 50;
         }
         @keyframes floatUp {
             0% { transform: translateY(0) scale(0.5); opacity: 0; }
-            20% { transform: translateY(-20px) scale(1.2); opacity: 1; }
-            80% { transform: translateY(-40px) scale(1); opacity: 1; }
-            100% { transform: translateY(-60px) scale(0.8); opacity: 0; }
+            20% { transform: translateY(-25px) scale(1.25); opacity: 1; }
+            80% { transform: translateY(-45px) scale(1); opacity: 1; }
+            100% { transform: translateY(-65px) scale(0.8); opacity: 0; }
         }
 
-        @media (max-width: 768px) {
-            #game-container { flex-direction: column; }
-            .side-panel { width: 100%; flex-direction: row; flex-wrap: wrap; justify-content: center; padding: 1rem; gap: 0.5rem; }
-            .player-card { flex: 1 1 45%; padding: 0.5rem; }
-            .dice-container { position: absolute; bottom: 2rem; right: 2rem; z-index: 30; }
-            #dice { width: 60px; height: 60px; }
-            .dot { width: 10px; height: 10px; }
+        @media (max-width: 900px) {
+            #game-container {
+                grid-template-areas:
+                    "mauve-player   pink-player"
+                    "board          board"
+                    "brown-player   black-player";
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto auto;
+            }
+            .board-wrapper { width: min(92vw, 55vh); height: min(92vw, 55vh); grid-area: board; }
         }
     </style>
 </head>
 <body>
 
+    <!-- GAMEPLAY WALLPAPER BACKGROUND -->
+    <div id="game-bg-wallpaper"></div>
+    <div id="floating-dice-bg">🎲 &nbsp; ⭐ &nbsp; 🟣 &nbsp; 🌸 &nbsp; ⬛ &nbsp; 🟤 &nbsp; 🏆</div>
+
     <div id="setup-screen">
-        <h1>يلا لودو 🎲</h1>
-        <p id="setup-status" style="font-size: 1.2rem; margin-bottom: 2rem; color: #cbd5e1;">بانتظار انضمام اللاعبين (1/4)...</p>
-        <button id="start-btn" class="btn" onclick="startGame()" disabled>ابدأ اللعبة</button>
+        <h1>POLO 🎲</h1>
+        <p id="setup-status" style="font-size: 1.3rem; margin-bottom: 1.2rem; color: #cbd5e1; font-weight: bold;">اختر عدد اللاعبين في الجلسة المحلية:</p>
+        
+        <div class="player-count-selector">
+            <button class="count-btn" onclick="selectPlayerCount(2, this)">2 لاعبين 👥</button>
+            <button class="count-btn" onclick="selectPlayerCount(3, this)">3 لاعبين 👥👤</button>
+            <button class="count-btn active" onclick="selectPlayerCount(4, this)">4 لاعبين 👥👥</button>
+        </div>
+
+        <button id="start-btn" class="btn" onclick="startGame()" style="margin-top: 1.5rem;">ابدأ اللعبة 🚀</button>
     </div>
 
     <div id="game-container">
-        <!-- Players Panel (Left side in LTR, Right side in RTL) -->
-        <div class="side-panel">
-            <div id="card-red" class="player-card" style="color: var(--red);">
-                <div class="avatar" style="background: var(--red);"></div>
+
+        <!-- Physical Top-Left Player HUD: Mauve 🟣 -->
+        <div id="corner-player-0" class="corner-card" style="grid-area: mauve-player; color: var(--mauve);">
+            <div class="card-header">
+                <div class="avatar" style="background: var(--mauve);"></div>
                 <div class="info">
-                    <h3>اللاعب الأحمر</h3>
-                    <p>في الانتظار</p>
+                    <h3>اللاعب الموف 🟣</h3>
+                    <p class="status-text">في الانتظار</p>
                 </div>
             </div>
-            <div id="card-green" class="player-card" style="color: var(--green);">
-                <div class="avatar" style="background: var(--green);"></div>
-                <div class="info">
-                    <h3>اللاعب الأخضر</h3>
-                    <p>في الانتظار</p>
+            <div class="dice-wrapper">
+                <div class="mini-dice-3d-scene" onclick="rollDice(0)">
+                    <div class="cube-3d" data-value="6">
+                        <div class="face front"><div class="dot center"></div></div>
+                        <div class="face back">
+                            <div class="dot top-left"></div><div class="dot top-right"></div>
+                            <div class="dot mid-left"></div><div class="dot mid-right"></div>
+                            <div class="dot bot-left"></div><div class="dot bot-right"></div>
+                        </div>
+                        <div class="face right"><div class="dot top-right"></div><div class="dot bot-left"></div></div>
+                        <div class="face left">
+                            <div class="dot top-left"></div><div class="dot top-right"></div>
+                            <div class="dot center"></div>
+                            <div class="dot bot-left"></div><div class="dot bot-right"></div>
+                        </div>
+                        <div class="face top"><div class="dot top-right"></div><div class="dot center"></div><div class="dot bot-left"></div></div>
+                        <div class="face bottom">
+                            <div class="dot top-left"></div><div class="dot top-right"></div>
+                            <div class="dot bot-left"></div><div class="dot bot-right"></div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div id="card-yellow" class="player-card" style="color: var(--yellow);">
-                <div class="avatar" style="background: var(--yellow);"></div>
-                <div class="info">
-                    <h3>اللاعب الأصفر</h3>
-                    <p>في الانتظار</p>
-                </div>
-            </div>
-            <div id="card-blue" class="player-card" style="color: var(--blue);">
-                <div class="avatar" style="background: var(--blue);"></div>
-                <div class="info">
-                    <h3>اللاعب الأزرق</h3>
-                    <p>في الانتظار</p>
-                </div>
+                <div class="timer-badge">10ث</div>
             </div>
         </div>
 
-        <div class="board-wrapper">
+        <!-- Physical Top-Right Player HUD: Pink 🌸 -->
+        <div id="corner-player-1" class="corner-card" style="grid-area: pink-player; color: var(--pink);">
+            <div class="card-header">
+                <div class="avatar" style="background: var(--pink);"></div>
+                <div class="info">
+                    <h3>اللاعب البينك 🌸</h3>
+                    <p class="status-text">في الانتظار</p>
+                </div>
+            </div>
+            <div class="dice-wrapper">
+                <div class="mini-dice-3d-scene" onclick="rollDice(1)">
+                    <div class="cube-3d" data-value="6">
+                        <div class="face front"><div class="dot center"></div></div>
+                        <div class="face back">
+                            <div class="dot top-left"></div><div class="dot top-right"></div>
+                            <div class="dot mid-left"></div><div class="dot mid-right"></div>
+                            <div class="dot bot-left"></div><div class="dot bot-right"></div>
+                        </div>
+                        <div class="face right"><div class="dot top-right"></div><div class="dot bot-left"></div></div>
+                        <div class="face left">
+                            <div class="dot top-left"></div><div class="dot top-right"></div>
+                            <div class="dot center"></div>
+                            <div class="dot bot-left"></div><div class="dot bot-right"></div>
+                        </div>
+                        <div class="face top"><div class="dot top-right"></div><div class="dot center"></div><div class="dot bot-left"></div></div>
+                        <div class="face bottom">
+                            <div class="dot top-left"></div><div class="dot top-right"></div>
+                            <div class="dot bot-left"></div><div class="dot bot-right"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="timer-badge">10ث</div>
+            </div>
+        </div>
+
+        <!-- Board Wrapper -->
+        <div class="board-wrapper" style="grid-area: board;">
             <div id="ludo-grid"></div>
             
             <div class="home-base red"><div class="home-inner" id="home-red"></div></div>
@@ -432,14 +738,76 @@
             <div id="tokens-layer"></div>
         </div>
 
-        <div class="dice-container">
-            <div id="dice" data-value="6" onclick="rollDice()">
-                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        <!-- Physical Bottom-Left Player HUD: Brown 🟤 -->
+        <div id="corner-player-3" class="corner-card" style="grid-area: brown-player; color: var(--brown);">
+            <div class="card-header">
+                <div class="avatar" style="background: var(--brown);"></div>
+                <div class="info">
+                    <h3>اللاعب البني 🟤</h3>
+                    <p class="status-text">في الانتظار</p>
+                </div>
             </div>
-            <div id="turn-indicator" style="font-weight: bold; font-size: 1.2rem; color: #cbd5e1;">دور الأحمر</div>
+            <div class="dice-wrapper">
+                <div class="mini-dice-3d-scene" onclick="rollDice(3)">
+                    <div class="cube-3d" data-value="6">
+                        <div class="face front"><div class="dot center"></div></div>
+                        <div class="face back">
+                            <div class="dot top-left"></div><div class="dot top-right"></div>
+                            <div class="dot mid-left"></div><div class="dot mid-right"></div>
+                            <div class="dot bot-left"></div><div class="dot bot-right"></div>
+                        </div>
+                        <div class="face right"><div class="dot top-right"></div><div class="dot bot-left"></div></div>
+                        <div class="face left">
+                            <div class="dot top-left"></div><div class="dot top-right"></div>
+                            <div class="dot center"></div>
+                            <div class="dot bot-left"></div><div class="dot bot-right"></div>
+                        </div>
+                        <div class="face top"><div class="dot top-right"></div><div class="dot center"></div><div class="dot bot-left"></div></div>
+                        <div class="face bottom">
+                            <div class="dot top-left"></div><div class="dot top-right"></div>
+                            <div class="dot bot-left"></div><div class="dot bot-right"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="timer-badge">10ث</div>
+            </div>
         </div>
+
+        <!-- Physical Bottom-Right Player HUD: Black ⬛ -->
+        <div id="corner-player-2" class="corner-card" style="grid-area: black-player; color: var(--black);">
+            <div class="card-header">
+                <div class="avatar" style="background: var(--black);"></div>
+                <div class="info">
+                    <h3>اللاعب الأسود ⬛</h3>
+                    <p class="status-text">في الانتظار</p>
+                </div>
+            </div>
+            <div class="dice-wrapper">
+                <div class="mini-dice-3d-scene" onclick="rollDice(2)">
+                    <div class="cube-3d" data-value="6">
+                        <div class="face front"><div class="dot center"></div></div>
+                        <div class="face back">
+                            <div class="dot top-left"></div><div class="dot top-right"></div>
+                            <div class="dot mid-left"></div><div class="dot mid-right"></div>
+                            <div class="dot bot-left"></div><div class="dot bot-right"></div>
+                        </div>
+                        <div class="face right"><div class="dot top-right"></div><div class="dot bot-left"></div></div>
+                        <div class="face left">
+                            <div class="dot top-left"></div><div class="dot top-right"></div>
+                            <div class="dot center"></div>
+                            <div class="dot bot-left"></div><div class="dot bot-right"></div>
+                        </div>
+                        <div class="face top"><div class="dot top-right"></div><div class="dot center"></div><div class="dot bot-left"></div></div>
+                        <div class="face bottom">
+                            <div class="dot top-left"></div><div class="dot top-right"></div>
+                            <div class="dot bot-left"></div><div class="dot bot-right"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="timer-badge">10ث</div>
+            </div>
+        </div>
+
     </div>
 
     <div id="toast" class="toast">رسالة</div>

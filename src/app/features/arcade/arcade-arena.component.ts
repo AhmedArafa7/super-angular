@@ -547,18 +547,19 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
       badgeBg: 'linear-gradient(135deg, #0284c7, #38bdf8)'
     },
     'ludo-party': {
-      badge: '🎲 YALLA LUDO 🌟',
-      primaryColor: '#facc15',
-      borderColor: 'rgba(250, 204, 21, 0.6)',
-      floatingEmojis: '🎲   🔴   🟢   🟡   🔵   ⭐',
-      badgeBg: 'linear-gradient(135deg, #ef4444, #f59e0b, #22c55e, #3b82f6)'
+      badge: '🎲 POLO 🌟',
+      primaryColor: '#a855f7',
+      borderColor: 'rgba(168, 85, 247, 0.7)',
+      floatingEmojis: '🎲   🟣   🌸   ⬛   🟤   ⭐',
+      badgeBg: 'linear-gradient(135deg, #a855f7, #ec4899, #334155, #8b4513)'
     },
     'crazy-uno': {
-      badge: '🎴 CRAZY UNO 💥',
-      primaryColor: '#f59e0b',
-      borderColor: 'rgba(245, 158, 11, 0.6)',
-      floatingEmojis: '🎴   🔴   🔵   🟢   🟡   💥',
-      badgeBg: 'linear-gradient(135deg, #ef4444, #f59e0b)'
+      badge: '🎴 JOHN CARD GAME 🎴',
+      primaryColor: '#a855f7',
+      borderColor: 'rgba(168, 85, 247, 0.7)',
+      floatingEmojis: '🎴   🟪   ⬛   ⚡   JOHN',
+      badgeBg: 'linear-gradient(135deg, #7e22ce, #a855f7)',
+      cardBg: 'linear-gradient(145deg, rgba(15, 5, 29, 0.95), rgba(8, 1, 18, 0.96))'
     },
     'bomb-arena': {
       badge: '💣 BOMB ARENA 💥',
@@ -613,10 +614,11 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
     },
     'strategic-xo': {
       badge: '❌ STRATEGIC XO ⭕',
-      primaryColor: '#ec4899',
-      borderColor: 'rgba(236, 72, 153, 0.6)',
+      primaryColor: '#06b6d4',
+      borderColor: 'rgba(6, 182, 212, 0.7)',
       floatingEmojis: '❌   ⭕   🎯   ⚔️   ✨',
-      badgeBg: 'linear-gradient(135deg, #be185d, #0284c7)'
+      badgeBg: 'linear-gradient(135deg, #06b6d4, #f43f5e)',
+      cardBg: 'linear-gradient(145deg, rgba(15, 23, 42, 0.94), rgba(3, 7, 18, 0.96))'
     },
     'card-battle': {
       badge: '🃏 CARD BATTLE 🛡️',

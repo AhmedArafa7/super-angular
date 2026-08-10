@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Crazy UNO (أونو المجنونة 🎴) Custom Menu Theme Stylesheet
+   JOHN (لعبة جون 🎴) Custom Menu Theme Stylesheet
    ========================================================================== */
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
 
@@ -10,168 +10,150 @@
     width: 100% !important;
     height: 100% !important;
     min-height: 100vh !important;
-    background: transparent !important; /* Remove dark background cloud */
+    background: radial-gradient(circle at center, rgba(27, 7, 54, 0.5) 0%, rgba(8, 1, 18, 0.95) 100%) !important;
     direction: rtl !important;
     overflow: hidden !important;
     box-sizing: border-box !important;
 }
 
-/* Hide SVG Thumbnail backdrop to expose full-res bg.png wallpaper */
-#arena-menu-overlay > div:first-of-type {
-    display: none !important;
+#arena-menu-overlay > img {
+    opacity: 0.8 !important;
+    filter: brightness(0.8) contrast(1.2) !important;
 }
 
-/* Ensure bg.png custom theme background is 100% full screen & bright */
-#arena-menu-overlay > div:nth-of-type(2) {
-    opacity: 1 !important;
-    filter: none !important;
-    background-size: cover !important;
-    background-position: center !important;
-}
-
-/* Floating UNO card symbols animation overlay */
+/* Floating JOHN & Card Emojis */
 #arena-menu-overlay::before {
-    content: "🎴   🔴   🔵   🟢   🟡   💥";
+    content: "🎴   JOHN   🟪   JOHN   ⬛   JOHN";
     position: absolute;
     inset: 0;
     font-size: 3.5rem;
-    color: rgba(250, 204, 21, 0.15);
+    color: rgba(168, 85, 247, 0.25);
     letter-spacing: 50px;
     word-spacing: 90px;
-    line-height: 140px;
+    line-height: 150px;
     pointer-events: none;
     user-select: none;
-    animation: floatingUnoCards 18s linear infinite;
+    animation: floatingJohnKeys 18s linear infinite;
     z-index: 1;
 }
 
-@keyframes floatingUnoCards {
+@keyframes floatingJohnKeys {
     0% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-35px) rotate(3deg); }
+    50% { transform: translateY(-35px) rotate(4deg); }
     100% { transform: translateY(0) rotate(0deg); }
 }
 
 /* Menu Container Glass Panel */
 #arena-menu-container {
-    background: rgba(15, 23, 42, 0.85) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
-    border: 2px solid rgba(250, 204, 21, 0.5) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: rgba(15, 5, 29, 0.92) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border: 3px solid #a855f7 !important;
     border-radius: 36px !important;
-    padding: 2.2rem 1.8rem !important;
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), inset 0 0 30px rgba(250, 204, 21, 0.15) !important;
+    padding: 2.5rem 2rem !important;
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.95), inset 0 0 35px rgba(168, 85, 247, 0.35) !important;
     z-index: 10 !important;
-    position: relative;
+    position: relative !important;
 }
 
-/* UNO badge on top of container */
+/* JOHN badge on top of container */
 #arena-menu-container::before {
-    content: "🎴 CRAZY UNO 💥";
+    content: "🎴 JOHN CARD GAME 🎴";
     position: absolute;
-    top: -14px;
-    right: 30px;
-    background: linear-gradient(135deg, #ef4444, #f59e0b);
-    color: #ffffff;
-    font-size: 0.75rem;
-    font-weight: 900;
-    padding: 3px 14px;
-    border-radius: 999px;
-    box-shadow: 0 0 15px rgba(239, 68, 68, 0.7);
+    top: -16px;
+    right: 50%;
+    transform: translateX(50%);
+    background: linear-gradient(135deg, #7e22ce, #a855f7) !important;
+    color: #ffffff !important;
+    font-size: 0.85rem !important;
+    font-weight: 900 !important;
+    padding: 5px 22px !important;
+    border-radius: 999px !important;
+    box-shadow: 0 0 25px rgba(168, 85, 247, 0.9) !important;
+    letter-spacing: 1px !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.4) !important;
 }
 
-/* Button Customizations with Arabic Text & Symbols */
+/* Button Customizations */
 #arena-menu-container .arena-btn {
     font-family: 'Tajawal', sans-serif !important;
     font-weight: 900 !important;
     letter-spacing: 0 !important;
     border-radius: 24px !important;
-    height: 3.8rem !important;
+    height: 4rem !important;
     transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    position: relative !important;
+    overflow: hidden !important;
 }
 
-/* 1. PLAY (ROOM) -> إنشاء غرفة وتحدي صديق */
-#arena-menu-container .arena-btn.btn-play {
-    background: linear-gradient(135deg, #ef4444, #b91c1c) !important;
-    border-bottom: 6px solid #991b1b !important;
-    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.5) !important;
-}
-#arena-menu-container .arena-btn.btn-play span {
-    display: none !important;
-}
-#arena-menu-container .arena-btn.btn-play::before {
-    content: "🎴 إنشاء غرفة وتحدي صديق" !important;
-    font-size: 1.25rem !important;
-    color: #ffffff !important;
-}
-
-/* 2. JOIN BY CODE -> الانضمام بكود الغرفة */
-#arena-menu-container .arena-btn.btn-join {
-    background: rgba(30, 41, 59, 0.85) !important;
-    border: 2px solid rgba(250, 204, 21, 0.5) !important;
-    color: #facc15 !important;
-    height: 3.2rem !important;
-    font-size: 0 !important;
-}
-#arena-menu-container .arena-btn.btn-join::before {
-    content: "🔑 الانضمام بكود الغرفة" !important;
-    font-size: 1.1rem !important;
-    color: #facc15 !important;
-}
-
-/* 3. LOCAL PLAY -> اللعب محلياً */
-#arena-menu-container .arena-btn.btn-local {
-    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
-    border-bottom: 6px solid #b45309 !important;
-    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.5) !important;
-}
-#arena-menu-container .arena-btn.btn-local span {
-    display: none !important;
-}
-#arena-menu-container .arena-btn.btn-local::before {
-    content: "👥 اللعب محلياً (نفس الجهاز)" !important;
-    font-size: 1.2rem !important;
-    color: #ffffff !important;
-}
-
-/* 4. ONLINE MATCH -> لعب أونلاين Pro */
-#arena-menu-container .arena-btn.btn-online {
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
-    border-bottom: 6px solid #1e40af !important;
-    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.5) !important;
-}
-#arena-menu-container .arena-btn.btn-online span {
-    display: none !important;
-}
-#arena-menu-container .arena-btn.btn-online::before {
-    content: "🏆 لعب أونلاين Pro" !important;
-    font-size: 1.25rem !important;
-    color: #ffffff !important;
-}
-
-/* 5. QUIT -> خروج */
-#arena-menu-container .arena-btn.btn-quit {
-    background: linear-gradient(135deg, #22c55e, #15803d) !important;
-    border-bottom: 6px solid #166534 !important;
-    box-shadow: 0 8px 20px rgba(34, 197, 94, 0.5) !important;
-}
-#arena-menu-container .arena-btn.btn-quit span {
-    display: none !important;
-}
-#arena-menu-container .arena-btn.btn-quit::before {
-    content: "🚪 خروج" !important;
-    font-size: 1.2rem !important;
-    color: #ffffff !important;
-}
-
-/* Pro Overlay Lock Badge */
-.pro-lock-overlay span {
+#arena-menu-container .arena-btn span {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.6rem !important;
     font-family: 'Tajawal', sans-serif !important;
+    font-size: 1.25rem !important;
     font-weight: 900 !important;
-    background: rgba(15, 23, 42, 0.95) !important;
-    color: #facc15 !important;
-    border: 2px solid #facc15 !important;
-    padding: 6px 16px !important;
-    border-radius: 999px !important;
-    font-size: 0.95rem !important;
-    box-shadow: 0 0 15px rgba(250, 204, 21, 0.6) !important;
+    color: #ffffff !important;
+    width: 100% !important;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.6) !important;
+}
+
+#arena-menu-container .arena-btn:hover {
+    transform: translateY(-3px) scale(1.02) !important;
+}
+
+/* 1. PLAY (ROOM) */
+#arena-menu-container .arena-btn.btn-play {
+    background: linear-gradient(135deg, #a855f7, #6b21a8) !important;
+    border: none !important;
+    border-bottom: 6px solid #581c87 !important;
+    box-shadow: 0 10px 25px rgba(168, 85, 247, 0.6) !important;
+}
+
+#arena-menu-container .arena-btn.btn-play:hover {
+    box-shadow: 0 14px 35px rgba(168, 85, 247, 0.85) !important;
+}
+
+/* 2. JOIN ROOM */
+#arena-menu-container .arena-btn.btn-join {
+    background: linear-gradient(135deg, #1e1b2e, #090312) !important;
+    border: 2px solid rgba(168, 85, 247, 0.5) !important;
+    border-bottom: 6px solid #6b21a8 !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5) !important;
+}
+
+#arena-menu-container .arena-btn.btn-join:hover {
+    border-color: #c084fc !important;
+    box-shadow: 0 10px 25px rgba(192, 132, 252, 0.5) !important;
+}
+
+/* 3. LOCAL PLAY */
+#arena-menu-container .arena-btn.btn-local {
+    background: linear-gradient(135deg, #c084fc, #7e22ce) !important;
+    border: none !important;
+    border-bottom: 6px solid #581c87 !important;
+    box-shadow: 0 10px 25px rgba(192, 132, 252, 0.6) !important;
+}
+
+#arena-menu-container .arena-btn.btn-local:hover {
+    box-shadow: 0 14px 35px rgba(192, 132, 252, 0.85) !important;
+}
+
+/* 4. PRO MATCHMAKING */
+#arena-menu-container .arena-btn.btn-online {
+    background: linear-gradient(135deg, #7e22ce, #3b0764) !important;
+    border: none !important;
+    border-bottom: 6px solid #2e1065 !important;
+    box-shadow: 0 10px 25px rgba(126, 34, 206, 0.6) !important;
+}
+
+/* 5. QUIT */
+#arena-menu-container .arena-btn.btn-quit {
+    background: linear-gradient(135deg, #ef4444, #991b1b) !important;
+    border: none !important;
+    border-bottom: 6px solid #7f1d1d !important;
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.5) !important;
 }

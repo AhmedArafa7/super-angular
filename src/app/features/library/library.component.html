@@ -421,6 +421,15 @@
             <button (click)="setReaderTheme('light')" [class.font-bold]="readerTheme === 'light'" class="px-2 py-1 text-xs rounded-lg hover:opacity-100">☀️ فاتح</button>
           </div>
 
+          <!-- Image Zoom Adjuster -->
+          <div *ngIf="selectedBookForReading.pages && selectedBookForReading.pages.length > 0"
+               class="flex items-center gap-1 rounded-xl p-1 border opacity-90"
+               [ngClass]="readerTheme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'">
+            <button (click)="zoomOut()" class="px-2 py-1 text-xs font-bold hover:opacity-100" title="تصغير الصورة (Zoom Out)">🔍-</button>
+            <span class="text-xs font-mono font-bold px-1 cursor-pointer" (click)="resetZoom()" title="إعادة ضبط التكبير">{{ (pageZoom * 100).toFixed(0) }}%</span>
+            <button (click)="zoomIn()" class="px-2 py-1 text-xs font-bold hover:opacity-100" title="تكبير الصورة حتى 350% (Zoom In)">🔍+</button>
+          </div>
+
           <!-- Two Page Spread Toggle -->
           <button *ngIf="selectedBookForReading.pages && selectedBookForReading.pages.length > 0"
                   (click)="toggleTwoPageMode()" 
@@ -496,11 +505,13 @@
                   <div class="hidden md:block absolute top-0 bottom-0 left-1/2 w-8 -translate-x-1/2 bg-gradient-to-r from-black/40 via-black/80 to-black/45 pointer-events-none z-10 shadow-inner"></div>
 
                   <!-- Right Page -->
-                  <div class="bg-black/40 rounded-2xl p-4 border border-white/10 shadow-inner flex flex-col items-center justify-center overflow-hidden min-h-[55vh]">
+                  <div class="bg-black/40 rounded-2xl p-4 border border-white/10 shadow-inner flex flex-col items-center justify-center overflow-auto min-h-[55vh] max-h-[70vh]">
                     <span class="text-[10px] font-mono text-indigo-400 mb-2 font-bold">صفحة يمنى #{{ activePageIndex + 1 }}</span>
                     @if (selectedBookForReading.pages[activePageIndex]; as page1) {
                       @if (page1.type === 'image') {
-                        <img [src]="page1.processedImageUrl || page1.imageUrl" [alt]="'صفحة ' + (activePageIndex + 1)" class="max-h-[55vh] object-contain rounded-xl shadow-lg" />
+                        <img [src]="page1.processedImageUrl || page1.imageUrl" [alt]="'صفحة ' + (activePageIndex + 1)" 
+                             [style.transform]="'scale(' + pageZoom + ')'" [style.transformOrigin]="'center top'"
+                             class="max-h-[55vh] object-contain rounded-xl shadow-lg transition-transform duration-200" />
                       } @else if (page1.type === 'text') {
                         <div class="space-y-3 w-full text-right p-2">
                           <h4 class="font-bold text-lg border-b pb-1">{{ page1.textTitle || ('صفحة ' + (activePageIndex + 1)) }}</h4>
@@ -513,11 +524,13 @@
                   </div>
 
                   <!-- Left Page -->
-                  <div class="bg-black/40 rounded-2xl p-4 border border-white/10 shadow-inner flex flex-col items-center justify-center overflow-hidden min-h-[55vh]">
+                  <div class="bg-black/40 rounded-2xl p-4 border border-white/10 shadow-inner flex flex-col items-center justify-center overflow-auto min-h-[55vh] max-h-[70vh]">
                     @if (selectedBookForReading.pages[activePageIndex + 1]; as page2) {
                       <span class="text-[10px] font-mono text-indigo-400 mb-2 font-bold">صفحة يسرى #{{ activePageIndex + 2 }}</span>
                       @if (page2.type === 'image') {
-                        <img [src]="page2.processedImageUrl || page2.imageUrl" [alt]="'صفحة ' + (activePageIndex + 2)" class="max-h-[55vh] object-contain rounded-xl shadow-lg" />
+                        <img [src]="page2.processedImageUrl || page2.imageUrl" [alt]="'صفحة ' + (activePageIndex + 2)" 
+                             [style.transform]="'scale(' + pageZoom + ')'" [style.transformOrigin]="'center top'"
+                             class="max-h-[55vh] object-contain rounded-xl shadow-lg transition-transform duration-200" />
                       } @else if (page2.type === 'text') {
                         <div class="space-y-3 w-full text-right p-2">
                           <h4 class="font-bold text-lg border-b pb-1">{{ page2.textTitle || ('صفحة ' + (activePageIndex + 2)) }}</h4>
@@ -558,8 +571,10 @@
 
                 <!-- Image Page Display Surface -->
                 <div *ngIf="curPage.type === 'image'" class="space-y-4">
-                  <div class="max-w-2xl mx-auto bg-black/40 rounded-3xl p-3 border border-white/10 shadow-2xl flex items-center justify-center overflow-hidden">
-                    <img [src]="curPage.processedImageUrl || curPage.imageUrl" [alt]="'صفحة ' + (activePageIndex + 1)" class="max-h-[60vh] object-contain rounded-2xl" />
+                  <div class="max-w-3xl mx-auto bg-black/40 rounded-3xl p-4 border border-white/10 shadow-2xl flex items-center justify-center overflow-auto max-h-[72vh]">
+                    <img [src]="curPage.processedImageUrl || curPage.imageUrl" [alt]="'صفحة ' + (activePageIndex + 1)" 
+                         [style.transform]="'scale(' + pageZoom + ')'" [style.transformOrigin]="'center top'"
+                         class="max-h-[65vh] object-contain rounded-2xl transition-transform duration-200 shadow-xl" />
                   </div>
 
                   <!-- AI Extracted Text Panel (if available) -->
