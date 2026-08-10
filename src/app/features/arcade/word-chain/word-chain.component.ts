@@ -16,19 +16,77 @@ interface PlayerScore {
   selector: 'app-word-chain-game',
   standalone: true,
   imports: [CommonModule, FormsModule, LucideAngularModule],
+  styles: [`
+    @keyframes floatLetter {
+      0% { transform: translateY(0px) rotate(0deg) scale(1); opacity: 0.2; }
+      50% { transform: translateY(-28px) rotate(10deg) scale(1.15); opacity: 0.45; }
+      100% { transform: translateY(0px) rotate(0deg) scale(1); opacity: 0.2; }
+    }
+    @keyframes floatChain {
+      0% { transform: translateY(0px) rotate(0deg) scale(1); opacity: 0.3; }
+      50% { transform: translateY(-35px) rotate(-15deg) scale(1.2); opacity: 0.6; }
+      100% { transform: translateY(0px) rotate(0deg) scale(1); opacity: 0.3; }
+    }
+    .floating-arabic-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 20%, #1e1b4b 0%, #0f172a 60%, #020617 100%);
+    }
+    .letter-particle {
+      position: absolute;
+      font-weight: 900;
+      font-family: 'Tajawal', system-ui, sans-serif;
+      color: rgba(199, 210, 254, 0.45);
+      text-shadow: 0 0 25px rgba(99, 102, 241, 0.6);
+      animation: floatLetter 8s ease-in-out infinite;
+    }
+    .chain-particle {
+      position: absolute;
+      filter: drop-shadow(0 0 20px rgba(245, 158, 11, 0.5));
+      animation: floatChain 9s ease-in-out infinite;
+    }
+  `],
   template: `
-    <div class="min-h-screen bg-slate-950 text-white p-4 md:p-12 flex flex-col items-center justify-start select-none font-sans dir-rtl">
+    <!-- Dynamic Arabic Alphabet & Chain Links Background -->
+    <div class="floating-arabic-bg">
+      <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600/25 rounded-full blur-3xl"></div>
+      <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/25 rounded-full blur-3xl"></div>
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/10 rounded-full blur-3xl"></div>
+
+      <!-- Floating 3D Arabic Alphabet Letters -->
+      <span class="letter-particle text-7xl top-[8%] left-[6%]" style="animation-delay: 0s">أ</span>
+      <span class="letter-particle text-8xl top-[22%] right-[10%]" style="animation-delay: 1.5s">ب</span>
+      <span class="letter-particle text-6xl top-[58%] left-[12%]" style="animation-delay: 3s">ت</span>
+      <span class="letter-particle text-9xl top-[72%] right-[6%]" style="animation-delay: 4.5s">س</span>
+      <span class="letter-particle text-7xl top-[12%] right-[32%]" style="animation-delay: 2s">م</span>
+      <span class="letter-particle text-8xl top-[48%] left-[28%]" style="animation-delay: 3.5s">ك</span>
+      <span class="letter-particle text-6xl top-[78%] left-[42%]" style="animation-delay: 5s">ل</span>
+      <span class="letter-particle text-7xl top-[32%] left-[4%]" style="animation-delay: 1s">ح</span>
+      <span class="letter-particle text-8xl top-[82%] right-[38%]" style="animation-delay: 2.5s">ن</span>
+      <span class="letter-particle text-7xl top-[42%] right-[3%]" style="animation-delay: 4s">ق</span>
+
+      <!-- Floating 3D Chain Links & Dictionary Icons -->
+      <span class="chain-particle text-7xl top-[16%] left-[18%]" style="animation-delay: 0.5s">🔗</span>
+      <span class="chain-particle text-8xl top-[62%] right-[20%]" style="animation-delay: 2.8s">🔗</span>
+      <span class="chain-particle text-6xl top-[38%] right-[6%]" style="animation-delay: 4.2s">📚</span>
+      <span class="chain-particle text-7xl top-[75%] left-[8%]" style="animation-delay: 1.8s">💡</span>
+    </div>
+
+    <div class="relative z-10 min-h-screen text-white p-4 md:p-12 flex flex-col items-center justify-start select-none font-sans dir-rtl">
       
       <!-- Top Navigation Header -->
-      <div class="w-full max-w-4xl flex items-center justify-between mb-8 border-b border-white/10 pb-4">
-        <button (click)="goBack()" class="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white px-5 py-2.5 rounded-2xl transition-all font-bold text-sm cursor-pointer">
+      <div class="w-full max-w-4xl flex items-center justify-between mb-8 border-b border-white/10 pb-4 backdrop-blur-md bg-white/5 px-6 py-3 rounded-2xl">
+        <button (click)="goBack()" class="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white px-5 py-2.5 rounded-2xl transition-all font-bold text-sm cursor-pointer shadow-lg">
           <lucide-icon [img]="ArrowRight" class="w-4 h-4"></lucide-icon>
           العودة لمعرض الألعاب
         </button>
 
         <div class="flex items-center gap-3">
-          <div class="bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 px-4 py-1.5 rounded-2xl text-xs font-black flex items-center gap-2">
-            <lucide-icon [img]="Sparkles" class="w-4 h-4"></lucide-icon>
+          <div class="bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 px-4 py-2 rounded-2xl text-xs font-black flex items-center gap-2 shadow-lg">
+            <lucide-icon [img]="Sparkles" class="w-4 h-4 text-amber-400"></lucide-icon>
             سلسلة الكلمات الذكية 🔗 (30 ثانية لكل كلمة)
           </div>
         </div>
@@ -38,7 +96,7 @@ interface PlayerScore {
       <div class="w-full max-w-3xl">
 
         <!-- 1. SETUP STAGE -->
-        <div *ngIf="gameState() === 'setup'" class="bg-slate-900 border border-white/10 rounded-[2.5rem] p-6 md:p-10 shadow-2xl space-y-8 animate-in zoom-in-95 duration-300">
+        <div *ngIf="gameState() === 'setup'" class="bg-indigo-950/40 backdrop-blur-2xl border border-indigo-500/30 rounded-[2.5rem] p-6 md:p-10 shadow-[0_0_60px_rgba(99,102,241,0.25)] space-y-8 animate-in zoom-in-95 duration-300">
           <div class="text-center space-y-3">
             <h1 class="text-3xl md:text-5xl font-black bg-gradient-to-l from-white via-indigo-200 to-indigo-400 bg-clip-text text-transparent">سلسلة الكلمات الذكية 🔗</h1>
             <p class="text-slate-400 text-xs md:text-sm max-w-lg mx-auto leading-relaxed">

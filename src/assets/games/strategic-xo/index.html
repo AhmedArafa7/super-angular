@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة XO الاستراتيجية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .hud {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Main Menu -->
+        <div id="main-menu" class="screen">
+            <div class="bg-pattern"></div>
+            <h1 class="glow-text title-large">XO الخارقة ✖️⭕</h1>
+            <p class="subtitle">فكر في كل خطوة، فموقع لعبك يحدد أين سيلعب خصمك!</p>
+            
+            <div class="menu-section">
+                <button class="action-btn primary mode-btn" data-mode="local_setup">لعب محلي (متعدد)</button>
+                <div class="divider"><span>أو</span></div>
+                <button class="action-btn secondary mode-btn" data-mode="p2p">تحدي أونلاين (P2P)</button>
+            </div>
+            
+            <div class="menu-section mt-20" style="text-align: center;">
+                <button class="action-btn transparent" onclick="window.history.back()" style="font-size: 1rem; padding: 10px;">العودة للأركيد</button>
+            </div>
+        </div>
+        
+        <!-- Local Setup Menu -->
+        <div id="local-setup-menu" class="screen hidden">
+            <div class="bg-pattern"></div>
+            <h1 class="glow-text">إعداد اللعب المحلي</h1>
+            <div class="p2p-box" style="text-align: center;">
+                <h2 style="margin-bottom: 20px;">عدد اللاعبين:</h2>
+                <div style="display: flex; justify-content: center; align-items: center; gap: 20px;">
+                    <button id="dec-local-players" class="action-btn secondary" style="width: 50px; font-size: 1.5rem;">-</button>
+                    <span id="local-players-count" style="font-size: 2rem; font-weight: bold;">2</span>
+                    <button id="inc-local-players" class="action-btn secondary" style="width: 50px; font-size: 1.5rem;">+</button>
+                </div>
+                
+                <button id="start-local-btn" class="action-btn primary mt-30" style="background: #38bdf8; color: #0f172a;">ابدأ اللعب</button>
+                <button id="back-from-local-btn" class="action-btn transparent mt-10">إلغاء</button>
+            </div>
+        </div>
+
+        <!-- P2P Menu -->
+        <div id="p2p-menu" class="screen hidden">
+            <div class="bg-pattern"></div>
+            <h1 class="glow-text">تحدي الأصدقاء 🌐</h1>
+            
+            <div class="p2p-box">
+                <h2>إنشاء غرفة تحدي</h2>
+                <button id="create-room-btn" class="action-btn primary">إنشاء غرفة</button>
+                <div id="room-info" class="hidden">
+                    <p>أرسل شفرة الاتصال للمنافس:</p>
+                    <div id="roomIdDisplay" class="room-id">جاري الإنشاء...</div>
+                    <p class="wait-text">في انتظار وصول المنافس...</p>
+                </div>
+
+                <div class="divider"><span>أو</span></div>
+
+                <h2>الانضمام لغرفة تحدي</h2>
+                <div class="join-box">
+                    <input type="text" id="join-room-id" placeholder="أدخل شفرة الاتصال هنا">
+                    <button id="join-room-btn" class="action-btn secondary">دخول التحدي</button>
+                    <p id="join-error" class="error-msg hidden">تعذر الاتصال بالغرفة.</p>
+                </div>
+            </div>
+            
+            <button id="back-to-menu-btn" class="action-btn transparent mt-20">إلغاء التحدي</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen hidden">
+            <div class="hud" id="main-hud">
+                <!-- Players HUD will be injected here dynamically -->
+            </div>
+            
+            <div class="game-info" style="margin-bottom: 10px;">
+                <div id="turn-indicator" class="turn-indicator">...</div>
+            </div>
+            
+            <div class="board-container">
+                <div id="super-board" class="super-board">
+                    <!-- 9 Mini Boards will be injected by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="screen hidden">
+            <div class="game-over-box">
+                <h1 id="game-over-title" class="glow-text">انتهت اللعبة!</h1>
+                <p id="game-over-msg" class="subtitle">يا لها من مباراة استراتيجية!</p>
+                
+                <div class="menu-section mt-20">
+                    <button id="restart-btn" class="action-btn primary">العب مرة أخرى</button>
+                    <button id="quit-btn" class="action-btn secondary">العودة للقائمة</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="game.js"></script>
+</body>
+</html>

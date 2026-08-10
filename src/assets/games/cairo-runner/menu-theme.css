@@ -1,0 +1,73 @@
+/* Cairo Runner Street Sign Menu Theme */
+#arena-menu-overlay {
+  font-family: 'Fredoka One', system-ui, sans-serif;
+}
+
+#arena-menu-container {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 1rem;
+}
+
+.arena-btn {
+  background: #facc15 !important; /* Yellow street sign */
+  border: 4px solid #000 !important;
+  border-bottom: 8px solid #000 !important;
+  border-radius: 12px !important;
+  color: #000 !important;
+  font-weight: 900 !important;
+  text-transform: uppercase;
+  text-shadow: none;
+  box-shadow: 0 10px 0 rgba(0,0,0,0.2) !important;
+  transform-origin: top center;
+  position: relative;
+}
+
+/* Simulate the metal pole connecting the signs */
+.arena-btn::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 20px;
+  background: #71717a; /* Metal gray */
+  border: 2px solid #3f3f46;
+  z-index: -1;
+}
+
+/* Hide pole for the first button or adjust it */
+.btn-play::before {
+  height: 40px;
+  top: -40px;
+  border-radius: 5px 5px 0 0;
+}
+
+.arena-btn:hover {
+  background: #fef08a !important;
+  transform: translateY(-2px) rotate(2deg) !important;
+  box-shadow: 0 12px 0 rgba(0,0,0,0.2) !important;
+}
+
+.arena-btn:active {
+  transform: translateY(4px) rotate(0deg) !important;
+  border-bottom: 4px solid #000 !important;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.2) !important;
+}
+
+.arena-btn.btn-join {
+  background: #eab308 !important;
+  height: 3rem !important;
+}
+
+.arena-btn.btn-quit {
+  background: #ef4444 !important; /* Red stop sign */
+  color: white !important;
+  border-radius: 20px !important;
+}
+
+.arena-btn.btn-quit:hover {
+  background: #f87171 !important;
+}

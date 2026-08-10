@@ -1,0 +1,65 @@
+/* Tank Battle Military Menu Theme */
+#arena-menu-overlay {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+#arena-menu-container {
+  background: rgba(10, 20, 10, 0.85); /* Dark olive */
+  backdrop-filter: blur(8px);
+  border: 4px solid #4a5d23;
+  border-radius: 0;
+  box-shadow: 0 0 20px rgba(74, 93, 35, 0.5), inset 0 0 15px rgba(0,0,0,0.8);
+  padding: 2.5rem 2rem;
+  position: relative;
+}
+
+#arena-menu-container::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0,0,0,0.15),
+    rgba(0,0,0,0.15) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+  pointer-events: none;
+}
+
+.arena-btn {
+  background: #2b3a18 !important;
+  border: 2px solid #5c7a29 !important;
+  border-bottom: 4px solid #1a240f !important;
+  border-radius: 4px !important;
+  color: #a3c473 !important;
+  font-family: 'Courier New', Courier, monospace !important;
+  text-transform: uppercase;
+  text-shadow: 0 0 5px rgba(163, 196, 115, 0.5);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.6) !important;
+  letter-spacing: 2px;
+}
+
+.arena-btn:hover {
+  background: #3e5423 !important;
+  color: #c5e895 !important;
+  border-color: #79a336 !important;
+  box-shadow: 0 0 15px rgba(121, 163, 54, 0.5) !important;
+}
+
+.arena-btn.btn-join {
+  background: transparent !important;
+  border: 1px dashed #5c7a29 !important;
+  color: #8a9e6b !important;
+}
+
+.arena-btn.btn-quit {
+  background: #3a1818 !important;
+  border-color: #7a2929 !important;
+  border-bottom-color: #240f0f !important;
+  color: #c47373 !important;
+}
+.arena-btn.btn-quit:hover {
+  background: #542323 !important;
+  color: #e89595 !important;
+}

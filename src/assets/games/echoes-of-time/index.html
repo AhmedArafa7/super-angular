@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Echoes of Time - أصداء الزمن</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=1">
+    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Global Mute Button -->
+        <button id="global-mute-btn" onclick="toggleGlobalMute()" class="mute-btn">🎵</button>
+        
+        <!-- Start Menu Screen -->
+        <div id="start-menu-screen" class="screen active">
+            <h1 class="game-title glow-text">أصداء الزمن ⏳</h1>
+            <p class="subtitle">تعاونوا لربط الماضي بالحاضر والمستقبل!</p>
+            
+            <div class="lobby-controls" style="background: rgba(15, 23, 42, 0.8); padding: 30px; border-radius: 20px; border: 1px solid #334155; max-width: 400px;">
+                <div style="margin-bottom: 20px; width: 100%;">
+                    <label style="display: block; margin-bottom: 5px; color: #94a3b8;">اسم اللاعب:</label>
+                    <input type="text" id="player-name" value="" placeholder="أدخل اسمك" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #3b82f6; background: #0f172a; color: white; font-family: 'Tajawal'; font-size: 1.1rem; box-sizing: border-box;">
+                </div>
+                
+                <button id="host-btn" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 1.2rem; margin-bottom: 20px;">إنشاء غرفة (مضيف)</button>
+                
+                <div style="width: 100%; position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                    <hr style="width: 100%; border-color: #334155;">
+                    <span style="position: absolute; background: #0f172a; padding: 0 10px; color: #94a3b8;">أو</span>
+                </div>
+                
+                <div style="display: flex; gap: 10px; width: 100%;">
+                    <input type="text" id="join-id" placeholder="كود الغرفة" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #a855f7; background: #0f172a; color: white; font-family: 'Orbitron'; font-size: 1.1rem; text-transform: uppercase;">
+                    <button id="join-btn" class="btn btn-secondary" style="padding: 12px 20px; font-size: 1.1rem;">انضمام</button>
+                </div>
+                <p id="join-error" style="color: #ef4444; margin-top: 10px; display: none; font-size: 0.9rem; text-align: center;"></p>
+            </div>
+        </div>
+
+        <!-- Lobby Screen -->
+        <div id="lobby-screen" class="screen">
+            <h1 class="game-title glow-text">أصداء الزمن ⏳</h1>
+            <p class="subtitle">تعاونوا لربط الماضي بالحاضر والمستقبل، وافتحوا بوابة الزمن!</p>
+            
+            <div class="lobby-controls">
+                <div id="player-name-display" class="name-box">
+                    اللاعب: <span id="player-name-text">...</span>
+                </div>
+                <input type="hidden" id="player-name" value="">
+                
+                <div class="room-id-box hidden" id="room-id-box">
+                    كود الغرفة: <span id="room-id-display" class="glow-text">...</span>
+                </div>
+                
+                <div class="players-list-container">
+                    <h3>المسافرون عبر الزمن:</h3>
+                    <ul id="players-list"></ul>
+                </div>
+                
+                <div class="roles-visual-container">
+                    <!-- Past Card -->
+                    <div class="time-card past-card" id="card-past">
+                        <div class="player-name-slot" id="name-past">--</div>
+                        <div class="time-avatar">🕰️</div>
+                        <div class="role-title">الماضي (Past)</div>
+                        <button class="btn role-btn" id="btn-select-past" onclick="selectMyRole('past')">اختيار</button>
+                        <div class="ready-status" id="ready-past"></div>
+                    </div>
+                    
+                    <!-- Present Card -->
+                    <div class="time-card present-card" id="card-present">
+                        <div class="player-name-slot" id="name-present">--</div>
+                        <div class="time-avatar">💻</div>
+                        <div class="role-title">الحاضر (Present)</div>
+                        <button class="btn role-btn" id="btn-select-present" onclick="selectMyRole('present')">اختيار</button>
+                        <div class="ready-status" id="ready-present"></div>
+                    </div>
+                    
+                    <!-- Future Card -->
+                    <div class="time-card future-card" id="card-future">
+                        <div class="player-name-slot" id="name-future">--</div>
+                        <div class="time-avatar">🚀</div>
+                        <div class="role-title">المستقبل (Future)</div>
+                        <button class="btn role-btn" id="btn-select-future" onclick="selectMyRole('future')">اختيار</button>
+                        <div class="ready-status" id="ready-future"></div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 30px;">
+                    <button id="start-game-btn" class="btn btn-primary start-btn hidden">تشغيل بوابة الزمن</button>
+                </div>
+                <p id="waiting-msg" class="waiting-text hidden">ننتظر المضيف لتشغيل البوابة...</p>
+            </div>
+            
+            <div id="audio-elements" class="hidden">
+                <audio id="audio-peer-1" autoplay></audio>
+                <audio id="audio-peer-2" autoplay></audio>
+            </div>
+        </div>
+
+        <!-- Main Game Screen -->
+        <div id="game-screen" class="screen">
+            <!-- Global Timer -->
+            <div class="game-header">
+                <div class="timer glow-text" id="timer-display">10:00</div>
+            </div>
+            
+            <!-- Views Container -->
+            <div id="views-container">
+                
+                <!-- Past View -->
+                <div id="past-view" class="role-view hidden">
+                    <div class="era-header past-theme">سنة 1920 - الماضي</div>
+                    <div class="instructions">أنت محتجز في قبو قديم. أمامك مولد طاقة غريب. تواصل مع أصدقائك لتعرف ماذا تفعل بهذه الأسلاك!</div>
+                    
+                    <div class="puzzle-container">
+                        <div class="generator-panel">
+                            <h3>مولد الطاقة القديم</h3>
+                            <div class="wires-box" id="past-wires">
+                                <!-- Generated by JS -->
+                            </div>
+                        </div>
+                        <div class="clue-box">
+                            <h4>قصاصة جريدة</h4>
+                            <p>تاريخ هام: <span class="highlight">15 سبتمبر</span></p>
+                            <p>مدينة هامة: <span class="highlight">لندن</span></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Present View -->
+                <div id="present-view" class="role-view hidden">
+                    <div class="era-header present-theme">الوقت الحاضر</div>
+                    <div class="instructions">أنت في مختبر حديث. حاسوبك يفتقر للطاقة. ساعد الماضي ليقوم بتشغيله لك، ثم تواصل مع المستقبل!</div>
+                    
+                    <div class="puzzle-container">
+                        <div class="manual-box">
+                            <h3>دليل هندسة المولدات الزمنية</h3>
+                            <ul>
+                                <li>إذا رأيت رمز ♈، اقطع السلك الأحمر.</li>
+                                <li>إذا رأيت رمز ♉، اقطع السلك الأزرق.</li>
+                                <li>إذا رأيت رمز ♊، اقطع السلك الأخضر.</li>
+                            </ul>
+                        </div>
+                        <div class="terminal-box" id="present-terminal">
+                            <div class="terminal-screen offline" id="terminal-screen">
+                                <p>NO POWER DETECTED</p>
+                            </div>
+                            <div class="terminal-inputs hidden" id="terminal-inputs">
+                                <p>Enter Temporal Coordinates:</p>
+                                <input type="text" id="coord-date" placeholder="Date (e.g., 15 Sep)">
+                                <input type="text" id="coord-city" placeholder="City (e.g., London)">
+                                <button class="btn btn-primary" onclick="submitCoordinates()">VERIFY</button>
+                                <p id="calibration-result" class="glow-text"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Future View -->
+                <div id="future-view" class="role-view hidden">
+                    <div class="era-header future-theme">سنة 2150 - المستقبل</div>
+                    <div class="instructions">تقف أمام بوابة الزمن العظيمة. تحتاج للطاقة والإحداثيات لتعمل. أرشد الماضي، وخذ الإحداثيات من الحاضر!</div>
+                    
+                    <div class="puzzle-container">
+                        <div class="portal-box">
+                            <h3>بوابة التلاقي الزمني</h3>
+                            <p>أدخل رمز المعايرة (Calibration Code):</p>
+                            <div class="code-inputs">
+                                <input type="number" id="code-1" max="9" min="0">
+                                <input type="number" id="code-2" max="9" min="0">
+                                <input type="number" id="code-3" max="9" min="0">
+                                <input type="number" id="code-4" max="9" min="0">
+                            </div>
+                            <button class="btn btn-secondary" style="margin-top:15px; width:100%" onclick="activatePortal()">تفعيل البوابة</button>
+                        </div>
+                        <div class="clue-box future-clue">
+                            <h4>رموز الطاقة المنسية</h4>
+                            <div class="symbols-display">
+                                <span class="sym">♈</span>
+                                <span class="sym">♉</span>
+                                <span class="sym">♊</span>
+                            </div>
+                            <p class="small-text">يجب إعطاؤها لحاضر لتشغيل مولد الماضي.</p>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+
+        <!-- Game Over / Victory Screen -->
+        <div id="game-over-screen" class="screen">
+            <h1 id="end-title" class="glow-text">تم تفعيل البوابة بنجاح! 🌌</h1>
+            <p id="end-subtitle">لقد تمكنتم من دمج الخطوط الزمنية والتقيتم أخيراً!</p>
+            <button class="btn btn-primary" style="margin-top: 30px;" onclick="window.parent.postMessage({type: 'CLOSE_GAME'}, '*')">العودة للأركيد</button>
+        </div>
+    </div>
+
+    <script src="game.js?v=5"></script>
+</body>
+</html>

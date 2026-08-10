@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الشركة المميتة - Lethal Company 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- PeerJS for P2P -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- PointerLockControls -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        
+        <!-- 3D Canvas Container -->
+        <div id="game-container"></div>
+        
+        <!-- Crosshair -->
+        <div id="crosshair" class="hidden">+</div>
+
+        <!-- Main Menu -->
+        <div id="main-menu" class="screen ui-layer">
+            <div class="crt-overlay"></div>
+            <h1 class="glow-text title-large text-green">Lethal Company 3D 🔦</h1>
+            <p class="subtitle text-green">استكشف المتاهة 삼ية الأبعاد... واجمع الخردة دون أن تموت!</p>
+            
+            <div class="menu-section">
+                <button class="action-btn primary mode-btn" data-mode="single">مهمة فردية</button>
+                <div class="divider"><span>أو</span></div>
+                <button class="action-btn secondary mode-btn" data-mode="p2p">عقد تعاوني (P2P)</button>
+            </div>
+        </div>
+
+        <!-- P2P Menu -->
+        <div id="p2p-menu" class="screen ui-layer hidden">
+            <div class="crt-overlay"></div>
+            <h1 class="glow-text text-green">تكوين الطاقم 🌐</h1>
+            
+            <div class="p2p-box">
+                <h2 class="text-green">إنشاء سيرفر المضيف</h2>
+                <button id="create-room-btn" class="action-btn primary">استضافة</button>
+                <div id="room-info" class="hidden">
+                    <p class="text-green">أرسل شفرة التردد لطاقمك:</p>
+                    <div id="roomIdDisplay" class="room-id">جاري الإنشاء...</div>
+                    <p class="wait-text">ننتظر وصول الزملاء...</p>
+                    <button id="start-game-btn" class="action-btn primary mt-10 hidden">بدء المهمة!</button>
+                </div>
+
+                <div class="divider"><span>أو</span></div>
+
+                <h2 class="text-green">الانضمام لطاقم</h2>
+                <div class="join-box">
+                    <input type="text" id="join-room-id" placeholder="أدخل التردد هنا">
+                    <button id="join-room-btn" class="action-btn secondary">دخول</button>
+                    <p id="join-error" class="error-msg hidden">التردد غير صحيح أو السيرفر ممتلئ.</p>
+                </div>
+            </div>
+            
+            <button id="back-to-menu-btn" class="action-btn transparent mt-20">إلغاء</button>
+        </div>
+
+        <!-- Ship Hub (Terminal) -->
+        <div id="ship-hub-screen" class="screen ui-layer hidden">
+            <div class="crt-overlay"></div>
+            <div class="sub-hub-layout">
+                <!-- Left Control: Shop & Assets -->
+                <div class="terminal-panel sub-left-panel">
+                    <h2 class="panel-title text-green">> مخزن المعدات (STORE)</h2>
+                    <p class="credits-display text-green">الرصيد المتاح: <span id="terminal-credits">60</span>$</p>
+                    <div class="shop-list">
+                        <div class="shop-item">
+                            <span>🔦 كشاف يدوي ($15)</span>
+                            <button class="shop-buy-btn" data-item="flashlight">شراء</button>
+                        </div>
+                        <div class="shop-item">
+                            <span>📻 جهاز لاسلكي ($10)</span>
+                            <button class="shop-buy-btn" data-item="walkie">شراء</button>
+                        </div>
+                        <div class="shop-item">
+                            <span>💨 أنبوبة أكسجين ($25)</span>
+                            <button class="shop-buy-btn" data-item="oxygen">شراء</button>
+                        </div>
+                        <div class="shop-item">
+                            <span>⚡ صعق كهربائي ($30)</span>
+                            <button class="shop-buy-btn" data-item="taser">شراء</button>
+                        </div>
+                    </div>
+                    <div class="inventory-status text-green mt-10">
+                        <p>> المعدات المملوكة:</p>
+                        <div id="owned-items" class="owned-items-grid">- لا يوجد -</div>
+                    </div>
+                </div>
+
+                <!-- Center Control: Route & Flight -->
+                <div class="terminal-panel sub-center-panel">
+                    <h1 class="terminal-header text-green">=== غواصة التحكم (SUB-HUB) ===</h1>
+                    <div class="terminal-stats">
+                        <p>الحصة المطلوبة (Quota): <span id="hub-quota" class="text-green">130</span>$</p>
+                        <p>الرصيد المجمع للشركة: <span id="hub-collected" class="text-green">0</span>$</p>
+                        <p>الأيام المتبقية: <span id="hub-days" class="text-red">3</span> أيام</p>
+                    </div>
+                    
+                    <div class="terminal-moons">
+                        <p class="text-green">> اختر المنشأة المستهدفة:</p>
+                        <button class="action-btn terminal-btn moon-btn selected" data-moon="experimentation">
+                            > منشأة الاختبار الغارقة (سهل - خطورة 10%)
+                        </button>
+                        <button class="action-btn terminal-btn moon-btn" data-moon="vow">
+                            > ممرات الطحالب الكثيفة (متوسط - خطورة 40%)
+                        </button>
+                        <button class="action-btn terminal-btn moon-btn" data-moon="titan">
+                            > هاوية تيتان العميقة (صعب - خطورة 80%)
+                        </button>
+                    </div>
+
+                    <!-- Lever Section -->
+                    <div class="lever-section mt-20">
+                        <button id="launch-lever-btn" class="action-btn primary pulse-btn">
+                            🕹️ اسحب الرافعة لبدء الهبوط
+                        </button>
+                        <div id="descent-loader" class="descent-loader hidden">
+                            <div class="descending-text animate-pulse">جاري الهبوط لأسفل المحيط...</div>
+                            <div class="descent-progress-bar"><div id="descent-progress-fill"></div></div>
+                        </div>
+                    </div>
+
+                    <div id="terminal-waiting" class="hidden">
+                        <p class="wait-text">> بانتظار المضيف لسحب الرافعة والبدء...</p>
+                    </div>
+                </div>
+
+                <!-- Right Control: Engineer Radar View -->
+                <div class="terminal-panel sub-right-panel">
+                    <h2 class="panel-title text-green">> شاشة رادار المهندس (RADAR)</h2>
+                    <div class="radar-console-box">
+                        <canvas id="engineer-radar-canvas" width="200" height="200"></canvas>
+                        <div class="radar-sweeper"></div>
+                    </div>
+                    <div class="engineer-controls mt-10">
+                        <button id="radar-door-btn" class="action-btn secondary text-xs" style="padding:5px;">فتح/إغلاق الباب الإلكتروني [R]</button>
+                        <div class="text-[10px] text-green-500 mt-5">
+                            * المهندس يقدر يساعد الطاقم من هنا لرؤية الوحوش (أحمر) والأصدقاء (أبيض) والتحكم بالأبواب!
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- In-Game HUD -->
+        <div id="game-hud" class="ui-layer hidden pointer-events-none">
+            <div class="crt-overlay pointer-events-none"></div>
+            
+            <div class="hud" id="main-hud">
+                <div class="hud-left">
+                    <div class="quota-box">الهدف: <span id="quota-collected">0</span> / <span id="quota-target">130</span>$</div>
+                    <div class="inventory-box">حمولة الخردة: <span id="scrap-value">0</span>$</div>
+                    <div class="days-box text-red">الأيام المتبقية: <span id="hud-days-left">3</span></div>
+                </div>
+                
+                <div class="game-info">
+                    <div id="time-display" class="timer text-green">الوقت: 08:00 AM</div>
+                    <!-- Oxygen & Weight Overlay -->
+                    <div class="indicators-box">
+                        <div class="hud-indicator oxygen-ind">
+                            <span>الأكسجين:</span>
+                            <div class="ind-bar-bg"><div id="oxygen-bar-fill" class="ind-bar-fill oxygen-fill"></div></div>
+                        </div>
+                        <div class="hud-indicator weight-ind">
+                            <span>الوزن:</span>
+                            <div class="ind-bar-bg"><div id="weight-bar-fill" class="ind-bar-fill weight-fill"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hud-right">
+                    <div class="battery-container">
+                        <span>البطارية:</span>
+                        <div class="battery-bg">
+                            <div id="battery-fill" class="battery-fill"></div>
+                        </div>
+                    </div>
+                    <!-- Walkie Talkie overlay -->
+                    <div id="walkie-overlay" class="walkie-overlay hidden mt-10">
+                        <span class="text-xs text-green">📻 اللاسلكي نشط</span>
+                        <div id="walkie-messages" class="walkie-log"></div>
+                        <input type="text" id="walkie-input" class="walkie-input" placeholder="اكتب رسالة اللاسلكي...">
+                    </div>
+                </div>
+            </div>
+            
+            <div id="interaction-hint" class="interaction-hint hidden">اضغط [E] للالتقاط</div>
+            
+            <!-- Pause Overlay -->
+            <div id="pause-overlay" class="pause-overlay hidden">
+                <div class="pause-box">
+                    <h2 class="text-green">متوقف مؤقتاً</h2>
+                    <p style="font-size: 1.2rem; font-weight: bold;">(انقر في أي مكان بالشاشة لتتمكن من التحرك والنظر بالماوس)</p>
+                </div>
+            </div>
+            
+            <!-- Mobile Controls -->
+            <div id="mobile-controls" class="hidden">
+                <div id="joystick-left" class="joystick-zone"></div>
+                <div id="joystick-right" class="joystick-zone">
+                    <div class="look-hint">اسحب للنظر</div>
+                </div>
+                <div class="mobile-actions">
+                    <button id="mobile-interact-btn" class="mobile-btn">E (التقاط)</button>
+                    <button id="mobile-flashlight-btn" class="mobile-btn">🔦 (كشاف)</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="screen ui-layer hidden">
+            <div class="crt-overlay"></div>
+            <div class="game-over-box">
+                <h1 id="game-over-title" class="glow-text text-red">تم الرفض من الشركة</h1>
+                <p id="game-over-msg" class="subtitle text-green">لم تحقق الحصة المطلوبة أو مُت في الظلام.</p>
+                
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <span class="stat-label">المجموع:</span>
+                        <span id="final-score" class="stat-value text-green">0$</span>
+                    </div>
+                </div>
+
+                <div class="menu-section mt-20">
+                    <button id="restart-btn" class="action-btn primary">عقد جديد</button>
+                    <button id="quit-btn" class="action-btn secondary">العودة للقائمة</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden ui-layer"></div>
+
+    <script src="game.js"></script>
+</body>
+</html>

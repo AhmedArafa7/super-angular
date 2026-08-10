@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ماينداستري 🏭 Mindustry</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Main Hub Screen -->
+        <div id="menu-screen" class="screen active">
+            <div class="official-badge">⭐ تجربة Mindustry التفاعلية الأصلية</div>
+            <h1 class="title">ماينداستري 🏭 Mindustry</h1>
+            <p class="subtitle">ابنِ شبكات المصانع المعقدة، سيور النقل، وشبكات الطاقة للدفاع عن المفاعل الرئيسي!</p>
+
+            <div class="mode-cards-grid">
+                <!-- Mode 1: Full Interactive Web Play -->
+                <div class="mode-card cursor-pointer" onclick="startLocalGame()">
+                    <div class="mode-icon">🎮</div>
+                    <h3>1. تشغيل اللعبة المباشر بالمتصفح</h3>
+                    <p>لعب ممتع ومستقل، استخراج الموارد، بناء الأسيور ومدافع الليزر</p>
+                    <span class="mode-badge local">تشغيل فوري مجاني</span>
+                </div>
+
+                <!-- Mode 2: Official GitHub Downloads -->
+                <div class="mode-card cursor-pointer" onclick="showDownloadsScreen()">
+                    <div class="mode-icon">💾</div>
+                    <h3>2. تحميل النسخة الكاملة (PC/APK)</h3>
+                    <p>روابط التحميل المباشرة لملفات `.exe` و `.apk` من GitHub</p>
+                    <span class="mode-badge p2p">إصدارات Anuken الرسمية</span>
+                </div>
+
+                <!-- Mode 3: Pro Multiplayer Servers -->
+                <div class="mode-card pro-card cursor-pointer" onclick="showProModal()">
+                    <div class="mode-icon">🌐</div>
+                    <h3>3. سيرفرات أونلاين Pro</h3>
+                    <p>ربط مع خوادم أونلاين سحابية جماعية مخصصة للمشتركين</p>
+                    <span class="mode-badge pro">👑 يتطلب Pro</span>
+                </div>
+            </div>
+
+            <div class="actions-row mt-20">
+                <a class="btn btn-secondary" href="https://github.com/Anuken/Mindustry" target="_blank" rel="noopener">⭐ مستودع GitHub الرسمي (Anuken/Mindustry)</a>
+                <button class="btn btn-secondary" onclick="window.history.back()">⬅️ العودة للأركيد</button>
+            </div>
+        </div>
+
+        <!-- Downloads Hub Screen -->
+        <div id="downloads-screen" class="screen">
+            <h2>تحميل اللعبة الكاملة الأصلية (Mindustry Official Downloads) 💾</h2>
+            <p class="subtitle">حمل ملفات اللعبة الأصلية مباشرة من مستودع المطوّر Anuken على GitHub بدون إعلانات</p>
+
+            <div class="download-cards-grid">
+                <div class="dl-card">
+                    <div class="dl-icon">💻</div>
+                    <h3>نسخة الكمبيوتر (Windows .exe)</h3>
+                    <p>ملف Mindustry.exe الرسمي للكمبيوتر (64-bit)</p>
+                    <a class="btn btn-primary mt-10" href="https://github.com/Anuken/Mindustry/releases/latest" target="_blank" rel="noopener">تحميل للكمبيوتر (GitHub)</a>
+                </div>
+
+                <div class="dl-card">
+                    <div class="dl-icon">📱</div>
+                    <h3>نسخة الأندرويد (Android APK)</h3>
+                    <p>تثبيت مباشر APK أو عبر متجر F-Droid المجاني</p>
+                    <a class="btn btn-primary mt-10" href="https://github.com/Anuken/Mindustry/releases/latest" target="_blank" rel="noopener">تحميل للأندرويد (APK)</a>
+                </div>
+
+                <div class="dl-card">
+                    <div class="dl-icon">🐧</div>
+                    <h3>نسخة لينكس ومحاكي الجافا (.jar)</h3>
+                    <p>ملف Mindustry.jar الرسمي لكافة الأنظمة</p>
+                    <a class="btn btn-primary mt-10" href="https://github.com/Anuken/Mindustry/releases" target="_blank" rel="noopener">تصفح كافة الإصدارات</a>
+                </div>
+            </div>
+
+            <button class="btn btn-secondary mt-30" onclick="showScreen('menu-screen')">العودة للرئيسية</button>
+        </div>
+
+        <!-- Gameplay Canvas Screen -->
+        <div id="game-screen" class="screen">
+            <!-- HUD Resource Bar -->
+            <div class="hud-bar">
+                <div class="res-item">💎 النحاس: <span id="res-copper">150</span></div>
+                <div class="res-item">⚡ الطاقة: <span id="res-power">100</span>%</div>
+                <div class="res-item">❤️ المفاعل: <span id="core-health">1000</span>/1000</div>
+                <div class="res-item wave-tag">🌊 الموجة: <span id="wave-count">1</span> (<span id="wave-timer">25</span>ث)</div>
+                <button class="btn btn-secondary btn-sm" onclick="showScreen('menu-screen')">⬅️ خروج</button>
+            </div>
+
+            <!-- Main Interactive Canvas -->
+            <canvas id="mindustry-canvas"></canvas>
+
+            <!-- Building Toolbar -->
+            <div class="build-toolbar">
+                <button class="tool-btn active" data-tool="drill" onclick="selectTool('drill')">⛏️ حفار (20💎)</button>
+                <button class="tool-btn" data-tool="conveyor" onclick="selectTool('conveyor')">🏭 سير نقل (5💎)</button>
+                <button class="tool-btn" data-tool="turret" onclick="selectTool('turret')">🎯 مدفع رصاص (40💎)</button>
+                <button class="tool-btn" data-tool="laser" onclick="selectTool('laser')">⚡ مدفع ليزر (60💎)</button>
+                <button class="tool-btn" data-tool="wall" onclick="selectTool('wall')">🛡️ جدار حماية (15💎)</button>
+                <button class="tool-btn danger" data-tool="delete" onclick="selectTool('delete')">❌ تفكيك</button>
+            </div>
+        </div>
+
+        <!-- Pro Subscription Modal -->
+        <div id="pro-modal" class="modal-backdrop hidden">
+            <div class="modal-card">
+                <div class="pro-crown">👑</div>
+                <h2>سيرفرات Mindustry Pro الرسمية</h2>
+                <p>الوصول المباشر لسيرفرات الأونلاين التنافسية وبناء المصانع العملاقة مخصص حصرياً لأعضاء Super Pro.</p>
+                <div class="pro-benefits">
+                    <div>✓ سيرفرات سحابية 24/7 دون انقطاع</div>
+                    <div>✓ حفظ التقدم التلقائي على خوادم الأونلاين</div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="closeProModal()">إغلاق</button>
+                    <button class="btn btn-primary" style="background:#f59e0b;" onclick="closeProModal()">ترقية إلى Pro 👑</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>

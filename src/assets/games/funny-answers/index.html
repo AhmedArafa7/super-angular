@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جوابك فخ</title>
+    <style>
+        body { margin: 0; font-family: system-ui, sans-serif; background: #e2e8f0; color: #0f172a; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        .table { flex: 1; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        
+        .black-card { background: #000; color: white; width: 300px; min-height: 200px; padding: 30px; border-radius: 20px; font-size: 28px; font-weight: 900; line-height: 1.4; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; display: flex; align-items: center; justify-content: center; margin-bottom: 40px; position: relative; }
+        .black-card::after { content: 'جوابك فخ'; position: absolute; bottom: 15px; left: 20px; font-size: 14px; font-weight: bold; color: #fff; opacity: 0.5; }
+        
+        .submissions { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; min-height: 200px; }
+        
+        .white-card { background: white; color: #000; width: 200px; min-height: 250px; padding: 20px; border-radius: 15px; font-size: 22px; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s; position: relative; display: flex; align-items: flex-start; justify-content: center; text-align: center; border: 2px solid transparent; }
+        .white-card:hover { transform: translateY(-10px); }
+        .white-card::after { content: 'جوابك فخ'; position: absolute; bottom: 15px; left: 15px; font-size: 12px; font-weight: bold; color: #000; opacity: 0.3; }
+        .white-card.selected { border-color: #ef4444; transform: translateY(-20px); box-shadow: 0 20px 25px rgba(239,68,68,0.2); }
+        
+        .hand { background: #cbd5e1; padding: 20px; display: flex; gap: 15px; overflow-x: auto; box-shadow: inset 0 5px 10px rgba(0,0,0,0.05); }
+        .hand .white-card { min-width: 150px; min-height: 200px; font-size: 18px; }
+        
+        .hud { position: absolute; top: 20px; right: 20px; left: 20px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
+        .judge-badge { background: #facc15; color: black; padding: 10px 20px; border-radius: 20px; font-size: 18px; font-weight: 900; box-shadow: 0 4px 6px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; }
+        
+        .players-list { background: rgba(255,255,255,0.9); padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); pointer-events: auto; }
+        .player-score { font-weight: bold; margin-bottom: 5px; font-size: 16px; }
+        
+        #btn-confirm { display: none; margin-top: 20px; background: #000; color: white; padding: 15px 40px; border-radius: 30px; font-size: 20px; font-weight: bold; cursor: pointer; border: none; }
+        #btn-confirm:hover { background: #333; }
+        
+        .toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #ef4444; color: white; padding: 20px 40px; border-radius: 20px; font-size: 28px; font-weight: bold; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 200; box-shadow: 0 10px 30px rgba(239,68,68,0.5); }
+    </style>
+</head>
+<body>
+    <div class="hud">
+        <div class="judge-badge" id="judge-badge" style="display: none;">⚖️ أنت القاضي في هذه الجولة!</div>
+        <div class="players-list" id="players-list">
+            <!-- Scores -->
+        </div>
+    </div>
+    
+    <div class="table">
+        <div id="setup-view">
+            <h1 style="font-size: 48px; margin-bottom: 10px;">جوابك فخ</h1>
+            <p style="font-size: 20px; margin-bottom: 30px;">لعبة الحفلات الأكثر إضحاكاً (تحتاج 3 لاعبين)</p>
+            <button id="start-btn" onclick="startGame()" style="background: #ef4444; color: white; border: none; padding: 15px 40px; border-radius: 30px; font-size: 24px; font-weight: bold; cursor: pointer; display: none;">بدء اللعبة</button>
+        </div>
+        
+        <div id="game-view" style="display: none; flex-direction: column; align-items: center; width: 100%;">
+            <div class="black-card" id="black-card">...</div>
+            <h3 id="instruction-text" style="color: #64748b; margin-bottom: 20px;">اللاعبون يختارون بطاقاتهم...</h3>
+            <div class="submissions" id="submissions"></div>
+            <button id="btn-confirm" onclick="confirmSelection()">تأكيد الاختيار</button>
+        </div>
+    </div>
+    
+    <div class="hand" id="hand" style="display: none;"></div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const blackCardsDB = [
+            "الشيء الوحيد الذي يخيفني أكثر من الموت هو ____.",
+            "اكتشفت مؤخراً أن سر السعادة هو ____.",
+            "ما هي القوة الخارقة الأسوأ على الإطلاق؟ ____.",
+            "في حقيبتي دائماً يوجد ____ تحسباً لأي طارئ.",
+            "السبب الحقيقي وراء تأخري عن العمل اليوم كان ____."
+        ];
+        
+        const whiteCardsDB = [
+            "خروف يرتدي نظارة شمسية", "أغاني الأطفال المرعبة", "البصل المفروم", "مدير غاضب", 
+            "Wi-Fi مجاني لكنه بطيء جداً", "كوب قهوة فارغ", "النوم لمدة 14 ساعة", "الضحك في جنازة",
+            "نسيان اسم شخص تتحدث معه", "التظاهر بأنك تفهم الفيزياء الكمية", "صوت المكنسة الكهربائية"
+        ];
+        
+        let state = {
+            status: 'waiting',
+            players: [], // {id, score, isJudge}
+            currentBlackCard: '',
+            submissions: [], // {playerId, cardText, isRevealed}
+            judgeId: null,
+            roundWinner: null
+        };
+
+        let myId = 'p_' + Math.floor(Math.random() * 1000);
+        let isHost = false;
+        let myHand = [];
+        let mySubmission = null;
+        let selectedSubmissionIdx = -1;
+
+        // WebRTC
+        window.addEventListener('message', (event) => {
+            const data = event.data;
+            if (!data || !data.type) return;
+
+            if (data.type === 'SYNC_STATE' && !isHost) {
+                state = data.state;
+                render();
+            } else if (data.type === 'DEAL_CARDS' && data.target === myId) {
+                myHand.push(...data.cards);
+                render();
+            } else if (data.type === 'PLAYER_JOINED' && isHost) {
+                if (!state.players.find(p => p.id === data.playerId)) {
+                    state.players.push({ id: data.playerId, score: 0, isJudge: false });
+                    broadcastState();
+                    renderSetup();
+                }
+            } else if (data.type === 'SUBMIT_CARD' && isHost) {
+                state.submissions.push({ playerId: data.playerId, cardText: data.cardText, isRevealed: false });
+                checkAllSubmitted();
+            } else if (data.type === 'JUDGE_WINNER' && isHost) {
+                declareWinner(data.playerId);
+            }
+        });
+
+        setTimeout(() => window.parent.postMessage({ type: 'PLAYER_JOINED', playerId: myId }, '*'), 500);
+
+        if (new URLSearchParams(window.location.search).get('mode') === 'local') {
+            isHost = true;
+            state.players.push({id: myId, score: 0, isJudge: false});
+            for(let i=0; i<2; i++) state.players.push({id: 'Bot_'+i, score: 0, isJudge: false});
+            renderSetup();
+        }
+
+        function renderSetup() {
+            if(!isHost) return;
+            const btn = document.getElementById('start-btn');
+            if (state.players.length >= 3) btn.style.display = 'block';
+        }
+
+        // Host Logic
+        function startGame() {
+            startRound();
+            
+            // Deal initial 5 cards to everyone
+            state.players.forEach(p => {
+                const cards = getRandomWhiteCards(5);
+                if (p.id === myId) myHand.push(...cards);
+                else window.parent.postMessage({ type: 'DEAL_CARDS', target: p.id, cards }, '*');
+            });
+        }
+
+        function startRound() {
+            state.status = 'playing';
+            state.submissions = [];
+            state.roundWinner = null;
+            state.currentBlackCard = blackCardsDB[Math.floor(Math.random() * blackCardsDB.length)];
+            
+            // Rotate judge
+            const oldJudgeIdx = state.players.findIndex(p => p.isJudge);
+            if(oldJudgeIdx !== -1) state.players[oldJudgeIdx].isJudge = false;
+            
+            const newJudgeIdx = oldJudgeIdx === -1 ? 0 : (oldJudgeIdx + 1) % state.players.length;
+            state.players[newJudgeIdx].isJudge = true;
+            state.judgeId = state.players[newJudgeIdx].id;
+            
+            broadcastState();
+        }
+
+        function getRandomWhiteCards(count) {
+            let cards = [];
+            for(let i=0; i<count; i++) cards.push(whiteCardsDB[Math.floor(Math.random() * whiteCardsDB.length)]);
+            return cards;
+        }
+
+        function broadcastState() {
+            if(isHost) window.parent.postMessage({ type: 'SYNC_STATE', state }, '*');
+            render();
+        }
+
+        function checkAllSubmitted() {
+            if (state.submissions.length === state.players.length - 1) { // Everyone except judge
+                state.status = 'judging';
+                // Shuffle submissions so judge doesn't know who is who
+                state.submissions.sort(() => Math.random() - 0.5);
+                broadcastState();
+            } else {
+                broadcastState();
+            }
+        }
+
+        function declareWinner(winnerId) {
+            const p = state.players.find(p => p.id === winnerId);
+            if(p) p.score++;
+            state.status = 'round_over';
+            state.roundWinner = winnerId;
+            broadcastState();
+            
+            setTimeout(() => {
+                // Deal 1 card to everyone who submitted
+                state.players.forEach(p => {
+                    if (p.id !== state.judgeId) {
+                        const card = getRandomWhiteCards(1);
+                        if (p.id === myId) myHand.push(...card);
+                        else window.parent.postMessage({ type: 'DEAL_CARDS', target: p.id, cards: card }, '*');
+                    }
+                });
+                startRound();
+            }, 5000);
+        }
+
+        // Guest/UI Logic
+        function render() {
+            if (state.status === 'waiting') return;
+            
+            document.getElementById('setup-view').style.display = 'none';
+            document.getElementById('game-view').style.display = 'flex';
+            document.getElementById('hand').style.display = 'flex';
+            
+            document.getElementById('black-card').innerText = state.currentBlackCard;
+            
+            const amIJudge = state.judgeId === myId;
+            document.getElementById('judge-badge').style.display = amIJudge ? 'flex' : 'none';
+            
+            let instruction = '';
+            if (state.status === 'playing') {
+                instruction = amIJudge ? 'اللاعبون يختارون إجاباتهم...' : (mySubmission ? 'في انتظار بقية اللاعبين...' : 'اختر ورقة للإجابة!');
+            } else if (state.status === 'judging') {
+                instruction = amIJudge ? 'اختر الإجابة الأكثر إضحاكاً!' : 'القاضي يقرأ الإجابات ويختار الفائز...';
+            } else if (state.status === 'round_over') {
+                instruction = `الفائز في هذه الجولة هو: ${state.roundWinner === myId ? 'أنت!' : 'لاعب '+state.roundWinner.substring(0,3)}`;
+            }
+            document.getElementById('instruction-text').innerText = instruction;
+
+            // Render Submissions
+            const subContainer = document.getElementById('submissions');
+            subContainer.innerHTML = '';
+            state.submissions.forEach((sub, idx) => {
+                const card = document.createElement('div');
+                card.className = `white-card ${selectedSubmissionIdx === idx ? 'selected' : ''}`;
+                
+                // Show text only during judging or if it's over
+                if (state.status === 'judging' || state.status === 'round_over') {
+                    card.innerText = sub.cardText;
+                    if (amIJudge && state.status === 'judging') {
+                        card.onclick = () => { selectedSubmissionIdx = idx; render(); document.getElementById('btn-confirm').style.display = 'block'; };
+                    }
+                    if (state.status === 'round_over' && sub.playerId === state.roundWinner) {
+                        card.style.borderColor = '#facc15'; card.style.background = '#fef08a';
+                    }
+                } else {
+                    card.innerText = 'بطاقة جاهزة';
+                    card.style.background = '#94a3b8';
+                }
+                subContainer.appendChild(card);
+            });
+
+            // Render Hand
+            const handContainer = document.getElementById('hand');
+            handContainer.innerHTML = '';
+            myHand.forEach((cardText, idx) => {
+                const card = document.createElement('div');
+                card.className = 'white-card';
+                card.innerText = cardText;
+                
+                if (!amIJudge && state.status === 'playing' && !mySubmission) {
+                    card.onclick = () => submitCard(idx);
+                } else {
+                    card.style.opacity = '0.5';
+                    card.style.cursor = 'not-allowed';
+                }
+                handContainer.appendChild(card);
+            });
+
+            // Render Scores
+            const playersList = document.getElementById('players-list');
+            playersList.innerHTML = '';
+            state.players.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'player-score';
+                div.innerText = `${p.id === myId ? 'أنت' : 'لاعب '+p.id.substring(0,3)}: ${p.score} نقطة ${p.isJudge ? ' (القاضي)' : ''}`;
+                if (p.id === state.roundWinner) div.style.color = '#16a34a';
+                playersList.appendChild(div);
+            });
+            
+            // Hide confirm button unless judge selected something
+            if (state.status !== 'judging' || !amIJudge) document.getElementById('btn-confirm').style.display = 'none';
+            if (state.status === 'playing') { mySubmission = null; selectedSubmissionIdx = -1; }
+        }
+
+        function submitCard(idx) {
+            const cardText = myHand[idx];
+            myHand.splice(idx, 1);
+            mySubmission = cardText;
+            render();
+            if (isHost) {
+                state.submissions.push({ playerId: myId, cardText, isRevealed: false });
+                checkAllSubmitted();
+            } else {
+                window.parent.postMessage({ type: 'SUBMIT_CARD', playerId: myId, cardText }, '*');
+            }
+        }
+
+        function confirmSelection() {
+            const winner = state.submissions[selectedSubmissionIdx];
+            if(!winner) return;
+            
+            document.getElementById('btn-confirm').style.display = 'none';
+            if (isHost) declareWinner(winner.playerId);
+            else window.parent.postMessage({ type: 'JUDGE_WINNER', playerId: winner.playerId }, '*');
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.opacity = '1';
+            setTimeout(() => t.style.opacity = '0', 3000);
+        }
+    </script>
+</body>
+</html>

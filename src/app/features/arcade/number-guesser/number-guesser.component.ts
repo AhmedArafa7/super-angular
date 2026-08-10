@@ -24,19 +24,78 @@ export interface PlayerSession {
   selector: 'app-number-guesser',
   standalone: true,
   imports: [CommonModule, FormsModule, LucideAngularModule],
+  styles: [`
+    @keyframes floatNumber {
+      0% { transform: translateY(0px) rotate(0deg) scale(1); opacity: 0.25; }
+      50% { transform: translateY(-30px) rotate(12deg) scale(1.2); opacity: 0.55; }
+      100% { transform: translateY(0px) rotate(0deg) scale(1); opacity: 0.25; }
+    }
+    @keyframes floatBadge {
+      0% { transform: translateY(0px) rotate(0deg) scale(1); opacity: 0.35; }
+      50% { transform: translateY(-35px) rotate(-15deg) scale(1.25); opacity: 0.7; }
+      100% { transform: translateY(0px) rotate(0deg) scale(1); opacity: 0.35; }
+    }
+    .floating-vault-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 20%, #1e140a 0%, #0f172a 60%, #020617 100%);
+    }
+    .num-particle {
+      position: absolute;
+      font-weight: 900;
+      font-family: 'Monaco', 'Courier New', monospace;
+      color: rgba(251, 191, 36, 0.45);
+      text-shadow: 0 0 25px rgba(245, 158, 11, 0.6);
+      animation: floatNumber 8s ease-in-out infinite;
+    }
+    .badge-particle {
+      position: absolute;
+      filter: drop-shadow(0 0 22px rgba(16, 185, 129, 0.6));
+      animation: floatBadge 9s ease-in-out infinite;
+    }
+  `],
   template: `
-    <div class="min-h-screen bg-slate-950 text-white p-4 md:p-10 flex flex-col items-center justify-start select-none font-sans dir-rtl">
+    <!-- Dynamic Cyber Vault & Secret Number Matrix Background -->
+    <div class="floating-vault-bg">
+      <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-600/20 rounded-full blur-3xl"></div>
+      <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl"></div>
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-3xl"></div>
+
+      <!-- Floating 3D Cyber Digits -->
+      <span class="num-particle text-8xl top-[8%] left-[6%]" style="animation-delay: 0s">7</span>
+      <span class="num-particle text-9xl top-[22%] right-[10%]" style="animation-delay: 1.5s">3</span>
+      <span class="num-particle text-7xl top-[58%] left-[12%]" style="animation-delay: 3s">9</span>
+      <span class="num-particle text-9xl top-[72%] right-[6%]" style="animation-delay: 4.5s">4</span>
+      <span class="num-particle text-8xl top-[12%] right-[32%]" style="animation-delay: 2s">1</span>
+      <span class="num-particle text-9xl top-[48%] left-[28%]" style="animation-delay: 3.5s">8</span>
+      <span class="num-particle text-7xl top-[78%] left-[42%]" style="animation-delay: 5s">5</span>
+      <span class="num-particle text-8xl top-[32%] left-[4%]" style="animation-delay: 1s">0</span>
+      <span class="num-particle text-9xl top-[82%] right-[38%]" style="animation-delay: 2.5s">2</span>
+      <span class="num-particle text-8xl top-[42%] right-[3%]" style="animation-delay: 4s">6</span>
+
+      <!-- Floating Feedback Badges & Security Vault Padlocks -->
+      <span class="badge-particle text-7xl top-[16%] left-[18%]" style="animation-delay: 0.5s">🎯</span>
+      <span class="badge-particle text-8xl top-[62%] right-[20%]" style="animation-delay: 2.8s">🔄</span>
+      <span class="badge-particle text-6xl top-[38%] right-[6%]" style="animation-delay: 4.2s">🔐</span>
+      <span class="badge-particle text-7xl top-[75%] left-[8%]" style="animation-delay: 1.8s">❌</span>
+      <span class="badge-particle text-6xl top-[28%] left-[45%]" style="animation-delay: 3.2s">🔑</span>
+    </div>
+
+    <div class="relative z-10 min-h-screen text-white p-4 md:p-10 flex flex-col items-center justify-start select-none font-sans dir-rtl">
       
       <!-- Top Navigation Header -->
-      <div class="w-full max-w-4xl flex items-center justify-between mb-8 border-b border-white/10 pb-4">
-        <button (click)="goBack()" class="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white px-5 py-2.5 rounded-2xl transition-all font-bold text-sm cursor-pointer">
+      <div class="w-full max-w-4xl flex items-center justify-between mb-8 border-b border-white/10 pb-4 backdrop-blur-md bg-white/5 px-6 py-3 rounded-2xl">
+        <button (click)="goBack()" class="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white px-5 py-2.5 rounded-2xl transition-all font-bold text-sm cursor-pointer shadow-lg">
           <lucide-icon [img]="ArrowRight" class="w-4 h-4"></lucide-icon>
           العودة لمعرض الألعاب
         </button>
 
         <div class="flex items-center gap-3">
-          <div class="bg-amber-500/10 border border-amber-500/30 text-amber-400 px-4 py-1.5 rounded-2xl text-xs font-black flex items-center gap-2">
-            <lucide-icon [img]="Sparkles" class="w-4 h-4"></lucide-icon>
+          <div class="bg-amber-500/20 border border-amber-500/40 text-amber-300 px-4 py-2 rounded-2xl text-xs font-black flex items-center gap-2 shadow-lg">
+            <lucide-icon [img]="Sparkles" class="w-4 h-4 text-emerald-400"></lucide-icon>
             تخمين رقم الخصم 🔢 (3، 4، 5 أرقام)
           </div>
         </div>
@@ -46,7 +105,7 @@ export interface PlayerSession {
       <div class="w-full max-w-3xl">
 
         <!-- 1. SETUP STAGE -->
-        <div *ngIf="gameState() === 'setup'" class="bg-slate-900 border border-white/10 rounded-[2.5rem] p-6 md:p-10 shadow-2xl space-y-8 animate-in zoom-in-95 duration-300">
+        <div *ngIf="gameState() === 'setup'" class="bg-amber-950/30 backdrop-blur-2xl border border-amber-500/30 rounded-[2.5rem] p-6 md:p-10 shadow-[0_0_60px_rgba(245,158,11,0.2)] space-y-8 animate-in zoom-in-95 duration-300">
           <div class="text-center space-y-3">
             <h1 class="text-3xl md:text-5xl font-black bg-gradient-to-l from-white via-amber-200 to-amber-400 bg-clip-text text-transparent">
               تخمين رقم الخصم 🔢

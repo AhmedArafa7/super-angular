@@ -1,0 +1,211 @@
+body {
+    background-color: #1e1b4b;
+    color: #f8fafc;
+    font-family: 'Tajawal', sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    text-align: center;
+    overflow: hidden;
+    touch-action: none;
+}
+
+#app {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.screen {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+.screen.active {
+    display: flex;
+}
+
+.hidden {
+    display: none !important;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.title {
+    font-size: 3rem;
+    color: #fb923c;
+    margin-bottom: 10px;
+    text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    color: #cbd5e1;
+    margin-bottom: 40px;
+}
+
+.btn {
+    font-family: 'Tajawal', sans-serif;
+    font-weight: 900;
+    font-size: 1.5rem;
+    border: none;
+    border-radius: 15px;
+    padding: 20px 30px;
+    width: 100%;
+    max-width: 300px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-primary { background: #3b82f6; color: white; box-shadow: 0 6px 0 #2563eb; }
+.btn-primary:active { transform: translateY(6px); box-shadow: 0 0 0 #2563eb; }
+
+.btn-secondary { background: #475569; color: white; box-shadow: 0 6px 0 #334155; }
+.btn-secondary:active { transform: translateY(6px); box-shadow: 0 0 0 #334155; }
+
+.mt-10 { margin-top: 10px; }
+.mt-30 { margin-top: 30px; }
+
+/* Game Screen */
+#game-screen {
+    padding: 0;
+    position: relative;
+    background: #312e81;
+}
+
+#light-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    z-index: 50;
+    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    border: 5px solid white;
+    transition: background-color 0.1s, box-shadow 0.1s;
+}
+
+.light-green {
+    background-color: #10b981;
+    box-shadow: 0 0 50px #10b981 !important;
+}
+
+.light-red {
+    background-color: #ef4444;
+    box-shadow: 0 0 50px #ef4444 !important;
+}
+
+.player-area {
+    flex: 1;
+    width: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.player-top {
+    transform: rotate(180deg);
+    background: #4338ca;
+}
+
+.player-bottom {
+    background: #3730a3;
+}
+
+.divider {
+    height: 10px;
+    width: 100%;
+    background: #000;
+    z-index: 10;
+}
+
+.track {
+    flex: 1;
+    position: relative;
+    margin: 20px 40px;
+    border-left: 2px dashed rgba(255,255,255,0.2);
+    border-right: 2px dashed rgba(255,255,255,0.2);
+}
+
+.finish-line {
+    position: absolute;
+    top: 10%;
+    left: 0;
+    width: 100%;
+    height: 10px;
+    background: repeating-linear-gradient(
+        90deg,
+        white,
+        white 20px,
+        black 20px,
+        black 40px
+    );
+}
+
+.player-character {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 3rem;
+    transition: bottom 0.1s linear;
+}
+
+.run-btn {
+    height: 100px;
+    background: rgba(0,0,0,0.3);
+    color: white;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 1.5rem;
+    font-weight: bold;
+    border: none;
+    border-top: 2px solid rgba(255,255,255,0.1);
+    touch-action: none;
+    user-select: none;
+}
+
+.run-btn:active {
+    background: rgba(0,0,0,0.5);
+}
+
+.eliminated {
+    filter: grayscale(100%);
+    opacity: 0.5;
+}
+
+#winner-banner {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#winner-text {
+    font-size: 3.5rem;
+    color: #facc15;
+    margin-bottom: 30px;
+    animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.1); }
+}

@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Three Monkeys - القردة الثلاثة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&family=Fredoka+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=9">
+    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <button id="global-mute-btn" onclick="toggleGlobalMute()" style="position: absolute; top: 15px; left: 15px; z-index: 1000; background: rgba(0,0,0,0.6); border: 2px solid #444; border-radius: 50%; width: 45px; height: 45px; color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.5); transition: transform 0.2s;" onmousedown="this.style.transform='scale(0.9)';" onmouseup="this.style.transform='scale(1)';">
+            🎵
+        </button>
+        <!-- Start Menu removed as requested, moved inside Lobby -->
+
+        <!-- Lobby Screen -->
+        <div id="lobby-screen" class="screen active">
+            <h1 class="game-title">القردة الثلاثة 🙈🙉🙊</h1>
+            <p class="subtitle">تعاونوا لتفكيك القنبلة.. ولا تنفجروا!</p>
+            
+            <div class="lobby-controls" style="position: relative; overflow: visible; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; max-width: 300px; margin: 0 auto;">
+                
+                <!-- Player Name (Always Visible) -->
+                <div id="player-name-display" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-center text-lg font-bold mb-6" style="background: rgba(17,24,39,0.9); border: 2px solid #374151; border-radius: 10px; padding: 10px; color: #facc15; width: 100%;">
+                    اللاعب: <span id="player-name-text">...</span>
+                </div>
+                <input type="hidden" id="player-name" value="">
+                
+                <!-- Glossy Menu Options -->
+                <div id="glossy-options" style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+                    <!-- Play Button -->
+                    <button onclick="document.getElementById('glossy-options').style.display='none'; document.getElementById('room-actions').style.display='block';" style="width: 100%; height: 48px; border-radius: 50px; background: #ff0066; border: none; border-bottom: 5px solid #cc0052; box-shadow: inset 0 3px 5px rgba(255,255,255,0.6), 0 4px 10px rgba(255,0,102,0.5); color: white; font-weight: 900; font-size: 20px; font-family: 'Tajawal', sans-serif; cursor: pointer; transition: transform 0.1s; letter-spacing: 2px;" onmousedown="this.style.transform='translateY(3px)'; this.style.borderBottomWidth='2px';" onmouseup="this.style.transform='translateY(0)'; this.style.borderBottomWidth='5px';">
+                        PLAY
+                    </button>
+                    <!-- Options Button -->
+                    <button onclick="document.getElementById('options-menu-overlay').style.display='flex';" style="width: 100%; height: 48px; border-radius: 50px; background: #ff9900; border: none; border-bottom: 5px solid #cc7a00; box-shadow: inset 0 3px 5px rgba(255,255,255,0.6), 0 4px 10px rgba(255,153,0,0.5); color: white; font-weight: 900; font-size: 20px; font-family: 'Tajawal', sans-serif; cursor: pointer; transition: transform 0.1s; letter-spacing: 2px;" onmousedown="this.style.transform='translateY(3px)'; this.style.borderBottomWidth='2px';" onmouseup="this.style.transform='translateY(0)'; this.style.borderBottomWidth='5px';">
+                        OPTIONS
+                    </button>
+                    <!-- Achievements Button -->
+                    <button onclick="showMissions()" style="width: 100%; height: 48px; border-radius: 50px; background: #3366ff; border: none; border-bottom: 5px solid #2952cc; box-shadow: inset 0 3px 5px rgba(255,255,255,0.6), 0 4px 10px rgba(51,102,255,0.5); color: white; font-weight: 900; font-size: 20px; font-family: 'Tajawal', sans-serif; cursor: pointer; transition: transform 0.1s; letter-spacing: 2px;" onmousedown="this.style.transform='translateY(3px)'; this.style.borderBottomWidth='2px';" onmouseup="this.style.transform='translateY(0)'; this.style.borderBottomWidth='5px';">
+                        ACHIEVEMENTS
+                    </button>
+                    <!-- Quit Button -->
+                    <button onclick="window.parent.postMessage({type: 'CLOSE_GAME'}, '*')" style="width: 100%; height: 48px; border-radius: 50px; background: #33cc33; border: none; border-bottom: 5px solid #29a329; box-shadow: inset 0 3px 5px rgba(255,255,255,0.6), 0 4px 10px rgba(51,204,51,0.5); color: white; font-weight: 900; font-size: 20px; font-family: 'Tajawal', sans-serif; cursor: pointer; transition: transform 0.1s; letter-spacing: 2px;" onmousedown="this.style.transform='translateY(3px)'; this.style.borderBottomWidth='2px';" onmouseup="this.style.transform='translateY(0)'; this.style.borderBottomWidth='5px';">
+                        QUIT
+                    </button>
+                </div>
+
+                <!-- Room Actions (Hidden Initially) -->
+                <div id="room-actions" style="display: none;">
+                    <div class="host-join-buttons">
+                        <button id="host-btn" class="btn btn-primary">إنشاء غرفة (مضيف)</button>
+                    </div>
+                    
+                    <div class="join-section" style="margin-top: 20px;">
+                        <input type="text" id="join-id" placeholder="كود الغرفة">
+                        <button id="join-btn" class="btn btn-secondary">انضمام</button>
+                        <p id="join-error" class="error-msg"></p>
+                    </div>
+                    
+                    <button onclick="document.getElementById('room-actions').style.display='none'; document.getElementById('glossy-options').style.display='flex';" style="margin-top: 15px; background: none; border: none; color: #9ca3af; text-decoration: underline; cursor: pointer; font-family: 'Tajawal', sans-serif;">
+                        العودة للقائمة
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mic-warning">
+                ⚠️ اللعبة تتطلب السماح باستخدام الميكروفون للتواصل.
+            </div>
+        </div>
+
+        <!-- Room Screen -->
+        <div id="room-screen" class="screen">
+            <h2>غرفة الانتظار</h2>
+            <div style="text-align: center; margin-bottom: 10px;">
+                <span style="background: #f59e0b; color: #000; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-family: 'Fredoka One', 'Tajawal', sans-serif;">
+                    المستوى: <span id="lobby-level-display">1</span>
+                </span>
+            </div>
+            <div class="room-id-box hidden" id="room-id-box">
+                كود الغرفة: <span id="room-id-display">...</span>
+            </div>
+            
+            <div class="players-list-container">
+                <h3>اللاعبون المتصلون:</h3>
+                <ul id="players-list"></ul>
+            </div>
+            
+            <div class="roles-visual-container">
+                <div class="monkey-card" id="card-deaf">
+                    <div class="monkey-name" id="name-deaf">--</div>
+                    <div class="monkey-avatar">🙉</div>
+                    <div class="monkey-role-name">أصم (DEAF)</div>
+                    <button class="btn role-btn" id="btn-select-deaf" onclick="selectMyRole('deaf')">اختيار</button>
+                    <div class="ready-status" id="ready-deaf"></div>
+                </div>
+                
+                <div class="monkey-card" id="card-blind">
+                    <div class="monkey-name" id="name-blind">--</div>
+                    <div class="monkey-avatar">🙈</div>
+                    <div class="monkey-role-name">أعمى (BLIND)</div>
+                    <button class="btn role-btn" id="btn-select-blind" onclick="selectMyRole('blind')">اختيار</button>
+                    <div class="ready-status" id="ready-blind"></div>
+                </div>
+                
+                <div class="monkey-card" id="card-mute">
+                    <div class="monkey-name" id="name-mute">--</div>
+                    <div class="monkey-avatar">🙊</div>
+                    <div class="monkey-role-name">أبكم (MUTE)</div>
+                    <button class="btn role-btn" id="btn-select-mute" onclick="selectMyRole('mute')">اختيار</button>
+                    <div class="ready-status" id="ready-mute"></div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <button id="start-game-btn" class="btn btn-primary" style="font-size: 1.5rem; padding: 15px 40px; display: none;">بدء اللعبة (START)</button>
+            </div>
+            
+            <p id="waiting-msg" class="waiting-text hidden">ننتظر المضيف لبدء اللعبة...</p>
+            
+            <div id="audio-elements" class="hidden">
+                <!-- Audio elements for WebRTC -->
+                <audio id="audio-peer-1" autoplay></audio>
+                <audio id="audio-peer-2" autoplay></audio>
+            </div>
+        </div>
+
+        <!-- Main Game Screen -->
+        <div id="game-screen" class="screen">
+            
+            <!-- Global Header -->
+            <div class="game-header">
+                <div class="timer" id="timer-display">05:00</div>
+                <div class="strikes" id="strikes-display"></div>
+            </div>
+            
+            <!-- Views container -->
+            <div id="views-container">
+                
+                <!-- Blind View -->
+                <div id="blind-view" class="role-view hidden">
+                    <div class="blind-instructions">أنت القرد الأعمى! 🙈 تحسس الشاشة لتجد الأزرار والأسلاك واستمع لزميلك.</div>
+                    <div class="bomb-container blind-bomb" id="blind-bomb">
+                        <!-- Interactive hitboxes generated by JS -->
+                    </div>
+                </div>
+                
+                <!-- Deaf View -->
+                <div id="deaf-view" class="role-view hidden">
+                    <div class="deaf-instructions">أنت القرد الأصم! 🙉 صِف القنبلة للأبكم، وانقل إيماءاته للأعمى بصوتك. (ميكروفونك مفتوح)</div>
+                    
+                    <div class="deaf-layout">
+                        <div class="bomb-container" id="deaf-bomb">
+                            <!-- Visual bomb generated by JS -->
+                        </div>
+                        <div class="gestures-display">
+                            <h4>إيماءات الخبير (الأبكم):</h4>
+                            <div id="received-gesture" class="gesture-emoji">...</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mute View -->
+                <div id="mute-view" class="role-view hidden">
+                    <div class="mute-instructions">أنت القرد الأبكم! 🙊 استمع لوصف الأصم، اقرأ الدليل، وأرسل له الحل بالإيماءات.</div>
+                    
+                    <div class="mute-layout">
+                        <div class="manual-book-container">
+                            <div class="manual-book">
+                                <div class="manual-cover"></div>
+                                <div class="binder-rings">
+                                    <div class="ring"></div>
+                                    <div class="ring"></div>
+                                    <div class="ring"></div>
+                                    <div class="ring"></div>
+                                </div>
+                                <div id="manual-content" class="manual-pages-inner"></div>
+                            </div>
+                            <div class="manual-nav">
+                                <button type="button" id="manual-prev" class="manual-nav-btn">◀ السابق</button>
+                                <span id="manual-page-label">1 / 2</span>
+                                <button type="button" id="manual-next" class="manual-nav-btn">التالي ▶</button>
+                            </div>
+                        </div>
+                        
+                        <div class="gestures-panel">
+                            <h4>أرسل إيماءة للأصم:</h4>
+                            <div class="gestures-grid" id="gestures-grid">
+                                <button class="btn-gesture" data-g="1️⃣">1️⃣</button>
+                                <button class="btn-gesture" data-g="2️⃣">2️⃣</button>
+                                <button class="btn-gesture" data-g="3️⃣">3️⃣</button>
+                                <button class="btn-gesture" data-g="4️⃣">4️⃣</button>
+                                <button class="btn-gesture" data-g="5️⃣">5️⃣</button>
+                                <button class="btn-gesture" data-g="0️⃣">0️⃣</button>
+                                <button class="btn-gesture" data-g="🔴">🔴</button>
+                                <button class="btn-gesture" data-g="🔵">🔵</button>
+                                <button class="btn-gesture" data-g="🟡">🟡</button>
+                                <button class="btn-gesture" data-g="🟢">🟢</button>
+                                <button class="btn-gesture" data-g="⬆️">⬆️</button>
+                                <button class="btn-gesture" data-g="⬇️">⬇️</button>
+                                <button class="btn-gesture" data-g="⬅️">⬅️</button>
+                                <button class="btn-gesture" data-g="➡️">➡️</button>
+                                <button class="btn-gesture" data-g="✂️">✂️</button>
+                                <button class="btn-gesture" data-g="👍">👍</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Game Over / Report Screen -->
+        <div id="game-over-screen" class="screen report-screen">
+            <div class="report-paper">
+                <div class="report-paper-holes" aria-hidden="true">
+                    <span></span><span></span><span></span><span></span>
+                </div>
+                <div class="report-paper-inner">
+                    <div class="report-monkey-sketch" aria-hidden="true">🙈</div>
+                    <h2 class="report-heading">REPORT</h2>
+                    <div class="report-stats">
+                        <div class="report-stat-row"><span>LEVEL</span><strong id="report-level">1</strong></div>
+                        <div class="report-stat-row"><span>TIME</span><strong id="report-time">0:00</strong></div>
+                        <div class="report-stat-row"><span>MISTAKE</span><strong id="report-mistakes">0</strong></div>
+                    </div>
+                    <div id="report-grade" class="report-grade win">A+</div>
+                </div>
+            </div>
+            <div class="report-actions">
+                <button id="replay-btn" class="report-replay-btn">PLAY AGAIN</button>
+                <button id="lobby-btn" class="report-lobby-btn">RETURN TO LOBBY 👆</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Options Menu Overlay -->
+    <div id="options-menu-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+        <div style="position: relative; width: 90%; max-width: 800px; aspect-ratio: 16/9; background: #b3c6ff; border: 15px solid #d92626; border-radius: 20px; display: flex; box-shadow: 0 20px 50px rgba(0,0,0,0.8); overflow: visible;" dir="ltr">
+            <!-- Back Button -->
+            <button onclick="document.getElementById('options-menu-overlay').style.display='none';" style="position: absolute; top: -30px; left: -30px; width: 60px; height: 60px; background: #4d4dff; border: 4px solid #1a1a80; border-radius: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 110; transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                <svg viewBox="0 0 24 24" fill="white" style="width: 40px; height: 40px;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
+            </button>
+
+            <!-- Book Spine/Center Fold -->
+            <div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: rgba(0,0,0,0.1); transform: translateX(-50%); box-shadow: 0 0 10px rgba(0,0,0,0.2);"></div>
+
+            <!-- Left Page -->
+            <div style="flex: 1; padding: 20px 40px; display: flex; flex-direction: column; justify-content: space-around; font-family: 'Fredoka One', 'Tajawal', sans-serif; color: #4a148c; text-align: center;">
+                
+                <!-- Graphics -->
+                <div class="option-row">
+                    <div style="font-weight: 900; font-size: 20px; margin-bottom: 5px; text-transform: uppercase;">GRAPHICS</div>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+                        <div class="triangle-left" onclick="changeOption('graphics', -1)"></div>
+                        <span id="opt-val-graphics" style="font-size: 18px; font-weight: bold;">High</span>
+                        <div class="triangle-right" onclick="changeOption('graphics', 1)"></div>
+                    </div>
+                </div>
+
+                <!-- Resolution -->
+                <div class="option-row">
+                    <div style="font-weight: 900; font-size: 20px; margin-bottom: 5px; text-transform: uppercase;">RESOLUTION</div>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+                        <div class="triangle-left" onclick="changeOption('resolution', -1)"></div>
+                        <span id="opt-val-resolution" style="font-size: 18px; font-weight: bold;">1920x1080</span>
+                        <div class="triangle-right" onclick="changeOption('resolution', 1)"></div>
+                    </div>
+                </div>
+
+                <!-- Window Mode -->
+                <div class="option-row">
+                    <div style="font-weight: 900; font-size: 20px; margin-bottom: 5px; text-transform: uppercase;">WINDOW MODE</div>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+                        <div class="triangle-left" onclick="changeOption('windowMode', -1)"></div>
+                        <span id="opt-val-windowMode" style="font-size: 18px; font-weight: bold;">Full Screen</span>
+                        <div class="triangle-right" onclick="changeOption('windowMode', 1)"></div>
+                    </div>
+                </div>
+
+                <!-- Language -->
+                <div class="option-row">
+                    <div style="font-weight: 900; font-size: 20px; margin-bottom: 5px; text-transform: uppercase;">LANGUAGE</div>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+                        <div class="triangle-left" onclick="changeOption('language', -1)"></div>
+                        <span id="opt-val-language" style="font-size: 18px; font-weight: bold; min-width: 120px;">🇬🇧 English</span>
+                        <div class="triangle-right" onclick="changeOption('language', 1)"></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Page -->
+            <div style="flex: 1; padding: 20px 40px; display: flex; flex-direction: column; justify-content: space-around; font-family: 'Fredoka One', 'Tajawal', sans-serif; color: #4a148c; text-align: center;">
+                
+                <!-- Sound -->
+                <div class="option-row">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;">
+                        <div style="font-weight: 900; font-size: 20px; text-transform: uppercase;">SOUND</div>
+                        <div id="val-sound" style="font-weight: bold; font-size: 16px; color: #ff0066;">80</div>
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-track"><div class="slider-fill" style="width: 80%;"></div></div>
+                        <div class="slider-thumb" style="left: 80%;">🍌</div>
+                    </div>
+                </div>
+
+                <!-- Music -->
+                <div class="option-row">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;">
+                        <div style="font-weight: 900; font-size: 20px; text-transform: uppercase;">MUSIC</div>
+                        <div id="val-music" style="font-weight: bold; font-size: 16px; color: #ff0066;">60</div>
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-track"><div class="slider-fill" style="width: 60%;"></div></div>
+                        <div class="slider-thumb" style="left: 60%;">🍌</div>
+                    </div>
+                </div>
+
+                <!-- Mouse -->
+                <div class="option-row">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;">
+                        <div style="font-weight: 900; font-size: 20px; text-transform: uppercase;">MOUSE</div>
+                        <div id="val-mouse" style="font-weight: bold; font-size: 16px; color: #ff0066;">50</div>
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-track"><div class="slider-fill" style="width: 50%;"></div></div>
+                        <div class="slider-thumb" style="left: 50%;">🍌</div>
+                    </div>
+                </div>
+
+                <!-- Microphone Level -->
+                <div class="option-row">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;">
+                        <div style="font-weight: 900; font-size: 20px; text-transform: uppercase;">MICROPHONE LEVEL</div>
+                        <div id="val-mic_level" style="font-weight: bold; font-size: 16px; color: #ff0066;">70</div>
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-track"><div class="slider-fill" style="width: 70%;"></div></div>
+                        <div class="slider-thumb" style="left: 70%;">🍌</div>
+                    </div>
+                </div>
+
+                <!-- Microphone Selection -->
+                <div class="option-row" style="margin-top: 10px;">
+                    <div style="font-weight: 900; font-size: 20px; margin-bottom: 5px; text-transform: uppercase;">MICROPHONE</div>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                        <div class="triangle-left" onclick="changeOption('microphone', -1)"></div>
+                        <span id="opt-val-microphone" style="font-size: 14px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;">Default Mic</span>
+                        <div class="triangle-right" onclick="changeOption('microphone', 1)"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
+    
+    .triangle-left {
+        width: 0;
+        height: 0;
+        border-top: 10px solid transparent;
+        border-bottom: 10px solid transparent;
+        border-right: 15px solid #4a148c;
+        cursor: pointer;
+        transition: transform 0.1s;
+    }
+    .triangle-left:active { transform: scale(0.8); }
+    .triangle-right {
+        width: 0;
+        height: 0;
+        border-top: 10px solid transparent;
+        border-bottom: 10px solid transparent;
+        border-left: 15px solid #4a148c;
+        cursor: pointer;
+        transition: transform 0.1s;
+    }
+    .triangle-right:active { transform: scale(0.8); }
+
+    .slider-container {
+        position: relative;
+        height: 20px;
+        width: 100%;
+        margin-top: 10px;
+    }
+    .slider-track {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 16px;
+        background: #2a0845;
+        border-radius: 8px;
+        transform: translateY(-50%);
+        overflow: hidden;
+        border: 2px solid #4a148c;
+    }
+    .slider-fill {
+        height: 100%;
+        background: #ffcc00;
+    }
+    .slider-thumb {
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 24px;
+        cursor: pointer;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+        user-select: none;
+    }
+    </style>
+    <!-- Missions Menu Overlay -->
+    <div id="missions-menu-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+        <div style="position: relative; width: 90%; max-width: 600px; background: #1e293b; border: 4px solid #3b82f6; border-radius: 20px; display: flex; flex-direction: column; padding: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+            
+            <!-- Back Button -->
+            <button onclick="document.getElementById('missions-menu-overlay').style.display='none';" style="position: absolute; top: -20px; right: -20px; width: 50px; height: 50px; background: #ef4444; border: 3px solid #991b1b; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 110; transition: transform 0.1s; color: white; font-weight: bold; font-size: 24px;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                X
+            </button>
+
+            <h2 style="color: #facc15; font-family: 'Fredoka One', 'Tajawal', sans-serif; text-align: center; margin-bottom: 20px; font-size: 2rem;">الإنجازات 🏆</h2>
+
+            <div id="missions-list" style="display: flex; flex-direction: column; gap: 15px; overflow-y: auto; max-height: 400px; padding-right: 10px;">
+                <!-- Missions injected by JS -->
+            </div>
+            
+        </div>
+    </div>
+
+    <script src="game.js?v=14"></script>
+    <script>
+    const MISSIONS = [
+        { id: 'm1', title: 'العب 3 أدوار', target: 3, key: 'tm_games_played', reward: '100 🍌', rewardTitle: '100 موزة' },
+        { id: 'm2', title: 'العب 10 أدوار', target: 10, key: 'tm_games_played', reward: '300 🍌', rewardTitle: '300 موزة' },
+        { id: 'm3', title: 'فز في اللعبة', target: 1, key: 'tm_games_won', reward: 'لقب: مبتدئ تفكيك', rewardTitle: 'لقب: مبتدئ تفكيك' },
+        { id: 'm4', title: 'فز في 5 أدوار', target: 5, key: 'tm_games_won', reward: 'لقب: خبير تفكيك', rewardTitle: 'لقب: خبير تفكيك' },
+        { id: 'm5', title: 'العب دور الأصم (DEAF)', target: 1, key: 'tm_played_deaf', reward: '50 🍌', rewardTitle: '50 موزة' },
+        { id: 'm6', title: 'العب دور الأعمى (BLIND)', target: 1, key: 'tm_played_blind', reward: '50 🍌', rewardTitle: '50 موزة' },
+        { id: 'm7', title: 'العب دور الأبكم (MUTE)', target: 1, key: 'tm_played_mute', reward: '50 🍌', rewardTitle: '50 موزة' },
+        { id: 'm8', title: 'فوز مثالي (بدون أخطاء)', target: 1, key: 'tm_perfect_win', reward: '250 🍌', rewardTitle: '250 موزة' }
+    ];
+
+    function showMissions() {
+        document.getElementById('missions-menu-overlay').style.display = 'flex';
+        renderMissions();
+    }
+
+    function renderMissions() {
+        const list = document.getElementById('missions-list');
+        list.innerHTML = '';
+        
+        MISSIONS.forEach(mission => {
+            const currentStr = localStorage.getItem(mission.key) || '0';
+            const current = parseInt(currentStr) || 0;
+            const isCompleted = current >= mission.target;
+            const isClaimed = localStorage.getItem('tm_mission_claimed_' + mission.id) === 'true';
+            
+            const div = document.createElement('div');
+            div.style.background = isClaimed ? 'rgba(34, 197, 94, 0.2)' : 'rgba(51, 65, 85, 0.8)';
+            div.style.border = isClaimed ? '2px solid #22c55e' : '2px solid #475569';
+            div.style.borderRadius = '12px';
+            div.style.padding = '15px';
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
+            
+            let btnHTML = '';
+            if (isClaimed) {
+                btnHTML = `<button disabled style="background: transparent; color: #22c55e; border: none; font-weight: bold; font-family: inherit;">تم الاستلام ✔️</button>`;
+            } else if (isCompleted) {
+                btnHTML = `<button onclick="claimMission('${mission.id}')" style="background: #eab308; color: #000; border: none; border-radius: 8px; padding: 8px 15px; font-weight: bold; font-family: inherit; cursor: pointer; box-shadow: 0 4px 0 #a16207;">استلام الجائزة</button>`;
+            } else {
+                btnHTML = `<div style="color: #94a3b8; font-weight: bold;">${current} / ${mission.target}</div>`;
+            }
+            
+            div.innerHTML = `
+                <div>
+                    <h3 style="margin: 0 0 5px 0; color: #f8fafc;">${mission.title}</h3>
+                    <div style="color: #cbd5e1; font-size: 0.9rem;">الجائزة: <span style="color: #facc15; font-weight: bold;">${mission.reward}</span></div>
+                </div>
+                <div>${btnHTML}</div>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    window.claimMission = function(id) {
+        localStorage.setItem('tm_mission_claimed_' + id, 'true');
+        const m = MISSIONS.find(x => x.id === id);
+        if (m) alert('🎉 مبروك! حصلت على: ' + m.rewardTitle);
+        if (typeof playClickSound === 'function') playClickSound();
+        renderMissions();
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Options Data ...
+
+        const optionsData = {
+            graphics: { current: 2, values: ['Low', 'Medium', 'High', 'Ultra'] },
+            resolution: { current: 1, values: ['1280x720', '1920x1080', '2560x1440'] },
+            windowMode: { current: 0, values: ['Full Screen', 'Windowed', 'Borderless'] },
+            language: { current: 0, values: ['🇬🇧 English', '🇸🇦 العربية', '🇪🇸 Español', '🇫🇷 Français'] },
+            microphone: { current: 0, values: ['Default Mic', 'Headset Mic', 'Virtual Audio'] }
+        };
+
+        // Load saved options
+        Object.keys(optionsData).forEach(key => {
+            const saved = localStorage.getItem('tm_opt_' + key);
+            if (saved !== null) {
+                optionsData[key].current = parseInt(saved);
+            }
+            const el = document.getElementById('opt-val-' + key);
+            if (el) el.innerText = optionsData[key].values[optionsData[key].current];
+        });
+
+        window.changeOption = function(key, direction) {
+            let max = optionsData[key].values.length - 1;
+            optionsData[key].current += direction;
+            if (optionsData[key].current < 0) optionsData[key].current = max;
+            if (optionsData[key].current > max) optionsData[key].current = 0;
+            document.getElementById('opt-val-' + key).innerText = optionsData[key].values[optionsData[key].current];
+            localStorage.setItem('tm_opt_' + key, optionsData[key].current);
+            applySettings();
+        };
+
+        function applySettings() {
+            // Graphics Effect
+            const g = optionsData.graphics.current;
+            const lobbyControls = document.querySelector('.lobby-controls');
+            if (lobbyControls) {
+                if (g === 0) lobbyControls.style.boxShadow = 'none';
+                if (g === 1) lobbyControls.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)';
+                if (g === 2) lobbyControls.style.boxShadow = '0 10px 30px rgba(0,0,0,0.8)';
+                if (g === 3) lobbyControls.style.boxShadow = '0 0 50px rgba(255,255,255,0.2)';
+            }
+            
+            // Window Mode
+            const w = optionsData.windowMode.current;
+            if (w === 0) {
+                window.parent.postMessage({type: 'ENTER_FULLSCREEN'}, '*');
+            } else {
+                window.parent.postMessage({type: 'EXIT_FULLSCREEN'}, '*');
+            }
+
+            // Language
+            updateLanguage();
+            
+            // Update BGM volume
+            updateBGM();
+        }
+
+        const translations = {
+            0: { // English
+                play: "PLAY", options: "OPTIONS", wishlist: "ACHIEVEMENTS", quit: "QUIT",
+                host: "Create Room (Host)", join_placeholder: "Room Code", join: "Join", back: "Back to Menu"
+            },
+            1: { // Arabic
+                play: "العب", options: "الخيارات", wishlist: "الإنجازات 🏆", quit: "خروج",
+                host: "إنشاء غرفة (مضيف)", join_placeholder: "كود الغرفة", join: "انضمام", back: "العودة للقائمة"
+            },
+            2: { // Spanish
+                play: "JUGAR", options: "OPCIONES", wishlist: "LOGROS", quit: "SALIR",
+                host: "Crear Sala", join_placeholder: "Código", join: "Unirse", back: "Volver"
+            },
+            3: { // French
+                play: "JOUER", options: "OPTIONS", wishlist: "SUCCÈS", quit: "QUITTER",
+                host: "Créer une salle", join_placeholder: "Code", join: "Rejoindre", back: "Retour"
+            }
+        };
+
+        function updateLanguage() {
+            const lang = optionsData.language.current;
+            const t = translations[lang];
+            
+            const glossyBtns = document.getElementById('glossy-options').querySelectorAll('button');
+            if(glossyBtns.length >= 4) {
+                glossyBtns[0].innerText = t.play;
+                glossyBtns[1].innerText = t.options;
+                glossyBtns[2].innerText = t.wishlist;
+                glossyBtns[3].innerText = t.quit;
+            }
+
+            const hostBtn = document.getElementById('host-btn');
+            if(hostBtn) hostBtn.innerText = t.host;
+            const joinBtn = document.getElementById('join-btn');
+            if(joinBtn) joinBtn.innerText = t.join;
+            const joinInput = document.getElementById('join-id');
+            if(joinInput) joinInput.placeholder = t.join_placeholder;
+            
+            const backBtn = document.querySelector('#room-actions > button');
+            if(backBtn) backBtn.innerText = t.back;
+        }
+
+        // --- Audio Delegation to Angular Arcade ---
+        function playClickSound() {
+            const soundVol = localStorage.getItem('tm_opt_sound') !== null ? parseInt(localStorage.getItem('tm_opt_sound')) / 100 : 0.8;
+            window.parent.postMessage({ type: 'AUDIO_PLAY_SFX', volume: soundVol }, '*');
+        }
+
+        let isGlobalMuted = false;
+        window.toggleGlobalMute = function() {
+            isGlobalMuted = !isGlobalMuted;
+            const btn = document.getElementById('global-mute-btn');
+            if (isGlobalMuted) {
+                btn.innerText = '🔇';
+                window.parent.postMessage({ type: 'AUDIO_STOP_BGM' }, '*');
+            } else {
+                btn.innerText = '🎵';
+                updateBGM();
+            }
+            playClickSound();
+        };
+
+        function updateBGM() {
+            window.parent.postMessage({ type: 'AUDIO_STOP_BGM' }, '*');
+        }
+
+        document.addEventListener('pointerdown', (e) => {
+            // Let the Angular parent handle AudioContext initialization
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.classList.contains('triangle-left') || e.target.classList.contains('triangle-right') || e.target.classList.contains('slider-thumb')) {
+                playClickSound();
+            }
+        });
+
+        function updateVolumes() {
+            const soundVol = localStorage.getItem('tm_opt_sound') !== null ? parseInt(localStorage.getItem('tm_opt_sound')) / 100 : 0.8;
+            if (typeof audioElements !== 'undefined') {
+                audioElements.forEach(a => {
+                    if (typeof myRole !== 'undefined' && myRole !== 'deaf') {
+                        a.volume = soundVol;
+                    }
+                });
+            }
+            
+            // Microphone muting logic
+            const micVol = localStorage.getItem('tm_opt_mic_level') !== null ? parseInt(localStorage.getItem('tm_opt_mic_level')) / 100 : 0.7;
+            if (typeof myStream !== 'undefined' && myStream) {
+                myStream.getAudioTracks().forEach(track => {
+                    track.enabled = (micVol > 0);
+                });
+            }
+        }
+
+        // Apply settings initially
+        setTimeout(applySettings, 500);
+
+        // Sliders Logic
+        const sliders = document.querySelectorAll('.slider-container');
+        sliders.forEach((container, index) => {
+            const thumb = container.querySelector('.slider-thumb');
+            const fill = container.querySelector('.slider-fill');
+            const sliderIds = ['sound', 'music', 'mouse', 'mic_level'];
+            const currentId = sliderIds[index];
+            
+            let isDragging = false;
+            let lastSoundTime = 0;
+            let lastValue = -1;
+            
+            // Load saved value
+            const savedVal = localStorage.getItem('tm_opt_' + currentId);
+            if (savedVal !== null) {
+                lastValue = parseInt(savedVal);
+                thumb.style.left = savedVal + '%';
+                fill.style.width = savedVal + '%';
+                const valDisplay = document.getElementById('val-' + currentId);
+                if (valDisplay) valDisplay.innerText = savedVal;
+            }
+
+            const updateSlider = (clientX) => {
+                const rect = container.getBoundingClientRect();
+                let percentage = (clientX - rect.left) / rect.width * 100;
+                if (percentage < 0) percentage = 0;
+                if (percentage > 100) percentage = 100;
+                let rounded = Math.round(percentage);
+                
+                if (rounded === lastValue) return; // Prevent unnecessary CPU load
+                lastValue = rounded;
+                
+                thumb.style.left = percentage + '%';
+                fill.style.width = percentage + '%';
+                
+                const valDisplay = document.getElementById('val-' + currentId);
+                if (valDisplay) valDisplay.innerText = rounded;
+                
+                localStorage.setItem('tm_opt_' + currentId, rounded);
+                if (currentId === 'sound') {
+                    updateVolumes();
+                    let now = performance.now();
+                    if (now - lastSoundTime > 150) {
+                        playClickSound();
+                        lastSoundTime = now;
+                    }
+                } else if (currentId === 'music') {
+                    updateBGM();
+                } else if (currentId === 'mic_level') {
+                    updateVolumes(); // Update mic mute state
+                }
+            };
+
+            thumb.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) updateSlider(e.clientX);
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            container.addEventListener('click', (e) => {
+                if(e.target !== thumb) updateSlider(e.clientX);
+            });
+            
+            // Touch support for mobile
+            thumb.addEventListener('touchstart', (e) => {
+                isDragging = true;
+            }, {passive: true});
+
+            document.addEventListener('touchmove', (e) => {
+                if (isDragging) updateSlider(e.touches[0].clientX);
+            }, {passive: true});
+
+            document.addEventListener('touchend', () => {
+                isDragging = false;
+            });
+        });
+    });
+    </script>
+</body>
+</html>

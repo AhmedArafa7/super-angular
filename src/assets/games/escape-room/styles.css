@@ -1,0 +1,332 @@
+:root {
+    --bg-dark: #1e1b4b;
+    --bg-card: #312e81;
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --secondary: #64748b;
+    --success: #10b981;
+    --danger: #ef4444;
+    --text-main: #f8fafc;
+    --text-muted: #cbd5e1;
+    --font-main: system-ui, -apple-system, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-main);
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.screen {
+    display: none;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.screen.active {
+    display: flex;
+}
+
+.card {
+    background: var(--bg-card);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+h1 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    color: #fff;
+}
+
+p {
+    color: var(--text-muted);
+    margin-bottom: 20px;
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #4f46e5;
+    background: #1e1b4b;
+    color: #fff;
+    font-size: 1rem;
+    outline: none;
+    text-align: center;
+}
+
+.actions {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #fff;
+}
+
+.btn.primary { background: var(--primary); }
+.btn.secondary { background: var(--secondary); }
+.btn.success { background: var(--success); }
+
+.join-group {
+    display: flex;
+    gap: 10px;
+}
+.join-group input { flex: 2; }
+.join-group .btn { flex: 1; }
+
+.hidden { display: none !important; }
+
+.code-box {
+    background: #000;
+    padding: 10px;
+    border-radius: 5px;
+    font-family: monospace;
+    font-size: 1.2rem;
+    color: var(--success);
+    margin-bottom: 20px;
+}
+
+.players-list {
+    text-align: right;
+    margin-bottom: 20px;
+    background: #1e1b4b;
+    padding: 15px;
+    border-radius: 8px;
+}
+.players-list ul { list-style: none; }
+.players-list li { padding: 5px 0; border-bottom: 1px solid #312e81; }
+
+/* Game Screen */
+#game-screen {
+    justify-content: flex-start;
+    padding: 0;
+    background: #0f172a;
+}
+
+header {
+    width: 100%;
+    padding: 15px 20px;
+    background: #020617;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #1e293b;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.timer {
+    color: var(--danger);
+    font-family: monospace;
+    font-size: 1.5rem;
+}
+
+.room-container {
+    flex: 1;
+    width: 100%;
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    perspective: 1000px;
+}
+
+.wall {
+    height: 40%;
+    background: #1e293b;
+    border-bottom: 4px solid #0f172a;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    position: relative;
+}
+
+.door {
+    width: 120px;
+    height: 180px;
+    background: #475569;
+    border: 4px solid #334155;
+    border-bottom: none;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+}
+
+.lock {
+    width: 40px;
+    height: 40px;
+    background: #0f172a;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+    border: 2px solid #94a3b8;
+    transition: all 0.3s;
+}
+.lock.open {
+    border-color: var(--success);
+    color: var(--success);
+    background: #064e3b;
+}
+
+.floor {
+    height: 60%;
+    background: #334155;
+    transform: rotateX(20deg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.puzzle-station {
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 10px;
+    border: 2px solid #475569;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    transform: rotateX(-20deg); /* Counter-rotate */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.puzzle-station h3 {
+    margin-bottom: 15px;
+    color: var(--text-muted);
+}
+
+.clue-box {
+    background: #000;
+    padding: 15px;
+    border-radius: 5px;
+    font-family: monospace;
+    font-size: 1.2rem;
+    color: #fbbf24;
+    margin-bottom: 15px;
+}
+
+/* Color Controls */
+.controls-box {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+.color-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+.color-btn:active { transform: scale(0.9); }
+
+/* Simon Says */
+.simon-display {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+.simon-light {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: #475569;
+    border: 2px solid #1e293b;
+    transition: background 0.2s;
+}
+.simon-light.active { background: #fbbf24; box-shadow: 0 0 10px #fbbf24; }
+
+.simon-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+.simon-btn {
+    width: 50px; height: 50px;
+    border-radius: 10px;
+    background: #3b82f6;
+    color: white; font-weight: bold; font-size: 1.2rem;
+    border: none; cursor: pointer;
+}
+.simon-btn:active { background: #2563eb; transform: scale(0.95); }
+
+/* Keypad */
+.keypad {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+.keypad-display {
+    background: #020617;
+    color: #10b981;
+    font-family: monospace;
+    font-size: 1.5rem;
+    padding: 10px;
+    border-radius: 5px;
+    width: 200px;
+    letter-spacing: 5px;
+}
+.keypad-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+.k-btn {
+    width: 60px; height: 60px;
+    background: #475569; color: white;
+    border: none; border-radius: 5px;
+    font-size: 1.5rem; cursor: pointer;
+}
+.k-btn:active { background: #334155; }
+.k-clear { background: #ef4444; }
+.k-enter { background: #10b981; }
+
+.shake {
+    animation: shake 0.4s;
+}
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}

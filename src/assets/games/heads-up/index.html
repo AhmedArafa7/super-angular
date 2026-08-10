@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>على رأسي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        .guesser-alert { font-size: 2rem; color: #ef4444; font-weight: bold; margin-bottom: 20px; }
+        .actor-word { font-size: 4rem; color: #facc15; font-weight: 900; margin: 30px 0; }
+        #game-screen { flex-direction: column; justify-content: center; }
+        
+        #local-word {
+            font-size: 5rem;
+            color: #fff;
+            font-weight: 900;
+            text-align: center;
+            margin-top: 50px;
+        }
+        #local-instructions {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            text-align: center;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Menu Screen -->
+        <div id="menu-screen" class="screen active">
+            <h1 class="title">على رأسي 🤦‍♂️</h1>
+            <p class="subtitle">قم بتمثيل الكلمة ليخمنها صديقك!</p>
+            
+            <div class="lobby-box mt-30">
+                <button class="btn btn-primary" onclick="showLocalSetup()">🕹️ لعب محلي (جهاز واحد)</button>
+                <button class="btn btn-primary mt-10" onclick="showCreateRoom()" style="background-color: #f59e0b; color: #000;">🌐 إنشاء غرفة (مضيف)</button>
+                <button class="btn btn-secondary mt-10" onclick="showJoinRoom()">🔗 الانضمام لغرفة</button>
+                <button class="btn btn-secondary mt-10" onclick="window.history.back()">العودة للأركيد</button>
+            </div>
+        </div>
+        
+        <!-- Local Setup Screen -->
+        <div id="local-setup-screen" class="screen">
+            <h2>إعداد اللعب المحلي</h2>
+            <p class="mt-20">ضع الهاتف على جبهتك بعد بدء اللعبة!</p>
+            <p>قم بإمالة الهاتف للأسفل إذا حزرت الكلمة، أو للأعلى لتخطيها.</p>
+            
+            <div class="category-grid mt-30">
+                <button class="category-card" onclick="startLocalGame('animals')">🦁 حيوانات</button>
+                <button class="category-card" onclick="startLocalGame('jobs')">👮 مهن</button>
+                <button class="category-card" onclick="startLocalGame('movies')">🎬 أفلام</button>
+                <button class="category-card" onclick="startLocalGame('actions')">🏃 أفعال</button>
+            </div>
+            
+            <button class="btn btn-secondary mt-20" onclick="showScreen('menu-screen')">العودة</button>
+        </div>
+
+        <!-- Host Screen (Online) -->
+        <div id="host-screen" class="screen">
+            <h2 style="color: #facc15;">أنت المضيف 👑</h2>
+            <p>شارك هذا الكود مع أصدقائك:</p>
+            <h1 id="room-code-display" class="title mt-10" style="letter-spacing: 5px; user-select: all;">...</h1>
+            
+            <div class="players-list-box mt-20">
+                <h3>اللاعبون المتواجدون (<span id="host-players-count">1</span>):</h3>
+                <ul id="host-players-list" style="list-style: none; padding: 0;">
+                    <li>أنت (المضيف)</li>
+                </ul>
+            </div>
+            
+            <div class="category-grid mt-30">
+                <button class="category-card" onclick="selectCategory('animals')">🦁 حيوانات</button>
+                <button class="category-card" onclick="selectCategory('jobs')">👮 مهن</button>
+                <button class="category-card" onclick="selectCategory('movies')">🎬 أفلام</button>
+                <button class="category-card" onclick="selectCategory('actions')">🏃 أفعال</button>
+            </div>
+            
+            <button class="btn btn-secondary mt-10" onclick="leaveRoom()">إلغاء</button>
+        </div>
+
+        <!-- Join Screen (Online) -->
+        <div id="join-screen" class="screen">
+            <h2>الانضمام لغرفة</h2>
+            <p class="mt-20">أدخل اسمك:</p>
+            <input type="text" id="player-name-input" class="form-input mt-10" placeholder="اسمك (مثال: أحمد)">
+            
+            <p class="mt-20">أدخل كود الغرفة:</p>
+            <input type="text" id="room-code-input" class="form-input mt-10" placeholder="مثال: ABCD" style="text-transform: uppercase;" maxlength="4">
+            
+            <p id="join-status" class="mt-10" style="color: #facc15;"></p>
+            
+            <button class="btn btn-primary mt-20" onclick="joinRoom()">انضمام</button>
+            <button class="btn btn-secondary mt-10" onclick="showScreen('menu-screen')">عودة</button>
+        </div>
+
+        <!-- Guest Waiting Screen (Online) -->
+        <div id="guest-waiting-screen" class="screen">
+            <h2>تم الانضمام بنجاح! ✅</h2>
+            <p class="mt-20">أنت في غرفة <span id="guest-room-id" style="color:#fcd34d"></span></p>
+            <p class="mt-10">في انتظار المضيف لاختيار الفئة وبدء اللعبة...</p>
+            
+            <div class="players-list-box mt-20">
+                <h3>اللاعبون المتواجدون:</h3>
+                <ul id="guest-players-list" style="list-style: none; padding: 0;"></ul>
+            </div>
+            
+            <button class="btn btn-secondary mt-30" onclick="leaveRoom()">خروج</button>
+        </div>
+
+        <!-- Game Screen (Shared) -->
+        <div id="game-screen" class="screen">
+            <div class="timer" id="timer-display">60</div>
+            
+            <!-- Local View -->
+            <div id="local-view" class="hidden">
+                <h1 id="local-word">...</h1>
+                <p id="local-instructions">إمالة للأسفل = صح ✅ | إمالة للأعلى = تخطي ⏭️</p>
+            </div>
+            
+            <!-- Online View for Guesser -->
+            <div id="guesser-view" class="hidden">
+                <h1 class="guesser-alert">أنت الذي يُخمّن! 😲</h1>
+                <p>شاهد أصدقاءك (عبر ديسكورد أو في الغرفة) وحاول تخمين الكلمة التي يمثلونها!</p>
+                <h2 style="color:#9ca3af; margin-top:30px;">الكلمة مخفية عنك</h2>
+                <p class="mt-20">أصدقاؤك سيضغطون على "صح" أو "تخطي" بناءً على إجاباتك.</p>
+            </div>
+            
+            <!-- Online View for Actors -->
+            <div id="actor-view" class="hidden">
+                <p>قم بتمثيل هذه الكلمة لـ <span id="guesser-name" style="color:#3b82f6; font-weight:bold;">...</span>:</p>
+                <h1 class="actor-word" id="secret-word">...</h1>
+                
+                <div class="controls mt-30">
+                    <button class="btn btn-success" onclick="actorVote('correct')">خمّنها صح! ✅</button>
+                    <button class="btn btn-danger mt-10" onclick="actorVote('pass')">تخطي ⏭️</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Screen (Shared) -->
+        <div id="result-screen" class="screen">
+            <h1 class="title">انتهى الوقت! ⏳</h1>
+            
+            <div class="score-board mt-30">
+                <h2>عدد الإجابات الصحيحة: <span id="final-score">0</span></h2>
+            </div>
+            
+            <div id="host-restart-controls" class="hidden mt-30">
+                <button class="btn btn-primary" onclick="backToLobby()">اختيار مخمّن وفئة جديدة</button>
+            </div>
+            <div id="guest-restart-wait" class="hidden mt-30">
+                <p style="color: #9ca3af;">في انتظار المضيف...</p>
+            </div>
+            
+            <div id="local-restart-controls" class="hidden mt-30">
+                <button class="btn btn-primary" onclick="showLocalSetup()">لعب جولة أخرى</button>
+            </div>
+            
+            <button class="btn btn-secondary mt-10" onclick="leaveRoom()">العودة للقائمة</button>
+        </div>
+
+    </div>
+    
+    <!-- Audio -->
+    <audio id="correct-audio" src="assets/correct.mp3" preload="auto"></audio>
+    <audio id="pass-audio" src="assets/pass.mp3" preload="auto"></audio>
+    <audio id="tick-audio" src="assets/tick.mp3" preload="auto"></audio>
+    
+    <script src="game.js"></script>
+</body>
+</html>

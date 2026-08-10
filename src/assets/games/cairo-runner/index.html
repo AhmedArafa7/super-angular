@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cairo Runner - زحمة الميكروباص</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Main Menu / Mode Selection -->
+        <div id="mode-selection-screen" class="screen">
+            <h1 class="glow-text title-large">زحمة الميكروباص</h1>
+            <p class="subtitle">اجري في شوارع مصر وحطم الأرقام!</p>
+            
+            <div id="main-menu" class="menu-section">
+                <button class="action-btn primary mode-btn" data-mode="local">لعب فردي (تدريب)</button>
+                <button class="action-btn secondary mode-btn" data-mode="p2p">تحدي صديق (عبر الإنترنت)</button>
+            </div>
+
+            <!-- P2P Lobby -->
+            <div id="p2p-menu" class="menu-section hidden p2p-box">
+                <h2>غرفة التحدي</h2>
+                
+                <button id="create-room-btn" class="action-btn primary">إنشاء غرفة جديدة</button>
+                
+                <div id="room-info" class="hidden room-info-box">
+                    <p>كود الغرفة الخاصة بك:</p>
+                    <h3 id="roomIdDisplay">جارِ الإنشاء...</h3>
+                    <p class="wait-text">في انتظار انضمام الخصم...</p>
+                </div>
+
+                <div class="divider"><span>أو</span></div>
+
+                <div class="join-box">
+                    <input type="text" id="join-room-id" placeholder="أدخل كود الغرفة المكون من حروف">
+                    <button id="join-room-btn" class="action-btn secondary">انضمام للغرفة</button>
+                    <p id="join-error" class="error-msg hidden">فشل الانضمام، تأكد من الكود</p>
+                </div>
+
+                <button id="back-to-menu-btn" class="action-btn transparent">رجوع</button>
+            </div>
+        </div>
+
+        <!-- Game Screen (Canvas + UI) -->
+        <div id="game-screen" class="screen hidden">
+            <!-- HUD -->
+            <div class="hud">
+                <div class="player-score">
+                    <h3>أنت</h3>
+                    <div id="my-score">النقاط: 0</div>
+                </div>
+                <!-- Enemy HUD (Only visible in P2P) -->
+                <div id="enemy-hud" class="player-score enemy-score hidden">
+                    <h3>الخصم</h3>
+                    <div id="enemy-score">النقاط: 0</div>
+                    <div id="enemy-status" class="status-alive">حي يرزق 🏃</div>
+                </div>
+            </div>
+
+            <!-- Canvas Container to maintain aspect ratio -->
+            <div id="canvas-container">
+                <canvas id="gameCanvas"></canvas>
+            </div>
+            
+            <!-- Mobile Controls -->
+            <div class="mobile-controls">
+                <button id="btn-left" class="control-btn">◀</button>
+                <button id="btn-jump" class="control-btn" style="background: rgba(59, 130, 246, 0.5);">▲</button>
+                <button id="btn-right" class="control-btn">▶</button>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="screen hidden overlay">
+            <div class="modal">
+                <h1 id="result-title">انتهت اللعبة!</h1>
+                <p id="result-desc">لقد اصطدمت بميكروباص!</p>
+                <h2 id="final-score-display" class="final-score">النقاط: 0</h2>
+                <div class="modal-actions">
+                    <button id="rematch-btn" class="action-btn primary">إعادة اللعب</button>
+                    <button id="menu-btn" class="action-btn secondary">القائمة الرئيسية</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="game.js"></script>
+</body>
+</html>

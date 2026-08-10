@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>سباق الرياضيات (Math Racer)</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    
+    <div id="start-screen" class="screen active">
+        <div class="card">
+            <h1>🏎️ سباق الرياضيات</h1>
+            <p>أجب عن المسائل الحسابية بأسرع ما يمكن لتسبق السيارة الحمراء!</p>
+            <div class="difficulty-select">
+                <button class="diff-btn active" data-level="easy">سهل (جمع وطرح)</button>
+                <button class="diff-btn" data-level="hard">صعب (ضرب وقسمة)</button>
+            </div>
+            <button id="start-btn" class="btn primary">انطلق!</button>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div class="track-container">
+            <div class="finish-line">🏁</div>
+            <!-- المؤقت -->
+            <div id="timer-display" class="timer">30</div>
+            
+            <div class="lane">
+                <div class="car player-car" id="player-car">🚙</div>
+            </div>
+            <div class="lane-divider"></div>
+            <div class="lane">
+                <div class="car enemy-car" id="enemy-car">🏎️</div>
+            </div>
+        </div>
+        
+        <div class="math-panel">
+            <div id="equation">5 + 7 = ?</div>
+            <div class="answer-input">
+                <input type="number" id="answer" placeholder="الرقم" autofocus>
+                <button id="submit-btn" class="btn success">إرسال (Enter)</button>
+            </div>
+            <div id="feedback" class="feedback"></div>
+        </div>
+    </div>
+
+    <div id="game-over-screen" class="screen">
+        <div class="card">
+            <h1 id="result-title"></h1>
+            <h2>وقتك: <span id="final-time">0</span> ثانية</h2>
+            <button id="restart-btn" class="btn primary">تسابق مرة أخرى</button>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>

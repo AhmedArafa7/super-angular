@@ -85,46 +85,62 @@ import { ArcadeAudioService } from '../../core/services/arcade-audio.service';
       <div *ngIf="showModeOverlay" id="arena-menu-overlay" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-6 animate-in fade-in zoom-in duration-500 overflow-hidden" 
            [style.background]="getDynamicGradient()">
          
-         <!-- Blurred / scaled game thumbnail background decoration -->
-         <div class="absolute inset-0 opacity-20 pointer-events-none bg-cover bg-center blur-2xl scale-110"
+         <!-- Floating Theme Emojis Animation Overlay -->
+         <div *ngIf="activeTheme" class="absolute inset-0 pointer-events-none select-none z-1 text-4xl opacity-20 overflow-hidden flex flex-wrap items-center justify-around leading-[140px] animate-pulse">
+            {{ activeTheme.floatingEmojis }}
+         </div>
+
+         <!-- Fullscreen HD Game Wallpaper -->
+         <img *ngIf="game && !bgImageFailed" 
+              [src]="bgUrl" 
+              (error)="onBgError()" 
+              class="absolute inset-0 w-full h-full object-cover pointer-events-none z-0">
+
+         <!-- Blurred / scaled game thumbnail background decoration fallback -->
+         <div *ngIf="bgImageFailed" class="absolute inset-0 opacity-25 pointer-events-none bg-cover bg-center blur-2xl scale-110"
               [style.background-image]="game && game.thumbnail && !game.thumbnail.startsWith('data:') ? 'url(' + game.thumbnail + ')' : 'none'">
          </div>
          
-         <!-- Optional bg.png custom theme loaded on top if exists -->
-         <div class="absolute inset-0 opacity-40 pointer-events-none bg-cover bg-center"
-              [style.background-image]="game ? 'url(/games/' + game.id + '/bg.png)' : 'none'">
-         </div>
-         
          <!-- Dynamic Menu Container -->
-         <div id="arena-menu-container" class="relative w-full max-w-sm flex flex-col gap-5 z-10">
+         <div id="arena-menu-container" 
+              class="relative w-full max-w-sm flex flex-col gap-5 z-10 p-8 rounded-[36px] backdrop-blur-xl shadow-2xl transition-all duration-300 border-2"
+              [style.background]="activeTheme && activeTheme.cardBg ? activeTheme.cardBg : 'rgba(15, 23, 42, 0.88)'"
+              [style.border-color]="activeTheme ? activeTheme.primaryColor : 'rgba(255,255,255,0.15)'"
+              [style.box-shadow]="activeTheme ? '0 25px 60px rgba(0,0,0,0.85), 0 0 25px ' + activeTheme.borderColor : '0 25px 60px rgba(0,0,0,0.85)'">
             
+            <!-- Custom Game Theme Badge -->
+            <div *ngIf="activeTheme" 
+                 class="absolute -top-4 right-7 text-white text-xs font-black px-4 py-1.5 rounded-full shadow-xl z-20 border border-white/20 tracking-wider"
+                 [style.background]="activeTheme.badgeBg">
+               {{ activeTheme.badge }}
+            </div>
+
             <!-- Private Room Button (PLAY) -->
             <button (click)="selectMode('private')" class="arena-btn btn-play group">
-               <span>PLAY (ROOM)</span>
-               <span class="pointer-icon group-hover:animate-bounce">👉🏼</span>
+               <span>🎯 إنشاء غرفة وتحدي صديق</span>
             </button>
             <button (click)="openJoinRoomModal()" class="arena-btn btn-join">
-              JOIN BY CODE
+              <span>🔑 الانضمام بكود الغرفة</span>
             </button>
 
             <!-- Local Play Button -->
             <button (click)="selectMode('local')" class="arena-btn btn-local">
-               <span>LOCAL PLAY</span>
+               <span>👥 اللعب محلياً (نفس الجهاز)</span>
             </button>
 
             <!-- Online Matchmaking Button -->
             <div class="pro-btn-wrapper relative">
                <div *ngIf="!globalState.userProfile().isPro" class="pro-lock-overlay">
-                  <span>PRO ONLY 🔒</span>
+                  <span>اشتراك Pro فقط 🔒</span>
                </div>
                <button (click)="selectMode('pro')" [disabled]="!globalState.userProfile().isPro" class="arena-btn btn-online">
-                  <span>ONLINE MATCH</span>
+                  <span>🏆 لعب أونلاين Pro</span>
                </button>
             </div>
 
             <!-- Quit Button -->
             <button (click)="goBack()" class="arena-btn btn-quit">
-               <span>QUIT</span>
+               <span>🚪 خروج</span>
             </button>
 
          </div>
@@ -442,11 +458,8 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
           if (game && (game.localUrl || gameId.startsWith('custom_game_'))) {
             this.game = game;
             this.loadGameMenuTheme(gameId);
-            if (this.game.hasCustomMenu && !this.selectedMode) {
-              this.showModeOverlay = false;
-              this.selectedMode = 'custom';
-              this.launchGame();
-            } else if (!this.selectedMode) {
+            if (!this.route.snapshot.queryParamMap.has('room')) {
+              this.selectedMode = null;
               this.showModeOverlay = true;
             }
           } else {
@@ -492,32 +505,210 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
     }, 1000);
   }
 
+  bgImageFailed = false;
+  bgTimestamp = Date.now();
+  bgUrl = '';
+  activeTheme: any = null;
+
+  private gameThemes: Record<string, any> = {
+    'memory-match': {
+      badge: '🧠 MEMORY MATCH 💡',
+      primaryColor: '#38bdf8',
+      borderColor: 'rgba(56, 189, 248, 0.6)',
+      floatingEmojis: '🧠   💡   ❓   ⭐   ✨',
+      badgeBg: 'linear-gradient(135deg, #0284c7, #8b5cf6)'
+    },
+    'fruit-slicer': {
+      badge: '🍉 FRUIT SLICER ⚔️',
+      primaryColor: '#ef4444',
+      borderColor: 'rgba(239, 68, 68, 0.6)',
+      floatingEmojis: '🍉   🍊   🍍   🍓   ⚔️',
+      badgeBg: 'linear-gradient(135deg, #ef4444, #f59e0b, #10b981)'
+    },
+    'typing-defense': {
+      badge: '⌨️ TYPING DEFENSE ⚡',
+      primaryColor: '#a855f7',
+      borderColor: 'rgba(168, 85, 247, 0.6)',
+      floatingEmojis: '⌨️   ⚡   💥   🔤   🎯',
+      badgeBg: 'linear-gradient(135deg, #a855f7, #ec4899)'
+    },
+    'flappy-clone': {
+      badge: '🐦 FLAPPY BIRD ☁️',
+      primaryColor: '#0284c7',
+      borderColor: 'rgba(2, 132, 199, 0.6)',
+      floatingEmojis: '🐦   ☁️   🍃   🪙   ✨',
+      badgeBg: 'linear-gradient(135deg, #0284c7, #22c55e)'
+    },
+    'air-hockey': {
+      badge: '🏒 AIR HOCKEY ⚡',
+      primaryColor: '#38bdf8',
+      borderColor: 'rgba(56, 189, 248, 0.6)',
+      floatingEmojis: '🏒   🔴   🔵   🏒   ✨',
+      badgeBg: 'linear-gradient(135deg, #0284c7, #38bdf8)'
+    },
+    'ludo-party': {
+      badge: '🎲 YALLA LUDO 🌟',
+      primaryColor: '#facc15',
+      borderColor: 'rgba(250, 204, 21, 0.6)',
+      floatingEmojis: '🎲   🔴   🟢   🟡   🔵   ⭐',
+      badgeBg: 'linear-gradient(135deg, #ef4444, #f59e0b, #22c55e, #3b82f6)'
+    },
+    'crazy-uno': {
+      badge: '🎴 CRAZY UNO 💥',
+      primaryColor: '#f59e0b',
+      borderColor: 'rgba(245, 158, 11, 0.6)',
+      floatingEmojis: '🎴   🔴   🔵   🟢   🟡   💥',
+      badgeBg: 'linear-gradient(135deg, #ef4444, #f59e0b)'
+    },
+    'bomb-arena': {
+      badge: '💣 BOMB ARENA 💥',
+      primaryColor: '#f97316',
+      borderColor: 'rgba(249, 115, 22, 0.6)',
+      floatingEmojis: '💥   💣   🔥   💥   💣   🔥',
+      badgeBg: 'linear-gradient(135deg, #f97316, #ef4444)'
+    },
+    'tick-tock-bomb': {
+      badge: '💣 TICK TOCK BOMB ⏰',
+      primaryColor: '#f97316',
+      borderColor: 'rgba(249, 115, 22, 0.8)',
+      floatingEmojis: '💣   ⏰   🔥   💥   ⚡',
+      badgeBg: 'linear-gradient(135deg, #ef4444, #f59e0b)',
+      cardBg: 'linear-gradient(145deg, rgba(30, 10, 10, 0.95), rgba(45, 15, 15, 0.95))'
+    },
+    'space-shooter': {
+      badge: '🚀 SPACE SHOOTER 👾',
+      primaryColor: '#3b82f6',
+      borderColor: 'rgba(59, 130, 246, 0.6)',
+      floatingEmojis: '🚀   👾   💥   ⭐   🌌',
+      badgeBg: 'linear-gradient(135deg, #1d4ed8, #7c3aed)'
+    },
+    'space-deception': {
+      badge: '🚀 SPACE DECEPTION 🔪',
+      primaryColor: '#ef4444',
+      borderColor: 'rgba(239, 68, 68, 0.8)',
+      floatingEmojis: '🚀   🔪   🚨   🌌   👾',
+      badgeBg: 'linear-gradient(135deg, #ef4444, #3b82f6)',
+      cardBg: 'linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95))'
+    },
+    'tank-battle': {
+      badge: '⚔️ TANK BATTLE 💥',
+      primaryColor: '#ef4444',
+      borderColor: 'rgba(239, 68, 68, 0.6)',
+      floatingEmojis: '💥   🛡️   💣   🎯   ⚡',
+      badgeBg: 'linear-gradient(135deg, #b91c1c, #f59e0b)'
+    },
+    'cairo-runner': {
+      badge: '🛺 CAIRO RUNNER 🚦',
+      primaryColor: '#f59e0b',
+      borderColor: 'rgba(245, 158, 11, 0.6)',
+      floatingEmojis: '🛺   🚌   🚗   🚦   ⚡',
+      badgeBg: 'linear-gradient(135deg, #d97706, #ef4444)'
+    },
+    'spot-differences': {
+      badge: '🔍 SPOT DIFFERENCES 👁️',
+      primaryColor: '#8b5cf6',
+      borderColor: 'rgba(139, 92, 246, 0.6)',
+      floatingEmojis: '🔍   👁️   ❓   💡   ✨',
+      badgeBg: 'linear-gradient(135deg, #6d28d9, #0284c7)'
+    },
+    'strategic-xo': {
+      badge: '❌ STRATEGIC XO ⭕',
+      primaryColor: '#ec4899',
+      borderColor: 'rgba(236, 72, 153, 0.6)',
+      floatingEmojis: '❌   ⭕   🎯   ⚔️   ✨',
+      badgeBg: 'linear-gradient(135deg, #be185d, #0284c7)'
+    },
+    'card-battle': {
+      badge: '🃏 CARD BATTLE 🛡️',
+      primaryColor: '#6366f1',
+      borderColor: 'rgba(99, 102, 241, 0.6)',
+      floatingEmojis: '🃏   ⚔️   🛡️   💥   👑',
+      badgeBg: 'linear-gradient(135deg, #4338ca, #be185d)'
+    },
+    'math-racer': {
+      badge: '🏎️ MATH RACER ⚡',
+      primaryColor: '#eab308',
+      borderColor: 'rgba(234, 179, 8, 0.6)',
+      floatingEmojis: '🏎️   ➕   ➖   ✖️   🏁',
+      badgeBg: 'linear-gradient(135deg, #ca8a04, #16a34a)'
+    },
+    'dragon-dungeon': {
+      badge: '🐉 DRAGON DUNGEON ⚔️',
+      primaryColor: '#f97316',
+      borderColor: 'rgba(249, 115, 22, 0.6)',
+      floatingEmojis: '🐉   ⚔️   🛡️   🔥   💎',
+      badgeBg: 'linear-gradient(135deg, #ea580c, #b91c1c)'
+    },
+    'snake-arena': {
+      badge: '🐍 SNAKE ARENA 🍎',
+      primaryColor: '#10b981',
+      borderColor: 'rgba(16, 185, 129, 0.6)',
+      floatingEmojis: '🐍   🍎   ⭐   💥   ✨',
+      badgeBg: 'linear-gradient(135deg, #059669, #0284c7)'
+    },
+    'werewolf-village': {
+      badge: '🐺 WEREWOLF VILLAGE 🌕',
+      primaryColor: '#64748b',
+      borderColor: 'rgba(100, 116, 139, 0.6)',
+      floatingEmojis: '🐺   🌕   🕯️   🌲   💀',
+      badgeBg: 'linear-gradient(135deg, #334155, #b91c1c)'
+    },
+    'spyfall': {
+      badge: '🕵️ SPYFALL 🔎',
+      primaryColor: '#0ea5e9',
+      borderColor: 'rgba(14, 165, 233, 0.8)',
+      floatingEmojis: '🕵️   🔎   ❓   ⏱️   🕶️',
+      badgeBg: 'linear-gradient(135deg, #0284c7, #4f46e5)',
+      cardBg: 'linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95))'
+    }
+  };
+
   loadGameMenuTheme(gameId: string) {
-    const url = `/games/${gameId}/menu-theme.css`;
-    fetch(url, { method: 'HEAD' }).then(res => {
-      const contentType = res.headers.get('content-type');
-      if (res.ok && contentType && contentType.includes('css')) {
-        const head = document.getElementsByTagName('head')[0];
-        let themeLink = document.getElementById('game-menu-theme') as HTMLLinkElement;
-        if (!themeLink) {
-          themeLink = document.createElement('link');
-          themeLink.id = 'game-menu-theme';
-          themeLink.rel = 'stylesheet';
-          head.appendChild(themeLink);
+    if (!gameId) return;
+    this.bgTimestamp = Date.now();
+    this.bgImageFailed = false;
+    this.bgUrl = `/assets/games/${gameId}/bg.png?v=${this.bgTimestamp}`;
+    this.activeTheme = this.gameThemes[gameId] || null;
+    
+    const tryFetchTheme = (url: string, fallbackUrl?: string) => {
+      fetch(url).then(res => {
+        if (res.ok) return res.text();
+        throw new Error('404');
+      }).then(cssText => {
+        if (!cssText || cssText.trim().startsWith('<!DOCTYPE')) {
+          throw new Error('Invalid CSS text');
         }
-        themeLink.href = url;
-      } else {
-        this.removeGameMenuTheme();
-      }
-    }).catch(() => {
-      this.removeGameMenuTheme();
-    });
+        let styleTag = document.getElementById('game-menu-theme') as HTMLStyleElement;
+        if (!styleTag) {
+          styleTag = document.createElement('style');
+          styleTag.id = 'game-menu-theme';
+          document.head.appendChild(styleTag);
+        }
+        styleTag.textContent = cssText;
+      }).catch(() => {
+        if (fallbackUrl) {
+          tryFetchTheme(fallbackUrl);
+        } else {
+          this.removeGameMenuTheme();
+        }
+      });
+    };
+
+    tryFetchTheme(`/assets/games/${gameId}/menu-theme.css?v=${this.bgTimestamp}`, `/games/${gameId}/menu-theme.css?v=${this.bgTimestamp}`);
+  }
+
+  onBgError() {
+    if (this.bgUrl.startsWith('/assets/games/')) {
+      this.bgUrl = `/games/${this.game?.id}/bg.png?v=${this.bgTimestamp}`;
+    } else {
+      this.bgImageFailed = true;
+    }
   }
 
   removeGameMenuTheme() {
-    const themeLink = document.getElementById('game-menu-theme');
-    if (themeLink) {
-      themeLink.remove();
+    const styleTag = document.getElementById('game-menu-theme');
+    if (styleTag) {
+      styleTag.remove();
     }
   }
 
@@ -708,7 +899,7 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
           url = url.replace('index.html', 'index_modified.html');
         }
 
-        url += (url.includes('?') ? '&' : '?') + 'mode=' + this.selectedMode;
+        url += (url.includes('?') ? '&' : '?') + 'mode=' + this.selectedMode + '&v=' + Date.now();
         if (this.selectedMode === 'private') {
            url += '&room=' + this.generatedRoomCode;
            if (this.privateRoomRole) {

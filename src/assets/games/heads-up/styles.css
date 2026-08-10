@@ -1,0 +1,221 @@
+body {
+    background-color: #312e81; /* Indigo background */
+    color: #f8fafc;
+    font-family: 'Tajawal', sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    text-align: center;
+    overflow: hidden;
+    transition: background-color 0.3s ease;
+}
+
+#app {
+    width: 100%;
+    max-width: 800px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.screen {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+.screen.active {
+    display: flex;
+}
+
+.hidden {
+    display: none !important;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.title {
+    font-size: 3rem;
+    color: #fca5a5;
+    margin-bottom: 10px;
+    text-shadow: 0 4px 10px rgba(0,0,0, 0.4);
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    color: #cbd5e1;
+    margin-bottom: 30px;
+}
+
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.cat-btn {
+    background: #4338ca;
+    color: white;
+    border: none;
+    padding: 20px 10px;
+    border-radius: 15px;
+    font-family: 'Tajawal', sans-serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    box-shadow: 0 6px 0 #312e81;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.cat-btn:active {
+    transform: translateY(6px);
+    box-shadow: 0 0 0 #312e81;
+}
+
+.btn-secondary {
+    background: #475569;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    padding: 15px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.mt-30 { margin-top: 30px; }
+
+/* Game Screen */
+#game-screen {
+    position: relative;
+}
+
+.timer {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 2.5rem;
+    font-weight: 900;
+    background: rgba(0,0,0,0.3);
+    padding: 10px 20px;
+    border-radius: 20px;
+}
+
+.word-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#current-word {
+    font-size: 6rem;
+    margin: 0;
+    text-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    word-break: break-word;
+}
+
+.controls {
+    display: flex;
+    gap: 20px;
+    height: 120px;
+}
+
+.control-btn {
+    flex: 1;
+    border: none;
+    border-radius: 20px;
+    font-family: 'Tajawal', sans-serif;
+    font-weight: 900;
+    font-size: 2rem;
+    cursor: pointer;
+    box-shadow: 0 10px 0 rgba(0,0,0,0.3);
+    color: white;
+}
+
+.control-btn:active {
+    transform: translateY(10px);
+    box-shadow: 0 0 0 rgba(0,0,0,0.3);
+}
+
+.skip-btn { background: #ef4444; }
+.correct-btn { background: #10b981; }
+
+/* Result Screen */
+.score-board {
+    background: rgba(0,0,0,0.2);
+    padding: 20px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+}
+
+.words-review {
+    flex: 1;
+    overflow-y: auto;
+    text-align: right;
+    background: rgba(0,0,0,0.2);
+    border-radius: 15px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.word-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 15px;
+    border-radius: 10px;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.word-item.correct { background: rgba(16, 185, 129, 0.2); border-right: 5px solid #10b981; }
+.word-item.wrong { background: rgba(239, 68, 68, 0.2); border-right: 5px solid #ef4444; }
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    padding: 20px;
+    font-family: 'Tajawal', sans-serif;
+    font-weight: 900;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+/* Overlay */
+#instruction-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Animations for correctness */
+.bg-correct { animation: flashGreen 0.5s ease; }
+.bg-wrong { animation: flashRed 0.5s ease; }
+
+@keyframes flashGreen {
+    0% { background-color: #10b981; }
+    100% { background-color: #312e81; }
+}
+
+@keyframes flashRed {
+    0% { background-color: #ef4444; }
+    100% { background-color: #312e81; }
+}

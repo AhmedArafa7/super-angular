@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>المطابقة السريعة ⚡ Dobble 2P</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Main Menu Screen (Strictly 2 Players) -->
+        <div id="menu-screen" class="screen active">
+            <h1 class="title">المطابقة السريعة ⚡</h1>
+            <p class="subtitle">تحدي السرعة للاعبين! ابحث عن الرمز المشترك بين الدائرتين واضغط عليه فوراً!</p>
+            
+            <div class="mode-cards-grid">
+                <!-- Mode 1: 1P vs AI Bot -->
+                <div class="mode-card cursor-pointer" onclick="showAiSetup()">
+                    <div class="mode-icon">🤖</div>
+                    <h3>1. لاعب ضد الذكاء الاصطناعي</h3>
+                    <p>تحدَّ الروبوت الذكي في جولة سريعة ومثيرة</p>
+                    <span class="mode-badge local">فردي (VS Bot)</span>
+                </div>
+
+                <!-- Mode 2: 2P Local Split-Screen -->
+                <div class="mode-card cursor-pointer" onclick="showLocalSetup()">
+                    <div class="mode-icon">📱</div>
+                    <h3>2. لاعب ضد صديق (نفس الجهاز)</h3>
+                    <p>انقسام الشاشة لدائرتين محاذيتين للاعبين</p>
+                    <span class="mode-badge local">ثنائي (2 Players)</span>
+                </div>
+
+                <!-- Mode 3: 2P Private Room P2P -->
+                <div class="mode-card cursor-pointer" onclick="showCreateRoom()">
+                    <div class="mode-icon">🔑</div>
+                    <h3>3. إنشاء غرفة أونلاين (P2P)</h3>
+                    <p>غرفة خاصة بكود دعوة لمنافسة صديق عن بُعد</p>
+                    <span class="mode-badge p2p">أونلاين 2P</span>
+                </div>
+
+                <!-- Mode 4: Online Pro Matchmaking -->
+                <div class="mode-card pro-card cursor-pointer" onclick="showProModal()">
+                    <div class="mode-icon">🌐</div>
+                    <h3>4. مطابقة أونلاين Pro</h3>
+                    <p>تحدي منافسين عشوائيين من أنحاء العالم</p>
+                    <span class="mode-badge pro">👑 يتطلب Pro</span>
+                </div>
+            </div>
+
+            <div class="actions-row mt-20">
+                <button class="btn btn-secondary" onclick="showJoinRoom()">🔗 الانضمام لغرفة صديق</button>
+                <button class="btn btn-secondary" onclick="window.history.back()">⬅️ العودة للأركيد</button>
+            </div>
+        </div>
+
+        <!-- AI Bot Setup Screen -->
+        <div id="ai-setup-screen" class="screen">
+            <h2>إعداد تحدي الذكاء الاصطناعي 🤖</h2>
+            
+            <div class="settings-box mt-15">
+                <p>مستوى صعوبة الروبوت:</p>
+                <div class="players-mode-selector">
+                    <button id="ai-easy-btn" class="active" onclick="setAiDifficulty('easy')">سهل</button>
+                    <button id="ai-medium-btn" onclick="setAiDifficulty('medium')">متوسط</button>
+                    <button id="ai-hard-btn" onclick="setAiDifficulty('hard')">صعب</button>
+                </div>
+            </div>
+
+            <div class="settings-box mt-15">
+                <p>مجموعة الرموز (الفئة):</p>
+                <div class="theme-selector-grid">
+                    <button class="theme-btn active" data-theme="random" onclick="setTheme('random')">🎲 عشوائي متجدد</button>
+                    <button class="theme-btn" data-theme="animals" onclick="setTheme('animals')">🐶 حيوانات</button>
+                    <button class="theme-btn" data-theme="fruits" onclick="setTheme('fruits')">🍎 طعام وفواكه</button>
+                    <button class="theme-btn" data-theme="space" onclick="setTheme('space')">🚀 فضاء ومجرات</button>
+                    <button class="theme-btn" data-theme="sports" onclick="setTheme('sports')">⚽ رياضة وألعاب</button>
+                    <button class="theme-btn" data-theme="vehicles" onclick="setTheme('vehicles')">🚗 مركبات وسيارت</button>
+                </div>
+            </div>
+
+            <div class="settings-box mt-15">
+                <p>عدد عناصر كل دائرة:</p>
+                <div class="players-mode-selector">
+                    <button id="item8-btn" class="active" onclick="setItemCount(8)">8 عناصر (قياسي)</button>
+                    <button id="item9-btn" onclick="setItemCount(9)">9 عناصر (متقدم)</button>
+                </div>
+            </div>
+
+            <div class="settings-box mt-15">
+                <p>نقاط الفوز بالجولة:</p>
+                <div class="stepper">
+                    <button onclick="changeMaxScore(-1)">-</button>
+                    <span id="ai-max-score-display">10</span>
+                    <button onclick="changeMaxScore(1)">+</button>
+                </div>
+            </div>
+            
+            <button class="btn btn-primary mt-20" onclick="startAiGame()">🚀 بدء التحدي فوراً</button>
+            <button class="btn btn-secondary mt-10" onclick="showScreen('menu-screen')">العودة للرئيسية</button>
+        </div>
+
+        <!-- Local Setup Screen (2 Players Same Device) -->
+        <div id="local-setup-screen" class="screen">
+            <h2>إعداد التحدي المحلي (لاعبان) 📱</h2>
+            
+            <div class="settings-box mt-15">
+                <p>مجموعة الرموز (الفئة):</p>
+                <div class="theme-selector-grid">
+                    <button class="theme-btn active" data-theme="random" onclick="setTheme('random')">🎲 عشوائي متجدد</button>
+                    <button class="theme-btn" data-theme="animals" onclick="setTheme('animals')">🐶 حيوانات</button>
+                    <button class="theme-btn" data-theme="fruits" onclick="setTheme('fruits')">🍎 طعام وفواكه</button>
+                    <button class="theme-btn" data-theme="space" onclick="setTheme('space')">🚀 فضاء ومجرات</button>
+                    <button class="theme-btn" data-theme="sports" onclick="setTheme('sports')">⚽ رياضة وألعاب</button>
+                    <button class="theme-btn" data-theme="vehicles" onclick="setTheme('vehicles')">🚗 مركبات وسيارت</button>
+                </div>
+            </div>
+
+            <div class="settings-box mt-15">
+                <p>عدد عناصر كل دائرة:</p>
+                <div class="players-mode-selector">
+                    <button id="local-item8-btn" class="active" onclick="setItemCount(8)">8 عناصر (قياسي)</button>
+                    <button id="local-item9-btn" onclick="setItemCount(9)">9 عناصر (متقدم)</button>
+                </div>
+            </div>
+
+            <div class="settings-box mt-15">
+                <p>نقاط الفوز بالجولة:</p>
+                <div class="stepper">
+                    <button onclick="changeMaxScore(-1)">-</button>
+                    <span id="local-max-score-display">10</span>
+                    <button onclick="changeMaxScore(1)">+</button>
+                </div>
+            </div>
+            
+            <button class="btn btn-primary mt-20" onclick="startLocalGame()">🚀 بدء اللعبة فوراً</button>
+            <button class="btn btn-secondary mt-10" onclick="showScreen('menu-screen')">العودة للرئيسية</button>
+        </div>
+
+        <!-- Host Screen (Online P2P) -->
+        <div id="host-screen" class="screen">
+            <h2 style="color: #facc15;">أنت المضيف 👑 (غرفة خاصة 2P)</h2>
+            <p>شارك هذا الكود مع صديقك للانضمام:</p>
+            <h1 id="room-code-display" class="title mt-10" style="letter-spacing: 6px; user-select: all; cursor: pointer;" onclick="copyRoomCode()">...</h1>
+            <p id="copy-status" style="color:#10b981; font-weight:bold;"></p>
+            
+            <div class="players-list-box mt-20">
+                <h3>المتنافسون (<span id="host-players-count">1</span>/2):</h3>
+                <ul id="host-players-list" style="list-style: none; padding: 0;">
+                    <li>أنت (المضيف)</li>
+                </ul>
+            </div>
+            
+            <button class="btn btn-primary mt-30" id="start-online-btn" onclick="startOnlineGame()" disabled>بدء المباراة (يتطلب انضمام صديق)</button>
+            <button class="btn btn-secondary mt-10" onclick="leaveRoom()">إلغاء الغرفة</button>
+        </div>
+
+        <!-- Join Screen (Online P2P) -->
+        <div id="join-screen" class="screen">
+            <h2>الانضمام لغرفة 🔗</h2>
+            <p class="mt-20">أدخل اسمك:</p>
+            <input type="text" id="player-name-input" class="form-input mt-10" placeholder="اسمك (مثال: أحمد)">
+            
+            <p class="mt-20">أدخل كود الغرفة (4 أحرف):</p>
+            <input type="text" id="room-code-input" class="form-input mt-10" placeholder="مثال: ABCD" style="text-transform: uppercase;" maxlength="4">
+            
+            <p id="join-status" class="mt-10" style="color: #facc15;"></p>
+            
+            <button class="btn btn-primary mt-20" onclick="joinRoom()">انضمام الآن</button>
+            <button class="btn btn-secondary mt-10" onclick="showScreen('menu-screen')">عودة</button>
+        </div>
+
+        <!-- Guest Waiting Screen -->
+        <div id="guest-waiting-screen" class="screen">
+            <h2>تم الانضمام بنجاح! ✅</h2>
+            <p class="mt-20">أنت في غرفة <span id="guest-room-id" style="color:#fcd34d"></span></p>
+            <p class="mt-10">في انتظار المضيف لبدء المباراة...</p>
+            <button class="btn btn-secondary mt-30" onclick="leaveRoom()">خروج من الغرفة</button>
+        </div>
+
+        <!-- Game Screen (Strictly Two Perfect Circular Cards, NO center card) -->
+        <div id="game-screen" class="screen">
+            <div class="game-header-bar">
+                <button class="btn btn-secondary btn-sm" onclick="leaveRoom()">⬅️ خروج</button>
+                <div class="target-score-badge">الهدف: <span id="target-score-num">10</span> نقاط</div>
+            </div>
+
+            <!-- 2-Player Arena (Top Circle & Bottom Circle ONLY) -->
+            <div class="arena-2p-container">
+                <!-- Top Circular Card (Player 1 / AI Bot / Friend) -->
+                <div class="player-slot top-slot" id="slot-top">
+                    <div class="player-badge" id="name-top">الخصم (الذكاء الاصطناعي): <span id="score-top">0</span></div>
+                    <div class="circle-card" id="card-top"></div>
+                </div>
+
+                <!-- Divider vs badge -->
+                <div class="vs-divider">
+                    <span class="vs-badge">VS</span>
+                </div>
+
+                <!-- Bottom Circular Card (Player 2 / Me) -->
+                <div class="player-slot bottom-slot" id="slot-bottom">
+                    <div class="circle-card" id="card-bottom"></div>
+                    <div class="player-badge" id="name-bottom">أنت: <span id="score-bottom">0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Winner Screen -->
+        <div id="winner-screen" class="screen">
+            <h1 class="title">انتهت المباراة! 🏆</h1>
+            <h2 class="mt-20">الفائز هو: <span id="winner-name" style="color:#facc15;"></span> 🎉</h2>
+            <div class="mt-30 flex gap-3">
+                <button class="btn btn-primary" onclick="restartCurrentGame()">لعب جولة أخرى 🔄</button>
+                <button class="btn btn-secondary" onclick="showScreen('menu-screen')">العودة للرئيسية</button>
+            </div>
+        </div>
+
+        <!-- Pro Subscription Prompt Modal -->
+        <div id="pro-modal" class="modal-backdrop hidden">
+            <div class="modal-card">
+                <div class="pro-crown">👑</div>
+                <h2>مطابقة أونلاين Pro</h2>
+                <p>خيار المطابقة الجماعية الفورية أونلاين ضد لاعبين عشوائيين مخصص للمشتركين في الباقة الاحترافية Super Pro.</p>
+                <div class="pro-benefits">
+                    <div>✓ مطابقة تلقائية خلال ثوانٍ</div>
+                    <div>✓ حفظ إحصائيات الفوز في قائمة الترتيب العالمية</div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="closeProModal()">إغلاق</button>
+                    <button class="btn btn-primary" style="background:#f59e0b;" onclick="closeProModal()">ترقية إلى Pro 👑</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>

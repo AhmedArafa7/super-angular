@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>الرسم والتخمين</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Menu Screen -->
+        <div id="menu-screen" class="screen active">
+            <h1 class="title">الرسم والتخمين 🎨</h1>
+            <p class="subtitle">هل أنت فنان؟ دع أصدقاءك يحكمون!</p>
+            
+            <div class="lobby-box mt-30">
+                <button class="btn btn-primary" onclick="showLocalSetup()">🕹️ لعب محلي (جهاز واحد)</button>
+                <button class="btn btn-primary mt-10" onclick="showCreateRoom()" style="background-color: #f59e0b; color: #000;">🌐 إنشاء غرفة (مضيف)</button>
+                <button class="btn btn-secondary mt-10" onclick="showJoinRoom()">🔗 الانضمام لغرفة</button>
+                <button class="btn btn-secondary mt-10" onclick="window.history.back()">العودة للأركيد</button>
+            </div>
+        </div>
+
+        <!-- Local Setup Screen -->
+        <div id="local-setup-screen" class="screen">
+            <h2>إعداد اللعب المحلي</h2>
+            <div class="settings-box mt-20">
+                <p>عدد جولات الرسم:</p>
+                <div class="stepper">
+                    <button onclick="changeLocalRounds(-1)">-</button>
+                    <span id="local-rounds-count">3</span>
+                    <button onclick="changeLocalRounds(1)">+</button>
+                </div>
+            </div>
+            
+            <button class="btn btn-primary mt-30" onclick="startLocalGame()">بدء اللعب المحلي</button>
+            <button class="btn btn-secondary mt-10" onclick="showScreen('menu-screen')">العودة</button>
+        </div>
+
+        <!-- Host Screen (Online) -->
+        <div id="host-screen" class="screen">
+            <h2 style="color: #facc15;">أنت المضيف 👑</h2>
+            <p>شارك هذا الكود مع أصدقائك:</p>
+            <h1 id="room-code-display" class="title mt-10" style="letter-spacing: 5px; user-select: all;">...</h1>
+            
+            <div class="settings-box mt-20">
+                <h3>اللاعبون المتواجدون (<span id="host-players-count">1</span>):</h3>
+                <ul id="host-players-list" style="list-style: none; padding: 0;">
+                    <li>أنت (المضيف)</li>
+                </ul>
+            </div>
+            
+            <div class="settings-box mt-20">
+                <p>عدد جولات الرسم:</p>
+                <div class="stepper">
+                    <button onclick="changeRounds(-1)">-</button>
+                    <span id="rounds-count">3</span>
+                    <button onclick="changeRounds(1)">+</button>
+                </div>
+            </div>
+            
+            <button class="btn btn-primary mt-30" id="start-online-btn" onclick="startOnlineGame()" disabled>بدء اللعبة (يتطلب لاعبين على الأقل)</button>
+            <button class="btn btn-secondary mt-10" onclick="leaveRoom()">إلغاء</button>
+        </div>
+
+        <!-- Join Screen (Online) -->
+        <div id="join-screen" class="screen">
+            <h2>الانضمام لغرفة</h2>
+            <p class="mt-20">أدخل اسمك:</p>
+            <input type="text" id="player-name-input" class="form-input mt-10" placeholder="اسمك (مثال: أحمد)">
+            
+            <p class="mt-20">أدخل كود الغرفة:</p>
+            <input type="text" id="room-code-input" class="form-input mt-10" placeholder="مثال: ABCD" style="text-transform: uppercase;" maxlength="4">
+            
+            <p id="join-status" class="mt-10" style="color: #facc15;"></p>
+            
+            <button class="btn btn-primary mt-20" onclick="joinRoom()">انضمام</button>
+            <button class="btn btn-secondary mt-10" onclick="showScreen('menu-screen')">عودة</button>
+        </div>
+
+        <!-- Guest Waiting Screen (Online) -->
+        <div id="guest-waiting-screen" class="screen">
+            <h2>تم الانضمام بنجاح! ✅</h2>
+            <p class="mt-20">أنت في غرفة <span id="guest-room-id" style="color:#fcd34d"></span></p>
+            <p class="mt-10">في انتظار المضيف لبدء اللعبة...</p>
+            
+            <div class="settings-box mt-20">
+                <h3>اللاعبون المتواجدون:</h3>
+                <ul id="guest-players-list" style="list-style: none; padding: 0;"></ul>
+            </div>
+            
+            <button class="btn btn-secondary mt-30" onclick="leaveRoom()">خروج</button>
+        </div>
+
+        <!-- Word Reveal Screen (Shared) -->
+        <div id="word-reveal-screen" class="screen">
+            <h2 id="role-title">دورك الآن في الرسم!</h2>
+            <p id="role-desc">انظر للكلمة ولا تخبر أحداً بها:</p>
+            
+            <div class="secret-word-box">
+                <h1 id="secret-word">...</h1>
+            </div>
+            
+            <button class="btn btn-primary" id="start-drawing-btn" onclick="startDrawingPhase()">بدأت، دعنا نرسم! 🖌️</button>
+            <p id="wait-drawer-msg" class="hidden mt-20" style="color:#facc15;">في انتظار الرسام للبدء...</p>
+        </div>
+
+        <!-- Drawing Screen (Shared) -->
+        <div id="drawing-screen" class="screen">
+            <div class="header">
+                <div class="timer" id="timer-display">90</div>
+                <div class="status" id="drawing-status">ارسم ليخمن أصدقاؤك!</div>
+            </div>
+            
+            <div class="canvas-container">
+                <canvas id="drawing-canvas"></canvas>
+            </div>
+            
+            <div class="toolbar" id="drawer-toolbar">
+                <div class="colors">
+                    <button class="color-btn active" style="background: #000000;" onclick="setColor('#000000', this)"></button>
+                    <button class="color-btn" style="background: #ef4444;" onclick="setColor('#ef4444', this)"></button>
+                    <button class="color-btn" style="background: #3b82f6;" onclick="setColor('#3b82f6', this)"></button>
+                    <button class="color-btn" style="background: #10b981;" onclick="setColor('#10b981', this)"></button>
+                    <button class="color-btn" style="background: #f59e0b;" onclick="setColor('#f59e0b', this)"></button>
+                </div>
+                
+                <div class="actions">
+                    <button class="action-btn" onclick="emitClearCanvas()">🗑️ مسح</button>
+                    <button class="action-btn" id="eraser-btn" onclick="toggleEraser()">🧹 ممحاة</button>
+                </div>
+            </div>
+            
+            <!-- Guessing UI for Guests (Online) -->
+            <div class="guessing-ui hidden" id="guesser-ui">
+                <input type="text" id="guess-input" class="form-input" placeholder="اكتب تخمينك هنا...">
+                <button class="btn btn-primary mt-10" onclick="submitGuess()">إرسال التخمين</button>
+            </div>
+
+            <!-- Host Controls during drawing (Online) -->
+            <div class="drawing-controls hidden" id="host-drawing-controls">
+                <button class="btn btn-danger" onclick="endDrawingPhase('timeout')">إنهاء الوقت ❌</button>
+            </div>
+
+            <!-- Local Game Controls during drawing -->
+            <div class="drawing-controls hidden" id="local-drawing-controls">
+                <button class="btn btn-success" onclick="endDrawingPhase('guessed')">خمنها أحدهم! ✅</button>
+                <button class="btn btn-danger" onclick="endDrawingPhase('timeout')">استسلموا ❌</button>
+            </div>
+        </div>
+
+        <!-- Score Screen (Shared) -->
+        <div id="score-screen" class="screen">
+            <h1 class="title" id="round-result-title">انتهت الجولة!</h1>
+            <p id="round-result-word">الكلمة كانت: </p>
+            
+            <div class="settings-box mt-20" id="online-scoreboard" style="display:none;">
+                <h2>النتائج:</h2>
+                <ul id="score-board-list" style="list-style: none; padding: 0;"></ul>
+            </div>
+            <div class="settings-box mt-20" id="local-scoreboard" style="display:none;">
+                <h2>الرسمات الصحيحة: <span id="local-total-score">0</span></h2>
+            </div>
+            
+            <div id="host-score-controls" class="hidden mt-30">
+                <button class="btn btn-primary" id="next-round-btn" onclick="hostNextRound()">الجولة التالية</button>
+            </div>
+            <div id="guest-score-wait" class="hidden mt-30">
+                <p style="color: #fcd34d;">في انتظار المضيف لبدء الجولة القادمة...</p>
+            </div>
+            
+            <!-- Local Next -->
+            <div id="local-score-controls" class="hidden mt-30">
+                <button class="btn btn-primary" id="local-next-round-btn" onclick="localNextRound()">الجولة التالية</button>
+                <button class="btn btn-secondary mt-10 hidden" id="local-finish-btn" onclick="leaveRoom()">إنهاء</button>
+            </div>
+            
+            <button class="btn btn-secondary mt-10 hidden" id="finish-btn" onclick="leaveRoom()">إنهاء والعودة</button>
+        </div>
+    </div>
+    
+    <script src="game.js"></script>
+</body>
+</html>
