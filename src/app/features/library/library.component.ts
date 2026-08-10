@@ -29,6 +29,13 @@ export interface PageImageFilter {
   rotation: number;   // 0, 90, 180, 270
 }
 
+export interface PageNote {
+  id: string;
+  text: string;
+  color: 'gold' | 'emerald' | 'crimson' | 'sky' | 'violet';
+  createdAt: string;
+}
+
 export interface BookPage {
   id: string;
   type: 'image' | 'text' | 'blank';
@@ -40,6 +47,7 @@ export interface BookPage {
   filter: PageImageFilter;
   selected?: boolean;
   isOcrLoading?: boolean;
+  notes?: PageNote[];
 }
 
 export interface Book {
@@ -388,6 +396,8 @@ export class LibraryComponent {
   readerFontSize = 18; // in px
   readerTheme: 'dark' | 'sepia' | 'light' = 'dark';
   readerMode: 'text' | 'pdf' | 'pages' = 'text';
+  isTwoPageMode = false;
+  pageZoom = 1.0; // 1.0 to 3.5
 
   // --- ADVANCED BOOK STUDIO & CREATOR STATE ---
   showBookStudioDialog = false;
@@ -403,7 +413,12 @@ export class LibraryComponent {
     pages: [] as BookPage[]
   };
 
+  editingBookId: string | null = null;
+  newNoteText = '';
+  newNoteColor: 'gold' | 'emerald' | 'crimson' | 'sky' | 'violet' = 'gold';
+
   selectedPageIndex = 0;
+  targetPageNumber: number | null = null;
   isProcessingStudioPublish = false;
   isBulkOcrRunning = false;
 
@@ -448,6 +463,20 @@ export class LibraryComponent {
 
   constructor() {
     this.loadBooks();
+    this.checkPendingDraftOnStartup();
+  }
+
+  async checkPendingDraftOnStartup() {
+    try {
+      const stored = localStorage.getItem('SUPER_BOOK_STUDIO_DRAFT');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.studioBook && (parsed.studioBook.pages?.length > 0 || parsed.studioBook.title)) {
+          this.hasSavedDraft = true;
+          this.draftSavedAt = parsed.savedAt || '';
+        }
+      }
+    } catch (e) {}
   }
 
   getSafeUrl(url: string): SafeResourceUrl {
@@ -808,13 +837,28 @@ export class LibraryComponent {
   // --- IN-APP READER HANDLERS ---
   openBookReader(book: Book) {
     this.selectedBookForReading = book;
-    this.activeChapterIndex = 0;
-    this.activePageIndex = 0;
-
-    if (book.pages && book.pages.length > 0) {
-      this.readerMode = 'pages';
-    } else {
-      this.readerMode = 'text';
+    this.pageZoom = 1.0;
+    
+    // Restore saved progress if any
+    try {
+      const savedProgress = localStorage.getItem(`SUPER_BOOK_PROGRESS_${book.id}`);
+      if (savedProgress) {
+        const parsed = JSON.parse(savedProgress);
+        this.activeChapterIndex = parsed.chapterIndex || 0;
+        this.activePageIndex = parsed.pageIndex || 0;
+        this.readerMode = parsed.readerMode || (book.pages && book.pages.length > 0 ? 'pages' : 'text');
+        this.isTwoPageMode = parsed.isTwoPageMode || false;
+      } else {
+        this.activeChapterIndex = 0;
+        this.activePageIndex = 0;
+        this.readerMode = book.pages && book.pages.length > 0 ? 'pages' : 'text';
+        this.isTwoPageMode = false;
+      }
+    } catch (e) {
+      this.activeChapterIndex = 0;
+      this.activePageIndex = 0;
+      this.readerMode = book.pages && book.pages.length > 0 ? 'pages' : 'text';
+      this.isTwoPageMode = false;
     }
 
     // Increment download/view count
@@ -824,35 +868,100 @@ export class LibraryComponent {
   }
 
   closeBookReader() {
+    this.saveCurrentProgress();
     this.selectedBookForReading = null;
+  }
+
+  saveCurrentProgress() {
+    if (!this.selectedBookForReading) return;
+    try {
+      const progressPayload = {
+        chapterIndex: this.activeChapterIndex,
+        pageIndex: this.activePageIndex,
+        readerMode: this.readerMode,
+        isTwoPageMode: this.isTwoPageMode,
+        updatedAt: Date.now()
+      };
+      localStorage.setItem(`SUPER_BOOK_PROGRESS_${this.selectedBookForReading.id}`, JSON.stringify(progressPayload));
+    } catch (e) {}
+  }
+
+  toggleTwoPageMode() {
+    this.isTwoPageMode = !this.isTwoPageMode;
+    this.saveCurrentProgress();
   }
 
   nextChapter() {
     if (this.selectedBookForReading?.chapters && this.activeChapterIndex < this.selectedBookForReading.chapters.length - 1) {
       this.activeChapterIndex++;
+      this.saveCurrentProgress();
     }
   }
 
   prevChapter() {
     if (this.activeChapterIndex > 0) {
       this.activeChapterIndex--;
+      this.saveCurrentProgress();
     }
   }
 
   nextPage() {
-    if (this.selectedBookForReading?.pages && this.activePageIndex < this.selectedBookForReading.pages.length - 1) {
-      this.activePageIndex++;
+    const step = this.isTwoPageMode ? 2 : 1;
+    if (this.selectedBookForReading?.pages && this.activePageIndex < this.selectedBookForReading.pages.length - step) {
+      this.activePageIndex += step;
+      this.saveCurrentProgress();
+    } else if (this.selectedBookForReading?.pages && this.activePageIndex < this.selectedBookForReading.pages.length - 1) {
+      this.activePageIndex = this.selectedBookForReading.pages.length - 1;
+      this.saveCurrentProgress();
     }
   }
 
   prevPage() {
-    if (this.activePageIndex > 0) {
-      this.activePageIndex--;
+    const step = this.isTwoPageMode ? 2 : 1;
+    if (this.activePageIndex >= step) {
+      this.activePageIndex -= step;
+      this.saveCurrentProgress();
+    } else if (this.activePageIndex > 0) {
+      this.activePageIndex = 0;
+      this.saveCurrentProgress();
+    }
+  }
+
+  jumpToPage(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input || !this.selectedBookForReading?.pages) return;
+    const pageNum = parseInt(input.value, 10);
+    if (!isNaN(pageNum)) {
+      const targetIndex = Math.max(0, Math.min(pageNum - 1, this.selectedBookForReading.pages.length - 1));
+      this.activePageIndex = targetIndex;
+      this.saveCurrentProgress();
+    }
+  }
+
+  jumpToChapter(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    if (!select || !this.selectedBookForReading?.chapters) return;
+    const chapterIndex = parseInt(select.value, 10);
+    if (!isNaN(chapterIndex)) {
+      this.activeChapterIndex = Math.max(0, Math.min(chapterIndex, this.selectedBookForReading.chapters.length - 1));
+      this.saveCurrentProgress();
     }
   }
 
   changeFontSize(delta: number) {
-    this.readerFontSize = Math.max(14, Math.min(28, this.readerFontSize + delta));
+    this.readerFontSize = Math.max(12, Math.min(48, this.readerFontSize + delta));
+  }
+
+  zoomIn() {
+    this.pageZoom = Math.min(3.5, this.pageZoom + 0.25);
+  }
+
+  zoomOut() {
+    this.pageZoom = Math.max(1.0, this.pageZoom - 0.25);
+  }
+
+  resetZoom() {
+    this.pageZoom = 1.0;
   }
 
   setReaderTheme(theme: 'dark' | 'sepia' | 'light') {
@@ -988,7 +1097,178 @@ export class LibraryComponent {
   // --- ADVANCED BOOK STUDIO & CREATOR LOGIC ---
   // ==========================================
 
-  openBookStudio() {
+  hasSavedDraft = false;
+  draftSavedAt = '';
+
+  async saveStudioDraft(silent = true) {
+    if (this.studioBook.pages.length === 0 && !this.studioBook.title.trim()) {
+      return;
+    }
+
+    const savedAtStr = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+    this.draftSavedAt = savedAtStr;
+    this.hasSavedDraft = true;
+
+    const draftPayload = {
+      id: 'studio_draft',
+      studioBook: this.studioBook,
+      studioTab: this.studioTab,
+      selectedPageIndex: this.selectedPageIndex,
+      targetPageNumber: this.targetPageNumber,
+      savedAt: savedAtStr
+    };
+
+    try {
+      localStorage.setItem('SUPER_BOOK_STUDIO_DRAFT', JSON.stringify(draftPayload));
+    } catch (e) {
+      console.warn('LocalStorage draft fallback');
+    }
+
+    try {
+      await this.indexedDb.put('personal_pdf_books', {
+        id: 'SUPER_STUDIO_DRAFT_IDB',
+        draftPayload,
+        savedAt: savedAtStr
+      });
+    } catch (e) {}
+
+    if (!silent) {
+      this.toast.show('تم حفظ مسودة العمل بنجاح!', 'success');
+    }
+  }
+
+  async loadStudioDraft(): Promise<boolean> {
+    let draftPayload: any = null;
+
+    try {
+      const stored = localStorage.getItem('SUPER_BOOK_STUDIO_DRAFT');
+      if (stored) {
+        draftPayload = JSON.parse(stored);
+      }
+    } catch (e) {}
+
+    if (!draftPayload) {
+      try {
+        const storedIdb = await this.indexedDb.get('personal_pdf_books', 'SUPER_STUDIO_DRAFT_IDB');
+        if (storedIdb && storedIdb.draftPayload) {
+          draftPayload = storedIdb.draftPayload;
+        }
+      } catch (e) {}
+    }
+
+    if (draftPayload && draftPayload.studioBook && (draftPayload.studioBook.pages?.length > 0 || draftPayload.studioBook.title)) {
+      this.studioBook = draftPayload.studioBook;
+      this.studioTab = draftPayload.studioTab || 'pages';
+      this.selectedPageIndex = Math.max(0, Math.min(draftPayload.selectedPageIndex || 0, (this.studioBook.pages.length || 1) - 1));
+      this.targetPageNumber = draftPayload.targetPageNumber || null;
+      this.draftSavedAt = draftPayload.savedAt || '';
+      this.hasSavedDraft = true;
+
+      // Re-render filtered page images to guarantee Canvas filters are rendered
+      this.studioBook.pages.forEach(page => {
+        if (page.type === 'image') {
+          this.renderFilteredPageImage(page);
+        }
+      });
+
+      return true;
+    }
+
+    return false;
+  }
+
+  async clearStudioDraft() {
+    this.hasSavedDraft = false;
+    this.draftSavedAt = '';
+    try {
+      localStorage.removeItem('SUPER_BOOK_STUDIO_DRAFT');
+    } catch (e) {}
+    try {
+      await this.indexedDb.delete('personal_pdf_books', 'SUPER_STUDIO_DRAFT_IDB');
+    } catch (e) {}
+  }
+
+  openBookStudioForEdit(book: Book) {
+    this.editingBookId = book.id;
+    this.studioBook = {
+      title: book.title || '',
+      author: book.author || '',
+      description: book.description || '',
+      category: book.category || 'روايات مصرية',
+      coverUrl: book.coverUrl || '',
+      pages: book.pages && book.pages.length > 0 ? JSON.parse(JSON.stringify(book.pages)) : []
+    };
+
+    if (this.studioBook.pages.length === 0 && book.chapters && book.chapters.length > 0) {
+      this.studioBook.pages = book.chapters.map((c, i) => ({
+        id: 'page_ch_' + i + '_' + Date.now(),
+        type: 'text',
+        textTitle: c.title,
+        textContent: c.content,
+        filter: this.createDefaultFilter(),
+        selected: false
+      }));
+    }
+
+    this.selectedPageIndex = 0;
+    this.studioTab = 'pages';
+    this.showBookStudioDialog = true;
+    this.toast.show(`فتح وضع التعديل لكتاب "${book.title}"`, 'info');
+  }
+
+  addNoteToPage(page: BookPage) {
+    if (!this.newNoteText.trim()) {
+      this.toast.show('يرجى كتابة نص الملاحظة أولاً', 'warning');
+      return;
+    }
+    if (!page.notes) {
+      page.notes = [];
+    }
+    page.notes.push({
+      id: 'note_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
+      text: this.newNoteText.trim(),
+      color: this.newNoteColor,
+      createdAt: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+    });
+    this.newNoteText = '';
+    this.saveStudioDraft(true);
+    this.toast.show('تمت إضافة الملاحظة الملونة بنجاح!', 'success');
+  }
+
+  deleteNoteFromPage(page: BookPage, noteId: string) {
+    if (page.notes) {
+      page.notes = page.notes.filter(n => n.id !== noteId);
+      this.saveStudioDraft(true);
+      this.toast.show('تم حذف الملاحظة', 'info');
+    }
+  }
+
+  async openBookStudio() {
+    this.editingBookId = null;
+    const loaded = await this.loadStudioDraft();
+    if (loaded) {
+      this.toast.show(`تم استرجاع مسودة الكتاب المحفوظة تلقائياً (${this.studioBook.pages.length} صفحة)`, 'info');
+    } else {
+      this.studioBook = {
+        title: '',
+        author: '',
+        description: '',
+        category: 'روايات مصرية',
+        coverUrl: '',
+        pages: []
+      };
+      this.selectedPageIndex = 0;
+      this.studioTab = 'pages';
+    }
+    this.showBookStudioDialog = true;
+  }
+
+  async resetOrStartFreshStudio() {
+    const confirmClear = await this.toast.confirm('هل أنت متأكد من مسح مسودة الكتاب الحالية والبدء بكتاب جديد فارغ؟');
+    if (!confirmClear) return;
+
+    await this.clearStudioDraft();
+    this.editingBookId = null;
     this.studioBook = {
       title: '',
       author: '',
@@ -998,12 +1278,11 @@ export class LibraryComponent {
       pages: []
     };
     this.selectedPageIndex = 0;
-    this.studioTab = 'pages';
-    this.studioBookMode = 'image';
-    this.showBookStudioDialog = true;
+    this.toast.show('تم مسح المسودة والبدء بكتاب جديد', 'info');
   }
 
   closeBookStudio() {
+    this.saveStudioDraft(true);
     this.showBookStudioDialog = false;
   }
 
@@ -1018,44 +1297,217 @@ export class LibraryComponent {
     };
   }
 
-  onStudioImagesSelected(event: Event) {
+  async onStudioImagesSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
 
     const files = Array.from(input.files);
-    files.forEach((file, idx) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string;
-        const newPage: BookPage = {
-          id: 'page_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
-          type: 'image',
-          imageUrl: dataUrl,
-          processedImageUrl: dataUrl,
-          filter: this.createDefaultFilter(),
-          selected: false
+
+    const readPromises = files.map(file => {
+      return new Promise<{ dataUrl: string; fileName: string }>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          resolve({
+            dataUrl: e.target?.result as string,
+            fileName: file.name
+          });
         };
-        this.studioBook.pages.push(newPage);
-        this.renderFilteredPageImage(newPage);
-
-        // Auto set coverUrl if empty
-        if (!this.studioBook.coverUrl) {
-          this.studioBook.coverUrl = dataUrl;
-        }
-
-        // Auto set title if empty
-        if (!this.studioBook.title && idx === 0 && this.studioBook.pages.length === 1) {
-          this.studioBook.title = file.name.replace(/\.[^/.]+$/, "");
-        }
-      };
-      reader.readAsDataURL(file);
+        reader.readAsDataURL(file);
+      });
     });
+
+    const results = await Promise.all(readPromises);
+    const newPages: BookPage[] = results.map(res => {
+      const page: BookPage = {
+        id: 'page_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+        type: 'image',
+        imageUrl: res.dataUrl,
+        processedImageUrl: res.dataUrl,
+        filter: this.createDefaultFilter(),
+        selected: false
+      };
+      this.renderFilteredPageImage(page);
+      return page;
+    });
+
+    // Auto set coverUrl if empty
+    if (!this.studioBook.coverUrl && newPages.length > 0) {
+      this.studioBook.coverUrl = newPages[0].imageUrl || '';
+    }
+
+    // Auto set title if empty
+    if (!this.studioBook.title && results.length > 0 && this.studioBook.pages.length === 0) {
+      this.studioBook.title = results[0].fileName.replace(/\.[^/.]+$/, "");
+    }
+
+    // Determine insertion position based on currently selected page
+    const hasSelectedPage = this.selectedPageIndex >= 0 && this.selectedPageIndex < this.studioBook.pages.length;
+
+    if (hasSelectedPage) {
+      const selectedPage = this.studioBook.pages[this.selectedPageIndex];
+      
+      if (selectedPage.type === 'blank') {
+        // REPLACE the selected blank page at its exact position!
+        const targetIndex = this.selectedPageIndex;
+        this.studioBook.pages.splice(targetIndex, 1, ...newPages);
+        this.selectedPageIndex = targetIndex;
+        this.toast.show(`تم استبدال الصفحة الفارغة بـ ${newPages.length} صورة!`, 'success');
+      } else {
+        // Insert immediately after the currently selected page
+        const targetIndex = this.selectedPageIndex + 1;
+        this.studioBook.pages.splice(targetIndex, 0, ...newPages);
+        this.selectedPageIndex = targetIndex;
+        this.toast.show(`تم إضافة ${newPages.length} صورة في موقع الصفحة المحددة!`, 'success');
+      }
+    } else {
+      // Append to the end if no page is selected
+      const insertAt = this.studioBook.pages.length;
+      this.studioBook.pages.push(...newPages);
+      this.selectedPageIndex = insertAt;
+      this.toast.show(`تم إضافة ${newPages.length} صورة صفحة`, 'success');
+    }
 
     input.value = '';
   }
 
+  async uploadImageToSpecificPageNumber(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const targetPageNum = this.targetPageNumber;
+    if (!targetPageNum || targetPageNum < 1) {
+      this.toast.show('يرجى كتابة رقم الصفحة المطلوبة أولاً (مثال: 23)', 'error');
+      input.value = '';
+      return;
+    }
+
+    const targetIndex = targetPageNum - 1; // 0-indexed index for Page N
+
+    // Automatically generate blank pages up to targetIndex if they don't exist yet!
+    let generatedCount = 0;
+    while (this.studioBook.pages.length < targetIndex) {
+      const blankNum = this.studioBook.pages.length + 1;
+      this.studioBook.pages.push({
+        id: 'blank_' + Date.now() + '_' + blankNum + '_' + Math.random().toString(36).substring(2, 5),
+        type: 'blank',
+        textTitle: `صفحة فارغة #${blankNum}`,
+        textContent: `(صفحة فارغة تلقائية #${blankNum})`,
+        filter: this.createDefaultFilter(),
+        selected: false
+      });
+      generatedCount++;
+    }
+
+    const files = Array.from(input.files);
+    const readPromises = files.map(file => {
+      return new Promise<{ dataUrl: string; fileName: string }>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          resolve({
+            dataUrl: e.target?.result as string,
+            fileName: file.name
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    const results = await Promise.all(readPromises);
+    const newPages: BookPage[] = results.map(res => {
+      const page: BookPage = {
+        id: 'page_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+        type: 'image',
+        imageUrl: res.dataUrl,
+        processedImageUrl: res.dataUrl,
+        filter: this.createDefaultFilter(),
+        selected: false
+      };
+      this.renderFilteredPageImage(page);
+      return page;
+    });
+
+    // Auto set cover if empty
+    if (!this.studioBook.coverUrl && newPages.length > 0) {
+      this.studioBook.coverUrl = newPages[0].imageUrl || '';
+    }
+
+    // Insert or replace at targetIndex
+    if (targetIndex < this.studioBook.pages.length) {
+      const existingPage = this.studioBook.pages[targetIndex];
+      if (existingPage.type === 'blank') {
+        // Replace the blank page at targetIndex directly
+        this.studioBook.pages.splice(targetIndex, 1, ...newPages);
+      } else {
+        // Insert right at targetIndex
+        this.studioBook.pages.splice(targetIndex, 0, ...newPages);
+      }
+    } else {
+      // Append at targetIndex
+      this.studioBook.pages.push(...newPages);
+    }
+
+    this.selectedPageIndex = targetIndex;
+    if (generatedCount > 0) {
+      this.toast.show(`تم توليد ${generatedCount} صفحة فارغة وإضافة الصورة بالصفحة رقم ${targetPageNum} بنجاح!`, 'success');
+    } else {
+      this.toast.show(`تم إضافة الصورة بالصفحة رقم ${targetPageNum} بنجاح!`, 'success');
+    }
+    input.value = '';
+  }
+
+  generateBlankPagesUpTo(targetNum: number) {
+    if (!targetNum || targetNum < 1) return;
+    const targetCount = targetNum - 1;
+    let added = 0;
+    while (this.studioBook.pages.length < targetCount) {
+      const blankNum = this.studioBook.pages.length + 1;
+      this.studioBook.pages.push({
+        id: 'blank_' + Date.now() + '_' + blankNum + '_' + Math.random().toString(36).substring(2, 5),
+        type: 'blank',
+        textTitle: `صفحة فارغة #${blankNum}`,
+        textContent: `(صفحة فارغة تلقائية #${blankNum})`,
+        filter: this.createDefaultFilter(),
+        selected: false
+      });
+      added++;
+    }
+    if (added > 0) {
+      this.toast.show(`تم إدراج ${added} صفحة فارغة تلقائياً وصولاً للصفحة #${targetNum - 1}`, 'info');
+    }
+  }
+
+  movePageToPosition(fromIdx: number, newPageNumber: number) {
+    if (newPageNumber < 1) return;
+    const targetIdx = newPageNumber - 1;
+
+    // Pad blank pages if targetIdx exceeds current page count
+    while (this.studioBook.pages.length <= targetIdx) {
+      const blankNum = this.studioBook.pages.length + 1;
+      this.studioBook.pages.push({
+        id: 'blank_' + Date.now() + '_' + blankNum,
+        type: 'blank',
+        textTitle: `صفحة فارغة #${blankNum}`,
+        textContent: `(صفحة فارغة تلقائية #${blankNum})`,
+        filter: this.createDefaultFilter(),
+        selected: false
+      });
+    }
+
+    const page = this.studioBook.pages.splice(fromIdx, 1)[0];
+    this.studioBook.pages.splice(targetIdx, 0, page);
+    this.selectedPageIndex = targetIdx;
+    this.toast.show(`تم نقل الصفحة لتعين برقم ${newPageNumber}`, 'info');
+  }
+
   insertBlankPage(atIndex?: number) {
-    const targetIdx = atIndex !== undefined ? atIndex : this.studioBook.pages.length;
+    let targetIdx = atIndex;
+    if (targetIdx === undefined) {
+      if (this.selectedPageIndex >= 0 && this.selectedPageIndex < this.studioBook.pages.length) {
+        targetIdx = this.selectedPageIndex + 1;
+      } else {
+        targetIdx = this.studioBook.pages.length;
+      }
+    }
     const blankPage: BookPage = {
       id: 'blank_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
       type: 'blank',
@@ -1070,7 +1522,14 @@ export class LibraryComponent {
   }
 
   addTextPageToStudio(atIndex?: number) {
-    const targetIdx = atIndex !== undefined ? atIndex : this.studioBook.pages.length;
+    let targetIdx = atIndex;
+    if (targetIdx === undefined) {
+      if (this.selectedPageIndex >= 0 && this.selectedPageIndex < this.studioBook.pages.length) {
+        targetIdx = this.selectedPageIndex + 1;
+      } else {
+        targetIdx = this.studioBook.pages.length;
+      }
+    }
     const textPage: BookPage = {
       id: 'text_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
       type: 'text',
@@ -1287,7 +1746,8 @@ export class LibraryComponent {
 
   async publishStudioBook() {
     if (!this.studioBook.title.trim()) {
-      this.toast.show('يرجى كتابة عنوان الكتاب', 'error');
+      this.studioTab = 'details';
+      this.toast.show('يرجى كتابة عنوان الكتاب أولاً', 'error');
       return;
     }
 
@@ -1318,11 +1778,13 @@ export class LibraryComponent {
         (this.studioBook.pages.find(p => p.processedImageUrl)?.processedImageUrl) ||
         'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80';
 
-      const newBook: Book = {
-        id: 'studio_book_' + Date.now(),
+      const bookId = this.editingBookId || ('studio_book_' + Date.now());
+
+      const bookPayload: Book = {
+        id: bookId,
         title: this.studioBook.title,
         author: this.studioBook.author || 'المكتبة العامة',
-        description: this.studioBook.description || `كتاب مخصص تم إنشاؤه عبر استوديو الكتب (${this.studioBook.pages.length} صفحة).`,
+        description: this.studioBook.description || `كتاب تم إنشاؤه عبر استوديو الكتب (${this.studioBook.pages.length} صفحة).`,
         coverUrl,
         fileUrl: '',
         category: this.studioBook.category,
@@ -1340,47 +1802,46 @@ export class LibraryComponent {
         pages: [...this.studioBook.pages]
       };
 
-      // 1. Update Signal immediately
-      this.books.update(list => [newBook, ...list]);
+      if (this.editingBookId) {
+        // Update existing book in Signal
+        this.books.update(list => list.map(b => b.id === bookId ? bookPayload : b));
+      } else {
+        // Add new book to Signal
+        this.books.update(list => [bookPayload, ...list]);
+      }
 
-      // 2. Persist to LocalStorage
+      // Persist to LocalStorage
       try {
         const stored = localStorage.getItem('SUPER_INGESTED_BOOKS');
         const list: Book[] = stored ? JSON.parse(stored) : [];
-        list.unshift(newBook);
+        const idx = list.findIndex(b => b.id === bookId);
+        if (idx >= 0) {
+          list[idx] = bookPayload;
+        } else {
+          list.unshift(bookPayload);
+        }
         localStorage.setItem('SUPER_INGESTED_BOOKS', JSON.stringify(list));
       } catch (e) {}
 
-      // 3. Persist to IndexedDB
+      // Persist to IndexedDB
       try {
         await this.indexedDb.put('created_books', {
-          id: newBook.id,
-          title: newBook.title,
-          author: newBook.author,
-          category: newBook.category,
-          bookData: newBook,
-          createdAt: newBook.createdAt
+          id: bookPayload.id,
+          title: bookPayload.title,
+          author: bookPayload.author,
+          category: bookPayload.category,
+          bookData: bookPayload,
+          createdAt: bookPayload.createdAt
         });
       } catch (e) {}
 
-      // 4. Save to Firestore if available
-      try {
-        const db = this.firebase.firestore;
-        await addDoc(collection(db, 'library_books'), {
-          title: newBook.title,
-          author: newBook.author,
-          description: newBook.description,
-          category: newBook.category,
-          coverUrl: newBook.coverUrl,
-          pagesCount: newBook.pagesCount,
-          status: 'approved',
-          uploaderId: 'studio_user',
-          uploaderName: 'صانع الكتب',
-          createdAt: newBook.createdAt
-        });
-      } catch (e) {}
+      const msg = this.editingBookId
+        ? `تم حفظ وتحديث كتاب "${bookPayload.title}" بنجاح!`
+        : `تم نشر كتاب "${bookPayload.title}" في المكتبة بنجاح!`;
 
-      this.toast.show(`تم نشر كتاب "${newBook.title}" في المكتبة بنجاح!`, 'success');
+      this.toast.show(msg, 'success');
+      this.editingBookId = null;
+      await this.clearStudioDraft();
       this.showBookStudioDialog = false;
     } catch (err) {
       console.error('Error publishing studio book:', err);

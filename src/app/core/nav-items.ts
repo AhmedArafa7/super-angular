@@ -63,6 +63,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: "library", label: "المكتبة العامة", icon: "library", restricted: false, isPermanent: true, status: 'NEW', category: 'ai' },
   { id: "directory", label: "دليل المستخدمين", icon: "users", restricted: false, category: 'tools' },
   { id: "hisn", label: "حصن المسلم", icon: "book-open", restricted: false, category: 'tools' },
+  { id: "about", label: "عن الشركة", icon: "building-2", restricted: false, isPermanent: true, status: 'NEW', route: 'about', category: 'core' },
   { id: "features", label: "المميزات", icon: "zap", restricted: false, category: 'tools' },
   { id: "notifications", label: "التنبيهات", icon: "bell", restricted: false, category: 'tools' },
   { id: "settings", label: "الإعدادات", icon: "settings", restricted: false, category: 'tools' },

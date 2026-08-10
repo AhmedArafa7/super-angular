@@ -127,12 +127,20 @@
         </p>
       </div>
 
-      <button 
-        (click)="isFormOpen.set(true)"
-        class="h-11 px-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black text-xs shadow-lg flex items-center gap-2 justify-center transition-all flex-row-reverse">
-        <svg lucideIcon="plus" class="size-4 text-indigo-400"></svg>
-        إضافة تطبيق مخصص
-      </button>
+      <div class="flex items-center gap-3">
+        <a 
+          routerLink="/about"
+          class="h-11 px-5 rounded-2xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 font-black text-xs shadow-lg flex items-center gap-2 justify-center transition-all flex-row-reverse">
+          <svg lucideIcon="building-2" class="size-4 text-indigo-400"></svg>
+          عن الشركة
+        </a>
+        <button 
+          (click)="isFormOpen.set(true)"
+          class="h-11 px-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black text-xs shadow-lg flex items-center gap-2 justify-center transition-all flex-row-reverse">
+          <svg lucideIcon="plus" class="size-4 text-indigo-400"></svg>
+          إضافة تطبيق مخصص
+        </button>
+      </div>
     </header>
 
     <!-- 2. SCROLL CONTAINER -->

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { LucideAngularModule } from 'lucide-angular';
+import { RouterModule } from '@angular/router';
 import { LauncherService, WebProject, AppFramework } from '../../core/launcher.service';
 import { WalletService } from '../../core/wallet.service';
 
@@ -22,7 +23,7 @@ export interface GithubRepoMetadata {
 @Component({
   selector: 'app-launcher',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, RouterModule, LucideAngularModule],
   templateUrl: './launcher.component.html',
   styleUrls: ['./launcher.component.scss']
 })
