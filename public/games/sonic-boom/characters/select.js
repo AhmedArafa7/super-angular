@@ -21,9 +21,10 @@ const CHARACTERS = {
         desc: 'The strong guardian. Slow but powerful.'
     },
     amy: {
-        name: 'Amy', color: 0xFF69B4, accentColor: 0xFFFFFF,
+        name: 'Amy', color: 0xF06292, accentColor: 0xFFFFFF,
         speed: 0.85, abilities: ['Piko Piko Hammer', 'Spin Attack', 'Tarot Reading'],
-        quills: 3, bandana: false, shoes: 0xFF69B4, gloves: true, hammer: true, headband: true, armlet: true, dress: true,
+        quills: 5, bandana: false, shoes: 0xE91E63, gloves: true, hammer: true, headband: true, armlet: true, dress: true,
+        legWraps: true, fingerless: true,
         desc: 'The energetic heroine. Fast and resourceful.'
     },
     sticks: {
@@ -136,23 +137,36 @@ export class CharacterSelect {
         smile.rotation.x = Math.PI;
         group.add(smile);
 
-        // quills — Amy gets upward spiky hair
+        // quills — Amy gets distinctive bob hairstyle with bangs
         if (char.quills > 0) {
-            const quillCount = isAmy ? 3 : char.quills;
-            for (let i = 0; i < quillCount; i++) {
-                const quill = new THREE.Mesh(new THREE.ConeGeometry(isAmy ? 0.18 : 0.15, isAmy ? 1.0 : 1.2, 6), bodyMat);
-                if (isAmy) {
-                    // Amy: spiky hair pointing upward and slightly back
-                    const angle = -0.6 + (i / 2) * 0.6;
-                    quill.position.set((i - 1) * 0.35, 4.1, -0.3);
-                    quill.rotation.x = -0.4 + i * 0.15;
-                    quill.rotation.z = (i - 1) * 0.2;
-                } else {
+            if (isAmy) {
+                // Amy's bob hairstyle: 2 bangs drooping forward + 3 back quills forming bob shape
+                // Front bangs
+                for (let i = 0; i < 2; i++) {
+                    const bang = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.7, 6), bodyMat);
+                    bang.position.set((i - 0.5) * 0.4, 3.95, 0.55);
+                    bang.rotation.x = 0.6; // drooping forward
+                    bang.rotation.z = (i - 0.5) * 0.25;
+                    group.add(bang);
+                }
+                // Back bob quills (rounded, shorter, angled outward)
+                for (let i = 0; i < 3; i++) {
+                    const quill = new THREE.Mesh(new THREE.ConeGeometry(0.22, 1.1, 8), bodyMat);
+                    const spread = (i - 1) * 0.5;
+                    quill.position.set(spread, 3.7, -0.5);
+                    quill.rotation.x = -0.7 - Math.abs(i - 1) * 0.15;
+                    quill.rotation.z = spread * 0.3;
+                    group.add(quill);
+                }
+            } else {
+                const quillCount = char.quills;
+                for (let i = 0; i < quillCount; i++) {
+                    const quill = new THREE.Mesh(new THREE.ConeGeometry(0.15, 1.2, 6), bodyMat);
                     const angle = -0.3 + (i / (char.quills - 1 || 1)) * 0.6;
                     quill.position.set(0, 3.8 - i * 0.3, -0.5 - i * 0.2);
                     quill.rotation.x = angle;
+                    group.add(quill);
                 }
-                group.add(quill);
             }
         }
 
@@ -179,27 +193,60 @@ export class CharacterSelect {
             }
         }
 
-        // gloves
+        // gloves — Amy gets fingerless sports gloves
         if (char.gloves) {
             for (const side of [-1, 1]) {
                 const glove = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), whiteMat);
                 glove.position.set(side * 1.2, 1.8, 0);
                 group.add(glove);
+                if (isAmy) {
+                    // Wrist cuff
+                    const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 0.15, 8), whiteMat);
+                    cuff.position.set(side * 1.2, 1.95, 0);
+                    group.add(cuff);
+                    // Skin-tone upper arm
+                    const upperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.15, 0.6, 6), faceMat);
+                    upperArm.position.set(side * 1.15, 2.2, 0);
+                    group.add(upperArm);
+                }
             }
         }
 
-        // shoes — Amy gets white stripe detail
+        // shoes — Amy gets chunky sporty sneakers from reference
         for (const side of [-1, 1]) {
-            const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.8), shoeMat);
-            shoe.position.set(side * 0.4, 0.15, 0.15);
-            group.add(shoe);
             if (isAmy) {
-                const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.08, 0.82), whiteMat);
-                stripe.position.set(side * 0.4, 0.22, 0.15);
-                group.add(stripe);
-                const sole = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.06, 0.82), whiteMat);
+                // Amy's sporty pink sneakers (chunky, with white sole and straps)
+                const sneaker = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.4, 0.9), shoeMat);
+                sneaker.position.set(side * 0.4, 0.2, 0.15);
+                group.add(sneaker);
+                // White thick sole
+                const sole = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.12, 0.92), whiteMat);
                 sole.position.set(side * 0.4, 0.0, 0.15);
                 group.add(sole);
+                // White toe cap
+                const toeCap = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), whiteMat);
+                toeCap.scale.set(1.3, 0.6, 1);
+                toeCap.position.set(side * 0.4, 0.15, 0.55);
+                group.add(toeCap);
+                // White strap across top
+                const strap = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.06, 0.15), whiteMat);
+                strap.position.set(side * 0.4, 0.35, 0.2);
+                group.add(strap);
+
+                // Leg wraps / knee guards (purple-pink sports wraps)
+                const legWrapMat = new THREE.MeshStandardMaterial({ color: 0xAB47BC, roughness: 0.6 });
+                const legWrap = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 0.5, 8), legWrapMat);
+                legWrap.position.set(side * 0.4, 0.7, 0.1);
+                group.add(legWrap);
+                // Knee guard ring
+                const kneeRing = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.03, 6, 10), legWrapMat);
+                kneeRing.position.set(side * 0.4, 0.95, 0.1);
+                kneeRing.rotation.x = Math.PI / 2;
+                group.add(kneeRing);
+            } else {
+                const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.8), shoeMat);
+                shoe.position.set(side * 0.4, 0.15, 0.15);
+                group.add(shoe);
             }
         }
 
@@ -221,26 +268,42 @@ export class CharacterSelect {
             group.add(band);
         }
 
-        // Amy — Pink headband
+        // Amy — Pink headband (thicker, more prominent as in reference)
         if (char.headband) {
-            const headbandMat = new THREE.MeshStandardMaterial({ color: 0xFF69B4, roughness: 0.5 });
-            const headband = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.07, 8, 16), headbandMat);
-            headband.position.y = 3.7;
+            const headbandMat = new THREE.MeshStandardMaterial({ color: 0xE91E63, roughness: 0.4 });
+            // Thick headband base
+            const headband = new THREE.Mesh(new THREE.TorusGeometry(0.65, 0.1, 10, 20), headbandMat);
+            headband.position.y = 3.85;
             headband.rotation.x = Math.PI / 2;
             group.add(headband);
+            // Top ridge of headband (the raised part visible in reference)
+            const headbandTop = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.12, 0.15), headbandMat);
+            headbandTop.position.set(0, 4.0, 0);
+            group.add(headbandTop);
         }
 
-        // Amy — Athletic dress with white belt
+        // Amy — Athletic dress with broad white belt (darker magenta-pink as in reference)
         if (char.dress) {
-            const dressMat = new THREE.MeshStandardMaterial({ color: 0xFF69B4, roughness: 0.5 });
-            const dress = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.9, 1.2, 12), dressMat);
-            dress.position.y = 1.5;
+            const dressMat = new THREE.MeshStandardMaterial({ color: 0xE91E63, roughness: 0.45 });
+            // Main dress body (flared)
+            const dress = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.95, 1.3, 14), dressMat);
+            dress.position.y = 1.45;
             group.add(dress);
-            const beltMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
-            const belt = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.06, 6, 16), beltMat);
-            belt.position.y = 1.9;
-            belt.rotation.x = Math.PI / 2;
+            // Collar / top edge
+            const collar = new THREE.Mesh(new THREE.TorusGeometry(0.56, 0.04, 6, 14), dressMat);
+            collar.position.y = 2.1;
+            collar.rotation.x = Math.PI / 2;
+            group.add(collar);
+            // Broad white belt (prominent as in reference)
+            const beltMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.25 });
+            const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.18, 14), beltMat);
+            belt.position.y = 1.85;
             group.add(belt);
+            // Belt buckle detail
+            const buckleMat = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.2, metalness: 0.3 });
+            const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.12, 0.06), buckleMat);
+            buckle.position.set(0, 1.85, 0.62);
+            group.add(buckle);
         }
 
         // Amy — Blue/white armlet on left arm
@@ -257,34 +320,53 @@ export class CharacterSelect {
             group.add(armBand2);
         }
 
-        // Amy — Piko Piko Hammer (massive pink head, yellow handle)
+        // Amy — Piko Piko Hammer (massive cylindrical pink head with thick gold bands, long yellow handle)
         if (char.hammer) {
             const hammerGroup = new THREE.Group();
-            const hammerHeadMat = new THREE.MeshStandardMaterial({ color: 0xFF69B4, roughness: 0.4 });
-            const hammerEdgeMat = new THREE.MeshStandardMaterial({ color: 0xFFD700, roughness: 0.3, metalness: 0.5 });
-            const handleMat = new THREE.MeshStandardMaterial({ color: 0xFFD700, roughness: 0.4 });
+            const hammerHeadMat = new THREE.MeshStandardMaterial({ color: 0xE91E63, roughness: 0.35 });
+            const hammerEdgeMat = new THREE.MeshStandardMaterial({ color: 0xFFD700, roughness: 0.2, metalness: 0.7 });
+            const handleMat = new THREE.MeshStandardMaterial({ color: 0xFFD700, roughness: 0.3, metalness: 0.3 });
 
-            // Massive hammer head
-            const hammerHead = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.7, 10), hammerHeadMat);
+            // MASSIVE hammer head (bigger than reference — it's iconic)
+            const hammerHead = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.9, 12), hammerHeadMat);
             hammerHead.rotation.x = Math.PI / 2;
             hammerGroup.add(hammerHead);
 
-            // Gold rings on hammer head edges
-            const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.04, 6, 16), hammerEdgeMat);
-            ring1.position.z = 0.3;
+            // Flat face caps (lighter pink)
+            const capMat = new THREE.MeshStandardMaterial({ color: 0xF48FB1, roughness: 0.3 });
+            const cap1 = new THREE.Mesh(new THREE.CircleGeometry(0.68, 12), capMat);
+            cap1.position.z = 0.46;
+            hammerGroup.add(cap1);
+            const cap2 = new THREE.Mesh(new THREE.CircleGeometry(0.68, 12), capMat);
+            cap2.position.z = -0.46;
+            cap2.rotation.y = Math.PI;
+            hammerGroup.add(cap2);
+
+            // Thick gold bands on hammer head edges
+            const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.7, 0.06, 8, 20), hammerEdgeMat);
+            ring1.position.z = 0.42;
             hammerGroup.add(ring1);
             const ring2 = ring1.clone();
-            ring2.position.z = -0.3;
+            ring2.position.z = -0.42;
             hammerGroup.add(ring2);
+            // Center gold band
+            const ringCenter = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.04, 6, 18), hammerEdgeMat);
+            ringCenter.position.z = 0;
+            hammerGroup.add(ringCenter);
 
-            // Yellow handle
-            const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.0, 6), handleMat);
-            handle.position.y = -1.2;
-            handle.rotation.z = 0.2;
+            // Long yellow handle
+            const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.4, 8), handleMat);
+            handle.position.y = -1.4;
+            handle.rotation.z = 0.15;
             hammerGroup.add(handle);
+            // Handle grip end
+            const grip = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 6), hammerEdgeMat);
+            grip.position.y = -2.6;
+            grip.position.x = 0.15 * 2.4;
+            hammerGroup.add(grip);
 
-            hammerGroup.position.set(0.7, 3.0, -0.8);
-            hammerGroup.rotation.set(-0.3, 0.5, 0.3);
+            hammerGroup.position.set(0.8, 3.2, -0.7);
+            hammerGroup.rotation.set(-0.25, 0.4, 0.25);
             group.add(hammerGroup);
         }
 
