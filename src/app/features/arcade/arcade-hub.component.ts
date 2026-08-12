@@ -154,6 +154,25 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3 } from 'lucide-ang
           </div>
         </div>
 
+        <!-- Godot Game Builder Card -->
+        <div 
+          [routerLink]="['/arcade/godot-builder']"
+          class="group relative cursor-pointer">
+          <div class="aspect-[4/3] rounded-[2rem] border-2 border-dashed border-purple-500/40 hover:border-purple-400 bg-slate-900/60 hover:bg-purple-950/30 transition-all duration-500 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-purple-500/20 flex flex-col items-center justify-center p-6 text-center">
+            
+            <div class="w-16 h-16 rounded-2xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400 group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300 shadow-xl mb-4">
+              <span class="text-3xl">🎮</span>
+            </div>
+
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/10 border border-purple-500/20 rounded-full mb-2">
+              <span class="text-[10px] font-black text-purple-400">محرك Godot</span>
+            </div>
+
+            <h3 class="text-lg font-black text-white group-hover:text-purple-300 transition-colors">لعبة Godot جديدة🎮</h3>
+            <p class="text-xs text-slate-400 mt-1 font-medium leading-relaxed">ابنِ لعبة حقيقية بمحرك Godot بالذكاء الاصطناعي</p>
+          </div>
+        </div>
+
         <div *ngFor="let game of games" class="group relative">
           <div class="aspect-[4/3] rounded-[2rem] overflow-hidden border border-white/5 bg-slate-900 transition-all duration-500 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-indigo-500/10 flex flex-col">
             <div class="flex-1 bg-slate-800 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity">
@@ -398,6 +417,10 @@ export class ArcadeHubComponent implements OnInit {
       this.router.navigate(['/arcade/flashcards']);
     } else if (id === 'number-guesser') {
       this.router.navigate(['/arcade/number-guesser']);
+    } else if (id === 'adventure-time') {
+      this.router.navigate(['/arcade/adventure-time']);
+    } else if (id === 'godot-builder') {
+      this.router.navigate(['/arcade/godot-builder']);
     } else {
       this.router.navigate(['/arcade/arena', id]);
     }

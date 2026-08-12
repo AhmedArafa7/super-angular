@@ -1,165 +1,138 @@
 import { Injectable, inject, NgZone, signal } from '@angular/core';
-import { Peer, DataConnection } from 'peerjs';
+import { io, Socket } from 'socket.io-client';
 
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'failed';
 
+/**
+ * MultiplayerService — Socket.IO-based session manager.
+ * Replaces the old PeerJS transport with a self-hosted signaling server
+ * (see signaling-server/server.js). API kept compatible for arcade games:
+ *   createRoom(code?), joinRoom(code), sendMessage(data), disconnect()
+ */
 @Injectable({ providedIn: 'root' })
 export class MultiplayerService {
   private ngZone = inject(NgZone);
 
-  private peer: Peer | null = null;
+  private socket: Socket | null = null;
   public isHost = false;
-  private dataChannels = new Map<string, DataConnection>();
   private currentRoomCode: string | null = null;
+  private connectPromise: Promise<Socket> | null = null;
 
   readonly connectionState = signal<ConnectionState>('disconnected');
   readonly onMessageReceived = signal<any | null>(null);
 
-  constructor() {
-    this.initPeer();
+  private serverUrl(): string {
+    const configured = (window as any).__SUPER_SIGNALING_URL__;
+    if (configured) return configured;
+    const host = window.location.hostname || 'localhost';
+    return `ws://${host}:3000`;
   }
 
-  private initPeer() {
-    try {
-      this.peer = new Peer(undefined as any, {
-        host: '0.peerjs.com',
-        port: 443,
-        secure: true
-      });
+  constructor() {}
 
-      this.peer.on('error', (err: any) => {
-        console.error('PeerJS error:', err);
+  /** Lazily connect (or reuse an existing socket). Resolves on first connect. */
+  private connect(): Promise<Socket> {
+    if (this.socket && this.socket.connected) return Promise.resolve(this.socket);
+    if (this.connectPromise) return this.connectPromise;
+
+    this.ngZone.run(() => this.connectionState.set('connecting'));
+
+    this.connectPromise = new Promise((resolve) => {
+      try {
+        this.socket = io(this.serverUrl(), { reconnection: true, reconnectionDelay: 1000, timeout: 8000 });
+
+        this.socket.on('connect', () => {
+          this.ngZone.run(() => {
+            if (this.currentRoomCode) {
+              this.connectionState.set('connected');
+            }
+            resolve(this.socket!);
+          });
+        });
+
+        this.socket.on('connect_error', () => {
+          this.ngZone.run(() => this.connectionState.set('failed'));
+        });
+
+        this.socket.on('message', (msg: any) => {
+          this.ngZone.run(() => this.onMessageReceived.set(msg && msg.data !== undefined ? msg.data : msg));
+        });
+
+        this.socket.on('disconnect', () => {
+          this.ngZone.run(() => {
+            if (!this.currentRoomCode) this.connectionState.set('disconnected');
+            this.connectPromise = null;
+          });
+        });
+      } catch (e) {
+        console.error('Failed to init Socket.IO:', e);
         this.ngZone.run(() => this.connectionState.set('failed'));
-      });
-    } catch (e: any) {
-      console.error('Failed to initialize PeerJS:', e);
-    }
+        this.connectPromise = null;
+      }
+    });
+
+    return this.connectPromise;
   }
 
   async createRoom(specificCode?: string): Promise<string> {
     this.disconnect();
     this.isHost = true;
+    const requestedCode = specificCode ? specificCode.trim().toUpperCase() : undefined;
     this.ngZone.run(() => this.connectionState.set('connecting'));
 
-    const roomCode = specificCode ? specificCode.trim().toUpperCase() : Math.random().toString(36).substring(2, 8).toUpperCase();
-    this.currentRoomCode = roomCode;
-
-    // Re-initialize peer with the specific room code as ID
-    if (this.peer) {
-      this.peer.destroy();
-    }
+    const socket = await this.connect();
+    this.currentRoomCode = requestedCode || null;
 
     return new Promise((resolve) => {
-      try {
-        this.peer = new Peer(roomCode, {
-          host: '0.peerjs.com',
-          port: 443,
-          secure: true
-        });
-
-        this.peer.on('open', () => {
-          this.ngZone.run(() => this.connectionState.set('connecting'));
-          resolve(roomCode);
-        });
-
-        this.peer.on('connection', (conn: DataConnection) => {
-          this.dataChannels.set(conn.peer, conn);
-          this.setupDataChannel(conn);
-        });
-
-        this.peer.on('error', (err: any) => {
-          console.error('Host peer error:', err);
+      socket.emit('create-session', { name: 'Player', character: 'sonic', requestedCode }, (res: any) => {
+        if (res && res.ok) {
+          this.currentRoomCode = res.code;
+          this.isHost = true;
+          this.ngZone.run(() => this.connectionState.set('connected'));
+          resolve(res.code);
+        } else {
           this.ngZone.run(() => this.connectionState.set('failed'));
-          resolve(roomCode);
-        });
-      } catch (e: any) {
-        resolve(roomCode);
-      }
+          resolve(requestedCode || '');
+        }
+      });
     });
   }
 
   async joinRoom(roomCode: string): Promise<boolean> {
     this.disconnect();
     this.isHost = false;
-    this.currentRoomCode = roomCode;
+    const code = roomCode.trim().toUpperCase();
+    this.currentRoomCode = code;
     this.ngZone.run(() => this.connectionState.set('connecting'));
 
+    const socket = await this.connect();
+
     return new Promise((resolve) => {
-      if (!this.peer || this.peer.destroyed) {
-        this.peer = new Peer(undefined as any, {
-          host: '0.peerjs.com',
-          port: 443,
-          secure: true
-        });
-      }
-
-      this.peer.on('open', () => {
-        const conn = this.peer!.connect(roomCode, { reliable: true });
-
-        conn.on('open', () => {
-          this.dataChannels.set('host', conn);
-          this.setupDataChannel(conn);
+      socket.emit('join-session', { code, name: 'Player', character: 'sonic' }, (res: any) => {
+        if (res && res.ok) {
+          this.isHost = false;
           this.ngZone.run(() => this.connectionState.set('connected'));
           resolve(true);
-        });
-
-        conn.on('error', (err: any) => {
-          console.error('Connection error:', err);
+        } else {
           this.ngZone.run(() => this.connectionState.set('failed'));
           resolve(false);
-        });
-      });
-
-      this.peer.on('error', (err: any) => {
-        console.error('Guest peer error:', err);
-        this.ngZone.run(() => this.connectionState.set('failed'));
-        resolve(false);
-      });
-    });
-  }
-
-  private setupDataChannel(conn: DataConnection) {
-    conn.on('data', (data: any) => {
-      this.ngZone.run(() => {
-        this.onMessageReceived.set(data);
-        // If we are Host, broadcast message to other connected guests (Star topology)
-        if (this.isHost) {
-          this.dataChannels.forEach((ch, id) => {
-            if (id !== conn.peer && ch.open) {
-              ch.send(data);
-            }
-          });
         }
       });
-    });
-
-    conn.on('open', () => {
-      this.ngZone.run(() => this.connectionState.set('connected'));
-    });
-
-    conn.on('close', () => {
-      this.dataChannels.delete(conn.peer);
-      if (!this.isHost) {
-        this.ngZone.run(() => this.connectionState.set('disconnected'));
-      }
     });
   }
 
   sendMessage(message: any) {
-    this.dataChannels.forEach(channel => {
-      if (channel.open) {
-        channel.send(message);
-      }
-    });
+    if (this.socket && this.socket.connected && this.currentRoomCode) {
+      this.socket.emit('message', { data: message });
+    }
   }
 
   disconnect() {
-    this.dataChannels.forEach(channel => channel.close());
-    this.dataChannels.clear();
-    if (this.peer && !this.peer.destroyed) {
-      this.peer.destroy();
-      this.peer = null;
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
     }
+    this.connectPromise = null;
     this.isHost = false;
     this.currentRoomCode = null;
     this.ngZone.run(() => this.connectionState.set('disconnected'));

@@ -430,6 +430,25 @@
             <button (click)="zoomIn()" class="px-2 py-1 text-xs font-bold hover:opacity-100" title="تكبير الصورة حتى 350% (Zoom In)">🔍+</button>
           </div>
 
+          <!-- Reader Annotation Tools -->
+          <div *ngIf="selectedBookForReading.pages && selectedBookForReading.pages.length > 0"
+               class="flex items-center gap-1.5 rounded-xl p-1 border opacity-90"
+               [ngClass]="readerTheme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'">
+            <button (click)="setReaderToolMode('view')" [ngClass]="readerToolMode === 'view' ? 'bg-indigo-600 text-white font-bold' : 'opacity-70'" class="px-2.5 py-1 text-xs rounded-lg transition-all" title="وضع التصفح والعرض العادي">👁️ تصفح</button>
+            <button (click)="setReaderToolMode('draw')" [ngClass]="readerToolMode === 'draw' ? 'bg-indigo-600 text-white font-bold' : 'opacity-70'" class="px-2.5 py-1 text-xs rounded-lg transition-all" title="الرسم الحر بالماوس على الصفحة">🖊️ رسم</button>
+            <button (click)="setReaderToolMode('type')" [ngClass]="readerToolMode === 'type' ? 'bg-indigo-600 text-white font-bold' : 'opacity-70'" class="px-2.5 py-1 text-xs rounded-lg transition-all" title="الكتابة في أي مكان (النقر على السطور والفراغات)">🔤 كتابة</button>
+            
+            <input *ngIf="readerToolMode === 'draw'" type="color" [(ngModel)]="drawColor" class="size-6 rounded cursor-pointer bg-transparent border-none ml-1" title="لون القلم" />
+          </div>
+
+          <!-- Share Book with Friend -->
+          <button *ngIf="selectedBookForReading"
+                  (click)="openShareBookModal(selectedBookForReading)"
+                  class="px-3.5 h-10 text-xs rounded-xl border bg-white/5 hover:bg-white/10 border-white/10 transition-all flex items-center gap-1.5 font-bold"
+                  title="مشاركة الكتاب مع صديق">
+            📤 مشاركة
+          </button>
+
           <!-- Two Page Spread Toggle -->
           <button *ngIf="selectedBookForReading.pages && selectedBookForReading.pages.length > 0"
                   (click)="toggleTwoPageMode()" 
@@ -571,10 +590,142 @@
 
                 <!-- Image Page Display Surface -->
                 <div *ngIf="curPage.type === 'image'" class="space-y-4">
-                  <div class="max-w-3xl mx-auto bg-black/40 rounded-3xl p-4 border border-white/10 shadow-2xl flex items-center justify-center overflow-auto max-h-[72vh]">
+                  <div class="flex items-center justify-between text-xs opacity-75 px-1">
+                    <span>💡 وضع الكتابة والرسم: <strong class="text-indigo-400">{{ readerToolMode === 'draw' ? '🖊️ الرسم الحر (اضغط واسحب بالماوس فوق أي جزء من الصفحة)' : (readerToolMode === 'type' ? '🔤 الكتابة (انقر على أي سطر أو فراغ لإضافة صندوق نص)' : '👁️ تصفح عادي') }}</strong></span>
+                    <button *ngIf="(curPage.drawings && curPage.drawings.length > 0) || (curPage.textBoxes && curPage.textBoxes.length > 0)"
+                            (click)="clearPageAnnotations(curPage)" class="text-red-400 hover:text-red-300 font-bold underline">
+                      🗑️ مسح جميع رسومات ونصوص الصفحة
+                    </button>
+                  </div>
+
+                  <div #pageContainer class="max-w-3xl mx-auto bg-black/40 rounded-3xl p-4 border border-white/10 shadow-2xl relative overflow-auto max-h-[72vh]"
+                       [class.cursor-crosshair]="readerToolMode !== 'view'"
+                       (mousedown)="onPageMouseDown($event, curPage)"
+                       (mousemove)="onContainerMouseMove($event, curPage, pageContainer)"
+                       (mouseup)="onContainerMouseUp(curPage)"
+                       (mouseleave)="onContainerMouseUp(curPage)"
+                       (click)="onPageContainerClick($event, curPage)">
+
                     <img [src]="curPage.processedImageUrl || curPage.imageUrl" [alt]="'صفحة ' + (activePageIndex + 1)" 
                          [style.transform]="'scale(' + pageZoom + ')'" [style.transformOrigin]="'center top'"
-                         class="max-h-[65vh] object-contain rounded-2xl transition-transform duration-200 shadow-xl" />
+                         class="max-h-[65vh] object-contain rounded-2xl transition-transform duration-200 shadow-xl pointer-events-none select-none mx-auto block" />
+
+                    <!-- SVG Drawing Overlay -->
+                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" class="absolute inset-4 w-[calc(100%-2rem)] h-[calc(100%-2rem)] pointer-events-none z-20">
+                      <ng-container *ngFor="let stroke of curPage.drawings">
+                        <polyline [attr.points]="getPointsString(stroke.points)"
+                                  [attr.stroke]="stroke.color"
+                                  [attr.stroke-width]="stroke.lineWidth / 2"
+                                  stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                      </ng-container>
+                      <polyline *ngIf="currentStroke.length > 1 && readerToolMode === 'draw'"
+                                [attr.points]="getPointsString(currentStroke)"
+                                [attr.stroke]="drawColor"
+                                [attr.stroke-width]="drawLineWidth / 2"
+                                stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                    </svg>
+
+                    <!-- Interactive Text Boxes Overlay -->
+                    <div *ngFor="let tb of curPage.textBoxes" 
+                         [style.left.%]="tb.x" 
+                         [style.top.%]="tb.y"
+                         (click)="selectTextBox(tb.id); $event.stopPropagation()"
+                         class="absolute z-30 textbox-item group -translate-x-2 -translate-y-2">
+                      <div class="relative flex items-center bg-transparent p-0 transition-all">
+                        
+                        <!-- Drag Handle -->
+                        <div (mousedown)="startDraggingTextBox($event, tb)" 
+                             class="cursor-move px-1 text-slate-400 hover:text-white font-bold select-none text-xs opacity-0 group-hover:opacity-100 transition-opacity" title="اسحب لتحريك النص">
+                          ⠿
+                        </div>
+
+                        <!-- Text Input -->
+                        <input type="text" [(ngModel)]="tb.text" (input)="saveCurrentProgress()" 
+                               [style.fontSize.px]="tb.fontSize || 16" 
+                               [style.color]="tb.color || '#f8fafc'"
+                               [style.fontWeight]="tb.isBold ? 'bold' : 'normal'"
+                               placeholder="اكتب هنا..." 
+                               class="bg-transparent border-none outline-none focus:outline-none focus:ring-0 px-1 py-0.5 font-sans min-w-[120px] shadow-none" />
+
+                        <!-- Floating Formatting Toolbar when active -->
+                        <div *ngIf="activeTextBoxId === tb.id" 
+                             class="absolute -top-11 right-0 flex items-center gap-1.5 bg-slate-900/95 border border-white/20 rounded-xl px-2.5 py-1.5 shadow-2xl z-40 text-white"
+                             (click)="$event.stopPropagation()">
+                          <button (click)="changeTextBoxFontSize(tb, -2)" class="px-1.5 py-0.5 text-[10px] font-bold bg-white/10 rounded hover:bg-white/20" title="تصغير الخط">A-</button>
+                          <span class="text-[10px] font-mono">{{ tb.fontSize || 16 }}px</span>
+                          <button (click)="changeTextBoxFontSize(tb, 2)" class="px-1.5 py-0.5 text-[10px] font-bold bg-white/10 rounded hover:bg-white/20" title="تكبير الخط">A+</button>
+                          
+                          <div class="h-3 w-px bg-white/20 mx-0.5"></div>
+
+                          <button (click)="toggleTextBoxBold(tb)" [class.bg-indigo-600]="tb.isBold" class="px-1.5 py-0.5 text-[10px] font-bold bg-white/10 rounded hover:bg-white/20" title="عريض (Bold)">B</button>
+
+                          <div class="h-3 w-px bg-white/20 mx-0.5"></div>
+
+                          <!-- Color choices -->
+                          <button (click)="changeTextBoxColor(tb, '#f8fafc')" class="size-3.5 rounded-full bg-white border border-slate-400" title="أبيض"></button>
+                          <button (click)="changeTextBoxColor(tb, '#0f172a')" class="size-3.5 rounded-full bg-slate-900 border border-slate-600" title="أسود"></button>
+                          <button (click)="changeTextBoxColor(tb, '#ef4444')" class="size-3.5 rounded-full bg-red-500" title="أحمر"></button>
+                          <button (click)="changeTextBoxColor(tb, '#2563eb')" class="size-3.5 rounded-full bg-blue-600" title="أزرق"></button>
+
+                          <div class="h-3 w-px bg-white/20 mx-0.5"></div>
+
+                          <button (click)="deleteTextBox(curPage, tb.id)" class="text-red-400 hover:text-red-300 text-xs px-1 font-bold" title="حذف النص">✕</button>
+                        </div>
+
+  </div>
+</div>
+
+<!-- Share Book with Friends Modal -->
+<div *ngIf="showShareBookModal && bookToShare" class="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 text-right" dir="rtl">
+  <div class="bg-slate-900 border border-white/10 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl space-y-6 animate-in zoom-in-95">
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <h3 class="text-xl font-black text-white flex items-center gap-2"><span>📤</span> مشاركة الكتاب</h3>
+      <button (click)="showShareBookModal = false" class="size-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center font-bold">✕</button>
+    </div>
+
+    <div class="flex items-center gap-3 bg-black/40 border border-white/5 p-3 rounded-2xl">
+      <img [src]="bookToShare.coverUrl" class="size-12 rounded-xl object-cover border border-white/10" alt="Cover">
+      <div>
+        <h4 class="text-sm font-bold text-white">{{ bookToShare.title }}</h4>
+        <p class="text-xs text-indigo-300">{{ bookToShare.author }}</p>
+      </div>
+    </div>
+
+    <div class="space-y-3">
+      <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">اختر صديقاً للإرسال:</h4>
+      
+      @if (globalState.friends().length > 0) {
+        <div class="flex flex-col gap-2 max-h-56 overflow-y-auto custom-scrollbar pr-1">
+          <div *ngFor="let friend of globalState.friends()" class="flex items-center justify-between bg-black/40 border border-white/5 p-3 rounded-2xl">
+            <div class="flex items-center gap-3">
+              <img [src]="friend.avatarUrl" class="size-10 rounded-full border border-white/10 object-cover" alt="Avatar">
+              <div>
+                <h5 class="text-sm font-bold text-white leading-tight">{{ friend.name }}</h5>
+                <span class="text-[10px]" [ngClass]="friend.status === 'online' ? 'text-green-400' : 'text-slate-400'">
+                  {{ friend.status === 'online' ? 'متصل الآن' : 'غير متصل' }}
+                </span>
+              </div>
+            </div>
+            <button (click)="shareBookWithFriend(friend.id)" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition-all">
+              إرسال الكتاب 📨
+            </button>
+          </div>
+        </div>
+      } @else {
+        <div class="bg-black/30 border border-white/5 rounded-2xl p-6 text-center space-y-2">
+          <span class="text-2xl opacity-60">👥</span>
+          <p class="text-sm text-slate-400">ليس لديك أصدقاء مضافون لمشاركة الكتب معهم.</p>
+          <p class="text-xs text-indigo-400">يمكنك إضافة أصدقاء عبر زر الأصدقاء (👥) في الشريط العلوي!</p>
+        </div>
+      }
+    </div>
+
+    <button (click)="showShareBookModal = false" class="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-2xl border border-white/10 text-xs transition-colors">
+      إغلاق
+    </button>
+  </div>
+</div>
+
                   </div>
 
                   <!-- AI Extracted Text Panel (if available) -->

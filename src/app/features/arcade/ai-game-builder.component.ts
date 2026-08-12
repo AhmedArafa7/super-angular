@@ -83,6 +83,30 @@ export interface SavedGameItem {
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
+        <!-- Engine Selection Tabs -->
+        <div class="lg:col-span-12">
+          <div class="bg-slate-900/80 border border-white/10 rounded-2xl p-2 flex items-center gap-2">
+            <button 
+              (click)="selectedEngine.set('web')"
+              [class.bg-indigo-600]="selectedEngine() === 'web'"
+              [class.text-white]="selectedEngine() === 'web'"
+              [class.text-slate-400]="selectedEngine() !== 'web'"
+              class="flex-1 px-4 py-3 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2">
+              <span>🌐</span>
+              <span>Web Games (HTML5/Canvas)</span>
+            </button>
+            <button 
+              (click)="selectedEngine.set('godot')"
+              [class.bg-indigo-600]="selectedEngine() === 'godot'"
+              [class.text-white]="selectedEngine() === 'godot'"
+              [class.text-slate-400]="selectedEngine() !== 'godot'"
+              class="flex-1 px-4 py-3 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2">
+              <span>🎮</span>
+              <span>Godot Games (GDScript)</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Left Sidebar: Saved Games Drawer, Version History & Game Assets Manager -->
         <div class="lg:col-span-4 space-y-6">
           
@@ -506,6 +530,7 @@ export class AiGameBuilderComponent implements OnInit {
 
   debugOverlay = signal<boolean>(false);
   showAssetGeneratorModal = signal<boolean>(false);
+  selectedEngine = signal<'web' | 'godot'>('web');
   sidebarService = inject(SidebarService);
 
   // Icons
@@ -834,6 +859,13 @@ export class AiGameBuilderComponent implements OnInit {
   applyTemplate(prompt: string) {
     this.promptText = prompt;
     this.toast.show('📋 تم اختيار قالب اللعبة، اضغط على توليد لبنائها فوراً!', 'info');
+  }
+
+  setEngine(engine: 'web' | 'godot') {
+    this.selectedEngine.set(engine);
+    if (engine === 'godot') {
+      this.router.navigate(['/arcade/godot-builder']);
+    }
   }
 
   applyShortcut(shortcutPrompt: string) {

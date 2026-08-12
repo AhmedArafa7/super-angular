@@ -2,11 +2,11 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { LucideDynamicIcon } from '@lucide/angular';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { FirebaseService } from '../../core/services/firebase.service';
 import { ToastService } from '../../core/services/toast.service';
 import { IndexedDBService } from '../../core/services/indexed-db.service';
+import { GlobalStateService } from '../../core/services/global-state.service';
 import {
   collection, doc, getDocs, addDoc, updateDoc, deleteDoc,
   query, where, orderBy
@@ -36,6 +36,27 @@ export interface PageNote {
   createdAt: string;
 }
 
+export interface DrawingPoint {
+  x: number;
+  y: number;
+}
+
+export interface DrawingStroke {
+  points: DrawingPoint[];
+  color: string;
+  lineWidth: number;
+}
+
+export interface PageTextBox {
+  id: string;
+  x: number; // percentage 0-100
+  y: number; // percentage 0-100
+  text: string;
+  fontSize: number;
+  color: string;
+  isBold?: boolean;
+}
+
 export interface BookPage {
   id: string;
   type: 'image' | 'text' | 'blank';
@@ -48,6 +69,8 @@ export interface BookPage {
   selected?: boolean;
   isOcrLoading?: boolean;
   notes?: PageNote[];
+  drawings?: DrawingStroke[];
+  textBoxes?: PageTextBox[];
 }
 
 export interface Book {
@@ -348,7 +371,7 @@ export const FAMOUS_EGYPTIAN_NOVELS: Book[] = [
 @Component({
   selector: 'app-library',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideDynamicIcon],
+  imports: [CommonModule, FormsModule],
   templateUrl: './library.component.html',
   styleUrls: ['./library.component.scss']
 })
@@ -358,6 +381,22 @@ export class LibraryComponent {
   private sanitizer = inject(DomSanitizer);
   private http = inject(HttpClient);
   private indexedDb = inject(IndexedDBService);
+  globalState = inject(GlobalStateService);
+
+  showShareBookModal = false;
+  bookToShare: Book | null = null;
+
+  openShareBookModal(book: Book) {
+    this.bookToShare = book;
+    this.showShareBookModal = true;
+  }
+
+  shareBookWithFriend(friendId: string) {
+    if (!this.bookToShare) return;
+    this.toast.show(`تم إرسال كتاب "${this.bookToShare.title}" بنجاح إلى صديقك! 📤`, 'success');
+    this.showShareBookModal = false;
+    this.bookToShare = null;
+  }
 
   books = signal<Book[]>(FAMOUS_EGYPTIAN_NOVELS);
   isLoading = signal(false);
@@ -398,6 +437,15 @@ export class LibraryComponent {
   readerMode: 'text' | 'pdf' | 'pages' = 'text';
   isTwoPageMode = false;
   pageZoom = 1.0; // 1.0 to 3.5
+
+  // Reader Annotation Tool State
+  readerToolMode: 'view' | 'draw' | 'type' = 'view';
+  drawColor = '#ef4444'; // default red pen
+  drawLineWidth = 3;
+  isDrawing = false;
+  currentStroke: DrawingPoint[] = [];
+  activeTextBoxId: string | null = null;
+  draggingBoxId: string | null = null;
 
   // --- ADVANCED BOOK STUDIO & CREATOR STATE ---
   showBookStudioDialog = false;
@@ -962,6 +1010,157 @@ export class LibraryComponent {
 
   resetZoom() {
     this.pageZoom = 1.0;
+  }
+
+  setReaderToolMode(mode: 'view' | 'draw' | 'type') {
+    this.readerToolMode = mode;
+  }
+
+  onPageMouseDown(event: MouseEvent, page: BookPage) {
+    if (this.readerToolMode !== 'draw') return;
+    const target = event.currentTarget as HTMLElement;
+    if (!target) return;
+    const rect = target.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+
+    this.isDrawing = true;
+    this.currentStroke = [{ x, y }];
+  }
+
+  onPageMouseMove(event: MouseEvent, page: BookPage) {
+    if (!this.isDrawing || this.readerToolMode !== 'draw') return;
+    const target = event.currentTarget as HTMLElement;
+    if (!target) return;
+    const rect = target.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+
+    this.currentStroke.push({ x, y });
+  }
+
+  onPageMouseUp(page: BookPage) {
+    if (!this.isDrawing || this.readerToolMode !== 'draw') return;
+    this.isDrawing = false;
+    if (this.currentStroke.length > 1) {
+      if (!page.drawings) page.drawings = [];
+      page.drawings.push({
+        points: [...this.currentStroke],
+        color: this.drawColor,
+        lineWidth: this.drawLineWidth
+      });
+      this.saveCurrentProgress();
+    }
+    this.currentStroke = [];
+  }
+
+  onPageContainerClick(event: MouseEvent, page: BookPage) {
+    if (this.readerToolMode !== 'type') return;
+    if ((event.target as HTMLElement).tagName === 'INPUT' || (event.target as HTMLElement).tagName === 'TEXTAREA' || (event.target as HTMLElement).closest('.textbox-item')) {
+      return;
+    }
+    const target = event.currentTarget as HTMLElement;
+    if (!target) return;
+    const rect = target.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+
+    if (!page.textBoxes) page.textBoxes = [];
+    page.textBoxes.push({
+      id: 'tb_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      x: Math.max(0, Math.min(95, x)),
+      y: Math.max(0, Math.min(95, y)),
+      text: '',
+      fontSize: 16,
+      color: '#0f172a'
+    });
+    this.saveCurrentProgress();
+  }
+
+  deleteTextBox(page: BookPage, boxId: string) {
+    if (!page.textBoxes) return;
+    page.textBoxes = page.textBoxes.filter(b => b.id !== boxId);
+    this.saveCurrentProgress();
+  }
+
+  clearPageAnnotations(page: BookPage) {
+    page.drawings = [];
+    page.textBoxes = [];
+    this.saveCurrentProgress();
+    this.toast.show('تم مسح جميع رسومات وملاحظات هذه الصفحة', 'info');
+  }
+
+  getPointsString(points: DrawingPoint[]): string {
+    return points.map(p => `${p.x},${p.y}`).join(' ');
+  }
+
+  selectTextBox(tbId: string) {
+    this.activeTextBoxId = tbId;
+  }
+
+  startDraggingTextBox(event: MouseEvent, tb: PageTextBox) {
+    event.stopPropagation();
+    this.draggingBoxId = tb.id;
+    this.activeTextBoxId = tb.id;
+  }
+
+  onContainerMouseMove(event: MouseEvent, page: BookPage, containerEl: HTMLElement) {
+    if (this.isDrawing && this.readerToolMode === 'draw') {
+      const rect = containerEl.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width) * 100;
+      const y = ((event.clientY - rect.top) / rect.height) * 100;
+      this.currentStroke.push({ x, y });
+      return;
+    }
+
+    if (this.draggingBoxId && page.textBoxes) {
+      const rect = containerEl.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width) * 100;
+      const y = ((event.clientY - rect.top) / rect.height) * 100;
+
+      const box = page.textBoxes.find(b => b.id === this.draggingBoxId);
+      if (box) {
+        box.x = Math.max(0, Math.min(95, x));
+        box.y = Math.max(0, Math.min(95, y));
+        this.saveCurrentProgress();
+      }
+    }
+  }
+
+  onContainerMouseUp(page: BookPage) {
+    if (this.isDrawing && this.readerToolMode === 'draw') {
+      this.isDrawing = false;
+      if (this.currentStroke.length > 1) {
+        if (!page.drawings) page.drawings = [];
+        page.drawings.push({
+          points: [...this.currentStroke],
+          color: this.drawColor,
+          lineWidth: this.drawLineWidth
+        });
+        this.saveCurrentProgress();
+      }
+      this.currentStroke = [];
+    }
+
+    if (this.draggingBoxId) {
+      this.draggingBoxId = null;
+      this.saveCurrentProgress();
+    }
+  }
+
+  changeTextBoxFontSize(tb: PageTextBox, delta: number) {
+    tb.fontSize = Math.max(10, Math.min(36, (tb.fontSize || 16) + delta));
+    this.saveCurrentProgress();
+  }
+
+  toggleTextBoxBold(tb: PageTextBox) {
+    tb.isBold = !tb.isBold;
+    this.saveCurrentProgress();
+  }
+
+  changeTextBoxColor(tb: PageTextBox, color: string) {
+    tb.color = color;
+    this.saveCurrentProgress();
   }
 
   setReaderTheme(theme: 'dark' | 'sepia' | 'light') {

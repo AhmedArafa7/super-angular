@@ -35,6 +35,11 @@
               "src/assets",
               {
                 "glob": "**/*",
+                "input": "src/games",
+                "output": "/games"
+              },
+              {
+                "glob": "**/*",
                 "input": "public",
                 "output": "/"
               }

@@ -431,8 +431,8 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
       if (state === 'connected' && this.selectedMode === 'private') {
         this.launchGame();
       } else if (state === 'failed') {
-        if (this.game && this.game.id.startsWith('custom_game_')) {
-          console.warn('P2P connection state failed for custom game, continuing in local mode.');
+        if (this.game && (this.game.id.startsWith('custom_game_') || this.selectedMode !== 'private')) {
+          console.warn('P2P connection state failed, continuing in local mode.');
           this.launchGame();
         } else {
           alert('فشل الاتصال بالغرفة. قد تكون الغرفة غير موجودة أو انتهت صلاحيتها.');

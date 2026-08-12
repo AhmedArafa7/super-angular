@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Tick Tock Bomb (القنبلة الموقوتة 💣) Custom Menu Theme Stylesheet
+   Tick Tock Potato (البطاطس الساخنة 🥔) Custom Menu Theme Stylesheet
    ========================================================================== */
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
 
@@ -16,13 +16,13 @@
     box-sizing: border-box !important;
 }
 
-/* Floating bombs, timers & fuse sparks animation overlay */
+/* Floating potatoes, fries & fire sparks animation overlay */
 #arena-menu-overlay::before {
-    content: "💣   ⏰   🔥   💥   ⚡";
+    content: "🥔   🍟   🥔   🔥   🥔";
     position: absolute;
     inset: 0;
     font-size: 3.5rem;
-    color: rgba(249, 115, 22, 0.25);
+    color: rgba(251, 191, 36, 0.25);
     letter-spacing: 55px;
     word-spacing: 95px;
     line-height: 140px;
@@ -53,13 +53,13 @@
     position: relative !important;
 }
 
-/* Tick Tock Bomb badge on top of container */
+/* Tick Tock Potato badge on top of container */
 #arena-menu-container::before {
-    content: "💣 TICK TOCK BOMB ⏰";
+    content: "🥔 HOT POTATO 🔥";
     position: absolute;
     top: -14px;
     right: 30px;
-    background: linear-gradient(135deg, #ef4444, #f59e0b);
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
     color: #ffffff;
     font-size: 0.75rem;
     font-weight: 900;

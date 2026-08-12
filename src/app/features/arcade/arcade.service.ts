@@ -7,6 +7,8 @@ export interface GameCategory {
   icon: string;
 }
 
+export type GameEngine = 'web' | 'godot';
+
 export interface ArcadeGame {
   id: string;
   category: string;
@@ -20,6 +22,8 @@ export interface ArcadeGame {
   maxPlayers?: number;
   localModeType?: 'standard' | 'ai' | 'pass_and_play'; // Determines the first button behavior/UI
   hasCustomMenu?: boolean; // If true, game handles its own initial menu before mode selection
+  engine?: GameEngine; // Type of game engine used
+  godotProjectId?: string; // Godot project ID for Godot games
   // General mobile-control contract for all iframe games.
   // If omitted, arena falls back to a safe default profile.
   mobileControls?: {
@@ -50,11 +54,22 @@ export class ArcadeService {
   // Local Mock Data representing games until Firebase is integrated
     private games: ArcadeGame[] = [
     {
+      id: 'sonic-boom',
+      category: 'general',
+      title: 'SONIC BOOM 💥🔵⚡',
+      description: 'لعبة الركض السريعة والمثيرة SONIC BOOM! اركض بسرعة الصوت عبر الجزيرة المفقودة، اقفز فوق العوائق، اجمع الحلقات الذهبية، استخدم الداش لتدمير الروبوتات، وحقق أعلى الأرقام!',
+      thumbnail: 'assets/images/sonic-boom-thumb.png',
+      genre: 'Action',
+      platforms: ['browser', 'android', 'pc'],
+      localUrl: '/games/sonic-boom/index.html',
+      status: 'available'
+    },
+    {
       id: 'dragon-dungeon',
       category: 'mental',
-      title: 'Dragon & Dungeons 🐉⚔️',
-      description: 'لعبة آر بي جي (RPG) أسطورية تحاكي زنازين وتنانين D&D. اختر بطلك (محارب، ساحر، سارق)، حارب الوحوش عبر 5 زنازين واهزم التنين الأسطوري!',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%23111827%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22300%22%20font-size%3D%22120%22%20text-anchor%3D%22middle%22%3E%F0%9F%90%89%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22420%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2245%22%20font-weight%3D%22900%22%20fill%3D%22%23f59e0b%22%20text-anchor%3D%22middle%22%3EDRAGON%20%26%20DUNGEONS%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'Jinx 🐉⚔️',
+      description: 'لعبة التحدي والمغامرات الأسطورية Jinx! اختر بطلك (محارب، ساحر، سارق)، واهزم الوحوش والتنانين في الزنازين السحرية!',
+      thumbnail: 'assets/images/jinx-thumb.png',
       genre: 'RPG',
       platforms: ['browser', 'pc', 'android'],
       localUrl: '/games/dragon-dungeon/index.html',
@@ -63,9 +78,9 @@ export class ArcadeService {
     {
       id: 'flashcards',
       category: 'mental',
-      title: 'البطاقات التعليمية (Flashcards) 🧠',
-      description: 'لعبة حفظ وتدريب ذكية (تتضمن أشهر السنة، أيام الأسبوع، أو أي محتوى تخصصه بنفسك وجه وظهر لتختبر حفظك ومعرفتك).',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%231e1b4b%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22300%22%20font-size%3D%22100%22%20text-anchor%3D%22middle%22%3E%F0%9F%A7%A0%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22420%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2250%22%20font-weight%3D%22900%22%20fill%3D%22%23a5b4fc%22%20text-anchor%3D%22middle%22%3EFLASHCARDS%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'FlipIt 🎴✨',
+      description: 'لعبة التحدي والبطاقات التعليمية المرحة! اختبر حفظك ومعرفتك للأشهر والأيام والأرقام مع دعم الصوت والذكاء الاصطناعي.',
+      thumbnail: 'assets/images/flipit-thumb.png',
       genre: 'Puzzle',
       platforms: ['browser', 'pc', 'android'],
       status: 'available'
@@ -73,9 +88,9 @@ export class ArcadeService {
     {
       id: 'word-chain',
       category: 'mental',
-      title: 'سلسلة الكلمات 🔗',
-      description: 'لعبة ذكاء وسرعة بديهة إنجليزية! اكتب كلمة تبدأ بآخر حرف من الكلمة السابقة دون تكرار ومع مؤقت زمني وتحدي جماعي (Pass & Play) أو ضد الذكاء الاصطناعي.',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%230f172a%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22300%22%20font-size%3D%22100%22%20text-anchor%3D%22middle%22%3E%F0%9F%94%97%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22420%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2250%22%20font-weight%3D%22900%22%20fill%3D%22%2338bdf8%22%20text-anchor%3D%22middle%22%3EWORD%20CHAIN%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'Tail to Head 🔗🔤✨',
+      description: 'لعبة الذكاء وسرعة البديهة الإنجليزية Tail to Head! ابدأ الكلمة الجديدة بآخر حرف من الكلمة السابقة (من الذيل إلى الرأس) قبل انتهاء المؤقت!',
+      thumbnail: 'assets/images/tail-to-head-thumb.png',
       genre: 'Puzzle',
       platforms: ['browser', 'pc', 'android'],
       status: 'available'
@@ -83,31 +98,19 @@ export class ArcadeService {
     {
       id: 'number-guesser',
       category: 'mental',
-      title: 'تخمين رقم الخصم 🔢',
-      description: 'لعبة الذكاء والاستنتاج! حدد طول الرقم السري (3، 4، أو 5 أرقام)، اختر رمزك السري، وحاول تخمين رقم الخصم بناءً على ردود الفعل والتلميحات (صح مكانه صح، صح مكانه غلط).',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%230f172a%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22300%22%20font-size%3D%22100%22%20text-anchor%3D%22middle%22%3E%F0%9F%90%AE%F0%9F%90%82%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22420%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2250%22%20font-weight%3D%22900%22%20fill%3D%22%23f59e0b%22%20text-anchor%3D%22middle%22%3ECODE%20GUESSER%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'Mind Hacker 🧠💻🔓',
+      description: 'لعبة اختراق الرموز والاستنتاج السري Mind Hacker! حدد طول الرقم السري (3، 4، أو 5 أرقام)، واختر شفرتك الخاصة، ونافس في اختراق رقم الخصم!',
+      thumbnail: 'assets/images/mind-hacker-thumb.png',
       genre: 'Puzzle',
       platforms: ['browser', 'pc', 'android'],
       status: 'available'
     },
     {
-      id: 'openttd',
-      category: 'mental',
-      title: 'OpenTTD 🚂',
-      description: 'لعبة محاكاة استراتيجية مفتوحة المصدر (Transport Tycoon Deluxe) لإدارة شبكات النقل والمواصلات.',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%232c3e50%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22300%22%20font-size%3D%22120%22%20text-anchor%3D%22middle%22%3E%F0%9F%9A%82%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22420%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2250%22%20font-weight%3D%22900%22%20fill%3D%22%23ecf0f1%22%20text-anchor%3D%22middle%22%3EOpenTTD%3C%2Ftext%3E%3C%2Fsvg%3E',
-      genre: 'Simulation',
-      platforms: ['pc', 'browser', 'android'],
-      localUrl: '/games/openttd/play/index.html',
-      status: 'available',
-      hasCustomMenu: true
-    },
-    {
       id: 'echoes-of-time',
       category: 'mental',
-      title: 'أصداء الزمن ⏳',
-      description: 'لعبة ألغاز تعاونية لـ 3 لاعبين (الماضي، الحاضر، المستقبل). تواصلوا لتفعيل بوابة الزمن وحل الألغاز المترابطة للنجاة!',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%230f172a%22%2F%3E%3Ccircle%20cx%3D%22400%22%20cy%3D%22300%22%20r%3D%22150%22%20fill%3D%22none%22%20stroke%3D%22%2338bdf8%22%20stroke-width%3D%2210%22%20stroke-dasharray%3D%2220%2010%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22300%22%20font-size%3D%2280%22%20text-anchor%3D%22middle%22%3E%E2%8F%B3%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22420%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2240%22%20font-weight%3D%22900%22%20fill%3D%22%2338bdf8%22%20text-anchor%3D%22middle%22%3EECHOES%20OF%20TIME%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'Tic Tac Toe',
+      description: 'لعبة التحدي والاستراتيجية Tic Tac Toe عبور الزمن! يتواصل 3 أبطال من (الماضي، الحاضر، والمستقبل) لتفعيل بوابة الزمن وحل شبكة التحدي للنجاة!',
+      thumbnail: 'assets/images/tic-tac-toe-thumb.png',
       genre: 'Puzzle',
       platforms: ['browser', 'pc'],
       localUrl: '/games/echoes-of-time/index.html',
@@ -118,9 +121,9 @@ export class ArcadeService {
     {
       id: 'three-monkeys',
       category: 'mental',
-      title: 'القردة الثلاثة 🙈🙉🙊',
-      description: 'لعبة تفكيك قنابل تعاونية لـ 3 لاعبين. يتواصل الأعمى والأصم والأبكم لتفكيك القنبلة قبل انتهاء الوقت المتبقي! تتطلب استخدام الميكروفون.',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%23111827%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22300%22%20font-size%3D%22120%22%20text-anchor%3D%22middle%22%3E%F0%9F%99%88%F0%9F%99%89%F0%9F%99%8A%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22400%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fbbf24%22%20text-anchor%3D%22middle%22%3ETHE%20THREE%20MONKEYS%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'Beyond Senses 🙈🙉🙊',
+      description: 'لعبة تفكيك قنابل تعاونية حماسية لـ 3 لاعبين (وراء الحواس)! يتواصل الأعمى والأصم والأبكم لتفكيك القنبلة الموقوتة قبل انفجارها.',
+      thumbnail: 'assets/images/beyond-senses-thumb.png',
       genre: 'Co-op',
       platforms: ['browser', 'pc'],
       localUrl: '/games/three-monkeys/index.html',
@@ -131,9 +134,9 @@ export class ArcadeService {
     {
       id: 'tank-battle',
       category: 'general',
-      title: 'Tank Battle Classic',
-      description: 'لعبة حرب الدبابات الشهيرة. يمكنك اللعب مع أصدقائك في نفس الشاشة أو اللعب ضد الذكاء الاصطناعي في معارك طاحنة.',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23111827%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23374151%22%2F%3E%3C%2FlinearGradient%3E%3Cpattern%20id%3D%22grid%22%20width%3D%2240%22%20height%3D%2240%22%20patternUnits%3D%22userSpaceOnUse%22%3E%3Cpath%20d%3D%22M%2040%200%20L%200%200%200%2040%22%20fill%3D%22none%22%20stroke%3D%22%234b5563%22%20stroke-width%3D%221%22%2F%3E%3C%2Fpattern%3E%3Cfilter%20id%3D%22glow%22%3E%3CfeGaussianBlur%20stdDeviation%3D%223%22%20result%3D%22coloredBlur%22%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D%22coloredBlur%22%2F%3E%3CfeMergeNode%20in%3D%22SourceGraphic%22%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22url(%23bg)%22%20%2F%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22url(%23grid)%22%20%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22100%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%20filter%3D%22url(%23glow)%22%3ETANK%20BATTLE%3C%2Ftext%3E%3Cg%20transform%3D%22translate(600%2C%20300)%20rotate(-45)%22%3E%3Crect%20x%3D%22-40%22%20y%3D%22-45%22%20width%3D%2220%22%20height%3D%2290%22%20fill%3D%22%231f2937%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2220%22%20y%3D%22-45%22%20width%3D%2220%22%20height%3D%2290%22%20fill%3D%22%231f2937%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%22-30%22%20y%3D%22-35%22%20width%3D%2260%22%20height%3D%2270%22%20fill%3D%22%23ef4444%22%20rx%3D%2210%22%2F%3E%3Crect%20x%3D%22-20%22%20y%3D%22-25%22%20width%3D%2240%22%20height%3D%2250%22%20fill%3D%22%23b91c1c%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%22-6%22%20y%3D%22-70%22%20width%3D%2212%22%20height%3D%2250%22%20fill%3D%22%234b5563%22%20rx%3D%222%22%2F%3E%3Ccircle%20cx%3D%220%22%20cy%3D%220%22%20r%3D%2220%22%20fill%3D%22%23fca5a5%22%20%2F%3E%3Ccircle%20cx%3D%220%22%20cy%3D%220%22%20r%3D%2210%22%20fill%3D%22%23ef4444%22%20%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(200%2C%20400)%20rotate(135)%22%3E%3Crect%20x%3D%22-40%22%20y%3D%22-45%22%20width%3D%2220%22%20height%3D%2290%22%20fill%3D%22%231f2937%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2220%22%20y%3D%22-45%22%20width%3D%2220%22%20height%3D%2290%22%20fill%3D%22%231f2937%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%22-30%22%20y%3D%22-35%22%20width%3D%2260%22%20height%3D%2270%22%20fill%3D%22%233b82f6%22%20rx%3D%2210%22%2F%3E%3Crect%20x%3D%22-20%22%20y%3D%22-25%22%20width%3D%2240%22%20height%3D%2250%22%20fill%3D%22%231d4ed8%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%22-6%22%20y%3D%22-70%22%20width%3D%2212%22%20height%3D%2250%22%20fill%3D%22%234b5563%22%20rx%3D%222%22%2F%3E%3Ccircle%20cx%3D%220%22%20cy%3D%220%22%20r%3D%2220%22%20fill%3D%22%2393c5fd%22%20%2F%3E%3Ccircle%20cx%3D%220%22%20cy%3D%220%22%20r%3D%2210%22%20fill%3D%22%233b82f6%22%20%2F%3E%3C%2Fg%3E%3Crect%20x%3D%22350%22%20y%3D%22350%22%20width%3D%228%22%20height%3D%2220%22%20fill%3D%22%23facc15%22%20transform%3D%22rotate(45%20354%20360)%22%20filter%3D%22url(%23glow)%22%2F%3E%3Crect%20x%3D%22450%22%20y%3D%22320%22%20width%3D%228%22%20height%3D%2220%22%20fill%3D%22%23facc15%22%20transform%3D%22rotate(-45%20454%20330)%22%20filter%3D%22url(%23glow)%22%2F%3E%3Ccircle%20cx%3D%22400%22%20cy%3D%22350%22%20r%3D%2240%22%20fill%3D%22%23f97316%22%20opacity%3D%220.8%22%20filter%3D%22url(%23glow)%22%2F%3E%3Ccircle%20cx%3D%22400%22%20cy%3D%22350%22%20r%3D%2220%22%20fill%3D%22%23facc15%22%20opacity%3D%220.9%22%2F%3E%3C%2Fsvg%3E',
+      title: 'Crazy Shells 💣💥',
+      description: 'لعبة معارك الدبابات الحماسية Crazy Shells! اختر دبابتك ووجه ذخائرك المفخخة والمفرقعات الملونة لتدمير الخصوم محلياً أو ضد AI!',
+      thumbnail: 'assets/images/crazy-shells-thumb.png',
       genre: 'Action',
       platforms: ['browser'],
       localUrl: '/games/tank-battle/index.html',
@@ -142,9 +145,9 @@ export class ArcadeService {
     {
       id: 'spot-differences',
       category: 'mental',
-      title: 'الاختلافات الخمسة',
-      description: 'درب قوة ملاحظتك وقم بإيجاد الاختلافات الخمسة في الوقت المحدد. تتغير الصور والتحديات تلقائياً في كل مرة تلعب!',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%231e1b4b%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23312e81%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22glow%22%3E%3CfeGaussianBlur%20stdDeviation%3D%223%22%20result%3D%22coloredBlur%22%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D%22coloredBlur%22%2F%3E%3CfeMergeNode%20in%3D%22SourceGraphic%22%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22dropShadow%22%3E%3CfeDropShadow%20dx%3D%220%22%20dy%3D%2210%22%20stdDeviation%3D%2215%22%20flood-opacity%3D%220.5%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22url(%23bg)%22%20%2F%3E%3Cg%20transform%3D%22translate(150%2C%20150)%22%20filter%3D%22url(%23dropShadow)%22%3E%3Crect%20width%3D%22220%22%20height%3D%22280%22%20fill%3D%22%23f8fafc%22%20rx%3D%2220%22%20stroke%3D%22%23e2e8f0%22%20stroke-width%3D%228%22%2F%3E%3Ccircle%20cx%3D%22110%22%20cy%3D%22140%22%20r%3D%2260%22%20fill%3D%22%23fcd34d%22%20%2F%3E%3Cpath%20d%3D%22M%200%20200%20Q%20110%20150%20220%20200%20L%20220%20280%20L%200%20280%20Z%22%20fill%3D%22%2334d399%22%20%2F%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2280%22%20r%3D%2220%22%20fill%3D%22%2338bdf8%22%20%2F%3E%3Ccircle%20cx%3D%22170%22%20cy%3D%2290%22%20r%3D%2215%22%20fill%3D%22%2338bdf8%22%20%2F%3E%3Ccircle%20cx%3D%22150%22%20cy%3D%22220%22%20r%3D%2215%22%20fill%3D%22%23ef4444%22%20id%3D%22targetApple%22%20%2F%3E%3Crect%20x%3D%22148%22%20y%3D%22200%22%20width%3D%224%22%20height%3D%2210%22%20fill%3D%22%238b4513%22%20%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(430%2C%20150)%22%20filter%3D%22url(%23dropShadow)%22%3E%3Crect%20width%3D%22220%22%20height%3D%22280%22%20fill%3D%22%23f8fafc%22%20rx%3D%2220%22%20stroke%3D%22%23e2e8f0%22%20stroke-width%3D%228%22%2F%3E%3Ccircle%20cx%3D%22110%22%20cy%3D%22140%22%20r%3D%2260%22%20fill%3D%22%23fcd34d%22%20%2F%3E%3Cpath%20d%3D%22M%200%20200%20Q%20110%20150%20220%20200%20L%20220%20280%20L%200%20280%20Z%22%20fill%3D%22%2334d399%22%20%2F%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2280%22%20r%3D%2220%22%20fill%3D%22%2338bdf8%22%20%2F%3E%3Ccircle%20cx%3D%22170%22%20cy%3D%2290%22%20r%3D%2215%22%20fill%3D%22%2338bdf8%22%20%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(580%2C%20370)%20rotate(-30)%22%20filter%3D%22url(%23glow)%22%3E%3Cline%20x1%3D%220%22%20y1%3D%2245%22%20x2%3D%220%22%20y2%3D%22120%22%20stroke%3D%22%23475569%22%20stroke-width%3D%2225%22%20stroke-linecap%3D%22round%22%20%2F%3E%3Ccircle%20cx%3D%220%22%20cy%3D%220%22%20r%3D%2250%22%20fill%3D%22rgba(239%2C%2068%2C%2068%2C%200.2)%22%20stroke%3D%22%23ef4444%22%20stroke-width%3D%2212%22%20%2F%3E%3Cpath%20d%3D%22M%20-25%20-25%20Q%200%20-40%2025%20-25%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22%20opacity%3D%220.8%22%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%22580%22%20cy%3D%22370%22%20r%3D%2260%22%20fill%3D%22none%22%20stroke%3D%22%23ef4444%22%20stroke-width%3D%226%22%20stroke-dasharray%3D%2215%2C10%22%20filter%3D%22url(%23glow)%22%20%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22100%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2250%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%20filter%3D%22url(%23glow)%22%3ESPOT%20THE%20DIFFERENCE%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'Eagle Eye 5 🦅🔍✨',
+      description: 'لعبة التركيز ودقة الملاحظة النارية Eagle Eye 5! استخدم عين النسر الثاقبة لاكتشاف الاختلافات الخمسة المخبأة بين الصور المتشابهة في أسرع وقت ممكن!',
+      thumbnail: 'assets/images/eagle-eye-5-thumb.png',
       genre: 'Puzzle',
       platforms: ['browser', 'android'],
       localUrl: '/games/spot-differences/index.html',
@@ -153,9 +156,9 @@ export class ArcadeService {
     {
       id: 'card-battle',
       category: 'mental',
-      title: 'صراع البطاقات',
-      description: 'لعبة استراتيجية مذهلة. قم بتجهيز مجموعتك المكونة من 20 بطاقات، وزع 100 نقطة عليها، وتغلب على الذكاء الاصطناعي في معارك تكتيكية محتدمة.',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%230f172a%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%231e293b%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22glow%22%3E%3CfeGaussianBlur%20stdDeviation%3D%225%22%20result%3D%22coloredBlur%22%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D%22coloredBlur%22%2F%3E%3CfeMergeNode%20in%3D%22SourceGraphic%22%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22url(%23bg)%22%20%2F%3E%3Cg%20transform%3D%22translate(300%2C%20200)%20rotate(-15)%22%3E%3Crect%20width%3D%22180%22%20height%3D%22260%22%20fill%3D%22%23334155%22%20rx%3D%2210%22%20stroke%3D%22%23ef4444%22%20stroke-width%3D%224%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22150%22%20font-size%3D%2280%22%20text-anchor%3D%22middle%22%3E%26%23x2694%3B%3C%2Ftext%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(450%2C%20220)%20rotate(15)%22%20filter%3D%22url(%23glow)%22%3E%3Crect%20width%3D%22180%22%20height%3D%22260%22%20fill%3D%22%231e293b%22%20rx%3D%2210%22%20stroke%3D%22%233b82f6%22%20stroke-width%3D%224%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22150%22%20font-size%3D%2280%22%20text-anchor%3D%22middle%22%3E%26%23x1F6E1%3B%3C%2Ftext%3E%3C%2Fg%3E%3Ctext%20x%3D%22400%22%20y%3D%22120%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%20filter%3D%22url(%23glow)%22%3ECARD%20BATTLE%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'Neural Deck 🧠🎴⚡',
+      description: 'لعبة معارك البطاقات العصبية والاستراتيجية Neural Deck! جهز deck بطاقاتك المستقبلية المكونة من 20 بطاقة سحرية وتغلب على الذكاء الاصطناعي بالذكاء والتخطيط!',
+      thumbnail: 'assets/images/neural-deck-thumb.png',
       genre: 'Strategy',
       platforms: ['browser', 'android'],
       localUrl: '/games/card-battle/index.html',
@@ -164,9 +167,9 @@ export class ArcadeService {
     {
       id: 'cairo-runner',
       category: 'general',
-      title: 'زحمة الميكروباص',
-      description: 'لعبة ركض لا نهائي إدمانية! تفادى الميكروباصات والتكاتك في شوارع مصر المزدحمة. تحدى أصدقاءك واعرف من سيصمد لفترة أطول!',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22road%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%231f2937%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23374151%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22glow%22%3E%3CfeGaussianBlur%20stdDeviation%3D%224%22%20result%3D%22blur%22%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D%22blur%22%2F%3E%3CfeMergeNode%20in%3D%22SourceGraphic%22%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%23111827%22%20%2F%3E%3Cg%20transform%3D%22perspective(500)%20rotateX(45)%20translate(0%2C%20-200)%22%3E%3Crect%20x%3D%22200%22%20y%3D%220%22%20width%3D%22400%22%20height%3D%221000%22%20fill%3D%22url(%23road)%22%2F%3E%3Cline%20x1%3D%22333%22%20y1%3D%220%22%20x2%3D%22333%22%20y2%3D%221000%22%20stroke%3D%22%23fcd34d%22%20stroke-width%3D%228%22%20stroke-dasharray%3D%2240%2C40%22%2F%3E%3Cline%20x1%3D%22466%22%20y1%3D%220%22%20x2%3D%22466%22%20y2%3D%221000%22%20stroke%3D%22%23fcd34d%22%20stroke-width%3D%228%22%20stroke-dasharray%3D%2240%2C40%22%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(350%2C%20350)%22%3E%3Crect%20x%3D%22-40%22%20y%3D%220%22%20width%3D%2280%22%20height%3D%22120%22%20fill%3D%22%23fff%22%20rx%3D%2210%22%2F%3E%3Crect%20x%3D%22-40%22%20y%3D%2280%22%20width%3D%2280%22%20height%3D%2215%22%20fill%3D%22%23ef4444%22%2F%3E%3Crect%20x%3D%22-30%22%20y%3D%2210%22%20width%3D%2260%22%20height%3D%2230%22%20fill%3D%22%231f2937%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(500%2C%20200)%20scale(0.8)%22%3E%3Crect%20x%3D%22-40%22%20y%3D%220%22%20width%3D%2280%22%20height%3D%22100%22%20fill%3D%22%23fcd34d%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%22-30%22%20y%3D%2210%22%20width%3D%2260%22%20height%3D%2230%22%20fill%3D%22%231f2937%22%20rx%3D%225%22%2F%3E%3Ccircle%20cx%3D%220%22%20cy%3D%2290%22%20r%3D%2215%22%20fill%3D%22%23000%22%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%22270%22%20cy%3D%22450%22%20r%3D%2225%22%20fill%3D%22%233b82f6%22%2F%3E%3Ccircle%20cx%3D%22270%22%20cy%3D%22430%22%20r%3D%2215%22%20fill%3D%22%23fca5a5%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22100%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%20filter%3D%22url(%23glow)%22%3ECAIRO%20RUNNER%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'Gridlock Gurus 🏎️💨',
+      description: 'لعبة تفادي السيارات والزحمة السريعة Gridlock Gurus! قد سيارتك الرياضية عبر الطريق المزدحم وتفادَ جميع السيارات والتكاتك دون أي تصادم!',
+      thumbnail: 'assets/images/gridlock-gurus-thumb.png',
       genre: 'Action',
       platforms: ['browser', 'android'],
       localUrl: '/games/cairo-runner/index.html',
@@ -175,9 +178,9 @@ export class ArcadeService {
     {
       id: 'lethal-company',
       category: 'general',
-      title: 'الشركة المميتة (2D)',
-      description: 'نسخة 2D من اللعبة الشهيرة! استكشف منشأة مظلمة، اجمع الخردة للشركة قبل انتهاء الوقت، ولا تدع الوحوش تمسك بك. تدعم اللعب التعاوني (P2P).',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Cdefs%3E%3CradialGradient%20id%3D%22bg%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2270%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23000%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23050505%22%2F%3E%3C%2FradialGradient%3E%3Cfilter%20id%3D%22glowGreen%22%3E%3CfeGaussianBlur%20stdDeviation%3D%224%22%20result%3D%22blur%22%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D%22blur%22%2F%3E%3CfeMergeNode%20in%3D%22SourceGraphic%22%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22glowRed%22%3E%3CfeGaussianBlur%20stdDeviation%3D%226%22%20result%3D%22blur%22%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D%22blur%22%2F%3E%3CfeMergeNode%20in%3D%22SourceGraphic%22%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22url(%23bg)%22%20%2F%3E%3Cg%20transform%3D%22translate(250%2C250)%22%3E%3Cpath%20d%3D%22M%200%200%20L%20350%20-150%20A%20350%20350%200%200%201%20350%20150%20Z%22%20fill%3D%22rgba(74%2C222%2C128%2C0.15)%22%20filter%3D%22url(%23glowGreen)%22%2F%3E%3Ccircle%20cx%3D%220%22%20cy%3D%220%22%20r%3D%2220%22%20fill%3D%22%2338bdf8%22%20%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(600%2C250)%22%3E%3Ccircle%20cx%3D%220%22%20cy%3D%220%22%20r%3D%2225%22%20fill%3D%22%23111%22%20stroke%3D%22%23ef4444%22%20stroke-width%3D%224%22%2F%3E%3Ccircle%20cx%3D%22-10%22%20cy%3D%22-5%22%20r%3D%226%22%20fill%3D%22%23ef4444%22%20filter%3D%22url(%23glowRed)%22%2F%3E%3Ccircle%20cx%3D%2210%22%20cy%3D%22-5%22%20r%3D%226%22%20fill%3D%22%23ef4444%22%20filter%3D%22url(%23glowRed)%22%2F%3E%3C%2Fg%3E%3Ctext%20x%3D%22400%22%20y%3D%22100%22%20font-family%3D%22monospace%22%20font-size%3D%2250%22%20font-weight%3D%22bold%22%20fill%3D%22%234ade80%22%20text-anchor%3D%22middle%22%20filter%3D%22url(%23glowGreen)%22%3ELETHAL%20COMPANY%202D%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'Loot & Scoot 📦👽👾',
+      description: 'لعبة التحدي واستكشاف الكواكب Loot & Scoot! اجمع الخردة والكنوز من المنشآت المظلمة واهرب من الوحوش الكونية الكوميدية مع أصدقائك!',
+      thumbnail: 'assets/images/loot-and-scoot-thumb.png',
       genre: 'Horror',
       platforms: ['browser', 'pc'],
       localUrl: '/games/lethal-company/index.html',
@@ -186,9 +189,9 @@ export class ArcadeService {
     {
       id: 'strategic-xo',
       category: 'mental',
-      title: 'XO الاستراتيجية',
-      description: 'النسخة الخارقة من لعبة إكس أو (Ultimate Tic-Tac-Toe). فكر في كل حركة لأن موقع لعبك يحدد أين سيلعب خصمك!',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%230f172a%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%231e293b%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22glowX%22%3E%3CfeGaussianBlur%20stdDeviation%3D%224%22%20result%3D%22blur%22%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D%22blur%22%2F%3E%3CfeMergeNode%20in%3D%22SourceGraphic%22%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22glowO%22%3E%3CfeGaussianBlur%20stdDeviation%3D%224%22%20result%3D%22blur%22%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D%22blur%22%2F%3E%3CfeMergeNode%20in%3D%22SourceGraphic%22%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22url(%23bg)%22%20%2F%3E%3Cg%20transform%3D%22translate(250%2C150)%22%3E%3Crect%20width%3D%22300%22%20height%3D%22300%22%20fill%3D%22%23334155%22%20rx%3D%2210%22%2F%3E%3Cline%20x1%3D%22100%22%20y1%3D%2210%22%20x2%3D%22100%22%20y2%3D%22290%22%20stroke%3D%22%23475569%22%20stroke-width%3D%224%22%2F%3E%3Cline%20x1%3D%22200%22%20y1%3D%2210%22%20x2%3D%22200%22%20y2%3D%22290%22%20stroke%3D%22%23475569%22%20stroke-width%3D%224%22%2F%3E%3Cline%20x1%3D%2210%22%20y1%3D%22100%22%20x2%3D%22290%22%20y2%3D%22100%22%20stroke%3D%22%23475569%22%20stroke-width%3D%224%22%2F%3E%3Cline%20x1%3D%2210%22%20y1%3D%22200%22%20x2%3D%22290%22%20y2%3D%22200%22%20stroke%3D%22%23475569%22%20stroke-width%3D%224%22%2F%3E%3Cg%20transform%3D%22translate(20%2C%2020)%22%3E%3Cpath%20d%3D%22M%200%200%20L%2060%2060%20M%2060%200%20L%200%2060%22%20stroke%3D%22%23f43f5e%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%20filter%3D%22url(%23glowX)%22%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(120%2C%20120)%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%2225%22%20fill%3D%22none%22%20stroke%3D%22%2338bdf8%22%20stroke-width%3D%228%22%20filter%3D%22url(%23glowO)%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3Ctext%20x%3D%22400%22%20y%3D%22100%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3ESTRATEGIC%20XO%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'Fractal XO ✖️⭕🌀',
+      description: 'لعبة التحدي والذكاء الهندسية الفائقة Fractal XO! العب في شبكة فركتال لانهائية 9x9 حيث تتداخل ألعاب XO الصغيرة داخل الشبكة الكبرى لتحديد التحدي القادم!',
+      thumbnail: 'assets/images/fractal-xo-thumb.png',
       genre: 'Puzzle',
       platforms: ['browser', 'android'],
       localUrl: '/games/strategic-xo/index.html',
@@ -197,9 +200,9 @@ export class ArcadeService {
     {
       id: 'memory-match',
       category: 'mental',
-      title: 'لعبة الذاكرة',
-      description: 'اختبر ذاكرتك وسرعة بديهتك مع أصدقائك في نفس الشاشة أو أونلاين عبر P2P. مستويات صعوبة متعددة بانتظارك!',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%231e293b%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%230f172a%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22url(%23bg)%22%20%2F%3E%3Cg%20transform%3D%22translate(250%2C200)%22%3E%3Crect%20width%3D%22120%22%20height%3D%22160%22%20rx%3D%2210%22%20fill%3D%22%2338bdf8%22%2F%3E%3Ctext%20x%3D%2260%22%20y%3D%2290%22%20font-size%3D%2260%22%20text-anchor%3D%22middle%22%20alignment-baseline%3D%22middle%22%3E%F0%9F%92%A1%3C%2Ftext%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(430%2C200)%22%3E%3Crect%20width%3D%22120%22%20height%3D%22160%22%20rx%3D%2210%22%20fill%3D%22%23cbd5e1%22%2F%3E%3Ctext%20x%3D%2260%22%20y%3D%2290%22%20font-size%3D%2260%22%20text-anchor%3D%22middle%22%20alignment-baseline%3D%22middle%22%3E%3F%3C%2Ftext%3E%3C%2Fg%3E%3Ctext%20x%3D%22400%22%20y%3D%22100%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3EMEMORY%20MATCH%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'Neural Pairs 🧠💡✨',
+      description: 'لعبة مطابقة الذاكرة العصبية الفائقة Neural Pairs! طابق البطاقات المزدوجة واكتشف الرموز المتماثلة في أسرع وقت مع أصدقائك في نفس الشاشة أو أونلاين عبر P2P!',
+      thumbnail: 'assets/images/neural-pairs-thumb.png',
       genre: 'Puzzle',
       platforms: ['browser', 'android'],
       localUrl: '/games/memory-match/index.html',
@@ -208,9 +211,9 @@ export class ArcadeService {
     {
       id: 'space-shooter',
       category: 'general',
-      title: 'حماية المجرة',
-      description: 'أنقذ كوكبك من الغزو الفضائي! تحكم في سفينتك، دمر الأعداء، وتعاون مع أصدقائك في نفس الشاشة أو أونلاين عبر الـ P2P.',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Cdefs%3E%3CradialGradient%20id%3D%22bg%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2270%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%231e1b4b%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23000%22%2F%3E%3C%2FradialGradient%3E%3Cfilter%20id%3D%22glow%22%3E%3CfeGaussianBlur%20stdDeviation%3D%224%22%20result%3D%22coloredBlur%22%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D%22coloredBlur%22%2F%3E%3CfeMergeNode%20in%3D%22SourceGraphic%22%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22url(%23bg)%22%20%2F%3E%3Cg%20fill%3D%22%23fff%22%20opacity%3D%220.5%22%3E%3Ccircle%20cx%3D%22100%22%20cy%3D%22100%22%20r%3D%222%22%2F%3E%3Ccircle%20cx%3D%22250%22%20cy%3D%2250%22%20r%3D%221%22%2F%3E%3Ccircle%20cx%3D%22400%22%20cy%3D%22150%22%20r%3D%223%22%2F%3E%3Ccircle%20cx%3D%22600%22%20cy%3D%2280%22%20r%3D%222%22%2F%3E%3Ccircle%20cx%3D%22750%22%20cy%3D%22200%22%20r%3D%221%22%2F%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%22400%22%20r%3D%222%22%2F%3E%3Ccircle%20cx%3D%22200%22%20cy%3D%22500%22%20r%3D%223%22%2F%3E%3Ccircle%20cx%3D%22500%22%20cy%3D%22450%22%20r%3D%221%22%2F%3E%3Ccircle%20cx%3D%22700%22%20cy%3D%22550%22%20r%3D%222%22%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(400%2C%20450)%22%20filter%3D%22url(%23glow)%22%3E%3Cpath%20d%3D%22M%200%20-40%20L%2040%2040%20L%200%2020%20L%20-40%2040%20Z%22%20fill%3D%22%233b82f6%22%2F%3E%3Crect%20x%3D%22-10%22%20y%3D%2230%22%20width%3D%2220%22%20height%3D%2240%22%20fill%3D%22%23f59e0b%22%20rx%3D%2210%22%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(250%2C%20200)%22%20filter%3D%22url(%23glow)%22%3E%3Cpath%20d%3D%22M%200%2040%20L%2030%20-30%20L%200%20-10%20L%20-30%20-30%20Z%22%20fill%3D%22%23ef4444%22%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(550%2C%20150)%20scale(1.5)%22%20filter%3D%22url(%23glow)%22%3E%3Cpath%20d%3D%22M%200%2040%20L%2040%20-40%20L%200%20-20%20L%20-40%20-40%20Z%22%20fill%3D%22%23ef4444%22%2F%3E%3C%2Fg%3E%3Crect%20x%3D%22395%22%20y%3D%22300%22%20width%3D%2210%22%20height%3D%2240%22%20fill%3D%22%233b82f6%22%20filter%3D%22url(%23glow)%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22100%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%20filter%3D%22url(%23glow)%22%3ESPACE%20SHOOTER%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'Nova Blitz 🚀💥🌌',
+      description: 'لعبة المعارك الفضائية والأنوار الكونية Nova Blitz! قد سفينتك الفضائية وسط انفجارات السوبرنوفا المضيئة واهزم أسراب الفضائيين!',
+      thumbnail: 'assets/images/nova-blitz-thumb.png',
       genre: 'Action',
       platforms: ['browser', 'pc'],
       localUrl: '/games/space-shooter/index.html',
@@ -219,9 +222,9 @@ export class ArcadeService {
     {
       id: 'spyfall',
       category: 'general',
-      title: 'الجاسوس (Spyfall)',
-      description: 'لعبة الخداع والمراوغة! العب مع أصدقائك من هاتف واحد (Pass & Play)، اطرحوا الأسئلة، واكشفوا الجاسوس قبل أن يهرب!',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%230f172a%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23020617%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22glow%22%3E%3CfeGaussianBlur%20stdDeviation%3D%228%22%20result%3D%22coloredBlur%22%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D%22coloredBlur%22%2F%3E%3CfeMergeNode%20in%3D%22SourceGraphic%22%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22url(%23bg)%22%20%2F%3E%3Cg%20transform%3D%22translate(400%2C300)%22%3E%3Cpath%20d%3D%22M-150%20-50%20C-150%20-150%20150%20-150%20150%20-50%20Z%22%20fill%3D%22%231e293b%22%20stroke%3D%22%23334155%22%20stroke-width%3D%224%22%2F%3E%3Crect%20x%3D%22-180%22%20y%3D%22-50%22%20width%3D%22360%22%20height%3D%2220%22%20fill%3D%22%230f172a%22%20stroke%3D%22%23334155%22%20stroke-width%3D%222%22%20rx%3D%225%22%2F%3E%3Cg%20filter%3D%22url(%23glow)%22%3E%3Ccircle%20cx%3D%22-60%22%20cy%3D%2230%22%20r%3D%2240%22%20fill%3D%22%23ef4444%22%20stroke%3D%22%23000%22%20stroke-width%3D%228%22%2F%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2230%22%20r%3D%2240%22%20fill%3D%22%23ef4444%22%20stroke%3D%22%23000%22%20stroke-width%3D%228%22%2F%3E%3Cline%20x1%3D%22-20%22%20y1%3D%2230%22%20x2%3D%2220%22%20y2%3D%2230%22%20stroke%3D%22%23000%22%20stroke-width%3D%228%22%2F%3E%3Cpath%20d%3D%22M-30%20120%20Q0%20150%2030%20120%22%20fill%3D%22none%22%20stroke%3D%22%23334155%22%20stroke-width%3D%226%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3Ctext%20x%3D%22400%22%20y%3D%22100%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%20filter%3D%22url(%23glow)%22%3ESPYFALL%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'Hidden Agent 🕵️‍♂️🔍💥',
+      description: 'لعبة الخداع والمراوغة السرية Hidden Agent! العب مع أصدقائك من هاتف واحد (Pass & Play)، اطرحوا الأسئلة الذكية واكشفوا الجاسوس الخفي قبل أن يهرب!',
+      thumbnail: 'assets/images/hidden-agent-thumb.png',
       genre: 'Social',
       platforms: ['browser', 'android'],
       localUrl: '/games/spyfall/index.html',
@@ -230,9 +233,9 @@ export class ArcadeService {
     {
       id: 'tick-tock-bomb',
       category: 'general',
-      title: 'القنبلة الموقوتة 💣',
-      description: 'لعبة جماعية حماسية (Pass & Play)! أجب على السؤال بسرعة ومرر الهاتف قبل أن تنفجر القنبلة في يدك. الوقت المتبقي عشوائي ومجهول!',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Cdefs%3E%3CradialGradient%20id%3D%22bg%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2270%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23450a0a%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23000%22%2F%3E%3C%2FradialGradient%3E%3Cfilter%20id%3D%22glow%22%3E%3CfeGaussianBlur%20stdDeviation%3D%2210%22%20result%3D%22blur%22%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D%22blur%22%2F%3E%3CfeMergeNode%20in%3D%22SourceGraphic%22%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22url(%23bg)%22%20%2F%3E%3Cg%20transform%3D%22translate(400%2C320)%22%3E%3Ccircle%20cx%3D%220%22%20cy%3D%220%22%20r%3D%22120%22%20fill%3D%22%23111827%22%20stroke%3D%22%231f2937%22%20stroke-width%3D%2210%22%2F%3E%3Crect%20x%3D%22-25%22%20y%3D%22-150%22%20width%3D%2250%22%20height%3D%2240%22%20fill%3D%22%23374151%22%20rx%3D%2210%22%2F%3E%3Cpath%20d%3D%22M0%20-150%20Q40%20-200%2080%20-180%22%20fill%3D%22none%22%20stroke%3D%22%23d97706%22%20stroke-width%3D%2210%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2280%22%20cy%3D%22-180%22%20r%3D%2220%22%20fill%3D%22%23ef4444%22%20filter%3D%22url(%23glow)%22%2F%3E%3Cpolygon%20points%3D%2280%2C-220%2090%2C-190%20120%2C-180%2090%2C-170%2080%2C-140%2070%2C-170%2040%2C-180%2070%2C-190%22%20fill%3D%22%23fcd34d%22%20filter%3D%22url(%23glow)%22%2F%3E%3Ctext%20x%3D%220%22%20y%3D%2225%22%20font-family%3D%22monospace%22%20font-size%3D%2260%22%20font-weight%3D%22bold%22%20fill%3D%22%23ef4444%22%20text-anchor%3D%22middle%22%20filter%3D%22url(%23glow)%22%3E00:03%3C%2Ftext%3E%3C%2Fg%3E%3Ctext%20x%3D%22400%22%20y%3D%22100%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%20filter%3D%22url(%23glow)%22%3ETICK%20TOCK%20BOMB%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'Hot Potato 🥔🔥💣',
+      description: 'لعبة التمرير والإجابة السريعة الحماسية Hot Potato! أجب على السؤال بسرعة ومرر الهاتف قبل أن تنفجر بطاطس القنبلة المشتعلة في يدك!',
+      thumbnail: 'assets/images/hot-potato-thumb.png',
       genre: 'Social',
       platforms: ['browser', 'android'],
       localUrl: '/games/tick-tock-bomb/index.html',
@@ -241,9 +244,9 @@ export class ArcadeService {
     {
       id: 'heads-up',
       category: 'general',
-      title: 'على رأسي 🤦‍♂️',
-      description: 'ضع الهاتف على جبهتك لتبدأ اللعب! سيقوم أصدقاؤك بتمثيل الكلمة التي تظهر على الشاشة، وعليك تخمينها قبل انتهاء الـ 60 ثانية.',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23312e81%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%231e1b4b%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22glow%22%3E%3CfeGaussianBlur%20stdDeviation%3D%2210%22%20result%3D%22blur%22%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D%22blur%22%2F%3E%3CfeMergeNode%20in%3D%22SourceGraphic%22%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22url(%23bg)%22%20%2F%3E%3Cg%20transform%3D%22translate(400%2C300)%22%3E%3Crect%20x%3D%22-150%22%20y%3D%22-80%22%20width%3D%22300%22%20height%3D%22160%22%20fill%3D%22%231e293b%22%20rx%3D%2220%22%20stroke%3D%22%233b82f6%22%20stroke-width%3D%228%22%20filter%3D%22url(%23glow)%22%2F%3E%3Crect%20x%3D%22-120%22%20y%3D%22-50%22%20width%3D%22240%22%20height%3D%22100%22%20fill%3D%22%233b82f6%22%20rx%3D%2210%22%2F%3E%3Ctext%20x%3D%220%22%20y%3D%2215%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2240%22%20font-weight%3D%22bold%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3E%D8%A3%D8%B3%D8%AF%3C%2Ftext%3E%3Cg%20transform%3D%22translate(0%2C%20-200)%22%3E%3Ccircle%20cx%3D%220%22%20cy%3D%220%22%20r%3D%2240%22%20fill%3D%22none%22%20stroke%3D%22%23cbd5e1%22%20stroke-width%3D%226%22%2F%3E%3Cpath%20d%3D%22M-20%20-10%20Q0%20-30%2020%20-10%22%20fill%3D%22none%22%20stroke%3D%22%23cbd5e1%22%20stroke-width%3D%226%22%2F%3E%3Cpath%20d%3D%22M-15%2015%20Q0%2025%2015%2015%22%20fill%3D%22none%22%20stroke%3D%22%23cbd5e1%22%20stroke-width%3D%226%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3Ctext%20x%3D%22400%22%20y%3D%22100%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%20filter%3D%22url(%23glow)%22%3EHEADS%20UP!%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'On My Head 📱🤦‍♂️✨',
+      description: 'لعبة الحركات والتخمين الجماعية On My Head! ضع الهاتف على جبهتك لتبدأ اللعب، وسيقوم أصدقاؤك بتمثيل الكلمة المعروضة وعليك تخمينها قبل انتهاء الـ 60 ثانية.',
+      thumbnail: 'assets/images/on-my-head-thumb.png',
       genre: 'Party',
       platforms: ['browser', 'android'],
       localUrl: '/games/heads-up/index.html',
@@ -252,9 +255,9 @@ export class ArcadeService {
     {
       id: 'draw-and-guess',
       category: 'general',
-      title: 'الرسم والتخمين 🎨',
-      description: 'هل أنت رسام ماهر؟ امسك الهاتف وارسم الكلمة السرية بينما يصرخ أصدقاؤك لتخمينها قبل أن ينتهي الوقت!',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%231e3a8a%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23172554%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22glow%22%3E%3CfeGaussianBlur%20stdDeviation%3D%225%22%20result%3D%22blur%22%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D%22blur%22%2F%3E%3CfeMergeNode%20in%3D%22SourceGraphic%22%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22url(%23bg)%22%20%2F%3E%3Cg%20transform%3D%22translate(400%2C300)%22%3E%3Crect%20x%3D%22-180%22%20y%3D%22-120%22%20width%3D%22360%22%20height%3D%22240%22%20fill%3D%22%23f8fafc%22%20rx%3D%2210%22%20stroke%3D%22%23cbd5e1%22%20stroke-width%3D%2210%22%2F%3E%3Cpath%20d%3D%22M-120%2020%20Q-80%20-60%20-40%2020%20T40%2020%20T120%2020%22%20fill%3D%22none%22%20stroke%3D%22%23ef4444%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2280%22%20cy%3D%22-40%22%20r%3D%2220%22%20fill%3D%22%23fcd34d%22%2F%3E%3Cg%20transform%3D%22translate(60%2C%2080)%20rotate(-30)%22%3E%3Crect%20x%3D%22-15%22%20y%3D%22-60%22%20width%3D%2230%22%20height%3D%22120%22%20fill%3D%22%23facc15%22%20rx%3D%225%22%2F%3E%3Cpolygon%20points%3D%22-15%2C-60%2015%2C-60%200%2C-90%22%20fill%3D%22%23fbbf24%22%2F%3E%3Cpolygon%20points%3D%22-5%2C-60%205%2C-60%200%2C-90%22%20fill%3D%22%23374151%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3Ctext%20x%3D%22400%22%20y%3D%22100%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2250%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%20filter%3D%22url(%23glow)%22%3EDRAW%20%26%20GUESS%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'Sketch & Guess 🎨✏️✨',
+      description: 'لعبة التحدي والإبداع الفني Sketch & Guess! امسك القلم السحري وارسم الكلمة السرية على اللوحة بينما يصرخ أصدقاؤك لتخمين الرسمة قبل فوات الوقت!',
+      thumbnail: 'assets/images/sketch-and-guess-thumb.png',
       genre: 'Party',
       platforms: ['browser', 'android', 'pc'],
       localUrl: '/games/draw-and-guess/index.html',
@@ -263,9 +266,9 @@ export class ArcadeService {
     {
       id: 'dobble',
       category: 'general',
-      title: 'المطابقة السريعة ⚡',
-      description: 'لعبة شاشة منقسمة (Split-Screen) للاعبين! هناك رمز واحد فقط مشترك بين بطاقتك وبطاقة خصمك، كن الأسرع في إيجاده والضغط عليه للفوز.',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%231e293b%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%230f172a%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22glow%22%3E%3CfeGaussianBlur%20stdDeviation%3D%228%22%20result%3D%22blur%22%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D%22blur%22%2F%3E%3CfeMergeNode%20in%3D%22SourceGraphic%22%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22url(%23bg)%22%20%2F%3E%3Cpath%20d%3D%22M0%20300%20L800%20300%22%20stroke%3D%22%23ef4444%22%20stroke-width%3D%228%22%20filter%3D%22url(%23glow)%22%2F%3E%3Cg%20transform%3D%22translate(400%2C150)%22%3E%3Ccircle%20cx%3D%220%22%20cy%3D%220%22%20r%3D%22100%22%20fill%3D%22%23fff%22%20stroke%3D%22%23cbd5e1%22%20stroke-width%3D%226%22%2F%3E%3Ctext%20x%3D%22-30%22%20y%3D%22-30%22%20font-size%3D%2240%22%3E%F0%9F%9A%80%3C%2Ftext%3E%3Ctext%20x%3D%2220%22%20y%3D%2230%22%20font-size%3D%2230%22%3E%F0%9F%8D%8E%3C%2Ftext%3E%3Ctext%20x%3D%22-20%22%20y%3D%2240%22%20font-size%3D%2250%22%3E%F0%9F%90%B1%3C%2Ftext%3E%3Ctext%20x%3D%2230%22%20y%3D%22-20%22%20font-size%3D%2235%22%3E%E2%9A%BD%3C%2Ftext%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(400%2C450)%22%3E%3Ccircle%20cx%3D%220%22%20cy%3D%220%22%20r%3D%22100%22%20fill%3D%22%23fff%22%20stroke%3D%22%23cbd5e1%22%20stroke-width%3D%226%22%2F%3E%3Ctext%20x%3D%2220%22%20y%3D%22-20%22%20font-size%3D%2230%22%3E%E2%AD%90%3C%2Ftext%3E%3Ctext%20x%3D%22-40%22%20y%3D%2210%22%20font-size%3D%2245%22%3E%F0%9F%90%B1%3C%2Ftext%3E%3Ctext%20x%3D%2210%22%20y%3D%2240%22%20font-size%3D%2235%22%3E%F0%9F%8E%B2%3C%2Ftext%3E%3Ctext%20x%3D%22-10%22%20y%3D%22-40%22%20font-size%3D%2225%22%3E%F0%9F%8E%A8%3C%2Ftext%3E%3C%2Fg%3E%3Ctext%20x%3D%22400%22%20y%3D%22300%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2250%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%20filter%3D%22url(%23glow)%22%20transform%3D%22translate(0%2C15)%22%3ESYMBOL%20CLASH%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'Symbol Hunter 🎯⚡🔮',
+      description: 'لعبة المطابقة السريعة وصيد الرموز الحماسية Symbol Hunter! ابحث عن الرمز المتطابق الوحيد بين بطاقتك وبطاقة خصمك واضغط عليه أولاً للفوز!',
+      thumbnail: 'assets/images/symbol-hunter-thumb.png',
       genre: 'Party',
       platforms: ['browser', 'android'],
       localUrl: '/games/dobble/index.html',
@@ -296,9 +299,9 @@ export class ArcadeService {
     {
       id: 'arabic-wordle',
       category: 'mental',
-      title: 'خمن الكلمة 🤔',
-      description: 'النسخة العربية من اللعبة الشهيرة Wordle. خمن الكلمة المكونة من 5 حروف في 6 محاولات فقط!',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%23121213%22%2F%3E%3Cg%20transform%3D%22translate(250%2C200)%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%2280%22%20height%3D%2280%22%20fill%3D%22%23538d4e%22%2F%3E%3Crect%20x%3D%22100%22%20y%3D%220%22%20width%3D%2280%22%20height%3D%2280%22%20fill%3D%22%23b59f3b%22%2F%3E%3Crect%20x%3D%22200%22%20y%3D%220%22%20width%3D%2280%22%20height%3D%2280%22%20fill%3D%22%233a3a3c%22%2F%3E%3Ctext%20x%3D%2240%22%20y%3D%2255%22%20font-size%3D%2250%22%20font-family%3D%22sans-serif%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3E%D9%83%3C%2Ftext%3E%3Ctext%20x%3D%22140%22%20y%3D%2255%22%20font-size%3D%2250%22%20font-family%3D%22sans-serif%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3E%D9%84%3C%2Ftext%3E%3Ctext%20x%3D%22240%22%20y%3D%2255%22%20font-size%3D%2250%22%20font-family%3D%22sans-serif%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3E%D9%85%3C%2Ftext%3E%3C%2Fg%3E%3Ctext%20x%3D%22400%22%20y%3D%22450%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3EWORDLE%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'LexiCode 🔤🟩🟨',
+      description: 'لعبة التشفير والتخمين الذكي للكلمات العربية LexiCode! خمن الكلمة السرية المكونة من 5 حروف في 6 محاولات فقط واكتشف الألوان الصحيحة!',
+      thumbnail: 'assets/images/lexicode-thumb.png',
       genre: 'Puzzle',
       platforms: ['browser', 'pc', 'android'],
       localUrl: '/games/arabic-wordle/index.html',
@@ -309,7 +312,7 @@ export class ArcadeService {
       category: 'mental',
       title: 'غرفة الهروب 🚪',
       description: 'لعبة تعاونية (P2P). تبادلا التلميحات عبر الميكروفون لحل الألغاز وفتح الأقفال والهروب معاً قبل نفاد الوقت!',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%231e1b4b%22%2F%3E%3Cg%20transform%3D%22translate(300%2C150)%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22200%22%20height%3D%22250%22%20fill%3D%22%23475569%22%20stroke%3D%22%23334155%22%20stroke-width%3D%2210%22%2F%3E%3Ccircle%20cx%3D%22160%22%20cy%3D%22125%22%20r%3D%2210%22%20fill%3D%22%23fbbf24%22%2F%3E%3C%2Fg%3E%3Ctext%20x%3D%22400%22%20y%3D%22500%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3EESCAPE%20ROOM%3C%2Ftext%3E%3C%2Fsvg%3E',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%231e1b4b%22%2F%3E%3Cg%20transform%3D%22translate(300%2C150)%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22200%22%20height%3D%22250%22%20fill%3D%22%23475569%22%20stroke%3D%22%23334155%22%20stroke-width%3D%2210%22%2F%3E%3Ccircle%20cx%3D%22160%22%20cy%3D%22125%22%20r%3D%2210%22%20fill%3D%22%23fbbf24%22%20%2F%3E%3C%2Fg%3E%3Ctext%20x%3D%22400%22%20y%3D%22500%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3EESCAPE%20ROOM%3C%2Ftext%3E%3C%2Fsvg%3E',
       genre: 'Co-op',
       platforms: ['browser', 'pc'],
       localUrl: '/games/escape-room/index.html',
@@ -318,9 +321,9 @@ export class ArcadeService {
     {
       id: 'fruit-slicer',
       category: 'general',
-      title: 'تقطيع الفواكه 🍉',
-      description: 'مرر إصبعك بسرعة لتقطيع الفواكه المتطايرة وتجنب القنابل لجمع أعلى النقاط. لعبة مسلية مليئة بالحركة!',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%2327272a%22%2F%3E%3Ctext%20x%3D%22300%22%20y%3D%22300%22%20font-size%3D%22100%22%20text-anchor%3D%22middle%22%20transform%3D%22rotate(-20%20300%20300)%22%3E%F0%9F%8D%89%3C%2Ftext%3E%3Ctext%20x%3D%22500%22%20y%3D%22250%22%20font-size%3D%22100%22%20text-anchor%3D%22middle%22%20transform%3D%22rotate(20%20500%20250)%22%3E%F0%9F%8D%8B%3C%2Ftext%3E%3Cpath%20d%3D%22M200%20350%20L600%20150%22%20stroke%3D%22%23fff%22%20stroke-width%3D%228%22%20fill%3D%22none%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22450%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3EFRUIT%20SLICER%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'Fruit Frenzy 🍉🍍⚔️',
+      description: 'لعبة التقطيع الاستوائية السريعة Fruit Frenzy! اقطع الفواكه المتطايرة بمهارة السيف النينجا واجمع أعلى النقاط وتفاد القنابل!',
+      thumbnail: 'assets/images/fruit-frenzy-thumb.png',
       genre: 'Action',
       platforms: ['browser', 'pc', 'android'],
       localUrl: '/games/fruit-slicer/index.html',
@@ -340,9 +343,9 @@ export class ArcadeService {
     {
       id: 'flappy-clone',
       category: 'general',
-      title: 'الطائر المضحك 🐒',
-      description: 'اضغط على الشاشة للقفز وتفادى الأنابيب في هذه النسخة المضحكة من اللعبة الشهيرة!',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%2338bdf8%22%2F%3E%3Crect%20x%3D%22500%22%20y%3D%220%22%20width%3D%22120%22%20height%3D%22200%22%20fill%3D%22%2322c55e%22%20stroke%3D%22%23166534%22%20stroke-width%3D%228%22%2F%3E%3Crect%20x%3D%22480%22%20y%3D%22160%22%20width%3D%22160%22%20height%3D%2240%22%20fill%3D%22%2322c55e%22%20stroke%3D%22%23166534%22%20stroke-width%3D%228%22%2F%3E%3Ctext%20x%3D%22250%22%20y%3D%22300%22%20font-size%3D%22100%22%20text-anchor%3D%22middle%22%3E%F0%9F%90%92%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22500%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3EFLAPPY%20CLONE%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'Flying Kong 🐦🎈✨',
+      description: 'لعبة الطيران والمغامرة Flying Kong! حرك العصفورة المضحكة وطير بها بمهارة بين الأنابيب والحواجز الملونة للتحليق لأعلى الأرقام القياسية!',
+      thumbnail: 'assets/images/flying-kong-thumb.png',
       genre: 'Action',
       platforms: ['browser', 'android'],
       localUrl: '/games/flappy-clone/index.html',
@@ -373,9 +376,9 @@ export class ArcadeService {
     {
       id: 'space-deception',
       category: 'general',
-      title: 'خيانة في الفضاء 🚀',
-      description: 'لعبة خداع واستنتاج (P2P). العب مع أصدقائك! أنجزوا المهام كطاقم، أو قوموا بتخريب السفينة وقتل الطاقم كمخربين دون أن يتم اكتشافكم.',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%23000%22%2F%3E%3Ccircle%20cx%3D%22200%22%20cy%3D%22300%22%20r%3D%2280%22%20fill%3D%22%2338bdf8%22%2F%3E%3Crect%20x%3D%22220%22%20y%3D%22260%22%20width%3D%2260%22%20height%3D%2240%22%20rx%3D%2220%22%20fill%3D%22%2394a3b8%22%2F%3E%3Ccircle%20cx%3D%22600%22%20cy%3D%22300%22%20r%3D%2280%22%20fill%3D%22%23ef4444%22%2F%3E%3Crect%20x%3D%22520%22%20y%3D%22260%22%20width%3D%2260%22%20height%3D%2240%22%20rx%3D%2220%22%20fill%3D%22%2394a3b8%22%2F%3E%3Cpath%20d%3D%22M560%20320%20L520%20350%22%20stroke%3D%22%23fff%22%20stroke-width%3D%2210%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22500%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23ef4444%22%20text-anchor%3D%22middle%22%3ESPACE%20DECEPTION%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'AstroTrick 🚀🕵️‍♂️🔪',
+      description: 'لعبة التحدي والاستنتاج الخاطف AstroTrick! أنجزوا مهام سفينة الفضاء كطاقم، أو قوموا بالتسلل والتخريب كمخربين دون أن يكتشفكم أحد!',
+      thumbnail: 'assets/images/astrotrick-thumb.png',
       genre: 'Co-op',
       platforms: ['browser', 'pc', 'android'],
       localUrl: '/games/space-deception/index.html',
@@ -385,9 +388,9 @@ export class ArcadeService {
     {
       id: 'ludo-party',
       category: 'general',
-      title: 'POLO 🎲',
-      description: 'لعبة بولو الكلاسيكية الممتعة بالألوان الفاخرة (الموف، البينك، الأسود، البني)! العب مع 3 من أصدقائك وواجه التحدي بالحجارة الكريستالية.',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Cdefs%3E%3CradialGradient%20id%3D%22bg%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%231b0736%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23080112%22%2F%3E%3C%2FradialGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22url(%23bg)%22%2F%3E%3Crect%20x%3D%22200%22%20y%3D%2280%22%20width%3D%22400%22%20height%3D%22400%22%20rx%3D%2230%22%20fill%3D%22%230f172a%22%20stroke%3D%22%23facc15%22%20stroke-width%3D%228%22%2F%3E%3Crect%20x%3D%22210%22%20y%3D%2290%22%20width%3D%22170%22%20height%3D%22170%22%20rx%3D%2220%22%20fill%3D%22%23a855f7%22%2F%3E%3Ccircle%20cx%3D%22295%22%20cy%3D%22175%22%20r%3D%2245%22%20fill%3D%22%23fff%22%20opacity%3D%220.9%22%2F%3E%3Ccircle%20cx%3D%22275%22%20cy%3D%22155%22%20r%3D%2216%22%20fill%3D%22%23a855f7%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22315%22%20cy%3D%22155%22%20r%3D%2216%22%20fill%3D%22%23a855f7%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22275%22%20cy%3D%22195%22%20r%3D%2216%22%20fill%3D%22%23a855f7%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22315%22%20cy%3D%22195%22%20r%3D%2216%22%20fill%3D%22%23a855f7%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%2F%3E%3Crect%20x%3D%22420%22%20y%3D%2290%22%20width%3D%22170%22%20height%3D%22170%22%20rx%3D%2220%22%20fill%3D%22%23ec4899%22%2F%3E%3Ccircle%20cx%3D%22505%22%20cy%3D%22175%22%20r%3D%2245%22%20fill%3D%22%23fff%22%20opacity%3D%220.9%22%2F%3E%3Ccircle%20cx%3D%22485%22%20cy%3D%22155%22%20r%3D%2216%22%20fill%3D%22%23ec4899%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22525%22%20cy%3D%22155%22%20r%3D%2216%22%20fill%3D%22%23ec4899%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22485%22%20cy%3D%22195%22%20r%3D%2216%22%20fill%3D%22%23ec4899%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22525%22%20cy%3D%22195%22%20r%3D%2216%22%20fill%3D%22%23ec4899%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%2F%3E%3Crect%20x%3D%22210%22%20y%3D%22300%22%20width%3D%22170%22%20height%3D%22170%22%20rx%3D%2220%22%20fill%3D%22%23334155%22%2F%3E%3Ccircle%20cx%3D%22295%22%20cy%3D%22385%22%20r%3D%2245%22%20fill%3D%22%23fff%22%20opacity%3D%220.9%22%2F%3E%3Ccircle%20cx%3D%22275%22%20cy%3D%22365%22%20r%3D%2216%22%20fill%3D%22%231e293b%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22315%22%20cy%3D%22365%22%20r%3D%2216%22%20fill%3D%22%231e293b%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22275%22%20cy%3D%22405%22%20r%3D%2216%22%20fill%3D%22%231e293b%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22315%22%20cy%3D%22405%22%20r%3D%2216%22%20fill%3D%22%231e293b%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%2F%3E%3Crect%20x%3D%22420%22%20y%3D%22300%22%20width%3D%22170%22%20height%3D%22170%22%20rx%3D%2220%22%20fill%3D%22%238b4513%22%2F%3E%3Ccircle%20cx%3D%22505%22%20cy%3D%22385%22%20r%3D%2245%22%20fill%3D%22%23fff%22%20opacity%3D%220.9%22%2F%3E%3Ccircle%20cx%3D%22485%22%20cy%3D%22365%22%20r%3D%2216%22%20fill%3D%22%238b4513%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22525%22%20cy%3D%22365%22%20r%3D%2216%22%20fill%3D%22%238b4513%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22485%22%20cy%3D%22405%22%20r%3D%2216%22%20fill%3D%22%238b4513%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22525%22%20cy%3D%22405%22%20r%3D%2216%22%20fill%3D%22%238b4513%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%2F%3E%3Crect%20x%3D%22370%22%20y%3D%22250%22%20width%3D%2260%22%20height%3D%2260%22%20fill%3D%22%23facc15%22%20rx%3D%2210%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22292%22%20font-size%3D%2236%22%20text-anchor%3D%22middle%22%3E%F0%9F%8F%86%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22540%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2264%22%20font-weight%3D%22900%22%20fill%3D%22%23facc15%22%20text-anchor%3D%22middle%22%20letter-spacing%3D%226%22%3EPOLO%20%F0%9F%8F%B4%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'Four Gems 💎🎲✨',
+      description: 'لعبة البورد الكلاسيكية الفاخرة Four Gems! حرك أحجارك الكريستالية الأربعة (ياقوت، زمرد، ياقوت أزرق، جمشت) عبر اللوحة الذهبية وكن أول من يصل بكل جواهره إلى البيت!',
+      thumbnail: 'assets/images/four-gems-thumb.png',
       genre: 'Board',
       platforms: ['browser', 'android'],
       localUrl: '/games/ludo-party/index.html',
@@ -396,9 +399,9 @@ export class ArcadeService {
     {
       id: 'crazy-uno',
       category: 'general',
-      title: 'JOHN 🎴',
-      description: 'لعبة البطاقات الشهيرة JOHN باللونين الأسود والموف! العب مع 2 إلى 8 أصدقاء، استخدم بطاقات السحب والعكس، ولا تنس أن تصرخ "JOHN" قبل الفوز!',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Cdefs%3E%3CradialGradient%20id%3D%22bg%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%231b0736%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23080112%22%2F%3E%3C%2FradialGradient%3E%3ClinearGradient%20id%3D%22cardBg%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23a855f7%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%236b21a8%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22url(%23bg)%22%2F%3E%3Ccircle%20cx%3D%22400%22%20cy%3D%22240%22%20r%3D%22180%22%20fill%3D%22%23a855f7%22%20opacity%3D%220.25%22%2F%3E%3Cg%20transform%3D%22translate(400%2C%20240)%20rotate(-12)%22%3E%3Crect%20x%3D%22-110%22%20y%3D%22-165%22%20width%3D%22220%22%20height%3D%22330%22%20fill%3D%22%23090312%22%20stroke%3D%22%23a855f7%22%20stroke-width%3D%226%22%20rx%3D%2224%22%2F%3E%3Crect%20x%3D%22-98%22%20y%3D%22-153%22%20width%3D%22196%22%20height%3D%22306%22%20fill%3D%22url(%23cardBg)%22%20rx%3D%2218%22%2F%3E%3Cellipse%20cx%3D%220%22%20cy%3D%220%22%20rx%3D%2270%22%20ry%3D%22110%22%20fill%3D%22%23090312%22%20stroke%3D%22%23e9d5ff%22%20stroke-width%3D%223%22%20transform%3D%22rotate(30)%22%2F%3E%3Ctext%20x%3D%220%22%20y%3D%2216%22%20font-family%3D%22sans-serif%22%20font-size%3D%2252%22%20font-weight%3D%22900%22%20fill%3D%22%23ffffff%22%20text-anchor%3D%22middle%22%20letter-spacing%3D%223%22%3EJOHN%3C%2Ftext%3E%3C%2Fg%3E%3Ctext%20x%3D%22400%22%20y%3D%22540%22%20font-family%3D%22sans-serif%22%20font-size%3D%2264%22%20font-weight%3D%22900%22%20fill%3D%22%23c084fc%22%20text-anchor%3D%22middle%22%20letter-spacing%3D%224%22%3EJOHN%20%F0%9F%8E%B4%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'JOHN 🎴🖤💜',
+      description: 'لعبة البطاقات الشهيرة والمثيرة JOHN! العب مع 2 إلى 8 أصدقاء باللونين الأسود والأرجواني الفاخر، استخدم بطاقات السحب والعكس القاتلة، ولا تنس أن تصرخ "JOHN" قبل الفوز!',
+      thumbnail: 'assets/images/john-thumb.png',
       genre: 'Card',
       platforms: ['browser', 'android'],
       localUrl: '/games/crazy-uno/index.html',
@@ -408,9 +411,9 @@ export class ArcadeService {
     {
       id: 'werewolf-village',
       category: 'general',
-      title: 'القرية الملعونة 🐺',
-      description: 'لعبة خداع جماعية (5 إلى 10 لاعبين). هناك مستذئبون يتخفون بين القرويين! حققوا، تناقشوا عبر الميكروفون، واكتشفوا الخونة قبل حلول الليل.',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%230f172a%22%2F%3E%3Ccircle%20cx%3D%22400%22%20cy%3D%22300%22%20r%3D%22150%22%20fill%3D%22%23fef08a%22%2F%3E%3Cpath%20d%3D%22M300%20450%20Q400%20200%20500%20450%20Z%22%20fill%3D%22%23020617%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22550%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23ef4444%22%20text-anchor%3D%22middle%22%3EWEREWOLF%20VILLAGE%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: "Who's the Wolf? 🐺🌕🔍",
+      description: "لعبة الغموض والتنكر الجماعية Who's the Wolf? هناك مستذئب مخادع يتخفى بين القرويين! تناقشوا وحققوا لاكتشاف الخونة قبل منتصف الليل!",
+      thumbnail: 'assets/images/whos-the-wolf-thumb.png',
       genre: 'Social',
       platforms: ['browser', 'android', 'pc'],
       localUrl: '/games/werewolf-village/index.html',
@@ -452,23 +455,11 @@ export class ArcadeService {
       localModeType: 'pass_and_play'
     },
     {
-      id: 'temporal-rift',
-      category: 'mental',
-      title: 'صدع الزمن ⏳',
-      description: 'لعبة ألغاز تعاونية تفاعلية عبر الزمن لـ 3 لاعبين (الماضي، الحاضر، المستقبل). تحرك بحذر فكل فعل تفعله في الماضي أو الحاضر سيغير مجرى التاريخ واللغز للآخرين!',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22%230f172a%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22300%22%20font-size%3D%22120%22%20text-anchor%3D%22middle%22%3E%E2%8F%B3%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22420%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%2322c55e%22%20text-anchor%3D%22middle%22%3ETEMPORAL%20RIFT%3C%2Ftext%3E%3C%2Fsvg%3E',
-      genre: 'Co-op',
-      platforms: ['browser', 'pc'],
-      localUrl: '/games/temporal-rift/index.html',
-      status: 'available',
-      hasCustomMenu: true
-    },
-    {
       id: 'number-hunt',
       category: 'general',
-      title: 'صيد الأرقام 🎯',
-      description: 'لعبة سرعة بديهة جماعية! ابحث عن الرقم المطلوب وسط شبكة من الأرقام العشوائية واضغط عليه قبل منافسيك لجمع النقاط!',
-      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%231e3a8a%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%230d1b2a%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22url(%23bg)%22%2F%3E%3Ccircle%20cx%3D%22400%22%20cy%3D%22300%22%20r%3D%22120%22%20fill%3D%22none%22%20stroke%3D%22%233b82f6%22%20stroke-width%3D%228%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22325%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2290%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3E42%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22500%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2255%22%20font-weight%3D%22900%22%20fill%3D%22%23facc15%22%20text-anchor%3D%22middle%22%3ENUMBER%20HUNT%3C%2Ftext%3E%3C%2Fsvg%3E',
+      title: 'Spot It: Digits 🎯🔢✨',
+      description: 'لعبة السرعة والتركيز الخاطف Spot It: Digits! ابحث عن الرقم المطلوب من بين مئات الأرقام المتطايرة واضغط عليه فوراً للانتصار!',
+      thumbnail: 'assets/images/spot-it-digits-thumb.png',
       genre: 'Party',
       platforms: ['browser', 'pc', 'android'],
       localUrl: '/games/number-hunt/index.html',
@@ -485,6 +476,16 @@ export class ArcadeService {
       localUrl: '/games/mindustry/index.html',
       status: 'available',
       hasCustomMenu: true
+    },
+    {
+      id: 'adventure-time',
+      category: 'general',
+      title: 'Adventure Time: Ooo 🗡️👑',
+      description: 'مغامرة فين وجيك في أرض أوو! استكشف القرى، حارب الأشرار والأساطير، وجمع الكنوز في عالم مفتوح مليء بالغموض.',
+      thumbnail: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22600%22%20viewBox%3D%220%200%20800%20600%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22sky%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2337b6f7%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23a7f3d0%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22800%22%20height%3D%22600%22%20fill%3D%22url(%23sky)%22%2F%3E%3Ccircle%20cx%3D%22680%22%20cy%3D%22100%22%20r%3D%2250%22%20fill%3D%22%23fbbf24%22%2F%3E%3Cpath%20d%3D%22M0%20400%20Q100%20320%20200%20390%20T400%20390%20T600%20390%20T800%20390%20V600%20H0%20Z%22%20fill%3D%22%234ade80%22%2F%3E%3Ctext%20x%3D%22400%22%20y%3D%22480%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2260%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3E%F0%9F%97%A1%EF%B8%8F%3C%2Ftext%3E%3Ctext%20x%3D%22400%22%20y%3D%22550%22%20font-family%3D%22system-ui%2C%20sans-serif%22%20font-size%3D%2250%22%20font-weight%3D%22900%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3EOOO%3C%2Ftext%3E%3C%2Fsvg%3E',
+      genre: 'RPG',
+      platforms: ['browser', 'android', 'pc'],
+      status: 'available'
     }
   ];
 

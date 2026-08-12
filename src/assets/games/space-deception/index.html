@@ -125,6 +125,76 @@
         </div>
     </div>
 
+    <!-- لوحة إعدادات اللعبة (الكمبيوتر) -->
+    <div id="settings-panel" class="settings-panel hidden">
+        <div class="panel-header">
+            <h3>⚙️ إعدادات اللعبة</h3>
+            <button id="close-settings-btn" class="close-btn">✕</button>
+        </div>
+        <div class="panel-body">
+            <div class="setting-row">
+                <label>سرعة اللاعبين</label>
+                <input type="range" id="setting-speed" min="2" max="8" value="4">
+                <span id="setting-speed-val">4</span>
+            </div>
+            <div class="setting-row">
+                <label>مدى الرؤية</label>
+                <input type="range" id="setting-vision" min="100" max="600" step="50" value="250">
+                <span id="setting-vision-val">250</span>
+            </div>
+            <div class="setting-row">
+                <label>مدة التصويت</label>
+                <input type="range" id="setting-vote-time" min="20" max="120" step="10" value="60">
+                <span id="setting-vote-time-val">60 ثانية</span>
+            </div>
+            <div class="setting-row">
+                <label>مهام لكل لاعب</label>
+                <input type="range" id="setting-tasks" min="1" max="8" value="4">
+                <span id="setting-tasks-val">4</span>
+            </div>
+            <div class="setting-row">
+                <label>تأكيد طرد المشبوه</label>
+                <input type="checkbox" id="setting-confirm-eject" checked>
+            </div>
+            <div class="setting-row">
+                <label>الوقت بين الطوارئ</label>
+                <input type="range" id="setting-emergency-cd" min="10" max="60" step="5" value="30">
+                <span id="setting-emergency-cd-val">30 ثانية</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- لوحة تخصيص الشخصية (المحطة التانية) -->
+    <div id="customize-panel" class="customize-panel hidden">
+        <div class="panel-header">
+            <h3>🎨 تخصيص الشخصية</h3>
+            <button id="close-customize-btn" class="close-btn">✕</button>
+        </div>
+        <div class="panel-body">
+            <div class="customize-section">
+                <label>🎨 اللون</label>
+                <div id="customize-colors" class="customize-grid"></div>
+            </div>
+            <div class="customize-section">
+                <label>🐱 الحيوان الأليف</label>
+                <div id="customize-pets" class="customize-grid"></div>
+            </div>
+            <div class="customize-section">
+                <label>👔 اللباس</label>
+                <div id="customize-outfits" class="customize-grid"></div>
+            </div>
+            <div class="customize-section">
+                <label>🧢 الطاقية</label>
+                <div id="customize-hats" class="customize-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- زرار بدء اللعبة داخل السفينة -->
+    <div id="ship-start-btn" class="ship-start-btn hidden" onclick="document.getElementById('start-game-btn').click()">
+        🚀 بدء المهمة
+    </div>
+
     <script src="game.js?v=20260810_pseudo3d_v100"></script>
 </body>
 </html>

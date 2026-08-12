@@ -26,6 +26,18 @@
     
     <div class="h-6 w-px bg-white/10 mx-1"></div>
     
+    <!-- Global Friends Hub Button -->
+    <button (click)="showGlobalFriendsModal = true" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all relative group" title="قائمة الأصدقاء">
+      <span class="text-base">👥</span>
+      @if (globalState.friends().length > 0) {
+        <span class="absolute top-2 left-2.5 h-4 min-w-[16px] px-1 flex items-center justify-center bg-indigo-600 rounded-full border-2 border-slate-950 text-[10px] font-black text-white">
+          {{ globalState.friends().length }}
+        </span>
+      }
+    </button>
+
+    <div class="h-6 w-px bg-white/10 mx-1"></div>
+
     <!-- Notifications -->
     <button class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all relative group" (click)="globalState.clearNotifications()">
       <svg lucideIcon="bell" class="w-5 h-5 group-hover:animate-pulse"></svg>
@@ -59,3 +71,56 @@
 
   </div>
 </header>
+
+<!-- Global Friends Modal -->
+<div *ngIf="showGlobalFriendsModal" class="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 text-right" dir="rtl">
+  <div class="bg-slate-900 border border-white/10 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl space-y-6 animate-in zoom-in-95">
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <h3 class="text-xl font-black text-white flex items-center gap-2"><span>👥</span> أصدقائي</h3>
+      <button (click)="showGlobalFriendsModal = false" class="size-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center font-bold">✕</button>
+    </div>
+
+    <!-- Add Friend Form -->
+    <div class="space-y-2">
+      <label class="block text-xs font-bold text-slate-300">إضافة صديق جديد:</label>
+      <div class="flex gap-2">
+        <input type="text" [(ngModel)]="friendQuery" placeholder="اكتب اسم المستخدم أو المعرف..." class="flex-1 bg-white/5 border border-white/10 rounded-xl h-11 px-4 text-xs text-white focus:outline-none focus:border-indigo-500" />
+        <button (click)="addFriend()" [disabled]="isAddingFriend" class="px-5 h-11 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition-all disabled:opacity-50">
+          {{ isAddingFriend ? 'جاري الإضافة...' : 'إضافة ➕' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Friends List -->
+    <div class="space-y-3">
+      <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">قائمة الأصدقاء ({{ globalState.friends().length }})</h4>
+      
+      @if (globalState.friends().length > 0) {
+        <div class="flex flex-col gap-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+          <div *ngFor="let friend of globalState.friends()" class="flex items-center justify-between bg-black/40 border border-white/5 p-3 rounded-2xl">
+            <div class="flex items-center gap-3">
+              <img [src]="friend.avatarUrl" class="size-10 rounded-full border border-white/10 object-cover" alt="Avatar">
+              <div>
+                <h5 class="text-sm font-bold text-white leading-tight">{{ friend.name }}</h5>
+                <span class="text-[10px]" [ngClass]="friend.status === 'online' ? 'text-green-400' : (friend.status === 'in-game' ? 'text-indigo-400' : 'text-slate-400')">
+                  {{ friend.status === 'online' ? 'متصل الآن' : (friend.status === 'in-game' ? 'يلعب حالياً' : 'غير متصل') }}
+                </span>
+              </div>
+            </div>
+            <span class="px-3 py-1.5 rounded-xl bg-white/5 text-indigo-300 text-xs font-bold border border-white/5">صديق مقرب ⭐</span>
+          </div>
+        </div>
+      } @else {
+        <div class="bg-black/30 border border-white/5 rounded-2xl p-8 text-center space-y-2">
+          <span class="text-3xl opacity-60">👥</span>
+          <p class="text-sm text-slate-400 font-medium">ليس لديك أصدقاء مضافون بعد.</p>
+          <p class="text-xs text-indigo-400">ابحث عن أصدقائك وأضفهم للتواصل ومشاركة الكتب والأنشطة!</p>
+        </div>
+      }
+    </div>
+
+    <button (click)="showGlobalFriendsModal = false" class="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-2xl border border-white/10 text-xs transition-colors">
+      إغلاق
+    </button>
+  </div>
+</div>

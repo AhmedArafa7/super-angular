@@ -92,28 +92,49 @@
             100% { transform: translateY(0) rotate(0deg); }
         }
 
-        /* --- SETUP MODAL --- */
+        /* --- RICH THEMATIC SETUP MODAL --- */
         #setup-screen {
             position: absolute;
             inset: 0;
-            background: rgba(8, 1, 18, 0.94);
-            backdrop-filter: blur(16px);
+            background: rgba(8, 1, 18, 0.95);
+            backdrop-filter: blur(18px);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 100;
             text-align: center;
-            padding: 20px;
+            padding: 25px;
         }
 
         #setup-screen h1 {
-            font-size: 4rem;
+            font-size: 4.2rem;
             font-weight: 900;
             color: var(--gold-real);
-            margin: 0 0 1rem 0;
+            margin: 0.5rem 0 0.5rem 0;
             text-shadow: 0 4px 30px rgba(212, 175, 55, 0.6);
-            letter-spacing: 2px;
+            letter-spacing: 3px;
+        }
+
+        /* PAWNS PREVIEW STRIP ON SETUP SCREEN */
+        .pawns-preview-strip {
+            display: flex;
+            gap: 0.8rem;
+            margin: 1.2rem 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .pawn-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.2rem;
+            border-radius: 100px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
         }
 
         /* LOCAL PLAYER COUNT SELECTOR */
@@ -152,19 +173,19 @@
         .btn {
             background: linear-gradient(135deg, #a855f7, #7e22ce);
             color: white;
-            border: none;
-            padding: 1.15rem 3rem;
+            border: 2px solid var(--gold-real);
+            padding: 1.15rem 3.5rem;
             border-radius: 100px;
-            font-size: 1.45rem;
+            font-size: 1.5rem;
             font-weight: 900;
             cursor: pointer;
             transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 8px 25px rgba(168, 85, 247, 0.5);
+            box-shadow: 0 8px 30px rgba(168, 85, 247, 0.6);
             font-family: 'Tajawal', sans-serif;
         }
         .btn:hover:not(:disabled) {
-            transform: translateY(-3px) scale(1.03);
-            box-shadow: 0 12px 35px rgba(168, 85, 247, 0.75);
+            transform: translateY(-3px) scale(1.04);
+            box-shadow: 0 14px 40px rgba(168, 85, 247, 0.85);
         }
         .btn:disabled {
             background: #334155;
@@ -498,7 +519,7 @@
             50% { transform: scale(1.18); }
         }
 
-        /* --- PURE GEMSTONE PAWNS --- */
+        /* --- 3D ROUND GEM PAWNS (Four Gems) --- */
         #tokens-layer {
             position: absolute;
             inset: 0;
@@ -508,8 +529,8 @@
 
         .token {
             position: absolute;
-            width: calc(100% / 15 * 0.76);
-            height: calc(100% / 15 * 0.76);
+            width: calc(100% / 15 * 0.78);
+            height: calc(100% / 15 * 0.78);
             border-radius: 50%;
             border: none !important;
             outline: none !important;
@@ -520,28 +541,33 @@
             z-index: 10;
         }
 
-        /* Gem Specular Glare */
+        /* Spherical glossy highlight (top-left glare) */
         .token::before {
             content: '';
             position: absolute;
-            top: 10%;
-            left: 15%;
-            width: 42%;
-            height: 32%;
-            border-radius: 50% 50% 60% 40%;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.2) 65%, transparent 100%);
-            transform: rotate(-15deg);
+            top: 7%;
+            left: 13%;
+            width: 36%;
+            height: 27%;
+            border-radius: 50%;
+            background: radial-gradient(ellipse at 40% 40%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.2) 65%, transparent 100%);
+            transform: rotate(-22deg);
             pointer-events: none;
+            z-index: 2;
         }
 
-        /* Gem Inner Cut Facet Contour */
+        /* 3D sphere shading + inner refraction glow */
         .token::after {
             content: '';
             position: absolute;
-            inset: 14%;
+            inset: 0;
             border-radius: 50%;
-            background: radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.3) 0%, transparent 60%);
-            box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.5), inset 0 -4px 8px rgba(0,0,0,0.5);
+            background:
+                radial-gradient(circle at 72% 82%, rgba(255, 255, 255, 0.3) 0%, transparent 55%),
+                radial-gradient(circle at 50% 35%, transparent 42%, rgba(0, 0, 0, 0.28) 76%, rgba(0, 0, 0, 0.6) 100%);
+            box-shadow:
+                inset -8px -10px 16px rgba(0, 0, 0, 0.55),
+                inset 5px 7px 11px rgba(255, 255, 255, 0.35);
             pointer-events: none;
         }
 
@@ -556,31 +582,31 @@
 
         @keyframes gemPulse {
             0% { transform: translate(-50%, -50%) scale(1.08); box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.9), 0 0 22px currentColor; }
-            100% { transform: translate(-50%, -70%) scale(1.32); box-shadow: 0 0 0 16px rgba(212, 175, 55, 0), 0 0 35px currentColor, 0 18px 36px rgba(0,0,0,0.9); }
+            100% { transform: translate(-50%, -70%) scale(1.32); box-shadow: 0 0 0 16px rgba(212, 175, 55, 0), 0 0 35px currentColor, 0 18px 36px rgba(0, 0, 0, 0.9); }
         }
 
-        /* 1. Mauve Amethyst Gem (🔴 slot) */
+        /* 1. Amethyst (Mauve) round gem */
         .token.red {
-            background: radial-gradient(circle at 35% 35%, #e9d5ff 0%, #a855f7 42%, #7e22ce 75%, #3b0764 100%);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.85), 0 0 14px rgba(168, 85, 247, 0.6);
+            background: radial-gradient(circle at 32% 28%, #f3e8ff 0%, #c084fc 28%, #a855f7 52%, #7e22ce 76%, #4c1d95 100%);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.85), 0 0 18px rgba(168, 85, 247, 0.7);
         }
 
-        /* 2. Pink Rose Quartz Gem (🟢 slot) */
+        /* 2. Rose Quartz (Pink) round gem */
         .token.green {
-            background: radial-gradient(circle at 35% 35%, #fbcfe8 0%, #ec4899 42%, #be185d 75%, #831843 100%);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.85), 0 0 14px rgba(236, 72, 153, 0.6);
+            background: radial-gradient(circle at 32% 28%, #fdf2f8 0%, #f9a8d4 28%, #ec4899 52%, #be185d 76%, #831843 100%);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.85), 0 0 18px rgba(236, 72, 153, 0.7);
         }
 
-        /* 3. Black Obsidian Gem (🟡 slot) */
+        /* 3. Black Obsidian (Slate) round gem */
         .token.yellow {
-            background: radial-gradient(circle at 35% 35%, #cbd5e1 0%, #475569 42%, #1e293b 75%, #020617 100%);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.85), 0 0 14px rgba(100, 116, 139, 0.6);
+            background: radial-gradient(circle at 32% 28%, #e2e8f0 0%, #64748b 28%, #334155 52%, #0f172a 76%, #020617 100%);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.9), 0 0 18px rgba(148, 163, 184, 0.55);
         }
 
-        /* 4. Brown Tiger Eye Gem (🔵 slot) */
+        /* 4. Tiger Eye (Brown) round gem */
         .token.blue {
-            background: radial-gradient(circle at 35% 35%, #fde68a 0%, #b45309 42%, #78350f 75%, #291202 100%);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.85), 0 0 14px rgba(180, 83, 9, 0.6);
+            background: radial-gradient(circle at 32% 28%, #fef3c7 0%, #f59e0b 28%, #b45309 52%, #78350f 76%, #451a03 100%);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.85), 0 0 18px rgba(180, 83, 9, 0.7);
         }
 
         /* TOAST & NOTIFICATIONS */
@@ -640,16 +666,25 @@
     <div id="floating-dice-bg">🎲 &nbsp; ⭐ &nbsp; 🟣 &nbsp; 🌸 &nbsp; ⬛ &nbsp; 🟤 &nbsp; 🏆</div>
 
     <div id="setup-screen">
+        <div style="font-size: 3.5rem; margin-bottom: 0.2rem; filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.8));">🎲 🏆 🎴</div>
         <h1>POLO 🎲</h1>
-        <p id="setup-status" style="font-size: 1.3rem; margin-bottom: 1.2rem; color: #cbd5e1; font-weight: bold;">اختر عدد اللاعبين في الجلسة المحلية:</p>
+        <p id="setup-status" style="font-size: 1.25rem; margin-bottom: 0.8rem; color: #cbd5e1; font-weight: bold;">اختر عدد اللاعبين في الجلسة المحلية:</p>
         
+        <!-- 4 Gemstone Pawns Preview Badges -->
+        <div class="pawns-preview-strip">
+            <div class="pawn-badge" style="background: rgba(168, 85, 247, 0.25); border: 1.5px solid #a855f7; color: #e9d5ff;">🟣 اللاعب الموف</div>
+            <div class="pawn-badge" style="background: rgba(236, 72, 153, 0.25); border: 1.5px solid #ec4899; color: #fbcfe8;">🌸 اللاعب البينك</div>
+            <div class="pawn-badge" style="background: rgba(51, 65, 85, 0.5); border: 1.5px solid #94a3b8; color: #cbd5e1;">⬛ اللاعب الأسود</div>
+            <div class="pawn-badge" style="background: rgba(139, 69, 19, 0.3); border: 1.5px solid #b45309; color: #fde68a;">🟤 اللاعب البني</div>
+        </div>
+
         <div class="player-count-selector">
             <button class="count-btn" onclick="selectPlayerCount(2, this)">2 لاعبين 👥</button>
             <button class="count-btn" onclick="selectPlayerCount(3, this)">3 لاعبين 👥👤</button>
             <button class="count-btn active" onclick="selectPlayerCount(4, this)">4 لاعبين 👥👥</button>
         </div>
 
-        <button id="start-btn" class="btn" onclick="startGame()" style="margin-top: 1.5rem;">ابدأ اللعبة 🚀</button>
+        <button id="start-btn" class="btn" onclick="startGame()" style="margin-top: 1.2rem;">ابدأ اللعبة 🚀</button>
     </div>
 
     <div id="game-container">

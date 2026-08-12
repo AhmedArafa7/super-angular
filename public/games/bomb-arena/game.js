@@ -130,15 +130,18 @@ function initLocalGame(playerCount) {
     playSound('click');
     activeMode = 'local';
     
+    // فرض عدد اللاعبين ليكون 3
+    playerCount = 3; 
+    
     names = {};
     playerIdsList = [];
     players = {};
     
+    // أماكن ثابتة لـ 3 لاعبين يجلسون بجانب بعضهم
     const spawns = [
-        { x: 120, y: 120 },
-        { x: 680, y: 380 },
-        { x: 680, y: 120 },
-        { x: 120, y: 380 }
+        { x: 200, y: 250 },
+        { x: 400, y: 250 },
+        { x: 600, y: 250 }
     ];
 
     for (let i = 1; i <= playerCount; i++) {
@@ -146,13 +149,13 @@ function initLocalGame(playerCount) {
         names[pid] = 'اللاعب ' + i;
         playerIdsList.push(pid);
         
-        const pos = spawns[(i - 1) % spawns.length];
+        const pos = spawns[i - 1];
         players[pid] = {
             id: pid,
             x: pos.x,
             y: pos.y,
-            speed: 4,
-            radius: 20,
+            speed: 0, // إيقاف الحركة لأنهم يجلسون
+            radius: 30, // تكبير حجم الشخصية قليلاً
             color: getPlayerColor(pid),
             alive: true,
             name: names[pid]
@@ -274,48 +277,34 @@ function loop() {
     animationFrameId = requestAnimationFrame(loop);
 }
 
+// دالة تمرير البطاطس
+function passBomb(fromId) {
+    if (bombHolderId !== fromId) return;
+    
+    // إيجاد اللاعب التالي في الصف
+    const currentIndex = playerIdsList.indexOf(fromId);
+    let nextIndex = (currentIndex + 1) % playerIdsList.length;
+    
+    // تخطي اللاعبين الذين خرجوا
+    let attempts = 0;
+    while (!players[playerIdsList[nextIndex]].alive && attempts < playerIdsList.length) {
+        nextIndex = (nextIndex + 1) % playerIdsList.length;
+        attempts++;
+    }
+    
+    bombHolderId = playerIdsList[nextIndex];
+    updateHolderDisplay();
+    playSound('correct');
+}
+
+// تحديث التعامل مع الأزرار
 function updateLocalPlayerPositions() {
     if (activeMode !== 'local') return;
 
-    // Player 1 (p1): WASD
-    if (players['p1'] && players['p1'].alive) {
-        let p = players['p1'];
-        if (keys['KeyW']) p.y -= p.speed;
-        if (keys['KeyS']) p.y += p.speed;
-        if (keys['KeyA']) p.x -= p.speed;
-        if (keys['KeyD']) p.x += p.speed;
-        clampPosition(p);
-    }
-
-    // Player 2 (p2): Arrow Keys
-    if (players['p2'] && players['p2'].alive) {
-        let p = players['p2'];
-        if (keys['ArrowUp']) p.y -= p.speed;
-        if (keys['ArrowDown']) p.y += p.speed;
-        if (keys['ArrowLeft']) p.x -= p.speed;
-        if (keys['ArrowRight']) p.x += p.speed;
-        clampPosition(p);
-    }
-
-    // Player 3 (p3): IJKL
-    if (players['p3'] && players['p3'].alive) {
-        let p = players['p3'];
-        if (keys['KeyI']) p.y -= p.speed;
-        if (keys['KeyK']) p.y += p.speed;
-        if (keys['KeyJ']) p.x -= p.speed;
-        if (keys['KeyL']) p.x += p.speed;
-        clampPosition(p);
-    }
-
-    // Player 4 (p4): Numpad 8456
-    if (players['p4'] && players['p4'].alive) {
-        let p = players['p4'];
-        if (keys['Numpad8']) p.y -= p.speed;
-        if (keys['Numpad5'] || keys['Numpad2']) p.y += p.speed;
-        if (keys['Numpad4']) p.x -= p.speed;
-        if (keys['Numpad6']) p.x += p.speed;
-        clampPosition(p);
-    }
+    // تم إيقاف الحركة، وتفعيل أزرار التمرير
+    if (keys['KeyE']) passBomb('p1');
+    if (keys['KeyO']) passBomb('p2');
+    if (keys['KeyY']) passBomb('p3');
 }
 
 function clampPosition(p) {
@@ -372,34 +361,43 @@ function drawPlayers() {
         const isHolder = (subMode === 'potato' && bombHolderId === pid);
         
         ctx.save();
-        ctx.shadowBlur = isHolder ? 25 : 12;
-        ctx.shadowColor = isHolder ? '#ef4444' : p.color;
         
-        // Outer aura for bomb holder
-        if (isHolder) {
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.radius + 8 + Math.sin(Date.now() * 0.01) * 3, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(239, 68, 68, 0.25)';
-            ctx.fill();
-            ctx.strokeStyle = '#ef4444';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-        }
-        
-        // Player Body
+        // رسم جسم الشخصية (بدل الدائرة البسيطة)
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fillStyle = p.color;
         ctx.fill();
-        ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 3;
+        ctx.strokeStyle = '#fff';
         ctx.stroke();
+
+        // إضافة ملامح وجه بسيطة
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(p.x - 7, p.y - 5, 4, 0, Math.PI * 2); // عين يسار
+        ctx.arc(p.x + 7, p.y - 5, 4, 0, Math.PI * 2); // عين يمين
+        ctx.fill();
+        
+        // تعبيرات وجه حسب الحالة (حامل القنبلة خائف)
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        if (isHolder) {
+            ctx.arc(p.x, p.y + 10, 5, Math.PI, 0); // فم حزين/خائف
+        } else {
+            ctx.arc(p.x, p.y + 12, 5, 0, Math.PI); // فم مبتسم
+        }
+        ctx.stroke();
+        
+        // قبعة مميزة لكل لاعب
+        ctx.fillStyle = isHolder ? '#facc15' : '#334155';
+        ctx.fillRect(p.x - 15, p.y - p.radius - 8, 30, 8);
         
         // Draw Ticking Bomb Icon above Holder
         if (isHolder) {
             ctx.font = 'bold 20px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('💣', p.x, p.y - p.radius - 10);
+            ctx.fillText('🥔🔥', p.x, p.y - p.radius - 20);
         }
         
         // Draw Player Name
