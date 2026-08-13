@@ -24,38 +24,39 @@ export class CoreEngine {
     }
 
     _lighting() {
-        // Bright tropical sun — warm golden light
-        this.sun = new THREE.DirectionalLight(0xfff0d0, 1.6);
-        this.sun.position.set(50, 70, -30);
+        // Sunset / Golden Hour main sun light (low angle, rich golden orange)
+        this.sun = new THREE.DirectionalLight(0xffaa44, 2.2);
+        this.sun.position.set(70, 35, -70);
         this.sun.castShadow = true;
         this.sun.shadow.mapSize.set(2048, 2048);
-        this.sun.shadow.camera.left = -100;
-        this.sun.shadow.camera.right = 100;
-        this.sun.shadow.camera.top = 100;
-        this.sun.shadow.camera.bottom = -100;
+        this.sun.shadow.camera.left = -120;
+        this.sun.shadow.camera.right = 120;
+        this.sun.shadow.camera.top = 120;
+        this.sun.shadow.camera.bottom = -120;
         this.sun.shadow.camera.near = 0.5;
-        this.sun.shadow.camera.far = 300;
-        this.sun.shadow.bias = -0.001;
+        this.sun.shadow.camera.far = 350;
+        this.sun.shadow.bias = -0.0008;
         this.sun.shadow.normalBias = 0.02;
         this.scene.add(this.sun);
 
-        // Cool fill light — ocean reflection tint
-        this.fill = new THREE.DirectionalLight(0x88ccdd, 0.35);
-        this.fill.position.set(-40, 25, 60);
+        // Fill light — purple/magenta dusk ambient fill
+        this.fill = new THREE.DirectionalLight(0xa855f7, 0.45);
+        this.fill.position.set(-60, 30, 60);
         this.scene.add(this.fill);
 
-        // Sky hemisphere — tropical blue above, warm sand below
-        this.hemi = new THREE.HemisphereLight(0x6ec6ff, 0xc4a870, 0.65);
+        // Hemisphere light — warm golden sunset sky above, warm sand ground below
+        this.hemi = new THREE.HemisphereLight(0xffaa66, 0xd49b4b, 0.75);
         this.scene.add(this.hemi);
 
-        // Ambient — warm
-        this.ambient = new THREE.AmbientLight(0xfff8e8, 0.25);
+        // Ambient — warm golden glow
+        this.ambient = new THREE.AmbientLight(0xff8833, 0.3);
         this.scene.add(this.ambient);
     }
 
     _fog() {
-        this.scene.fog = new THREE.Fog(0x88ccee, 150, 380);
-        this.scene.background = new THREE.Color(0x7ec8e3);
+        // Sunset golden-purple horizon fog
+        this.scene.fog = new THREE.FogExp2(0xd97706, 0.0035);
+        this.scene.background = new THREE.Color(0xf59e0b);
     }
 
     _resize() {

@@ -8,6 +8,8 @@ import { MultiplayerService } from '../../core/services/multiplayer.service';
 import { ArcadeService, ArcadeGame } from './arcade.service';
 import { FirebaseService } from '../../core/services/firebase.service';
 import { ArcadeAudioService } from '../../core/services/arcade-audio.service';
+import { ArcadeCloudService } from '../../core/services/arcade-cloud.service';
+import { SuperArcadeBridgeService } from '../../core/services/super-arcade-bridge';
 
 @Component({
   selector: 'app-arcade-arena',
@@ -418,6 +420,21 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
   globalState = inject(GlobalStateService);
   multiplayer = inject(MultiplayerService);
   private firebaseService = inject(FirebaseService);
+  arcadeCloud = inject(ArcadeCloudService);
+  arcadeBridge = inject(SuperArcadeBridgeService);
+
+  @HostListener('window:message', ['$event'])
+  onWindowMessage(event: MessageEvent) {
+    const data = event.data;
+    if (!data || typeof data !== 'object') return;
+
+    if (data.type === 'SUPER_ARCADE_SCORE_SUBMIT') {
+      const playerName = this.globalState.userProfile().name || 'لاعب Arcade';
+      this.arcadeCloud.submitHighScore(data.gameId, playerName, data.score);
+    } else if (data.type === 'SUPER_ARCADE_P2P_SEND') {
+      this.multiplayer.sendMessage({ action: data.action, payload: data.payload });
+    }
+  }
 
   copied = false;
   invitedFriends: string[] = [];
@@ -731,6 +748,8 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
       try {
         const code = await this.multiplayer.createRoom();
         this.generatedRoomCode = code;
+        const hostName = this.globalState.userProfile().name || 'مستضيف الغرفة';
+        await this.arcadeCloud.registerPrivateRoom(code, this.game?.id || 'arcade_game', code || 'host_peer', hostName);
       } catch (err) {
         console.error('Failed to create room:', err);
         alert('فشل إنشاء الغرفة. تأكد من اتصالك بالإنترنت أو إعدادات السيرفر.');

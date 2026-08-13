@@ -217,23 +217,41 @@ export class PhysicsEngine {
     const skipMovement = this._spinDashActive || this._isHomingAttacking || this._isSpinDashing;
 
     if (!skipMovement) {
-      // Camera-relative world direction
+      // 1. Calculate Camera Vectors (Flattened on Y-axis and normalized)
+      const camForward = new THREE.Vector3(-Math.sin(cameraYaw), 0, -Math.cos(cameraYaw)).normalize();
+      const camRight = new THREE.Vector3(Math.cos(cameraYaw), 0, -Math.sin(cameraYaw)).normalize();
+
+      // 2. Map Inputs to Camera Vectors
+      // W/S (Vertical) maps to camForward, A/D (Horizontal) maps to camRight
+      const verticalInput = input.moveZ || 0;   // W = +1, S = -1
+      const horizontalInput = input.moveX || 0; // D = +1, A = -1
+
+      const targetMovementDirection = new THREE.Vector3();
+      targetMovementDirection
+        .addScaledVector(camForward, verticalInput)
+        .addScaledVector(camRight, horizontalInput);
+
       let wx = 0, wz = 0;
-      if (input.moveX || input.moveZ) {
-        const sin = Math.sin(cameraYaw);
-        const cos = Math.cos(cameraYaw);
-        wx = input.moveX * cos - input.moveZ * sin;
-        wz = input.moveX * sin + input.moveZ * cos;
-        const len = Math.hypot(wx, wz);
-        if (len > 1) { wx /= len; wz /= len; }
+      if (targetMovementDirection.lengthSq() > 0.0001) {
+        targetMovementDirection.normalize();
+        wx = targetMovementDirection.x;
+        wz = targetMovementDirection.z;
+
+        // 3. Character Rotation (Facing Direction via Quaternion slerp)
+        const targetAngle = Math.atan2(wx, wz);
+        const targetQuaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetAngle);
+        if (player && player.group) {
+          player.group.quaternion.slerp(targetQuaternion, Math.min(1.0, 12 * dt));
+        }
+        this.facingAngle = targetAngle;
       }
 
       const wantSpeed = input.sprint ? this.SPRINT_SPEED : input.walk ? this.WALK_SPEED : this.RUN_SPEED;
       const accel = this.grounded ? this.GROUND_ACCEL : this.AIR_ACCEL;
 
-      // Accelerate toward desired direction (momentum built into the body)
-      body.velocity.x += wx * accel * dt;
-      body.velocity.z += wz * accel * dt;
+      // Accelerate toward target camera-relative movement direction
+      body.velocity.x += wx * wantSpeed * accel * dt * 0.1;
+      body.velocity.z += wz * wantSpeed * accel * dt * 0.1;
 
       // Clamp horizontal speed
       const hs = Math.hypot(body.velocity.x, body.velocity.z);
@@ -241,6 +259,29 @@ export class PhysicsEngine {
         const s = wantSpeed / hs;
         body.velocity.x *= s;
         body.velocity.z *= s;
+      }
+
+      // Slope Physics (gaining speed downhill, losing speed uphill)
+      if (this.grounded && this._heightAtFn) {
+        const px = body.position.x;
+        const pz = body.position.z;
+        const fx = Math.sin(this.facingAngle);
+        const fz = Math.cos(this.facingAngle);
+        const currentH = this._heightAtFn(px, pz);
+        const nextH = this._heightAtFn(px + fx * 1.5, pz + fz * 1.5);
+        const dh = nextH - currentH;
+
+        if (dh < -0.15) {
+          // Downhill momentum acceleration
+          const downhillFactor = Math.abs(dh) * 25;
+          body.velocity.x += fx * downhillFactor * dt;
+          body.velocity.z += fz * downhillFactor * dt;
+        } else if (dh > 0.15 && !this._spinDashActive) {
+          // Uphill resistance
+          const uphillResistance = Math.min(0.5, dh * 0.35);
+          body.velocity.x *= (1 - uphillResistance * dt * 4);
+          body.velocity.z *= (1 - uphillResistance * dt * 4);
+        }
       }
 
       // Momentum damping when no input

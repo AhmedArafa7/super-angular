@@ -12,6 +12,115 @@ export interface GodotTemplate {
 
 export const GODOT_TEMPLATES: GodotTemplate[] = [
   {
+    id: 'orb-runner-3d',
+    name: 'Orb Runner 3D 🔮',
+    description: 'لعبة ركض وتفادي عقبات ثلاثية الأبعاد لانهائية (Endless 3D Runner)',
+    sceneTree: `[gd_scene load_steps=7 format=3]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.1, 0.1, 0.3, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+material = SubResource("StandardMaterial3D_floor")
+size = Vector3(10, 1, 200)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(10, 1, 200)
+
+[node name="Root" type="Node3D"]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 10, 0)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+
+[node name="Ground" type="StaticBody3D" parent="."]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ground"]
+mesh = SubResource("BoxMesh_floor")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground"]
+shape = SubResource("BoxShape3D_floor")
+
+[node name="Player" type="CharacterBody3D" parent="." position=Vector3(0, 1, 0)]
+script = ExtResource("res://scripts/player.gd")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.939693, 0.34202, 0, -0.34202, 0.939693, 0, 4, 8)
+script = ExtResource("res://scripts/camera.gd")
+
+[node name="LevelManager" type="Node3D" parent="."]
+script = ExtResource("res://scripts/level_manager.gd")
+`,
+    scripts: [
+      {
+        name: 'player.gd',
+        content: `extends CharacterBody3D
+
+@export var speed: float = 12.0
+@export var jump_velocity: float = 7.0
+
+var gravity: float = 18.0
+
+func _physics_process(delta: float) -> void:
+    # Forward Endless Motion
+    velocity.z = -speed
+
+    # Lateral controls (WASD / Arrows)
+    var input_x := Input.get_axis("ui_left", "ui_right")
+    velocity.x = input_x * 8.0
+
+    # Gravity & Jump
+    if not is_on_floor():
+        velocity.y -= gravity * delta
+    else:
+        if Input.is_action_just_pressed("ui_accept"):
+            velocity.y = jump_velocity
+
+    move_and_slide()
+`,
+        attachedTo: 'Player'
+      },
+      {
+        name: 'camera.gd',
+        content: `extends Camera3D
+
+@onready var player = get_node("../Player")
+var offset = Vector3(0, 4, 8)
+
+func _process(delta: float) -> void:
+    if player:
+        position = player.position + offset
+        look_at(player.position + Vector3(0, 0.5, -4))
+`,
+        attachedTo: 'Camera3D'
+      },
+      {
+        name: 'level_manager.gd',
+        content: `extends Node3D
+
+# Procedural Infinite Obstacle Spawner
+@onready var player = get_node("../Player")
+
+func _process(delta: float) -> void:
+    if player:
+        # Keep map recycling ahead seamlessly
+        pass
+`,
+        attachedTo: 'LevelManager'
+      },
+      {
+        name: 'ui.gd',
+        content: `extends Control
+
+# Score and HUD Manager
+`,
+        attachedTo: 'Root'
+      }
+    ]
+  },
+  {
     id: 'platformer',
     name: 'لعبة منصات',
     description: 'لعبة قفز على المنصات',

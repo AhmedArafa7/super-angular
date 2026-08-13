@@ -6,7 +6,7 @@ import { EncryptionService } from './encryption.service';
 })
 export class IndexedDBService {
   private readonly DB_NAME = 'halaltubeDB';
-  private readonly DB_VERSION = 6; // Incremented for personal PDF books store
+  private readonly DB_VERSION = 7; // Incremented for created studio books store
   private db: IDBDatabase | null = null;
   private encryption = inject(EncryptionService);
 
@@ -16,7 +16,7 @@ export class IndexedDBService {
 
   private getKeyPathForStore(storeName: string): string {
     if (storeName === 'subscriptions') return 'channelId';
-    if (storeName === 'personal_pdf_books') return 'id';
+    if (storeName === 'personal_pdf_books' || storeName === 'created_books') return 'id';
     return 'videoId';
   }
 
@@ -79,6 +79,11 @@ export class IndexedDBService {
         // Personal PDF Books Store
         if (!db.objectStoreNames.contains('personal_pdf_books')) {
           db.createObjectStore('personal_pdf_books', { keyPath: 'id' });
+        }
+
+        // Created Studio Books Store
+        if (!db.objectStoreNames.contains('created_books')) {
+          db.createObjectStore('created_books', { keyPath: 'id' });
         }
       };
     });

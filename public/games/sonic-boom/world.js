@@ -8,6 +8,10 @@ export class WorldBuilder {
         this.colliders = [];
         this.checkpoints = [];
         this.grindRails = [];
+        this.springs = [];
+        this.enerbeamAnchors = [];
+        this.interactiveProps = [];
+        this.sittingSpots = [];
         this._waterMesh = null;
         this._waterTime = 0;
     }
@@ -21,6 +25,9 @@ export class WorldBuilder {
         this._seasideCircuit();
         this._grindRailSystem();
         this._checkpointSystem();
+        this._bounceSprings();
+        this._enerbeamAnchors();
+        this._interactiveProps();
         this._water();
         this._skyDome();
         this._clouds();
@@ -29,13 +36,19 @@ export class WorldBuilder {
         this._props();
     }
 
-    // Update animated elements (call each frame)
-    update(dt) {
+    // Update animated elements and LOD system (call each frame)
+    update(dt, camera) {
         this._waterTime += dt;
         this._animateWater();
         this._animateCheckpoints(dt);
         this._animateGrindRails(dt);
         this._animateProps(dt);
+        this._animateInteractiveProps(dt);
+        if (camera) {
+            this.scene.traverse(obj => {
+                if (obj.isLOD) obj.update(camera);
+            });
+        }
     }
 
     _tailsWorkshopAndBiplane() {
@@ -400,6 +413,190 @@ export class WorldBuilder {
 
     getGrindRails() {
         return this.grindRails;
+    }
+
+    getSprings() {
+        return this.springs;
+    }
+
+    getEnerbeamAnchors() {
+        return this.enerbeamAnchors;
+    }
+
+    getInteractiveProps() {
+        return this.interactiveProps;
+    }
+
+    getSittingSpots() {
+        return this.sittingSpots;
+    }
+
+    _interactiveProps() {
+        const chairMat = new THREE.MeshStandardMaterial({ color: 0x1565C0, roughness: 0.5 });
+        const ballMat = new THREE.MeshStandardMaterial({ color: 0xff0055, roughness: 0.3, metalness: 0.1 });
+        const coconutMat = new THREE.MeshStandardMaterial({ color: 0x4a2c11, roughness: 0.95 });
+
+        // Sitting Spots (Beach Chairs & Village Benches)
+        const chairSpots = [
+            { x: -15, y: 0.6, z: 72, rot: 0.2 },
+            { x: -10, y: 0.6, z: 74, rot: -0.3 },
+            { x: 12, y: 0.6, z: 70, rot: 0.5 },
+            { x: 18, y: 0.6, z: 72, rot: -0.1 }
+        ];
+
+        for (const spot of chairSpots) {
+            const chairGroup = new THREE.Group();
+            const seat = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.2, 1.8), chairMat);
+            seat.position.y = 0.5;
+            chairGroup.add(seat);
+            const back = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.4, 0.2), chairMat);
+            back.position.set(0, 1.1, -0.8);
+            back.rotation.x = -0.3;
+            chairGroup.add(back);
+
+            chairGroup.position.set(spot.x, spot.y, spot.z);
+            chairGroup.rotation.y = spot.rot;
+            this.scene.add(chairGroup);
+
+            this.sittingSpots.push({ x: spot.x, y: spot.y + 0.6, z: spot.z, radius: 2.0, type: 'chair' });
+        }
+
+        // Usable Pick-up & Throw Objects (Coconuts & Beach Balls)
+        const objectSpots = [
+            { x: -12, z: 71, type: 'ball', size: 0.65 },
+            { x: 15, z: 69, type: 'ball', size: 0.7 },
+            { x: 5, z: 73, type: 'coconut', size: 0.35 },
+            { x: -5, z: 74, type: 'coconut', size: 0.35 },
+            { x: 25, z: 65, type: 'coconut', size: 0.35 },
+            { x: -25, z: 66, type: 'coconut', size: 0.35 }
+        ];
+
+        for (const o of objectSpots) {
+            const baseY = heightAt(o.x, o.z);
+            const geo = o.type === 'ball' ? new THREE.SphereGeometry(o.size, 16, 12) : new THREE.DodecahedronGeometry(o.size, 1);
+            const mat = o.type === 'ball' ? ballMat : coconutMat;
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(o.x, baseY + o.size, o.z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            this.scene.add(mesh);
+
+            this.interactiveProps.push({
+                mesh,
+                x: o.x,
+                z: o.z,
+                baseY: baseY + o.size,
+                type: o.type,
+                radius: 2.5,
+                held: false,
+                velocity: new THREE.Vector3()
+            });
+        }
+    }
+
+    _animateInteractiveProps(dt) {
+        for (const prop of this.interactiveProps) {
+            if (!prop.held && prop.velocity.lengthSq() > 0.01) {
+                prop.mesh.position.addScaledVector(prop.velocity, dt);
+                prop.velocity.y -= 18 * dt; // gravity
+                const groundH = heightAt(prop.mesh.position.x, prop.mesh.position.z) + (prop.type === 'ball' ? 0.65 : 0.35);
+                if (prop.mesh.position.y <= groundH) {
+                    prop.mesh.position.y = groundH;
+                    prop.velocity.y *= -0.55; // bounce
+                    prop.velocity.x *= 0.8;
+                    prop.velocity.z *= 0.8;
+                }
+            }
+        }
+    }
+
+    _bounceSprings() {
+        const springDefs = [
+            { x: 8, z: -18, type: 'red', force: 28 },
+            { x: -12, z: -35, type: 'yellow', force: 18 },
+            { x: 22, z: -25, type: 'red', force: 28 },
+            { x: -28, z: -20, type: 'yellow', force: 18 },
+            { x: 5, z: -50, type: 'red', force: 30 },
+            { x: -18, z: -60, type: 'yellow', force: 20 },
+            { x: 32, z: -15, type: 'red', force: 28 }
+        ];
+
+        const coilMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.9, roughness: 0.2 });
+        const redMat = new THREE.MeshStandardMaterial({ color: 0xd32f2f, emissive: 0xd32f2f, emissiveIntensity: 0.4, roughness: 0.3 });
+        const yellowMat = new THREE.MeshStandardMaterial({ color: 0xffd54f, emissive: 0xffd54f, emissiveIntensity: 0.5, roughness: 0.3 });
+
+        for (const s of springDefs) {
+            const baseY = heightAt(s.x, s.z);
+            const group = new THREE.Group();
+
+            const base = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.1, 0.25, 12), coilMat);
+            base.position.y = 0.125;
+            group.add(base);
+
+            const coil = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.08, 8, 16), coilMat);
+            coil.rotation.x = Math.PI / 2;
+            coil.position.y = 0.4;
+            group.add(coil);
+
+            const plateMat = s.type === 'red' ? redMat : yellowMat;
+            const topPlate = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.2, 12), plateMat);
+            topPlate.position.y = 0.75;
+            topPlate.castShadow = true;
+            group.add(topPlate);
+
+            group.position.set(s.x, baseY, s.z);
+            this.scene.add(group);
+
+            this.springs.push({
+                group,
+                topPlate,
+                x: s.x,
+                z: s.z,
+                y: baseY + 0.75,
+                type: s.type,
+                force: s.force,
+                radius: 1.5,
+                animTimer: 0
+            });
+        }
+    }
+
+    _enerbeamAnchors() {
+        const anchorDefs = [
+            { x: 0, y: 7, z: -30 },
+            { x: 18, y: 9, z: -35 },
+            { x: -18, y: 8, z: -45 },
+            { x: 8, y: 12, z: -70 }
+        ];
+
+        const glowMat = new THREE.MeshStandardMaterial({ color: 0x00d2ff, emissive: 0x00d2ff, emissiveIntensity: 0.9, transparent: true, opacity: 0.85 });
+        const ringMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.8 });
+
+        for (const a of anchorDefs) {
+            const group = new THREE.Group();
+
+            const orb = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 12), glowMat);
+            group.add(orb);
+
+            const ring = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.08, 8, 20), ringMat);
+            group.add(ring);
+
+            const light = new THREE.PointLight(0x00d2ff, 1.2, 12);
+            group.add(light);
+
+            group.position.set(a.x, a.y, a.z);
+            this.scene.add(group);
+
+            this.enerbeamAnchors.push({
+                group,
+                orb,
+                ring,
+                x: a.x,
+                y: a.y,
+                z: a.z,
+                radius: 14
+            });
+        }
     }
 
     _animateCheckpoints(dt) {

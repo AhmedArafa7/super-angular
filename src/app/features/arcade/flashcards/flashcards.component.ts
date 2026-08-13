@@ -915,7 +915,6 @@ export class FlashcardsComponent implements OnInit, OnDestroy {
     if (!this.aiKeyManager.checkAndIncrementQuota()) {
       return;
     }
-
     try {
       const reader = new FileReader();
       reader.readAsDataURL(blob);

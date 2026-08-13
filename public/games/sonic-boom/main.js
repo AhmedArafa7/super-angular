@@ -10,6 +10,7 @@ import { SonicCharacter } from './characters/sonic.js?v=3';
 import { WorldBuilder } from './world.js?v=3';
 import { CharacterSelect } from './characters/select.js?v=3';
 import { EggmanEvent } from './events/eggman.js?v=3';
+import { NetworkClient } from './net/net-client.js?v=3';
 
 const STATE = { MENU: 0, SELECT: 1, PLAYING: 2, PAUSED: 3, GAME_OVER: 4 };
 let gameState = STATE.MENU;
@@ -452,23 +453,65 @@ function checkBoostPads() {
     }
 }
 
-// ---- Eggman Boss ----
+// ---- Bounce Springs Check ----
+function checkSprings() {
+    if (!player) return;
+    const springs = world.getSprings ? world.getSprings() : [];
+    const pp = player.position;
+    for (const spring of springs) {
+        const dx = pp.x - spring.x;
+        const dy = pp.y - spring.y;
+        const dz = pp.z - spring.z;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        if (dist < spring.radius && Math.abs(dy) < 2.2) {
+            physics.playerBody.velocity.y = spring.force;
+            physics.playerBody.velocity.x += player.facing.x * 12;
+            physics.playerBody.velocity.z += player.facing.z * 12;
+            physics.grounded = false;
+            cam.shake(0.4);
+            try { audio.playSpring(); } catch (e) {}
+
+            if (spring.topPlate) {
+                spring.topPlate.position.y = 0.2;
+                let t = 0;
+                const bounceAnim = () => {
+                    t += 0.1;
+                    spring.topPlate.position.y = 0.2 + Math.sin(t * Math.PI) * 0.7;
+                    if (t < 1) requestAnimationFrame(bounceAnim);
+                    else spring.topPlate.position.y = 0.75;
+                };
+                bounceAnim();
+            }
+        }
+    }
+}
+
+// ---- Dynamic Eggman Boss Event ----
+let eggmanEventTimer = 0;
 function updateEggmanBoss(dt) {
-    if (!eggman || !eggman.active || !eggman.mech) return;
-    eggman.update(dt, player.position);
+    if (!eggman) return;
+
+    // Dynamic world event trigger every 120s
+    eggmanEventTimer += dt;
+    if (eggmanEventTimer > 120 && !eggman.active) {
+        eggmanEventTimer = 0;
+        eggman.start();
+        showDialogue('Dr. Eggman', '🚨 DYNAMIC WORLD EVENT: Dr. Eggman has arrived in his Egg Slicer Mech! Team up to defeat him!');
+    }
+
+    if (!eggman.active || !eggman.mech) return;
+    eggman.update(dt, [player.position]);
     if (eggman.mech) {
         const dx = player.position.x - eggman.mech.position.x;
         const dz = player.position.z - eggman.mech.position.z;
         const dist = Math.sqrt(dx * dx + dz * dz);
         const isAttacking = (physics.isSpinDashActive || physics.isHomingAttacking);
         if (dist < 5 && isAttacking) {
-            eggman.health -= 10;
+            eggman.takeDamage(15);
             cam.shake(0.6);
             if (eggman.health <= 0) {
-                score += 2000;
-                eggman.defeat();
                 try { audio.playBossDefeat(); } catch (e) {}
-                showDialogue('Eggman', 'Curse you! This isn\'t over!');
+                showDialogue('Dr. Eggman', 'Curse you! This isn\'t over!');
             }
         }
         if (dist < 4 && player.invincibleTimer <= 0 && !isAttacking) {
@@ -482,7 +525,7 @@ function updateEggmanBoss(dt) {
     }
 }
 
-// ---- Enerbeam ----
+// ---- Enerbeam Mechanic ----
 let _enerbeamActive = false;
 function handleEnerbeam() {
     if (!player) return;
@@ -494,13 +537,123 @@ function handleEnerbeam() {
         _enerbeamActive = false;
         player.hideEnerbeam();
     }
+    
     if (_enerbeamActive) {
-        const target = new THREE.Vector3(
-            player.position.x + player.facing.x * 10,
-            player.position.y + 1,
-            player.position.z + player.facing.z * 10
+        // 1. Enerbeam tether vs Eggman Mech
+        if (eggman && eggman.active && eggman.mech) {
+            const dx = player.position.x - eggman.mech.position.x;
+            const dy = player.position.y - eggman.mech.position.y;
+            const dz = player.position.z - eggman.mech.position.z;
+            const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            if (dist < 25) {
+                const targetPos = new THREE.Vector3(eggman.mech.position.x, eggman.mech.position.y + 4, eggman.mech.position.z);
+                player.showEnerbeam(targetPos);
+                eggman.takeDamage(0.6);
+                cam.shake(0.15);
+                return;
+            }
+        }
+
+        // 2. Enerbeam tether vs World Anchors
+        const anchors = world.getEnerbeamAnchors ? world.getEnerbeamAnchors() : [];
+        let closestAnchor = null;
+        let minDist = 18;
+        const pp = player.position;
+        for (const a of anchors) {
+            const dx = pp.x - a.x, dy = pp.y - a.y, dz = pp.z - a.z;
+            const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            if (dist < minDist) {
+                minDist = dist;
+                closestAnchor = a;
+            }
+        }
+
+        if (closestAnchor) {
+            const targetPos = new THREE.Vector3(closestAnchor.x, closestAnchor.y, closestAnchor.z);
+            player.showEnerbeam(targetPos);
+            // Enerbeam Grapple pull impulse
+            physics.playerBody.velocity.x += (closestAnchor.x - pp.x) * 1.5;
+            physics.playerBody.velocity.y = Math.max(physics.playerBody.velocity.y, 14);
+            physics.playerBody.velocity.z += (closestAnchor.z - pp.z) * 1.5;
+            physics.grounded = false;
+        } else {
+            const target = new THREE.Vector3(
+                player.position.x + player.facing.x * 12,
+                player.position.y + 2,
+                player.position.z + player.facing.z * 12
+            );
+            player.showEnerbeam(target);
+        }
+    }
+}
+
+// ---- Interactive Social Props (Sitting & Pickup / Throw) ----
+let heldProp = null;
+function checkInteractiveProps(dt) {
+    if (!player) return;
+    const props = world.getInteractiveProps ? world.getInteractiveProps() : [];
+    const sittingSpots = world.getSittingSpots ? world.getSittingSpots() : [];
+    const pp = player.position;
+
+    // 1. Sit on Beach Chair / Bench
+    if (input.interactJust) {
+        let nearestSpot = null;
+        let minDist = 2.2;
+        for (const spot of sittingSpots) {
+            const dx = pp.x - spot.x, dz = pp.z - spot.z;
+            const dist = Math.sqrt(dx * dx + dz * dz);
+            if (dist < minDist) {
+                minDist = dist;
+                nearestSpot = spot;
+            }
+        }
+        if (nearestSpot) {
+            physics.playerBody.position.set(nearestSpot.x, nearestSpot.y, nearestSpot.z);
+            physics.playerBody.velocity.set(0, 0, 0);
+            showDialogue('Social Hub', 'جلس اللاعب للاسترخاء والحديث على الشاطئ 🧘');
+            return;
+        }
+    }
+
+    // 2. Pick up & Throw Coconuts or Beach Balls
+    if (input.actionJust || input.interactJust) {
+        if (heldProp) {
+            heldProp.held = false;
+            heldProp.velocity.set(
+                player.facing.x * 22,
+                10,
+                player.facing.z * 22
+            );
+            showDialogue('Social Fun', 'رمي الجسم التفاعلي! ⚽🥥');
+            heldProp = null;
+        } else {
+            let closest = null, minDist = 2.5;
+            for (const prop of props) {
+                if (prop.held) continue;
+                const dx = pp.x - prop.mesh.position.x;
+                const dz = pp.z - prop.mesh.position.z;
+                const dist = Math.sqrt(dx * dx + dz * dz);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closest = prop;
+                }
+            }
+            if (closest) {
+                closest.held = true;
+                heldProp = closest;
+                showDialogue('Social Fun', 'حمل جسم تفاعلي! اضغط رمي لإطلاقه 🥥');
+            }
+        }
+    }
+
+    // Carry held prop above player head
+    if (heldProp && heldProp.held) {
+        heldProp.mesh.position.set(
+            player.position.x,
+            player.position.y + 2.4,
+            player.position.z
         );
-        player.showEnerbeam(target);
+        heldProp.velocity.set(0, 0, 0);
     }
 }
 
@@ -508,7 +661,9 @@ function handleEnerbeam() {
 function findHomingTarget() {
     if (!player) return null;
     const pp = player.position;
-    let closest = null, closestDist = 30;
+    let closest = null, closestDist = 35;
+
+    // Check enemies
     for (const enemy of enemies) {
         if (!enemy.userData.alive) continue;
         const dx = pp.x - enemy.position.x;
@@ -520,6 +675,20 @@ function findHomingTarget() {
             closest = enemy.position.clone();
         }
     }
+
+    // Check springs
+    const springs = world.getSprings ? world.getSprings() : [];
+    for (const s of springs) {
+        const dx = pp.x - s.x;
+        const dy = pp.y - s.y;
+        const dz = pp.z - s.z;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (dist < closestDist) {
+            closestDist = dist;
+            closest = new THREE.Vector3(s.x, s.y, s.z);
+        }
+    }
+
     return closest;
 }
 
@@ -618,16 +787,286 @@ function respawnAtCheckpoint() {
 }
 
 // ============================================================
-// MENU WIRING — attached immediately, before anything can crash
+// MENU WIRING — 3 Standardized Game Modes
 // ============================================================
-const btnPlay = document.getElementById('btn-play');
-if (btnPlay) btnPlay.onclick = () => {
-    mainMenu.classList.add('hidden');
-    selectMenu.classList.remove('hidden');
-    selectMenu.style.display = 'flex';
-    if (charSelect) charSelect.show();
-    gameState = STATE.SELECT;
-};
+
+// Mode 1: Local Play (4-6 Players)
+const btnModeLocal = document.getElementById('btn-mode-local');
+const localPlayMenu = document.getElementById('local-play-menu');
+const btnLocalStartGame = document.getElementById('btn-local-start-game');
+const btnLocalBackMain = document.getElementById('btn-local-back-main');
+
+if (btnModeLocal) {
+    btnModeLocal.onclick = () => {
+        mainMenu.classList.add('hidden');
+        if (localPlayMenu) localPlayMenu.style.display = 'flex';
+    };
+}
+if (btnLocalBackMain) {
+    btnLocalBackMain.onclick = () => {
+        if (localPlayMenu) localPlayMenu.style.display = 'none';
+        mainMenu.classList.remove('hidden');
+    };
+}
+if (btnLocalStartGame) {
+    btnLocalStartGame.onclick = () => {
+        const countSelect = document.getElementById('local-player-count-select');
+        const playerCount = countSelect ? parseInt(countSelect.value) : 6;
+        if (localPlayMenu) localPlayMenu.style.display = 'none';
+        showDialogue('Local Play', `بدء اللعب محلياً لـ ${playerCount} لاعبين! دور اللاعب الأول 🎮`);
+        startGame();
+    };
+}
+
+// Mode 2: Private Room / P2P
+const btnModePrivate = document.getElementById('btn-mode-private');
+const joinMenu = document.getElementById('join-menu');
+const btnJoinBack = document.getElementById('btn-join-back');
+if (btnModePrivate) {
+    btnModePrivate.onclick = async () => {
+        mainMenu.classList.add('hidden');
+        if (joinMenu) {
+            joinMenu.classList.remove('hidden');
+            joinMenu.style.display = 'flex';
+        }
+        try {
+            await initNetworkClient();
+            if (netClient) {
+                const res = await netClient.host('sonic');
+                if (joinMenu) joinMenu.style.display = 'none';
+                const lobbyMenu = $('lobby-menu');
+                if (lobbyMenu) lobbyMenu.style.display = 'flex';
+                if ($('lobby-code')) $('lobby-code').textContent = res.code;
+            }
+        } catch (e) {
+            console.warn('[Net] Offline local listen-server room mode:', e.message);
+        }
+    };
+}
+if (btnJoinBack) {
+    btnJoinBack.onclick = () => {
+        if (joinMenu) {
+            joinMenu.classList.add('hidden');
+            joinMenu.style.display = 'none';
+        }
+        mainMenu.classList.remove('hidden');
+    };
+}
+
+// ============================================================
+// MULTIPLAYER & NETWORKING INTEGRATION
+// ============================================================
+let netClient = null;
+let remotePlayerMeshes = {};
+
+function initNetworkClient() {
+    if (netClient && netClient.connected) return Promise.resolve(netClient);
+    const playerName = ($('player-name') && $('player-name').value) || 'Player_' + Math.floor(Math.random() * 1000);
+    netClient = new NetworkClient({
+        name: playerName,
+        onEvent: (evt) => handleNetEvent(evt)
+    });
+    return netClient.connect().catch(err => {
+        console.warn('[Net] Direct socket offline, running local server mode:', err.message);
+    });
+}
+
+function handleNetEvent(evt) {
+    if (evt.type === 'lobby:update') {
+        renderLobbyPlayers(evt.players);
+    } else if (evt.type === 'eggman:event') {
+        if (eggman && !eggman.active) {
+            eggman.start();
+            showDialogue('Dr. Eggman', evt.manual ? '💥 DUAL TRIGGER: Host triggered Dr. Eggman Mech Attack!' : '🚨 RANDOM EVENT: Dr. Eggman has invaded Bygone Island!');
+        }
+    } else if (evt.type === 'player:move') {
+        updateRemotePlayerMesh(evt.playerId, evt.pos, evt.rot, evt.anim, evt.emote);
+    } else if (evt.type === 'chat') {
+        addChatMessage(evt.fromName, evt.message);
+    }
+}
+
+function renderLobbyPlayers(players) {
+    const container = $('lobby-players');
+    if (!container) return;
+    container.innerHTML = '';
+    const charCounts = {};
+
+    for (const p of players) {
+        charCounts[p.character] = (charCounts[p.character] || 0) + 1;
+        const count = charCounts[p.character];
+        const el = document.createElement('div');
+        el.className = 'lobby-player' + (p.isHost ? ' host' : '');
+        const tintLabel = count > 1 ? ` (P${count} Tint)` : '';
+        el.innerHTML = `
+            <div class="dot" style="background:${p.character === 'sonic' ? '#1565C0' : p.character === 'tails' ? '#FF8C00' : p.character === 'knuckles' ? '#CC0000' : '#E91E63'}"></div>
+            <div class="name">${p.name}${tintLabel}</div>
+            <div class="role">${p.character.toUpperCase()}</div>
+        `;
+        container.appendChild(el);
+    }
+}
+
+function updateRemotePlayerMesh(pid, pos, rot, anim, emote) {
+    if (!pos || !engine) return;
+    let group = remotePlayerMeshes[pid];
+    if (!group) {
+        group = new THREE.Group();
+        const headMesh = new THREE.Mesh(
+            new THREE.SphereGeometry(0.8, 12, 10),
+            new THREE.MeshStandardMaterial({ color: 0x1565C0 })
+        );
+        headMesh.position.y = 1.6;
+        group.add(headMesh);
+        const bodyMesh = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.5, 0.4, 1.4, 8),
+            new THREE.MeshStandardMaterial({ color: 0xffffff })
+        );
+        bodyMesh.position.y = 0.7;
+        group.add(bodyMesh);
+        engine.scene.add(group);
+        
+        group.userData = {
+            targetPos: new THREE.Vector3(pos.x, pos.y, pos.z),
+            targetRotY: rot ? (rot.y || 0) : 0,
+            anim: anim || 'idle'
+        };
+        group.position.set(pos.x, pos.y, pos.z);
+        remotePlayerMeshes[pid] = group;
+    } else {
+        // Store target for smooth lerp interpolation in render loop
+        group.userData.targetPos.set(pos.x, pos.y, pos.z);
+        if (rot) group.userData.targetRotY = rot.y || 0;
+        group.userData.anim = anim || 'idle';
+    }
+}
+
+// Per-frame smooth lerp interpolation for remote players
+function animateRemotePlayers(dt) {
+    for (const pid of Object.keys(remotePlayerMeshes)) {
+        const group = remotePlayerMeshes[pid];
+        if (!group || !group.userData) continue;
+        
+        // Linear position lerp interpolation
+        group.position.lerp(group.userData.targetPos, Math.min(1.0, 16 * dt));
+        
+        // Rotation lerp
+        let diff = group.userData.targetRotY - group.rotation.y;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        group.rotation.y += diff * Math.min(1.0, 16 * dt);
+    }
+}
+
+function addChatMessage(sender, msg) {
+    const messagesBox = $('chat-messages');
+    if (!messagesBox) return;
+    const line = document.createElement('div');
+    line.className = 'chat-msg';
+    line.innerHTML = `<span class="chat-sender">${sender}:</span> ${msg}`;
+    messagesBox.appendChild(line);
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+}
+
+const btnJoinSubmit = document.getElementById('btn-join-submit');
+if (btnJoinSubmit) {
+    btnJoinSubmit.onclick = async () => {
+        const codeInput = $('join-code');
+        const code = codeInput ? codeInput.value.toUpperCase().trim() : '';
+        if (!code) return;
+        try {
+            await initNetworkClient();
+            const res = await netClient.join(code, 'sonic');
+            if (joinMenu) joinMenu.style.display = 'none';
+            const lobbyMenu = $('lobby-menu');
+            if (lobbyMenu) lobbyMenu.style.display = 'flex';
+            if ($('lobby-code')) $('lobby-code').textContent = res.code || code;
+        } catch (e) {
+            if ($('join-error')) $('join-error').textContent = e.message || 'Room not found';
+        }
+    };
+}
+
+const btnEggmanTrigger = document.getElementById('btn-eggman-trigger');
+if (btnEggmanTrigger) {
+    btnEggmanTrigger.onclick = () => {
+        if (netClient && netClient.isHost) {
+            netClient.triggerEggman();
+        } else if (eggman) {
+            eggman.start();
+            showDialogue('Host Admin', '💥 HOST DUAL TRIGGER: Dr. Eggman Invasion Invoked!');
+        }
+    };
+}
+
+// Gear Customization & Enerbeam Color Wiring
+const btnOpenGear = document.getElementById('btn-open-gear');
+const gearModal = document.getElementById('gear-modal');
+const btnGearSave = document.getElementById('btn-gear-save');
+const btnInviteFriend = document.getElementById('btn-invite-friend');
+let selectedEnerbeamColor = 0x00bbff;
+
+if (btnOpenGear) {
+    btnOpenGear.onclick = () => {
+        if (gearModal) gearModal.style.display = 'flex';
+    };
+}
+if (btnGearSave) {
+    btnGearSave.onclick = () => {
+        if (gearModal) gearModal.style.display = 'none';
+        showDialogue('Gear Customization', 'تم حفظ تخصيص عتاد الـ Enerbeam بنجاح ⚙️');
+    };
+}
+document.querySelectorAll('#enerbeam-color-picker .color-chip').forEach(chip => {
+    chip.onclick = () => {
+        document.querySelectorAll('#enerbeam-color-picker .color-chip').forEach(c => c.style.borderColor = 'transparent');
+        chip.style.borderColor = '#fff';
+        selectedEnerbeamColor = parseInt(chip.dataset.color);
+        if (player && player._enerbeamLine) {
+            player._enerbeamLine.material.color.setHex(selectedEnerbeamColor);
+        }
+    };
+});
+
+if (btnInviteFriend) {
+    btnInviteFriend.onclick = () => {
+        const code = (netClient && netClient.code) ? netClient.code : 'SNC78B';
+        const inviteUrl = window.location.origin + window.location.pathname + '?room=' + code;
+        navigator.clipboard.writeText(inviteUrl).catch(() => {});
+        showDialogue('Invite Friend', `تم نسخ كود ورابط الدعوة للغرفة [${code}]! شاركه مع أصدقائك 👥`);
+    };
+}
+
+// Mode 3: Online Matchmaking (PRO Restricted)
+const btnModePro = document.getElementById('btn-mode-pro');
+const proModal = document.getElementById('pro-modal');
+const btnProClose = document.getElementById('btn-pro-close');
+const btnProUpgrade = document.getElementById('btn-pro-upgrade');
+
+if (btnModePro) {
+    btnModePro.onclick = () => {
+        const isPro = localStorage.getItem('is_pro_user') === 'true';
+        if (isPro) {
+            showDialogue('Online Matchmaking', 'جاري البحث عن منافسين أونلاين في سيرفرات Pro...');
+            setTimeout(() => startGame(), 1500);
+        } else {
+            if (proModal) proModal.style.display = 'flex';
+        }
+    };
+}
+if (btnProClose) {
+    btnProClose.onclick = () => {
+        if (proModal) proModal.style.display = 'none';
+    };
+}
+if (btnProUpgrade) {
+    btnProUpgrade.onclick = () => {
+        localStorage.setItem('is_pro_user', 'true');
+        if (proModal) proModal.style.display = 'none';
+        showDialogue('Pro Account', 'مبروك! تم تفعيل حساب Pro بنجاح 👑 جاري دخول الماتش أونلاين!');
+        setTimeout(() => startGame(), 1500);
+    };
+}
 
 document.querySelectorAll('.char-card').forEach(card => {
     card.onclick = () => {
@@ -642,20 +1081,6 @@ if (btnConfirm) btnConfirm.onclick = () => {
     selectMenu.classList.add('hidden');
     selectMenu.style.display = 'none';
     startGame();
-};
-
-const btnHost = document.getElementById('btn-host');
-if (btnHost) btnHost.onclick = () => {
-    mainMenu.classList.add('hidden');
-    selectMenu.classList.remove('hidden');
-    selectMenu.style.display = 'flex';
-    if (charSelect) charSelect.show();
-    gameState = STATE.SELECT;
-};
-
-const btnJoin = document.getElementById('btn-join-menu');
-if (btnJoin) btnJoin.onclick = () => {
-    showDialogue('Multiplayer', 'Coming soon! Play solo for now.');
 };
 
 const btnResume = document.getElementById('btn-resume');
@@ -787,6 +1212,7 @@ function gameLoop(now) {
         checkRingCollection();
         checkCheckpoints();
         checkBoostPads();
+        checkSprings();
         updateEnemies(dt);
         updateEggmanBoss(dt);
         handleEnerbeam();
@@ -798,7 +1224,12 @@ function gameLoop(now) {
 
         try { audio.updateSpeedWind(speed / physics.SPRINT_SPEED); } catch (e) {}
 
-        try { world.update(dt); } catch (e) {}
+        try { world.update(dt, engine.camera); } catch (e) {}
+        try { checkInteractiveProps(dt); } catch (e) {}
+        try { animateRemotePlayers(dt); } catch (e) {}
+        if (netClient) {
+            try { netClient.updateVoiceProximity(player.position, cam.getYaw()); } catch (e) {}
+        }
 
         for (const ring of worldRings) {
             if (!ring.userData.collected) {

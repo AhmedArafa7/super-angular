@@ -1155,7 +1155,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
 
                   <div class="flex items-center gap-2">
                     <span class="text-[11px] text-slate-500 font-bold">الكمية:</span>
-                    <input type="number" [(ngModel)]="poItemQuantities[prod.id]" min="1" placeholder="مثال: 20"
+                    <input type="number" [(ngModel)]="poItemQuantities[prod.id]" (ngModelChange)="recalculateWholesaleTotal()" min="1" placeholder="مثال: 20"
                            class="w-20 p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center font-bold text-slate-900 dark:text-white text-xs">
                   </div>
                 </div>
@@ -1166,7 +1166,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
               <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">ثمن الطلبية الكلي المشتراة من الشركة (تحدده الشركة الموردة بالجنية)</label>
               <input type="number" [(ngModel)]="poCustomTotalCost" min="1" placeholder="مثال: 12500 ج.م"
                      class="w-full p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 font-bold text-amber-900 dark:text-amber-200 font-mono text-sm focus:ring-2 focus:ring-amber-500">
-              <p class="text-[10px] text-slate-400 mt-1">يُحسب هذا المبلغ مباشرة في ميزانية المشتريات وحساب الأرباح والخسائر للمحل.</p>
+              <p class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-1">💡 يُحسب السعر تلقائياً باعتبار أن الشراء بالجملة يوفر 20% من سعر الشراء القطاعي. يمكنك تعديله يدوياً إن وجد خصم إضافي.</p>
             </div>
 
             <div>
@@ -1629,6 +1629,7 @@ export class OmAlQura2AdminPortalComponent {
     const firstSupp = this.service.suppliers()[0];
     this.selectedPoSupplierId = firstSupp ? firstSupp.id : '';
     this.poNotes = 'يرجى التوريد بشكل عاجل والتسليم لمخزن الفرع.';
+    this.recalculateWholesaleTotal();
     this.showPoModal.set(true);
   }
 
@@ -1637,10 +1638,27 @@ export class OmAlQura2AdminPortalComponent {
     const firstSupp = this.service.suppliers()[0];
     this.selectedPoSupplierId = firstSupp ? firstSupp.id : '';
     this.poNotes = `طلب توريد عاجل لصنف (${product.name}).`;
+    this.recalculateWholesaleTotal();
     this.showPoModal.set(true);
   }
 
   poCustomTotalCost: number | null = null;
+
+  recalculateWholesaleTotal() {
+    let total = 0;
+    Object.keys(this.poItemQuantities).forEach(prodId => {
+      const qty = Number(this.poItemQuantities[prodId]);
+      if (qty && qty > 0) {
+        const prod = this.service.products().find(p => p.id === prodId);
+        if (prod) {
+          // Wholesale price provides 20% savings on retail price (price * 0.80)
+          const wholesaleUnitPrice = prod.price * 0.80;
+          total += wholesaleUnitPrice * qty;
+        }
+      }
+    });
+    this.poCustomTotalCost = total > 0 ? Math.round(total) : null;
+  }
 
   submitCreatePo() {
     if (!this.selectedPoSupplierId) return;
@@ -1656,7 +1674,7 @@ export class OmAlQura2AdminPortalComponent {
             productName: prod.name,
             currentStock: prod.stockQuantity,
             requestedQuantity: qty,
-            unitPriceEst: prod.price * 0.75
+            unitPriceEst: prod.price * 0.80
           });
         }
       }

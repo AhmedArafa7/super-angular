@@ -15,6 +15,8 @@ import { ToastService } from '../../core/services/toast.service';
 import { SidebarService } from '../../core/sidebar.service';
 import { CustomModuleStorageService, CustomModuleItem } from '../ai-module-builder/custom-module-viewer.component';
 import { ArcadeService, ArcadeGame } from './arcade.service';
+import { SuperArcadeBridgeService } from '../../core/services/super-arcade-bridge';
+import { ArcadeCloudService } from '../../core/services/arcade-cloud.service';
 
 export interface GameVersion {
   versionId: string;
@@ -500,6 +502,8 @@ export class AiGameBuilderComponent implements OnInit {
   router = inject(Router);
   route = inject(ActivatedRoute);
   arcadeService = inject(ArcadeService);
+  arcadeCloud = inject(ArcadeCloudService);
+  arcadeBridge = inject(SuperArcadeBridgeService);
 
   private readonly STORAGE_KEY = 'si_neuro_custom_games_v1';
 
@@ -609,7 +613,14 @@ export class AiGameBuilderComponent implements OnInit {
       </script>`;
     }
 
-    const headAssets = `<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"><style>body{margin:0;padding:1rem;background-color:#020617;color:white;font-family:'Cairo',system-ui,sans-serif;}</style>`;
+    const bridgeScript = this.arcadeBridge.generateBridgeScript({
+      gameId: this.activeGameId() || 'preview_game',
+      gameTitle: this.activeGame()?.title || 'Preview Game',
+      mode: 'local',
+      isProUser: true
+    });
+
+    const headAssets = `<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">${bridgeScript}<style>body{margin:0;padding:1rem;background-color:#020617;color:white;font-family:'Cairo',system-ui,sans-serif;}</style>`;
 
     let fullPage = '';
     if (rawHtml.toLowerCase().includes('<html') || rawHtml.toLowerCase().includes('<!doctype')) {
@@ -674,7 +685,7 @@ export class AiGameBuilderComponent implements OnInit {
     this.showPublishModal.set(true);
   }
 
-  confirmPublishGame() {
+  async confirmPublishGame() {
     if (!this.publishData.title.trim()) {
       this.toast.show('يرجى كتابة عنوان للعبة أولاً.', 'warning');
       return;
@@ -686,6 +697,14 @@ export class AiGameBuilderComponent implements OnInit {
       return;
     }
 
+    await this.arcadeCloud.publishGameToCloud({
+      title: this.publishData.title,
+      description: this.publishData.description,
+      category: this.publishData.category,
+      genre: this.publishData.genre,
+      htmlContent: code
+    });
+
     this.arcadeService.publishGame({
       title: this.publishData.title,
       description: this.publishData.description,
@@ -695,7 +714,7 @@ export class AiGameBuilderComponent implements OnInit {
     });
 
     this.showPublishModal.set(false);
-    this.toast.show('🚀 تم نشر اللعبة بنجاح في معرض ألعاب Super Arcade!', 'success');
+    this.toast.show('🚀 تم نشر اللعبة بنجاح في السحابة ومعرض ألعاب Super Arcade!', 'success');
     
     setTimeout(() => {
       this.router.navigate(['/arcade']);

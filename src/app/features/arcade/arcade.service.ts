@@ -65,6 +65,17 @@ export class ArcadeService {
       status: 'available'
     },
     {
+      id: 'sonic-runner',
+      category: 'general',
+      title: 'Sonic 3D Runner 🏃‍♂️🔵⚡',
+      description: 'لعبة الركض ثلاثية الأبعاد الشهيرة Sonic 3D Runner! اركض في منطقة Green Hill Zone، تفادى العوائق والكراب الآلي، واجمع الحلقات الذهبية!',
+      thumbnail: 'assets/images/sonic-boom-thumb.png',
+      genre: 'Action',
+      platforms: ['browser', 'android', 'pc'],
+      localUrl: '/games/sonic-runner/index.html',
+      status: 'available'
+    },
+    {
       id: 'dragon-dungeon',
       category: 'mental',
       title: 'Jinx 🐉⚔️',

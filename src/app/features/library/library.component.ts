@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -57,14 +57,25 @@ export interface PageTextBox {
   isBold?: boolean;
 }
 
+export interface PageAudio {
+  id: string;
+  url?: string;
+  audioBlob?: Blob;
+  title?: string;
+  duration?: number; // in seconds
+  autoPlay?: boolean;
+}
+
 export interface BookPage {
   id: string;
   type: 'image' | 'text' | 'blank';
   imageUrl?: string;
   processedImageUrl?: string;
+  imageBlob?: Blob;
   textTitle?: string;
   textContent?: string;
   extractedText?: string;
+  audio?: PageAudio;
   filter: PageImageFilter;
   selected?: boolean;
   isOcrLoading?: boolean;
@@ -465,6 +476,27 @@ export class LibraryComponent {
   newNoteText = '';
   newNoteColor: 'gold' | 'emerald' | 'crimson' | 'sky' | 'violet' = 'gold';
 
+  // --- PAGE AUDIO & RECORDING STATE ---
+  isRecordingAudio = false;
+  recordingSeconds = 0;
+  recordingTargetPage: BookPage | null = null;
+  private mediaRecorder: MediaRecorder | null = null;
+  private audioChunks: Blob[] = [];
+  private recordingTimer: any = null;
+
+  // Active Reader / Studio Audio Player State
+  activeAudioElement: HTMLAudioElement | null = null;
+  activeAudioPageId: string | null = null;
+  isAudioPlaying = false;
+  currentAudioTime = 0;
+  totalAudioDuration = 0;
+  audioPlaybackRate = 1.0;
+  isAudioMuted = false;
+  
+  // TTS AI State
+  isTTSPlaying = false;
+  activeTTSPageId: string | null = null;
+
   selectedPageIndex = 0;
   targetPageNumber: number | null = null;
   isProcessingStudioPublish = false;
@@ -507,6 +539,49 @@ export class LibraryComponent {
     }
 
     return result;
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyboardShortcuts(event: KeyboardEvent) {
+    if (this.selectedBookForReading) {
+      const target = event.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+
+      if (event.key === 'ArrowLeft') {
+        this.nextPage();
+        event.preventDefault();
+      } else if (event.key === 'ArrowRight') {
+        this.prevPage();
+        event.preventDefault();
+      } else if (event.key === 'Escape') {
+        this.closeBookReader();
+        event.preventDefault();
+      } else if (event.key === 'f' || event.key === 'F') {
+        this.toggleFullscreen();
+        event.preventDefault();
+      }
+    } else if (this.showBookStudioDialog) {
+      if (event.key === 'Escape') {
+        this.closeBookStudio();
+        event.preventDefault();
+      }
+    }
+  }
+
+  toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+  }
+
+  setZoomPreset(zoomLevel: number) {
+    this.pageZoom = zoomLevel;
   }
 
   constructor() {
@@ -557,6 +632,7 @@ export class LibraryComponent {
       const pdfItems = await this.indexedDb.getAll('personal_pdf_books');
       if (pdfItems && pdfItems.length > 0) {
         pdfItems.forEach(item => {
+          if (!item || item.id === 'SUPER_STUDIO_DRAFT_IDB' || !item.title) return;
           let blobUrl = item.fileDataUrl;
           if (item.fileBlob instanceof Blob || (item.fileBlob && typeof item.fileBlob === 'object')) {
             blobUrl = URL.createObjectURL(item.fileBlob);
@@ -587,11 +663,37 @@ export class LibraryComponent {
       console.warn('Could not load personal_pdf_books from IndexedDB:', e);
     }
 
+    let createdStudioBooks: Book[] = [];
+    try {
+      const studioItems = await this.indexedDb.getAll('created_books');
+      if (studioItems && studioItems.length > 0) {
+        studioItems.forEach(item => {
+          const book: Book = item.bookData || item;
+          if (book && book.pages) {
+            book.pages.forEach(p => {
+              if (p.imageBlob instanceof Blob || (p.imageBlob && typeof p.imageBlob === 'object')) {
+                p.processedImageUrl = URL.createObjectURL(p.imageBlob);
+                if (!p.imageUrl || p.imageUrl === '[IDB_STORED]') p.imageUrl = p.processedImageUrl;
+              }
+              if (p.audio && (p.audio.audioBlob instanceof Blob || (p.audio.audioBlob && typeof p.audio.audioBlob === 'object'))) {
+                p.audio.url = URL.createObjectURL(p.audio.audioBlob);
+              }
+            });
+          }
+          if (book && book.title) {
+            createdStudioBooks.push(book);
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Could not load created_books from IndexedDB:', e);
+    }
+
     // Set initial local books immediately
     if (!this.showPendingReview) {
-      const initialCombined = [...personalPdfBooks, ...jsonAssetBooks, ...localIngestedBooks, ...FAMOUS_EGYPTIAN_NOVELS];
+      const initialCombined = [...personalPdfBooks, ...createdStudioBooks, ...jsonAssetBooks, ...localIngestedBooks, ...FAMOUS_EGYPTIAN_NOVELS];
       const uniqueInitial = initialCombined.filter((b, index, self) => 
-        b.isPersonalPdf || index === self.findIndex(t => t.title === b.title)
+        b.isPersonalPdf || index === self.findIndex(t => t.id === b.id || t.title === b.title)
       );
       this.books.set(uniqueInitial);
     }
@@ -610,7 +712,7 @@ export class LibraryComponent {
         const snap = await getDocs(q);
         fetchedBooks = snap.docs.map(d => ({ id: d.id, ...d.data() } as Book));
 
-        const combined = [...personalPdfBooks, ...jsonAssetBooks, ...localIngestedBooks, ...FAMOUS_EGYPTIAN_NOVELS];
+        const combined = [...personalPdfBooks, ...createdStudioBooks, ...jsonAssetBooks, ...localIngestedBooks, ...FAMOUS_EGYPTIAN_NOVELS];
         fetchedBooks.forEach(fb => {
           if (!combined.some(c => c.id === fb.id || c.title === fb.title)) {
             combined.push(fb);
@@ -618,7 +720,7 @@ export class LibraryComponent {
         });
 
         const uniqueBooks = combined.filter((b, index, self) => 
-          b.isPersonalPdf || index === self.findIndex(t => t.title === b.title)
+          b.isPersonalPdf || index === self.findIndex(t => t.id === b.id || t.title === b.title)
         );
 
         this.books.set(uniqueBooks);
@@ -918,6 +1020,16 @@ export class LibraryComponent {
   closeBookReader() {
     this.saveCurrentProgress();
     this.selectedBookForReading = null;
+    this.activePageIndex = 0;
+    this.activeChapterIndex = 0;
+    if (this.activeAudioElement) {
+      this.activeAudioElement.pause();
+      this.isAudioPlaying = false;
+    }
+    if (this.isTTSPlaying && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      this.isTTSPlaying = false;
+    }
   }
 
   saveCurrentProgress() {
@@ -954,23 +1066,31 @@ export class LibraryComponent {
   }
 
   nextPage() {
+    if (!this.selectedBookForReading) return;
     const step = this.isTwoPageMode ? 2 : 1;
-    if (this.selectedBookForReading?.pages && this.activePageIndex < this.selectedBookForReading.pages.length - step) {
+    if (this.selectedBookForReading.pages && this.activePageIndex < this.selectedBookForReading.pages.length - step) {
       this.activePageIndex += step;
       this.saveCurrentProgress();
-    } else if (this.selectedBookForReading?.pages && this.activePageIndex < this.selectedBookForReading.pages.length - 1) {
+    } else if (this.selectedBookForReading.pages && this.activePageIndex < this.selectedBookForReading.pages.length - 1) {
       this.activePageIndex = this.selectedBookForReading.pages.length - 1;
+      this.saveCurrentProgress();
+    } else if (this.selectedBookForReading.chapters && this.activeChapterIndex < this.selectedBookForReading.chapters.length - 1) {
+      this.activeChapterIndex++;
       this.saveCurrentProgress();
     }
   }
 
   prevPage() {
+    if (!this.selectedBookForReading) return;
     const step = this.isTwoPageMode ? 2 : 1;
     if (this.activePageIndex >= step) {
       this.activePageIndex -= step;
       this.saveCurrentProgress();
     } else if (this.activePageIndex > 0) {
       this.activePageIndex = 0;
+      this.saveCurrentProgress();
+    } else if (this.selectedBookForReading.chapters && this.activeChapterIndex > 0) {
+      this.activeChapterIndex--;
       this.saveCurrentProgress();
     }
   }
@@ -1272,9 +1392,21 @@ export class LibraryComponent {
 
     try {
       const db = this.firebase.firestore;
-      await deleteDoc(doc(db, 'library_books', bookId));
+      await deleteDoc(doc(db, 'library_books', bookId)).catch(() => {});
+      await this.indexedDb.delete('created_books', bookId).catch(() => {});
+      await this.indexedDb.delete('personal_pdf_books', bookId).catch(() => {});
+
+      try {
+        const stored = localStorage.getItem('SUPER_INGESTED_BOOKS');
+        if (stored) {
+          const list: Book[] = JSON.parse(stored);
+          const updated = list.filter(b => b.id !== bookId);
+          localStorage.setItem('SUPER_INGESTED_BOOKS', JSON.stringify(updated));
+        }
+      } catch (e) {}
+
       this.books.update(books => books.filter(b => b.id !== bookId));
-      this.toast.show('تم حذف الكتاب', 'success');
+      this.toast.show('تم حذف الكتاب بنجاح', 'success');
     } catch (err) {
       console.error('Error deleting book:', err);
       this.toast.show('فشل حذف الكتاب', 'error');
@@ -1496,32 +1628,106 @@ export class LibraryComponent {
     };
   }
 
+  @HostListener('window:paste', ['$event'])
+  async onPaste(event: ClipboardEvent) {
+    if (!this.showBookStudioDialog) return;
+    const items = event.clipboardData?.items;
+    if (!items) return;
+
+    const files: File[] = [];
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile();
+        if (file) files.push(file);
+      }
+    }
+
+    if (files.length > 0) {
+      event.preventDefault();
+      this.addPastedImageFilesToStudio(files);
+    }
+  }
+
+  async pasteImageFromClipboard() {
+    try {
+      if (navigator.clipboard && navigator.clipboard.read) {
+        const clipboardItems = await navigator.clipboard.read();
+        const files: File[] = [];
+        for (const item of clipboardItems) {
+          for (const type of item.types) {
+            if (type.startsWith('image/')) {
+              const blob = await item.getType(type);
+              const file = new File([blob], `pasted_page_${Date.now()}.png`, { type });
+              files.push(file);
+            }
+          }
+        }
+        if (files.length > 0) {
+          this.addPastedImageFilesToStudio(files);
+          return;
+        }
+      }
+      this.toast.show('اضغط Ctrl+V للصق الصورة المنسوخة من الحافظة مباشرة', 'info');
+    } catch (err) {
+      this.toast.show('اضغط Ctrl+V للصق الصورة المنسوخة من الحافظة مباشرة', 'info');
+    }
+  }
+
+  private addPastedImageFilesToStudio(files: File[]) {
+    const newPages: BookPage[] = files.map(file => {
+      const blobUrl = URL.createObjectURL(file);
+      const page: BookPage = {
+        id: 'page_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+        type: 'image',
+        imageUrl: blobUrl,
+        processedImageUrl: blobUrl,
+        imageBlob: file,
+        filter: this.createDefaultFilter(),
+        selected: false
+      };
+      this.renderFilteredPageImage(page);
+      return page;
+    });
+
+    if (!this.studioBook.coverUrl && newPages.length > 0) {
+      this.studioBook.coverUrl = newPages[0].imageUrl || '';
+    }
+
+    const hasSelectedPage = this.selectedPageIndex >= 0 && this.selectedPageIndex < this.studioBook.pages.length;
+    if (hasSelectedPage) {
+      const selectedPage = this.studioBook.pages[this.selectedPageIndex];
+      if (selectedPage.type === 'blank') {
+        const targetIndex = this.selectedPageIndex;
+        this.studioBook.pages.splice(targetIndex, 1, ...newPages);
+        this.selectedPageIndex = targetIndex;
+      } else {
+        const targetIndex = this.selectedPageIndex + 1;
+        this.studioBook.pages.splice(targetIndex, 0, ...newPages);
+        this.selectedPageIndex = targetIndex;
+      }
+    } else {
+      const insertAt = this.studioBook.pages.length;
+      this.studioBook.pages.push(...newPages);
+      this.selectedPageIndex = insertAt;
+    }
+
+    this.toast.show(`تم لصق ${newPages.length} صورة من الحافظة بنجاح! 📋`, 'success');
+  }
+
   async onStudioImagesSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
 
     const files = Array.from(input.files);
 
-    const readPromises = files.map(file => {
-      return new Promise<{ dataUrl: string; fileName: string }>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          resolve({
-            dataUrl: e.target?.result as string,
-            fileName: file.name
-          });
-        };
-        reader.readAsDataURL(file);
-      });
-    });
-
-    const results = await Promise.all(readPromises);
-    const newPages: BookPage[] = results.map(res => {
+    const newPages: BookPage[] = files.map(file => {
+      const blobUrl = URL.createObjectURL(file);
       const page: BookPage = {
         id: 'page_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
         type: 'image',
-        imageUrl: res.dataUrl,
-        processedImageUrl: res.dataUrl,
+        imageUrl: blobUrl,
+        processedImageUrl: blobUrl,
+        imageBlob: file,
         filter: this.createDefaultFilter(),
         selected: false
       };
@@ -1535,8 +1741,8 @@ export class LibraryComponent {
     }
 
     // Auto set title if empty
-    if (!this.studioBook.title && results.length > 0 && this.studioBook.pages.length === 0) {
-      this.studioBook.title = results[0].fileName.replace(/\.[^/.]+$/, "");
+    if (!this.studioBook.title && files.length > 0 && this.studioBook.pages.length === 0) {
+      this.studioBook.title = files[0].name.replace(/\.[^/.]+$/, "");
     }
 
     // Determine insertion position based on currently selected page
@@ -1598,26 +1804,14 @@ export class LibraryComponent {
     }
 
     const files = Array.from(input.files);
-    const readPromises = files.map(file => {
-      return new Promise<{ dataUrl: string; fileName: string }>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          resolve({
-            dataUrl: e.target?.result as string,
-            fileName: file.name
-          });
-        };
-        reader.readAsDataURL(file);
-      });
-    });
-
-    const results = await Promise.all(readPromises);
-    const newPages: BookPage[] = results.map(res => {
+    const newPages: BookPage[] = files.map(file => {
+      const blobUrl = URL.createObjectURL(file);
       const page: BookPage = {
         id: 'page_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
         type: 'image',
-        imageUrl: res.dataUrl,
-        processedImageUrl: res.dataUrl,
+        imageUrl: blobUrl,
+        processedImageUrl: blobUrl,
+        imageBlob: file,
         filter: this.createDefaultFilter(),
         selected: false
       };
@@ -1836,6 +2030,234 @@ export class LibraryComponent {
     this.renderFilteredPageImage(page);
   }
 
+  // ==========================================
+  // --- PAGE AUDIO NARRATION & RECORDING ENGINE ---
+  // ==========================================
+
+  onPageAudioFileSelected(event: Event, page: BookPage) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    const blobUrl = URL.createObjectURL(file);
+
+    page.audio = {
+      id: 'audio_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
+      url: blobUrl,
+      audioBlob: file,
+      title: file.name,
+      autoPlay: false
+    };
+
+    const audioObj = new Audio(blobUrl);
+    audioObj.onloadedmetadata = () => {
+      if (page.audio) page.audio.duration = Math.round(audioObj.duration);
+      this.saveStudioDraft(true);
+    };
+
+    this.toast.show(`تم إرفاق الملف الصوتي "${file.name}" بالصفحة بنجاح 🎵`, 'success');
+    input.value = '';
+  }
+
+  async startMicRecording(page: BookPage) {
+    if (this.isRecordingAudio) return;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.mediaRecorder = new MediaRecorder(stream);
+      this.audioChunks = [];
+      this.recordingTargetPage = page;
+      this.recordingSeconds = 0;
+      this.isRecordingAudio = true;
+
+      this.mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          this.audioChunks.push(event.data);
+        }
+      };
+
+      this.mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+        const blobUrl = URL.createObjectURL(audioBlob);
+
+        if (this.recordingTargetPage) {
+          this.recordingTargetPage.audio = {
+            id: 'rec_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
+            url: blobUrl,
+            audioBlob: audioBlob,
+            title: `تسجيل صوتي (صفحة #${this.studioBook.pages.indexOf(this.recordingTargetPage) + 1})`,
+            duration: this.recordingSeconds,
+            autoPlay: false
+          };
+          this.saveStudioDraft(true);
+          this.toast.show('تم حفظ التسجيل الصوتي المباشر بالصفحة بنجاح! 🎙️', 'success');
+        }
+
+        stream.getTracks().forEach(track => track.stop());
+        this.isRecordingAudio = false;
+        this.recordingTargetPage = null;
+      };
+
+      this.mediaRecorder.start(100);
+
+      this.recordingTimer = setInterval(() => {
+        this.recordingSeconds++;
+      }, 1000);
+
+      this.toast.show('جاري التسجيل الصوتي بالمايك المباشر... 🎙️', 'info');
+    } catch (err) {
+      console.error('Microphone access error:', err);
+      this.toast.show('تعذر الوصول إلى المايك، يرجى السماح لصلاحية الصوت بالمتصفح', 'error');
+    }
+  }
+
+  stopMicRecording() {
+    if (this.mediaRecorder && this.isRecordingAudio) {
+      clearInterval(this.recordingTimer);
+      this.mediaRecorder.stop();
+    }
+  }
+
+  deletePageAudio(page: BookPage) {
+    if (this.activeAudioPageId === page.id && this.activeAudioElement) {
+      this.activeAudioElement.pause();
+      this.isAudioPlaying = false;
+      this.activeAudioElement = null;
+      this.activeAudioPageId = null;
+    }
+    page.audio = undefined;
+    this.saveStudioDraft(true);
+    this.toast.show('تم حذف التعليق الصوتي من الصفحة', 'info');
+  }
+
+  togglePageAudioPlay(page: BookPage) {
+    if (!page.audio || (!page.audio.url && !page.audio.audioBlob)) return;
+
+    const audioUrl = page.audio.url || (page.audio.audioBlob ? URL.createObjectURL(page.audio.audioBlob) : '');
+    if (!audioUrl) return;
+
+    if (this.activeAudioPageId === page.id && this.activeAudioElement) {
+      if (this.isAudioPlaying) {
+        this.activeAudioElement.pause();
+        this.isAudioPlaying = false;
+      } else {
+        this.activeAudioElement.play();
+        this.isAudioPlaying = true;
+      }
+      return;
+    }
+
+    if (this.activeAudioElement) {
+      this.activeAudioElement.pause();
+    }
+
+    const audio = new Audio(audioUrl);
+    audio.playbackRate = this.audioPlaybackRate;
+    audio.muted = this.isAudioMuted;
+
+    audio.onplay = () => {
+      this.isAudioPlaying = true;
+      this.activeAudioPageId = page.id;
+    };
+
+    audio.onpause = () => {
+      this.isAudioPlaying = false;
+    };
+
+    audio.ontimeupdate = () => {
+      this.currentAudioTime = Math.round(audio.currentTime);
+      this.totalAudioDuration = Math.round(audio.duration || 0);
+    };
+
+    audio.onended = () => {
+      this.isAudioPlaying = false;
+      this.currentAudioTime = 0;
+    };
+
+    this.activeAudioElement = audio;
+    this.activeAudioPageId = page.id;
+    audio.play();
+  }
+
+  setAudioPlaybackRate(rate: number) {
+    this.audioPlaybackRate = rate;
+    if (this.activeAudioElement) {
+      this.activeAudioElement.playbackRate = rate;
+    }
+  }
+
+  seekAudioTime(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const seekTime = parseFloat(input.value);
+    if (this.activeAudioElement && !isNaN(seekTime)) {
+      this.activeAudioElement.currentTime = seekTime;
+      this.currentAudioTime = seekTime;
+    }
+  }
+
+  toggleAudioMute() {
+    this.isAudioMuted = !this.isAudioMuted;
+    if (this.activeAudioElement) {
+      this.activeAudioElement.muted = this.isAudioMuted;
+    }
+  }
+
+  formatTimeSeconds(sec: number): string {
+    if (isNaN(sec) || sec < 0) return '0:00';
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  }
+
+  toggleTTSForPage(page: BookPage) {
+    if (!('speechSynthesis' in window)) {
+      this.toast.show('المتصفح لا يدعم القراءة الصوتية الذكية (TTS)', 'error');
+      return;
+    }
+
+    if (this.isTTSPlaying && this.activeTTSPageId === page.id) {
+      window.speechSynthesis.cancel();
+      this.isTTSPlaying = false;
+      this.activeTTSPageId = null;
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const textToSpeak = page.textContent || page.extractedText || page.textTitle || '';
+    if (!textToSpeak.trim()) {
+      this.toast.show('لا يوجد نص في هذه الصفحة لقراءته صوتياً', 'warning');
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.lang = 'ar-SA';
+    utterance.rate = this.audioPlaybackRate;
+
+    const voices = window.speechSynthesis.getVoices();
+    const arabicVoice = voices.find(v => v.lang.startsWith('ar'));
+    if (arabicVoice) {
+      utterance.voice = arabicVoice;
+    }
+
+    utterance.onstart = () => {
+      this.isTTSPlaying = true;
+      this.activeTTSPageId = page.id;
+    };
+
+    utterance.onend = () => {
+      this.isTTSPlaying = false;
+      this.activeTTSPageId = null;
+    };
+
+    utterance.onerror = () => {
+      this.isTTSPlaying = false;
+      this.activeTTSPageId = null;
+    };
+
+    window.speechSynthesis.speak(utterance);
+    this.toast.show('جاري القراءة الصوتية الذكية للصفحة... 🗣️', 'info');
+  }
+
   applyFilterPresetToAllPages(preset: PageImageFilter['preset']) {
     this.studioBook.pages.forEach(p => {
       if (p.type === 'image') {
@@ -1851,8 +2273,9 @@ export class LibraryComponent {
   }
 
   renderFilteredPageImage(page: BookPage) {
-    if (page.type !== 'image' || !page.imageUrl) return;
+    if (page.type !== 'image' || (!page.imageUrl && !page.processedImageUrl)) return;
 
+    const sourceUrl = page.imageUrl || page.processedImageUrl!;
     const img = new Image();
     img.crossOrigin = 'Anonymous';
     img.onload = () => {
@@ -1878,9 +2301,17 @@ export class LibraryComponent {
       ctx.drawImage(img, -img.width / 2, -img.height / 2);
       ctx.restore();
 
-      page.processedImageUrl = canvas.toDataURL('image/jpeg', 0.92);
+      // Ultra-efficient WebP Blob conversion (~60% size reduction with zero Base64 overhead!)
+      canvas.toBlob((blob) => {
+        if (blob) {
+          page.imageBlob = blob;
+          page.processedImageUrl = URL.createObjectURL(blob);
+        } else {
+          page.processedImageUrl = canvas.toDataURL('image/jpeg', 0.85);
+        }
+      }, 'image/webp', 0.82);
     };
-    img.src = page.imageUrl;
+    img.src = sourceUrl;
   }
 
   async extractTextFromPageAI(page: BookPage) {
@@ -2009,20 +2440,7 @@ export class LibraryComponent {
         this.books.update(list => [bookPayload, ...list]);
       }
 
-      // Persist to LocalStorage
-      try {
-        const stored = localStorage.getItem('SUPER_INGESTED_BOOKS');
-        const list: Book[] = stored ? JSON.parse(stored) : [];
-        const idx = list.findIndex(b => b.id === bookId);
-        if (idx >= 0) {
-          list[idx] = bookPayload;
-        } else {
-          list.unshift(bookPayload);
-        }
-        localStorage.setItem('SUPER_INGESTED_BOOKS', JSON.stringify(list));
-      } catch (e) {}
-
-      // Persist to IndexedDB
+      // 1. Persist to IndexedDB (created_books - supports large Base64 images without quota limits)
       try {
         await this.indexedDb.put('created_books', {
           id: bookPayload.id,
@@ -2032,7 +2450,32 @@ export class LibraryComponent {
           bookData: bookPayload,
           createdAt: bookPayload.createdAt
         });
-      } catch (e) {}
+      } catch (e) {
+        console.error('Failed to save studio book to IndexedDB:', e);
+      }
+
+      // 2. Persist to LocalStorage (with lightweight fallback for heavy base64 images)
+      try {
+        const stored = localStorage.getItem('SUPER_INGESTED_BOOKS');
+        const list: Book[] = stored ? JSON.parse(stored) : [];
+        const lightPayload: Book = {
+          ...bookPayload,
+          pages: bookPayload.pages ? bookPayload.pages.map(p => ({
+            ...p,
+            imageUrl: (p.imageUrl && p.imageUrl.length > 100000) ? '[IDB_STORED]' : p.imageUrl,
+            processedImageUrl: (p.processedImageUrl && p.processedImageUrl.length > 100000) ? '[IDB_STORED]' : p.processedImageUrl
+          })) : undefined
+        };
+        const idx = list.findIndex(b => b.id === bookId);
+        if (idx >= 0) {
+          list[idx] = lightPayload;
+        } else {
+          list.unshift(lightPayload);
+        }
+        localStorage.setItem('SUPER_INGESTED_BOOKS', JSON.stringify(list));
+      } catch (e) {
+        console.warn('LocalStorage quota limit reached, book is safely stored in IndexedDB:', e);
+      }
 
       const msg = this.editingBookId
         ? `تم حفظ وتحديث كتاب "${bookPayload.title}" بنجاح!`

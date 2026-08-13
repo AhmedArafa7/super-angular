@@ -68,6 +68,22 @@
         </h1>
         <p class="text-slate-400 text-lg">أشهر الروايات المصرية والأعمال الأدبية الخالدة لأبرز الكُتّاب والروائيين.</p>
       </div>
+    <!-- Saved Studio Draft Alert Banner -->
+    <div *ngIf="hasSavedDraft" class="max-w-7xl mx-auto mb-8 p-4 md:p-5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-yellow-500/20 border border-amber-500/40 flex flex-col sm:flex-row items-center justify-between gap-4 text-right shadow-2xl animate-fade-in">
+      <div class="flex items-center gap-3">
+        <div class="p-3 bg-amber-500/20 rounded-xl text-amber-400 shrink-0">
+          <svg lucideIcon="bookmark" class="size-6"></svg>
+        </div>
+        <div>
+          <h3 class="font-black text-amber-200 text-base">لديك مسودة كتاب محفـوظة! (تم الحفظ في {{ draftSavedAt }})</h3>
+          <p class="text-xs text-amber-300/80">لم يكتمل نشر كتابك السابق، يمكنك استكماله أو نشره بنقرة واحدة في المكتبة.</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+        <button (click)="openBookStudio()" class="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs transition-all shadow-lg flex items-center gap-2">
+          <span>✏️ استكمال المسودة ونشر الكتاب</span>
+        </button>
+      </div>
     </div>
 
     <!-- Categories Bar -->
@@ -377,75 +393,79 @@
   </div>
 
   <!-- IN-APP BOOK READER MODAL (قارئ الكتب الإلكتروني التفاعلي) -->
-  <div *ngIf="selectedBookForReading" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 md:p-6 animate-in fade-in duration-300">
+  <div *ngIf="selectedBookForReading" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 md:p-4 animate-in fade-in duration-300 select-none">
     <div [ngClass]="{
            'bg-[#0f172a] text-slate-100 border-white/10': readerTheme === 'dark',
            'bg-[#fbf0d9] text-[#2b251a] border-[#e2d2b4]': readerTheme === 'sepia',
            'bg-white text-slate-900 border-slate-200': readerTheme === 'light'
          }"
-         class="w-full max-w-5xl h-[92vh] rounded-[2.5rem] border shadow-2xl flex flex-col overflow-hidden relative transition-colors duration-300">
+         class="w-full max-w-[96vw] h-[95vh] rounded-3xl border shadow-2xl flex flex-col overflow-hidden relative transition-colors duration-300">
       
-      <!-- Reader Header Toolbar -->
+      <!-- Reader Header Toolbar (Wide, Unconstrained Header) -->
       <div [ngClass]="{
-             'bg-slate-900/80 border-b border-white/10': readerTheme === 'dark',
+             'bg-slate-900/90 border-b border-white/10': readerTheme === 'dark',
              'bg-[#f3e3c3] border-b border-[#e2d2b4]': readerTheme === 'sepia',
              'bg-slate-100 border-b border-slate-200': readerTheme === 'light'
            }"
-           class="p-4 md:px-8 flex items-center justify-between gap-4 shrink-0">
+           class="p-3 md:px-6 flex items-center justify-between gap-3 shrink-0 shadow-md">
         
-        <!-- Book Details -->
-        <div class="flex items-center gap-3 min-w-0">
+        <!-- Book Cover & Full Title (Never Truncates) -->
+        <div class="flex items-center gap-3 flex-1 min-w-0 pr-2">
           <img [src]="selectedBookForReading.coverUrl" [alt]="selectedBookForReading.title" 
-               class="size-11 rounded-xl object-cover shadow-md shrink-0 border border-white/10">
+               class="size-10 rounded-xl object-cover shadow-md shrink-0 border border-white/10">
           <div class="min-w-0 text-right">
-            <h2 class="font-bold text-base md:text-lg truncate leading-snug">{{ selectedBookForReading.title }}</h2>
-            <p class="text-xs opacity-75 font-semibold truncate">{{ selectedBookForReading.author }}</p>
+            <h2 class="font-bold text-sm md:text-base leading-snug break-words line-clamp-1 text-amber-400">{{ selectedBookForReading.title }}</h2>
+            <p class="text-[11px] opacity-75 font-semibold truncate">{{ selectedBookForReading.author }}</p>
           </div>
         </div>
 
-        <!-- Reader Controls -->
-        <div class="flex items-center gap-2 md:gap-3 flex-wrap">
+        <!-- Reader Controls Toolbar -->
+        <div class="flex items-center gap-1.5 md:gap-2.5 flex-wrap justify-end">
+          <!-- Keyboard Shortcut Hint Badge -->
+          <span class="hidden lg:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-400">
+            ⌨️ الأسهم للتقليب | ESC للإغلاق
+          </span>
+
+          <!-- Quick Zoom Presets -->
+          <div *ngIf="selectedBookForReading.pages && selectedBookForReading.pages.length > 0"
+               class="flex items-center gap-1 rounded-xl p-1 border opacity-90 text-[11px]"
+               [ngClass]="readerTheme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'">
+            <button (click)="setZoomPreset(1.0)" [class.font-bold]="pageZoom === 1.0" class="px-2 py-0.5 rounded hover:bg-white/10">100%</button>
+            <button (click)="setZoomPreset(1.25)" [class.font-bold]="pageZoom === 1.25" class="px-2 py-0.5 rounded hover:bg-white/10">125%</button>
+            <button (click)="setZoomPreset(1.5)" [class.font-bold]="pageZoom === 1.5" class="px-2 py-0.5 rounded hover:bg-white/10">150% 🔍</button>
+          </div>
+
           <!-- Font Size Adjuster -->
           <div class="flex items-center gap-1 rounded-xl p-1 border opacity-80"
                [ngClass]="readerTheme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'">
-            <button (click)="changeFontSize(-2)" class="px-2 py-1 text-xs font-bold hover:opacity-100" title="تصغير الخط">A-</button>
+            <button (click)="changeFontSize(-2)" class="px-2 py-0.5 text-xs font-bold hover:opacity-100" title="تصغير الخط">A-</button>
             <span class="text-xs font-mono font-bold px-1">{{ readerFontSize }}px</span>
-            <button (click)="changeFontSize(2)" class="px-2 py-1 text-xs font-bold hover:opacity-100" title="تكبير الخط">A+</button>
+            <button (click)="changeFontSize(2)" class="px-2 py-0.5 text-xs font-bold hover:opacity-100" title="تكبير الخط">A+</button>
           </div>
 
           <!-- Reader Theme Switcher -->
-          <div class="flex items-center gap-1 rounded-xl p-1 border opacity-80"
+          <div class="flex items-center gap-0.5 rounded-xl p-1 border opacity-80"
                [ngClass]="readerTheme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'">
-            <button (click)="setReaderTheme('dark')" [class.font-bold]="readerTheme === 'dark'" class="px-2 py-1 text-xs rounded-lg hover:opacity-100">🌙 داكن</button>
-            <button (click)="setReaderTheme('sepia')" [class.font-bold]="readerTheme === 'sepia'" class="px-2 py-1 text-xs rounded-lg hover:opacity-100">📜 بيج</button>
-            <button (click)="setReaderTheme('light')" [class.font-bold]="readerTheme === 'light'" class="px-2 py-1 text-xs rounded-lg hover:opacity-100">☀️ فاتح</button>
-          </div>
-
-          <!-- Image Zoom Adjuster -->
-          <div *ngIf="selectedBookForReading.pages && selectedBookForReading.pages.length > 0"
-               class="flex items-center gap-1 rounded-xl p-1 border opacity-90"
-               [ngClass]="readerTheme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'">
-            <button (click)="zoomOut()" class="px-2 py-1 text-xs font-bold hover:opacity-100" title="تصغير الصورة (Zoom Out)">🔍-</button>
-            <span class="text-xs font-mono font-bold px-1 cursor-pointer" (click)="resetZoom()" title="إعادة ضبط التكبير">{{ (pageZoom * 100).toFixed(0) }}%</span>
-            <button (click)="zoomIn()" class="px-2 py-1 text-xs font-bold hover:opacity-100" title="تكبير الصورة حتى 350% (Zoom In)">🔍+</button>
+            <button (click)="setReaderTheme('dark')" [class.font-bold]="readerTheme === 'dark'" class="px-2 py-0.5 text-[11px] rounded-lg hover:opacity-100">🌙 داكن</button>
+            <button (click)="setReaderTheme('sepia')" [class.font-bold]="readerTheme === 'sepia'" class="px-2 py-0.5 text-[11px] rounded-lg hover:opacity-100">📜 بيج</button>
+            <button (click)="setReaderTheme('light')" [class.font-bold]="readerTheme === 'light'" class="px-2 py-0.5 text-[11px] rounded-lg hover:opacity-100">☀️ فاتح</button>
           </div>
 
           <!-- Reader Annotation Tools -->
           <div *ngIf="selectedBookForReading.pages && selectedBookForReading.pages.length > 0"
-               class="flex items-center gap-1.5 rounded-xl p-1 border opacity-90"
+               class="flex items-center gap-1 rounded-xl p-1 border opacity-90"
                [ngClass]="readerTheme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'">
-            <button (click)="setReaderToolMode('view')" [ngClass]="readerToolMode === 'view' ? 'bg-indigo-600 text-white font-bold' : 'opacity-70'" class="px-2.5 py-1 text-xs rounded-lg transition-all" title="وضع التصفح والعرض العادي">👁️ تصفح</button>
-            <button (click)="setReaderToolMode('draw')" [ngClass]="readerToolMode === 'draw' ? 'bg-indigo-600 text-white font-bold' : 'opacity-70'" class="px-2.5 py-1 text-xs rounded-lg transition-all" title="الرسم الحر بالماوس على الصفحة">🖊️ رسم</button>
-            <button (click)="setReaderToolMode('type')" [ngClass]="readerToolMode === 'type' ? 'bg-indigo-600 text-white font-bold' : 'opacity-70'" class="px-2.5 py-1 text-xs rounded-lg transition-all" title="الكتابة في أي مكان (النقر على السطور والفراغات)">🔤 كتابة</button>
+            <button (click)="setReaderToolMode('view')" [ngClass]="readerToolMode === 'view' ? 'bg-indigo-600 text-white font-bold' : 'opacity-70'" class="px-2 py-0.5 text-xs rounded-lg transition-all" title="تصفح">👁️ تصفح</button>
+            <button (click)="setReaderToolMode('draw')" [ngClass]="readerToolMode === 'draw' ? 'bg-indigo-600 text-white font-bold' : 'opacity-70'" class="px-2 py-0.5 text-xs rounded-lg transition-all" title="رسم حر">🖊️ رسم</button>
+            <button (click)="setReaderToolMode('type')" [ngClass]="readerToolMode === 'type' ? 'bg-indigo-600 text-white font-bold' : 'opacity-70'" class="px-2 py-0.5 text-xs rounded-lg transition-all" title="كتابة نص">🔤 كتابة</button>
             
-            <input *ngIf="readerToolMode === 'draw'" type="color" [(ngModel)]="drawColor" class="size-6 rounded cursor-pointer bg-transparent border-none ml-1" title="لون القلم" />
+            <input *ngIf="readerToolMode === 'draw'" type="color" [(ngModel)]="drawColor" class="size-5 rounded cursor-pointer bg-transparent border-none ml-1" title="لون القلم" />
           </div>
 
           <!-- Share Book with Friend -->
-          <button *ngIf="selectedBookForReading"
-                  (click)="openShareBookModal(selectedBookForReading)"
-                  class="px-3.5 h-10 text-xs rounded-xl border bg-white/5 hover:bg-white/10 border-white/10 transition-all flex items-center gap-1.5 font-bold"
-                  title="مشاركة الكتاب مع صديق">
+          <button (click)="openShareBookModal(selectedBookForReading)"
+                  class="px-3 h-9 text-xs rounded-xl border bg-white/5 hover:bg-white/10 border-white/10 transition-all flex items-center gap-1 font-bold"
+                  title="مشاركة الكتاب">
             📤 مشاركة
           </button>
 
@@ -453,22 +473,40 @@
           <button *ngIf="selectedBookForReading.pages && selectedBookForReading.pages.length > 0"
                   (click)="toggleTwoPageMode()" 
                   [ngClass]="isTwoPageMode ? 'bg-indigo-600 text-white font-bold border-indigo-500 shadow-md' : (readerTheme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10')"
-                  class="px-3.5 h-10 text-xs rounded-xl border transition-all flex items-center gap-1.5"
-                  title="عرض صفحتين جنب بعض ككتاب ورقي حقيقي">
-            📖 {{ isTwoPageMode ? 'عرض صفحتين' : 'صفحة واحدة' }}
+                  class="px-3 h-9 text-xs rounded-xl border transition-all flex items-center gap-1"
+                  title="عرض صفحتين جنب بعض ككتاب">
+            📖 {{ isTwoPageMode ? 'صفحتين' : 'صفحة واحدة' }}
           </button>
 
           <!-- Close Reader -->
           <button (click)="closeBookReader()" 
-                  class="size-10 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 flex items-center justify-center font-bold text-lg transition-all"
-                  title="إغلاق القارئ">
+                  class="size-9 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-600 hover:text-white flex items-center justify-center font-bold text-lg transition-all shadow-md"
+                  title="إغلاق القارئ (Esc)">
             ✕
           </button>
         </div>
       </div>
 
-      <!-- Reader Body Layout (Chapters Navigation + Native Reading View) -->
+      <!-- Reader Body Layout (Floating Nav Arrows + Chapters Navigation + Native Reading View) -->
       <div class="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden relative">
+        
+        <!-- FLOATING SIDE NAVIGATION ARROW (RIGHT: PREVIOUS PAGE) -->
+        <button *ngIf="selectedBookForReading.pages && selectedBookForReading.pages.length > 0"
+                (click)="prevPage()"
+                [disabled]="activePageIndex === 0"
+                class="absolute right-4 top-1/2 -translate-y-1/2 z-40 size-12 md:size-14 rounded-full bg-slate-950/80 hover:bg-indigo-600 border border-white/20 text-white font-black text-xl shadow-2xl flex items-center justify-center transition-all opacity-80 hover:opacity-100 hover:scale-110 disabled:opacity-20 disabled:pointer-events-none backdrop-blur-md"
+                title="الصفحة السابقة (السهم الأيمن ➡️)">
+          ►
+        </button>
+
+        <!-- FLOATING SIDE NAVIGATION ARROW (LEFT: NEXT PAGE) -->
+        <button *ngIf="selectedBookForReading.pages && selectedBookForReading.pages.length > 0"
+                (click)="nextPage()"
+                [disabled]="activePageIndex >= selectedBookForReading.pages.length - (isTwoPageMode ? 2 : 1)"
+                class="absolute left-4 top-1/2 -translate-y-1/2 z-40 size-12 md:size-14 rounded-full bg-slate-950/80 hover:bg-indigo-600 border border-white/20 text-white font-black text-xl shadow-2xl flex items-center justify-center transition-all opacity-80 hover:opacity-100 hover:scale-110 disabled:opacity-20 disabled:pointer-events-none backdrop-blur-md"
+                title="الصفحة التالية (السهم الأيسر ⬅️)">
+          ◄
+        </button>
         
         <!-- Chapters Sidebar Table of Contents -->
         <div *ngIf="selectedBookForReading.chapters && selectedBookForReading.chapters.length > 0"
@@ -477,8 +515,8 @@
                'bg-[#f3e3c3]/50 border-l border-[#e2d2b4]': readerTheme === 'sepia',
                'bg-slate-50 border-l border-slate-200': readerTheme === 'light'
              }"
-             class="w-full md:w-72 p-4 overflow-y-auto shrink-0 space-y-2 border-b md:border-b-0">
-          <h3 class="text-xs font-bold uppercase tracking-wider opacity-70 mb-3 text-right">فصول واقتباسات الكتاب</h3>
+             class="w-full md:w-64 p-3 overflow-y-auto shrink-0 space-y-2 border-b md:border-b-0">
+          <h3 class="text-xs font-bold uppercase tracking-wider opacity-70 mb-2 text-right">فصول الكتاب</h3>
           
           <button *ngFor="let chap of selectedBookForReading.chapters; let idx = index"
                   (click)="activeChapterIndex = idx"
@@ -487,23 +525,23 @@
                     'bg-[#d6b986] text-slate-950 font-bold shadow-md': activeChapterIndex === idx && readerTheme === 'sepia',
                     'opacity-70 hover:opacity-100': activeChapterIndex !== idx
                   }"
-                  class="w-full p-3 rounded-xl text-xs text-right transition-all flex items-center justify-between gap-2">
+                  class="w-full p-2.5 rounded-xl text-xs text-right transition-all flex items-center justify-between gap-2">
             <span class="truncate">{{ chap.title }}</span>
             <span class="font-mono text-[10px] opacity-60">#{{ idx + 1 }}</span>
           </button>
         </div>
 
-        <!-- Main Reading Content Surface -->
-        <div class="flex-1 p-4 md:p-8 overflow-y-auto text-right leading-loose font-serif select-text custom-scrollbar">
+        <!-- Main Reading Content Surface (FLUID & UNCONSTRAINED) -->
+        <div class="flex-1 p-3 md:p-6 overflow-y-auto text-right leading-loose font-serif select-text custom-scrollbar">
           
           <!-- Pages Reader View (for books with custom pages / scans) -->
           <ng-container *ngIf="selectedBookForReading.pages && selectedBookForReading.pages.length > 0">
             
             <!-- TWO PAGE SPREAD SINK VIEW (BOOK VIEW) -->
             <ng-container *ngIf="isTwoPageMode">
-              <div class="max-w-6xl mx-auto space-y-4">
+              <div class="max-w-7xl mx-auto space-y-4">
                 <!-- Page Header Bar -->
-                <div class="flex items-center justify-between border-b pb-3" [ngClass]="readerTheme === 'dark' ? 'border-white/10' : 'border-slate-300'">
+                <div class="flex items-center justify-between border-b pb-2" [ngClass]="readerTheme === 'dark' ? 'border-white/10' : 'border-slate-300'">
                   <div class="flex items-center gap-2">
                     <span class="text-xs font-bold uppercase tracking-widest text-indigo-400">
                       الصفحتان {{ activePageIndex + 1 }} - {{ activePageIndex + 2 <= selectedBookForReading.pages.length ? activePageIndex + 2 : selectedBookForReading.pages.length }} من {{ selectedBookForReading.pages.length }}
@@ -519,18 +557,18 @@
                 </div>
 
                 <!-- Book Spread Container -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-black/30 p-4 md:p-6 rounded-3xl border border-white/10 shadow-2xl relative">
-                  <!-- Center Book Spine Effect -->
-                  <div class="hidden md:block absolute top-0 bottom-0 left-1/2 w-8 -translate-x-1/2 bg-gradient-to-r from-black/40 via-black/80 to-black/45 pointer-events-none z-10 shadow-inner"></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-black/30 p-3 md:p-5 rounded-3xl border border-white/10 shadow-2xl relative">
+                  <!-- Center Spine -->
+                  <div class="hidden md:block absolute top-0 bottom-0 left-1/2 w-6 -translate-x-1/2 bg-gradient-to-r from-black/40 via-black/80 to-black/45 pointer-events-none z-10 shadow-inner"></div>
 
                   <!-- Right Page -->
-                  <div class="bg-black/40 rounded-2xl p-4 border border-white/10 shadow-inner flex flex-col items-center justify-center overflow-auto min-h-[55vh] max-h-[70vh]">
-                    <span class="text-[10px] font-mono text-indigo-400 mb-2 font-bold">صفحة يمنى #{{ activePageIndex + 1 }}</span>
+                  <div class="bg-black/40 rounded-2xl p-3 border border-white/10 shadow-inner flex flex-col items-center justify-center overflow-auto min-h-[60vh]">
+                    <span class="text-[10px] font-mono text-indigo-400 mb-1.5 font-bold">صفحة يمنى #{{ activePageIndex + 1 }}</span>
                     @if (selectedBookForReading.pages[activePageIndex]; as page1) {
                       @if (page1.type === 'image') {
                         <img [src]="page1.processedImageUrl || page1.imageUrl" [alt]="'صفحة ' + (activePageIndex + 1)" 
                              [style.transform]="'scale(' + pageZoom + ')'" [style.transformOrigin]="'center top'"
-                             class="max-h-[55vh] object-contain rounded-xl shadow-lg transition-transform duration-200" />
+                             class="w-full max-h-[78vh] object-contain rounded-xl shadow-lg transition-transform duration-200" />
                       } @else if (page1.type === 'text') {
                         <div class="space-y-3 w-full text-right p-2">
                           <h4 class="font-bold text-lg border-b pb-1">{{ page1.textTitle || ('صفحة ' + (activePageIndex + 1)) }}</h4>
@@ -543,13 +581,13 @@
                   </div>
 
                   <!-- Left Page -->
-                  <div class="bg-black/40 rounded-2xl p-4 border border-white/10 shadow-inner flex flex-col items-center justify-center overflow-auto min-h-[55vh] max-h-[70vh]">
+                  <div class="bg-black/40 rounded-2xl p-4 border border-white/10 shadow-inner flex flex-col items-center justify-center overflow-auto min-h-[60vh]">
                     @if (selectedBookForReading.pages[activePageIndex + 1]; as page2) {
-                      <span class="text-[10px] font-mono text-indigo-400 mb-2 font-bold">صفحة يسرى #{{ activePageIndex + 2 }}</span>
+                      <span class="text-[10px] font-mono text-indigo-400 mb-1.5 font-bold">صفحة يسرى #{{ activePageIndex + 2 }}</span>
                       @if (page2.type === 'image') {
                         <img [src]="page2.processedImageUrl || page2.imageUrl" [alt]="'صفحة ' + (activePageIndex + 2)" 
                              [style.transform]="'scale(' + pageZoom + ')'" [style.transformOrigin]="'center top'"
-                             class="max-h-[55vh] object-contain rounded-xl shadow-lg transition-transform duration-200" />
+                             class="w-full max-h-[78vh] object-contain rounded-xl shadow-lg transition-transform duration-200" />
                       } @else if (page2.type === 'text') {
                         <div class="space-y-3 w-full text-right p-2">
                           <h4 class="font-bold text-lg border-b pb-1">{{ page2.textTitle || ('صفحة ' + (activePageIndex + 2)) }}</h4>
@@ -566,30 +604,73 @@
               </div>
             </ng-container>
 
-            <!-- SINGLE PAGE VIEW -->
+            <!-- SINGLE PAGE VIEW (FLUID HIGH RESOLUTION) -->
             <ng-container *ngIf="!isTwoPageMode && selectedBookForReading.pages[activePageIndex] as curPage">
-              <div class="max-w-4xl mx-auto space-y-6">
+              <div class="max-w-5xl mx-auto space-y-4">
                 
-                <!-- Page Header Bar -->
-                <div class="flex items-center justify-between border-b pb-3" [ngClass]="readerTheme === 'dark' ? 'border-white/10' : 'border-slate-300'">
+                <!-- Page Header Info Bar -->
+                <div class="flex items-center justify-between border-b pb-2" [ngClass]="readerTheme === 'dark' ? 'border-white/10' : 'border-slate-300'">
                   <div class="flex items-center gap-2">
                     <span class="text-xs font-bold uppercase tracking-widest text-indigo-400">الصفحة {{ activePageIndex + 1 }} من {{ selectedBookForReading.pages.length }}</span>
                     <span *ngIf="curPage.type === 'blank'" class="px-2 py-0.5 rounded-full text-[10px] bg-amber-500/20 text-amber-400 font-bold">📄 صفحة فارغة</span>
                     <span *ngIf="curPage.type === 'image'" class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-400 font-bold">🖼️ صفحة مصورة</span>
                     <span *ngIf="curPage.type === 'text'" class="px-2 py-0.5 rounded-full text-[10px] bg-indigo-500/20 text-indigo-400 font-bold">📝 صفحة نصية</span>
+                    <span *ngIf="curPage.audio" class="px-2 py-0.5 rounded-full text-[10px] bg-amber-500/20 text-amber-300 font-bold flex items-center gap-1">🎵 تعليق صوتي</span>
                   </div>
 
                   <div class="flex items-center gap-2">
+                    <button (click)="toggleTTSForPage(curPage)" class="px-3 py-1 text-xs rounded-lg bg-purple-600/30 text-purple-200 hover:bg-purple-600/50 border border-purple-500/30 font-bold transition-all flex items-center gap-1">
+                      <span>🗣️</span> {{ isTTSPlaying && activeTTSPageId === curPage.id ? 'إيقاف TTS' : 'قراءة صوتية (AI)' }}
+                    </button>
                     <button (click)="openBookStudioForEdit(selectedBookForReading)" class="px-3 py-1 text-xs rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 font-bold transition-all flex items-center gap-1 shadow-sm" title="تعديل هذا الكتاب في استوديو صانع الكتب">
                       ✏️ تعديل الكتاب
                     </button>
-                    <button *ngIf="selectedBookForReading.chapters && selectedBookForReading.chapters.length > 0" (click)="setReaderMode('pages')" [class.font-bold]="readerMode === 'pages'" class="px-3 py-1 text-xs rounded-lg bg-indigo-600/30 text-indigo-300">عرض الصفحات</button>
-                    <button *ngIf="selectedBookForReading.chapters && selectedBookForReading.chapters.length > 0" (click)="setReaderMode('text')" [class.font-bold]="readerMode === 'text'" class="px-3 py-1 text-xs rounded-lg bg-white/5">عرض الفصول</button>
                   </div>
                 </div>
 
-                <!-- Image Page Display Surface -->
-                <div *ngIf="curPage.type === 'image'" class="space-y-4">
+                <!-- PROFESSIONAL FLOATING PAGE AUDIO PLAYER BAR -->
+                <div *ngIf="curPage.audio || isAudioPlaying || isTTSPlaying" 
+                     class="max-w-4xl mx-auto p-3 rounded-2xl bg-slate-900/95 border border-emerald-500/40 backdrop-blur-xl shadow-2xl flex flex-col md:flex-row items-center justify-between gap-3 text-right animate-in fade-in duration-300">
+                  
+                  <div class="flex items-center gap-3 w-full md:w-auto min-w-0">
+                    <button (click)="curPage.audio ? togglePageAudioPlay(curPage) : toggleTTSForPage(curPage)" 
+                            class="size-10 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold flex items-center justify-center text-base shrink-0 shadow-lg shadow-emerald-900/40">
+                      {{ (isAudioPlaying && activeAudioPageId === curPage.id) || (isTTSPlaying && activeTTSPageId === curPage.id) ? '⏸️' : '▶️' }}
+                    </button>
+                    
+                    <div class="truncate text-right">
+                      <h5 class="text-xs font-bold text-white truncate leading-tight">
+                        {{ curPage.audio ? (curPage.audio.title || 'تعليق صوتي للصفحة') : 'قراءة صوتية بالذكاء الاصطناعي (AI TTS)' }}
+                      </h5>
+                      <span class="text-[10px] text-emerald-400 font-mono font-bold">
+                        {{ formatTimeSeconds(currentAudioTime) }} / {{ formatTimeSeconds(totalAudioDuration || curPage.audio?.duration || 0) }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Audio Seek Slider & Speed Controls -->
+                  <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                    <input type="range" min="0" [max]="totalAudioDuration || curPage.audio?.duration || 100" [value]="currentAudioTime" (input)="seekAudioTime($event)" 
+                           class="w-28 md:w-44 accent-emerald-500 cursor-pointer h-1.5 bg-white/10 rounded-lg" />
+
+                    <!-- Playback Speed Control Selector -->
+                    <select [value]="audioPlaybackRate" (change)="setAudioPlaybackRate(+$any($event.target).value)" 
+                            class="bg-black/40 border border-white/10 rounded-lg px-2 h-8 text-[11px] font-mono text-emerald-300 font-bold focus:outline-none">
+                      <option value="0.75" class="bg-slate-900">0.75x</option>
+                      <option value="1" class="bg-slate-900">1.0x عادي</option>
+                      <option value="1.25" class="bg-slate-900">1.25x</option>
+                      <option value="1.5" class="bg-slate-900">1.5x</option>
+                      <option value="2" class="bg-slate-900">2.0x سريع</option>
+                    </select>
+
+                    <button (click)="toggleAudioMute()" class="size-8 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-slate-300 font-bold" title="كتم / تفعيل الصوت">
+                      {{ isAudioMuted ? '🔇' : '🔊' }}
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Image Page Display Surface (FLUID HIGH RESOLUTION VIEW) -->
+                <div *ngIf="curPage.type === 'image'" class="space-y-3">
                   <div class="flex items-center justify-between text-xs opacity-75 px-1">
                     <span>💡 وضع الكتابة والرسم: <strong class="text-indigo-400">{{ readerToolMode === 'draw' ? '🖊️ الرسم الحر (اضغط واسحب بالماوس فوق أي جزء من الصفحة)' : (readerToolMode === 'type' ? '🔤 الكتابة (انقر على أي سطر أو فراغ لإضافة صندوق نص)' : '👁️ تصفح عادي') }}</strong></span>
                     <button *ngIf="(curPage.drawings && curPage.drawings.length > 0) || (curPage.textBoxes && curPage.textBoxes.length > 0)"
@@ -598,7 +679,7 @@
                     </button>
                   </div>
 
-                  <div #pageContainer class="max-w-3xl mx-auto bg-black/40 rounded-3xl p-4 border border-white/10 shadow-2xl relative overflow-auto max-h-[72vh]"
+                  <div #pageContainer class="w-full mx-auto bg-black/40 rounded-3xl p-3 md:p-5 border border-white/10 shadow-2xl relative overflow-auto min-h-[65vh]"
                        [class.cursor-crosshair]="readerToolMode !== 'view'"
                        (mousedown)="onPageMouseDown($event, curPage)"
                        (mousemove)="onContainerMouseMove($event, curPage, pageContainer)"
@@ -608,10 +689,10 @@
 
                     <img [src]="curPage.processedImageUrl || curPage.imageUrl" [alt]="'صفحة ' + (activePageIndex + 1)" 
                          [style.transform]="'scale(' + pageZoom + ')'" [style.transformOrigin]="'center top'"
-                         class="max-h-[65vh] object-contain rounded-2xl transition-transform duration-200 shadow-xl pointer-events-none select-none mx-auto block" />
+                         class="w-full h-auto max-h-[82vh] object-contain rounded-2xl transition-transform duration-200 shadow-2xl pointer-events-none select-none mx-auto block" />
 
                     <!-- SVG Drawing Overlay -->
-                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" class="absolute inset-4 w-[calc(100%-2rem)] h-[calc(100%-2rem)] pointer-events-none z-20">
+                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" class="absolute inset-3 md:inset-5 w-[calc(100%-1.5rem)] md:w-[calc(100%-2.5rem)] h-[calc(100%-1.5rem)] md:h-[calc(100%-2.5rem)] pointer-events-none z-20">
                       <ng-container *ngFor="let stroke of curPage.drawings">
                         <polyline [attr.points]="getPointsString(stroke.points)"
                                   [attr.stroke]="stroke.color"
@@ -671,65 +752,13 @@
 
                           <button (click)="deleteTextBox(curPage, tb.id)" class="text-red-400 hover:text-red-300 text-xs px-1 font-bold" title="حذف النص">✕</button>
                         </div>
-
-  </div>
-</div>
-
-<!-- Share Book with Friends Modal -->
-<div *ngIf="showShareBookModal && bookToShare" class="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 text-right" dir="rtl">
-  <div class="bg-slate-900 border border-white/10 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl space-y-6 animate-in zoom-in-95">
-    <div class="flex items-center justify-between border-b border-white/10 pb-4">
-      <h3 class="text-xl font-black text-white flex items-center gap-2"><span>📤</span> مشاركة الكتاب</h3>
-      <button (click)="showShareBookModal = false" class="size-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center font-bold">✕</button>
-    </div>
-
-    <div class="flex items-center gap-3 bg-black/40 border border-white/5 p-3 rounded-2xl">
-      <img [src]="bookToShare.coverUrl" class="size-12 rounded-xl object-cover border border-white/10" alt="Cover">
-      <div>
-        <h4 class="text-sm font-bold text-white">{{ bookToShare.title }}</h4>
-        <p class="text-xs text-indigo-300">{{ bookToShare.author }}</p>
-      </div>
-    </div>
-
-    <div class="space-y-3">
-      <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">اختر صديقاً للإرسال:</h4>
-      
-      @if (globalState.friends().length > 0) {
-        <div class="flex flex-col gap-2 max-h-56 overflow-y-auto custom-scrollbar pr-1">
-          <div *ngFor="let friend of globalState.friends()" class="flex items-center justify-between bg-black/40 border border-white/5 p-3 rounded-2xl">
-            <div class="flex items-center gap-3">
-              <img [src]="friend.avatarUrl" class="size-10 rounded-full border border-white/10 object-cover" alt="Avatar">
-              <div>
-                <h5 class="text-sm font-bold text-white leading-tight">{{ friend.name }}</h5>
-                <span class="text-[10px]" [ngClass]="friend.status === 'online' ? 'text-green-400' : 'text-slate-400'">
-                  {{ friend.status === 'online' ? 'متصل الآن' : 'غير متصل' }}
-                </span>
-              </div>
-            </div>
-            <button (click)="shareBookWithFriend(friend.id)" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition-all">
-              إرسال الكتاب 📨
-            </button>
-          </div>
-        </div>
-      } @else {
-        <div class="bg-black/30 border border-white/5 rounded-2xl p-6 text-center space-y-2">
-          <span class="text-2xl opacity-60">👥</span>
-          <p class="text-sm text-slate-400">ليس لديك أصدقاء مضافون لمشاركة الكتب معهم.</p>
-          <p class="text-xs text-indigo-400">يمكنك إضافة أصدقاء عبر زر الأصدقاء (👥) في الشريط العلوي!</p>
-        </div>
-      }
-    </div>
-
-    <button (click)="showShareBookModal = false" class="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-2xl border border-white/10 text-xs transition-colors">
-      إغلاق
-    </button>
-  </div>
-</div>
+                      </div>
+                    </div>
 
                   </div>
 
                   <!-- AI Extracted Text Panel (if available) -->
-                  <div *ngIf="curPage.extractedText" class="p-6 rounded-2xl bg-black/20 border border-emerald-500/30 text-right space-y-2">
+                  <div *ngIf="curPage.extractedText" class="p-5 rounded-2xl bg-black/20 border border-emerald-500/30 text-right space-y-2">
                     <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs">
                       <span>🤖 النص المستخرج بالذكاء الاصطناعي (AI OCR):</span>
                     </div>
@@ -1132,66 +1161,83 @@
       <div *ngIf="studioTab === 'pages'" class="flex-1 flex flex-col min-h-0 space-y-4">
         
         <!-- Action Toolbar -->
-        <div class="bg-slate-900/70 border border-white/10 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div class="bg-slate-900/90 border border-white/15 rounded-2xl p-3 md:p-4 flex flex-col gap-3 shrink-0 shadow-xl">
           
-          <!-- Add Pages Buttons & Title Input -->
-          <div class="flex items-center gap-2 flex-wrap">
-            <!-- Inline Always Visible Book Title Input -->
-            <div class="flex items-center gap-2 bg-indigo-950/90 border border-amber-500/50 rounded-xl px-3 py-1 shadow-md">
-              <span class="text-xs font-bold text-amber-300 whitespace-nowrap">📖 عنوان الكتاب:</span>
-              <input type="text" [(ngModel)]="studioBook.title" (ngModelChange)="saveStudioDraft(true)" placeholder="اكتب عنوان الكتاب هنا..." 
-                     class="w-44 md:w-60 bg-slate-900 border border-white/10 rounded-lg h-8 px-2.5 text-xs text-white font-bold focus:outline-none focus:border-amber-400" />
-            </div>
+          <!-- Row 1: Primary Add & Import Actions -->
+          <div class="flex items-center justify-between gap-3 flex-wrap">
+            <div class="flex items-center gap-2 flex-wrap">
+              <!-- Inline Always Visible Book Title Input -->
+              <div class="flex items-center gap-2 bg-indigo-950/90 border border-amber-500/50 rounded-xl px-3 py-1 shadow-md">
+                <span class="text-xs font-bold text-amber-300 whitespace-nowrap">📖 عنوان الكتاب:</span>
+                <input type="text" [(ngModel)]="studioBook.title" (ngModelChange)="saveStudioDraft(true)" placeholder="اكتب عنوان الكتاب هنا..." 
+                       class="w-40 md:w-56 bg-slate-900 border border-white/10 rounded-lg h-8 px-2.5 text-xs text-white font-bold focus:outline-none focus:border-amber-400" />
+              </div>
 
-            <label class="px-4 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-2 cursor-pointer transition-all shadow-md">
-              <input type="file" multiple accept="image/*" class="hidden" (change)="onStudioImagesSelected($event)" />
-              📷 رفع صور الصفحات
-            </label>
-
-            <!-- Direct Target Page Number Upload Tool -->
-            <div class="flex items-center gap-1.5 bg-indigo-950/70 border border-indigo-500/40 rounded-xl p-1 px-2.5 text-xs shadow-sm">
-              <span class="text-indigo-300 font-bold">رقم الصفحة:</span>
-              <input type="number" min="1" [(ngModel)]="targetPageNumber" placeholder="23" 
-                     class="w-14 h-8 bg-slate-900 border border-white/10 rounded-lg text-center font-mono font-bold text-emerald-400 focus:outline-none focus:border-indigo-500 text-xs" />
-              
-              <label class="px-3 h-8 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all shadow-sm" 
-                     title="رفع صورة مخصصة مباشرة لرقم الصفحة المحدد (مثل صفحة 23) مع توليد صفحات فارغة تلقائياً حتى هذا الرقم لتنظيم ترتيب الكتاب">
-                <input type="file" accept="image/*" multiple class="hidden" (change)="uploadImageToSpecificPageNumber($event)" />
-                <span>📷 إدراج بالصفحة {{ targetPageNumber ? '#' + targetPageNumber : '' }}</span>
+              <!-- Upload Images Button -->
+              <label class="px-4 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-2 cursor-pointer transition-all shadow-md">
+                <input type="file" multiple accept="image/*" class="hidden" (change)="onStudioImagesSelected($event)" />
+                <span>📷 رفع صور الصفحات</span>
               </label>
+
+              <!-- Paste Image from Clipboard Button (PROMINENT & DIRECT) -->
+              <button (click)="pasteImageFromClipboard()" 
+                      class="px-4 h-10 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-black text-xs flex items-center gap-2 transition-all shadow-lg shadow-emerald-900/30 transform hover:scale-[1.02]"
+                      title="لصق صورة من الحافظة مباشرة دون تحميلها على الجهاز (يمكنك أيضاً ضغط Ctrl+V في أي مكان)">
+                <span class="text-base">📋</span>
+                <span>لصق من الحافظة (Ctrl+V)</span>
+              </button>
+
+              <!-- Direct Target Page Number Upload Tool -->
+              <div class="flex items-center gap-1.5 bg-indigo-950/70 border border-indigo-500/40 rounded-xl p-1 px-2.5 text-xs shadow-sm">
+                <span class="text-indigo-300 font-bold">رقم الصفحة:</span>
+                <input type="number" min="1" [(ngModel)]="targetPageNumber" placeholder="23" 
+                       class="w-12 h-8 bg-slate-900 border border-white/10 rounded-lg text-center font-mono font-bold text-emerald-400 focus:outline-none focus:border-indigo-500 text-xs" />
+                
+                <label class="px-3 h-8 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all shadow-sm" 
+                       title="رفع صورة مخصصة مباشرة لرقم الصفحة المحدد (مثل صفحة 23) مع توليد صفحات فارغة تلقائياً">
+                  <input type="file" accept="image/*" multiple class="hidden" (change)="uploadImageToSpecificPageNumber($event)" />
+                  <span>📷 إدراج بالصفحة {{ targetPageNumber ? '#' + targetPageNumber : '' }}</span>
+                </label>
+              </div>
             </div>
 
-            <button (click)="insertBlankPage()" class="px-4 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 font-bold text-xs flex items-center gap-2 transition-all">
-              📄 إضافة صفحة فارغة
-            </button>
+            <!-- Page Creation Options -->
+            <div class="flex items-center gap-2">
+              <button (click)="insertBlankPage()" class="px-3.5 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-all">
+                📄 صفحة فارغة
+              </button>
 
-            <button (click)="addTextPageToStudio()" class="px-4 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 font-bold text-xs flex items-center gap-2 transition-all">
-              📝 إضافة صفحة نصية
-            </button>
+              <button (click)="addTextPageToStudio()" class="px-3.5 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-all">
+                📝 صفحة نصية
+              </button>
+            </div>
           </div>
 
-          <!-- Quick Presets for All Image Pages -->
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <span class="text-[11px] text-slate-400 font-bold ml-1">فلاتر القراءة:</span>
-            <button (click)="applyFilterPresetToAllPages('original')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] font-bold">أصلية</button>
-            <button (click)="applyFilterPresetToAllPages('document')" class="px-2.5 py-1 rounded-lg bg-emerald-600/80 hover:bg-emerald-500 text-white text-[11px] font-bold">📜 مستندات (B&W)</button>
-            <button (click)="applyFilterPresetToAllPages('night')" class="px-2.5 py-1 rounded-lg bg-purple-600/80 hover:bg-purple-500 text-white text-[11px] font-bold">🌙 ليلي</button>
-            <button (click)="applyFilterPresetToAllPages('grayscale')" class="px-2.5 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-[11px] font-bold">رمادي</button>
-            <button (click)="applyFilterPresetToAllPages('contrast')" class="px-2.5 py-1 rounded-lg bg-amber-600/80 hover:bg-amber-500 text-white text-[11px] font-bold">تباين عالي</button>
-          </div>
+          <!-- Row 2: Reading Presets & Multi-Selection Actions -->
+          <div class="flex items-center justify-between gap-3 flex-wrap border-t border-white/10 pt-2.5">
+            <!-- Quick Presets for All Image Pages -->
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-[11px] text-slate-400 font-bold ml-1">فلاتر القراءة:</span>
+              <button (click)="applyFilterPresetToAllPages('original')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] font-bold">أصلية</button>
+              <button (click)="applyFilterPresetToAllPages('document')" class="px-2.5 py-1 rounded-lg bg-emerald-600/80 hover:bg-emerald-500 text-white text-[11px] font-bold">📜 مستندات (B&W)</button>
+              <button (click)="applyFilterPresetToAllPages('night')" class="px-2.5 py-1 rounded-lg bg-purple-600/80 hover:bg-purple-500 text-white text-[11px] font-bold">🌙 ليلي</button>
+              <button (click)="applyFilterPresetToAllPages('grayscale')" class="px-2.5 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-[11px] font-bold">رمادي</button>
+              <button (click)="applyFilterPresetToAllPages('contrast')" class="px-2.5 py-1 rounded-lg bg-amber-600/80 hover:bg-amber-500 text-white text-[11px] font-bold">تباين عالي</button>
+            </div>
 
-          <!-- Multi-selection & OCR Bulk Actions -->
-          <div class="flex items-center gap-2">
-            <button (click)="selectAllPages(true)" class="px-3 h-9 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-slate-300 font-bold">تحديد الكل</button>
-            <button (click)="selectAllPages(false)" class="px-3 h-9 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-slate-300 font-bold">إلغاء</button>
+            <!-- Multi-selection & OCR Bulk Actions -->
+            <div class="flex items-center gap-2">
+              <button (click)="selectAllPages(true)" class="px-3 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-slate-300 font-bold">تحديد الكل</button>
+              <button (click)="selectAllPages(false)" class="px-3 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-slate-300 font-bold">إلغاء</button>
 
-            <button *ngIf="selectedPagesCount > 0" (click)="deleteSelectedPages()" class="px-3 h-9 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-bold flex items-center gap-1">
-              🗑️ حذف المحدد ({{ selectedPagesCount }})
-            </button>
+              <button *ngIf="selectedPagesCount > 0" (click)="deleteSelectedPages()" class="px-3 h-8 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-bold flex items-center gap-1">
+                🗑️ حذف المحدد ({{ selectedPagesCount }})
+              </button>
 
-            <button *ngIf="selectedPagesCount > 0" (click)="extractTextFromSelectedPagesAI()" [disabled]="isBulkOcrRunning" class="px-3 h-9 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold flex items-center gap-1 shadow-md">
-              🤖 AI OCR للمحدد
-            </button>
+              <button *ngIf="selectedPagesCount > 0" (click)="extractTextFromSelectedPagesAI()" [disabled]="isBulkOcrRunning" class="px-3 h-8 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold flex items-center gap-1 shadow-md">
+                🤖 AI OCR للمحدد
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1223,9 +1269,12 @@
                 
                 <!-- Card Header Badges & Selector -->
                 <div class="flex items-center justify-between gap-1 mb-1.5 z-10">
-                  <span class="size-6 rounded-lg bg-indigo-600/90 text-white font-mono text-[11px] font-bold flex items-center justify-center shadow-md">
-                    {{ idx + 1 }}
-                  </span>
+                  <div class="flex items-center gap-1">
+                    <span class="size-6 rounded-lg bg-indigo-600/90 text-white font-mono text-[11px] font-bold flex items-center justify-center shadow-md">
+                      {{ idx + 1 }}
+                    </span>
+                    <span *ngIf="page.audio" class="size-6 rounded-lg bg-amber-500/20 text-amber-300 text-xs flex items-center justify-center font-bold" title="تحتوي هذه الصفحة على صوت/تعليق">🎵</span>
+                  </div>
 
                   <input type="checkbox" [checked]="page.selected" (change)="togglePageSelection(idx); $event.stopPropagation()" class="size-4 rounded accent-indigo-600 cursor-pointer" />
                 </div>
@@ -1365,6 +1414,69 @@
                           class="w-full bg-slate-950 border border-emerald-500/30 rounded-xl p-2.5 text-xs text-slate-100 font-sans leading-relaxed focus:outline-none focus:border-emerald-500"></textarea>
               </div>
 
+              <!-- PAGE AUDIO NARRATION & RECORDING PANEL -->
+              <div class="space-y-3 bg-black/30 p-3.5 rounded-2xl border border-white/10 text-xs">
+                <div class="flex items-center justify-between border-b border-white/10 pb-2">
+                  <span class="font-bold text-amber-300 flex items-center gap-1.5 text-xs">
+                    <span>🎙️</span> التعليق والصوتيات للصفحة
+                  </span>
+                  <span *ngIf="studioBook.pages[selectedPageIndex].audio" class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-300 font-bold">
+                    ✓ صوت مرفق
+                  </span>
+                </div>
+
+                <!-- Audio Recording Status / Controls -->
+                <ng-container *ngIf="isRecordingAudio && recordingTargetPage === studioBook.pages[selectedPageIndex]; else notRecordingTmpl">
+                  <div class="p-3 rounded-xl bg-red-500/20 border border-red-500/40 text-center space-y-2 animate-pulse">
+                    <div class="flex items-center justify-center gap-2 text-red-300 font-bold text-xs">
+                      <span class="size-3 rounded-full bg-red-500 animate-ping"></span>
+                      <span>جاري التسجيل الصوتي المباشر...</span>
+                    </div>
+                    <span class="font-mono text-base font-black text-white block">{{ formatTimeSeconds(recordingSeconds) }}</span>
+                    <button (click)="stopMicRecording()" class="w-full py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-md">
+                      ⏹️ إيقاف وحفظ التسجيل
+                    </button>
+                  </div>
+                </ng-container>
+                <ng-template #notRecordingTmpl>
+                  <div class="grid grid-cols-2 gap-2">
+                    <button (click)="startMicRecording(studioBook.pages[selectedPageIndex])" 
+                            [disabled]="isRecordingAudio"
+                            class="py-2.5 px-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-[11px] flex items-center justify-center gap-1.5 shadow-md transition-all">
+                      <span>🎙️</span> تسجيل بالمايك
+                    </button>
+
+                    <label class="py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer shadow-md transition-all">
+                      <input type="file" accept="audio/*" class="hidden" (change)="onPageAudioFileSelected($event, studioBook.pages[selectedPageIndex])" />
+                      <span>🎵 رفع ملف صوتي</span>
+                    </label>
+                  </div>
+
+                  <button (click)="toggleTTSForPage(studioBook.pages[selectedPageIndex])" 
+                          class="w-full py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/30 text-purple-200 font-bold text-xs flex items-center justify-center gap-1.5 transition-all">
+                    <span>🗣️</span>
+                    <span>{{ isTTSPlaying && activeTTSPageId === studioBook.pages[selectedPageIndex].id ? '⏹️ إيقاف القراءة الصوتية (TTS)' : 'قراءة النص صوتياً بالذكاء الاصطناعي (TTS)' }}</span>
+                  </button>
+                </ng-template>
+
+                <!-- Attached Audio Player Card if Audio Exists -->
+                <div *ngIf="studioBook.pages[selectedPageIndex].audio as pageAudio" class="p-3 rounded-xl bg-slate-950 border border-emerald-500/30 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <button (click)="togglePageAudioPlay(studioBook.pages[selectedPageIndex])" 
+                              class="size-8 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center justify-center text-xs shrink-0 shadow-md">
+                        {{ isAudioPlaying && activeAudioPageId === studioBook.pages[selectedPageIndex].id ? '⏸️' : '▶️' }}
+                      </button>
+                      <div class="truncate text-right">
+                        <span class="text-xs font-bold text-slate-100 block truncate">{{ pageAudio.title || 'صوت الصفحة' }}</span>
+                        <span class="text-[10px] text-emerald-400 font-mono">{{ formatTimeSeconds(pageAudio.duration || currentAudioTime) }}</span>
+                      </div>
+                    </div>
+                    <button (click)="deletePageAudio(studioBook.pages[selectedPageIndex])" class="text-red-400 hover:text-red-300 text-xs px-1 font-bold" title="حذف الملف الصوتي">✕</button>
+                  </div>
+                </div>
+              </div>
+
             </ng-container>
 
             <!-- If Selected Page is Text Page -->
@@ -1457,6 +1569,57 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- Share Book with Friends Modal -->
+<div *ngIf="showShareBookModal && bookToShare" class="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 text-right select-none" dir="rtl">
+  <div class="bg-slate-900 border border-white/10 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl space-y-6 animate-in zoom-in-95">
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <h3 class="text-xl font-black text-white flex items-center gap-2"><span>📤</span> مشاركة الكتاب</h3>
+      <button (click)="showShareBookModal = false" class="size-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center font-bold">✕</button>
+    </div>
+
+    <div class="flex items-center gap-3 bg-black/40 border border-white/5 p-3 rounded-2xl">
+      <img [src]="bookToShare.coverUrl" class="size-12 rounded-xl object-cover border border-white/10" alt="Cover">
+      <div>
+        <h4 class="text-sm font-bold text-white">{{ bookToShare.title }}</h4>
+        <p class="text-xs text-indigo-300">{{ bookToShare.author }}</p>
+      </div>
+    </div>
+
+    <div class="space-y-3">
+      <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">اختر صديقاً للإرسال:</h4>
+      
+      @if (globalState.friends().length > 0) {
+        <div class="flex flex-col gap-2 max-h-56 overflow-y-auto custom-scrollbar pr-1">
+          <div *ngFor="let friend of globalState.friends()" class="flex items-center justify-between bg-black/40 border border-white/5 p-3 rounded-2xl">
+            <div class="flex items-center gap-3">
+              <img [src]="friend.avatarUrl" class="size-10 rounded-full border border-white/10 object-cover" alt="Avatar">
+              <div>
+                <h5 class="text-sm font-bold text-white leading-tight">{{ friend.name }}</h5>
+                <span class="text-[10px]" [ngClass]="friend.status === 'online' ? 'text-green-400' : 'text-slate-400'">
+                  {{ friend.status === 'online' ? 'متصل الآن' : 'غير متصل' }}
+                </span>
+              </div>
+            </div>
+            <button (click)="shareBookWithFriend(friend.id)" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition-all">
+              إرسال الكتاب 📨
+            </button>
+          </div>
+        </div>
+      } @else {
+        <div class="bg-black/30 border border-white/5 rounded-2xl p-6 text-center space-y-2">
+          <span class="text-2xl opacity-60">👥</span>
+          <p class="text-sm text-slate-400">ليس لديك أصدقاء مضافون لمشاركة الكتب معهم.</p>
+          <p class="text-xs text-indigo-400">يمكنك إضافة أصدقاء عبر زر الأصدقاء (👥) في الشريط العلوي!</p>
+        </div>
+      }
+    </div>
+
+    <button (click)="showShareBookModal = false" class="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-2xl border border-white/10 text-xs transition-colors">
+      إغلاق
+    </button>
   </div>
 </div>
 
