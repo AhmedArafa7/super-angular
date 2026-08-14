@@ -81,14 +81,15 @@ import { SafePipe } from '../../../../core/pipes/safe.pipe'; // Need to ensure w
               allowfullscreen>
             </iframe>
 
-            <!-- Quick Action Floating Overlay for Brave / Localhost origin blocking -->
-            <div class="absolute bottom-3 left-3 z-30 flex items-center gap-2 bg-slate-900/90 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-xl opacity-40 hover:opacity-100 transition-opacity">
+            <!-- Quick Action Floating Overlay for Direct Playback & Fallback -->
+            <div class="absolute top-3 right-3 z-30 flex items-center gap-2 pointer-events-auto">
               <a 
                 [href]="getDirectYoutubeLink()" 
                 target="_blank" 
                 rel="noopener"
-                class="text-[11px] font-bold text-indigo-400 hover:text-white flex items-center gap-1 transition"
-                title="فتح في يوتيوب في حال تعذر التشغيل محلياً بسبب حظر متصفح Brave أو الأمان"
+                (click)="$event.stopPropagation()"
+                class="bg-slate-950/85 hover:bg-red-600 backdrop-blur-md border border-white/15 text-white px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-all shadow-lg hover:scale-105"
+                title="مشاهدة الفيديو مباشرة على YouTube إذا كان التضمين محظوراً أو تعذر التشغيل"
               >
                 <span>مشاهدة على YouTube ↗</span>
               </a>

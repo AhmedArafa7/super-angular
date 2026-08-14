@@ -114,6 +114,11 @@ export class SiNeuroVideoPlayerComponent implements AfterViewInit, OnDestroy {
     return `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1&vq=${vqValue}`;
   }
 
+  get directYoutubeUrl(): string {
+    const ytId = this.extractYoutubeId(this.src) || this.extractYoutubeId(this.videoId) || this.videoId;
+    return ytId ? `https://www.youtube.com/watch?v=${ytId}` : '#';
+  }
+
   startUpscaleEngine() {
     if (this.upscaleInterval) {
       clearInterval(this.upscaleInterval);

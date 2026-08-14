@@ -36,15 +36,15 @@ export class PipedApiService {
   private proxyBase = environment.apiBaseUrl !== undefined && environment.apiBaseUrl !== null ? environment.apiBaseUrl : 'https://super-axd.pages.dev';
   private instances = environment.pipedInstances || [
     'https://pipedapi.adminforge.de',
-    'https://pipedapi.resonate.is',
     'https://pipedapi.rhea.pub',
+    'https://api.piped.privacydev.net',
+    'https://pipedapi.leptons.xyz',
+    'https://pipedapi.smnz.de',
     'https://pipedapi.astral.autistici.org',
-    'https://pipedapi.yt.artemislena.eu',
-    'https://pipedapi.drgns.space',
-    'https://pipedapi.mha.fi'
+    'https://pipedapi.drgns.space'
   ];
 
-  private async smartFetch<T>(targetUrl: string, timeoutMs = 8000): Promise<T> {
+  private async smartFetch<T>(targetUrl: string, timeoutMs = 3500): Promise<T> {
     if (targetUrl.includes('/piped-proxy')) {
       const text = await firstValueFrom(
         this.http.get(targetUrl, { responseType: 'text' }).pipe(timeout(timeoutMs))
@@ -96,80 +96,70 @@ export class PipedApiService {
   }
 
   async getVideoDetails(videoId: string): Promise<PipedVideoDetails> {
-    let lastError: any;
-
-    for (const instance of this.instances) {
+    // 1. Try Piped instances (fast 3.5s timeout per instance)
+    for (const instance of this.instances.slice(0, 4)) {
       try {
         const url = `${instance}/streams/${videoId}`;
-        return await this.smartFetch<PipedVideoDetails>(url);
+        return await this.smartFetch<PipedVideoDetails>(url, 3500);
       } catch (error) {
-        console.warn(`[PipedApiService] Instance ${instance} failed for ${videoId}`, error);
-        lastError = error;
+        // Continue to next instance
       }
     }
 
-    // Secondary Fallback: Multi-instance Invidious API
+    // 2. Try Invidious instances as secondary fallback
     const invidiousInstances = [
       'https://invidious.projectsegfau.lt',
       'https://inv.nadeko.net',
-      'https://invidious.privacydev.net',
-      'https://iv.melmac.space',
-      'https://invidious.nerdvpn.de',
-      'https://invidious.drgns.space'
+      'https://invidious.drgns.space',
+      'https://yewtu.be'
     ];
 
     for (const inv of invidiousInstances) {
       try {
-        const invRes = await fetch(`${inv}/api/v1/videos/${videoId}`, { signal: AbortSignal.timeout(6000) });
+        const invRes = await fetch(`${inv}/api/v1/videos/${videoId}`, { signal: AbortSignal.timeout(3000) });
         if (invRes.ok) {
-          const text = await invRes.text();
-          if (text && !text.trim().startsWith('<')) {
-            const data = JSON.parse(text);
-            if (data && (data.formatStreams?.length > 0 || data.adaptiveFormats?.length > 0)) {
-              const videoStreams: PipedVideoStream[] = (data.formatStreams || []).map((f: any) => ({
-                url: f.url,
-                quality: f.quality || f.qualityLabel || '360p',
-                mimeType: f.container ? `video/${f.container}` : 'video/mp4',
-                videoOnly: false
-              }));
-
-              const audioStreams: PipedAudioStream[] = (data.adaptiveFormats || []).filter((f: any) => f.type?.includes('audio')).map((f: any) => ({
-                url: f.url,
-                quality: f.quality || 'audio',
-                mimeType: f.type || 'audio/mp4'
-              }));
-
-              return {
-                title: data.title || '',
-                description: data.description || '',
-                uploader: data.author || '',
-                uploaderAvatar: data.authorThumbnails?.[0]?.url || '',
-                thumbnailUrl: data.videoThumbnails?.[0]?.url || '',
-                hls: data.hlsUrl || null,
-                videoStreams,
-                audioStreams,
-                relatedStreams: (data.recommendedVideos || []).map((r: any) => ({
-                  url: `/watch?v=${r.videoId}`,
-                  title: r.title,
-                  uploaderName: r.author,
-                  thumbnail: r.videoThumbnails?.[0]?.url || `https://img.youtube.com/vi/${r.videoId}/hqdefault.jpg`,
-                  duration: r.lengthSeconds,
-                  views: r.viewCount
-                }))
-              };
-            }
-          }
+          const data = await invRes.json();
+          return {
+            title: data.title || 'فيديو',
+            description: data.description || '',
+            uploader: data.author || '',
+            uploaderAvatar: data.authorThumbnails?.[0]?.url || '',
+            thumbnailUrl: data.videoThumbnails?.[0]?.url || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+            hls: data.hlsUrl || null,
+            videoStreams: [],
+            audioStreams: [],
+            relatedStreams: []
+          };
         }
-      } catch (invErr) {
-        console.warn(`[PipedApiService] Invidious fallback ${inv} failed for ${videoId}`, invErr);
-      }
+      } catch (e) {}
     }
 
-    console.warn(`[PipedApiService] All Piped/Invidious instances unavailable for video ${videoId}. Using fallback YouTube metadata.`);
+    // 3. Ultra-fast oEmbed fallback for genuine title & channel metadata
+    try {
+      const oembedRes = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`, {
+        signal: AbortSignal.timeout(3000)
+      });
+      if (oembedRes.ok) {
+        const data = await oembedRes.json();
+        return {
+          title: data.title || 'فيديو يوتيوب',
+          description: '',
+          uploader: data.author_name || 'قناة يوتيوب',
+          uploaderAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.author_name || 'Channel')}&background=6366f1&color=fff&bold=true`,
+          thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+          hls: null,
+          videoStreams: [],
+          audioStreams: [],
+          relatedStreams: []
+        };
+      }
+    } catch (e) {}
+
+    // 4. Absolute Fallback
     return {
-      title: '',
+      title: 'فيديو يوتيوب',
       description: '',
-      uploader: '',
+      uploader: 'قناة يوتيوب',
       uploaderAvatar: '',
       thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
       hls: null,
@@ -180,25 +170,21 @@ export class PipedApiService {
   }
 
   async getChannelDetails(channelId: string, nextpage?: string): Promise<any> {
-    let lastError: any;
-
-    for (const instance of this.instances) {
+    for (const instance of this.instances.slice(0, 3)) {
       try {
         let url = `${instance}/channel/${channelId}`;
         if (nextpage) url += `?nextpage=${nextpage}`;
-        return await this.smartFetch<any>(url);
+        return await this.smartFetch<any>(url, 3500);
       } catch (error) {
-        console.warn(`[PipedApiService] Instance ${instance} failed for channel ${channelId}`, error);
-        lastError = error;
+        // Try next
       }
     }
 
     // Fallback: Fetch official YouTube Channel RSS Feed via Proxy if Piped fails
-    console.warn(`[PipedApiService] All Piped instances failed for channel ${channelId}. Using YouTube RSS Fallback.`);
     try {
       return await this.fetchChannelRssFallback(channelId);
     } catch (rssErr) {
-      console.error('[PipedApiService] YouTube RSS Fallback also failed:', rssErr);
+      console.error('[PipedApiService] YouTube RSS Fallback failed:', rssErr);
       throw new Error('All Piped instances and RSS fallback failed for channel details');
     }
   }
@@ -208,7 +194,7 @@ export class PipedApiService {
     const proxyUrl = `${this.proxyBase}/api/proxy?url=${encodeURIComponent(rssUrl)}`;
     
     const xmlText = await firstValueFrom(
-      this.http.get(proxyUrl, { responseType: 'text' }).pipe(timeout(10000))
+      this.http.get(proxyUrl, { responseType: 'text' }).pipe(timeout(6000))
     );
 
     if (!xmlText || !xmlText.includes('<feed')) {
@@ -259,43 +245,35 @@ export class PipedApiService {
   }
 
   async getTrending(region: string = 'EG'): Promise<any[]> {
-    let lastError: any;
-
-    for (const instance of this.instances) {
+    for (const instance of this.instances.slice(0, 3)) {
       try {
         const url = `${instance}/trending?region=${region}`;
-        return await this.smartFetch<any[]>(url);
+        return await this.smartFetch<any[]>(url, 3500);
       } catch (error) {
-        console.warn(`[PipedApiService] Instance ${instance} failed for trending`, error);
-        lastError = error;
+        // Try next
       }
     }
-
     throw new Error('All Piped instances failed to fetch trending');
   }
 
   async getComments(videoId: string, nextpage?: string): Promise<any> {
-    let lastError: any;
-
-    for (const instance of this.instances) {
+    for (const instance of this.instances.slice(0, 3)) {
       try {
         let url = `${instance}/comments/${videoId}`;
         if (nextpage) url += `?nextpage=${nextpage}`;
-        return await this.smartFetch<any>(url);
+        return await this.smartFetch<any>(url, 3500);
       } catch (error) {
-        console.warn(`[PipedApiService] Instance ${instance} failed for comments`, error);
-        lastError = error;
+        // Try next
       }
     }
-
-    throw new Error('All Piped instances failed to fetch comments');
+    return { comments: [], nextpage: null };
   }
 
   async search(query: string): Promise<any[]> {
-    for (const instance of this.instances) {
+    for (const instance of this.instances.slice(0, 4)) {
       try {
         const url = `${instance}/search?q=${encodeURIComponent(query)}&filter=all`;
-        const res = await this.smartFetch<any>(url);
+        const res = await this.smartFetch<any>(url, 3500);
         const items = res?.items || res || [];
         if (Array.isArray(items) && items.length > 0) {
           const videos: any[] = [];
@@ -320,17 +298,17 @@ export class PipedApiService {
           if (videos.length > 0) return videos;
         }
       } catch (err) {
-        console.warn(`[PipedApiService] Search failed for instance ${instance}`, err);
+        // Try next instance
       }
     }
     return [];
   }
 
   async searchChannels(query: string): Promise<any[]> {
-    for (const instance of this.instances) {
+    for (const instance of this.instances.slice(0, 3)) {
       try {
         const url = `${instance}/search?q=${encodeURIComponent(query)}&filter=all`;
-        const res = await this.smartFetch<any>(url);
+        const res = await this.smartFetch<any>(url, 3500);
         const items = res?.items || res || [];
         if (Array.isArray(items) && items.length > 0) {
           const channels = items
@@ -343,7 +321,7 @@ export class PipedApiService {
           if (channels.length > 0) return channels;
         }
       } catch (err) {
-        console.warn(`[PipedApiService] Channel search failed for instance ${instance}`, err);
+        // Try next
       }
     }
     return [];

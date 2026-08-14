@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, from } from 'rxjs';
+import { Observable, of, from, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { ProxyService } from './proxy.service';
@@ -44,9 +44,13 @@ export class YoutubeDiscoveryService {
 
     return this.proxy.fetchJSON<any>(url).pipe(
       map(data => {
-        if (!data) return [];
+        if (!data) {
+          throw new Error('Proxy returned empty HTML data');
+        }
         const contents = data.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents;
-        if (!contents) return [];
+        if (!contents) {
+          throw new Error('YouTube desktop layout search contents missing');
+        }
 
         const videos: FeedVideo[] = [];
         contents.forEach((section: any) => {
@@ -60,9 +64,11 @@ export class YoutubeDiscoveryService {
             });
           }
         });
+        if (videos.length === 0) {
+          throw new Error('No video items parsed from search');
+        }
         return videos;
-      }),
-      catchError(() => of([]))
+      })
     );
   }
 
@@ -107,15 +113,13 @@ export class YoutubeDiscoveryService {
         })
         .then(data => {
           if (!data || !data.title) {
-            observer.next(null);
-            observer.complete();
-            return;
+            throw new Error('Empty oEmbed title');
           }
           observer.next({
             id: videoId,
             title: data.title || 'فيديو يوتيوب',
             url: `https://www.youtube.com/watch?v=${videoId}`,
-            thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+            thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
             author: data.author_name || 'قناة يوتيوب',
             authorId: '',
             published: '',
@@ -129,7 +133,6 @@ export class YoutubeDiscoveryService {
           observer.complete();
         })
         .catch(err => {
-          console.warn('[YoutubeDiscoveryService] oEmbed failed, trying noembed fallback', err);
           // Fallback: try noembed.com
           fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`)
             .then(res => res.json())
@@ -139,7 +142,7 @@ export class YoutubeDiscoveryService {
                   id: videoId,
                   title: data.title,
                   url: `https://www.youtube.com/watch?v=${videoId}`,
-                  thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+                  thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
                   author: data.author_name || 'قناة يوتيوب',
                   authorId: '',
                   published: '',
@@ -179,7 +182,7 @@ export class YoutubeDiscoveryService {
         }));
       }),
       catchError(err => {
-        console.error('Failed to fetch real comments:', err);
+        console.error('Failed to fetch comments:', err);
         return of([]);
       })
     );
@@ -191,7 +194,7 @@ export class YoutubeDiscoveryService {
       if (!videoId) return null;
 
       const title = renderer.title?.runs?.[0]?.text || '';
-      const author = renderer.ownerText?.runs?.[0]?.text || renderer.shortBylineText?.runs?.[0]?.text || 'YouTube Channel';
+      const author = renderer.ownerText?.runs?.[0]?.text || renderer.shortBylineText?.runs?.[0]?.text || 'قناة يوتيوب';
       const authorId = renderer.ownerText?.runs?.[0]?.navigationEndpoint?.browseEndpoint?.browseId || '';
       const published = renderer.publishedTimeText?.simpleText || renderer.videoInfo?.runs?.[0]?.text || '';
       const views = renderer.viewCountText?.simpleText || renderer.shortViewCountText?.simpleText || '';
@@ -233,40 +236,6 @@ export class YoutubeDiscoveryService {
         channelAvatar,
         duration: duration || undefined
       };
-    } catch (e) {
-      return null;
-    }
-  }
-
-  private extractJSONFromHTML(html: string, variableName: string): any {
-    try {
-      const pattern = `var ${variableName} = `;
-      const startIndex = html.indexOf(pattern);
-      if (startIndex === -1) return null;
-
-      const jsonStart = html.indexOf('{', startIndex + pattern.length);
-      if (jsonStart === -1) return null;
-
-      let braceCount = 0;
-      let inString = false;
-      let escape = false;
-
-      for (let i = jsonStart; i < html.length; i++) {
-        const char = html[i];
-        if (escape) { escape = false; continue; }
-        if (char === '\\') { escape = true; continue; }
-        if (char === '"') { inString = !inString; continue; }
-        if (!inString) {
-          if (char === '{') braceCount++;
-          else if (char === '}') {
-            braceCount--;
-            if (braceCount === 0) {
-              return JSON.parse(html.substring(jsonStart, i + 1));
-            }
-          }
-        }
-      }
-      return null;
     } catch (e) {
       return null;
     }

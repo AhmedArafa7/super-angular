@@ -1,9 +1,11 @@
 import { Injectable, signal, inject } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { PipedApiService, PipedVideoDetails } from './piped-api.service';
 import { IndexedDBService } from './indexed-db.service';
 import { VideoDownloadService } from './video-download.service';
 import { halaltubeService } from '../../features/halaltube/halaltube.service';
 import { checkIsShorts } from '../../features/halaltube/halaltube.model';
+import { YoutubeDiscoveryService } from './youtube-discovery.service';
 
 export type PlayerMode = 'hidden' | 'floating' | 'full' | 'pip';
 export type PlayerType = 'native' | 'iframe';
@@ -24,6 +26,7 @@ export interface ActiveVideo {
 })
 export class VideoStateService {
   private pipedService = inject(PipedApiService);
+  private discoveryService = inject(YoutubeDiscoveryService);
   private dbService = inject(IndexedDBService);
   private downloadService = inject(VideoDownloadService);
   private halaltubeService = inject(halaltubeService);
@@ -189,25 +192,83 @@ export class VideoStateService {
     }
 
     // ── Primary YouTube Playback Track: Direct YouTube Embed ──
-    // Direct embed is 100% reliable, supports HD, and avoids dead third-party Piped proxies.
     this.switchToIframe();
 
-    // Attempt to load related videos from cache first
+    // 1. Check IndexedDB cache for related videos first
     try {
       const cachedRelated = await this.dbService.getWithTTL('related_videos', targetId, 2 * 60 * 60 * 1000);
-      if (cachedRelated?.streams?.length) {
+      if (cachedRelated?.streams && cachedRelated.streams.length >= 10) {
         this.relatedVideos.set(cachedRelated.streams);
         this.isLoadingRelated.set(false);
       }
     } catch (e) {}
 
-    // Fetch related videos & details in the background (Piped metadata only)
-    this.pipedService.getVideoDetails(targetId).then(details => {
-      if (details) {
-        this.pipedDetails.set(details);
-        if (details.relatedStreams?.length) {
-          this.relatedVideos.set(details.relatedStreams);
-          this.dbService.setWithTTL('related_videos', { videoId: targetId, streams: details.relatedStreams });
+    // 2. Background Contextual Multi-Source Recommendations:
+    // Extract keywords from title and clean up common stopwords
+    const cleanTitle = (video.title || '')
+      .replace(/[\(\)\[\]\|-–—#_]/g, ' ')
+      .split(' ')
+      .filter((w: string) => w.length > 2 && !['في', 'من', 'على', 'إلى', 'مع', 'عن', 'هذا', 'هذه', 'كيف', 'ماذا', 'شاهد', 'فيديو'].includes(w))
+      .slice(0, 4)
+      .join(' ');
+
+    const searchTopic = cleanTitle || video.category || 'تكنولوجيا';
+
+    // Query related streams from Piped, Discovery Search, and Channel Streams concurrently
+    const relatedPromises: Promise<any[]>[] = [
+      this.pipedService.getVideoDetails(targetId).then(d => {
+        if (d) this.pipedDetails.set(d);
+        return d?.relatedStreams || [];
+      }).catch(() => []),
+      firstValueFrom(this.discoveryService.searchYouTube(searchTopic)).catch(() => []),
+      this.pipedService.search(searchTopic).catch(() => [])
+    ];
+
+    if ((video as any).authorId) {
+      relatedPromises.push(
+        this.pipedService.getChannelDetails((video as any).authorId)
+          .then(c => c?.relatedStreams || [])
+          .catch(() => [])
+      );
+    }
+
+    Promise.all(relatedPromises).then(([pipedRelated, discoveryRelated, pipedSearchRelated, channelRelated]) => {
+      const allRelated = [
+        ...(pipedRelated || []),
+        ...(discoveryRelated || []),
+        ...(pipedSearchRelated || []),
+        ...(channelRelated || [])
+      ];
+
+      // Deduplicate and filter out current video
+      const seen = new Set<string>([targetId]);
+      const uniqueRelated: any[] = [];
+      for (const item of allRelated) {
+        const vId = item.id || (item.url ? item.url.replace('/watch?v=', '') : '');
+        if (vId && !seen.has(vId)) {
+          seen.add(vId);
+          uniqueRelated.push({
+            id: vId,
+            title: item.title,
+            author: item.author || item.uploaderName,
+            authorId: item.authorId || item.uploaderUrl?.replace('/channel/', '') || '',
+            thumbnail: item.thumbnail || (item.thumbnailUrl) || `https://img.youtube.com/vi/${vId}/hqdefault.jpg`,
+            time: item.time || item.uploadedDate || 'حديثاً',
+            duration: item.duration,
+            views: item.views,
+            category: item.category || video.category,
+            source: 'youtube'
+          });
+        }
+      }
+
+      // If we got results, update state & cache in IndexedDB
+      if (uniqueRelated.length > 0) {
+        this.relatedVideos.set(uniqueRelated);
+        this.dbService.setWithTTL('related_videos', { videoId: targetId, streams: uniqueRelated }).catch(() => {});
+        // Auto-cache to IndexedDB saved_videos so global library grows!
+        for (const item of uniqueRelated.slice(0, 15)) {
+          this.dbService.autoCacheVideo(item).catch(() => {});
         }
       }
       this.isLoadingRelated.set(false);

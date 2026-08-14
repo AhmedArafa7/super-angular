@@ -13,6 +13,7 @@ export interface ContentItem {
   hasMusic?: boolean;
   category?: string;
   fetchedAt?: number;
+  publishedAt?: number; // تاريخ النشر الفعلي
   url?: string;
   status?: string;
   visibility?: string;

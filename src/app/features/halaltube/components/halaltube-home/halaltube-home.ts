@@ -1,8 +1,10 @@
 import { Component, inject, signal, OnInit, computed, ChangeDetectionStrategy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { halaltubeService, AlgorithmConfig } from '../../halaltube.service';
 import { FirebaseService } from '../../../../core/services/firebase.service';
+import { ToastService } from '../../../../core/services/toast.service';
 import { YoutubeDiscoveryService } from '../../../../core/services/youtube-discovery.service';
 import { halaltube_CATEGORIES, ContentItem, checkIsShorts } from '../../halaltube.model';
 import { SubscriptionBarComponent } from '../shared/subscription-bar/subscription-bar';
@@ -21,7 +23,7 @@ import { VideoDownloadService } from '../../../../core/services/video-download.s
 @Component({
   selector: 'app-halaltube-home',
   standalone: true,
-  imports: [CommonModule, RouterModule, LucideAngularModule, SubscriptionBarComponent, NexusNativeAdsComponent],
+  imports: [CommonModule, FormsModule, RouterModule, LucideAngularModule, SubscriptionBarComponent, NexusNativeAdsComponent],
   templateUrl: './halaltube-home.html',
   styleUrls: ['./halaltube-home.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,6 +34,7 @@ import { VideoDownloadService } from '../../../../core/services/video-download.s
 export class halaltubeHomeComponent implements OnInit {
   halaltube = inject(halaltubeService);
   firebaseService = inject(FirebaseService);
+  toast = inject(ToastService);
   vaultService = inject(VaultService);
   downloadService = inject(VideoDownloadService);
   router = inject(Router);
@@ -87,7 +90,12 @@ export class halaltubeHomeComponent implements OnInit {
 
   showAlgoModal = signal(false);
   showDebugModal = signal(false);
-  debugTab = signal<'encrypted' | 'history' | 'saved' | 'subs' | 'algo'>('encrypted');
+  debugTab = signal<'encrypted' | 'history' | 'saved' | 'subs' | 'algo' | 'dev-tools'>('encrypted');
+  
+  // Dev Tools
+  devVideoUrl = signal('');
+  generatedFallbackJson = signal('');
+  isGeneratingFallback = signal(false);
   
   rawEncryptedData = signal<{storeName: string, items: any[]}[]>([]);
   decryptedHistory = signal<any[]>([]);
@@ -332,7 +340,7 @@ export class halaltubeHomeComponent implements OnInit {
     }
   }
 
-  setDebugTab(tab: 'encrypted' | 'history' | 'saved' | 'subs' | 'algo') {
+  setDebugTab(tab: 'encrypted' | 'history' | 'saved' | 'subs' | 'algo' | 'dev-tools') {
     this.debugTab.set(tab);
   }
 
@@ -365,15 +373,46 @@ export class halaltubeHomeComponent implements OnInit {
     });
   }
 
-  updateTargetUpscaleQuality(event: Event) {
-    const select = event.target as HTMLSelectElement;
-    if (select) {
-      const current = this.halaltube.algoConfig();
-      this.halaltube.updateAlgoConfig({
-        ...current,
-        targetUpscaleQuality: select.value
-      });
+  async generateFallbackVideoData() {
+    const url = this.devVideoUrl();
+    if (!url) return;
+    
+    this.isGeneratingFallback.set(true);
+    const videoId = this.extractYoutubeId(url);
+    if (!videoId) {
+      this.toast.show('رابط غير صالح', 'error');
+      this.isGeneratingFallback.set(false);
+      return;
     }
+
+    this.discoveryService.fetchVideoDetails(videoId).subscribe({
+      next: (details) => {
+        if (!details) {
+          this.toast.show('لم يتم العثور على بيانات للفيديو', 'error');
+          this.isGeneratingFallback.set(false);
+          return;
+        }
+        const d = details as any;
+        const json = {
+          id: d.id || videoId,
+          title: d.title || 'فيديو',
+          url: `https://www.youtube.com/watch?v=${d.id || videoId}`,
+          thumbnail: d.thumbnail || '',
+          author: d.author || 'غير معروف',
+          authorId: d.authorId || '',
+          publishedAt: Date.now(),
+          source: 'youtube',
+          isWhitelisted: true,
+          isShorts: false
+        };
+        this.generatedFallbackJson.set(JSON.stringify(json, null, 2));
+        this.isGeneratingFallback.set(false);
+      },
+      error: () => {
+        this.toast.show('فشل جلب بيانات الفيديو', 'error');
+        this.isGeneratingFallback.set(false);
+      }
+    });
   }
 
   ngOnDestroy() {
@@ -401,18 +440,33 @@ export class halaltubeHomeComponent implements OnInit {
     }
   }
 
+  private isLoadMoreDebouncing = false;
+
   loadMore() {
+    if (this.isLoadMoreDebouncing) return;
+    this.isLoadMoreDebouncing = true;
+
     const currentCount = this.visibleCount();
     const totalItems = this.standardVideosList().length;
     
     if (currentCount < totalItems) {
+      this.visibleCount.set(Math.min(currentCount + 20, totalItems));
       setTimeout(() => {
-        this.visibleCount.set(currentCount + 20);
-      }, 100);
+        this.isLoadMoreDebouncing = false;
+      }, 300);
     } else if (this.halaltube.hasMoreFeed() && !this.halaltube.isFeedLoading()) {
       this.halaltube.loadMoreTrending().then(() => {
         this.visibleCount.set(this.standardVideosList().length);
+        setTimeout(() => {
+          this.isLoadMoreDebouncing = false;
+        }, 500);
+      }).catch(() => {
+        this.isLoadMoreDebouncing = false;
       });
+    } else {
+      setTimeout(() => {
+        this.isLoadMoreDebouncing = false;
+      }, 300);
     }
   }
 

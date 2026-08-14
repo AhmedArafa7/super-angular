@@ -51,33 +51,45 @@ export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Computed state for filtered and paginated videos
   filteredVideos = computed(() => {
-    let videos = this.videoState.relatedVideos() || [];
-    if (!videos || videos.length === 0) {
-      videos = this.halaltube.allHomeContent() || [];
+    const related = this.videoState.relatedVideos() || [];
+    const homeContent = this.halaltube.allHomeContent() || [];
+    
+    // Merge related videos first, then append global catalog for endless suggestions
+    const seen = new Set<string>();
+    const combined: any[] = [];
+    
+    for (const v of [...related, ...homeContent]) {
+      const vId = this.getVideoId(v);
+      if (vId && !seen.has(vId)) {
+        seen.add(vId);
+        combined.push(v);
+      }
     }
+
+    let videos = combined;
     const cat = this.activeCategory();
     const activeVid = this.videoState.activeVideo();
     
     if (cat === 'نفس القناة') {
        if (activeVid?.author) {
          const authorNorm = activeVid.author.trim().toLowerCase();
-         videos = videos.filter(v => {
+         const authorMatches = videos.filter(v => {
            const vAuthor = (v.author || v.uploaderName || '').trim().toLowerCase();
            return vAuthor === authorNorm || vAuthor.includes(authorNorm) || authorNorm.includes(vAuthor);
          });
-       }
-       if (videos.length === 0) {
-         videos = this.halaltube.allHomeContent().slice(0, 10);
+         if (authorMatches.length > 0) {
+           videos = authorMatches;
+         }
        }
     } else if (cat === 'ذات صلة') {
         const vidCat = (activeVid as any)?.category;
         if (vidCat) {
           const catNorm = vidCat.trim().toLowerCase();
-          videos = videos.filter(v => (v.category || '').trim().toLowerCase() === catNorm);
+          const catMatches = videos.filter(v => (v.category || '').trim().toLowerCase() === catNorm);
+          if (catMatches.length > 0) {
+            videos = catMatches;
+          }
         }
-       if (videos.length === 0) {
-         videos = this.halaltube.allHomeContent();
-       }
     } else if (cat === 'حديثاً') {
        videos = [...videos].sort((a, b) => {
          const timeA = new Date(a.time || a.uploadedDate || 0).getTime();
@@ -140,6 +152,10 @@ export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     
     if (currentDisplayed < totalFiltered) {
       this.currentPage.update(p => p + 1);
+    } else if (this.halaltube.hasMoreFeed() && !this.halaltube.isFeedLoading()) {
+      this.halaltube.loadMoreTrending().then(() => {
+        this.currentPage.update(p => p + 1);
+      });
     }
   }
 

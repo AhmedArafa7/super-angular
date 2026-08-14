@@ -2,6 +2,7 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { firstValueFrom, from, catchError } from 'rxjs';
 import { QueryDocumentSnapshot } from 'firebase/firestore';
 import { Video, YouTubeSubscription, FeedVideo, HistoryItem, halaltubeTab, ContentItem, checkIsShorts } from './halaltube.model';
+import { FALLBACK_VIDEOS } from './data/fallback-videos';
 import { FirebaseService } from '../../core/services/firebase.service';
 import { YoutubeDiscoveryService, VideoDetails, YouTubeComment } from '../../core/services/youtube-discovery.service';
 import { YoutubeDataService, YouTubeChannelStats, YouTubeVideo } from '../../core/services/youtube-data.service';
@@ -155,18 +156,17 @@ export class halaltubeService {
       const subWeight = config.subscriptionWeight / 100;
       
       if (subVids.length === 0) {
-        // Fallback to Whitelist only if they are not logged in or have no subscriptions
+        // Whitelist + local videos if not logged in
         combined = [...localVideos, ...dbVids];
       } else {
         combined = [...localVideos];
-        // Advanced Recommendation interleaving based on subscriptionWeight
+        // Deterministic recommendation interleaving based on subscriptionWeight
         let subIdx = 0;
         let dbIdx = 0;
-        const totalTarget = 100;
+        const totalTarget = 300;
         
         while (combined.length < totalTarget && (subIdx < subVids.length || dbIdx < dbVids.length)) {
-          // Weighted choice: pull from subscriptions feed vs whitelist feed
-          if (subIdx < subVids.length && (dbIdx >= dbVids.length || Math.random() < subWeight)) {
+          if (subIdx < subVids.length && (dbIdx >= dbVids.length || (subIdx / (subIdx + dbIdx + 1)) < subWeight)) {
             combined.push(subVids[subIdx++]);
           } else if (dbIdx < dbVids.length) {
             combined.push(dbVids[dbIdx++]);
@@ -212,7 +212,7 @@ export class halaltubeService {
     }
     combined = uniqueCombined;
 
-    // Recommendation Sorting: prioritizing user's favorite categories, then sorting by _shuffleOrder
+    // Stable Recommendation Sorting: prioritizing user's favorite categories, then sorting by _shuffleOrder
     const catWeights = config.categoryWeights || {};
     const sorted = combined.sort((a, b) => {
       const weightA = catWeights[a.category || ''] || 5;
@@ -222,9 +222,9 @@ export class halaltubeService {
         return weightB - weightA; // Higher weight comes first
       }
 
-      // Preserve the shuffled order if weights are equal
-      const orderA = (a as any)._shuffleOrder !== undefined ? (a as any)._shuffleOrder : Math.random();
-      const orderB = (b as any)._shuffleOrder !== undefined ? (b as any)._shuffleOrder : Math.random();
+      // Preserve stable bottom-appended order
+      const orderA = (a as any)._shuffleOrder !== undefined ? (a as any)._shuffleOrder : 0;
+      const orderB = (b as any)._shuffleOrder !== undefined ? (b as any)._shuffleOrder : 0;
       return orderA - orderB;
     });
 
@@ -259,7 +259,19 @@ export class halaltubeService {
     return result;
   }
 
-  // Actions
+  // Action helpers
+  formatPublishedDate(publishedAt?: number): string {
+    if (!publishedAt) return 'حديثاً';
+    const diff = Date.now() - publishedAt;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    if (days === 0) return 'اليوم';
+    if (days === 1) return 'منذ يوم';
+    if (days < 30) return `منذ ${days} يوم`;
+    const months = Math.floor(days / 30);
+    if (months === 1) return 'منذ شهر';
+    return `منذ ${months} شهر`;
+  }
+
   setActiveTab(tab: halaltubeTab) {
     this.activeTab.set(tab);
   }
@@ -295,59 +307,79 @@ export class halaltubeService {
   private pipedApiService = inject(PipedApiService);
   private invidious = inject(InvidiousProviderService);
 
+  private isInitialized = false;
+  private currentTopicIndex = 0;
+  private readonly CORE_TOPICS = [
+    'تكنولوجيا وبرمجة',
+    'قرآن كريم وتلاوات خاشعة',
+    'علوم وفضاء ووثائقيات',
+    'ذكاء اصطناعي وتطوير الويب',
+    'بودكاست وتطوير الذات',
+    'تاريخ وقصص وحضارات'
+  ];
+
   async loadTrending(force = false): Promise<void> {
+    if (!force && this.isInitialized && this.feedVideos().length >= 30) {
+      return;
+    }
+
+    // 1. Check IndexedDB cached feed first for instant loading
     if (!force) {
-      const cached = await this.idb.getWithTTL('whitelist_feed', 'main', 5 * 60 * 1000); // 5 mins TTL
-      if (cached && cached.videos && cached.videos.length > 0) {
-        // Dynamically shuffle feed items on every load to ensure recommendation freshness
-        const shuffled = [...cached.videos];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      try {
+        const cached = await this.idb.getWithTTL('whitelist_feed', 'main', 60 * 60 * 1000); // 1 hour TTL
+        if (cached && Array.isArray(cached.videos) && cached.videos.length >= 20) {
+          this.trendingVideos.set(cached.videos);
+          this.feedVideos.set(cached.videos);
+          this.isUsingCachedData.set(true);
+          this.isInitialized = true;
+          return;
         }
-        this.trendingVideos.set(shuffled);
-        this.feedVideos.set(shuffled);
-        this.isUsingCachedData.set(true);
-        return;
-      }
+      } catch (e) {}
     }
 
     this.isFeedLoading.set(true);
     this.isUsingCachedData.set(false);
     
     try {
-      // Make sure subscriptions are loaded first to enable subscription feed mixing
       if (this.subscriptions().length === 0) {
         await this.loadMySubscriptions();
       }
 
-      const topics = ['برمجة', 'تكنولوجيا', 'علوم', 'وثائقي', 'أخبار تقنية', 'ذكاء اصطناعي', 'تطوير الويب', 'عالم الفضاء', 'تاريخ', 'بودكاست'];
-      const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+      // Load previous saved/discovered videos from IndexedDB to accumulate repository
+      let accumulatedIndexedDbVideos: FeedVideo[] = [];
+      try {
+        const stored = await this.idb.getAll('saved_videos') || [];
+        accumulatedIndexedDbVideos = stored.map((v: any) => ({
+          id: v.videoId || v.id,
+          title: v.title,
+          url: `https://www.youtube.com/watch?v=${v.videoId || v.id}`,
+          thumbnail: v.thumbnail || `https://img.youtube.com/vi/${v.videoId || v.id}/hqdefault.jpg`,
+          author: v.author,
+          authorId: v.authorId || '',
+          time: 'محفوظ في الذاكرة',
+          source: 'youtube' as const,
+          category: v.category || 'تكنولوجيا وبرمجة',
+          isWhitelisted: true
+        }));
+      } catch (e) {}
 
-      // Fetch RSS feeds, Whitelist videos, and random YT topic in parallel
-      const cachedLive = this.cacheService.getRandomVideos() || [];
-      let liveVideosPromise = Promise.resolve(cachedLive.slice(0, 5)); // Use 5 cached by default
-      
-      // If cache is empty or we want to refresh (e.g. 20% chance to fetch new), fetch from API
-      if (cachedLive.length < 20 || Math.random() < 0.2) {
-        liveVideosPromise = firstValueFrom(this.discoveryService.searchYouTube(randomTopic))
-          .then(vids => {
-            if (vids && vids.length > 0) {
-              this.cacheService.setRandomVideos(vids);
-            }
-            return vids.slice(0, 5); // Take up to 5 fresh ones
-          })
-          .catch(() => cachedLive.slice(0, 5));
-      }
+      // Parallel multi-topic harvesting across 6 core topics
+      const topicPromises = this.CORE_TOPICS.map(topic => 
+        firstValueFrom(this.discoveryService.searchYouTube(topic))
+          .catch(() => this.pipedApiService.search(topic))
+          .catch(() => [] as FeedVideo[])
+      );
 
-      const [_, firestoreResult, liveVideos] = await Promise.all([
-        this.loadSubscriptionsFeed(force),
-        this.firebaseService.getPublishedVideos(undefined, 50),
-        liveVideosPromise
+      const [subVideosRes, firestoreResult, ...topicResults] = await Promise.all([
+        this.loadSubscriptionsFeed(force).catch(() => {}),
+        this.firebaseService.getPublishedVideos(undefined, 50).catch(() => ({ videos: [], lastVisible: null })),
+        ...topicPromises
       ]);
-      const subVideos = this.subscriptionsFeed();
+
+      const subVideos = this.subscriptionsFeed() || [];
+      const harvestedVideos = topicResults.flat().filter(Boolean);
       
-      const mappedFirestore: FeedVideo[] = firestoreResult.videos.map((v: any) => {
+      const mappedFirestore: FeedVideo[] = (firestoreResult?.videos || []).map((v: any) => {
         const isYt = v.source === 'youtube';
         return {
           id: v.id,
@@ -359,67 +391,89 @@ export class halaltubeService {
           time: v.time || 'حديثاً',
           source: v.source || 'youtube',
           isShorts: v.isShorts || false,
-          isWhitelisted: true, // Add this flag
-          _shuffleOrder: Math.random() // Add shuffle order
+          isWhitelisted: true,
+          _shuffleOrder: Math.random()
         } as any;
       });
 
-      // Combine personalized subscription videos, published Firestore videos, and random topic videos
-      let combined = [...subVideos, ...mappedFirestore, ...liveVideos];
+      // Combine all sources: subscriptions, firestore whitelist, multi-topic search, indexeddb library, and fallback videos
+      let combined = [
+        ...subVideos,
+        ...mappedFirestore,
+        ...harvestedVideos,
+        ...accumulatedIndexedDbVideos,
+        ...FALLBACK_VIDEOS
+      ];
 
-      // Shuffle the combined array to make the feed dynamic and prevent static content
-      for (let i = combined.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [combined[i], combined[j]] = [combined[j], combined[i]];
+      // Deduplicate by ID
+      const seenIds = new Set<string>();
+      const uniqueCombined: FeedVideo[] = [];
+      for (const v of combined) {
+        if (v && v.id && !seenIds.has(v.id)) {
+          seenIds.add(v.id);
+          uniqueCombined.push(v);
+        }
       }
 
-      // Add _shuffleOrder to all items so they keep this order after sorting
-      combined = combined.map((v, idx) => ({ ...v, _shuffleOrder: idx }));
+      // Shuffle once on initial load and assign stable shuffle order
+      for (let i = uniqueCombined.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [uniqueCombined[i], uniqueCombined[j]] = [uniqueCombined[j], uniqueCombined[i]];
+      }
 
-      // Deduplicate by ID just in case
-      const seenIds = new Set();
-      combined = combined.filter(v => {
-        if (seenIds.has(v.id)) return false;
-        seenIds.add(v.id);
-        return true;
-      });
-      
-      this.trendingVideos.set(combined);
-      this.feedVideos.set(combined);
-      this.lastVisibleFeedDoc.set(firestoreResult.lastVisible);
-      this.hasMoreFeed.set(firestoreResult.videos.length >= 50);
+      const indexedCombined = uniqueCombined.map((v, idx) => ({ ...v, _shuffleOrder: idx }));
 
-      // Cache the fresh combined feed
-      await this.idb.setWithTTL('whitelist_feed', { id: 'main', videos: combined });
+      this.trendingVideos.set(indexedCombined);
+      this.feedVideos.set(indexedCombined);
+      this.lastVisibleFeedDoc.set(firestoreResult?.lastVisible || null);
+      this.hasMoreFeed.set(true);
+      this.isInitialized = true;
+
+      // Persist to IndexedDB whitelist_feed & auto-cache items
+      if (indexedCombined.length > 0) {
+        await this.idb.setWithTTL('whitelist_feed', { id: 'main', videos: indexedCombined });
+        for (const v of indexedCombined.slice(0, 50)) {
+          this.idb.autoCacheVideo(v).catch(() => {});
+        }
+      }
       
     } catch (err) {
       console.error('[halaltubeService] loadTrending failed', err);
-      // Absolute fallback
-      try {
-        const fallbackVids = await firstValueFrom(this.discoveryService.searchYouTube('برمجة'));
-        this.trendingVideos.set(fallbackVids);
-        this.feedVideos.set(fallbackVids);
-      } catch (e) {}
+      this.trendingVideos.set(FALLBACK_VIDEOS);
+      this.feedVideos.set(FALLBACK_VIDEOS);
     } finally {
       this.isFeedLoading.set(false);
     }
   }
 
   async loadMoreTrending(): Promise<void> {
-    if (!this.hasMoreFeed() || this.isFeedLoading()) return;
+    if (this.isFeedLoading()) return;
 
     this.isFeedLoading.set(true);
     
     try {
-      const topics = ['برمجة', 'تكنولوجيا', 'علوم', 'وثائقي', 'أخبار تقنية', 'ذكاء اصطناعي', 'تطوير الويب', 'عالم الفضاء', 'تاريخ', 'بودكاست'];
-      const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+      const moreTopics = [
+        'شروحات برمجية ومشاريع عملية',
+        'تلاوات هادئة مريحة للنفس',
+        'عجائب الكون والفضاء الخارجي',
+        'بناء العادات اليومية والإنتاجية',
+        'وثائقيات علمية وطبيعية',
+        'تاريخ وقصص الأنبياء والحضارات',
+        'تطبيقات وأدوات الذكاء الاصطناعي',
+        'حوارات وبودكاست ملهم'
+      ];
+      
+      const targetTopic = moreTopics[this.currentTopicIndex % moreTopics.length];
+      this.currentTopicIndex++;
 
       const [result, liveVideos] = await Promise.all([
-        this.firebaseService.getPublishedVideos(this.lastVisibleFeedDoc() || undefined, 20),
-        firstValueFrom(this.discoveryService.searchYouTube(randomTopic)).catch(() => [])
+        this.firebaseService.getPublishedVideos(this.lastVisibleFeedDoc() || undefined, 20).catch(() => ({ videos: [], lastVisible: null })),
+        firstValueFrom(this.discoveryService.searchYouTube(targetTopic))
+          .catch(() => this.pipedApiService.search(targetTopic))
+          .catch(() => [] as FeedVideo[])
       ]);
       
-      const mappedVideos: FeedVideo[] = result.videos.map(v => {
+      const mappedVideos: FeedVideo[] = (result?.videos || []).map(v => {
         const isYt = v.source === 'youtube';
         return {
           id: v.id,
@@ -431,35 +485,39 @@ export class halaltubeService {
           time: v.time || new Date(v.createdAt).toLocaleDateString(),
           source: v.source || 'youtube',
           isShorts: v.isShorts || false,
-          isWhitelisted: true, // Add this flag
+          isWhitelisted: true,
           channelAvatar: v.channelAvatar,
           duration: v.duration,
           views: v.views ? `${v.views} مشاهدة` : undefined
         };
       });
       
-      let newCombined = [...mappedVideos, ...liveVideos];
+      const currentVideos = this.feedVideos();
+      const currentCount = currentVideos.length;
+      const newItems = [...mappedVideos, ...(liveVideos || [])];
 
-      // Shuffle
-      for (let i = newCombined.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [newCombined[i], newCombined[j]] = [newCombined[j], newCombined[i]];
+      // Assign sequential _shuffleOrder to preserve bottom-appended order without shifting previous items
+      const indexedNew = newItems.map((v, idx) => ({
+        ...v,
+        _shuffleOrder: currentCount + idx
+      }));
+
+      // Deduplicate against existing
+      const existingIds = new Set(currentVideos.map(v => v.id));
+      const freshToAdd = indexedNew.filter(v => v && v.id && !existingIds.has(v.id));
+
+      if (freshToAdd.length > 0) {
+        this.trendingVideos.update(vids => [...vids, ...freshToAdd]);
+        this.feedVideos.update(vids => [...vids, ...freshToAdd]);
+
+        // Auto cache to IndexedDB
+        for (const item of freshToAdd) {
+          this.idb.autoCacheVideo(item).catch(() => {});
+        }
       }
-
-      this.trendingVideos.update(vids => [...vids, ...newCombined]);
-      this.feedVideos.update(vids => {
-        const combined = [...vids, ...newCombined];
-        // Deduplicate
-        const seenIds = new Set();
-        return combined.filter(v => {
-          if (seenIds.has(v.id)) return false;
-          seenIds.add(v.id);
-          return true;
-        });
-      });
       
-      this.lastVisibleFeedDoc.set(result.lastVisible);
-      this.hasMoreFeed.set(result.videos.length === 20);
+      this.lastVisibleFeedDoc.set(result?.lastVisible || null);
+      this.hasMoreFeed.set(true); // Always allow more infinite scrolling
       
     } catch (err) {
       console.error('[halaltubeService] loadMoreTrending failed', err);
@@ -511,9 +569,21 @@ export class halaltubeService {
           } catch (e) {}
         }
 
+        // If still 0 results (all network providers down), fallback to matching local & curated fallback videos
+        if (!finalVideos || finalVideos.length === 0) {
+          const cleanQ = query.trim().toLowerCase();
+          const allLocal = [...FALLBACK_VIDEOS, ...this.feedVideos()];
+          const matched = allLocal.filter(v => 
+            v.title?.toLowerCase().includes(cleanQ) || 
+            v.author?.toLowerCase().includes(cleanQ) ||
+            v.category?.toLowerCase().includes(cleanQ)
+          );
+          finalVideos = matched.length > 0 ? matched : FALLBACK_VIDEOS.slice(0, 4);
+        }
+
         // Check which videos are already whitelisted
         const videoIds = finalVideos.map((v: any) => v.id);
-        const whitelistedIds = await this.firebaseService.checkVideosExist(videoIds);
+        const whitelistedIds = await this.firebaseService.checkVideosExist(videoIds).catch(() => []);
         const whitelistedSet = new Set(whitelistedIds);
         
         // Add isWhitelisted flag
@@ -527,7 +597,14 @@ export class halaltubeService {
       },
       error: (err) => {
         console.error('[halaltubeService] All search providers failed:', err);
-        this.searchResults.set([]);
+        const cleanQ = query.trim().toLowerCase();
+        const allLocal = [...FALLBACK_VIDEOS, ...this.feedVideos()];
+        const matched = allLocal.filter(v => 
+          v.title?.toLowerCase().includes(cleanQ) || 
+          v.author?.toLowerCase().includes(cleanQ) ||
+          v.category?.toLowerCase().includes(cleanQ)
+        );
+        this.searchResults.set(matched.length > 0 ? matched : FALLBACK_VIDEOS);
         this.isSearching.set(false);
       }
     });
@@ -861,23 +938,30 @@ export class halaltubeService {
       // Try to load from cache first
       if (!force) {
         const cached = await this.idb.getWithTTL('shorts_feed', 'main', 60 * 60 * 1000);
-        if (cached && cached.videos && cached.videos.length > 0) {
+        if (cached && Array.isArray(cached.videos) && cached.videos.length > 0) {
           this.shortsFeed.set(cached.videos);
           this.isShortsLoading.set(false);
           return;
         }
       }
 
-      // Fetch new shorts from YouTube
-      const apiShorts = await firstValueFrom(
-        this.discoveryService.searchYouTube('shorts', 'EgQYAXAB')
-      );
+      // Fetch new shorts from YouTube with cascading fallbacks
+      let apiShorts: FeedVideo[] = [];
+      try {
+        apiShorts = await firstValueFrom(
+          this.discoveryService.searchYouTube('shorts', 'EgQYAXAB')
+        );
+      } catch (e) {
+        try {
+          apiShorts = await this.pipedApiService.search('shorts');
+        } catch (e2) {}
+      }
 
       // Filter shorts using robust checkIsShorts helper
-      let shorts = apiShorts.filter(v => checkIsShorts(v));
+      let shorts = (apiShorts || []).filter(v => checkIsShorts(v));
 
-      // If no shorts found, mark all as shorts
-      if (shorts.length === 0) {
+      // If no shorts found, mark available as shorts
+      if (shorts.length === 0 && apiShorts && apiShorts.length > 0) {
         shorts = apiShorts.map(v => ({ ...v, isShorts: true }));
       }
 
@@ -890,16 +974,17 @@ export class halaltubeService {
       const uniqueShorts: FeedVideo[] = [];
       
       for (const video of combined) {
-        if (!seenIds.has(video.id)) {
+        if (video && video.id && !seenIds.has(video.id)) {
           seenIds.add(video.id);
           uniqueShorts.push(video);
         }
       }
 
-      this.shortsFeed.set(uniqueShorts);
-
-      // Cache the result
-      await this.idb.setWithTTL('shorts_feed', { id: 'main', videos: uniqueShorts });
+      if (uniqueShorts.length > 0) {
+        this.shortsFeed.set(uniqueShorts);
+        // Cache the result
+        await this.idb.setWithTTL('shorts_feed', { id: 'main', videos: uniqueShorts });
+      }
     } catch (err) {
       console.error('[halaltubeService] loadShorts failed:', err);
     } finally {
