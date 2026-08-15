@@ -1059,7 +1059,9 @@ export class FirebaseService {
         reporterId: uid,
         timestamp: Date.now()
       });
-      console.log(`[FirebaseService] Video ${videoId} reported successfully.`);
+      // Also automatically blacklist the reported video globally so it gets filtered out platform-wide
+      await this.blacklistVideo(videoId, videoTitle, `${reason}: ${comments}`);
+      console.log(`[FirebaseService] Video ${videoId} reported and blacklisted successfully.`);
     } catch (err) {
       console.error('[FirebaseService] reportVideo failed:', err);
       throw err;
@@ -1069,6 +1071,17 @@ export class FirebaseService {
   // ==========================================
   // VIDEO BLACKLIST (per-video, not channel)
   // ==========================================
+
+  async getBlacklistedVideoIds(): Promise<string[]> {
+    try {
+      const ref = collection(this.firestore, 'blacklisted_videos');
+      const snap = await getDocs(ref);
+      return snap.docs.map(d => d.id);
+    } catch (err) {
+      console.error('[FirebaseService] getBlacklistedVideoIds failed:', err);
+      return [];
+    }
+  }
 
   async blacklistVideo(videoId: string, videoTitle: string, reason: string, authorId?: string, authorName?: string): Promise<void> {
     try {

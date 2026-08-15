@@ -87,7 +87,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             </div>
             <h2 class="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2 mt-1">
               <svg lucideIcon="users" class="w-6 h-6 text-amber-500"></svg>
-              <span>تعيين مهندسين وعمال جدد وسجلات الرواتب بالمصنع (HR)</span>
+              <span>تعيين مهندسين وعمال جدد وسجلات الرواتب بالمصنع</span>
             </h2>
             <p class="text-xs text-slate-500 mt-1">المدير هو المسؤول عن تعيين مهندسين وعمال جدد، تعديل الرواتب، وإدارة طاقم العمل بالمصنع.</p>
           </div>

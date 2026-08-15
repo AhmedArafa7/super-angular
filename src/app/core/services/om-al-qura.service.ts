@@ -1,5 +1,5 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
-import { collection, doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { FirebaseService } from './firebase.service';
 import { ToastService } from './toast.service';
 
@@ -650,11 +650,15 @@ export class OmAlQuraService {
     }
   }
 
-  saveSuppliers(data: OmAlQuraSupplier[]) {
+  async saveSuppliers(data: OmAlQuraSupplier[]) {
     this.suppliers.set(data);
     localStorage.setItem('omalqura_suppliers', JSON.stringify(data));
     if (this.firebase.firestore) {
-      data.forEach(item => setDoc(doc(this.firebase.firestore, 'omalqura_suppliers', item.id), item).catch(() => {}));
+      const batch = writeBatch(this.firebase.firestore);
+      data.forEach(item => {
+        batch.set(doc(this.firebase.firestore, 'omalqura_suppliers', item.id), item);
+      });
+      await batch.commit().catch(e => console.error('Batch write suppliers failed', e));
     }
   }
 
@@ -678,19 +682,27 @@ export class OmAlQuraService {
     this.toast.show('تم حذف بيانات المورد.', 'info');
   }
 
-  savePurchaseOrders(data: OmAlQuraPurchaseOrder[]) {
+  async savePurchaseOrders(data: OmAlQuraPurchaseOrder[]) {
     this.purchaseOrders.set(data);
     localStorage.setItem('omalqura_purchase_orders', JSON.stringify(data));
     if (this.firebase.firestore) {
-      data.forEach(item => setDoc(doc(this.firebase.firestore, 'omalqura_purchase_orders', item.id), item).catch(() => {}));
+      const batch = writeBatch(this.firebase.firestore);
+      data.forEach(item => {
+        batch.set(doc(this.firebase.firestore, 'omalqura_purchase_orders', item.id), item);
+      });
+      await batch.commit().catch(e => console.error('Batch write POs failed', e));
     }
   }
 
-  saveCctvCameras(cameras: OmAlQuraCctvCamera[]) {
+  async saveCctvCameras(cameras: OmAlQuraCctvCamera[]) {
     this.cctvCameras.set(cameras);
     localStorage.setItem('omalqura_cctv_cameras', JSON.stringify(cameras));
     if (this.firebase.firestore) {
-      cameras.forEach(c => setDoc(doc(this.firebase.firestore, 'omalqura_cctv_cameras', c.id), c).catch(() => {}));
+      const batch = writeBatch(this.firebase.firestore);
+      cameras.forEach(c => {
+        batch.set(doc(this.firebase.firestore, 'omalqura_cctv_cameras', c.id), c);
+      });
+      await batch.commit().catch(e => console.error('Batch write CCTV failed', e));
     }
   }
 
@@ -847,35 +859,51 @@ ${itemsText}
     this.saveSuppliers(defaults);
   }
 
-  private saveEmployees(data: OmAlQuraEmployee[]) {
+  async saveEmployees(data: OmAlQuraEmployee[]) {
     this.employees.set(data);
     localStorage.setItem('omalqura_employees', JSON.stringify(data));
     if (this.firebase.firestore) {
-      data.forEach(item => setDoc(doc(this.firebase.firestore, 'omalqura_employees', item.id), item).catch(() => {}));
+      const batch = writeBatch(this.firebase.firestore);
+      data.forEach(item => {
+        batch.set(doc(this.firebase.firestore, 'omalqura_employees', item.id), item);
+      });
+      await batch.commit().catch(e => console.error('Batch write employees failed', e));
     }
   }
 
-  private saveOrders(data: OmAlQuraOrder[]) {
+  async saveOrders(data: OmAlQuraOrder[]) {
     this.orders.set(data);
     localStorage.setItem('omalqura_orders', JSON.stringify(data));
     if (this.firebase.firestore) {
-      data.forEach(item => setDoc(doc(this.firebase.firestore, 'omalqura_orders', item.id), item).catch(() => {}));
+      const batch = writeBatch(this.firebase.firestore);
+      data.forEach(item => {
+        batch.set(doc(this.firebase.firestore, 'omalqura_orders', item.id), item);
+      });
+      await batch.commit().catch(e => console.error('Batch write orders failed', e));
     }
   }
 
-  private saveDrivers(data: OmAlQuraDeliveryDriver[]) {
+  async saveDrivers(data: OmAlQuraDeliveryDriver[]) {
     this.deliveryDrivers.set(data);
     localStorage.setItem('omalqura_drivers', JSON.stringify(data));
     if (this.firebase.firestore) {
-      data.forEach(item => setDoc(doc(this.firebase.firestore, 'omalqura_delivery_drivers', item.id), item).catch(() => {}));
+      const batch = writeBatch(this.firebase.firestore);
+      data.forEach(item => {
+        batch.set(doc(this.firebase.firestore, 'omalqura_delivery_drivers', item.id), item);
+      });
+      await batch.commit().catch(e => console.error('Batch write drivers failed', e));
     }
   }
 
-  private saveDebts(data: OmAlQuraCustomerDebt[]) {
+  async saveDebts(data: OmAlQuraCustomerDebt[]) {
     this.customerDebts.set(data);
     localStorage.setItem('omalqura_debts', JSON.stringify(data));
     if (this.firebase.firestore) {
-      data.forEach(item => setDoc(doc(this.firebase.firestore, 'omalqura_customer_debts', item.id), item).catch(() => {}));
+      const batch = writeBatch(this.firebase.firestore);
+      data.forEach(item => {
+        batch.set(doc(this.firebase.firestore, 'omalqura_customer_debts', item.id), item);
+      });
+      await batch.commit().catch(e => console.error('Batch write debts failed', e));
     }
   }
 

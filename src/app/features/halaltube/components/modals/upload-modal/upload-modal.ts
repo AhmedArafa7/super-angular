@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { 
   LucideAngularModule, X, Upload, HardDrive, Link, Plus, Zap, ExternalLink, 
-  FileVideo, Sparkles, Pin, PinOff, CheckCircle2, AlertCircle 
+  FileVideo, Sparkles, Pin, PinOff, CheckCircle2, AlertCircle, Cloud 
 } from 'lucide-angular';
 import { FirebaseService } from '../../../../../core/services/firebase.service';
 import { YoutubeDiscoveryService } from '../../../../../core/services/youtube-discovery.service';
@@ -45,11 +45,12 @@ export class UploadModalComponent implements OnInit, AfterViewInit, OnChanges {
   PinOff = PinOff;
   CheckCircle2 = CheckCircle2;
   AlertCircle = AlertCircle;
+  Cloud = Cloud;
 
   // Form Fields
   title = '';
   sourceUrl = '';
-  sourceType: 'vault' | 'youtube' | 'local' = 'vault';
+  sourceType: 'vault' | 'youtube' | 'local' | 'archive' = 'vault';
   selectedChannel = 'الرئيسية';
   
   showChannelDropdown = false;
@@ -157,7 +158,7 @@ export class UploadModalComponent implements OnInit, AfterViewInit, OnChanges {
     }
   }
   
-  selectSourceType(type: 'vault' | 'youtube' | 'local') {
+  selectSourceType(type: 'vault' | 'youtube' | 'local' | 'archive') {
     this.sourceType = type;
     this.title = '';
     this.sourceUrl = '';
@@ -353,13 +354,18 @@ export class UploadModalComponent implements OnInit, AfterViewInit, OnChanges {
     try {
       this.isUploading = true;
       let finalUrl = sourceUrlVal;
-      let finalSource = this.sourceType === 'youtube' ? 'youtube' : (this.sourceType === 'local' ? 'local' : 'platform');
+      let finalSource = this.sourceType === 'youtube' ? 'youtube' : (this.sourceType === 'local' ? 'local' : (this.sourceType === 'archive' ? 'archive' : 'platform'));
 
       if (this.sourceType === 'local' && this.selectedFile) {
         // Upload to Firebase Storage with progress tracking
         finalUrl = await this.firebaseService.uploadVideoToStorage(this.selectedFile);
       } else if (this.sourceType === 'vault') {
         finalSource = 'platform';
+      } else if (this.sourceType === 'archive') {
+        finalSource = 'archive';
+        if (finalUrl.includes('/details/')) {
+          finalUrl = finalUrl.replace('/details/', '/download/');
+        }
       }
 
       // Extract YouTube video ID if YouTube source

@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, ViewChild, ElementRef } from '@angular/core';
+import { Component, inject, signal, computed, ViewChild, ElementRef, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideDynamicIcon } from '@lucide/angular';
@@ -279,11 +279,16 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
               <button (click)="openEditProduct(p)" class="flex-1 py-1.5 px-3 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-bold hover:bg-blue-200 transition-all flex items-center justify-center gap-1">
                 <svg lucideIcon="edit-3" class="w-3.5 h-3.5"></svg>
-                <span>تعديل المنتج والتصنيف</span>
+                <span>تعديل المنتج</span>
               </button>
-              <button (click)="quickUpdateStock(p, 10)" class="py-1.5 px-3 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 text-xs font-bold hover:bg-emerald-200 shrink-0">
-                +10 مخزون
-              </button>
+              
+              <div class="flex items-center gap-1">
+                <input type="number" [(ngModel)]="stockUpdateAmount[p.id]" placeholder="الكمية" class="w-16 p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-xs font-bold text-center border-none">
+                <button (click)="quickUpdateStock(p, stockUpdateAmount[p.id] || 10)" class="py-1.5 px-3 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 text-xs font-bold hover:bg-emerald-200 shrink-0">
+                  إضافة
+                </button>
+              </div>
+
               <button (click)="service.deleteProduct(p.id)" class="py-1.5 px-3 rounded-xl bg-rose-100 text-rose-700 text-xs font-bold hover:bg-rose-200 shrink-0">
                 حذف
               </button>
@@ -863,137 +868,131 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             </button>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-            <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">اسم المنظف / المنتج *</label>
-              <input type="text" [(ngModel)]="newProdName" placeholder="مثال: مسحوق غسيل أوتوماتيك أريال/وفير..."
-                     class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:outline-hidden focus:ring-2 focus:ring-emerald-500">
-            </div>
-
-            <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">القسم / التصنيف *</label>
-              <select [(ngModel)]="newProdCategory" class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500">
-                <option *ngFor="let cat of service.categories()" [value]="cat">{{ cat }}</option>
-                <option value="أخرى">أخرى (كتابة قسم جديد)</option>
-              </select>
-
-              <div *ngIf="newProdCategory === 'أخرى'" class="mt-2">
-                <input type="text" [(ngModel)]="customProdCategory" placeholder="اكتب اسم القسم الجديد هنا..." required
-                       class="w-full p-2.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-700 text-slate-900 dark:text-white text-xs font-bold focus:outline-hidden focus:ring-2 focus:ring-emerald-500">
-              </div>
-            </div>
-
-            <div class="sm:col-span-2 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
-              <div class="flex justify-between items-center">
-                <label class="block font-black text-slate-900 dark:text-white text-xs">🏷️ الكود التسلسلي / الباركود (Serial / Barcode)</label>
-                <button type="button" (click)="generateNewBarcode()" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer flex items-center gap-1">
-                  <svg lucideIcon="sparkles" class="w-3.5 h-3.5"></svg>
-                  <span>توليد باركود تلقائي</span>
-                </button>
-              </div>
-              <input type="text" [(ngModel)]="newProdBarcode" placeholder="مثال: 690123456789 (أو امسح بقارئ الأكواد)"
-                     class="w-full p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-xs font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
-            </div>
-
-            <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">السعر (ج.م) *</label>
-              <input type="number" [(ngModel)]="newProdPrice" min="0" placeholder="0"
-                     class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
-            </div>
-
-            <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">العدد / الكمية المتاحة *</label>
-              <input type="number" [(ngModel)]="newProdStock" min="0" placeholder="0"
-                     class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
-            </div>
-
-            <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">نسبة الخصم (%)</label>
-              <input type="number" [(ngModel)]="newProdDiscount" min="0" max="100" placeholder="0"
-                     class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
-            </div>
-
-            <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">مكان المنتج بالمحل (الرف/الممر) *</label>
-              <input type="text" [(ngModel)]="newProdLocationStore" placeholder="مثال: الممر 2 - رف B3"
-                     class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500">
-            </div>
-
-            <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">مكان التخزين بالمخزن الداخلي</label>
-              <input type="text" [(ngModel)]="newProdLocationWarehouse" placeholder="مثال: المخزن - رف W-1"
-                     class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500">
-            </div>
-
-            <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">موعد التوفر المتوقع (عند نفاد المخزون)</label>
-              <input type="text" [(ngModel)]="newProdExpectedRestock" placeholder="مثال: غداً 4 مساءً أو خلال 24 ساعة"
-                     class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500">
-            </div>
-
-            <div class="sm:col-span-2 flex items-center gap-3 pt-2">
-              <input type="checkbox" [(ngModel)]="newProdIsInWarehouse" id="addWarehouseCheck" class="w-4 h-4 text-emerald-600 rounded">
-              <label for="addWarehouseCheck" class="font-bold text-slate-800 dark:text-slate-200 text-xs cursor-pointer">متوفر حالياً بالمخزن الداخلي (وليس العرض فقط)</label>
-            </div>
-
-            <div class="sm:col-span-2">
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">وصف المنتج</label>
-              <textarea [(ngModel)]="newProdDescription" rows="2" placeholder="وصف قصير للمنتج..."
-                        class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500"></textarea>
-            </div>
-
-            <div class="sm:col-span-2 space-y-2">
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">صورة المنتج (من الهاتف / الكاميرا عبر Cloudinary)</label>
-              
-              <div class="flex flex-wrap items-center gap-3">
-                <label class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-md transition-all cursor-pointer flex items-center gap-2">
-                  <svg lucideIcon="camera" class="w-4 h-4"></svg>
-                  <span>{{ uploadingAddImage() ? 'جاري الرفع على Cloudinary...' : '📸 التقاط صورة بالكاميرا / رفع من الجوال' }}</span>
-                  <input type="file" accept="image/*" capture="environment" class="hidden" (change)="onFileSelectedForAdd($event)" [disabled]="uploadingAddImage()">
-                </label>
-
-                <span class="text-xs text-slate-400 font-bold">أو رابط صورة:</span>
-
-                <input type="text" [(ngModel)]="newProdImageUrl" placeholder="https://..." class="flex-1 min-w-[200px] p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white">
+          <form (ngSubmit)="saveNewProduct()" class="space-y-4 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">اسم المنظف / المنتج *</label>
+                <select [(ngModel)]="newProdName" name="newProdNameSelect" class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500">
+                  <option value="" disabled>اختر منتجاً...</option>
+                  <option *ngFor="let prod of service.products()" [value]="prod.name">{{ prod.name }}</option>
+                  <option value="جديد">منتج جديد (اكتب اسماً مخصصاً)</option>
+                </select>
+                <input *ngIf="newProdName === 'جديد'" type="text" [(ngModel)]="newProdName" name="newProdNameCustom" placeholder="اكتب اسم المنتج الجديد..."
+                       class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold mt-2">
               </div>
 
-              <div *ngIf="newProdImageUrl" class="flex items-center gap-3 pt-2">
-                <img [src]="newProdImageUrl" appImageFallback class="w-16 h-16 rounded-2xl object-cover border-2 border-emerald-500 shadow-md">
-                <div class="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
-                  ✓ تم تجهيز ومعاينة صورة المنتج
+              <div>
+                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">القسم / التصنيف *</label>
+                <select [(ngModel)]="newProdCategory" name="newProdCatSelect" class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500">
+                  <option *ngFor="let cat of service.categories()" [value]="cat">{{ cat }}</option>
+                  <option value="أخرى">أخرى (كتابة قسم جديد)</option>
+                </select>
+
+                <div *ngIf="newProdCategory === 'أخرى'" class="mt-2">
+                  <input type="text" [(ngModel)]="customProdCategory" name="customCatInput" placeholder="اكتب اسم القسم الجديد هنا..." required
+                         class="w-full p-2.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-700 text-slate-900 dark:text-white text-xs font-bold focus:outline-hidden focus:ring-2 focus:ring-emerald-500">
+                </div>
+              </div>
+
+              <div class="sm:col-span-2 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+                <div class="flex justify-between items-center">
+                  <label class="block font-black text-slate-900 dark:text-white text-xs">🏷️ الكود التسلسلي / الباركود (Serial / Barcode)</label>
+                  <button type="button" (click)="generateNewBarcode()" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer flex items-center gap-1">
+                    <svg lucideIcon="sparkles" class="w-3.5 h-3.5"></svg>
+                    <span>توليد باركود تلقائي</span>
+                  </button>
+                </div>
+                <input type="text" [(ngModel)]="newProdBarcode" name="newBarcode" placeholder="مثال: 690123456789 (أو امسح بقارئ الأكواد)"
+                       class="w-full p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-xs font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">السعر (ج.م) *</label>
+                <input type="number" [(ngModel)]="newProdPrice" name="newPrice" min="0" placeholder="0"
+                       class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">العدد / الكمية المتاحة *</label>
+                <input type="number" [(ngModel)]="newProdStock" name="newStock" min="0" placeholder="0"
+                       class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">مكان المنتج بالمحل (الرف/الممر) *</label>
+                <input type="text" [(ngModel)]="newProdLocationStore" name="newLocStore" placeholder="مثال: الممر 2 - رف B3"
+                       class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">مكان التخزين بالمخزن الداخلي</label>
+                <input type="text" [(ngModel)]="newProdLocationWarehouse" name="newLocWarehouse" placeholder="مثال: المخزن - رف W-1"
+                       class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500">
+              </div>
+
+              <div class="sm:col-span-2">
+                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">موعد التوفر المتوقع (عند نفاد المخزون)</label>
+                <input type="text" [(ngModel)]="newProdExpectedRestock" name="newRestock" placeholder="مثال: غداً 4 مساءً أو خلال 24 ساعة"
+                       class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500">
+              </div>
+
+              <div class="sm:col-span-2 flex items-center gap-3 pt-2">
+                <input type="checkbox" [(ngModel)]="newProdIsInWarehouse" name="newInWh" id="addWarehouseCheck" class="w-4 h-4 text-emerald-600 rounded">
+                <label for="addWarehouseCheck" class="font-bold text-slate-800 dark:text-slate-200 text-xs cursor-pointer">متوفر حالياً بالمخزن الداخلي (وليس العرض فقط)</label>
+              </div>
+
+              <div class="sm:col-span-2">
+                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">وصف المنتج</label>
+                <textarea [(ngModel)]="newProdDescription" name="newDesc" rows="2" placeholder="وصف قصير للمنتج..."
+                          class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500"></textarea>
+              </div>
+
+              <div class="sm:col-span-2 space-y-2">
+                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">صورة المنتج (من الهاتف / الكاميرا عبر Cloudinary)</label>
+                <div class="flex flex-wrap items-center gap-3">
+                  <label class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-md transition-all cursor-pointer flex items-center gap-2">
+                    <svg lucideIcon="camera" class="w-4 h-4"></svg>
+                    <span>{{ uploadingAddImage() ? 'جاري الرفع على Cloudinary...' : '📸 التقاط صورة بالكاميرا / رفع من الجوال' }}</span>
+                    <input type="file" accept="image/*" capture="environment" class="hidden" (change)="onFileSelectedForAdd($event)" [disabled]="uploadingAddImage()">
+                  </label>
+                  <span class="text-xs text-slate-400 font-bold">أو رابط صورة:</span>
+                  <input type="text" [(ngModel)]="newProdImageUrl" name="newImgUrl" placeholder="https://..." class="flex-1 min-w-[200px] p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white">
+                </div>
+                <div *ngIf="newProdImageUrl" class="flex items-center gap-3 pt-2">
+                  <img [src]="newProdImageUrl" appImageFallback class="w-16 h-16 rounded-2xl object-cover border-2 border-emerald-500 shadow-md">
+                  <div class="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">✓ تم تجهيز ومعاينة صورة المنتج</div>
+                </div>
+              </div>
+
+              <div class="sm:col-span-2 p-4 bg-rose-50 dark:bg-rose-950/20 rounded-2xl border border-rose-200 dark:border-rose-900/40 space-y-3">
+                <div class="flex items-center gap-2">
+                  <input type="checkbox" [(ngModel)]="newProdIsBoycott" name="newBoycott" id="boycottCheck" class="w-4 h-4 text-rose-600 rounded">
+                  <label for="boycottCheck" class="font-black text-rose-600 text-xs cursor-pointer">علامة: هذا المنتج ضمن قائمة المقاطعة</label>
+                </div>
+                <div *ngIf="newProdIsBoycott" class="space-y-2">
+                  <div>
+                    <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">سبب المقاطعة</label>
+                    <input type="text" [(ngModel)]="newProdBoycottReason" name="newBoycottReason" placeholder="مثال: شركة داعمة بشكل مباشر للمحتل" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+                  </div>
+                  <div>
+                    <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">قائمة البدائل الوطنية المطابقة (تفصل بينها بفصلة)</label>
+                    <input type="text" [(ngModel)]="newProdAlternatives" name="newBoycottAlts" placeholder="مثال: سبيرو سباتس كولا، عصير سينا كولا" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div class="sm:col-span-2 p-4 bg-rose-50 dark:bg-rose-950/20 rounded-2xl border border-rose-200 dark:border-rose-900/40 space-y-3">
-              <div class="flex items-center gap-2">
-                <input type="checkbox" [(ngModel)]="newProdIsBoycott" id="boycottCheck" class="w-4 h-4 text-rose-600 rounded">
-                <label for="boycottCheck" class="font-black text-rose-600 text-xs cursor-pointer">علامة: هذا المنتج ضمن قائمة المقاطعة</label>
-              </div>
-
-              <div *ngIf="newProdIsBoycott" class="space-y-2">
-                <div>
-                  <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">سبب المقاطعة</label>
-                  <input type="text" [(ngModel)]="newProdBoycottReason" placeholder="مثال: شركة داعمة بشكل مباشر للمحتل" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
-                </div>
-                <div>
-                  <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">قائمة البدائل الوطنية المطابقة (تفصل بينها بفصلة)</label>
-                  <input type="text" [(ngModel)]="newProdAlternatives" placeholder="مثال: سبيرو سباتس كولا، عصير سينا كولا" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
-                </div>
-              </div>
+            <div class="pt-4 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
+              <button type="button" (click)="openAddProductModal.set(false)" class="px-5 py-2.5 rounded-2xl text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 text-xs">
+                إلغاء
+              </button>
+              <button type="submit" [disabled]="!newProdName || newProdPrice === null"
+                      class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-xs disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md flex items-center gap-2 cursor-pointer">
+                <svg lucideIcon="check" class="w-4 h-4"></svg>
+                <span>حفظ وتسجيل المنتج</span>
+              </button>
             </div>
-          </div>
-
-          <div class="pt-3 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
-            <button type="button" (click)="openAddProductModal.set(false)" class="px-5 py-2.5 rounded-2xl text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 text-xs">
-              إلغاء
-            </button>
-            <button type="button" (click)="saveNewProduct()" [disabled]="!newProdName || newProdPrice === null || newProdPrice === undefined"
-                    class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-xs disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md flex items-center gap-2 cursor-pointer">
-              <svg lucideIcon="check" class="w-4 h-4"></svg>
-              <span>حفظ وإضافة للمخزون</span>
-            </button>
-          </div>
+          </form>
         </div>
       </div>
 
@@ -1400,7 +1399,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
     </div>
   `
 })
-export class OmAlQuraStaffPortalComponent {
+export class OmAlQuraStaffPortalComponent implements OnDestroy {
   service = inject(OmAlQuraService);
 
   activeSubTab = signal<'attendance' | 'inventory' | 'pos' | 'notifications' | 'debts' | 'suggestions'>('attendance');
@@ -1418,7 +1417,7 @@ export class OmAlQuraStaffPortalComponent {
   attendanceCodeError = signal(false);
 
   nowLabel = '';
-  private clockTimer: any;
+  private clockTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     this.updateClock();
@@ -1503,14 +1502,14 @@ export class OmAlQuraStaffPortalComponent {
   newFaqAnswer = '';
   newFaqCategory = 'عام';
 
-  // New Product Form state
+  // Products Management Form state
   newProdName = '';
   newProdCategory = 'منظفات ومساحيق غسيل';
   customProdCategory = '';
   newProdPrice: number | null = null;
   newProdStock: number | null = 10;
   newProdDiscount: number | null = 0;
-  newProdLocationStore = '';
+  newProdLocationStore = 'الممر الرئيسي';
   newProdLocationWarehouse = '';
   newProdIsInWarehouse = false;
   newProdExpectedRestock = '';
@@ -1520,6 +1519,10 @@ export class OmAlQuraStaffPortalComponent {
   newProdDescription = '';
   newProdImageUrl = '';
   newProdBarcode = '';
+  
+  // Stock update helper state
+  stockUpdateAmount: { [prodId: string]: number } = {};
+
   editProdBarcode = '';
 
   generateNewBarcode() {
@@ -1658,7 +1661,6 @@ export class OmAlQuraStaffPortalComponent {
         ? this.customProdCategory.trim() 
         : (this.newProdCategory === 'أخرى' ? 'قسم جديد' : this.newProdCategory);
 
-      // Auto-save new category to dynamic categories list if not present
       if (finalCategory && !this.service.categories().includes(finalCategory)) {
         this.service.addCategory(finalCategory);
       }
@@ -1677,7 +1679,7 @@ export class OmAlQuraStaffPortalComponent {
         boycottReason: this.newProdBoycottReason || undefined,
         boycottAlternatives: alts,
         locationInStore: this.newProdLocationStore || 'الممر الرئيسي',
-        locationInWarehouse: this.newProdLocationWarehouse || 'المخزن',
+        locationInWarehouse: this.newProdLocationWarehouse || undefined,
         isInWarehouse: this.newProdIsInWarehouse,
         expectedRestockDate: this.newProdExpectedRestock || undefined,
         imageUrl: this.newProdImageUrl || 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=600&auto=format',
@@ -1692,7 +1694,7 @@ export class OmAlQuraStaffPortalComponent {
       this.newProdPrice = null;
       this.newProdStock = 10;
       this.newProdDiscount = 0;
-      this.newProdLocationStore = '';
+      this.newProdLocationStore = 'الممر الرئيسي';
       this.newProdLocationWarehouse = '';
       this.newProdIsInWarehouse = false;
       this.newProdExpectedRestock = '';

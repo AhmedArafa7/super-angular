@@ -18,6 +18,11 @@ export class SidebarService {
   readonly isResizing = signal<boolean>(false);
   readonly position = signal<SidebarPosition>("left");
   readonly floatingPos = signal<{x: number, y: number}>({ x: 20, y: 100 });
+  readonly floatingWidth = signal<number>(310);
+  readonly floatingHeight = signal<number>(450);
+  readonly arrowControlMode = signal<'move' | 'snap' | 'resize' | 'scroll'>('move');
+  readonly isFloatingExpanded = signal<boolean>(true);
+  readonly isFloatingIconsOnly = signal<boolean>(false);
   readonly isMobile = signal<boolean>(false);
 
   readonly collapsedCategories = signal<string[]>([]);
@@ -109,6 +114,84 @@ export class SidebarService {
     this.markUnsaved();
   }
 
+  setFloatingDimensions(w: number, h: number): void {
+    this.floatingWidth.set(Math.max(220, Math.min(500, w)));
+    this.floatingHeight.set(Math.max(300, Math.min(800, h)));
+    this.markUnsaved();
+  }
+
+  resizeFloating(deltaWidth: number, deltaHeight: number): void {
+    const newW = Math.max(240, Math.min(480, this.floatingWidth() + deltaWidth));
+    const newH = Math.max(320, Math.min(750, this.floatingHeight() + deltaHeight));
+    this.floatingWidth.set(newW);
+    this.floatingHeight.set(newH);
+    this.markUnsaved();
+  }
+
+  setArrowControlMode(mode: 'move' | 'snap' | 'resize' | 'scroll'): void {
+    this.arrowControlMode.set(mode);
+    this.saveState();
+  }
+
+  snapFloatingTo(edge: 'top' | 'bottom' | 'left' | 'right' | 'center' | 'up' | 'down'): void {
+    if (typeof window === 'undefined') return;
+    const w = this.isFloatingIconsOnly() ? 72 : this.floatingWidth();
+    const h = this.floatingHeight();
+    const screenW = window.innerWidth;
+    const screenH = window.innerHeight;
+
+    let targetX = this.floatingPos().x;
+    let targetY = this.floatingPos().y;
+
+    if (edge === 'top' || edge === 'up') {
+      targetY = 16;
+    } else if (edge === 'bottom' || edge === 'down') {
+      targetY = Math.max(16, screenH - h - 24);
+    } else if (edge === 'left') {
+      targetX = 16;
+    } else if (edge === 'right') {
+      targetX = Math.max(16, screenW - w - 24);
+    } else if (edge === 'center') {
+      targetX = Math.max(16, (screenW - w) / 2);
+      targetY = Math.max(16, (screenH - h) / 2);
+    }
+
+    this.setFloatingPos({ x: targetX, y: targetY });
+  }
+
+  setFloatingExpanded(val: boolean): void {
+    this.isFloatingExpanded.set(val);
+    this.markUnsaved();
+  }
+
+  toggleFloatingExpanded(): void {
+    this.isFloatingExpanded.update(v => !v);
+    this.markUnsaved();
+  }
+
+  setFloatingIconsOnly(val: boolean): void {
+    this.isFloatingIconsOnly.set(val);
+    this.markUnsaved();
+  }
+
+  toggleFloatingIconsOnly(): void {
+    this.isFloatingIconsOnly.update(v => !v);
+    this.markUnsaved();
+  }
+
+  moveFloating(direction: 'up' | 'down' | 'left' | 'right', delta: number = 40): void {
+    const current = this.floatingPos();
+    let newX = current.x;
+    let newY = current.y;
+
+    if (direction === 'up') newY = Math.max(10, current.y - delta);
+    if (direction === 'down') newY = current.y + delta;
+    if (direction === 'left') newX = Math.max(10, current.x - delta);
+    if (direction === 'right') newX = current.x + delta;
+
+    this.setFloatingPos({ x: newX, y: newY });
+  }
+
   toggleCollapsed(): void {
     this.isCollapsed.update(v => !v);
     this.markUnsaved();
@@ -146,6 +229,11 @@ export class SidebarService {
         width: this.width(),
         position: this.position(),
         floatingPos: this.floatingPos(),
+        floatingWidth: this.floatingWidth(),
+        floatingHeight: this.floatingHeight(),
+        arrowControlMode: this.arrowControlMode(),
+        isFloatingExpanded: this.isFloatingExpanded(),
+        isFloatingIconsOnly: this.isFloatingIconsOnly(),
         collapsedCategories: this.collapsedCategories(),
         recentItemIds: this.recentItemIds()
       };
@@ -167,6 +255,11 @@ export class SidebarService {
           if (parsed.width !== undefined) this.width.set(parsed.width);
           if (parsed.position !== undefined) this.position.set(parsed.position);
           if (parsed.floatingPos !== undefined) this.floatingPos.set(parsed.floatingPos);
+          if (parsed.floatingWidth !== undefined) this.floatingWidth.set(parsed.floatingWidth);
+          if (parsed.floatingHeight !== undefined) this.floatingHeight.set(parsed.floatingHeight);
+          if (parsed.arrowControlMode !== undefined) this.arrowControlMode.set(parsed.arrowControlMode);
+          if (parsed.isFloatingExpanded !== undefined) this.isFloatingExpanded.set(parsed.isFloatingExpanded);
+          if (parsed.isFloatingIconsOnly !== undefined) this.isFloatingIconsOnly.set(parsed.isFloatingIconsOnly);
           if (parsed.collapsedCategories !== undefined) this.collapsedCategories.set(parsed.collapsedCategories);
           if (parsed.recentItemIds !== undefined) this.recentItemIds.set(parsed.recentItemIds);
         } catch (e) {

@@ -52,10 +52,25 @@ export class AppSidebarComponent {
   }
   showCustomizationDialog = false;
   showUserProfileDropdown = false;
+  showBottomSheet = signal<boolean>(false);
+  showBottomLayoutMenu = signal<boolean>(false);
   
   searchQuery = signal<string>('');
   isOnline = signal<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
   isDarkMode = signal<boolean>(true);
+
+  toggleBottomSheet() {
+    this.showBottomSheet.update(v => !v);
+  }
+
+  closeBottomSheet() {
+    this.showBottomSheet.set(false);
+  }
+
+  toggleBottomLayoutMenu(event: Event) {
+    event.stopPropagation();
+    this.showBottomLayoutMenu.update(v => !v);
+  }
   
   // Resize State
   private startX = 0;

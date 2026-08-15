@@ -28,7 +28,7 @@ export class SiNeuroVideoPlayerComponent implements AfterViewInit, OnDestroy {
   @Input() authorAvatar = '';
   @Input() qualityOptions: string[] = ["Auto (720p)"];
   @Input() defaultQuality = "Auto (720p)";
-  @Input() sourceType: "local" | "telegram" | "tiktok" | "youtube" = "youtube";
+  @Input() sourceType: "local" | "telegram" | "tiktok" | "youtube" | "archive" = "youtube";
   @Input() proSettings?: {
     autoTrimOutro: boolean;
     frameSkipRatio: string;
@@ -117,6 +117,15 @@ export class SiNeuroVideoPlayerComponent implements AfterViewInit, OnDestroy {
   get directYoutubeUrl(): string {
     const ytId = this.extractYoutubeId(this.src) || this.extractYoutubeId(this.videoId) || this.videoId;
     return ytId ? `https://www.youtube.com/watch?v=${ytId}` : '#';
+  }
+
+  get resolvedVideoSrc(): string {
+    if (this.src && (this.src.includes('archive.org') || this.sourceType === 'archive')) {
+      if (this.src.includes('/details/')) {
+        return this.src.replace('/details/', '/download/');
+      }
+    }
+    return this.src;
   }
 
   startUpscaleEngine() {

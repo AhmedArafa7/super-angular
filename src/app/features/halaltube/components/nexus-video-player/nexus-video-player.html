@@ -58,7 +58,7 @@
     </div>
   } @else {
     <video #videoPlayer
-           [src]="src"
+           [src]="resolvedVideoSrc"
            [poster]="poster"
            class="w-full h-full object-contain"
            (timeupdate)="handleTimeUpdate()"

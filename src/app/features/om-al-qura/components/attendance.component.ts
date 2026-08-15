@@ -1,4 +1,4 @@
-import { Component, inject, signal, ViewChild, ElementRef } from '@angular/core';
+import { Component, inject, signal, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideDynamicIcon } from '@lucide/angular';
@@ -144,7 +144,7 @@ import { OmAlQuraService } from '../../../core/services/om-al-qura.service';
     </div>
   `
 })
-export class OmAlQuraAttendanceComponent {
+export class OmAlQuraAttendanceComponent implements OnDestroy {
   service = inject(OmAlQuraService);
 
   showModal = signal(false);
@@ -154,7 +154,7 @@ export class OmAlQuraAttendanceComponent {
   codeError = signal(false);
   nowLabel = '';
 
-  private clockTimer: any;
+  private clockTimer: ReturnType<typeof setInterval> | null = null;
 
   @ViewChild('codeInputField') set codeInputField(ref: ElementRef<HTMLInputElement>) {
     if (ref) {

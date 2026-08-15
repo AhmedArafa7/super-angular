@@ -1,6 +1,6 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { OmAlQuraService, OmAlQuraEmployee, OmAlQuraAisleConfig, OmAlQuraProduct, OmAlQuraSupplier, OmAlQuraPurchaseOrderItem } from '../../../core/services/om-al-qura.service';
 import { ImageFallbackDirective } from '../../../shared/directives/image-fallback.directive';
@@ -8,7 +8,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
 @Component({
   selector: 'app-om-al-qura-admin-portal',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideDynamicIcon],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, LucideDynamicIcon],
   template: `
     <div class="space-y-8 font-sans" dir="rtl">
       
@@ -87,7 +87,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             </div>
             <h2 class="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2 mt-1">
               <svg lucideIcon="users" class="w-6 h-6 text-emerald-600"></svg>
-              <span>توظيف عمال جداد وسجلات الموظفين والرواتب (HR)</span>
+              <span>توظيف عمال جداد وسجلات الموظفين والرواتب</span>
             </h2>
             <p class="text-xs text-slate-500 mt-1">المدير هو المسؤول عن توظيف عمال جدد، تعديل الرواتب، وإلغاء/حذف الموظفين من المتجر.</p>
           </div>
@@ -723,31 +723,31 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
               </button>
             </div>
 
-            <form (ngSubmit)="submitAddSupplierForm()" class="space-y-4 text-xs">
+            <form [formGroup]="supplierForm" (ngSubmit)="submitAddSupplierForm()" class="space-y-4 text-xs">
               <div>
                 <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">اسم الشركة / المصنع المورد *</label>
-                <input type="text" [(ngModel)]="newSupplierCompany" name="suppCompanyName" required
+                <input type="text" formControlName="companyName" required
                        placeholder="مثال: شركة النيل للمنظفات / مصنع الأهرام للبلاستيك"
                        class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500">
               </div>
 
               <div>
                 <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">اسم المندوب / المسؤول المباشر *</label>
-                <input type="text" [(ngModel)]="newSupplierName" name="suppName" required
+                <input type="text" formControlName="name" required
                        placeholder="مثال: أ/ محمد عبد الرحمن"
                        class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500">
               </div>
 
               <div>
                 <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">رقم الهاتف للاتصال والواتساب *</label>
-                <input type="tel" [(ngModel)]="newSupplierPhone" name="suppPhone" required dir="ltr"
+                <input type="tel" formControlName="phone" required dir="ltr"
                        placeholder="010XXXXXXXX"
                        class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-right font-mono font-bold focus:ring-2 focus:ring-emerald-500">
               </div>
 
               <div>
                 <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">الأقسام والمنتجات الموردة (مفصولة بفاصلة)</label>
-                <input type="text" [(ngModel)]="newSupplierCategoriesStr" name="suppCategories"
+                <input type="text" formControlName="categories"
                        placeholder="مثال: مساحيق غسيل، مطهرات، أدوات نظافة"
                        class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500">
               </div>
@@ -756,7 +756,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
                 <button type="button" (click)="openAddSupplierModal.set(false)" class="px-5 py-2.5 rounded-2xl text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 text-xs">
                   إلغاء
                 </button>
-                <button type="submit" [disabled]="!newSupplierCompany || !newSupplierName || !newSupplierPhone"
+                <button type="submit" [disabled]="supplierForm.invalid"
                         class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-xs disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md flex items-center gap-2 cursor-pointer">
                   <svg lucideIcon="check" class="w-4 h-4"></svg>
                   <span>حفظ وتسجيل المورد</span>
@@ -823,22 +823,22 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             </button>
           </div>
 
-          <form (ngSubmit)="submitHireDriverForm()" class="space-y-4 text-xs">
+          <form [formGroup]="hireDriverForm" (ngSubmit)="submitHireDriverForm()" class="space-y-4 text-xs">
             <div>
               <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">اسم السائق *</label>
-              <input type="text" [(ngModel)]="newDriverName" name="drvName" required placeholder="مثال: محمود عبد السلام"
+              <input type="text" formControlName="name" placeholder="مثال: محمود عبد السلام"
                      class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white">
             </div>
 
             <div>
               <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">رقم الهاتف *</label>
-              <input type="tel" [(ngModel)]="newDriverPhone" name="drvPhone" required dir="ltr" placeholder="010XXXXXXXX"
+              <input type="tel" formControlName="phone" dir="ltr" placeholder="010XXXXXXXX"
                      class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white text-right">
             </div>
 
             <div>
               <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">ساعات والدوام المتفق عليه</label>
-              <input type="text" [(ngModel)]="newDriverShift" name="drvShift" placeholder="من 8 ص حتى 5 م"
+              <input type="text" formControlName="shift" placeholder="من 8 ص حتى 5 م"
                      class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white">
             </div>
 
@@ -846,7 +846,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
               <button type="button" (click)="showHireDriverModal.set(false)" class="px-4 py-2 rounded-2xl text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-slate-800">
                 إلغاء
               </button>
-              <button type="submit" [disabled]="!newDriverName || !newDriverPhone"
+              <button type="submit" [disabled]="hireDriverForm.invalid"
                       class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl text-xs disabled:opacity-40 shadow-md">
                 تعيين وسحب الكارت
               </button>
@@ -1079,28 +1079,28 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
             </button>
           </div>
 
-          <form (ngSubmit)="submitAddSupplierForm()" class="space-y-4 text-xs">
+          <form [formGroup]="supplierForm" (ngSubmit)="submitAddSupplierForm()" class="space-y-4 text-xs">
             <div>
               <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">اسم المورد / المسؤول *</label>
-              <input type="text" [(ngModel)]="newSupplierName" name="suppName" required placeholder="مثال: المهندس أحمد النيل"
+              <input type="text" formControlName="name" placeholder="مثال: المهندس أحمد النيل"
                      class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white">
             </div>
 
             <div>
               <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">اسم الشركة / المصنع *</label>
-              <input type="text" [(ngModel)]="newSupplierCompany" name="suppComp" required placeholder="مثال: النيل للمنظفات والمطهرات"
+              <input type="text" formControlName="companyName" placeholder="مثال: النيل للمنظفات والمطهرات"
                      class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white">
             </div>
 
             <div>
               <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">رقم هاتف المورد (واتساب التوريد) *</label>
-              <input type="tel" [(ngModel)]="newSupplierPhone" name="suppPhone" required dir="ltr" placeholder="010XXXXXXXX"
+              <input type="tel" formControlName="phone" dir="ltr" placeholder="010XXXXXXXX"
                      class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white text-right">
             </div>
 
             <div>
               <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">الأقسام التي يوردها (مفصولة بفاصلة)</label>
-              <input type="text" [(ngModel)]="newSupplierCategoriesStr" name="suppCats" placeholder="مثال: منظفات ومساحيق غسيل ، مطهرات"
+              <input type="text" formControlName="categories" placeholder="مثال: منظفات ومساحيق غسيل، مطهرات"
                      class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white">
             </div>
 
@@ -1108,7 +1108,7 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
               <button type="button" (click)="openAddSupplierModal.set(false)" class="px-4 py-2 rounded-2xl text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-slate-800">
                 إلغاء
               </button>
-              <button type="submit" [disabled]="!newSupplierName || !newSupplierPhone"
+              <button type="submit" [disabled]="supplierForm.invalid"
                       class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl text-xs disabled:opacity-40 shadow-md">
                 حفظ وتسجيل المورد
               </button>
@@ -1190,6 +1190,21 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
 })
 export class OmAlQuraAdminPortalComponent {
   service = inject(OmAlQuraService);
+  private fb = inject(FormBuilder);
+
+  hireDriverForm: FormGroup = this.fb.group({
+    name: ['', Validators.required],
+    phone: ['', [Validators.required, Validators.pattern('^01[0-9]{9}$')]],
+    shift: ['']
+  });
+
+  // Supplier Form
+  supplierForm: FormGroup = this.fb.group({
+    name: ['', Validators.required],
+    companyName: ['مؤسسة توريدات'],
+    phone: ['', [Validators.required, Validators.pattern('^01[0-9]{9}$')]],
+    categories: ['منظفات ومساحيق غسيل، مطهرات']
+  });
 
   showHireModal = signal(false);
   newHireName = '';
@@ -1252,23 +1267,20 @@ export class OmAlQuraAdminPortalComponent {
 
   // Delivery Driver Hiring State & Action
   showHireDriverModal = signal(false);
-  newDriverName = '';
-  newDriverPhone = '';
-  newDriverShift = 'من 8:00 صباحاً حتى 5:00 مساءً';
 
   submitHireDriverForm() {
-    if (!this.newDriverName || !this.newDriverPhone) return;
+    if (this.hireDriverForm.invalid) return;
+
+    const { name, phone, shift } = this.hireDriverForm.value;
 
     this.service.addDeliveryDriver({
-      name: this.newDriverName,
-      phone: this.newDriverPhone,
+      name,
+      phone,
       status: 'متاح',
-      workingHoursInfo: this.newDriverShift || 'دوام كامل'
+      workingHoursInfo: shift || 'دوام كامل'
     });
 
-    this.newDriverName = '';
-    this.newDriverPhone = '';
-    this.newDriverShift = 'من 8:00 صباحاً حتى 5:00 مساءً';
+    this.hireDriverForm.reset({ shift: 'من 8:00 صباحاً حتى 5:00 مساءً' });
     this.showHireDriverModal.set(false);
   }
 
@@ -1585,10 +1597,6 @@ export class OmAlQuraAdminPortalComponent {
 
   // Suppliers & Purchase Orders State & Handlers
   openAddSupplierModal = signal(false);
-  newSupplierName = '';
-  newSupplierCompany = '';
-  newSupplierPhone = '';
-  newSupplierCategoriesStr = 'منظفات ومساحيق غسيل ، مطهرات';
 
   showPoModal = signal(false);
   selectedPoSupplierId = '';
@@ -1596,23 +1604,21 @@ export class OmAlQuraAdminPortalComponent {
   poNotes = '';
 
   submitAddSupplierForm() {
-    if (!this.newSupplierName || !this.newSupplierPhone) return;
+    if (this.supplierForm.invalid) return;
 
-    const cats = this.newSupplierCategoriesStr 
-      ? this.newSupplierCategoriesStr.split('،').flatMap(c => c.split(',')).map(c => c.trim()).filter(Boolean) 
+    const { name, companyName, phone, categories } = this.supplierForm.value;
+    const cats = categories 
+      ? categories.split('،').flatMap((c: string) => c.split(',')).map((c: string) => c.trim()).filter(Boolean) 
       : ['عام'];
 
     this.service.addSupplier({
-      name: this.newSupplierName,
-      companyName: this.newSupplierCompany || 'مؤسسة توريدات',
-      phone: this.newSupplierPhone,
+      name,
+      companyName: companyName || 'مؤسسة توريدات',
+      phone,
       suppliedCategories: cats
     });
 
-    this.newSupplierName = '';
-    this.newSupplierCompany = '';
-    this.newSupplierPhone = '';
-    this.newSupplierCategoriesStr = 'منظفات ومساحيق غسيل ، مطهرات';
+    this.supplierForm.reset({ categories: 'منظفات ومساحيق غسيل ، مطهرات' });
     this.openAddSupplierModal.set(false);
   }
 

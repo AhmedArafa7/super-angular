@@ -289,25 +289,284 @@
   <app-floating-orb></app-floating-orb>
 }
 
-<!-- Mobile Bottom Bar Mode -->
-@if (sidebar.position() === 'bottom') {
-  <nav class="fixed bottom-0 left-0 right-0 z-50 bg-[#0B0F19]/90 backdrop-blur-xl border-t border-white/10 pb-safe">
-    <div class="flex items-center justify-around p-2 overflow-x-auto scrollbar-hide snap-x" dir="rtl">
-      @for (item of pinnedItems.slice(0, 6); track item.id) {
+<!-- Top Navigation Bar Mode -->
+@if (sidebar.position() === 'top') {
+  <header class="fixed top-0 left-0 right-0 z-50 bg-[#0B0F19]/95 backdrop-blur-2xl border-b border-white/10 shadow-2xl h-14 flex items-center justify-between px-4 animate-in fade-in select-none" dir="rtl">
+    
+    <!-- Left / Brand Hub Section -->
+    <div class="flex items-center gap-3 shrink-0">
+      <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-black text-xs">
+        SN
+      </div>
+      <div class="flex flex-col leading-none hidden md:flex">
+        <span class="font-black text-white text-xs tracking-wider uppercase">Si-Neuro</span>
+        <span class="text-[8px] font-bold text-indigo-400 tracking-widest uppercase">Top Central Hub</span>
+      </div>
+    </div>
+
+    <!-- Center / Horizontal Pinned Navigation Items -->
+    <nav class="flex-1 flex items-center gap-1.5 overflow-x-auto scrollbar-hide px-3 mx-2 max-w-5xl snap-x">
+      @for (item of pinnedItems; track item.id) {
         <a [routerLink]="['/' + (item.route || item.id)]"
-           routerLinkActive="bg-white/10 text-white shadow-lg"
-           [routerLinkActiveOptions]="{ exact: true }"
-           class="flex flex-col items-center justify-center min-w-[64px] h-14 px-2 rounded-xl transition-all text-slate-400 hover:text-white snap-center relative">
-          <lucide-icon [name]="item.icon" class="w-5 h-5 mb-1"></lucide-icon>
-          <span class="text-[10px] font-medium truncate w-full text-center">{{ item.label }}</span>
+           (click)="onItemClick(item)"
+           routerLinkActive="bg-indigo-600/30 text-white border-indigo-500/50 shadow-lg shadow-indigo-500/10"
+           [routerLinkActiveOptions]="{ exact: !item.route && item.id === '' }"
+           class="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/5 text-slate-300 hover:text-white hover:bg-white/10 transition-all text-xs font-bold shrink-0 snap-center group">
+          <lucide-icon [name]="item.icon" class="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform"></lucide-icon>
+          <span class="truncate">{{ item.label }}</span>
+          @if (item.status === 'BETA') {
+            <span class="text-[7px] px-1 h-3.5 border border-amber-500/30 text-amber-400 rounded flex items-center">BETA</span>
+          }
+          @if (item.status === 'PRO') {
+            <span class="bg-gradient-to-r from-amber-400 to-orange-500 text-black px-1 h-3.5 rounded text-[7px] font-black">PRO</span>
+          }
         </a>
       }
-      <button (click)="showCustomizationDialog = true" class="flex flex-col items-center justify-center min-w-[64px] h-14 px-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all snap-center">
-         <lucide-icon name="menu" class="w-5 h-5 mb-1"></lucide-icon>
-         <span class="text-[10px] font-medium truncate w-full text-center">المزيد</span>
+    </nav>
+
+    <!-- Right / Quick Action Buttons -->
+    <div class="flex items-center gap-1.5 shrink-0">
+      <!-- Instant 1-Click Language Switcher (EN / ع) -->
+      <button (click)="toggleLanguage()" class="px-2.5 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-mono font-black text-indigo-400 hover:text-white transition-all cursor-pointer flex items-center gap-1" title="تبديل اللغة">
+        <span>🌐</span>
+        <span>{{ settingsService.language() === 'ar' ? 'EN' : 'ع' }}</span>
+      </button>
+
+      <!-- Layout Switcher to Floating / Other -->
+      <button (click)="sidebar.setPosition('floating')" class="p-2 hover:bg-white/10 border border-white/10 rounded-xl text-slate-300 hover:text-white transition-colors cursor-pointer" title="تحويل للوضع العائم">
+        <lucide-icon name="layers" class="w-4 h-4 text-indigo-400"></lucide-icon>
+      </button>
+
+      <button (click)="sidebar.setPosition('left')" class="p-2 hover:bg-white/10 border border-white/10 rounded-xl text-slate-300 hover:text-white transition-colors cursor-pointer" title="الشريط الأيسر">
+        <lucide-icon name="panel-left" class="w-4 h-4"></lucide-icon>
+      </button>
+
+      <button (click)="sidebar.setPosition('right')" class="p-2 hover:bg-white/10 border border-white/10 rounded-xl text-slate-300 hover:text-white transition-colors cursor-pointer" title="الشريط الأيمن">
+        <lucide-icon name="panel-right" class="w-4 h-4"></lucide-icon>
+      </button>
+
+      <!-- Customization Dialog Trigger -->
+      <button (click)="showCustomizationDialog = true" class="p-2 hover:bg-white/10 border border-white/10 rounded-xl text-slate-300 hover:text-white transition-colors cursor-pointer" title="تخصيص وترتيب القائمة">
+        <lucide-icon name="sliders-horizontal" class="w-4 h-4"></lucide-icon>
       </button>
     </div>
+  </header>
+}
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- Enhanced Bottom Navigation Bar Mode (sidebar.position() === 'bottom') -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+@if (sidebar.position() === 'bottom') {
+  
+  <!-- 1. The Main Bottom Dock Bar -->
+  <nav class="fixed bottom-0 left-0 right-0 z-50 bg-[#0B0F19]/95 backdrop-blur-2xl border-t border-white/10 shadow-[0_-10px_35px_rgba(0,0,0,0.7)] h-16 flex items-center justify-between px-3 select-none" dir="rtl">
+    
+    <!-- Right Actions: "المزيد" & "تبديل اللغة" Buttons -->
+    <div class="flex items-center gap-1 shrink-0">
+      <!-- Open Full Bottom Sheet Drawer Trigger -->
+      <button (click)="toggleBottomSheet()"
+              [ngClass]="showBottomSheet() ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/40 border-indigo-500/50' : 'bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border-white/10'"
+              class="flex flex-col items-center justify-center h-12 px-3 rounded-2xl border transition-all cursor-pointer group"
+              title="فتح القائمة الكاملة ومركز التحكم">
+        <lucide-icon name="menu" class="w-4 h-4 mb-0.5 group-hover:scale-110 transition-transform text-indigo-400"></lucide-icon>
+        <span class="text-[9px] font-bold">المزيد</span>
+      </button>
+
+      <!-- Instant 1-Click Language Switcher (EN / ع) -->
+      <button (click)="toggleLanguage()" 
+              class="flex flex-col items-center justify-center h-12 px-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-indigo-400 hover:text-white transition-all cursor-pointer" 
+              title="تبديل اللغة">
+        <span class="text-xs">🌐</span>
+        <span class="text-[9px] font-mono font-bold">{{ settingsService.language() === 'ar' ? 'EN' : 'ع' }}</span>
+      </button>
+    </div>
+
+    <!-- Center Dock: All Pinned Navigation Items (Horizontally Scrollable) -->
+    <div class="flex-1 flex items-center gap-1.5 overflow-x-auto scrollbar-hide px-3 mx-1 snap-x justify-start sm:justify-center">
+      @for (item of pinnedItems; track item.id) {
+        <a [routerLink]="['/' + (item.route || item.id)]"
+           (click)="onItemClick(item)"
+           routerLinkActive="bg-indigo-600/30 text-white border-indigo-500/50 shadow-lg shadow-indigo-500/20"
+           [routerLinkActiveOptions]="{ exact: !item.route && item.id === '' }"
+           class="flex flex-col items-center justify-center min-w-[56px] h-12 px-2 rounded-2xl border border-transparent text-slate-400 hover:text-white hover:bg-white/5 transition-all text-center shrink-0 snap-center relative group">
+          
+          <lucide-icon [name]="item.icon" class="w-4 h-4 mb-0.5 text-slate-300 group-hover:text-indigo-400 group-hover:scale-110 transition-transform"></lucide-icon>
+          <span class="text-[9px] font-medium truncate max-w-[54px]">{{ item.label }}</span>
+          
+          @if (item.status === 'BETA') {
+            <span class="absolute -top-1 -right-1 text-[6px] px-1 h-3 border border-amber-500/40 bg-amber-500/20 text-amber-300 font-black uppercase rounded-full">BETA</span>
+          }
+          @if (item.status === 'PRO') {
+            <span class="absolute -top-1 -right-1 bg-gradient-to-r from-amber-400 to-orange-500 text-black px-1 h-3 rounded-full text-[6px] font-black">PRO</span>
+          }
+        </a>
+      }
+    </div>
+
+    <!-- Left Actions: Layout Switcher & Customization -->
+    <div class="flex items-center gap-1 shrink-0">
+      
+      <!-- Layout Switcher Dropdown Trigger -->
+      <div class="relative">
+        <button (click)="toggleBottomLayoutMenu($event)"
+                class="flex flex-col items-center justify-center h-12 px-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-all cursor-pointer"
+                title="تغيير تخطيط الواجهة">
+          <lucide-icon name="layout-dashboard" class="w-4 h-4 mb-0.5 text-indigo-400"></lucide-icon>
+          <span class="text-[9px] font-bold">التخطيط</span>
+        </button>
+
+        @if (showBottomLayoutMenu()) {
+          <div class="absolute left-0 bottom-full mb-2 w-44 bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-1.5 z-[100] animate-in fade-in zoom-in-95 duration-100"
+               (click)="$event.stopPropagation()">
+            <div class="px-2 py-1 text-[10px] font-bold text-slate-400">تغيير تخطيط الواجهة:</div>
+            
+            <button (click)="sidebar.setPosition('left'); showBottomLayoutMenu.set(false)" class="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-white/10 rounded-xl text-right transition-colors">
+              <lucide-icon name="panel-left" class="w-3.5 h-3.5 text-indigo-400"></lucide-icon>
+              <span>الشريط الأيسر</span>
+            </button>
+            <button (click)="sidebar.setPosition('right'); showBottomLayoutMenu.set(false)" class="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-white/10 rounded-xl text-right transition-colors">
+              <lucide-icon name="panel-right" class="w-3.5 h-3.5 text-indigo-400"></lucide-icon>
+              <span>الشريط الأيمن</span>
+            </button>
+            <button (click)="sidebar.setPosition('top'); showBottomLayoutMenu.set(false)" class="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-white/10 rounded-xl text-right transition-colors">
+              <lucide-icon name="panel-top" class="w-3.5 h-3.5 text-indigo-400"></lucide-icon>
+              <span>الشريط العلوي</span>
+            </button>
+            <button (click)="sidebar.setPosition('floating'); showBottomLayoutMenu.set(false)" class="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-amber-400 hover:text-amber-300 hover:bg-white/10 rounded-xl text-right transition-colors font-bold">
+              <lucide-icon name="orbit" class="w-3.5 h-3.5 text-amber-400"></lucide-icon>
+              <span>الوضع العائم</span>
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- Customization Dialog Trigger -->
+      <button (click)="showCustomizationDialog = true"
+              class="flex flex-col items-center justify-center h-12 px-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-all cursor-pointer"
+              title="تخصيص وترتيب القائمة">
+        <lucide-icon name="sliders-horizontal" class="w-4 h-4 mb-0.5"></lucide-icon>
+        <span class="text-[9px] font-bold">تخصيص</span>
+      </button>
+
+    </div>
   </nav>
+
+  <!-- 2. Expandable Bottom Sheet / Drawer -->
+  @if (showBottomSheet()) {
+    <div class="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+         (click)="closeBottomSheet()">
+      
+      <div class="absolute bottom-16 inset-x-0 max-w-2xl mx-auto bg-[#0B0F19]/98 backdrop-blur-2xl border border-white/10 rounded-t-3xl shadow-[0_-20px_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[75vh] animate-in slide-in-from-bottom duration-300"
+           dir="rtl"
+           (click)="$event.stopPropagation()">
+        
+        <!-- Sheet Header & Drag Pill -->
+        <div class="p-3 border-b border-white/10 flex items-center justify-between bg-white/[0.03]">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white font-black text-xs">
+              SN
+            </div>
+            <div>
+              <span class="text-xs font-bold text-white block">مركز التحكم والتنقل السريع</span>
+              <span class="text-[9px] text-indigo-400">جميع الأقسام والأدوات المتاحة</span>
+            </div>
+          </div>
+
+          <button (click)="closeBottomSheet()" class="p-1.5 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-colors cursor-pointer">
+            ✕
+          </button>
+        </div>
+
+        <!-- Quick Search Bar inside Bottom Sheet -->
+        <div class="p-3 border-b border-white/10 bg-black/20">
+          <div class="relative flex items-center bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 focus-within:border-indigo-500/60">
+            <lucide-icon name="search" class="w-4 h-4 text-slate-400 ml-2"></lucide-icon>
+            <input type="text"
+                   [ngModel]="searchQuery()"
+                   (ngModelChange)="searchQuery.set($event)"
+                   placeholder="ابحث في جميع الأقسام..."
+                   class="w-full bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none text-right font-medium">
+            @if (searchQuery()) {
+              <button (click)="searchQuery.set('')" class="text-slate-400 hover:text-white text-xs px-1">✕</button>
+            }
+          </div>
+        </div>
+
+        <!-- Sheet Scrollable Content -->
+        <div class="p-4 overflow-y-auto flex-1 space-y-4 scrollbar-hide">
+          
+          <!-- Recent Items -->
+          @if (!searchQuery().trim() && recentItems.length > 0) {
+            <div>
+              <div class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                <lucide-icon name="history" class="w-3.5 h-3.5"></lucide-icon>
+                <span>الأقسام الأخيرة</span>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                @for (item of recentItems; track item.id) {
+                  <a [routerLink]="['/' + (item.route || item.id)]"
+                     (click)="onItemClick(item); closeBottomSheet()"
+                     class="flex items-center gap-2 p-2 rounded-xl bg-white/5 hover:bg-indigo-600/20 border border-white/5 hover:border-indigo-500/30 text-xs text-slate-300 hover:text-white truncate transition-all">
+                    <lucide-icon [name]="item.icon" class="w-3.5 h-3.5 text-indigo-400 shrink-0"></lucide-icon>
+                    <span class="truncate">{{ item.label }}</span>
+                  </a>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Categorized Navigation Items with 3-dots Context Menu Support -->
+          <div>
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">الأقسام المثبتة ({{ pinnedItems.length }})</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              @for (item of pinnedItems; track item.id) {
+                <div class="bg-white/[0.02] border border-white/5 rounded-xl hover:border-indigo-500/30 transition-all">
+                  <app-sidebar-item [item]="item" (click)="onItemClick(item); closeBottomSheet()"></app-sidebar-item>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Unpinned Items -->
+          @if (unpinnedItems.length > 0) {
+            <div class="pt-2 border-t border-white/5">
+              <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">أقسام إضافية غير مثبتة ({{ unpinnedItems.length }})</div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                @for (item of unpinnedItems; track item.id) {
+                  <div class="bg-white/[0.02] border border-white/5 rounded-xl hover:border-white/10 transition-all">
+                    <app-sidebar-item [item]="item" (click)="onItemClick(item); closeBottomSheet()"></app-sidebar-item>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+        </div>
+
+        <!-- Sheet Footer with Quick Tools -->
+        <div class="p-3 border-t border-white/10 bg-white/[0.02] flex items-center justify-between text-xs">
+          <!-- Theme & Language Switchers -->
+          <div class="flex items-center gap-2">
+            <button (click)="toggleTheme()" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white flex items-center gap-1.5 cursor-pointer">
+              <lucide-icon [img]="isDarkMode() ? Sun : Moon" class="w-3.5 h-3.5 text-amber-400"></lucide-icon>
+              <span>{{ isDarkMode() ? 'الوضع الفاتح' : 'الوضع الداكن' }}</span>
+            </button>
+            <button (click)="toggleLanguage()" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-indigo-400 hover:text-white flex items-center gap-1.5 cursor-pointer font-bold">
+              <span>🌐</span>
+              <span>{{ settingsService.language() === 'ar' ? 'English' : 'العربية' }}</span>
+            </button>
+          </div>
+
+          <!-- Customization Dialog Button -->
+          <button (click)="showCustomizationDialog = true; closeBottomSheet()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold flex items-center gap-1.5 shadow-lg shadow-indigo-500/20 cursor-pointer">
+            <lucide-icon name="sliders-horizontal" class="w-3.5 h-3.5"></lucide-icon>
+            <span>تخصيص القائمة</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
 }
 
 <!-- Customization Dialog -->

@@ -353,7 +353,7 @@ export class OmAlQuraSecurityCctvComponent implements OnInit, OnDestroy, AfterVi
   webcamActive = signal(false);
   liveClock = signal(new Date().toLocaleTimeString('ar-EG'));
 
-  private animationTimer: any = null;
+  private animationTimer: ReturnType<typeof setInterval> | null = null;
   private mediaStream: MediaStream | null = null;
 
   newCamData = {

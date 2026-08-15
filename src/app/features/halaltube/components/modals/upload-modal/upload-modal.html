@@ -66,6 +66,15 @@
       </button>
       <button 
         type="button"
+        [class.active]="sourceType === 'archive'" 
+        (click)="selectSourceType('archive')"
+        class="segment-btn"
+        title="تخزين مجاني غير محدود عبر Archive.org">
+        <lucide-icon [img]="Cloud" class="w-4 h-4"></lucide-icon>
+        <span>Archive.org</span>
+      </button>
+      <button 
+        type="button"
         [class.active]="sourceType === 'youtube'" 
         (click)="selectSourceType('youtube')"
         class="segment-btn">

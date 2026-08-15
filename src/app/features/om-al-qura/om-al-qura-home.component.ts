@@ -143,7 +143,7 @@ export class OmAlQuraHomeComponent implements OnInit, OnDestroy {
     { id: 'staff', label: '2.  الموظفين والنظام الداخلي', icon: 'user-cog' },
     { id: 'in_store_map', label: '3. خريطة المحل للزبائن داخل الفرع', icon: 'map-pin' },
     { id: 'delivery', label: '4.  الدليفري والتوصيل', icon: 'truck' },
-    { id: 'admin', label: '5.  الإدارة والآدمن (HR)', icon: 'shield-check' },
+    { id: 'admin', label: '5.  الإدارة', icon: 'shield-check' },
     { id: 'cctv', label: '6. 📹 كاميرات المراقبة والأمن', icon: 'video' }
   ];
 

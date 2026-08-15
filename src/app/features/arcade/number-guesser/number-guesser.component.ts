@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -10,6 +10,7 @@ export interface GuessRecord {
   bulls: number; // صح في مكانه صح (Right digit, right position)
   cows: number;  // صح في مكانه غلط (Right digit, wrong position)
   misses: number;// أرقام خاطئة
+  message: string; // التوضيح اللفظي لنتيجة التخمين
   timestamp: string;
 }
 
@@ -312,13 +313,16 @@ export interface PlayerSession {
                 type="text" 
                 [(ngModel)]="currentGuessInput" 
                 [attr.maxlength]="codeLength"
-                (keyup.enter)="submitGuess()"
+                [disabled]="isTurnSwitching()"
+                (keyup.enter)="!isTurnSwitching() && submitGuess()"
                 placeholder="أدخل تخمينك (مثال: {{ sampleGuessPlaceholder() }})..." 
                 autofocus
-                class="w-full h-16 bg-slate-950 border-2 border-amber-500/50 rounded-2xl px-6 text-center text-2xl font-mono text-white font-black tracking-widest focus:outline-none focus:border-amber-400 shadow-inner"
+                class="w-full h-16 bg-slate-950 border-2 border-amber-500/50 rounded-2xl px-6 text-center text-2xl font-mono text-white font-black tracking-widest focus:outline-none focus:border-amber-400 shadow-inner disabled:opacity-50 disabled:cursor-not-allowed"
               />
-              <button (click)="submitGuess()" class="absolute left-2 top-1/2 -translate-y-1/2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black h-12 px-6 rounded-xl text-sm transition-all shadow cursor-pointer">
-                تخمين ↵
+              <button (click)="submitGuess()" 
+                      [disabled]="isTurnSwitching()"
+                      class="absolute left-2 top-1/2 -translate-y-1/2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-black h-12 px-6 rounded-xl text-sm transition-all shadow cursor-pointer">
+                {{ isTurnSwitching() ? ('⏳ ' + countdownSeconds() + ' ث') : 'تخمين ↵' }}
               </button>
             </div>
             
@@ -327,25 +331,41 @@ export interface PlayerSession {
             </p>
           </div>
 
-          <!-- Recent Feedback Card (If Available) -->
-          <div *ngIf="lastFeedback" class="bg-slate-950 border border-white/10 p-5 rounded-2xl text-center space-y-3 animate-in zoom-in-95">
-            <span class="text-xs font-bold text-slate-400">نتيجة المحاولة الأخيرة ({{ lastFeedback.guess }}):</span>
-            <div class="grid grid-cols-3 gap-3 max-w-md mx-auto">
-              <div class="bg-emerald-950/50 border border-emerald-500/30 p-3 rounded-xl">
-                <span class="text-2xl block mb-1">🎯</span>
-                <span class="text-xs font-bold text-emerald-400 block">صح مكانه صح</span>
-                <span class="font-mono text-xl font-black text-white">{{ lastFeedback.bulls }}</span>
+          <!-- Recent Feedback Card (Clean Dynamic Contextual Verbal Feedback) -->
+          <div *ngIf="lastFeedback" 
+               class="p-6 rounded-3xl text-center space-y-4 animate-in zoom-in-95 shadow-2xl transition-all border"
+               [ngClass]="{
+                 'bg-rose-950/30 border-rose-500/40 shadow-rose-500/10': lastFeedback.bulls === 0 && lastFeedback.cows === 0,
+                 'bg-emerald-950/30 border-emerald-500/40 shadow-emerald-500/10': lastFeedback.bulls > 0 && lastFeedback.cows === 0,
+                 'bg-amber-950/30 border-amber-500/40 shadow-amber-500/10': lastFeedback.bulls === 0 && lastFeedback.cows > 0,
+                 'bg-indigo-950/30 border-indigo-500/40 shadow-indigo-500/10': lastFeedback.bulls > 0 && lastFeedback.cows > 0
+               }">
+            
+            <div class="flex items-center justify-between border-b border-white/10 pb-3">
+              <span class="text-xs font-bold text-slate-400">نتيجة تخمين (<span class="text-amber-400 font-bold">{{ lastFeedback.player }}</span>):</span>
+              <span class="font-mono text-xl font-black text-amber-300 bg-black/40 px-4 py-1 rounded-xl border border-white/10 tracking-widest">{{ lastFeedback.guess }}</span>
+            </div>
+
+            <!-- Main Dynamic Natural Language Feedback Sentence -->
+            <div class="p-5 rounded-2xl border text-sm md:text-base font-black leading-relaxed shadow-lg"
+                 [ngClass]="{
+                   'bg-rose-500/10 border-rose-500/30 text-rose-300': lastFeedback.bulls === 0 && lastFeedback.cows === 0,
+                   'bg-emerald-500/10 border-emerald-500/30 text-emerald-300': lastFeedback.bulls > 0 && lastFeedback.cows === 0,
+                   'bg-amber-500/10 border-amber-500/30 text-amber-300': lastFeedback.bulls === 0 && lastFeedback.cows > 0,
+                   'bg-indigo-500/10 border-indigo-500/30 text-indigo-200': lastFeedback.bulls > 0 && lastFeedback.cows > 0
+                 }">
+              {{ lastFeedback.message }}
+            </div>
+
+            <!-- 5-Second Turn Switch Countdown Alert -->
+            <div *ngIf="isTurnSwitching()" class="flex items-center justify-between bg-amber-500/10 border border-amber-500/30 px-4 py-3 rounded-2xl text-xs text-amber-300 font-bold animate-pulse">
+              <div class="flex items-center gap-2">
+                <span class="text-base">⏳</span>
+                <span>انتقال الدور إلى (<span class="text-white font-bold">{{ getNextPlayerName() }}</span>) خلال <span class="font-mono text-sm font-black text-amber-400">{{ countdownSeconds() }}</span> ثوانٍ...</span>
               </div>
-              <div class="bg-amber-950/50 border border-amber-500/30 p-3 rounded-xl">
-                <span class="text-2xl block mb-1">🔄</span>
-                <span class="text-xs font-bold text-amber-400 block">صح مكانه غلط</span>
-                <span class="font-mono text-xl font-black text-white">{{ lastFeedback.cows }}</span>
-              </div>
-              <div class="bg-rose-950/50 border border-rose-500/30 p-3 rounded-xl">
-                <span class="text-2xl block mb-1">❌</span>
-                <span class="text-xs font-bold text-rose-400 block">أرقام خاطئة</span>
-                <span class="font-mono text-xl font-black text-white">{{ lastFeedback.misses }}</span>
-              </div>
+              <button (click)="skipCountdown()" class="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black transition-all cursor-pointer shadow">
+                تخطي وبدء الدور الآن ⚡
+              </button>
             </div>
           </div>
 
@@ -353,7 +373,7 @@ export interface PlayerSession {
           <div class="space-y-3">
             <div class="flex justify-between items-center">
               <h3 class="text-sm font-bold text-slate-300">جدول سجل التخمينات ({{ guessHistory.length }}):</h3>
-              <span class="text-xs text-slate-500"> مرتبة من الأحدث إلى الأقدم</span>
+              <span class="text-xs text-slate-500">مرتبة من الأحدث إلى الأقدم</span>
             </div>
 
             <div *ngIf="guessHistory.length === 0" class="bg-black/20 border border-white/5 rounded-2xl p-8 text-center text-slate-500 text-xs">
@@ -366,6 +386,7 @@ export interface PlayerSession {
                   <tr>
                     <th class="p-3 text-center">اللاعب</th>
                     <th class="p-3 text-center">الرقم المترشح</th>
+                    <th class="p-3 text-right">التقييم والملاحظة</th>
                     <th class="p-3 text-center">🎯 صح مكانه صح</th>
                     <th class="p-3 text-center">🔄 صح مكانه غلط</th>
                     <th class="p-3 text-center">❌ أرقام خاطئة</th>
@@ -375,9 +396,18 @@ export interface PlayerSession {
                   <tr *ngFor="let h of guessHistory" class="hover:bg-white/5 transition-colors">
                     <td class="p-3 text-center font-sans font-bold text-amber-300">{{ h.player }}</td>
                     <td class="p-3 text-center font-black text-base text-white tracking-widest">{{ h.guess }}</td>
-                    <td class="p-3 text-center text-emerald-400 font-bold">{{ h.bulls }}</td>
-                    <td class="p-3 text-center text-amber-400 font-bold">{{ h.cows }}</td>
-                    <td class="p-3 text-center text-rose-400 font-bold">{{ h.misses }}</td>
+                    <td class="p-3 text-right font-sans font-bold text-[11px]"
+                        [ngClass]="{
+                          'text-rose-400': h.bulls === 0 && h.cows === 0,
+                          'text-emerald-400': h.bulls > 0 && h.cows === 0,
+                          'text-amber-400': h.bulls === 0 && h.cows > 0,
+                          'text-indigo-300': h.bulls > 0 && h.cows > 0
+                        }">
+                      {{ h.message }}
+                    </td>
+                    <td class="p-3 text-center font-bold" [ngClass]="h.bulls > 0 ? 'text-emerald-400' : 'text-slate-600'">{{ h.bulls }}</td>
+                    <td class="p-3 text-center font-bold" [ngClass]="h.cows > 0 ? 'text-amber-400' : 'text-slate-600'">{{ h.cows }}</td>
+                    <td class="p-3 text-center font-bold" [ngClass]="h.misses > 0 ? 'text-rose-400' : 'text-slate-600'">{{ h.misses }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -416,7 +446,7 @@ export interface PlayerSession {
     </div>
   `
 })
-export class NumberGuesserComponent implements OnInit {
+export class NumberGuesserComponent implements OnInit, OnDestroy {
 
   // Icons
   Trophy = Trophy;
@@ -439,6 +469,9 @@ export class NumberGuesserComponent implements OnInit {
   gameState = signal<'setup' | 'secret_setup' | 'playing' | 'gameover'>('setup');
   p2pRoomCode = signal<string>('');
   copiedLink = signal<boolean>(false);
+  isTurnSwitching = signal<boolean>(false);
+  countdownSeconds = signal<number>(10);
+  private countdownTimer: any = null;
 
   // Setup properties
   selectedMode: 'local' | 'p2p' | 'online_pro' = 'local';
@@ -474,6 +507,10 @@ export class NumberGuesserComponent implements OnInit {
     if (savedName) {
       this.playerList[0] = savedName;
     }
+  }
+
+  ngOnDestroy() {
+    this.clearCountdown();
   }
 
   trackByIndex(index: number): number {
@@ -593,6 +630,8 @@ export class NumberGuesserComponent implements OnInit {
 
   // --- Step 3: Start Playing ---
   startMatch() {
+    this.clearCountdown();
+    this.isTurnSwitching.set(false);
     this.guessHistory = [];
     this.lastFeedback = null;
     this.currentGuessInput = '';
@@ -603,6 +642,8 @@ export class NumberGuesserComponent implements OnInit {
 
   // --- Submit candidate guess from Main Input Box ---
   submitGuess() {
+    if (this.isTurnSwitching()) return;
+
     const guess = this.currentGuessInput.trim();
 
     if (guess.length !== this.codeLength || !/^\d+$/.test(guess)) {
@@ -623,6 +664,7 @@ export class NumberGuesserComponent implements OnInit {
 
     // Compute Bulls & Cows & Misses
     const feedback = this.evaluateGuess(guess, targetCode);
+    const feedbackMessage = this.getFeedbackMessage(feedback.bulls, feedback.cows, feedback.misses, this.codeLength);
 
     const record: GuessRecord = {
       player: this.currentTurnPlayer,
@@ -630,6 +672,7 @@ export class NumberGuesserComponent implements OnInit {
       bulls: feedback.bulls,
       cows: feedback.cows,
       misses: feedback.misses,
+      message: feedbackMessage,
       timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     };
 
@@ -639,12 +682,13 @@ export class NumberGuesserComponent implements OnInit {
 
     // Check Win Condition (Bulls === codeLength)
     if (feedback.bulls === this.codeLength) {
+      this.clearCountdown();
       this.triggerWin(this.currentTurnPlayer, targetCode);
       return;
     }
 
-    // Switch Turn
-    this.switchTurn();
+    // Start 5-second countdown before switching turn
+    this.startTurnCountdown();
   }
 
   evaluateGuess(guess: string, secret: string): { bulls: number; cows: number; misses: number } {
@@ -684,7 +728,43 @@ export class NumberGuesserComponent implements OnInit {
     return this.playerList[oppIdx];
   }
 
+  getNextPlayerName(): string {
+    return this.getOpponentName(this.currentTurnPlayer);
+  }
+
+  startTurnCountdown() {
+    this.clearCountdown();
+    this.isTurnSwitching.set(true);
+    this.countdownSeconds.set(10);
+
+    this.countdownTimer = setInterval(() => {
+      const remaining = this.countdownSeconds() - 1;
+      if (remaining <= 0) {
+        this.clearCountdown();
+        this.isTurnSwitching.set(false);
+        this.switchTurn();
+      } else {
+        this.countdownSeconds.set(remaining);
+      }
+    }, 1000);
+  }
+
+  skipCountdown() {
+    this.clearCountdown();
+    this.isTurnSwitching.set(false);
+    this.switchTurn();
+  }
+
+  clearCountdown() {
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer);
+      this.countdownTimer = null;
+    }
+  }
+
   switchTurn() {
+    this.clearCountdown();
+    this.isTurnSwitching.set(false);
     const idx = this.playerList.indexOf(this.currentTurnPlayer);
     const nextIdx = (idx + 1) % this.playerList.length;
     this.currentTurnPlayer = this.playerList[nextIdx];
@@ -701,6 +781,7 @@ export class NumberGuesserComponent implements OnInit {
     const humanSecret = this.secretsMap[humanPlayer];
 
     const feedback = this.evaluateGuess(aiGuess, humanSecret);
+    const feedbackMessage = this.getFeedbackMessage(feedback.bulls, feedback.cows, feedback.misses, this.codeLength);
 
     const record: GuessRecord = {
       player: 'الكمبيوتر (AI)',
@@ -708,6 +789,7 @@ export class NumberGuesserComponent implements OnInit {
       bulls: feedback.bulls,
       cows: feedback.cows,
       misses: feedback.misses,
+      message: feedbackMessage,
       timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     };
 
@@ -715,14 +797,71 @@ export class NumberGuesserComponent implements OnInit {
     this.guessHistory.unshift(record);
 
     if (feedback.bulls === this.codeLength) {
+      this.clearCountdown();
       this.triggerWin('الكمبيوتر (AI)', humanSecret);
       return;
     }
 
-    this.switchTurn();
+    // 5-second countdown after AI guess as well
+    this.startTurnCountdown();
+  }
+
+  // --- Dynamic Arabic Feedback Generator ---
+  getFeedbackMessage(bulls: number, cows: number, misses: number, codeLength: number): string {
+    // 1. All Digits Correct -> Win
+    if (bulls === codeLength) {
+      return `🎉 مبروك! الرقم صحيح بالكامل وفي مكانه الصحيح! (${bulls} أرقام صحيحة)`;
+    }
+
+    // 2. Completely Wrong (No bulls, no cows)
+    if (bulls === 0 && cows === 0) {
+      return `❌ الرقم غلط تماماً! (جميع الأرقام الـ ${codeLength} خاطئة ولا يوجد أي رقم صحيح).`;
+    }
+
+    // 3. Only Digits in Correct Position (Bulls only)
+    if (bulls > 0 && cows === 0) {
+      const bullsText = this.formatBullsText(bulls);
+      const missesText = misses > 0 ? ` (و ${this.formatMissesText(misses)})` : '';
+      return `🎯 يوجد ${bullsText}${missesText}.`;
+    }
+
+    // 4. Only Digits in Wrong Position (Cows only)
+    if (bulls === 0 && cows > 0) {
+      const cowsText = this.formatCowsText(cows);
+      const missesText = misses > 0 ? ` (و ${this.formatMissesText(misses)})` : '';
+      return `🔄 يوجد ${cowsText}${missesText}.`;
+    }
+
+    // 5. Mixed: Some in correct position AND some in wrong position
+    const bullsText = this.formatBullsText(bulls);
+    const cowsText = this.formatCowsText(cows);
+    const missesText = misses > 0 ? ` (و ${this.formatMissesText(misses)})` : '';
+    return `🎯 يوجد ${bullsText}، و 🔄 ${cowsText}${missesText}.`;
+  }
+
+  formatBullsText(n: number): string {
+    if (n === 1) return 'رقم واحد صح ومكانه صح';
+    if (n === 2) return 'رقمان صح ومكانهما صح';
+    if (n >= 3 && n <= 10) return `${n} أرقام صح ومكانها صح`;
+    return `${n} رقم صح ومكانه صح`;
+  }
+
+  formatCowsText(n: number): string {
+    if (n === 1) return 'رقم واحد صح ومكانه غلط';
+    if (n === 2) return 'رقمان صح ومكانهما غلط';
+    if (n >= 3 && n <= 10) return `${n} أرقام صح ومكانها غلط`;
+    return `${n} رقم صح ومكانه غلط`;
+  }
+
+  formatMissesText(n: number): string {
+    if (n === 1) return 'رقم واحد خاطئ';
+    if (n === 2) return 'رقمان خاطئان';
+    if (n >= 3 && n <= 10) return `${n} أرقام خاطئة`;
+    return `${n} رقم خاطئ`;
   }
 
   triggerWin(winner: string, winningCode: string) {
+    this.clearCountdown();
     this.winnerName = winner;
     this.winningCode = winningCode;
     this.totalAttempts = this.guessHistory.filter(h => h.player === winner).length;
@@ -730,10 +869,12 @@ export class NumberGuesserComponent implements OnInit {
   }
 
   restartGame() {
+    this.clearCountdown();
     this.proceedToSecretSetup();
   }
 
   resetToSetup() {
+    this.clearCountdown();
     this.gameState.set('setup');
   }
 }

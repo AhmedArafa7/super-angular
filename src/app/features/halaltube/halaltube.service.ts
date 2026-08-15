@@ -1048,6 +1048,16 @@ export class halaltubeService {
           }
         }
       }
+
+      // Also fetch global blacklisted videos from Firestore platform-wide
+      const globalBlacklisted = await this.firebaseService.getBlacklistedVideoIds();
+      if (globalBlacklisted && globalBlacklisted.length > 0) {
+        this.reportedVideoIds.update(current => {
+          const next = new Set(current);
+          globalBlacklisted.forEach(id => next.add(id));
+          return next;
+        });
+      }
     } catch (e) {}
 
     this.loadTrending();
