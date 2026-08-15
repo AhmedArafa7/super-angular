@@ -82,17 +82,29 @@ export class halaltubeModerationComponent implements OnInit {
   async loadWhitelistedChannels() {
     this.isLoading.set(true);
     try {
-      const { videos } = await this.firebase.getVideosByStatus('published', undefined, 200);
-      const channelMap = new Map<string, { authorId: string; author: string; count: number; thumbnail: string; videos: any[] }>();
+      const [{ videos }, firestoreChannels] = await Promise.all([
+        this.firebase.getVideosByStatus('published', undefined, 200),
+        this.firebase.getWhitelistedChannels()
+      ]);
+
+      const firestoreChannelMap = new Map<string, any>();
+      for (const fc of firestoreChannels) {
+        firestoreChannelMap.set(fc.channelId || fc.id, fc);
+      }
+
+      const channelMap = new Map<string, { authorId: string; author: string; count: number; thumbnail: string; status: 'trusted' | 'probation' | 'blacklisted'; videos: any[] }>();
       
       for (const v of videos) {
         const key = v.authorId || v.author || 'unknown';
+        const meta = firestoreChannelMap.get(key) || {};
+
         if (!channelMap.has(key)) {
           channelMap.set(key, {
             authorId: v.authorId || key,
-            author: v.author || 'قناة غير معروفة',
+            author: v.author || meta.channelName || 'قناة غير معروفة',
             count: 0,
             thumbnail: v.thumbnail || '',
+            status: meta.status || 'trusted',
             videos: []
           });
         }
@@ -319,6 +331,40 @@ export class halaltubeModerationComponent implements OnInit {
 
   closeChannelModal() {
     this.selectedChannel.set(null);
+  }
+
+  async putChannelOnProbation(channel: any) {
+    if (!confirm(`هل تريد وضع قناة "${channel.author}" تحت الملاحظة (Probation)؟ أي فيديوهات قادمة ستتطلب مراجعة يدوية.`)) return;
+
+    this.isLoading.set(true);
+    try {
+      await this.firebase.setChannelTrustStatus(channel.authorId, channel.author, 'probation', 'وضع يدوي تحت الملاحظة');
+      await this.loadWhitelistedChannels();
+      this.selectedChannel.set(null);
+      alert(`تم وضع قناة "${channel.author}" تحت الملاحظة بنجاح.`);
+    } catch (e) {
+      console.error(e);
+      alert('حدث خطأ أثناء تحديث حالة القناة.');
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  async restoreChannelTrust(channel: any) {
+    if (!confirm(`هل تريد إعادة توثيق قناة "${channel.author}" كقناة موثوقة (Trusted)؟`)) return;
+
+    this.isLoading.set(true);
+    try {
+      await this.firebase.setChannelTrustStatus(channel.authorId, channel.author, 'trusted');
+      await this.loadWhitelistedChannels();
+      this.selectedChannel.set(null);
+      alert(`تم توثيق قناة "${channel.author}" بنجاح.`);
+    } catch (e) {
+      console.error(e);
+      alert('حدث خطأ أثناء تحديث حالة القناة.');
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 
   async revokeChannelApproval(channel: any) {

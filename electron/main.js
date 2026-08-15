@@ -1,6 +1,8 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, dialog, Menu, Tray, nativeImage, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, Tray, nativeImage, shell, powerMonitor } = require('electron');
+const pdfParse = require('pdf-parse');
+const { PDFDocument } = require('pdf-lib');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -272,9 +274,34 @@ function showAbout() {
 //  IPC Handlers
 // ─────────────────────────────────────────
 
-// ── Inkscape ──
-ipcMain.handle('inkscape:detect', async () => {
-  return await inkscapeManager.detect();
+// ── Power & Resources ──
+ipcMain.handle('power:get-status', () => {
+  return {
+    onBattery: powerMonitor.isOnBatteryPower()
+  };
+});
+
+// ── File Processing ──
+ipcMain.handle('fs:process-file', async (_, { filePath, mode }) => {
+  try {
+    const ext = path.extname(filePath).toLowerCase();
+    const buffer = fs.readFileSync(filePath);
+    
+    if (ext === '.pdf') {
+      if (mode === 'text') {
+        const data = await pdfParse(buffer);
+        return { ok: true, content: data.text, type: 'text' };
+      } else if (mode === 'advanced') {
+        // Here you would implement layout preservation if possible
+        // For now, let's return a placeholder or do minimal text extraction
+        const data = await pdfParse(buffer);
+        return { ok: true, content: data.text, type: 'advanced' };
+      }
+    }
+    return { ok: false, error: 'Unsupported file type or mode' };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
 });
 
 ipcMain.handle('inkscape:open', async (_, filePath) => {

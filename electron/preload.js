@@ -29,11 +29,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
 
-  // ── File System ──
-  fs: {
-    saveSVG: (content, filename) => ipcRenderer.invoke('fs:save-svg', { content, filename }),
-    readFile: (filePath) => ipcRenderer.invoke('fs:read-file', filePath),
-    writeFile: (filePath, content) => ipcRenderer.invoke('fs:write-file', { filePath, content })
+  // ── Power & Resources ──
+  power: {
+    getStatus: () => ipcRenderer.invoke('power:get-status')
+  },
+
+  // ── File Processing ──
+  fileProcessing: {
+    process: (filePath, mode) => ipcRenderer.invoke('fs:process-file', { filePath, mode })
   },
 
   // ── Dialogs ──

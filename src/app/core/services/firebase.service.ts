@@ -630,10 +630,82 @@ export class FirebaseService {
   async updateVideoStatus(videoId: string, newStatus: string): Promise<void> {
     try {
       const docRef = doc(this.firestore, 'videos', videoId);
+      const snap = await getDoc(docRef);
+      const videoData = snap.exists() ? snap.data() : null;
+
       await updateDoc(docRef, { status: newStatus });
+
+      if (videoData && (videoData['authorId'] || videoData['author'])) {
+        const channelId = videoData['authorId'] || videoData['author'];
+        const channelName = videoData['author'] || 'قناة غير معروفة';
+
+        if (newStatus === 'published') {
+          // Check if channel is not blacklisted
+          const blacklisted = await this.syncBlacklistedChannels();
+          if (!blacklisted.includes(channelId)) {
+            const channelDocRef = doc(this.firestore, 'whitelisted_channels', channelId);
+            const channelSnap = await getDoc(channelDocRef);
+            const currentStatus = channelSnap.exists() ? channelSnap.data()?.['status'] : null;
+
+            // Promote to trusted if not explicitly restricted/probation
+            if (currentStatus !== 'probation' && currentStatus !== 'blacklisted') {
+              await setDoc(channelDocRef, {
+                channelId,
+                channelName,
+                status: 'trusted',
+                updatedAt: Date.now(),
+                approvedVideosCount: (channelSnap.data()?.['approvedVideosCount'] || 0) + 1
+              }, { merge: true });
+            }
+          }
+        } else if (newStatus === 'rejected') {
+          // Single infraction: Demote channel to probation (requires review for all future submissions)
+          const channelDocRef = doc(this.firestore, 'whitelisted_channels', channelId);
+          await setDoc(channelDocRef, {
+            channelId,
+            channelName,
+            status: 'probation',
+            updatedAt: Date.now(),
+            lastRejectedAt: Date.now(),
+            lastRejectedVideoId: videoId
+          }, { merge: true });
+        }
+      }
     } catch (err) {
       console.error(`[FirebaseService] updateVideoStatus failed for ${videoId}:`, err);
       throw err;
+    }
+  }
+
+  async setChannelTrustStatus(channelId: string, channelName: string, status: 'trusted' | 'probation' | 'blacklisted', reason?: string): Promise<void> {
+    try {
+      const channelDocRef = doc(this.firestore, 'whitelisted_channels', channelId);
+      await setDoc(channelDocRef, {
+        channelId,
+        channelName,
+        status,
+        reason: reason || '',
+        updatedAt: Date.now(),
+        updatedBy: this.getUserId()
+      }, { merge: true });
+
+      if (status === 'blacklisted') {
+        await this.blacklistChannel(channelId, channelName);
+      }
+    } catch (err) {
+      console.error(`[FirebaseService] setChannelTrustStatus failed for ${channelId}:`, err);
+      throw err;
+    }
+  }
+
+  async getWhitelistedChannels(): Promise<any[]> {
+    try {
+      const q = query(collection(this.firestore, 'whitelisted_channels'));
+      const snap = await getDocs(q);
+      return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (err) {
+      console.error('[FirebaseService] getWhitelistedChannels failed:', err);
+      return [];
     }
   }
 

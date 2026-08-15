@@ -55,6 +55,7 @@ export const routes: Routes = [
       { path: 'html-editor', loadComponent: () => import('./features/html-editor/html-editor.component').then(c => c.HtmlEditorComponent), title: 'محرر HTML الشامل' },
       { path: 'text-fixer', loadComponent: () => import('./features/text-fixer/text-fixer.component').then(c => c.TextFixerComponent), title: 'مصحح اتجاه النصوص (RTL/LTR)' },
       { path: 'file-viewer', loadComponent: () => import('./features/file-viewer/file-viewer.component').then(c => c.FileViewerComponent), title: 'عارض ومحلل الملفات الشامل' },
+      { path: 'file-manager', loadComponent: () => import('./features/file-manager/file-manager.component').then(c => c.FileManagerComponent), title: 'إدارة وتعديل الملفات' },
       { path: 'ai-module-builder', loadComponent: () => import('./features/ai-module-builder/ai-module-builder.component').then(c => c.AiModuleBuilderComponent), title: 'صانع الأقسام بالذكاء الاصطناعي', data: { preload: true, preloadDelay: 1000 } },
       { path: 'custom-module/:id', loadComponent: () => import('./features/ai-module-builder/custom-module-viewer.component').then(c => c.CustomModuleViewerComponent), title: 'عرض القسم المخصص' },
       { path: 'study-ai', loadComponent: () => import('./features/learning/learning.component').then(c => c.LearningComponent), title: 'المساعد الدراسي الذكي' },

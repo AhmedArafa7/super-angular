@@ -42,6 +42,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: "opencode", label: "مساعد البرمجة OpenCode", icon: "terminal", restricted: false, isPermanent: true, status: 'NEW', route: 'opencode', category: 'dev' },
   { id: "external-tabs", label: "أرشيف التبويبات الخارجية", icon: "bookmark", restricted: false, isPermanent: true, status: 'NEW', route: 'external-tabs', category: 'tools' },
   { id: "html-editor", label: "محرر HTML الشامل", icon: "code", restricted: false, isPermanent: true, status: 'NEW', route: 'html-editor', category: 'dev' },
+  { id: "file-manager", label: "مدير الملفات", icon: "file-archive", restricted: false, isPermanent: true, status: 'NEW', route: 'file-manager', category: 'tools' },
   { id: "text-fixer", label: "مصحح اتجاه النصوص", icon: "type", restricted: false, isPermanent: true, status: 'NEW', route: 'text-fixer', category: 'tools' },
   { id: "ai-module-builder", label: "صانع الأقسام بالذكاء الاصطناعي", icon: "sparkles", restricted: false, isPermanent: true, status: 'NEW', route: 'ai-module-builder', category: 'ai' },
   { id: "deals", label: "عروض المحلات", icon: "tag", restricted: false, category: 'tools' },
