@@ -40,12 +40,9 @@ export class AppSidebarComponent {
   globalState = inject(GlobalStateService);
   moduleStorage = inject(CustomModuleStorageService);
   settingsService = inject(SettingsService);
-
-  toggleLanguage() {
-    this.settingsService.toggleLanguage();
-  }
   
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('bottomDock') bottomDockRef!: ElementRef<HTMLDivElement>;
   
   get userRole(): string | null {
     return (this.firebase.userData() as any)?.role || 'admin';
@@ -70,6 +67,13 @@ export class AppSidebarComponent {
   toggleBottomLayoutMenu(event: Event) {
     event.stopPropagation();
     this.showBottomLayoutMenu.update(v => !v);
+  }
+
+  scrollBottomDock(direction: 'left' | 'right') {
+    const el = this.bottomDockRef?.nativeElement;
+    if (!el) return;
+    const delta = direction === 'left' ? -200 : 200;
+    el.scrollBy({ left: delta, behavior: 'smooth' });
   }
   
   // Resize State

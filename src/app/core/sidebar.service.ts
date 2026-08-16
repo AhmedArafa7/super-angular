@@ -23,6 +23,7 @@ export class SidebarService {
   readonly arrowControlMode = signal<'move' | 'snap' | 'resize' | 'scroll'>('move');
   readonly isFloatingExpanded = signal<boolean>(true);
   readonly isFloatingIconsOnly = signal<boolean>(false);
+  readonly floatingOrientation = signal<'vertical' | 'horizontal'>('vertical');
   readonly isMobile = signal<boolean>(false);
 
   readonly collapsedCategories = signal<string[]>([]);
@@ -110,8 +111,31 @@ export class SidebarService {
   }
 
   setFloatingPos(pos: { x: number, y: number }): void {
-    this.floatingPos.set(pos);
+    let x = pos.x;
+    let y = pos.y;
+    if (typeof window !== 'undefined') {
+      const screenW = window.innerWidth;
+      const screenH = window.innerHeight;
+      const maxX = Math.max(16, screenW - 50);
+      const maxY = Math.max(16, screenH - 50);
+      x = Math.max(10, Math.min(maxX, x));
+      y = Math.max(10, Math.min(maxY, y));
+    }
+    this.floatingPos.set({ x, y });
     this.markUnsaved();
+  }
+
+  resetFloatingPosition(): void {
+    if (typeof window !== 'undefined') {
+      const screenW = window.innerWidth;
+      const isHoriz = this.floatingOrientation() === 'horizontal';
+      const w = isHoriz ? 500 : (this.isFloatingIconsOnly() ? 72 : this.floatingWidth());
+      const x = Math.max(16, (screenW - w) / 2);
+      const y = 20;
+      this.setFloatingPos({ x, y });
+    } else {
+      this.setFloatingPos({ x: 50, y: 50 });
+    }
   }
 
   setFloatingDimensions(w: number, h: number): void {
@@ -135,25 +159,38 @@ export class SidebarService {
 
   snapFloatingTo(edge: 'top' | 'bottom' | 'left' | 'right' | 'center' | 'up' | 'down'): void {
     if (typeof window === 'undefined') return;
-    const w = this.isFloatingIconsOnly() ? 72 : this.floatingWidth();
-    const h = this.floatingHeight();
+    
+    const isHoriz = this.floatingOrientation() === 'horizontal';
+    const isIcons = this.isFloatingIconsOnly();
+    
+    let elWidth = isHoriz ? 550 : (isIcons ? 72 : this.floatingWidth());
+    let elHeight = isHoriz ? 64 : this.floatingHeight();
+    
+    // Dynamic measurement of the active floating element if rendered
+    const domEl = document.querySelector('[cdkdrag]') as HTMLElement;
+    if (domEl) {
+      elWidth = domEl.offsetWidth || elWidth;
+      elHeight = domEl.offsetHeight || elHeight;
+    }
+
     const screenW = window.innerWidth;
     const screenH = window.innerHeight;
+    const padding = 16;
 
     let targetX = this.floatingPos().x;
     let targetY = this.floatingPos().y;
 
     if (edge === 'top' || edge === 'up') {
-      targetY = 16;
+      targetY = padding;
     } else if (edge === 'bottom' || edge === 'down') {
-      targetY = Math.max(16, screenH - h - 24);
+      targetY = Math.max(padding, screenH - elHeight - padding);
     } else if (edge === 'left') {
-      targetX = 16;
+      targetX = padding;
     } else if (edge === 'right') {
-      targetX = Math.max(16, screenW - w - 24);
+      targetX = Math.max(padding, screenW - elWidth - padding);
     } else if (edge === 'center') {
-      targetX = Math.max(16, (screenW - w) / 2);
-      targetY = Math.max(16, (screenH - h) / 2);
+      targetX = Math.max(padding, (screenW - elWidth) / 2);
+      targetY = Math.max(padding, (screenH - elHeight) / 2);
     }
 
     this.setFloatingPos({ x: targetX, y: targetY });
@@ -176,6 +213,16 @@ export class SidebarService {
 
   toggleFloatingIconsOnly(): void {
     this.isFloatingIconsOnly.update(v => !v);
+    this.markUnsaved();
+  }
+
+  setFloatingOrientation(val: 'vertical' | 'horizontal'): void {
+    this.floatingOrientation.set(val);
+    this.markUnsaved();
+  }
+
+  toggleFloatingOrientation(): void {
+    this.floatingOrientation.update(v => v === 'vertical' ? 'horizontal' : 'vertical');
     this.markUnsaved();
   }
 
@@ -234,6 +281,7 @@ export class SidebarService {
         arrowControlMode: this.arrowControlMode(),
         isFloatingExpanded: this.isFloatingExpanded(),
         isFloatingIconsOnly: this.isFloatingIconsOnly(),
+        floatingOrientation: this.floatingOrientation(),
         collapsedCategories: this.collapsedCategories(),
         recentItemIds: this.recentItemIds()
       };
@@ -254,12 +302,13 @@ export class SidebarService {
           if (parsed.isHeaderVisible !== undefined) this.isHeaderVisible.set(parsed.isHeaderVisible);
           if (parsed.width !== undefined) this.width.set(parsed.width);
           if (parsed.position !== undefined) this.position.set(parsed.position);
-          if (parsed.floatingPos !== undefined) this.floatingPos.set(parsed.floatingPos);
+          if (parsed.floatingPos !== undefined) this.setFloatingPos(parsed.floatingPos);
           if (parsed.floatingWidth !== undefined) this.floatingWidth.set(parsed.floatingWidth);
           if (parsed.floatingHeight !== undefined) this.floatingHeight.set(parsed.floatingHeight);
           if (parsed.arrowControlMode !== undefined) this.arrowControlMode.set(parsed.arrowControlMode);
           if (parsed.isFloatingExpanded !== undefined) this.isFloatingExpanded.set(parsed.isFloatingExpanded);
           if (parsed.isFloatingIconsOnly !== undefined) this.isFloatingIconsOnly.set(parsed.isFloatingIconsOnly);
+          if (parsed.floatingOrientation !== undefined) this.floatingOrientation.set(parsed.floatingOrientation);
           if (parsed.collapsedCategories !== undefined) this.collapsedCategories.set(parsed.collapsedCategories);
           if (parsed.recentItemIds !== undefined) this.recentItemIds.set(parsed.recentItemIds);
         } catch (e) {

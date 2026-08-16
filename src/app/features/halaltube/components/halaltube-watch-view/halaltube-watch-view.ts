@@ -171,8 +171,16 @@ export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
       author: videoAuthor || 'قناة halaltube',
       thumbnail: videoThumb || (ytId ? `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg` : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800'),
       url: targetUrl || (ytId ? `https://www.youtube.com/watch?v=${ytId}` : ''),
-      source: playingSource
+      source: playingSource,
+      isWhitelisted: homeVideo?.isWhitelisted || false
     });
+
+    // Check if video is already in the whitelist database
+    this.firebase.checkVideosExist([playingId]).then(existing => {
+      if (existing.includes(playingId) || homeVideo?.isWhitelisted) {
+        this.videoState.activeVideo.update(current => current ? { ...current, isWhitelisted: true } as any : current);
+      }
+    }).catch(() => {});
 
     // Load full details & comments asynchronously if it's a YouTube video
     if (ytId) {

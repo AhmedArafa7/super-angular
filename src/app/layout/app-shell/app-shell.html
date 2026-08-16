@@ -37,6 +37,7 @@
     }
 
     <main class="flex-1 overflow-y-auto relative transition-colors duration-500"
+          [class.pb-24]="sidebar.position() === 'bottom'"
           [ngClass]="sidebar.isVisible() ? 'bg-slate-900/20' : 'bg-slate-900/40'">
       <router-outlet></router-outlet>
     </main>

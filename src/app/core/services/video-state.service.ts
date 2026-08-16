@@ -19,6 +19,7 @@ export interface ActiveVideo {
   source?: string;
   channelAvatar?: string | null;
   category?: string;
+  isWhitelisted?: boolean;
 }
 
 @Injectable({
