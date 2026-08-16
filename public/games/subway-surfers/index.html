@@ -1,0 +1,2745 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Subway Surfers 3D — مطاردة السابواي ثلاثية الأبعاد</title>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Fredoka+One&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: 'Cairo', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #090d16;
+        }
+
+        #game-canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Top In-Game HUD Bar */
+        #top-hud {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            pointer-events: none;
+            width: 96%;
+            max-width: 1020px;
+            justify-content: space-between;
+            transition: opacity 0.3s;
+        }
+
+        .hud-card {
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(14px);
+            border: 2px solid rgba(245, 158, 11, 0.5);
+            border-radius: 20px;
+            padding: 5px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), inset 0 0 12px rgba(245, 158, 11, 0.15);
+            pointer-events: auto;
+        }
+
+        .hud-card.keys-card {
+            border-color: rgba(56, 189, 248, 0.7);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), inset 0 0 12px rgba(56, 189, 248, 0.25);
+        }
+
+        .hud-card.score-card {
+            border-color: rgba(56, 189, 248, 0.6);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), inset 0 0 12px rgba(56, 189, 248, 0.2);
+        }
+
+        .hud-card.chase-card {
+            border-color: rgba(239, 68, 68, 0.7);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), inset 0 0 12px rgba(239, 68, 68, 0.2);
+            min-width: 170px;
+        }
+
+        .hud-card.missions-toggle {
+            cursor: pointer;
+            border-color: #a855f7;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), inset 0 0 12px rgba(168, 85, 247, 0.25);
+            transition: transform 0.2s;
+        }
+
+        .hud-card.missions-toggle:hover {
+            transform: scale(1.06);
+            background: #581c87;
+        }
+
+        .hud-label {
+            font-size: 0.6rem;
+            font-weight: 900;
+            color: #fbbf24;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .hud-val {
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: #ffffff;
+            font-family: 'Fredoka One', 'Cairo', monospace;
+            line-height: 1;
+        }
+
+        .hud-icon {
+            font-size: 1.35rem;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+        }
+
+        /* Multiplier Badge */
+        .multiplier-badge {
+            background: linear-gradient(135deg, #f59e0b, #ea580c);
+            color: #fff;
+            padding: 2px 7px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 900;
+            font-family: 'Fredoka One', sans-serif;
+            margin-right: 4px;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.5);
+        }
+
+        /* Pause Button in HUD */
+        .btn-pause-hud {
+            background: linear-gradient(135deg, #334155, #1e293b);
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            border-radius: 16px;
+            color: #fff;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            cursor: pointer;
+            pointer-events: auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            transition: all 0.2s;
+        }
+
+        .btn-pause-hud:hover {
+            transform: scale(1.08);
+            border-color: #38bdf8;
+            background: #0284c7;
+        }
+
+        .btn-pause-hud:active {
+            transform: scale(0.95);
+        }
+
+        /* Chase Distance Meter */
+        .chase-bar-container {
+            width: 100%;
+            height: 7px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 3px;
+            position: relative;
+        }
+
+        .chase-bar-fill {
+            height: 100%;
+            width: 60%;
+            background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981);
+            border-radius: 10px;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Active Missions In-Game Drawer Overlay */
+        #missions-banner {
+            position: absolute;
+            top: 75px;
+            right: 16px;
+            z-index: 22;
+            background: rgba(15, 23, 42, 0.94);
+            backdrop-filter: blur(16px);
+            border: 2px solid rgba(168, 85, 247, 0.6);
+            border-radius: 20px;
+            padding: 10px 16px;
+            width: 280px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+            pointer-events: auto;
+        }
+
+        #missions-banner.collapsed {
+            transform: translateX(110%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .mission-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            font-weight: 900;
+            color: #d8b4fe;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 4px;
+        }
+
+        .mission-item {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .mission-text {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .mission-progress-bar {
+            width: 100%;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .mission-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #a855f7, #ec4899);
+            border-radius: 6px;
+            transition: width 0.3s;
+        }
+
+        /* Power-ups Active Bar */
+        #powerup-bar {
+            position: absolute;
+            top: 75px;
+            left: 16px;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .powerup-pill {
+            background: rgba(15, 23, 42, 0.92);
+            border: 2px solid #38bdf8;
+            border-radius: 30px;
+            padding: 5px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            animation: pulse-border 1.5s infinite;
+        }
+
+        @keyframes pulse-border {
+            0%, 100% { transform: scale(1); border-color: #38bdf8; }
+            50% { transform: scale(1.04); border-color: #facc15; }
+        }
+
+        /* Two-Player Controls Helper Bar */
+        #two-player-hud {
+            position: absolute;
+            bottom: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            display: flex;
+            gap: 16px;
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(16px);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 8px 18px;
+            color: #fff;
+            font-size: 0.76rem;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.7);
+            pointer-events: none;
+            max-width: 95%;
+            justify-content: space-around;
+        }
+
+        .p-guide {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .p-tag {
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 900;
+            font-size: 0.7rem;
+        }
+
+        .p-tag.runner { background: linear-gradient(135deg, #10b981, #059669); }
+        .p-tag.chaser { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+
+        .key-badge {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            padding: 1px 5px;
+            font-family: monospace;
+            font-size: 0.72rem;
+            font-weight: bold;
+            color: #facc15;
+        }
+
+        /* Tap to Play Intro Prompt Overlay */
+        #tap-to-play-prompt {
+            position: absolute;
+            bottom: 18%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 30;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            pointer-events: auto;
+            cursor: pointer;
+            animation: bounce-prompt 1.8s infinite;
+        }
+
+        @keyframes bounce-prompt {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-10px); }
+        }
+
+        .tap-prompt-btn {
+            background: linear-gradient(135deg, #f59e0b, #ea580c);
+            border: 3px solid #fef08a;
+            color: #ffffff;
+            padding: 14px 44px;
+            border-radius: 40px;
+            font-size: 1.35rem;
+            font-weight: 900;
+            box-shadow: 0 10px 35px rgba(245, 158, 11, 0.6), 0 0 25px rgba(245, 158, 11, 0.4);
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: transform 0.15s;
+        }
+
+        .tap-prompt-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .tap-prompt-sub {
+            color: #93c5fd;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+        }
+
+        /* Mobile Cop Controls */
+        .mobile-cop-actions {
+            position: absolute;
+            bottom: 80px;
+            left: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 25;
+            pointer-events: auto;
+        }
+
+        .cop-action-btn {
+            background: rgba(239, 68, 68, 0.9);
+            border: 2px solid #fff;
+            color: #fff;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.62rem;
+            font-weight: 900;
+            box-shadow: 0 4px 15px rgba(239,68,68,0.5);
+            cursor: pointer;
+        }
+
+        /* Screens & Overlays */
+        .overlay-screen {
+            position: absolute;
+            inset: 0;
+            z-index: 50;
+            background: radial-gradient(circle at center, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.98));
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+            color: #fff;
+        }
+
+        .overlay-screen.hidden {
+            display: none !important;
+        }
+
+        .game-logo {
+            font-family: 'Fredoka One', 'Cairo', sans-serif;
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(180deg, #fef08a 0%, #f59e0b 50%, #ea580c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 8px 30px rgba(245, 158, 11, 0.4);
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+            line-height: 1.1;
+        }
+
+        .game-subtitle {
+            font-size: 1rem;
+            color: #38bdf8;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .menu-card {
+            background: rgba(30, 41, 59, 0.82);
+            border: 2px solid rgba(245, 158, 11, 0.35);
+            border-radius: 30px;
+            padding: 24px 32px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .mode-btn {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border: none;
+            border-bottom: 5px solid #b45309;
+            border-radius: 18px;
+            color: #fff;
+            padding: 13px 18px;
+            font-size: 1.1rem;
+            font-weight: 900;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-3px);
+            filter: brightness(1.1);
+        }
+
+        .mode-btn:active {
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+        }
+
+        .mode-btn.revive-btn {
+            background: linear-gradient(135deg, #06b6d4, #0284c7);
+            border-bottom-color: #0369a1;
+            box-shadow: 0 6px 25px rgba(6, 182, 212, 0.4);
+            font-size: 1.25rem;
+            padding: 16px 20px;
+        }
+
+        .mode-btn.revive-btn:disabled {
+            background: #475569;
+            border-bottom-color: #334155;
+            box-shadow: none;
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .mode-btn.two-player {
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            border-bottom-color: #5b21b6;
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.35);
+        }
+
+        .mode-btn.room-btn {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border-bottom-color: #1e40af;
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35);
+        }
+
+        .mode-btn.pro-btn {
+            background: linear-gradient(135deg, #ec4899, #be185d);
+            border-bottom-color: #9d174d;
+            box-shadow: 0 6px 20px rgba(236, 72, 153, 0.35);
+        }
+
+        .mode-btn.secondary-action {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-bottom-color: #047857;
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+        }
+
+        .mode-btn.quit-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: none;
+            color: #cbd5e1;
+            font-size: 0.95rem;
+            padding: 10px;
+        }
+
+        .pro-badge {
+            background: #facc15;
+            color: #000;
+            font-size: 0.7rem;
+            font-weight: 900;
+            padding: 2px 8px;
+            border-radius: 8px;
+        }
+
+        /* Save Me / Revive Modal */
+        .save-me-timer-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0 16px;
+        }
+
+        .save-me-timer-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #38bdf8, #06b6d4);
+            border-radius: 10px;
+            transition: width 0.1s linear;
+        }
+
+        /* P2P Room Section */
+        .room-code-display {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px dashed #10b981;
+            border-radius: 16px;
+            padding: 12px;
+            font-size: 1.6rem;
+            font-family: monospace;
+            font-weight: 900;
+            color: #10b981;
+            letter-spacing: 4px;
+        }
+
+        .room-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 12px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: #38bdf8;
+            outline: none;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 14px 0;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 10px;
+        }
+
+        .stat-num {
+            font-size: 1.7rem;
+            font-weight: 900;
+            color: #facc15;
+            font-family: 'Fredoka One', 'Cairo', sans-serif;
+        }
+
+        .stat-title {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            font-weight: 700;
+        }
+
+        /* Floating Notifications */
+        .floating-notif {
+            position: absolute;
+            top: 25%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            font-size: 1.9rem;
+            font-weight: 900;
+            font-family: 'Fredoka One', 'Cairo', sans-serif;
+            color: #facc15;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8), 0 0 20px #f59e0b;
+            pointer-events: none;
+            z-index: 35;
+            opacity: 0;
+            transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .floating-notif.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 3D WebGL Canvas -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Top In-Game HUD -->
+    <div id="top-hud" style="display: none;">
+        <!-- Coins Card -->
+        <div class="hud-card">
+            <span class="hud-icon">🪙</span>
+            <div>
+                <div class="hud-label">العملات</div>
+                <div class="hud-val" id="hud-coins">0</div>
+            </div>
+        </div>
+
+        <!-- Keys Card (🔑 Rare Keys System) -->
+        <div class="hud-card keys-card">
+            <span class="hud-icon">🔑</span>
+            <div>
+                <div class="hud-label">المفاتيح</div>
+                <div class="hud-val" id="hud-keys" style="color: #38bdf8;">0</div>
+            </div>
+        </div>
+
+        <!-- Missions Toggle Button -->
+        <div class="hud-card missions-toggle" id="btn-toggle-missions" title="عرض المهمات والتحديات">
+            <span class="hud-icon">📜</span>
+            <div>
+                <div class="hud-label">المهمات</div>
+                <div class="hud-val" id="hud-mission-count" style="color: #c084fc; font-size: 1.1rem;">0/3</div>
+            </div>
+        </div>
+
+        <!-- Chase Radar -->
+        <div class="hud-card chase-card">
+            <span class="hud-icon" id="cop-indicator-icon">👮‍♂️</span>
+            <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="hud-label">مطاردة الشرطي</span>
+                    <span class="hud-label" id="chase-dist-val" style="color:#ef4444;">40m</span>
+                </div>
+                <div class="chase-bar-container">
+                    <div class="chase-bar-fill" id="chase-bar-fill"></div>
+                </div>
+            </div>
+            <span class="hud-icon">🏃‍♂️</span>
+        </div>
+
+        <!-- Score / Distance with Multiplier -->
+        <div class="hud-card score-card">
+            <span class="multiplier-badge" id="hud-multiplier">x1</span>
+            <div>
+                <div class="hud-label">المسافة</div>
+                <div class="hud-val" id="hud-score">0m</div>
+            </div>
+        </div>
+
+        <!-- Pause Button (⏸️) -->
+        <button class="btn-pause-hud" id="btn-pause-trigger" title="إيقاف مؤقت (Escape/P)">
+            ⏸️
+        </button>
+    </div>
+
+    <!-- Active Missions Drawer -->
+    <div id="missions-banner">
+        <div class="mission-header">
+            <span>📜 مهمات السابواي (احصل على مفاتيح 🔑)</span>
+            <span id="missions-tier-badge" style="color: #facc15;">المستوى 1</span>
+        </div>
+        <div id="missions-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+    </div>
+
+    <!-- Power-ups Active Floating Bar -->
+    <div id="powerup-bar"></div>
+
+    <!-- 2-Player Controls Guide HUD -->
+    <div id="two-player-hud" style="display: none;">
+        <div class="p-guide">
+            <span class="p-tag runner">لاعب 1 (الهارب 🏃‍♂️)</span>
+            <span>الأسهم / <span class="key-badge">WASD</span>: حركة وقفز وتدحرج | <span class="key-badge">Q</span>: لوح التزلج</span>
+        </div>
+        <div class="p-guide">
+            <span class="p-tag chaser">لاعب 2 (الشرطي 👮‍♂️)</span>
+            <span><span class="key-badge">J/L</span>: مسار | <span class="key-badge">I</span>: تيربو | <span class="key-badge">K</span>: فخ شبكة | <span class="key-badge">U</span>: الكلب 🐕</span>
+        </div>
+    </div>
+
+    <!-- Tap to Play Intro Scene Prompt (Subway Classic Intro) -->
+    <div id="tap-to-play-prompt" style="display: none;">
+        <button class="tap-prompt-btn" id="btn-tap-to-play">
+            <span>انطلق الآن! 🚀</span>
+        </button>
+        <div class="tap-prompt-sub">اضغط في أي مكان لبدء الهروب من الشرطي والكلب!</div>
+    </div>
+
+    <!-- Mobile Cop Controls -->
+    <div class="mobile-cop-actions" id="mobile-cop-actions" style="display: none;">
+        <button class="cop-action-btn" id="m-cop-boost">⚡ تيربو</button>
+        <button class="cop-action-btn" id="m-cop-trap">🕸️ فخ</button>
+        <button class="cop-action-btn" id="m-cop-dog">🐕 كلب</button>
+    </div>
+
+    <!-- Floating Notification Banner -->
+    <div id="floating-banner" class="floating-notif">JETPACK ACTIVATED! 🚀</div>
+
+    <!-- ================= SCREENS & MODALS ================= -->
+
+    <!-- 1. Main Mode Selection Screen (Arcade Standard: 3 Modes) -->
+    <div id="menu-screen" class="overlay-screen">
+        <div class="game-logo">SUBWAY SURFERS 3D</div>
+        <div class="game-subtitle">🚇 مطاردة السابواي الخارقة — الهارب ضد الشرطي 🏃‍♂️👮‍♂️</div>
+
+        <div class="menu-card">
+            <!-- 1. Local Play (Single & 2-Player VS) -->
+            <button class="mode-btn" id="btn-mode-single">
+                <span>🏃‍♂️ اللعب الفردي (ضد الذكاء الاصطناعي)</span>
+            </button>
+
+            <button class="mode-btn two-player" id="btn-mode-local-vs">
+                <span>👥 لعب ثنائي محلي (هارب ضد شرطي على نفس الجهاز)</span>
+            </button>
+
+            <!-- 2. Private Room P2P -->
+            <button class="mode-btn room-btn" id="btn-mode-room">
+                <span>🎯 إنشاء غرفة وتحدي صديق أونلاين (P2P)</span>
+            </button>
+
+            <!-- 3. Pro Mode -->
+            <button class="mode-btn pro-btn" id="btn-mode-pro">
+                <span>🏆 لعب أونلاين Pro</span>
+                <span class="pro-badge">PRO</span>
+            </button>
+
+            <!-- Quit -->
+            <button class="mode-btn quit-btn" id="btn-quit">
+                <span>🚪 خروج من اللعبة</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. Save Me / Revive Modal (المتابعة بالمفاتيح النادرة) -->
+    <div id="saveme-screen" class="overlay-screen hidden">
+        <div class="game-logo" style="background: linear-gradient(180deg, #38bdf8, #0284c7); -webkit-background-clip: text;">أنقذني بالمفتاح! 🔑⚡</div>
+        <div class="game-subtitle">استخدم المفتاح السحري لتدمير كل العوائق ومواصلة نفس السكور!</div>
+
+        <div class="menu-card">
+            <div class="save-me-timer-bar">
+                <div class="save-me-timer-fill" id="saveme-timer-fill"></div>
+            </div>
+
+            <div style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 6px;">
+                رصيدك الحالي: <span id="saveme-user-keys" style="color: #38bdf8; font-weight: 900; font-size: 1.2rem;">0</span> 🔑
+            </div>
+
+            <button class="mode-btn revive-btn" id="btn-use-key">
+                <span id="btn-use-key-text">🔑 متابعة باستخدام 1 مفتاح</span>
+            </button>
+
+            <button class="mode-btn quit-btn" id="btn-saveme-skip">
+                <span>لا شكراً / إنهاء الجولة ❌</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 3. Pause Menu Modal (نافذة الإيقاف المؤقت) -->
+    <div id="pause-screen" class="overlay-screen hidden">
+        <div class="game-logo" style="background: linear-gradient(180deg, #60a5fa, #3b82f6); -webkit-background-clip: text;">اللعبة متوقفة مؤقتاً ⏸️</div>
+        <div class="game-subtitle">خذ نفساً ثم واصل الهروب أو اختر الإجراء المناسب:</div>
+
+        <div class="menu-card">
+            <button class="mode-btn secondary-action" id="btn-pause-resume">
+                <span>▶️ استئناف ومتابعة اللعب</span>
+            </button>
+
+            <button class="mode-btn" id="btn-pause-restart">
+                <span>🔄 إعادة البدء من نقطة الصفر</span>
+            </button>
+
+            <button class="mode-btn room-btn" id="btn-pause-main-menu">
+                <span>📋 العودة للقائمة الرئيسية</span>
+            </button>
+
+            <button class="mode-btn quit-btn" id="btn-pause-exit">
+                <span>🚪 الخروج النهائي من اللعبة</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 4. P2P Room Screen -->
+    <div id="room-screen" class="overlay-screen hidden">
+        <div class="game-logo">غرفة التحدي أونلاين</div>
+        <div class="game-subtitle">تحدَّ صديقك في مطاردة السابواي الحية!</div>
+
+        <div class="menu-card">
+            <div id="room-create-section">
+                <button class="mode-btn room-btn" id="btn-create-room">
+                    <span>🔑 إنشاء كود غرفة جديد</span>
+                </button>
+                <div id="created-room-box" style="display: none; margin-top: 14px;">
+                    <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px;">كود الغرفة الخاص بك:</p>
+                    <div class="room-code-display" id="display-room-code">------</div>
+                    <p style="font-size: 0.8rem; color: #38bdf8; margin-top: 6px;">في انتظار انضمام الخصم...</p>
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 6px 0;"></div>
+
+            <div id="room-join-section">
+                <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px;">أو أدخل كود غرفة للانضمام:</p>
+                <input type="text" id="input-room-code" class="room-input" placeholder="مثال: SUB123" maxlength="10">
+                <button class="mode-btn" id="btn-join-room" style="margin-top: 10px;">
+                    <span>انضمام للغرفة 🚀</span>
+                </button>
+            </div>
+
+            <button class="mode-btn quit-btn" id="btn-back-from-room">
+                <span>رجوع للقائمة</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 5. Game Over Screen -->
+    <div id="gameover-screen" class="overlay-screen hidden">
+        <div class="game-logo" id="gameover-title" style="background: linear-gradient(180deg, #f87171, #ef4444, #b91c1c); -webkit-background-clip: text;">تم الإمساك بك! 🚨</div>
+        <div class="game-subtitle" id="gameover-subtitle">لقد أوقع بك الشرطي والكلب بعد مطاردة بطولية!</div>
+
+        <div class="menu-card">
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-num" id="stat-final-score">0m</div>
+                    <div class="stat-title">المسافة المقطوعة</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num" id="stat-final-coins">0</div>
+                    <div class="stat-title">العملات المجمعة</div>
+                </div>
+            </div>
+
+            <button class="mode-btn" id="btn-restart">
+                <span>🔄 إعادة البدء من نقطة الصفر</span>
+            </button>
+            <button class="mode-btn quit-btn" id="btn-gameover-menu">
+                <span>القائمة الرئيسية</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ================= GAME ENGINE SCRIPT ================= -->
+    <script>
+        /**
+         * Subway Surfers 3D — Enhanced Edition (Ultra Realistic Graphics, Tuned Speed, Missions System)
+         */
+
+        // Persistent Inventory (Keys & Coins)
+        let totalKeys = parseInt(localStorage.getItem('subway_surfers_keys') || '3', 10);
+        let revivesUsedThisRound = 0;
+
+        function saveKeysToStorage() {
+            localStorage.setItem('subway_surfers_keys', totalKeys.toString());
+            document.getElementById('hud-keys').textContent = totalKeys;
+        }
+
+        // --- Missions / Challenges System ---
+        let missionTier = parseInt(localStorage.getItem('subway_mission_tier') || '1', 10);
+        let missionSpeedBonus = (missionTier - 1) * 1.2;
+        let scoreMultiplier = missionTier;
+
+        // Mission pool definitions
+        const missionPool = [
+            { id: 'coins_50', text: 'اجمع 50 عملة ذهبية', target: 50, type: 'coins', rewardKeys: 1 },
+            { id: 'distance_300', text: 'اقطع مسافة 300 متر', target: 300, type: 'distance', rewardKeys: 1 },
+            { id: 'jumps_8', text: 'اقفز 8 مرات', target: 8, type: 'jumps', rewardKeys: 1 },
+            { id: 'slides_6', text: 'تدحرج وانزلق 6 مرات', target: 6, type: 'slides', rewardKeys: 1 },
+            { id: 'hoverboard_1', text: 'استخدم لوح التزلج مرة واحدة', target: 1, type: 'hoverboard', rewardKeys: 1 },
+            { id: 'powerup_2', text: 'التقط قدرتين خاصتين (Power-ups)', target: 2, type: 'powerup', rewardKeys: 1 },
+            { id: 'coins_120', text: 'اجمع 120 عملة ذهبية', target: 120, type: 'coins', rewardKeys: 2 },
+            { id: 'distance_600', text: 'اقطع مسافة 600 متر', target: 600, type: 'distance', rewardKeys: 2 },
+            { id: 'lane_changes_12', text: 'غيّر مسارك 12 مرة', target: 12, type: 'lane_changes', rewardKeys: 1 }
+        ];
+
+        let activeMissions = [];
+        let sessionStats = {
+            coins: 0,
+            distance: 0,
+            jumps: 0,
+            slides: 0,
+            hoverboard: 0,
+            powerup: 0,
+            lane_changes: 0
+        };
+
+        function initMissions() {
+            const savedMissions = localStorage.getItem('subway_active_missions');
+            if (savedMissions) {
+                try {
+                    activeMissions = JSON.parse(savedMissions);
+                } catch(e) {
+                    generateFreshMissions();
+                }
+            } else {
+                generateFreshMissions();
+            }
+            renderMissionsUI();
+        }
+
+        function generateFreshMissions() {
+            // Pick 3 missions matching tier
+            const startIdx = ((missionTier - 1) * 3) % missionPool.length;
+            activeMissions = [];
+            for (let i = 0; i < 3; i++) {
+                const template = missionPool[(startIdx + i) % missionPool.length];
+                activeMissions.push({
+                    id: template.id + '_' + missionTier,
+                    text: template.text,
+                    target: template.target,
+                    type: template.type,
+                    rewardKeys: template.rewardKeys,
+                    current: 0,
+                    completed: false
+                });
+            }
+            saveMissions();
+        }
+
+        function saveMissions() {
+            localStorage.setItem('subway_active_missions', JSON.stringify(activeMissions));
+            localStorage.setItem('subway_mission_tier', missionTier.toString());
+        }
+
+        function trackMissionEvent(type, amount = 1) {
+            if (gameState !== 'PLAYING') return;
+            sessionStats[type] = (sessionStats[type] || 0) + amount;
+
+            let updated = false;
+            let newlyCompletedCount = 0;
+
+            activeMissions.forEach(m => {
+                if (!m.completed && m.type === type) {
+                    m.current = Math.min(m.target, m.current + amount);
+                    updated = true;
+                    if (m.current >= m.target) {
+                        m.completed = true;
+                        newlyCompletedCount++;
+                        // Reward Keys!
+                        totalKeys += m.rewardKeys;
+                        saveKeysToStorage();
+                        sound.missionComplete();
+                        showFloatingBanner(`🎉 اكتملت المهمة! +${m.rewardKeys} مفتاح 🔑`);
+                    }
+                }
+            });
+
+            if (updated) {
+                saveMissions();
+                renderMissionsUI();
+            }
+
+            // Check if all 3 missions in set are completed
+            const allCompleted = activeMissions.every(m => m.completed);
+            if (allCompleted) {
+                missionTier++;
+                missionSpeedBonus = (missionTier - 1) * 1.2;
+                scoreMultiplier = missionTier;
+                document.getElementById('hud-multiplier').textContent = `x${scoreMultiplier}`;
+                sound.powerup();
+                showFloatingBanner(`🔥 ترقية المستوى ${missionTier}! مضاعفة النقاط وسرعة أعلى!`);
+                setTimeout(() => {
+                    generateFreshMissions();
+                    renderMissionsUI();
+                }, 2000);
+            }
+        }
+
+        function renderMissionsUI() {
+            const listEl = document.getElementById('missions-list');
+            const tierBadge = document.getElementById('missions-tier-badge');
+            const countEl = document.getElementById('hud-mission-count');
+
+            tierBadge.textContent = `المستوى ${missionTier}`;
+            const completedCount = activeMissions.filter(m => m.completed).length;
+            countEl.textContent = `${completedCount}/3`;
+
+            listEl.innerHTML = '';
+            activeMissions.forEach(m => {
+                const percent = Math.min(100, (m.current / m.target) * 100);
+                const item = document.createElement('div');
+                item.className = 'mission-item';
+                item.innerHTML = `
+                    <div class="mission-text">
+                        <span>${m.completed ? '✅' : '📌'} ${m.text}</span>
+                        <span style="color: #facc15;">+${m.rewardKeys} 🔑</span>
+                    </div>
+                    <div class="mission-progress-bar">
+                        <div class="mission-progress-fill" style="width: ${percent}%; ${m.completed ? 'background: #22c55e;' : ''}"></div>
+                    </div>
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        // Toggle Missions Drawer
+        let missionsBannerCollapsed = false;
+        document.getElementById('btn-toggle-missions').addEventListener('click', () => {
+            const banner = document.getElementById('missions-banner');
+            missionsBannerCollapsed = !missionsBannerCollapsed;
+            if (missionsBannerCollapsed) {
+                banner.classList.add('collapsed');
+            } else {
+                banner.classList.remove('collapsed');
+            }
+        });
+
+        // --- Web Audio Synthesizer ---
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.musicGain = null;
+                this.sfxGain = null;
+                this.isMuted = false;
+                this.musicInterval = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) {
+                        this.ctx = new AudioContext();
+                        this.sfxGain = this.ctx.createGain();
+                        this.sfxGain.gain.value = 0.35;
+                        this.sfxGain.connect(this.ctx.destination);
+
+                        this.musicGain = this.ctx.createGain();
+                        this.musicGain.gain.value = 0.15;
+                        this.musicGain.connect(this.ctx.destination);
+                    }
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playTone(freq, type, duration, targetGain = this.sfxGain) {
+                if (!this.ctx || this.isMuted) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(targetGain);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e) {}
+            }
+
+            coin() {
+                this.init();
+                this.playTone(987.77, 'sine', 0.1);
+                setTimeout(() => this.playTone(1318.51, 'triangle', 0.15), 45);
+            }
+
+            keyCollect() {
+                this.init();
+                [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((f, i) => {
+                    setTimeout(() => this.playTone(f, 'triangle', 0.2), i * 50);
+                });
+            }
+
+            missionComplete() {
+                this.init();
+                [440, 554, 659, 880, 1108].forEach((f, i) => {
+                    setTimeout(() => this.playTone(f, 'sine', 0.25), i * 65);
+                });
+            }
+
+            reviveBlast() {
+                this.init();
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(450, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.5);
+                    gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
+                    osc.connect(gain);
+                    gain.connect(this.sfxGain);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.5);
+                } catch(e) {}
+            }
+
+            jump() {
+                this.init();
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(240, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(620, this.ctx.currentTime + 0.18);
+                    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.18);
+                    osc.connect(gain);
+                    gain.connect(this.sfxGain);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.18);
+                } catch(e) {}
+            }
+
+            slide() {
+                this.init();
+                this.playTone(170, 'sawtooth', 0.18);
+            }
+
+            spray() {
+                this.init();
+                if (!this.ctx) return;
+                try {
+                    const node = this.ctx.createBufferSource();
+                    const buffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.15, this.ctx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < buffer.length; i++) {
+                        data[i] = (Math.random() * 2 - 1) * 0.3;
+                    }
+                    node.buffer = buffer;
+                    const gain = this.ctx.createGain();
+                    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+                    node.connect(gain);
+                    gain.connect(this.sfxGain);
+                    node.start();
+                } catch(e) {}
+            }
+
+            powerup() {
+                this.init();
+                [440, 554, 659, 880].forEach((freq, idx) => {
+                    setTimeout(() => this.playTone(freq, 'sine', 0.15), idx * 55);
+                });
+            }
+
+            siren() {
+                this.init();
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(650, this.ctx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(1100, this.ctx.currentTime + 0.25);
+                    osc.frequency.linearRampToValueAtTime(650, this.ctx.currentTime + 0.5);
+                    gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
+                    osc.connect(gain);
+                    gain.connect(this.sfxGain);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.5);
+                } catch(e) {}
+            }
+
+            dogBark() {
+                this.init();
+                this.playTone(220, 'square', 0.08);
+                setTimeout(() => this.playTone(180, 'square', 0.1), 80);
+            }
+
+            crash() {
+                this.init();
+                this.playTone(110, 'sawtooth', 0.4);
+                this.playTone(55, 'square', 0.5);
+            }
+
+            trainHorn() {
+                this.init();
+                this.playTone(349.23, 'sawtooth', 0.35);
+                this.playTone(440.00, 'sawtooth', 0.35);
+            }
+
+            whistle() {
+                this.init();
+                this.playTone(1800, 'sine', 0.2);
+                setTimeout(() => this.playTone(2200, 'sine', 0.35), 70);
+            }
+
+            startMusic() {
+                this.init();
+                if (this.musicInterval) return;
+                let step = 0;
+                const bassNotes = [110, 110, 146, 110, 164, 146, 110, 130];
+                this.musicInterval = setInterval(() => {
+                    if (this.ctx && !this.isMuted && gameState === 'PLAYING') {
+                        const note = bassNotes[step % bassNotes.length];
+                        this.playTone(note, 'triangle', 0.12, this.musicGain);
+                        if (step % 2 === 1) {
+                            this.playTone(587.33, 'sine', 0.05, this.musicGain);
+                        }
+                        step++;
+                    }
+                }, 185);
+            }
+
+            stopMusic() {
+                if (this.musicInterval) {
+                    clearInterval(this.musicInterval);
+                    this.musicInterval = null;
+                }
+            }
+        }
+
+        const sound = new SoundEngine();
+
+        // --- Game Modes & Speed Parameters ---
+        const LANES = [-3.6, 0, 3.6];
+        let activeMode = 'single';
+        let gameState = 'MENU';
+
+        let score = 0;
+        let coins = 0;
+        // Tuned comfortable base speed (as requested by user)
+        const baseSpeed = 22.0;
+        let gameSpeed = 22.0;
+        let chaseDistance = 40.0;
+        let lastTrapTime = 0;
+        let lastDogTime = 0;
+        let lastBoostTime = 0;
+        let saveMeCountdownInterval = null;
+        let invulnerabilityTimer = 0;
+
+        // Active Powerups
+        const powerups = {
+            jetpack: { active: false, timer: 0, duration: 8 },
+            magnet: { active: false, timer: 0, duration: 10 },
+            sneakers: { active: false, timer: 0, duration: 12 },
+            multiplier: { active: false, timer: 0, duration: 12 },
+            hoverboard: { active: false, timer: 0, duration: 15 }
+        };
+
+        // --- Three.js World Setup ---
+        const canvas = document.getElementById('game-canvas');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0c1222);
+        scene.fog = new THREE.FogExp2(0x0c1222, 0.0055);
+
+        const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 400);
+        camera.position.set(0, 5.5, 9.5);
+        camera.lookAt(0, 2, -15);
+
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        // Realistic Sun & Ambient Lights
+        const ambientLight = new THREE.AmbientLight(0xfff7ed, 0.9);
+        scene.add(ambientLight);
+
+        const sunLight = new THREE.DirectionalLight(0xfffbeb, 1.4);
+        sunLight.position.set(35, 60, 30);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 1024;
+        sunLight.shadow.mapSize.height = 1024;
+        sunLight.shadow.camera.near = 0.5;
+        sunLight.shadow.camera.far = 180;
+        sunLight.shadow.camera.left = -35;
+        sunLight.shadow.camera.right = 35;
+        sunLight.shadow.camera.top = 35;
+        sunLight.shadow.camera.bottom = -35;
+        scene.add(sunLight);
+
+        const skyFillLight = new THREE.HemisphereLight(0x38bdf8, 0x1e293b, 0.6);
+        scene.add(skyFillLight);
+
+        // --- Track & Materials ---
+        const groundChunks = [];
+        const CHUNK_LENGTH = 120;
+        const NUM_CHUNKS = 4;
+
+        const ballastMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.95 });
+        const railMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.15 });
+        const tieMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.85 });
+        const pillarMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.7 });
+        const goldMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.92, roughness: 0.12, emissive: 0xd97706, emissiveIntensity: 0.4 });
+        const keyCyanMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.95, roughness: 0.08, emissive: 0x0284c7, emissiveIntensity: 0.65 });
+        const barrierRedMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.35 });
+        const barrierWhiteMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.35 });
+        const woodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8 });
+
+        function createTrackChunk(zOffset) {
+            const group = new THREE.Group();
+
+            // Ground Gravel
+            const groundGeo = new THREE.PlaneGeometry(28, CHUNK_LENGTH);
+            const ground = new THREE.Mesh(groundGeo, ballastMat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            group.add(ground);
+
+            // Rails & Ties for 3 lanes
+            LANES.forEach(laneX => {
+                [-0.85, 0.85].forEach(railOffset => {
+                    const railGeo = new THREE.BoxGeometry(0.14, 0.24, CHUNK_LENGTH);
+                    const rail = new THREE.Mesh(railGeo, railMat);
+                    rail.position.set(laneX + railOffset, 0.12, 0);
+                    group.add(rail);
+                });
+
+                // Wooden Ties
+                const numTies = Math.floor(CHUNK_LENGTH / 2.0);
+                for (let i = 0; i < numTies; i++) {
+                    const tieGeo = new THREE.BoxGeometry(2.2, 0.14, 0.45);
+                    const tie = new THREE.Mesh(tieGeo, tieMat);
+                    tie.position.set(laneX, 0.07, -CHUNK_LENGTH / 2 + i * 2.0);
+                    tie.receiveShadow = true;
+                    group.add(tie);
+                }
+            });
+
+            // Overhead arches & Station Infrastructure
+            const numPillars = 6;
+            for (let i = 0; i < numPillars; i++) {
+                const z = -CHUNK_LENGTH / 2 + i * (CHUNK_LENGTH / numPillars);
+                [-10, 10].forEach(x => {
+                    const pillarGeo = new THREE.CylinderGeometry(0.35, 0.45, 14, 10);
+                    const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+                    pillar.position.set(x, 7, z);
+                    group.add(pillar);
+
+                    if (x === -10) {
+                        const beamGeo = new THREE.BoxGeometry(20.5, 0.6, 0.6);
+                        const beam = new THREE.Mesh(beamGeo, railMat);
+                        beam.position.set(0, 13.5, z);
+                        group.add(beam);
+
+                        // Signal Light
+                        const signalLight = new THREE.PointLight(Math.random() > 0.5 ? 0x22c55e : 0xef4444, 1.6, 18);
+                        signalLight.position.set(0, 13, z);
+                        group.add(signalLight);
+                    }
+                });
+            }
+
+            // City Skyscrapers with glowing windows
+            [-22, 22].forEach(sideX => {
+                for (let j = 0; j < 4; j++) {
+                    const height = 30 + Math.random() * 45;
+                    const bGeo = new THREE.BoxGeometry(14, height, 26);
+                    const bMat = new THREE.MeshStandardMaterial({
+                        color: Math.random() > 0.5 ? 0x090d16 : 0x0f172a,
+                        roughness: 0.8
+                    });
+                    const building = new THREE.Mesh(bGeo, bMat);
+                    building.position.set(sideX + (sideX > 0 ? 7 : -7), height / 2 - 2, -CHUNK_LENGTH / 2 + j * 28);
+                    group.add(building);
+                }
+            });
+
+            group.position.z = zOffset;
+            scene.add(group);
+            return group;
+        }
+
+        for (let i = 0; i < NUM_CHUNKS; i++) {
+            groundChunks.push(createTrackChunk(-i * CHUNK_LENGTH));
+        }
+
+        // --- High-Fidelity 3D Trains & Obstacles ---
+        const worldObjects = [];
+
+        const trainPalettes = [
+            { main: 0xd97706, stripe: 0xfef08a, roof: 0x334155 }, // Subway Amber
+            { main: 0x0284c7, stripe: 0x38bdf8, roof: 0x1e293b }, // Metro Blue
+            { main: 0xdc2626, stripe: 0xffedd5, roof: 0x18181b }, // Express Red
+            { main: 0x16a34a, stripe: 0xa7f3d0, roof: 0x1f2937 }  // Forest Line
+        ];
+
+        function createHighDetailTrain(x, z, isMoving = false) {
+            const group = new THREE.Group();
+            const length = 25;
+            const height = 4.5;
+            const width = 2.8;
+
+            const palette = trainPalettes[Math.floor(Math.random() * trainPalettes.length)];
+            const bodyMat = new THREE.MeshStandardMaterial({ color: palette.main, roughness: 0.3, metalness: 0.35 });
+            const stripeMat = new THREE.MeshStandardMaterial({ color: palette.stripe, roughness: 0.35 });
+            const roofMat = new THREE.MeshStandardMaterial({ color: palette.roof, roughness: 0.6 });
+            const glassMat = new THREE.MeshStandardMaterial({ color: 0x93c5fd, roughness: 0.08, metalness: 0.95, emissive: 0x1e3a8a, emissiveIntensity: 0.4 });
+
+            // Main Body Box
+            const body = new THREE.Mesh(new THREE.BoxGeometry(width, height, length), bodyMat);
+            body.position.y = height / 2 + 0.45;
+            body.castShadow = true;
+            body.receiveShadow = true;
+            group.add(body);
+
+            // Side Color Stripe
+            const stripe = new THREE.Mesh(new THREE.BoxGeometry(width + 0.06, 0.7, length), stripeMat);
+            stripe.position.y = height / 2 + 0.25;
+            group.add(stripe);
+
+            // Curved Roof
+            const roof = new THREE.Mesh(new THREE.CylinderGeometry(width / 2, width / 2, length, 16, 1, false, 0, Math.PI), roofMat);
+            roof.rotation.x = Math.PI / 2;
+            roof.rotation.z = Math.PI;
+            roof.position.set(0, height + 0.45, 0);
+            group.add(roof);
+
+            // Rooftop AC Units
+            [-length / 4, length / 4].forEach(rz => {
+                const acUnit = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.4, 2.8), pillarMat);
+                acUnit.position.set(0, height + 0.9, rz);
+                group.add(acUnit);
+            });
+
+            // Side Windows & Passenger Doors
+            for (let w = -length / 2 + 3.2; w < length / 2 - 2; w += 3.2) {
+                [-width / 2 - 0.04, width / 2 + 0.04].forEach(wx => {
+                    const win = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.25, 1.8), glassMat);
+                    win.position.set(wx, 2.85, w);
+                    group.add(win);
+                });
+            }
+
+            // Front Cabin Windshield
+            const frontGlass = new THREE.Mesh(new THREE.BoxGeometry(width * 0.82, 1.5, 0.12), glassMat);
+            frontGlass.position.set(0, 3.1, length / 2 + 0.06);
+            group.add(frontGlass);
+
+            // Dual Headlights
+            [-0.95, 0.95].forEach(lx => {
+                const hlMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.1, 12), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+                hlMesh.rotation.x = Math.PI / 2;
+                hlMesh.position.set(lx, 1.35, length / 2 + 0.08);
+                group.add(hlMesh);
+
+                const spot = new THREE.PointLight(0xffffff, 2.6, 20);
+                spot.position.set(lx, 1.35, length / 2 + 0.9);
+                group.add(spot);
+            });
+
+            // Bogies & Steel Wheels
+            [-length / 3, length / 3].forEach(bz => {
+                const wheelAxle = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, width + 0.25, 12), railMat);
+                wheelAxle.rotation.z = Math.PI / 2;
+                wheelAxle.position.set(0, 0.42, bz);
+                group.add(wheelAxle);
+            });
+
+            // Wooden Climbing Ramp at Back
+            const ramp = new THREE.Mesh(new THREE.BoxGeometry(width, 0.38, 4.8), woodMat);
+            ramp.rotation.x = 0.32;
+            ramp.position.set(0, 1.25, length / 2 + 2.2);
+            group.add(ramp);
+
+            // Coins on Roof
+            for (let c = -length / 2 + 3; c < length / 2 - 2; c += 2.4) {
+                createCoin(x, height + 1.4, z + c);
+            }
+
+            group.position.set(x, 0, z);
+            group.userData = {
+                type: 'train',
+                width,
+                height,
+                length,
+                isMoving,
+                speed: isMoving ? 14 : 0
+            };
+            scene.add(group);
+            worldObjects.push(group);
+            return group;
+        }
+
+        function createCoin(x, y, z) {
+            const coinGeo = new THREE.CylinderGeometry(0.44, 0.44, 0.12, 16);
+            const coin = new THREE.Mesh(coinGeo, goldMat);
+            coin.rotation.x = Math.PI / 2;
+            coin.position.set(x, y, z);
+            coin.castShadow = true;
+            coin.userData = { type: 'coin', radius: 0.75 };
+            scene.add(coin);
+            worldObjects.push(coin);
+            return coin;
+        }
+
+        // 3D Rare Key (🔑)
+        function createRareKey(x, y, z) {
+            const group = new THREE.Group();
+
+            const ringGeo = new THREE.TorusGeometry(0.28, 0.08, 8, 16);
+            const ring = new THREE.Mesh(ringGeo, keyCyanMat);
+            ring.position.y = 0.45;
+            group.add(ring);
+
+            const stemGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.7, 8);
+            const stem = new THREE.Mesh(stemGeo, keyCyanMat);
+            stem.position.y = 0;
+            group.add(stem);
+
+            const bitGeo = new THREE.BoxGeometry(0.2, 0.08, 0.08);
+            const bit1 = new THREE.Mesh(bitGeo, keyCyanMat);
+            bit1.position.set(0.08, -0.2, 0);
+            const bit2 = bit1.clone();
+            bit2.position.set(0.08, -0.32, 0);
+            group.add(bit1, bit2);
+
+            const keyLight = new THREE.PointLight(0x38bdf8, 2.5, 12);
+            keyLight.position.set(0, 0.2, 0);
+            group.add(keyLight);
+
+            group.position.set(x, y, z);
+            group.userData = { type: 'key', radius: 0.9 };
+            scene.add(group);
+            worldObjects.push(group);
+            return group;
+        }
+
+        function createBarrier(x, z, isHigh = false) {
+            const group = new THREE.Group();
+            if (isHigh) {
+                for (let p = 0; p < 2; p++) {
+                    const plank = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.45, 0.2), p % 2 === 0 ? barrierRedMat : barrierWhiteMat);
+                    plank.position.set(0, 0.9 + p * 0.45, 0);
+                    plank.castShadow = true;
+                    group.add(plank);
+                }
+
+                [-1.3, 1.3].forEach(px => {
+                    const post = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.6, 0.22), woodMat);
+                    post.position.set(px, 0.8, 0);
+                    group.add(post);
+                });
+
+                group.userData = { type: 'barrier_jump', height: 1.6, width: 2.9 };
+            } else {
+                const frame = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.9, 0.22), barrierRedMat);
+                frame.position.set(0, 2.4, 0);
+                frame.castShadow = true;
+                group.add(frame);
+
+                [-1.35, 1.35].forEach(px => {
+                    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.6, 0.2), woodMat);
+                    leg.position.set(px, 1.3, 0);
+                    group.add(leg);
+                });
+
+                group.userData = { type: 'barrier_slide', height: 2.8, width: 2.9 };
+            }
+
+            group.position.set(x, 0, z);
+            scene.add(group);
+            worldObjects.push(group);
+            return group;
+        }
+
+        function createPowerupItem(x, y, z, pType) {
+            const group = new THREE.Group();
+            let iconGeo, iconMat;
+
+            if (pType === 'jetpack') {
+                iconGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.9, 8);
+                iconMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.6 });
+            } else if (pType === 'magnet') {
+                iconGeo = new THREE.TorusGeometry(0.4, 0.15, 8, 16);
+                iconMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xb91c1c, emissiveIntensity: 0.6 });
+            } else if (pType === 'sneakers') {
+                iconGeo = new THREE.BoxGeometry(0.5, 0.4, 0.8);
+                iconMat = new THREE.MeshStandardMaterial({ color: 0x10b981, emissive: 0x059669, emissiveIntensity: 0.6 });
+            } else {
+                iconGeo = new THREE.OctahedronGeometry(0.5);
+                iconMat = new THREE.MeshStandardMaterial({ color: 0xa855f7, emissive: 0x7e22ce, emissiveIntensity: 0.6 });
+            }
+
+            const mesh = new THREE.Mesh(iconGeo, iconMat);
+            mesh.castShadow = true;
+            group.add(mesh);
+            group.position.set(x, y, z);
+            group.userData = { type: 'powerup', pType, radius: 0.95 };
+            scene.add(group);
+            worldObjects.push(group);
+            return group;
+        }
+
+        // Procedural Spawner
+        let nextSpawnZ = -30;
+        function spawnWorldSegment() {
+            const z = nextSpawnZ;
+            const chosenLanes = [0, 1, 2].sort(() => Math.random() - 0.5);
+
+            // Lane 1: Train
+            const lane1X = LANES[chosenLanes[0]];
+            createHighDetailTrain(lane1X, z - 8, Math.random() > 0.45);
+
+            // Lane 2: Barriers or static train
+            const lane2X = LANES[chosenLanes[1]];
+            if (Math.random() > 0.6) {
+                createHighDetailTrain(lane2X, z - 20, false);
+            } else {
+                createBarrier(lane2X, z, Math.random() > 0.45);
+            }
+
+            // Lane 3: Rare Key / Powerup / Coins
+            const lane3X = LANES[chosenLanes[2]];
+            const roll = Math.random();
+
+            if (roll < 0.12) {
+                createRareKey(lane3X, 1.4, z);
+            } else if (roll < 0.28) {
+                const pTypes = ['jetpack', 'magnet', 'sneakers', 'multiplier'];
+                const selectedP = pTypes[Math.floor(Math.random() * pTypes.length)];
+                createPowerupItem(lane3X, 1.2, z, selectedP);
+            } else {
+                for (let c = 0; c < 5; c++) {
+                    createCoin(lane3X, 1.1, z - c * 2.2);
+                }
+            }
+
+            nextSpawnZ -= 32;
+        }
+
+        function clearAllWorldObjects() {
+            for (let i = worldObjects.length - 1; i >= 0; i--) {
+                scene.remove(worldObjects[i]);
+            }
+            worldObjects.length = 0;
+            nextSpawnZ = -30;
+            for (let i = 0; i < 9; i++) {
+                spawnWorldSegment();
+            }
+        }
+
+        for (let i = 0; i < 9; i++) {
+            spawnWorldSegment();
+        }
+
+        // --- Ultra Realistic 3D Character Models (Jake & Cop) ---
+
+        // 1. High Detail Jake (Realistic Subway Surfers Jake)
+        function buildJakeCharacter() {
+            const root = new THREE.Group();
+
+            // Materials
+            const skinMat = new THREE.MeshStandardMaterial({ color: 0xffd7b5, roughness: 0.6 });
+            const hoodieMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.5 }); // Subway Blue
+            const whiteMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.4 });
+            const capRedMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.35 });
+            const denimMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.65 });
+            const hairMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8 });
+
+            // Head (Smooth Rounded)
+            const headGeo = new THREE.SphereGeometry(0.32, 16, 16);
+            const head = new THREE.Mesh(headGeo, skinMat);
+            head.position.y = 2.05;
+            head.scale.set(1.0, 1.08, 1.0);
+            head.castShadow = true;
+            root.add(head);
+
+            // Hair tufts
+            const hair = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.2, 0.45), hairMat);
+            hair.position.set(0, 2.22, 0.05);
+            root.add(hair);
+
+            // Cap (Backwards baseball cap)
+            const capDome = new THREE.Mesh(new THREE.SphereGeometry(0.35, 14, 14, 0, Math.PI * 2, 0, Math.PI / 2), capRedMat);
+            capDome.position.set(0, 2.12, 0);
+            root.add(capDome);
+
+            const capVisor = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.06, 0.32), capRedMat);
+            capVisor.position.set(0, 2.18, -0.36);
+            capVisor.rotation.x = -0.15;
+            root.add(capVisor);
+
+            // Headphones around neck
+            const headphones = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.07, 8, 16), new THREE.MeshStandardMaterial({ color: 0x15803d }));
+            headphones.rotation.x = Math.PI / 2;
+            headphones.position.set(0, 1.76, 0);
+            root.add(headphones);
+
+            // Torso (Layered Hoodie over White Tee)
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.88, 0.46), hoodieMat);
+            torso.position.y = 1.28;
+            torso.castShadow = true;
+            root.add(torso);
+
+            const innerTee = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.48), whiteMat);
+            innerTee.position.set(0, 1.55, 0.02);
+            root.add(innerTee);
+
+            // Backpack
+            const backpack = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.72, 0.28), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+            backpack.position.set(0, 1.28, -0.34);
+            root.add(backpack);
+
+            // Spray Can
+            const sprayCan = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.35, 10), new THREE.MeshStandardMaterial({ color: 0xec4899 }));
+            sprayCan.position.set(0.52, 1.1, 0.25);
+            root.add(sprayCan);
+
+            // Denim Legs (Jeans)
+            const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.78, 0.28), denimMat);
+            leftLeg.position.set(-0.21, 0.48, 0);
+            leftLeg.castShadow = true;
+            root.add(leftLeg);
+
+            const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.78, 0.28), denimMat);
+            rightLeg.position.set(0.21, 0.48, 0);
+            rightLeg.castShadow = true;
+            root.add(rightLeg);
+
+            // Realistic Sneakers (Red & White)
+            [-0.21, 0.21].forEach(sx => {
+                const snk = new THREE.Group();
+                const sole = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.1, 0.52), whiteMat);
+                sole.position.set(0, 0.05, 0.05);
+                const upper = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.18, 0.48), capRedMat);
+                upper.position.set(0, 0.18, 0.05);
+                snk.add(sole, upper);
+                snk.position.set(sx, 0, 0);
+                snk.castShadow = true;
+                root.add(snk);
+            });
+
+            // Arms
+            const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.7, 0.22), hoodieMat);
+            leftArm.position.set(-0.52, 1.28, 0);
+            root.add(leftArm);
+
+            const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.7, 0.22), hoodieMat);
+            rightArm.position.set(0.52, 1.28, 0);
+            root.add(rightArm);
+
+            // Hoverboard
+            const hoverboard = new THREE.Mesh(
+                new THREE.BoxGeometry(1.2, 0.14, 2.5),
+                new THREE.MeshStandardMaterial({ color: 0xec4899, emissive: 0xec4899, emissiveIntensity: 0.7, roughness: 0.2 })
+            );
+            hoverboard.position.set(0, 0.07, 0);
+            hoverboard.visible = false;
+            root.add(hoverboard);
+
+            // Shield
+            const shieldGeo = new THREE.SphereGeometry(1.6, 16, 16);
+            const shieldMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true, transparent: true, opacity: 0.6 });
+            const shieldMesh = new THREE.Mesh(shieldGeo, shieldMat);
+            shieldMesh.position.y = 1.2;
+            shieldMesh.visible = false;
+            root.add(shieldMesh);
+
+            // Jetpack
+            const jetpackGroup = new THREE.Group();
+            const tank1 = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.75, 8), new THREE.MeshStandardMaterial({ color: 0xf59e0b }));
+            tank1.position.set(-0.2, 1.35, -0.4);
+            const tank2 = tank1.clone();
+            tank2.position.set(0.2, 1.35, -0.4);
+            jetpackGroup.add(tank1, tank2);
+            jetpackGroup.visible = false;
+            root.add(jetpackGroup);
+
+            scene.add(root);
+            return {
+                root,
+                leftLeg,
+                rightLeg,
+                leftArm,
+                rightArm,
+                sprayCan,
+                hoverboard,
+                shieldMesh,
+                jetpackGroup,
+                laneIndex: 1,
+                targetX: LANES[1],
+                y: 0,
+                vy: 0,
+                isJumping: false,
+                isSliding: false,
+                slideTimer: 0
+            };
+        }
+
+        // 2. Police Inspector & Bulldog
+        function buildPoliceCharacter() {
+            const root = new THREE.Group();
+
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.15, 0.65), new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 }));
+            body.position.y = 1.35;
+            body.castShadow = true;
+            root.add(body);
+
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.58, 0.58), new THREE.MeshStandardMaterial({ color: 0xffd7b5, roughness: 0.6 }));
+            head.position.y = 2.25;
+            head.castShadow = true;
+            root.add(head);
+
+            const hat = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.48, 0.28, 8), new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3 }));
+            hat.position.set(0, 2.58, 0.05);
+            root.add(hat);
+
+            const badge = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.05), new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.9 }));
+            badge.position.set(0.28, 1.55, 0.35);
+            root.add(badge);
+
+            const flashlight = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 0.55, 8), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+            flashlight.rotation.x = Math.PI / 2;
+            flashlight.position.set(0.65, 1.15, 0.35);
+            root.add(flashlight);
+
+            const dogGroup = new THREE.Group();
+            const dogBody = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.45, 0.75), new THREE.MeshStandardMaterial({ color: 0x78350f }));
+            dogBody.position.set(0, 0.4, 0);
+            dogGroup.add(dogBody);
+
+            const dogHead = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), new THREE.MeshStandardMaterial({ color: 0x92400e }));
+            dogHead.position.set(0, 0.6, -0.45);
+            dogGroup.add(dogHead);
+
+            dogGroup.position.set(-1.2, 0, 0.2);
+            root.add(dogGroup);
+
+            scene.add(root);
+            return {
+                root,
+                dogGroup,
+                laneIndex: 1,
+                targetX: LANES[1]
+            };
+        }
+
+        const runner = buildJakeCharacter();
+        const inspector = buildPoliceCharacter();
+
+        // Spray Particles
+        const sprayParticles = [];
+        const sprayGeo = new THREE.SphereGeometry(0.06, 6, 6);
+        const sprayColors = [0xec4899, 0x38bdf8, 0xfacc15, 0xa855f7];
+
+        for (let i = 0; i < 25; i++) {
+            const pMesh = new THREE.Mesh(
+                sprayGeo,
+                new THREE.MeshBasicMaterial({ color: sprayColors[i % sprayColors.length] })
+            );
+            pMesh.visible = false;
+            scene.add(pMesh);
+            sprayParticles.push({
+                mesh: pMesh,
+                vx: 0, vy: 0, vz: 0, life: 0
+            });
+        }
+
+        function triggerSprayBurst(origin) {
+            sprayParticles.forEach(p => {
+                p.mesh.position.copy(origin);
+                p.mesh.visible = true;
+                p.vx = (Math.random() - 0.5) * 4;
+                p.vy = (Math.random() - 0.2) * 3;
+                p.vz = -(Math.random() * 5 + 2);
+                p.life = 0.4;
+            });
+            sound.spray();
+        }
+
+        // --- Controls & Input ---
+
+        function handleRunnerLaneChange(dir) {
+            if (gameState !== 'PLAYING') return;
+            const newIndex = runner.laneIndex + dir;
+            if (newIndex >= 0 && newIndex < LANES.length) {
+                runner.laneIndex = newIndex;
+                runner.targetX = LANES[newIndex];
+                sound.jump();
+                trackMissionEvent('lane_changes', 1);
+            }
+        }
+
+        function handleRunnerJump() {
+            if (gameState !== 'PLAYING') return;
+            if (!runner.isJumping) {
+                const jumpForce = powerups.sneakers.active ? 18.0 : 13.5;
+                runner.vy = jumpForce;
+                runner.isJumping = true;
+                runner.isSliding = false;
+                sound.jump();
+                trackMissionEvent('jumps', 1);
+            }
+        }
+
+        function handleRunnerSlide() {
+            if (gameState !== 'PLAYING') return;
+            runner.isSliding = true;
+            runner.slideTimer = 0.7;
+            if (runner.isJumping) {
+                runner.vy = -18;
+            }
+            sound.slide();
+            trackMissionEvent('slides', 1);
+        }
+
+        function handleRunnerHoverboard() {
+            if (gameState !== 'PLAYING') return;
+            if (!powerups.hoverboard.active) {
+                powerups.hoverboard.active = true;
+                powerups.hoverboard.timer = powerups.hoverboard.duration;
+                runner.hoverboard.visible = true;
+                sound.powerup();
+                showFloatingBanner('🛹 HOVERBOARD ACTIVE!');
+                trackMissionEvent('hoverboard', 1);
+            }
+        }
+
+        // Inspector Controls
+        function handleCopLaneChange(dir) {
+            if (gameState !== 'PLAYING') return;
+            const newIndex = inspector.laneIndex + dir;
+            if (newIndex >= 0 && newIndex < LANES.length) {
+                inspector.laneIndex = newIndex;
+                inspector.targetX = LANES[newIndex];
+            }
+        }
+
+        function handleCopTurboBoost() {
+            const now = Date.now();
+            if (now - lastBoostTime < 6000) return;
+            lastBoostTime = now;
+            chaseDistance = Math.max(5.0, chaseDistance - 8.0);
+            sound.siren();
+            showFloatingBanner('🚨 COP TURBO SPRINT!');
+        }
+
+        function handleCopThrowTrap() {
+            const now = Date.now();
+            if (now - lastTrapTime < 8000) return;
+            lastTrapTime = now;
+            createBarrier(LANES[runner.laneIndex], runner.root.position.z - 30, Math.random() > 0.5);
+            sound.trainHorn();
+            showFloatingBanner('🕸️ ROAD TRAP DEPLOYED!');
+        }
+
+        function handleCopDogSprint() {
+            const now = Date.now();
+            if (now - lastDogTime < 10000) return;
+            lastDogTime = now;
+            sound.dogBark();
+            chaseDistance = Math.max(4.0, chaseDistance - 12.0);
+            showFloatingBanner('🐕 POLICE DOG LUNGE!');
+        }
+
+        // Keyboard Handling
+        window.addEventListener('keydown', e => {
+            if (e.code === 'Escape' || e.code === 'KeyP') {
+                if (gameState === 'PLAYING') {
+                    pauseGame();
+                } else if (gameState === 'PAUSED') {
+                    resumeGame();
+                }
+                return;
+            }
+
+            if (['ArrowLeft', 'KeyA'].includes(e.code)) handleRunnerLaneChange(-1);
+            else if (['ArrowRight', 'KeyD'].includes(e.code)) handleRunnerLaneChange(1);
+            else if (['ArrowUp', 'KeyW', 'Space'].includes(e.code)) handleRunnerJump();
+            else if (['ArrowDown', 'KeyS'].includes(e.code)) handleRunnerSlide();
+            else if (['KeyQ', 'KeyE'].includes(e.code)) handleRunnerHoverboard();
+
+            if (activeMode === 'local_vs' && gameState === 'PLAYING') {
+                if (['KeyJ', 'Numpad4'].includes(e.code)) handleCopLaneChange(-1);
+                else if (['KeyL', 'Numpad6'].includes(e.code)) handleCopLaneChange(1);
+                else if (['KeyI', 'Numpad8'].includes(e.code)) handleCopTurboBoost();
+                else if (['KeyK', 'Numpad5'].includes(e.code)) handleCopThrowTrap();
+                else if (['KeyU', 'Numpad7'].includes(e.code)) handleCopDogSprint();
+            }
+        });
+
+        // Touch Gestures
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let lastTouchTapTime = 0;
+
+        window.addEventListener('touchstart', e => {
+            if (gameState === 'INTRO_IDLE') {
+                startSprintFromIntro();
+                return;
+            }
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+
+            const now = Date.now();
+            if (now - lastTouchTapTime < 300) {
+                handleRunnerHoverboard();
+            }
+            lastTouchTapTime = now;
+        }, { passive: true });
+
+        window.addEventListener('touchend', e => {
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            const dy = e.changedTouches[0].clientY - touchStartY;
+            const absDx = Math.abs(dx);
+            const absDy = Math.abs(dy);
+
+            if (Math.max(absDx, absDy) > 25) {
+                if (absDx > absDy) {
+                    if (dx > 0) handleRunnerLaneChange(1);
+                    else handleRunnerLaneChange(-1);
+                } else {
+                    if (dy < 0) handleRunnerJump();
+                    else handleRunnerSlide();
+                }
+            }
+        }, { passive: true });
+
+        document.getElementById('m-cop-boost')?.addEventListener('click', handleCopTurboBoost);
+        document.getElementById('m-cop-trap')?.addEventListener('click', handleCopThrowTrap);
+        document.getElementById('m-cop-dog')?.addEventListener('click', handleCopDogSprint);
+
+        // Helper Notification
+        const bannerEl = document.getElementById('floating-banner');
+        let bannerTimer;
+        function showFloatingBanner(text) {
+            bannerEl.textContent = text;
+            bannerEl.classList.add('show');
+            clearTimeout(bannerTimer);
+            bannerTimer = setTimeout(() => bannerEl.classList.remove('show'), 1800);
+        }
+
+        // --- Game Loop & Rendering ---
+        let lastTime = performance.now();
+
+        function animate(now) {
+            requestAnimationFrame(animate);
+            const dt = Math.min((now - lastTime) / 1000, 0.1);
+            lastTime = now;
+
+            if (gameState === 'INTRO_IDLE') {
+                updateIntroAnimation(dt, now);
+            } else if (gameState === 'PLAYING') {
+                updateGame(dt, now);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // --- Intro Graffiti Painting Scene ---
+        let sprayTimer = 0;
+        function updateIntroAnimation(dt, now) {
+            runner.root.position.set(0, 0, 0);
+            runner.root.rotation.y = Math.PI * 0.15;
+
+            runner.rightArm.rotation.x = -Math.PI / 3 + Math.sin(now * 0.008) * 0.4;
+            runner.rightArm.rotation.z = Math.cos(now * 0.008) * 0.3;
+
+            sprayTimer += dt;
+            if (sprayTimer > 0.18) {
+                sprayTimer = 0;
+                const sprayPos = runner.root.position.clone().add(new THREE.Vector3(0.55, 1.3, 0.4));
+                triggerSprayBurst(sprayPos);
+            }
+
+            sprayParticles.forEach(p => {
+                if (p.life > 0) {
+                    p.life -= dt;
+                    p.mesh.position.x += p.vx * dt;
+                    p.mesh.position.y += p.vy * dt;
+                    p.mesh.position.z += p.vz * dt;
+                    if (p.life <= 0) p.mesh.visible = false;
+                }
+            });
+
+            camera.position.set(Math.sin(now * 0.001) * 2.5, 3.8, 6.5);
+            camera.lookAt(0, 1.8, 0);
+
+            inspector.root.position.set(2.5, 0, 14);
+            inspector.root.visible = false;
+        }
+
+        function startSprintFromIntro() {
+            if (gameState !== 'INTRO_IDLE') return;
+
+            sound.whistle();
+            setTimeout(() => sound.siren(), 200);
+
+            runner.root.rotation.y = 0;
+            runner.sprayCan.visible = false;
+            sprayParticles.forEach(p => p.mesh.visible = false);
+
+            inspector.root.visible = true;
+            inspector.root.position.set(0, 0, 8);
+
+            gameState = 'PLAYING';
+            document.getElementById('tap-to-play-prompt').style.display = 'none';
+            document.getElementById('top-hud').style.display = 'flex';
+
+            sound.startMusic();
+            showFloatingBanner('RUN! COP IS ON YOUR TAIL! 🚨');
+        }
+
+        // --- Main Game Update ---
+        function updateGame(dt, now) {
+            // Tuned gentle speed curve + mission tier boost
+            gameSpeed = baseSpeed + missionSpeedBonus + Math.min(score * 0.006, 12.0);
+            const moveZ = gameSpeed * dt;
+            const distanceGained = Math.round(moveZ * scoreMultiplier * (powerups.multiplier.active ? 2 : 1));
+            score += distanceGained;
+
+            trackMissionEvent('distance', Math.round(moveZ));
+
+            // Update UI
+            document.getElementById('hud-score').textContent = `${score}m`;
+            document.getElementById('hud-coins').textContent = coins;
+            document.getElementById('hud-keys').textContent = totalKeys;
+
+            // Invulnerability shield timer
+            if (invulnerabilityTimer > 0) {
+                invulnerabilityTimer -= dt;
+                runner.shieldMesh.visible = true;
+                runner.shieldMesh.rotation.y += 4 * dt;
+                if (invulnerabilityTimer <= 0) {
+                    runner.shieldMesh.visible = false;
+                }
+            }
+
+            // Runner Smooth Lane Transition & Slight tilt
+            runner.root.position.x += (runner.targetX - runner.root.position.x) * 15.0 * dt;
+            runner.root.rotation.z = (runner.targetX - runner.root.position.x) * -0.06;
+
+            // Runner Jump & Gravity
+            if (powerups.jetpack.active) {
+                runner.root.position.y += (8.5 - runner.root.position.y) * 5.0 * dt;
+                runner.isJumping = false;
+            } else {
+                runner.vy -= 34.0 * dt;
+                runner.y += runner.vy * dt;
+                if (runner.y <= 0) {
+                    runner.y = 0;
+                    runner.vy = 0;
+                    runner.isJumping = false;
+                }
+                runner.root.position.y = runner.y;
+            }
+
+            // Slide Roll
+            if (runner.isSliding) {
+                runner.slideTimer -= dt;
+                runner.root.scale.set(1.0, 0.5, 1.0);
+                if (runner.slideTimer <= 0) {
+                    runner.isSliding = false;
+                    runner.root.scale.set(1.0, 1.0, 1.0);
+                }
+            } else {
+                runner.root.scale.set(1.0, 1.0, 1.0);
+            }
+
+            // Running Limb Cycle
+            const runAnimTime = now * 0.016;
+            if (!runner.isJumping && !runner.isSliding && !powerups.jetpack.active) {
+                runner.leftLeg.rotation.x = Math.sin(runAnimTime) * 0.7;
+                runner.rightLeg.rotation.x = -Math.sin(runAnimTime) * 0.7;
+                runner.leftArm.rotation.x = -Math.sin(runAnimTime) * 0.6;
+                runner.rightArm.rotation.x = Math.sin(runAnimTime) * 0.6;
+            }
+
+            // Move Ground Tracks
+            groundChunks.forEach(chunk => {
+                chunk.position.z += moveZ;
+                if (chunk.position.z > CHUNK_LENGTH) {
+                    chunk.position.z -= NUM_CHUNKS * CHUNK_LENGTH;
+                }
+            });
+
+            // Inspector AI
+            if (activeMode === 'single') {
+                if (Math.random() < 0.03) {
+                    inspector.laneIndex = runner.laneIndex;
+                    inspector.targetX = LANES[inspector.laneIndex];
+                }
+            }
+
+            inspector.root.position.x += (inspector.targetX - inspector.root.position.x) * 12.0 * dt;
+            const targetCopZ = runner.root.position.z + (chaseDistance * 0.45);
+            inspector.root.position.z += (targetCopZ - inspector.root.position.z) * 4.0 * dt;
+            inspector.dogGroup.position.z = Math.sin(now * 0.01) * 0.3;
+
+            // Distance meter update
+            chaseDistance = Math.min(65.0, chaseDistance + dt * 1.5);
+            const chasePercent = Math.max(0, Math.min(100, (chaseDistance / 60.0) * 100));
+            document.getElementById('chase-bar-fill').style.width = `${chasePercent}%`;
+            document.getElementById('chase-dist-val').textContent = `${Math.round(chaseDistance)}m`;
+
+            if (chaseDistance <= 2.5 && invulnerabilityTimer <= 0) {
+                triggerSaveMeModal('👮‍♂️ تم الإمساك بك من الشرطي!', 'لقد نجح الشرطي في تضييق الخناق والإمساك بك!');
+                return;
+            }
+
+            updatePowerups(dt);
+
+            // Update World Objects
+            for (let i = worldObjects.length - 1; i >= 0; i--) {
+                const obj = worldObjects[i];
+                obj.position.z += moveZ;
+
+                if (obj.userData.type === 'train' && obj.userData.isMoving) {
+                    obj.position.z += obj.userData.speed * dt;
+                }
+
+                if (obj.userData.type === 'coin') {
+                    obj.rotation.z += 3.0 * dt;
+                    if (powerups.magnet.active) {
+                        const distToRunner = obj.position.distanceTo(runner.root.position);
+                        if (distToRunner < 18.0) {
+                            obj.position.lerp(runner.root.position, 12.0 * dt);
+                        }
+                    }
+                }
+
+                if (obj.userData.type === 'key') {
+                    obj.rotation.y += 3.5 * dt;
+                }
+
+                checkCollisions(obj, i);
+
+                if (obj.position.z > 20) {
+                    scene.remove(obj);
+                    worldObjects.splice(i, 1);
+                }
+            }
+
+            if (worldObjects.length < 24) {
+                spawnWorldSegment();
+            }
+
+            // Camera follow smoothly
+            camera.position.x = runner.root.position.x * 0.45;
+            camera.position.y = 5.5 + runner.root.position.y * 0.3;
+            camera.position.z = 9.5;
+            camera.lookAt(runner.root.position.x * 0.2, 2, -15);
+        }
+
+        function checkCollisions(obj, index) {
+            const rx = runner.root.position.x;
+            const ry = runner.root.position.y;
+            const rz = runner.root.position.z;
+
+            const ox = obj.position.x;
+            const oy = obj.position.y;
+            const oz = obj.position.z;
+
+            // 1. Key Collection
+            if (obj.userData.type === 'key') {
+                if (Math.abs(rx - ox) < 1.3 && Math.abs(rz - oz) < 1.6 && Math.abs(ry - oy) < 1.8) {
+                    totalKeys++;
+                    saveKeysToStorage();
+                    sound.keyCollect();
+                    showFloatingBanner('🔑 RARE KEY FOUND! +1');
+                    scene.remove(obj);
+                    worldObjects.splice(index, 1);
+                }
+                return;
+            }
+
+            // 2. Coins
+            if (obj.userData.type === 'coin') {
+                if (Math.abs(rx - ox) < 1.1 && Math.abs(rz - oz) < 1.4 && Math.abs(ry - oy) < 1.6) {
+                    const add = (powerups.multiplier.active ? 2 : 1);
+                    coins += add;
+                    sound.coin();
+                    trackMissionEvent('coins', add);
+                    scene.remove(obj);
+                    worldObjects.splice(index, 1);
+                }
+                return;
+            }
+
+            // 3. Power-ups
+            if (obj.userData.type === 'powerup') {
+                if (Math.abs(rx - ox) < 1.2 && Math.abs(rz - oz) < 1.5) {
+                    const p = obj.userData.pType;
+                    powerups[p].active = true;
+                    powerups[p].timer = powerups[p].duration;
+                    sound.powerup();
+                    showFloatingBanner(`${p.toUpperCase()} ACTIVATED! ⭐`);
+                    if (p === 'hoverboard') runner.hoverboard.visible = true;
+                    if (p === 'jetpack') runner.jetpackGroup.visible = true;
+                    trackMissionEvent('powerup', 1);
+                    scene.remove(obj);
+                    worldObjects.splice(index, 1);
+                }
+                return;
+            }
+
+            // If player is invulnerable (just revived), ignore damage
+            if (invulnerabilityTimer > 0) return;
+
+            // 4. Trains
+            if (obj.userData.type === 'train') {
+                const halfLen = obj.userData.length / 2;
+                if (Math.abs(rx - ox) < 1.2 && rz < (oz + halfLen) && rz > (oz - halfLen)) {
+                    if (ry >= (obj.userData.height + 0.1)) {
+                        runner.y = obj.userData.height + 0.3;
+                        runner.vy = 0;
+                        runner.isJumping = false;
+                    } else {
+                        handleObstacleHit('train');
+                    }
+                }
+                return;
+            }
+
+            // 5. Barriers
+            if (obj.userData.type === 'barrier_jump') {
+                if (Math.abs(rx - ox) < 1.2 && Math.abs(rz - oz) < 1.0) {
+                    if (ry < 1.3) {
+                        handleObstacleHit('barrier');
+                    }
+                }
+            } else if (obj.userData.type === 'barrier_slide') {
+                if (Math.abs(rx - ox) < 1.2 && Math.abs(rz - oz) < 1.0) {
+                    if (!runner.isSliding) {
+                        handleObstacleHit('barrier');
+                    }
+                }
+            }
+        }
+
+        function handleObstacleHit(type) {
+            if (invulnerabilityTimer > 0) return;
+
+            if (powerups.hoverboard.active) {
+                powerups.hoverboard.active = false;
+                powerups.hoverboard.timer = 0;
+                runner.hoverboard.visible = false;
+                sound.crash();
+                showFloatingBanner('🛹 HOVERBOARD SAVED YOU!');
+                return;
+            }
+
+            sound.crash();
+            chaseDistance -= 16.0;
+
+            if (chaseDistance <= 2.5 || type === 'train') {
+                triggerSaveMeModal(
+                    type === 'train' ? '💥 اصطدمت بالقطار السريع!' : '🚨 تعثرت بالحاجز وأمسك بك الشرطي!',
+                    'هل تريد استخدام المفتاح لمسح العوائق ومواصلة نفس السكور؟'
+                );
+            } else {
+                sound.siren();
+                showFloatingBanner('⚠️ WATCH OUT! COP IS CLOSING IN!');
+            }
+        }
+
+        function updatePowerups(dt) {
+            const bar = document.getElementById('powerup-bar');
+            bar.innerHTML = '';
+
+            Object.keys(powerups).forEach(key => {
+                const p = powerups[key];
+                if (p.active) {
+                    p.timer -= dt;
+                    if (p.timer <= 0) {
+                        p.active = false;
+                        if (key === 'hoverboard') runner.hoverboard.visible = false;
+                        if (key === 'jetpack') runner.jetpackGroup.visible = false;
+                    } else {
+                        const pill = document.createElement('div');
+                        pill.className = 'powerup-pill';
+                        pill.textContent = `${key.toUpperCase()}: ${Math.ceil(p.timer)}s`;
+                        bar.appendChild(pill);
+                    }
+                }
+            });
+        }
+
+        // --- Save Me / Revive System with Keys ---
+        let saveMeTimerVal = 100;
+        let lastCrashTitle = '';
+        let lastCrashSubtitle = '';
+
+        function getRequiredKeyCost() {
+            return Math.pow(2, revivesUsedThisRound);
+        }
+
+        function triggerSaveMeModal(title, subtitle) {
+            lastCrashTitle = title;
+            lastCrashSubtitle = subtitle;
+            gameState = 'SAVEME';
+            sound.stopMusic();
+
+            const cost = getRequiredKeyCost();
+            document.getElementById('saveme-user-keys').textContent = totalKeys;
+            const btnText = document.getElementById('btn-use-key-text');
+            const btnRevive = document.getElementById('btn-use-key');
+
+            btnText.textContent = `🔑 متابعة باستخدام ${cost} مفتاح`;
+            btnRevive.disabled = totalKeys < cost;
+
+            document.getElementById('saveme-screen').classList.remove('hidden');
+
+            saveMeTimerVal = 100;
+            const fill = document.getElementById('saveme-timer-fill');
+            fill.style.width = '100%';
+
+            if (saveMeCountdownInterval) clearInterval(saveMeCountdownInterval);
+            saveMeCountdownInterval = setInterval(() => {
+                saveMeTimerVal -= 2;
+                fill.style.width = `${Math.max(0, saveMeTimerVal)}%`;
+                if (saveMeTimerVal <= 0) {
+                    clearInterval(saveMeCountdownInterval);
+                    finishSaveMeAndShowGameOver();
+                }
+            }, 100);
+        }
+
+        function executeReviveWithKey() {
+            const cost = getRequiredKeyCost();
+            if (totalKeys < cost) return;
+
+            if (saveMeCountdownInterval) clearInterval(saveMeCountdownInterval);
+            totalKeys -= cost;
+            revivesUsedThisRound++;
+            saveKeysToStorage();
+
+            destroyObstaclesAroundPlayer();
+
+            sound.reviveBlast();
+            showFloatingBanner('⚡ REVIVED! BLAST WAVE CLEARED TRACKS!');
+
+            invulnerabilityTimer = 3.5;
+            chaseDistance = 45.0;
+            runner.y = 0;
+            runner.vy = 0;
+            runner.isJumping = false;
+            runner.isSliding = false;
+
+            document.getElementById('saveme-screen').classList.add('hidden');
+            gameState = 'PLAYING';
+            sound.startMusic();
+        }
+
+        function destroyObstaclesAroundPlayer() {
+            const rz = runner.root.position.z;
+            for (let i = worldObjects.length - 1; i >= 0; i--) {
+                const obj = worldObjects[i];
+                if (obj.userData.type === 'train' || obj.userData.type === 'barrier_jump' || obj.userData.type === 'barrier_slide') {
+                    if (obj.position.z > (rz - 60) && obj.position.z < (rz + 25)) {
+                        scene.remove(obj);
+                        worldObjects.splice(i, 1);
+                    }
+                }
+            }
+        }
+
+        function finishSaveMeAndShowGameOver() {
+            if (saveMeCountdownInterval) clearInterval(saveMeCountdownInterval);
+            document.getElementById('saveme-screen').classList.add('hidden');
+            triggerGameOver(lastCrashTitle, lastCrashSubtitle);
+        }
+
+        // --- Pause Menu Handling ---
+        function pauseGame() {
+            if (gameState !== 'PLAYING') return;
+            gameState = 'PAUSED';
+            sound.stopMusic();
+            document.getElementById('pause-screen').classList.remove('hidden');
+        }
+
+        function resumeGame() {
+            if (gameState !== 'PAUSED') return;
+            document.getElementById('pause-screen').classList.add('hidden');
+            gameState = 'PLAYING';
+            sound.startMusic();
+        }
+
+        // --- Game Setup & Lifecycle ---
+        function prepareGameIntro(mode = 'single') {
+            activeMode = mode;
+            gameState = 'INTRO_IDLE';
+            score = 0;
+            coins = 0;
+            revivesUsedThisRound = 0;
+            chaseDistance = 40.0;
+            invulnerabilityTimer = 0;
+            sessionStats = { coins: 0, distance: 0, jumps: 0, slides: 0, hoverboard: 0, powerup: 0, lane_changes: 0 };
+
+            clearAllWorldObjects();
+
+            runner.laneIndex = 1;
+            runner.targetX = LANES[1];
+            runner.root.position.set(0, 0, 0);
+            runner.y = 0;
+            runner.vy = 0;
+            runner.isJumping = false;
+            runner.isSliding = false;
+            runner.sprayCan.visible = true;
+            runner.hoverboard.visible = false;
+            runner.shieldMesh.visible = false;
+            runner.jetpackGroup.visible = false;
+
+            inspector.laneIndex = 1;
+            inspector.targetX = LANES[1];
+            inspector.root.position.set(0, 0, 8);
+
+            Object.keys(powerups).forEach(k => { powerups[k].active = false; powerups[k].timer = 0; });
+
+            document.getElementById('menu-screen').classList.add('hidden');
+            document.getElementById('room-screen').classList.add('hidden');
+            document.getElementById('gameover-screen').classList.add('hidden');
+            document.getElementById('saveme-screen').classList.add('hidden');
+            document.getElementById('pause-screen').classList.add('hidden');
+
+            document.getElementById('tap-to-play-prompt').style.display = 'flex';
+            document.getElementById('top-hud').style.display = 'none';
+
+            const twoPlayerHud = document.getElementById('two-player-hud');
+            const mobileCopActions = document.getElementById('mobile-cop-actions');
+            if (mode === 'local_vs') {
+                twoPlayerHud.style.display = 'flex';
+                mobileCopActions.style.display = 'flex';
+            } else {
+                twoPlayerHud.style.display = 'none';
+                mobileCopActions.style.display = 'none';
+            }
+        }
+
+        function triggerGameOver(title, subtitle) {
+            gameState = 'GAMEOVER';
+            sound.stopMusic();
+
+            document.getElementById('gameover-title').textContent = title;
+            document.getElementById('gameover-subtitle').textContent = subtitle;
+            document.getElementById('stat-final-score').textContent = `${score}m`;
+            document.getElementById('stat-final-coins').textContent = coins;
+            document.getElementById('gameover-screen').classList.remove('hidden');
+
+            try {
+                window.parent.postMessage({
+                    type: 'SUPER_ARCADE_SCORE_SUBMIT',
+                    gameId: 'subway-surfers',
+                    score: score
+                }, '*');
+            } catch(e) {}
+        }
+
+        // --- P2P Online Room ---
+        let peer = null;
+        let conn = null;
+
+        function initP2P() {
+            if (!peer) {
+                const pId = 'SUBWAY_' + Math.random().toString(36).substr(2, 6).toUpperCase();
+                peer = new Peer(pId);
+                peer.on('open', id => {
+                    document.getElementById('display-room-code').textContent = id;
+                });
+                peer.on('connection', c => {
+                    conn = c;
+                    setupConn();
+                    prepareGameIntro('p2p');
+                });
+            }
+        }
+
+        function setupConn() {
+            conn.on('data', data => {
+                if (data.type === 'COP_ACTION') {
+                    if (data.action === 'boost') handleCopTurboBoost();
+                    else if (data.action === 'trap') handleCopThrowTrap();
+                    else if (data.action === 'dog') handleCopDogSprint();
+                } else if (data.type === 'COP_LANE') {
+                    inspector.laneIndex = data.lane;
+                    inspector.targetX = LANES[data.lane];
+                }
+            });
+        }
+
+        function joinRoom(roomId) {
+            if (!peer) {
+                peer = new Peer();
+                peer.on('open', () => {
+                    conn = peer.connect(roomId);
+                    conn.on('open', () => {
+                        setupConn();
+                        prepareGameIntro('p2p');
+                    });
+                });
+            } else {
+                conn = peer.connect(roomId);
+                conn.on('open', () => {
+                    setupConn();
+                    prepareGameIntro('p2p');
+                });
+            }
+        }
+
+        // --- Button Handlers ---
+        document.getElementById('btn-mode-single').addEventListener('click', () => prepareGameIntro('single'));
+        document.getElementById('btn-mode-local-vs').addEventListener('click', () => prepareGameIntro('local_vs'));
+
+        document.getElementById('btn-mode-room').addEventListener('click', () => {
+            document.getElementById('menu-screen').classList.add('hidden');
+            document.getElementById('room-screen').classList.remove('hidden');
+            initP2P();
+        });
+
+        document.getElementById('btn-create-room').addEventListener('click', () => {
+            document.getElementById('created-room-box').style.display = 'block';
+            initP2P();
+        });
+
+        document.getElementById('btn-join-room').addEventListener('click', () => {
+            const code = document.getElementById('input-room-code').value.trim().toUpperCase();
+            if (code) joinRoom(code);
+        });
+
+        document.getElementById('btn-back-from-room').addEventListener('click', () => {
+            document.getElementById('room-screen').classList.add('hidden');
+            document.getElementById('menu-screen').classList.remove('hidden');
+        });
+
+        document.getElementById('btn-mode-pro').addEventListener('click', () => {
+            alert('🏆 وضع أونلاين Pro متاح لمشتركي Pro! جاري بدء جولة المصنفين...');
+            prepareGameIntro('pro');
+        });
+
+        document.getElementById('btn-tap-to-play').addEventListener('click', startSprintFromIntro);
+        canvas.addEventListener('click', () => {
+            if (gameState === 'INTRO_IDLE') startSprintFromIntro();
+        });
+
+        document.getElementById('btn-use-key').addEventListener('click', executeReviveWithKey);
+        document.getElementById('btn-saveme-skip').addEventListener('click', finishSaveMeAndShowGameOver);
+
+        document.getElementById('btn-pause-trigger').addEventListener('click', pauseGame);
+        document.getElementById('btn-pause-resume').addEventListener('click', resumeGame);
+        document.getElementById('btn-pause-restart').addEventListener('click', () => {
+            document.getElementById('pause-screen').classList.add('hidden');
+            prepareGameIntro(activeMode);
+        });
+        document.getElementById('btn-pause-main-menu').addEventListener('click', () => {
+            document.getElementById('pause-screen').classList.add('hidden');
+            document.getElementById('top-hud').style.display = 'none';
+            document.getElementById('tap-to-play-prompt').style.display = 'none';
+            gameState = 'MENU';
+            document.getElementById('menu-screen').classList.remove('hidden');
+        });
+        document.getElementById('btn-pause-exit').addEventListener('click', () => {
+            try {
+                window.parent.history.back();
+            } catch(e) {
+                location.reload();
+            }
+        });
+
+        document.getElementById('btn-restart').addEventListener('click', () => prepareGameIntro(activeMode));
+        document.getElementById('btn-gameover-menu').addEventListener('click', () => {
+            document.getElementById('gameover-screen').classList.add('hidden');
+            document.getElementById('top-hud').style.display = 'none';
+            document.getElementById('tap-to-play-prompt').style.display = 'none';
+            gameState = 'MENU';
+            document.getElementById('menu-screen').classList.remove('hidden');
+        });
+
+        document.getElementById('btn-quit').addEventListener('click', () => {
+            try {
+                window.parent.history.back();
+            } catch(e) {
+                location.reload();
+            }
+        });
+
+        // Initialize Inventory & Missions
+        saveKeysToStorage();
+        initMissions();
+        document.getElementById('hud-multiplier').textContent = `x${scoreMultiplier}`;
+
+        // Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // URL Parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryMode = urlParams.get('mode');
+        const roomCode = urlParams.get('room');
+
+        if (roomCode) {
+            if (urlParams.get('host') === 'true') {
+                document.getElementById('menu-screen').classList.add('hidden');
+                document.getElementById('room-screen').classList.remove('hidden');
+                document.getElementById('created-room-box').style.display = 'block';
+                document.getElementById('display-room-code').textContent = roomCode;
+                initP2P();
+            } else {
+                joinRoom(roomCode);
+            }
+        } else if (queryMode === 'local') {
+            prepareGameIntro('single');
+        } else if (queryMode === 'pro') {
+            prepareGameIntro('pro');
+        }
+
+        // Start Loop
+        requestAnimationFrame(animate);
+    </script>
+</body>
+</html>

@@ -92,32 +92,202 @@
 
   <!-- 1. PENDING -->
   @if (activeSubTab() === 'pending') {
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      @for (video of pendingVideos(); track video.id) {
-        <div class="video-card bg-slate-900 border border-white/5 rounded-[2rem] overflow-hidden flex flex-col text-right">
-          <div class="relative aspect-video">
-            <img [src]="getSafeThumbnail(video)" class="w-full h-full object-cover">
-            <span class="absolute top-3 right-3 bg-amber-500 text-black text-[9px] font-black uppercase px-2 py-0.5 rounded-md">Pending Review</span>
-          </div>
-          <div class="p-5 flex-1 flex flex-col">
-            <h3 class="text-sm font-black text-white leading-snug line-clamp-2 mb-2">{{ video.title }}</h3>
-            <p class="text-xs text-slate-400 font-bold mb-4 flex-1">القناة: {{ video.author }}</p>
-            <div class="flex items-center gap-2 mt-auto">
-              <button 
-                (click)="changeVideoStatus(video, 'pending', 'published')"
-                class="flex-1 h-9 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black transition-all">
-                اعتماد
-              </button>
-              <button 
-                (click)="changeVideoStatus(video, 'pending', 'rejected')"
-                class="flex-1 h-9 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl text-xs font-black transition-all">
-                رفض وحذف
-              </button>
+    <!-- View Switcher Bar (Playlists vs Grid) -->
+    <div class="flex items-center justify-between bg-slate-900/60 p-3 rounded-2xl border border-white/5 mb-6">
+      <div class="flex items-center gap-2">
+        <button 
+          (click)="moderationViewMode.set('playlists')"
+          [ngClass]="moderationViewMode() === 'playlists' ? 'bg-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/20' : 'text-slate-400 hover:text-white bg-white/5'"
+          class="h-8 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer">
+          <lucide-icon [img]="ListTree" class="size-3.5"></lucide-icon>
+          <span>📁 عرض قوائم التشغيل والمجلدات</span>
+        </button>
+        <button 
+          (click)="moderationViewMode.set('grid')"
+          [ngClass]="moderationViewMode() === 'grid' ? 'bg-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/20' : 'text-slate-400 hover:text-white bg-white/5'"
+          class="h-8 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer">
+          <lucide-icon [img]="LayoutGrid" class="size-3.5"></lucide-icon>
+          <span>🔲 عرض شبكي فردي</span>
+        </button>
+      </div>
+
+      <div class="text-xs text-slate-400 font-bold">
+        <span>إجمالي المعلق: <b class="text-amber-400">{{ pendingVideos().length }}</b> فيديو</span>
+      </div>
+    </div>
+
+    <!-- Mode A: Playlists / Folders Grouped View -->
+    @if (moderationViewMode() === 'playlists') {
+      <div class="space-y-6">
+        @for (rootGroup of getGroupedPendingPlaylists(); track rootGroup.rootPlaylist) {
+          <div class="bg-slate-900/90 border border-amber-500/30 rounded-[2rem] p-6 shadow-xl space-y-5 text-right animate-in fade-in duration-300">
+            <!-- Root Folder Header Bar -->
+            <div class="flex items-center justify-between border-b border-white/10 pb-4 flex-wrap gap-3">
+              <div class="flex items-center gap-3 cursor-pointer" (click)="rootGroup.isOpen = !rootGroup.isOpen">
+                <lucide-icon [img]="Folder" class="size-6 text-amber-400 shrink-0"></lucide-icon>
+                <div>
+                  <h3 class="text-base font-black text-white flex items-center gap-2">
+                    <span>{{ rootGroup.rootPlaylist }}</span>
+                    <span class="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
+                      {{ rootGroup.totalVideos }} فيديو
+                    </span>
+                  </h3>
+                  <p class="text-[11px] text-slate-400" *ngIf="rootGroup.author">المصدر / القناة: {{ rootGroup.author }}</p>
+                </div>
+              </div>
+
+              <!-- Root Batch Actions -->
+              <div class="flex items-center gap-2">
+                <button 
+                  (click)="batchApproveRootFolder(rootGroup)"
+                  class="h-9 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-500/20 cursor-pointer">
+                  <lucide-icon [img]="Zap" class="size-3.5"></lucide-icon>
+                  <span>اعتماد كامل المجلد ({{ rootGroup.totalVideos }}) ⚡</span>
+                </button>
+                <button 
+                  (click)="batchRejectRootFolder(rootGroup)"
+                  class="h-9 px-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl text-xs font-black transition-all cursor-pointer">
+                  <span>رفض المجلد ✕</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Root Folder Body (Sub-playlists & Videos) -->
+            <div *ngIf="rootGroup.isOpen" class="space-y-4">
+              <!-- Sub-playlists Accordions (e.g. Session 01, Session 02...) -->
+              @for (sub of rootGroup.subplaylists; track sub.name) {
+                <div class="bg-black/30 border border-white/10 rounded-2xl p-4 space-y-3">
+                  <!-- Sub-playlist Header -->
+                  <div class="flex items-center justify-between flex-wrap gap-2">
+                    <div class="flex items-center gap-2.5 cursor-pointer min-w-0" (click)="sub.isOpen = !sub.isOpen">
+                      <lucide-icon [img]="sub.isOpen ? ChevronDown : ChevronRight" class="size-4 text-slate-400"></lucide-icon>
+                      <lucide-icon [img]="sub.isOpen ? FolderOpen : Folder" class="size-4 text-amber-400 shrink-0"></lucide-icon>
+                      <span class="text-sm font-bold text-white truncate">{{ sub.name }}</span>
+                      <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">
+                        {{ sub.videos.length }} فيديو
+                      </span>
+                    </div>
+
+                    <!-- Sub-playlist Actions -->
+                    <div class="flex items-center gap-2">
+                      <button 
+                        (click)="batchApproveSubplaylist(sub)"
+                        class="h-8 px-3 bg-emerald-600/80 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-black transition cursor-pointer flex items-center gap-1">
+                        <lucide-icon [img]="CheckCircle2" class="size-3"></lucide-icon>
+                        <span>اعتماد القائمة ({{ sub.videos.length }})</span>
+                      </button>
+                      <button 
+                        (click)="batchRejectSubplaylist(sub)"
+                        class="h-8 px-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg text-[11px] font-bold transition cursor-pointer">
+                        <span>رفض</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Sub-playlist Videos Grid -->
+                  <div *ngIf="sub.isOpen" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pt-2 border-t border-white/5 animate-in fade-in duration-200">
+                    @for (video of sub.videos; track video.id) {
+                      <div class="video-card bg-slate-950/80 border border-white/5 rounded-2xl overflow-hidden flex flex-col text-right">
+                        <div class="relative aspect-video bg-black">
+                          <img [src]="getSafeThumbnail(video)" class="w-full h-full object-cover">
+                          <span class="absolute top-2 right-2 bg-amber-500 text-black text-[8px] font-black uppercase px-1.5 py-0.5 rounded">Pending</span>
+                          <span *ngIf="video.source === 'drive'" class="absolute bottom-2 left-2 bg-blue-600/90 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">Google Drive</span>
+                        </div>
+                        <div class="p-3 flex-1 flex flex-col justify-between">
+                          <h4 class="text-xs font-bold text-white line-clamp-2 mb-2 leading-snug">{{ video.title }}</h4>
+                          <div class="flex items-center gap-1.5 mt-auto pt-2">
+                            <a [href]="video.url || video.embedUrl" target="_blank"
+                               class="size-7 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 flex items-center justify-center transition" title="معاينة">
+                              <lucide-icon [img]="PlayCircle" class="size-3.5"></lucide-icon>
+                            </a>
+                            <button 
+                              (click)="changeVideoStatus(video, 'pending', 'published')"
+                              class="flex-1 h-7 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-bold transition">
+                              اعتماد
+                            </button>
+                            <button 
+                              (click)="changeVideoStatus(video, 'pending', 'rejected')"
+                              class="flex-1 h-7 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg text-[11px] font-bold transition">
+                              رفض
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+
+              <!-- Standalone Direct Videos in Root -->
+              <div *ngIf="rootGroup.rootVideos.length > 0" class="space-y-2 pt-2">
+                <h4 class="text-xs font-bold text-slate-400">فيديوهات مباشرة:</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  @for (video of rootGroup.rootVideos; track video.id) {
+                    <div class="video-card bg-slate-950/80 border border-white/5 rounded-2xl overflow-hidden flex flex-col text-right">
+                      <div class="relative aspect-video bg-black">
+                        <img [src]="getSafeThumbnail(video)" class="w-full h-full object-cover">
+                      </div>
+                      <div class="p-3 flex-1 flex flex-col justify-between">
+                        <h4 class="text-xs font-bold text-white line-clamp-2 mb-2">{{ video.title }}</h4>
+                        <div class="flex items-center gap-1.5 mt-auto pt-2">
+                          <button 
+                            (click)="changeVideoStatus(video, 'pending', 'published')"
+                            class="flex-1 h-7 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-bold transition">
+                            اعتماد
+                          </button>
+                          <button 
+                            (click)="changeVideoStatus(video, 'pending', 'rejected')"
+                            class="flex-1 h-7 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg text-[11px] font-bold transition">
+                            رفض
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      }
-    </div>
+        }
+      </div>
+    }
+
+    <!-- Mode B: Individual Grid View -->
+    @if (moderationViewMode() === 'grid') {
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        @for (video of pendingVideos(); track video.id) {
+          <div class="video-card bg-slate-900 border border-white/5 rounded-[2rem] overflow-hidden flex flex-col text-right">
+            <div class="relative aspect-video">
+              <img [src]="getSafeThumbnail(video)" class="w-full h-full object-cover">
+              <span class="absolute top-3 right-3 bg-amber-500 text-black text-[9px] font-black uppercase px-2 py-0.5 rounded-md">Pending Review</span>
+              <span *ngIf="video.source === 'drive'" class="absolute bottom-3 left-3 bg-blue-600/90 text-white text-[9px] font-bold px-2 py-0.5 rounded-md">Google Drive</span>
+            </div>
+            <div class="p-5 flex-1 flex flex-col">
+              <div *ngIf="video.parentPlaylist || video.playlistName" class="mb-2">
+                <span class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 font-bold truncate max-w-full">
+                  📁 {{ video.parentPlaylist ? video.parentPlaylist + ' > ' : '' }}{{ video.playlistName }}
+                </span>
+              </div>
+              <h3 class="text-sm font-black text-white leading-snug line-clamp-2 mb-2">{{ video.title }}</h3>
+              <p class="text-xs text-slate-400 font-bold mb-4 flex-1">القناة: {{ video.author }}</p>
+              <div class="flex items-center gap-2 mt-auto">
+                <button 
+                  (click)="changeVideoStatus(video, 'pending', 'published')"
+                  class="flex-1 h-9 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black transition-all">
+                  اعتماد
+                </button>
+                <button 
+                  (click)="changeVideoStatus(video, 'pending', 'rejected')"
+                  class="flex-1 h-9 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl text-xs font-black transition-all">
+                  رفض وحذف
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
     @if (pendingVideos().length === 0 && !isLoading()) {
       <div class="flex flex-col items-center justify-center py-20 text-slate-500">
         <lucide-icon [img]="CheckCircle2" class="size-16 mb-4 opacity-30"></lucide-icon>

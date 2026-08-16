@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { getFirestore, Firestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, orderBy, limit, startAfter, QueryDocumentSnapshot, documentId, runTransaction, arrayUnion, addDoc, onSnapshot, serverTimestamp, enableIndexedDbPersistence } from 'firebase/firestore';
+import { getFirestore, Firestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, orderBy, limit, startAfter, QueryDocumentSnapshot, documentId, runTransaction, arrayUnion, addDoc, onSnapshot, serverTimestamp, enableIndexedDbPersistence, writeBatch } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL, FirebaseStorage } from 'firebase/storage';
 import { environment } from '../../../environments/environment';
 
@@ -673,6 +673,41 @@ export class FirebaseService {
       }
     } catch (err) {
       console.error(`[FirebaseService] updateVideoStatus failed for ${videoId}:`, err);
+      throw err;
+    }
+  }
+
+  /**
+   * Batch updates video status (e.g. approve/reject an entire playlist)
+   * Safely chunks writes into <= 400 operations per batch to strictly adhere to Firestore limits.
+   */
+  async batchUpdateVideoStatus(videoIds: string[], newStatus: 'published' | 'rejected' | 'pending_review'): Promise<number> {
+    if (!videoIds || videoIds.length === 0) return 0;
+
+    const CHUNK_SIZE = 400; // Strictly below Firestore's 500 limit
+    let totalUpdated = 0;
+
+    try {
+      for (let i = 0; i < videoIds.length; i += CHUNK_SIZE) {
+        const chunk = videoIds.slice(i, i + CHUNK_SIZE);
+        const batch = writeBatch(this.firestore);
+
+        for (const id of chunk) {
+          if (!id) continue;
+          const docRef = doc(this.firestore, 'videos', id);
+          batch.update(docRef, {
+            status: newStatus,
+            updatedAt: serverTimestamp()
+          });
+        }
+
+        await batch.commit();
+        totalUpdated += chunk.length;
+      }
+
+      return totalUpdated;
+    } catch (err) {
+      console.error(`[FirebaseService] batchUpdateVideoStatus(${newStatus}) failed:`, err);
       throw err;
     }
   }

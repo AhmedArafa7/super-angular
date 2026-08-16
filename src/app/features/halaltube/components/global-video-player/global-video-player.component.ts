@@ -70,12 +70,13 @@ import { SafePipe } from '../../../../core/pipes/safe.pipe'; // Need to ensure w
           <canvas #ambientCanvas width="1" height="1" class="hidden"></canvas>
         }
 
-        <!-- Fallback IFrame Player (YouTube API) -->
+        <!-- Fallback IFrame Player (YouTube API / Google Drive Preview) -->
         @if (videoState.playerType() === 'iframe') {
           <div class="relative w-full h-full bg-black">
             <iframe 
               [src]="getIframeUrl() | safe:'resourceUrl'" 
               class="w-full h-full bg-black border-0"
+              sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
               referrerpolicy="strict-origin-when-cross-origin"
               allowfullscreen>
@@ -84,14 +85,14 @@ import { SafePipe } from '../../../../core/pipes/safe.pipe'; // Need to ensure w
             <!-- Quick Action Floating Overlay for Direct Playback & Fallback -->
             <div class="absolute top-3 right-3 z-30 flex items-center gap-2 pointer-events-auto">
               <a 
-                [href]="getDirectYoutubeLink()" 
+                [href]="getDirectExternalLink()" 
                 target="_blank" 
                 rel="noopener"
                 (click)="$event.stopPropagation()"
-                class="bg-slate-950/85 hover:bg-red-600 backdrop-blur-md border border-white/15 text-white px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-all shadow-lg hover:scale-105"
-                title="مشاهدة الفيديو مباشرة على YouTube إذا كان التضمين محظوراً أو تعذر التشغيل"
+                class="bg-slate-950/85 hover:bg-indigo-600 backdrop-blur-md border border-white/15 text-white px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-all shadow-lg hover:scale-105"
+                [title]="isDriveVideo() ? 'مشاهدة الفيديو مباشرة على Google Drive إذا تم تقييد التضمين' : 'مشاهدة الفيديو مباشرة على YouTube إذا كان التضمين محظوراً أو تعذر التشغيل'"
               >
-                <span>مشاهدة على YouTube ↗</span>
+                <span>{{ isDriveVideo() ? 'مشاهدة على Google Drive ↗' : 'مشاهدة على YouTube ↗' }}</span>
               </a>
             </div>
           </div>
@@ -369,9 +370,30 @@ export class GlobalVideoPlayerComponent {
     return (match && match[1] && match[1].length === 11) ? match[1] : null;
   }
 
+  private extractDriveId(url?: string): string | null {
+    if (!url) return null;
+    const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    return match ? match[1] : null;
+  }
+
+  isDriveVideo(): boolean {
+    const video = this.videoState.activeVideo();
+    if (!video) return false;
+    return video.source === 'drive' || (video.url && video.url.includes('drive.google.com')) || !!(video as any).driveFileId;
+  }
+
   getIframeUrl(): string {
     const video = this.videoState.activeVideo();
     if (!video) return '';
+
+    // Google Drive Video Embed
+    if (this.isDriveVideo()) {
+      if ((video as any).embedUrl) return (video as any).embedUrl;
+      const driveId = (video as any).driveFileId || this.extractDriveId(video.url) || video.id;
+      return `https://drive.google.com/file/d/${driveId}/preview`;
+    }
+
+    // YouTube Embed
     const ytId = this.extractYoutubeId(video.url) ||
                  this.extractYoutubeId((video as any).externalUrl) ||
                  this.extractYoutubeId(video.id);
@@ -379,13 +401,21 @@ export class GlobalVideoPlayerComponent {
     return `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1`;
   }
 
-  getDirectYoutubeLink(): string {
+  getDirectExternalLink(): string {
     const video = this.videoState.activeVideo();
     if (!video) return '#';
+    if (this.isDriveVideo()) {
+      const driveId = (video as any).driveFileId || this.extractDriveId(video.url) || video.id;
+      return video.url || `https://drive.google.com/file/d/${driveId}/view`;
+    }
     const ytId = this.extractYoutubeId(video.url) ||
                  this.extractYoutubeId((video as any).externalUrl) ||
                  this.extractYoutubeId(video.id);
     return ytId ? `https://www.youtube.com/watch?v=${ytId}` : '#';
+  }
+
+  getDirectYoutubeLink(): string {
+    return this.getDirectExternalLink();
   }
 
   closePlayer() {

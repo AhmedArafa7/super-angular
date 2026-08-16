@@ -83,6 +83,15 @@
       </button>
       <button 
         type="button"
+        [class.active]="sourceType === 'drive'" 
+        (click)="selectSourceType('drive')"
+        class="segment-btn"
+        title="مجلدات وقوائم تشغيل Google Drive">
+        <lucide-icon [img]="Folder" class="w-4 h-4"></lucide-icon>
+        <span>Google Drive</span>
+      </button>
+      <button 
+        type="button"
         [class.active]="sourceType === 'local'" 
         (click)="selectSourceType('local')"
         class="segment-btn">
@@ -127,23 +136,163 @@
           type="text" 
           [(ngModel)]="title" 
           (keydown.enter)="onEnterPress($event)"
-          placeholder="...صف موضوع الفيديو"
+          placeholder="...صف موضوع الفيديو أو المجلد"
           class="text-input"
         />
       </div>
 
       <!-- Source URL Input (hidden if local is selected) -->
       <div class="form-group animate-fade-in" *ngIf="sourceType !== 'local'">
-        <label class="input-label">رابط المصدر</label>
+        <label class="input-label">رابط المصدر (فيديو، قائمة YouTube، أو مجلد Google Drive)</label>
         <input 
           #urlInput
           type="text" 
           [ngModel]="sourceUrl" 
           (ngModelChange)="onSourceUrlChange($event)"
           (keydown.enter)="onEnterPress($event)"
-          placeholder="...رابط فيديو من الخزنة أو اليوتيوب"
+          placeholder="...رابط فيديو، قائمة تشغيل، أو مجلد Google Drive (drive.google.com/.../folders/...)"
           class="text-input font-mono"
         />
+      </div>
+
+      <!-- Google Drive Loading Indicator -->
+      <div *ngIf="isDriveLoading()" class="my-4 p-4 bg-slate-950/80 rounded-2xl border border-amber-500/30 text-center text-xs text-amber-300 font-bold flex items-center justify-center gap-2 animate-pulse">
+        <span class="w-4 h-4 rounded-full border-2 border-amber-400 border-t-transparent animate-spin inline-block"></span>
+        <span>جاري استكشاف وفهرسة مجلدات وقوائم تشغيل Google Drive بدقة... 📁⏳</span>
+      </div>
+
+      <!-- Google Drive API Key Input Prompt (if required / not configured) -->
+      <div *ngIf="showDriveKeyPrompt()" class="my-4 p-4 bg-amber-950/60 rounded-2xl border border-amber-500/40 space-y-3 animate-in fade-in">
+        <div class="flex items-center gap-2 text-amber-400 text-xs font-black">
+          <lucide-icon [img]="Key" class="w-4 h-4"></lucide-icon>
+          <span>مفتاح Google Drive API Key مطلوب لمتابعة الفهرسة السريعة:</span>
+        </div>
+        <p class="text-[11px] text-slate-300 leading-relaxed">
+          لفهرسة شجرة المجلدات المتداخلة بالكامل، يرجى إدخال مفتاح Google Drive API Key مجاني من Google Cloud Console:
+        </p>
+        <div class="flex gap-2">
+          <input type="text" [(ngModel)]="driveApiKeyInput" placeholder="AIzaSy..." class="text-input font-mono text-xs flex-1">
+          <button type="button" (click)="applyDriveApiKeyAndRetry()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs transition cursor-pointer">تطبيق ومتابعة ⚡</button>
+        </div>
+      </div>
+
+      <!-- Google Drive Interactive Nested Playlist Tree Panel -->
+      <div *ngIf="driveFolderTree() as root" class="my-4 p-4 bg-slate-950/80 rounded-2xl border border-amber-500/30 space-y-3 max-h-80 overflow-y-auto custom-scrollbar animate-in zoom-in-95">
+        <div class="flex items-center justify-between border-b border-white/10 pb-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <lucide-icon [img]="Folder" class="w-4 h-4 text-amber-400 shrink-0"></lucide-icon>
+            <span class="text-xs font-black text-amber-400 truncate">{{ root.name }} ({{ driveTotalVideos() }} فيديو عبر {{ driveTotalFolders() }} مجلد):</span>
+            <button type="button" (click)="toggleSelectAllDrive(true)" class="text-[10px] text-amber-300 hover:underline cursor-pointer shrink-0">تحديد الكل</button>
+            <span class="text-white/20 text-[10px]">|</span>
+            <button type="button" (click)="toggleSelectAllDrive(false)" class="text-[10px] text-slate-400 hover:underline cursor-pointer shrink-0">إلغاء التحديد</button>
+          </div>
+          <button type="button" (click)="driveFolderTree.set(null)" class="text-[10px] text-rose-400 hover:underline cursor-pointer shrink-0">إلغاء القائمة</button>
+        </div>
+
+        <!-- Tree Nodes List -->
+        <div class="space-y-3">
+          <!-- Direct Videos in Root (if any) -->
+          <div *ngIf="root.videos.length > 0" class="space-y-1.5 pl-2">
+            <div *ngFor="let rv of root.videos" (click)="toggleDriveVideo(rv)"
+                 class="flex items-center gap-2.5 p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 cursor-pointer transition">
+              <input type="checkbox" [checked]="rv.selected" (click)="$event.stopPropagation(); toggleDriveVideo(rv)" class="w-4 h-4 text-amber-600 rounded">
+              <img [src]="rv.thumbnail" class="w-12 h-8 object-cover rounded-lg shrink-0 bg-slate-900">
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-bold text-white truncate">{{ rv.title }}</p>
+                <p class="text-[10px] text-amber-400/80">المجلد الرئيسي</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Subfolders (Level 1: e.g. Session 01 [ERD], Session 02 [Mapping], etc.) -->
+          <div *ngFor="let sub of root.subfolders" class="border border-white/5 rounded-2xl bg-white/[0.02] p-3 space-y-2">
+            <div class="flex items-center justify-between cursor-pointer" (click)="toggleFolderOpen(sub)">
+              <div class="flex items-center gap-2 min-w-0">
+                <input type="checkbox" [checked]="sub.selected" (click)="$event.stopPropagation(); toggleFolderSelect(sub)" class="w-4 h-4 text-amber-600 rounded">
+                <lucide-icon [img]="sub.isOpen ? FolderOpen : Folder" class="w-4 h-4 text-amber-400 shrink-0"></lucide-icon>
+                <span class="text-xs font-bold text-white truncate">{{ sub.name }}</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 font-bold border border-amber-500/20 shrink-0">
+                  {{ sub.totalVideosCount }} فيديو
+                </span>
+              </div>
+              <lucide-icon [img]="sub.isOpen ? ChevronDown : ChevronRight" class="w-4 h-4 text-slate-400"></lucide-icon>
+            </div>
+
+            <!-- Subfolder Content (when open) -->
+            <div *ngIf="sub.isOpen" class="space-y-2 pr-4 pt-1 border-r-2 border-amber-500/20 mr-2 animate-in fade-in duration-200">
+              <!-- Videos in this Subfolder -->
+              <div *ngFor="let vid of sub.videos" (click)="toggleDriveVideo(vid)"
+                   class="flex items-center gap-2.5 p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 cursor-pointer transition">
+                <input type="checkbox" [checked]="vid.selected" (click)="$event.stopPropagation(); toggleDriveVideo(vid)" class="w-4 h-4 text-amber-600 rounded">
+                <img [src]="vid.thumbnail" class="w-12 h-8 object-cover rounded-lg shrink-0 bg-slate-900">
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-bold text-white truncate">{{ vid.title }}</p>
+                  <p class="text-[10px] text-slate-400">{{ sub.name }}</p>
+                </div>
+              </div>
+
+              <!-- Deeper Subfolders (Level 2: if any) -->
+              <div *ngFor="let deepSub of sub.subfolders" class="border border-white/5 rounded-xl bg-white/[0.02] p-2.5 space-y-2">
+                <div class="flex items-center justify-between cursor-pointer" (click)="toggleFolderOpen(deepSub)">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <input type="checkbox" [checked]="deepSub.selected" (click)="$event.stopPropagation(); toggleFolderSelect(deepSub)" class="w-4 h-4 text-amber-600 rounded">
+                    <lucide-icon [img]="deepSub.isOpen ? FolderOpen : Folder" class="w-3.5 h-3.5 text-amber-400 shrink-0"></lucide-icon>
+                    <span class="text-xs font-bold text-slate-200 truncate">{{ deepSub.name }}</span>
+                    <span class="text-[10px] text-amber-400 font-bold">({{ deepSub.totalVideosCount }})</span>
+                  </div>
+                  <lucide-icon [img]="deepSub.isOpen ? ChevronDown : ChevronRight" class="w-3.5 h-3.5 text-slate-400"></lucide-icon>
+                </div>
+
+                <div *ngIf="deepSub.isOpen" class="space-y-1.5 pr-3 pt-1 border-r border-amber-500/20 mr-1">
+                  <div *ngFor="let dVid of deepSub.videos" (click)="toggleDriveVideo(dVid)"
+                       class="flex items-center gap-2 p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 cursor-pointer">
+                    <input type="checkbox" [checked]="dVid.selected" (click)="$event.stopPropagation(); toggleDriveVideo(dVid)" class="w-3.5 h-3.5 text-amber-600 rounded">
+                    <img [src]="dVid.thumbnail" class="w-10 h-7 object-cover rounded shrink-0 bg-slate-900">
+                    <p class="text-[11px] font-medium text-white truncate flex-1">{{ dVid.title }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit Drive Button -->
+        <button type="button" (click)="submitSelectedDrivePlaylists()"
+                class="w-full py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-amber-500/20 cursor-pointer">
+          ⚡ اعتماد واقتراح مجلدات وقوائم تشغيل Google Drive للمنصة
+        </button>
+      </div>
+
+      <!-- YouTube Playlist Videos Selection Panel -->
+      <div *ngIf="isPlaylistLoading()" class="my-4 p-4 bg-slate-950/80 rounded-2xl border border-indigo-500/30 text-center text-xs text-indigo-300 font-bold">
+        جاري جلب وفهرسة قائمة التشغيل (Playlist) من يوتيوب... ⏳
+      </div>
+
+      <div *ngIf="playlistVideos().length > 0" class="my-4 p-4 bg-slate-950/80 rounded-2xl border border-indigo-500/30 space-y-3 max-h-60 overflow-y-auto custom-scrollbar">
+        <div class="flex items-center justify-between border-b border-white/10 pb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-black text-indigo-400">قائمة التشغيل ({{ playlistVideos().length }} فيديو):</span>
+            <button type="button" (click)="toggleSelectAllPlaylist(true)" class="text-[10px] text-indigo-300 hover:text-indigo-200 hover:underline cursor-pointer">تحديد الكل</button>
+            <span class="text-white/20 text-[10px]">|</span>
+            <button type="button" (click)="toggleSelectAllPlaylist(false)" class="text-[10px] text-slate-400 hover:text-slate-300 hover:underline cursor-pointer">إلغاء التحديد</button>
+          </div>
+          <button type="button" (click)="playlistVideos.set([])" class="text-[10px] text-rose-400 hover:underline cursor-pointer">إلغاء القائمة</button>
+        </div>
+        <div class="space-y-2">
+          <div *ngFor="let pv of playlistVideos()" (click)="togglePlaylistVideo(pv)"
+               class="flex items-center gap-3 p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 cursor-pointer transition">
+            <input type="checkbox" [checked]="pv.selected" (click)="$event.stopPropagation(); togglePlaylistVideo(pv)" class="w-4 h-4 text-indigo-600 rounded">
+            <img [src]="pv.thumbnail" class="w-12 h-8 object-cover rounded-lg shrink-0">
+            <div class="min-w-0 flex-1">
+              <p class="text-xs font-bold text-white truncate">{{ pv.title }}</p>
+              <p class="text-[10px] text-slate-400">{{ pv.author }}</p>
+            </div>
+          </div>
+        </div>
+        <button type="button" (click)="submitSelectedPlaylistVideos()"
+                class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition shadow-md cursor-pointer">
+          ⚡ اعتماد واقتراح الفيديوهات المحددة للمنصة
+        </button>
       </div>
 
       <!-- Local File Upload Placeholder (shown if local is selected) -->

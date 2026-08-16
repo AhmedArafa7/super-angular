@@ -326,4 +326,52 @@ export class PipedApiService {
     }
     return [];
   }
+
+  async getPlaylist(playlistId: string): Promise<any> {
+    // 1. Try Piped instances
+    for (const instance of this.instances.slice(0, 4)) {
+      try {
+        const url = `${instance}/playlists/${playlistId}`;
+        const res = await this.smartFetch<any>(url, 3500);
+        if (res && (res.relatedStreams || res.videos || res.items)) {
+          return res;
+        }
+      } catch (error) {
+        // Try next instance
+      }
+    }
+
+    // 2. Invidious Instances Fallback
+    const invidiousInstances = [
+      'https://invidious.projectsegfau.lt',
+      'https://inv.nadeko.net',
+      'https://invidious.drgns.space',
+      'https://yewtu.be'
+    ];
+
+    for (const inv of invidiousInstances) {
+      try {
+        const invRes = await fetch(`${inv}/api/v1/playlists/${playlistId}`, { signal: AbortSignal.timeout(3500) });
+        if (invRes.ok) {
+          const data = await invRes.json();
+          const videos = (data.videos || []).map((v: any) => ({
+            type: 'stream',
+            url: `/watch?v=${v.videoId}`,
+            id: v.videoId,
+            title: v.title,
+            uploaderName: v.author || data.author,
+            thumbnail: v.videoThumbnails?.[0]?.url || `https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg`
+          }));
+          return {
+            name: data.title || 'قائمة تشغيل',
+            uploader: data.author || '',
+            relatedStreams: videos,
+            videos: videos
+          };
+        }
+      } catch (e) {}
+    }
+
+    throw new Error('All Piped and Invidious instances failed to fetch playlist');
+  }
 }

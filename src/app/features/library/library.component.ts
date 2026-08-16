@@ -111,6 +111,26 @@ export interface Book {
 
 export const FAMOUS_EGYPTIAN_NOVELS: Book[] = [
   {
+    id: 'user_drive_book_1',
+    title: 'الكتاب المضاف من Google Drive',
+    author: 'مؤلف غير محدد',
+    description: 'كتاب أضيف خصيصاً من رابط Google Drive ليكون متاحاً بشكل استاتيكي في المكتبة العامة بدون استهلاك أي تخزين محلي.',
+    coverUrl: 'https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=600&q=80',
+    fileUrl: 'https://drive.google.com/uc?export=download&id=1oXWnv6Fl7o1hApNV6_FrCmRJ8JXONOpi',
+    embedUrl: 'https://drive.google.com/file/d/1oXWnv6Fl7o1hApNV6_FrCmRJ8JXONOpi/preview',
+    category: 'كتب عامة ومراجع',
+    status: 'approved',
+    uploaderId: 'system',
+    uploaderName: 'المكتبة العامة',
+    downloadCount: 150,
+    createdAt: '2026-08-16',
+    fileSize: '5.0 MB',
+    rating: 5.0,
+    ratingCount: 12,
+    featured: true,
+    pagesCount: 100
+  },
+  {
     id: 'novel_1',
     title: 'الثلاثية: بين القصرين',
     author: 'نجيب محفوظ',

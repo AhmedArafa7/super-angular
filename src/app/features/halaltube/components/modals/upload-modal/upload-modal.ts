@@ -1,13 +1,16 @@
-import { Component, Input, Output, EventEmitter, inject, OnInit, ChangeDetectorRef, ViewChild, ElementRef, AfterViewInit, OnChanges, SimpleChanges, HostListener } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, OnInit, ChangeDetectorRef, ViewChild, ElementRef, AfterViewInit, OnChanges, SimpleChanges, HostListener, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { 
   LucideAngularModule, X, Upload, HardDrive, Link, Plus, Zap, ExternalLink, 
-  FileVideo, Sparkles, Pin, PinOff, CheckCircle2, AlertCircle, Cloud 
+  FileVideo, Sparkles, Pin, PinOff, CheckCircle2, AlertCircle, Cloud,
+  Folder, FolderOpen, ChevronDown, ChevronRight, Film, Layers, Key
 } from 'lucide-angular';
 import { FirebaseService } from '../../../../../core/services/firebase.service';
 import { YoutubeDiscoveryService } from '../../../../../core/services/youtube-discovery.service';
+import { PipedApiService } from '../../../../../core/services/piped-api.service';
+import { GoogleDriveService, DriveFolderNode, DriveVideoItem, DriveTreeResult } from '../../../../../core/services/google-drive.service';
 import { VaultService } from '../../../../../core/vault.service';
 import { halaltubeService } from '../../../halaltube.service';
 import { checkIsShorts } from '../../../halaltube.model';
@@ -26,6 +29,20 @@ export class UploadModalComponent implements OnInit, AfterViewInit, OnChanges {
   private halaltubeService = inject(halaltubeService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  private pipedApi = inject(PipedApiService);
+  private googleDriveService = inject(GoogleDriveService);
+
+  playlistVideos = signal<any[]>([]);
+  isPlaylistLoading = signal(false);
+
+  // Google Drive State Signals
+  driveFolderTree = signal<DriveFolderNode | null>(null);
+  isDriveLoading = signal<boolean>(false);
+  driveApiKeyInput = signal<string>('');
+  showDriveKeyPrompt = signal<boolean>(false);
+  driveTotalVideos = signal<number>(0);
+  driveTotalFolders = signal<number>(0);
+  pendingDriveFolderId = signal<string>('');
 
   @Input() isOpen: boolean = true;
   @Output() close = new EventEmitter<void>();
@@ -46,11 +63,18 @@ export class UploadModalComponent implements OnInit, AfterViewInit, OnChanges {
   CheckCircle2 = CheckCircle2;
   AlertCircle = AlertCircle;
   Cloud = Cloud;
+  Folder = Folder;
+  FolderOpen = FolderOpen;
+  ChevronDown = ChevronDown;
+  ChevronRight = ChevronRight;
+  Film = Film;
+  Layers = Layers;
+  Key = Key;
 
   // Form Fields
   title = '';
   sourceUrl = '';
-  sourceType: 'vault' | 'youtube' | 'local' | 'archive' = 'vault';
+  sourceType: 'vault' | 'youtube' | 'local' | 'archive' | 'drive' = 'vault';
   selectedChannel = 'الرئيسية';
   
   showChannelDropdown = false;
@@ -158,13 +182,15 @@ export class UploadModalComponent implements OnInit, AfterViewInit, OnChanges {
     }
   }
   
-  selectSourceType(type: 'vault' | 'youtube' | 'local' | 'archive') {
+  selectSourceType(type: 'vault' | 'youtube' | 'local' | 'archive' | 'drive') {
     this.sourceType = type;
     this.title = '';
     this.sourceUrl = '';
     this.showFetchButton = false;
     this.detectedYtId = '';
     this.isExtractingTitle = false;
+    this.driveFolderTree.set(null);
+    this.showDriveKeyPrompt.set(false);
     this.cdr.detectChanges();
   }
 
@@ -172,6 +198,225 @@ export class UploadModalComponent implements OnInit, AfterViewInit, OnChanges {
     this.selectedChannel = channel;
     this.showChannelDropdown = false;
     this.cdr.detectChanges();
+  }
+
+  async fetchDriveFolder(folderId: string, customApiKey?: string) {
+    this.isDriveLoading.set(true);
+    this.pendingDriveFolderId.set(folderId);
+    this.cdr.detectChanges();
+
+    try {
+      const result = await this.googleDriveService.crawlFolderHierarchy(folderId, customApiKey || this.driveApiKeyInput());
+      this.driveFolderTree.set(result.tree);
+      this.driveTotalVideos.set(result.totalVideos);
+      this.driveTotalFolders.set(result.totalFolders);
+      this.showDriveKeyPrompt.set(false);
+
+      if (result.rootName) {
+        this.title = `مجلد Google Drive: ${result.rootName} (${result.totalVideos} فيديو عبر ${result.totalFolders} مجلد/قائمة)`;
+      }
+      this.showToast(`تمت فهرسة ${result.totalVideos} فيديو عبر ${result.totalFolders} مجلد بنجاح! 📁`, 'success');
+    } catch (err: any) {
+      console.error('[UploadModal] Google Drive fetch error:', err);
+      const errMsg = err?.message || 'فشل جلب مجلد Google Drive.';
+      this.showToast(errMsg, 'error', 5000);
+      // If error indicates API key requirement or 403, show key prompt
+      if (errMsg.includes('API Key') || errMsg.includes('403') || !this.driveApiKeyInput()) {
+        this.showDriveKeyPrompt.set(true);
+      }
+    } finally {
+      this.isDriveLoading.set(false);
+      this.cdr.detectChanges();
+    }
+  }
+
+  applyDriveApiKeyAndRetry() {
+    const key = this.driveApiKeyInput().trim();
+    if (!key) {
+      this.showToast('يرجى إدخال مفتاح Google Drive API Key', 'error');
+      return;
+    }
+    const folderId = this.pendingDriveFolderId() || this.googleDriveService.extractFolderId(this.sourceUrl);
+    if (folderId) {
+      this.fetchDriveFolder(folderId, key);
+    }
+  }
+
+  toggleFolderOpen(folder: DriveFolderNode) {
+    folder.isOpen = !folder.isOpen;
+    this.cdr.detectChanges();
+  }
+
+  toggleFolderSelect(folder: DriveFolderNode) {
+    folder.selected = !folder.selected;
+    const applySelection = (node: DriveFolderNode, isSelected: boolean) => {
+      node.selected = isSelected;
+      node.videos.forEach(v => v.selected = isSelected);
+      node.subfolders.forEach(sf => applySelection(sf, isSelected));
+    };
+    applySelection(folder, folder.selected);
+    this.cdr.detectChanges();
+  }
+
+  toggleDriveVideo(video: DriveVideoItem) {
+    video.selected = !video.selected;
+    this.cdr.detectChanges();
+  }
+
+  toggleSelectAllDrive(selectAll: boolean) {
+    const root = this.driveFolderTree();
+    if (!root) return;
+    const applySelection = (node: DriveFolderNode, isSelected: boolean) => {
+      node.selected = isSelected;
+      node.videos.forEach(v => v.selected = isSelected);
+      node.subfolders.forEach(sf => applySelection(sf, isSelected));
+    };
+    applySelection(root, selectAll);
+    this.cdr.detectChanges();
+  }
+
+  collectSelectedDriveVideos(node: DriveFolderNode | null, list: DriveVideoItem[] = []): DriveVideoItem[] {
+    if (!node) return list;
+    for (const v of node.videos) {
+      if (v.selected) list.push(v);
+    }
+    for (const sf of node.subfolders) {
+      this.collectSelectedDriveVideos(sf, list);
+    }
+    return list;
+  }
+
+  async submitSelectedDrivePlaylists() {
+    const root = this.driveFolderTree();
+    if (!root) return;
+
+    const selectedVideos = this.collectSelectedDriveVideos(root, []);
+    if (selectedVideos.length === 0) {
+      this.showToast('يرجى اختيار فيديو واحد على الأقل من المجلدات', 'error');
+      return;
+    }
+
+    try {
+      this.isUploading = true;
+      this.cdr.detectChanges();
+
+      for (const v of selectedVideos) {
+        await this.firebaseService.addVideoForReview({
+          title: v.title,
+          author: this.selectedChannel || v.folderName || 'Google Drive',
+          category: 'تكنولوجيا وبرمجة',
+          thumbnail: v.thumbnail,
+          source: 'drive',
+          url: v.url,
+          embedUrl: v.embedUrl,
+          driveFileId: v.id,
+          playlistName: v.folderName, // Sub-playlist name (e.g. Session 01 [ERD])
+          parentPlaylist: v.parentFolderName || root.name || '', // Root playlist name (e.g. 01 Database)
+          folderHierarchy: v.folderHierarchy,
+          folderPath: v.folderPath,
+          isShorts: false,
+          isLargeFile: false,
+          fileSizeMB: v.size ? +(v.size / (1024 * 1024)).toFixed(1) : 0
+        });
+      }
+
+      this.isUploading = false;
+      this.showToast(`تم إرسال ${selectedVideos.length} فيديو من مجلدات Google Drive للمراجعة بنجاح! 📁⚡`, 'success');
+      this.driveFolderTree.set(null);
+      this.sourceUrl = '';
+      this.title = '';
+      if (!this.isPinned) {
+        this.onClose();
+      }
+      this.cdr.detectChanges();
+    } catch (err) {
+      this.isUploading = false;
+      console.error('[UploadModal] Submit Drive Playlists failed:', err);
+      this.showToast('حدث خطأ أثناء رفع فيديوهات Google Drive', 'error');
+      this.cdr.detectChanges();
+    }
+  }
+
+  async fetchPlaylistVideos(playlistId: string) {
+    this.isPlaylistLoading.set(true);
+    this.cdr.detectChanges();
+    try {
+      const res = await this.pipedApi.getPlaylist(playlistId);
+      const items = (res?.relatedStreams || res?.videos || []).map((v: any) => {
+        const vId = v.url ? v.url.replace('/watch?v=', '') : v.id;
+        return {
+          id: vId,
+          title: v.title,
+          thumbnail: v.thumbnail || `https://img.youtube.com/vi/${vId}/hqdefault.jpg`,
+          author: v.uploaderName || v.author || 'يوتيوب',
+          selected: true
+        };
+      });
+      this.playlistVideos.set(items);
+      if (res?.name) {
+        this.title = `قائمة تشغيل: ${res.name} (${items.length} فيديو)`;
+      }
+    } catch (e) {
+      this.showToast('فشل جلب قائمة التشغيل. يرجى التأكد من الرابط.', 'error');
+    } finally {
+      this.isPlaylistLoading.set(false);
+      this.cdr.detectChanges();
+    }
+  }
+
+  togglePlaylistVideo(item: any) {
+    item.selected = !item.selected;
+    this.cdr.detectChanges();
+  }
+
+  toggleSelectAllPlaylist(selectAll: boolean) {
+    const current = this.playlistVideos();
+    current.forEach(v => v.selected = selectAll);
+    this.playlistVideos.set([...current]);
+    this.cdr.detectChanges();
+  }
+
+  async submitSelectedPlaylistVideos() {
+    const selected = this.playlistVideos().filter(v => v.selected);
+    if (selected.length === 0) {
+      this.showToast('يرجى اختيار فيديو واحد على الأقل من القائمة', 'error');
+      return;
+    }
+
+    try {
+      this.isUploading = true;
+      this.cdr.detectChanges();
+
+      for (const v of selected) {
+        const vUrl = `https://www.youtube.com/watch?v=${v.id}`;
+        const isShorts = checkIsShorts({ url: vUrl, title: v.title });
+        await this.firebaseService.addVideoForReview({
+          title: v.title,
+          author: this.selectedChannel || v.author || 'الرئيسية',
+          category: isShorts ? 'shorts' : 'تكنولوجيا',
+          thumbnail: v.thumbnail,
+          source: 'youtube',
+          url: vUrl,
+          isShorts: isShorts,
+          isLargeFile: false,
+          fileSizeMB: 0
+        });
+      }
+
+      this.isUploading = false;
+      this.showToast(`تم إرسال ${selected.length} فيديو من قائمة التشغيل للمراجعة بنجاح! ⚡`, 'success');
+      this.playlistVideos.set([]);
+      this.sourceUrl = '';
+      this.title = '';
+      if (!this.isPinned) {
+        this.onClose();
+      }
+      this.cdr.detectChanges();
+    } catch (err) {
+      this.isUploading = false;
+      this.showToast('حدث خطأ أثناء رفع القائمة', 'error');
+      this.cdr.detectChanges();
+    }
   }
 
   openVault() {
@@ -209,7 +454,24 @@ export class UploadModalComponent implements OnInit, AfterViewInit, OnChanges {
       this.showFetchButton = false;
       this.detectedYtId = '';
       this.isExtractingTitle = false;
+      this.driveFolderTree.set(null);
+      this.showDriveKeyPrompt.set(false);
       this.cdr.detectChanges();
+      return;
+    }
+
+    // 1. Google Drive Folder Detection
+    const driveFolderId = this.googleDriveService.extractFolderId(urlVal);
+    if (driveFolderId) {
+      this.sourceType = 'drive';
+      this.fetchDriveFolder(driveFolderId);
+      return;
+    }
+
+    // 2. YouTube Playlist Detection
+    const playlistMatch = urlVal.match(/[?&]list=([a-zA-Z0-9_-]+)/i);
+    if (playlistMatch && playlistMatch[1]) {
+      this.fetchPlaylistVideos(playlistMatch[1]);
       return;
     }
 

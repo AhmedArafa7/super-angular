@@ -528,6 +528,14 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
   activeTheme: any = null;
 
   private gameThemes: Record<string, any> = {
+    'subway-surfers': {
+      badge: '🚇 SUBWAY SURFERS 3D 🏃‍♂️👮‍♂️',
+      primaryColor: '#f59e0b',
+      borderColor: 'rgba(245, 158, 11, 0.7)',
+      floatingEmojis: '🚇   🏃‍♂️   👮‍♂️   🪙   🛹   ⚡',
+      badgeBg: 'linear-gradient(135deg, #f59e0b, #ea580c, #ef4444)',
+      cardBg: 'linear-gradient(145deg, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.96))'
+    },
     'memory-match': {
       badge: '🧠 MEMORY MATCH 💡',
       primaryColor: '#38bdf8',

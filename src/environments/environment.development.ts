@@ -18,6 +18,7 @@ export const environment = {
     clientId: 'YOUR_YOUTUBE_CLIENT_ID',
     scopes: 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/userinfo.profile'
   },
+  googleDriveApiKey: '',
   pipedInstances: [
     'https://pipedapi.kavin.rocks',
     'https://piped-api.garudalinux.org',

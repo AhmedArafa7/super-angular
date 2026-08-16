@@ -4,9 +4,28 @@ import { firstValueFrom } from 'rxjs';
 import { FirebaseService } from '../../../../core/services/firebase.service';
 import { YoutubeDiscoveryService } from '../../../../core/services/youtube-discovery.service';
 import { IndexedDBService } from '../../../../core/services/indexed-db.service';
-import { LucideAngularModule, ShieldCheck, Trash2, CheckCircle2, Clock, PlayCircle, Eye, AlertCircle, RefreshCw, RefreshCcw, Search, Database } from 'lucide-angular';
+import { 
+  LucideAngularModule, ShieldCheck, Trash2, CheckCircle2, Clock, PlayCircle, 
+  Eye, AlertCircle, RefreshCw, RefreshCcw, Search, Database,
+  Folder, FolderOpen, Layers, ChevronDown, ChevronRight, LayoutGrid, ListTree, Zap
+} from 'lucide-angular';
 import { RouterModule } from '@angular/router';
 import { QueryDocumentSnapshot } from 'firebase/firestore';
+
+export interface ModerationPlaylistGroup {
+  rootPlaylist: string;
+  author?: string;
+  totalVideos: number;
+  subplaylists: {
+    name: string;
+    parent: string;
+    path: string;
+    videos: any[];
+    isOpen: boolean;
+  }[];
+  rootVideos: any[];
+  isOpen: boolean;
+}
 
 @Component({
   selector: 'app-halaltube-moderation',
@@ -19,6 +38,9 @@ export class halaltubeModerationComponent implements OnInit {
 
   // Tabs: 'pending' | 'approved' | 'rejected' | 'channels' | 'local_storage' | 'whitelisted_channels'
   activeSubTab = signal<'pending' | 'approved' | 'rejected' | 'channels' | 'local_storage' | 'whitelisted_channels'>('pending');
+
+  // View Mode: 'playlists' | 'grid'
+  moderationViewMode = signal<'playlists' | 'grid'>('playlists');
 
   // Video Signals
   pendingVideos = signal<any[]>([]);
@@ -388,6 +410,140 @@ export class halaltubeModerationComponent implements OnInit {
       alert('حدث خطأ أثناء إلغاء اعتماد القناة.');
     } finally {
       this.isLoading.set(false);
+    }
+  }
+
+  // Icons
+  Folder = Folder;
+  FolderOpen = FolderOpen;
+  Layers = Layers;
+  ChevronDown = ChevronDown;
+  ChevronRight = ChevronRight;
+  LayoutGrid = LayoutGrid;
+  ListTree = ListTree;
+  Zap = Zap;
+
+  // Grouping helper for Playlists / Nested Folders View
+  getGroupedPendingPlaylists(): ModerationPlaylistGroup[] {
+    const videos = this.pendingVideos();
+    const groupMap = new Map<string, ModerationPlaylistGroup>();
+
+    for (const v of videos) {
+      const rootKey = v.parentPlaylist || (v.folderHierarchy && v.folderHierarchy.length > 1 ? v.folderHierarchy[0] : (v.playlistName ? 'قوائم تشغيل متنوعة' : 'فيديوهات فردية (بدون قائمة)'));
+      const subKey = v.playlistName || (v.folderHierarchy && v.folderHierarchy.length > 1 ? v.folderHierarchy[v.folderHierarchy.length - 1] : 'عام');
+
+      if (!groupMap.has(rootKey)) {
+        groupMap.set(rootKey, {
+          rootPlaylist: rootKey,
+          author: v.author,
+          totalVideos: 0,
+          subplaylists: [],
+          rootVideos: [],
+          isOpen: true
+        });
+      }
+
+      const rootGroup = groupMap.get(rootKey)!;
+      rootGroup.totalVideos++;
+
+      if (!v.playlistName && !v.parentPlaylist && (!v.folderHierarchy || v.folderHierarchy.length <= 1)) {
+        rootGroup.rootVideos.push(v);
+      } else {
+        let sub = rootGroup.subplaylists.find(s => s.name === subKey);
+        if (!sub) {
+          sub = {
+            name: subKey,
+            parent: rootKey,
+            path: v.folderPath || `${rootKey} / ${subKey}`,
+            videos: [],
+            isOpen: true
+          };
+          rootGroup.subplaylists.push(sub);
+        }
+        sub.videos.push(v);
+      }
+    }
+
+    return Array.from(groupMap.values());
+  }
+
+  async batchApproveSubplaylist(sub: { name: string; videos: any[] }) {
+    const ids = sub.videos.map(v => v.id).filter(Boolean);
+    if (ids.length === 0) return;
+
+    const idSet = new Set(ids);
+    const approvedList = sub.videos.map(v => ({ ...v, status: 'published' }));
+    this.pendingVideos.update(list => list.filter(v => !idSet.has(v.id)));
+    this.approvedVideos.update(list => [...approvedList, ...list]);
+
+    try {
+      const updatedCount = await this.firebase.batchUpdateVideoStatus(ids, 'published');
+      alert(`تم اعتماد ${updatedCount} فيديو من قائمة "${sub.name}" بنجاح! ⚡`);
+    } catch (err) {
+      console.error('Failed to batch approve playlist', err);
+      alert('حدث خطأ أثناء اعتماد قائمة التشغيل.');
+      this.loadData(true);
+    }
+  }
+
+  async batchRejectSubplaylist(sub: { name: string; videos: any[] }) {
+    if (!confirm(`هل أنت متأكد من رفض وحذف جميع الفيديوهات (${sub.videos.length}) في قائمة "${sub.name}"؟`)) return;
+    const ids = sub.videos.map(v => v.id).filter(Boolean);
+    if (ids.length === 0) return;
+
+    const idSet = new Set(ids);
+    const rejectedList = sub.videos.map(v => ({ ...v, status: 'rejected' }));
+    this.pendingVideos.update(list => list.filter(v => !idSet.has(v.id)));
+    this.rejectedVideos.update(list => [...rejectedList, ...list]);
+
+    try {
+      await this.firebase.batchUpdateVideoStatus(ids, 'rejected');
+      alert(`تم رفض قائمة "${sub.name}" بنجاح.`);
+    } catch (err) {
+      console.error('Failed to batch reject playlist', err);
+      alert('حدث خطأ أثناء الرفض.');
+      this.loadData(true);
+    }
+  }
+
+  async batchApproveRootFolder(group: ModerationPlaylistGroup) {
+    const allVideos = [...group.rootVideos, ...group.subplaylists.flatMap(s => s.videos)];
+    const ids = allVideos.map(v => v.id).filter(Boolean);
+    if (ids.length === 0) return;
+
+    const idSet = new Set(ids);
+    const approvedList = allVideos.map(v => ({ ...v, status: 'published' }));
+    this.pendingVideos.update(list => list.filter(v => !idSet.has(v.id)));
+    this.approvedVideos.update(list => [...approvedList, ...list]);
+
+    try {
+      const count = await this.firebase.batchUpdateVideoStatus(ids, 'published');
+      alert(`تم اعتماد كامل مجلد/قائمة "${group.rootPlaylist}" (${count} فيديو) بنجاح! ⚡📁`);
+    } catch (err) {
+      console.error('Failed to batch approve root folder', err);
+      alert('حدث خطأ أثناء اعتماد المجلد بالكامل.');
+      this.loadData(true);
+    }
+  }
+
+  async batchRejectRootFolder(group: ModerationPlaylistGroup) {
+    const allVideos = [...group.rootVideos, ...group.subplaylists.flatMap(s => s.videos)];
+    if (!confirm(`هل أنت متأكد من رفض وحذف جميع الفيديوهات (${allVideos.length}) في كامل مجلد "${group.rootPlaylist}"؟`)) return;
+    const ids = allVideos.map(v => v.id).filter(Boolean);
+    if (ids.length === 0) return;
+
+    const idSet = new Set(ids);
+    const rejectedList = allVideos.map(v => ({ ...v, status: 'rejected' }));
+    this.pendingVideos.update(list => list.filter(v => !idSet.has(v.id)));
+    this.rejectedVideos.update(list => [...rejectedList, ...list]);
+
+    try {
+      await this.firebase.batchUpdateVideoStatus(ids, 'rejected');
+      alert(`تم رفض كامل المجلد.`);
+    } catch (err) {
+      console.error('Failed to batch reject root folder', err);
+      alert('حدث خطأ.');
+      this.loadData(true);
     }
   }
 }
