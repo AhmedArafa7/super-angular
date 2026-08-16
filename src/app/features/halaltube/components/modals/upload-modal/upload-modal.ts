@@ -196,6 +196,12 @@ export class UploadModalComponent implements OnInit, AfterViewInit, OnChanges {
     return fallbackMatch ? fallbackMatch[1] : null;
   }
 
+  extractArchiveIdentifier(url: string): string | null {
+    if (!url) return null;
+    const match = url.match(/archive\.org\/(?:details|download)\/([^\/?#]+)/i);
+    return match ? match[1] : null;
+  }
+
   onSourceUrlChange(url: string) {
     this.sourceUrl = url;
     const urlVal = url.trim();
@@ -207,10 +213,14 @@ export class UploadModalComponent implements OnInit, AfterViewInit, OnChanges {
       return;
     }
 
-    // Auto-switch to YouTube tab if a YouTube URL is detected
+    // Auto-switch tab based on URL pattern
     const isYoutube = /(?:youtube\.com|youtu\.be)/i.test(urlVal);
-    if (isYoutube && this.sourceType !== 'youtube') {
+    const isArchive = /archive\.org/i.test(urlVal);
+
+    if (isYoutube) {
       this.sourceType = 'youtube';
+    } else if (isArchive) {
+      this.sourceType = 'archive';
     }
 
     if (this.sourceType === 'youtube') {
@@ -243,6 +253,30 @@ export class UploadModalComponent implements OnInit, AfterViewInit, OnChanges {
         this.detectedYtId = '';
         this.isExtractingTitle = false;
         this.cdr.detectChanges();
+      }
+    } else if (this.sourceType === 'archive') {
+      const identifier = this.extractArchiveIdentifier(urlVal);
+      if (identifier) {
+        this.isExtractingTitle = true;
+        this.cdr.detectChanges();
+
+        fetch(`https://archive.org/metadata/${identifier}`)
+          .then(res => res.json())
+          .then((data: any) => {
+            const meta = data?.metadata;
+            if (meta && meta.title) {
+              this.title = meta.title;
+            } else {
+              this.title = `أرشيف - ${identifier}`;
+            }
+            this.isExtractingTitle = false;
+            this.cdr.detectChanges();
+          })
+          .catch(() => {
+            this.title = `أرشيف - ${identifier}`;
+            this.isExtractingTitle = false;
+            this.cdr.detectChanges();
+          });
       }
     } else if (this.sourceType === 'vault') {
       const matchedAsset = this.vaultService.assets().find(a => 
@@ -368,11 +402,16 @@ export class UploadModalComponent implements OnInit, AfterViewInit, OnChanges {
         }
       }
 
-      // Extract YouTube video ID if YouTube source
+      // Extract YouTube or Archive thumbnail/ID
       let thumbnail = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800';
       const ytMatch = finalUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([^&?\n]+)/);
       if (ytMatch && ytMatch[1]) {
         thumbnail = `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
+      } else if (this.sourceType === 'archive') {
+        const identifier = this.extractArchiveIdentifier(finalUrl);
+        if (identifier) {
+          thumbnail = `https://archive.org/services/img/${identifier}`;
+        }
       }
 
       const calculatedIsShorts = checkIsShorts({ url: finalUrl, title: titleVal });

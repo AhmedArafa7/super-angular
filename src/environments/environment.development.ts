@@ -4,6 +4,7 @@ export const environment = {
   apiKey: '457119132189353',
   secretKey: '457119132189353',
   apiBaseUrl: 'https://super-axd.pages.dev',
+  backendProxyUrl: 'http://localhost:3000',
   firebase: {
     projectId: 'studio-3522991053-84d29',
     appId: '1:663102763152:web:483fb4c5e300dd53316815',
