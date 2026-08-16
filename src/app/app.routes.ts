@@ -60,6 +60,8 @@ export const routes: Routes = [
       { path: 'custom-module/:id', loadComponent: () => import('./features/ai-module-builder/custom-module-viewer.component').then(c => c.CustomModuleViewerComponent), title: 'عرض القسم المخصص' },
       { path: 'study-ai', loadComponent: () => import('./features/learning/learning.component').then(c => c.LearningComponent), title: 'المساعد الدراسي الذكي' },
       { path: 'learning', loadComponent: () => import('./features/learning/learning.component').then(c => c.LearningComponent), title: 'المساعد الدراسي والتعلم' },
+      { path: 'dev-hub', loadComponent: () => import('./features/dev-hub/dev-hub.component').then(c => c.DevHubComponent), title: 'مركز المطورين الشامل - DevHub' },
+      { path: 'developers', redirectTo: 'dev-hub', pathMatch: 'full' },
       { path: 'about', loadComponent: () => import('./features/about/about.component').then(c => c.AboutComponent), title: 'عن الشركة - Super Platform' },
       { path: 'admin', loadComponent: () => import('./features/admin/admin.component').then(c => c.AdminComponent), canActivate: [adminGuard] }
     ]

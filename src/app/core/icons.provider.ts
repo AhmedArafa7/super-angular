@@ -17,12 +17,15 @@ import {
   UserCheck, BellRing, Tags, Edit3, Ban, User, Phone, Package, CheckCircle, BellOff,
   PackagePlus, Camera, PenTool, Grid, Maximize2, Pause, VolumeX, Volume2, LoaderCircle,
   Maximize, Star, Timer, Sun, Moon, Chrome, CloudCog, CloudUpload, CloudRain, Flag, Lock, BarChart3,
-  Type, Code, Bookmark, Building2
+  Type, Code, Bookmark, Building2, Smartphone, Workflow, Database
 } from 'lucide-angular';
 
 import { 
   provideLucideIcons as provideNewLucideIcons,
   LucideBuilding2,
+  LucideSmartphone,
+  LucideWorkflow,
+  LucideDatabase,
   LucideLayoutDashboard, LucideMessageCircleQuestion, LucideGamepad2, LucideClock, LucideHeartPulse, 
   LucideMessageSquare, LucideCpu, LucideHardDrive, LucideTable, LucideTag, LucideMessageCircle, LucideVideo, LucideShoppingCart, 
   LucideGraduationCap, LucideLibraryBig, LucideMegaphone, LucideDownloadCloud, LucideRocket, LucideWallet, LucideRepeat, 
@@ -200,7 +203,10 @@ export const provideLucideIcons = () => {
         Type,
         Code,
         Bookmark,
-        Building2
+        Building2,
+        Smartphone,
+        Workflow,
+        Database
       })
     ),
     provideNewLucideIcons(
@@ -353,7 +359,10 @@ export const provideLucideIcons = () => {
       LucideCloudRain,
       LucideFlag,
       LucideLock,
-      LucideBarChart3
+      LucideBarChart3,
+      LucideSmartphone,
+      LucideWorkflow,
+      LucideDatabase
     )
   ];
 };

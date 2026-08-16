@@ -1,4 +1,4 @@
-export type ContentSource = 'youtube' | 'drive' | 'local' | 'offline' | 'platform';
+export type ContentSource = 'youtube' | 'drive' | 'local' | 'offline' | 'platform' | 'archive';
 
 export interface ContentItem {
   id: string;

@@ -167,5 +167,23 @@ export const FALLBACK_VIDEOS: FeedVideo[] = [
     views: '540K مشاهدة',
     isWhitelisted: true,
     isShorts: false
+  },
+
+  // ── أرشيف الإنترنت (Archive.org) ───────────────────────────
+  {
+    id: 'archive_sample_1',
+    title: 'مكتبة التراث الإسلامي والعلمي (أرشيف مفتوح)',
+    url: 'https://archive.org/download/islamic_heritage_sample/sample.mp4',
+    thumbnail: 'https://archive.org/services/img/islamic_heritage_sample',
+    author: 'أرشيف التراث الإسلامي',
+    authorId: 'archive_islamic',
+    channelAvatar: 'https://ui-avatars.com/api/?name=Archive+Org&background=0284c7&color=fff&bold=true',
+    publishedAt: 1714000000000,
+    source: 'archive',
+    category: 'قرآن كريم',
+    duration: '30:00',
+    views: '120K مشاهدة',
+    isWhitelisted: true,
+    isShorts: false
   }
 ];

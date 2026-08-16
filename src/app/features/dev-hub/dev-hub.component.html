@@ -1,0 +1,1175 @@
+<div class="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 space-y-8 font-sans selection:bg-indigo-500 selection:text-white" dir="rtl">
+
+  <!-- ========================================== -->
+  <!-- 1. Header & Hero Section                   -->
+  <!-- ========================================== -->
+  <header class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 border border-slate-800/80 p-6 md:p-10 shadow-2xl backdrop-blur-xl">
+    <!-- Ambient Background Glows -->
+    <div class="absolute -top-24 -right-24 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-cyan-600/15 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+      <div class="space-y-3 max-w-2xl">
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-semibold tracking-wide">
+          <lucide-icon name="sparkles" class="w-3.5 h-3.5 animate-pulse"></lucide-icon>
+          <span>مركز المطورين الشامل • Super Dev Hub</span>
+          <span class="bg-indigo-500/20 text-indigo-300 text-[10px] px-1.5 py-0.5 rounded font-mono">v2.5</span>
+        </div>
+
+        <h1 class="text-3xl md:text-5xl font-black tracking-tight text-white flex items-center gap-3">
+          <span>بيئة المطور المتكاملة</span>
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-400 to-fuchsia-400">
+            {{ hubService.currentTrack().title }}
+          </span>
+        </h1>
+
+        <p class="text-slate-400 text-sm md:text-base leading-relaxed">
+          {{ hubService.currentTrack().description }}
+        </p>
+
+        <!-- Current Track Skills Tags -->
+        <div class="flex flex-wrap gap-1.5 pt-2">
+          @for (skill of hubService.currentTrack().skills; track skill) {
+            <span class="text-xs font-mono px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-300">
+              #{{ skill }}
+            </span>
+          }
+        </div>
+      </div>
+
+      <!-- Search & Quick Stats -->
+      <div class="w-full lg:w-auto flex flex-col sm:flex-row lg:flex-col gap-4">
+        <!-- Global Search Input -->
+        <div class="relative min-w-[280px]">
+          <lucide-icon name="search" class="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2"></lucide-icon>
+          <input 
+            type="text" 
+            [(ngModel)]="hubService.searchQuery" 
+            placeholder="ابحث عن أداة، أمر Git، معمارية، أو مرجع..."
+            class="w-full pr-10 pl-4 py-2.5 text-sm bg-slate-900/90 border border-slate-700/80 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-inner"
+          />
+          @if (hubService.searchQuery()) {
+            <button 
+              (click)="hubService.searchQuery.set('')"
+              class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs px-1.5 py-0.5 rounded bg-slate-800"
+            >
+              مسح
+            </button>
+          }
+        </div>
+
+        <!-- Quick Track Stats Pill -->
+        <div class="flex items-center gap-3 p-3 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-md">
+          @for (stat of hubService.currentTrack().quickStats; track stat.label) {
+            <div class="text-right px-2 border-l border-slate-800 last:border-l-0">
+              <div class="text-[10px] text-slate-400 font-medium">{{ stat.label }}</div>
+              <div class="text-xs font-bold text-slate-200 truncate max-w-[130px]">{{ stat.value }}</div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- 2. Specializations Switcher Bar (10 Tracks) -->
+  <!-- ========================================== -->
+  <section class="space-y-3">
+    <div class="flex items-center justify-between px-1">
+      <h2 class="text-sm md:text-base font-bold text-slate-300 flex items-center gap-2">
+        <lucide-icon name="layers" class="w-4 h-4 text-indigo-400"></lucide-icon>
+        <span>اختر تخصصك البرمجي (Track Selection)</span>
+      </h2>
+      <span class="text-xs text-slate-500">10 تخصصات برمجية شاملة</span>
+    </div>
+
+    <!-- Scrollable Tracks Grid -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-2.5">
+      @for (track of hubService.tracks(); track track.id) {
+        <button 
+          (click)="selectTrack(track.id)"
+          [ngClass]="{
+            'bg-slate-800/95 border-indigo-500 ring-2 ring-indigo-500/30 shadow-lg shadow-indigo-500/10 -translate-y-1': hubService.activeTrackId() === track.id,
+            'bg-slate-900/70 border-slate-800/80 hover:bg-slate-850 hover:border-slate-700': hubService.activeTrackId() !== track.id
+          }"
+          class="group flex flex-col items-center text-center p-3 rounded-2xl border transition-all duration-200 relative overflow-hidden"
+        >
+          <!-- Active Glow Accent Top Line -->
+          @if (hubService.activeTrackId() === track.id) {
+            <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r" [ngClass]="track.accentColor"></div>
+          }
+
+          <div 
+            class="w-10 h-10 rounded-xl flex items-center justify-center mb-2 transition-transform group-hover:scale-110"
+            [ngClass]="track.bgLight"
+          >
+            <lucide-icon [name]="track.icon" class="w-5 h-5" [ngClass]="track.textColor"></lucide-icon>
+          </div>
+
+          <span class="text-xs font-bold text-slate-200 line-clamp-1 leading-tight mb-1">
+            {{ track.title }}
+          </span>
+
+          <span class="text-[9px] text-slate-400 font-mono tracking-tighter truncate w-full opacity-80">
+            {{ track.badge }}
+          </span>
+        </button>
+      }
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- 3. Navigation Tabs                         -->
+  <!-- ========================================== -->
+  <nav class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-800/80 scrollbar-none">
+    <button 
+      (click)="selectTab('tools')"
+      [ngClass]="hubService.activeTab() === 'tools' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/20' : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800'"
+      class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs md:text-sm transition-all whitespace-nowrap border border-white/5"
+    >
+      <lucide-icon name="wrench" class="w-4 h-4"></lucide-icon>
+      <span>الأدوات التفاعلية (Live Tools)</span>
+      <span class="bg-black/20 text-xs px-1.5 py-0.2 rounded-md font-mono">{{ hubService.filteredTools().length }}</span>
+    </button>
+
+    <button 
+      (click)="selectTab('blueprints')"
+      [ngClass]="hubService.activeTab() === 'blueprints' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/20' : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800'"
+      class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs md:text-sm transition-all whitespace-nowrap border border-white/5"
+    >
+      <lucide-icon name="layers" class="w-4 h-4"></lucide-icon>
+      <span>الهياكل والمعمارية (Blueprints)</span>
+      <span class="bg-black/20 text-xs px-1.5 py-0.2 rounded-md font-mono">{{ hubService.filteredBlueprints().length }}</span>
+    </button>
+
+    <button 
+      (click)="selectTab('checklists')"
+      [ngClass]="hubService.activeTab() === 'checklists' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/20' : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800'"
+      class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs md:text-sm transition-all whitespace-nowrap border border-white/5"
+    >
+      <lucide-icon name="check-square" class="w-4 h-4"></lucide-icon>
+      <span>قوائم تدقيق الإنتاج (Checklist)</span>
+      <span class="bg-emerald-500/20 text-emerald-300 text-xs px-2 py-0.5 rounded-md font-mono font-bold">
+        {{ hubService.checklistProgress() }}%
+      </span>
+    </button>
+
+    <button 
+      (click)="selectTab('cheatsheets')"
+      [ngClass]="hubService.activeTab() === 'cheatsheets' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/20' : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800'"
+      class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs md:text-sm transition-all whitespace-nowrap border border-white/5"
+    >
+      <lucide-icon name="terminal" class="w-4 h-4"></lucide-icon>
+      <span>أوامر واختصارات سريعة (Cheat Sheet)</span>
+      <span class="bg-black/20 text-xs px-1.5 py-0.2 rounded-md font-mono">{{ hubService.filteredCommands().length }}</span>
+    </button>
+
+    <button 
+      (click)="selectTab('resources')"
+      [ngClass]="hubService.activeTab() === 'resources' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/20' : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800'"
+      class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs md:text-sm transition-all whitespace-nowrap border border-white/5"
+    >
+      <lucide-icon name="bookmark" class="w-4 h-4"></lucide-icon>
+      <span>أقوى المصادر والمكتبات (Resources)</span>
+      <span class="bg-black/20 text-xs px-1.5 py-0.2 rounded-md font-mono">{{ hubService.filteredResources().length }}</span>
+    </button>
+
+    <button 
+      (click)="selectTab('prompts')"
+      [ngClass]="hubService.activeTab() === 'prompts' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/20' : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800'"
+      class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs md:text-sm transition-all whitespace-nowrap border border-white/5"
+    >
+      <lucide-icon name="sparkles" class="w-4 h-4 text-fuchsia-400"></lucide-icon>
+      <span>استوديو أوامر الذكاء الاصطناعي (AI Studio)</span>
+      <span class="bg-fuchsia-500/20 text-fuchsia-300 text-xs px-1.5 py-0.2 rounded-md font-mono">PRO</span>
+    </button>
+  </nav>
+
+  <!-- ========================================== -->
+  <!-- 4. Tab 1: Interactive Dev Tools Widgets    -->
+  <!-- ========================================== -->
+  @if (hubService.activeTab() === 'tools') {
+    <section class="space-y-8">
+      
+      <!-- Quick Tools Grid Launcher -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        @for (tool of hubService.filteredTools(); track tool.id) {
+          <div class="group p-5 rounded-2xl bg-slate-900/80 border border-slate-800/80 hover:border-indigo-500/50 transition-all flex flex-col justify-between shadow-lg hover:shadow-indigo-500/5 relative">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+                  <lucide-icon [name]="tool.icon" class="w-5 h-5"></lucide-icon>
+                </div>
+                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+                  {{ tool.category }}
+                </span>
+              </div>
+
+              <div>
+                <h3 class="font-bold text-white text-base group-hover:text-indigo-300 transition-colors">{{ tool.name }}</h3>
+                <span class="text-xs text-slate-400 font-mono block mb-1">{{ tool.nameEn }}</span>
+                <p class="text-xs text-slate-400 leading-relaxed line-clamp-2">{{ tool.description }}</p>
+              </div>
+
+              <div class="flex flex-wrap gap-1 pt-1">
+                @for (tag of tool.tags; track tag) {
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800/60 text-slate-400">#{{ tag }}</span>
+                }
+              </div>
+            </div>
+
+            <div class="pt-4 mt-3 border-t border-slate-800/80 flex items-center justify-between">
+              <a [href]="'#' + tool.widgetId" class="text-xs font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1.5 transition-colors">
+                <span>تشغيل الأداة المباشرة</span>
+                <lucide-icon name="arrow-down" class="w-3.5 h-3.5"></lucide-icon>
+              </a>
+              <button (click)="hubService.toggleFavorite(tool.id)" class="text-slate-400 hover:text-amber-400 transition-colors" [title]="hubService.isFavorite(tool.id) ? 'إزالة من المفضلة' : 'إضافة للمفضلة'">
+                <lucide-icon name="star" class="w-4 h-4" [ngClass]="{'fill-amber-400 text-amber-400': hubService.isFavorite(tool.id)}"></lucide-icon>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- ========================================== -->
+      <!-- Interactive Widgets Container              -->
+      <!-- ========================================== -->
+      <div class="space-y-10 pt-4">
+
+        <!-- Widget 1: JSON to TypeScript / Formatter -->
+        <div id="json-ts" class="p-6 md:p-8 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-6">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                <lucide-icon name="code-2" class="w-5 h-5"></lucide-icon>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-white">محلل ومولد أنواع JSON إلى TypeScript</h3>
+                <p class="text-xs text-slate-400">تحويل فوري لأي نص JSON إلى واجهات TypeScript interfaces أو تنسيق دقيق</p>
+              </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex items-center gap-2 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60">
+              <button 
+                (click)="jsonOutputMode.set('ts')"
+                [ngClass]="jsonOutputMode() === 'ts' ? 'bg-cyan-500 text-black font-bold' : 'text-slate-300 hover:text-white'"
+                class="px-3 py-1.5 rounded-lg text-xs transition-all"
+              >
+                TypeScript Types
+              </button>
+              <button 
+                (click)="jsonOutputMode.set('format')"
+                [ngClass]="jsonOutputMode() === 'format' ? 'bg-cyan-500 text-black font-bold' : 'text-slate-300 hover:text-white'"
+                class="px-3 py-1.5 rounded-lg text-xs transition-all"
+              >
+                Beautify (تنسيق)
+              </button>
+              <button 
+                (click)="jsonOutputMode.set('minify')"
+                [ngClass]="jsonOutputMode() === 'minify' ? 'bg-cyan-500 text-black font-bold' : 'text-slate-300 hover:text-white'"
+                class="px-3 py-1.5 rounded-lg text-xs transition-all"
+              >
+                Minify (ضغط)
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Left: JSON Input -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-xs text-slate-400">
+                <span>أدخل كود الـ JSON هنا:</span>
+                <span class="font-mono text-[11px]">{{ jsonSizeStats().bytes }} Bytes ({{ jsonSizeStats().lines }} أسطر)</span>
+              </div>
+              <textarea 
+                [(ngModel)]="jsonInput"
+                dir="ltr"
+                rows="12"
+                placeholder="Paste your JSON here..."
+                class="w-full p-4 rounded-2xl bg-slate-950/80 border border-slate-800 font-mono text-xs text-cyan-300 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 shadow-inner"
+              ></textarea>
+            </div>
+
+            <!-- Right: TypeScript Output -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-xs text-slate-400">
+                <div class="flex items-center gap-2">
+                  <span>النتيجة المولدة:</span>
+                  @if (jsonOutputMode() === 'ts') {
+                    <input 
+                      type="text" 
+                      [(ngModel)]="jsonRootInterfaceName" 
+                      placeholder="Root Interface Name"
+                      dir="ltr"
+                      class="text-xs px-2 py-0.5 bg-slate-800 border border-slate-700 rounded text-cyan-300 font-mono"
+                    />
+                  }
+                </div>
+                <button 
+                  (click)="copyToClipboard(formattedJsonOrTs(), 'json-out')"
+                  class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono transition-colors"
+                >
+                  <lucide-icon [name]="copiedId() === 'json-out' ? 'check' : 'copy'" class="w-3.5 h-3.5 text-cyan-400"></lucide-icon>
+                  <span>{{ copiedId() === 'json-out' ? 'تم النسخ!' : 'نسخ الكود' }}</span>
+                </button>
+              </div>
+              <pre 
+                dir="ltr"
+                class="w-full p-4 rounded-2xl bg-slate-950/90 border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto h-[290px] shadow-inner selection:bg-cyan-500/30"
+              >{{ formattedJsonOrTs() }}</pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Widget 2: Live Regex Playground -->
+        <div id="regex" class="p-6 md:p-8 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-6">
+          <div class="flex items-center justify-between border-b border-slate-800/80 pb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                <lucide-icon name="search" class="w-5 h-5"></lucide-icon>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-white">مختبر التعابير النمطية الحي (Regex Playground)</h3>
+                <p class="text-xs text-slate-400">فحص وتجربة التعابير النمطية لحظياً مع مكتبة الأنماط الجاهزة</p>
+              </div>
+            </div>
+
+            <div class="text-xs font-mono px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20">
+              عدد التطابقات: {{ regexMatches().count }}
+            </div>
+          </div>
+
+          <!-- Presets Chips -->
+          <div class="space-y-1.5">
+            <span class="text-xs text-slate-400 font-medium">أنماط جاهزة للاستخدام السريع:</span>
+            <div class="flex flex-wrap gap-2">
+              @for (preset of regexPresets; track preset.label) {
+                <button 
+                  (click)="regexPattern.set(preset.pattern); regexFlags.set(preset.flags)"
+                  class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-purple-600 hover:text-white text-slate-300 border border-slate-700 transition-all font-mono"
+                >
+                  {{ preset.label }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Pattern Input & Flags -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="md:col-span-3 space-y-1.5">
+              <label class="text-xs text-slate-400 font-mono">النمط التعبيري (Regex Pattern):</label>
+              <div class="relative">
+                <input 
+                  type="text" 
+                  [(ngModel)]="regexPattern"
+                  dir="ltr"
+                  placeholder="e.g. [a-z0-9]+"
+                  class="w-full px-4 py-3 rounded-xl bg-slate-950/80 border border-slate-800 text-purple-300 font-mono text-sm focus:outline-none focus:border-purple-500"
+                />
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="text-xs text-slate-400 font-mono">الأعلام (Flags):</label>
+              <input 
+                type="text" 
+                [(ngModel)]="regexFlags"
+                dir="ltr"
+                placeholder="g, i, m, s"
+                class="w-full px-4 py-3 rounded-xl bg-slate-950/80 border border-slate-800 text-purple-300 font-mono text-sm focus:outline-none focus:border-purple-500 text-center"
+              />
+            </div>
+          </div>
+
+          <!-- Test Text Area -->
+          <div class="space-y-2">
+            <label class="text-xs text-slate-400">النص المراد فحصه ومطابقته (Test String):</label>
+            <textarea 
+              [(ngModel)]="regexTestText"
+              rows="4"
+              placeholder="ضع النص هنا ليتم فحصه فوراً..."
+              class="w-full p-4 rounded-2xl bg-slate-950/80 border border-slate-800 text-slate-200 text-sm focus:outline-none focus:border-purple-500 shadow-inner"
+            ></textarea>
+          </div>
+
+          <!-- Matches Viewer -->
+          @if (regexMatches().items.length > 0) {
+            <div class="p-4 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-2">
+              <div class="text-xs font-bold text-purple-400">قائمة النصوص المطابقة المكتشفة:</div>
+              <div class="flex flex-wrap gap-2">
+                @for (item of regexMatches().items; track item.index) {
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/20 border border-purple-500/40 text-purple-200 font-mono text-xs">
+                    <span class="text-slate-400 text-[10px]">#{{ item.index }}:</span>
+                    <strong class="font-bold">{{ item.match }}</strong>
+                  </span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Widget 3: JWT Token Inspector -->
+        <div id="jwt" class="p-6 md:p-8 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-6">
+          <div class="flex items-center justify-between border-b border-slate-800/80 pb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <lucide-icon name="key" class="w-5 h-5"></lucide-icon>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-white">محلل وفاحص رموز JWT (Token Inspector)</h3>
+                <p class="text-xs text-slate-400">فك تشفير آمن 100% داخل المتصفح مع فحص الصلاحية والبيانات المخزنة</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-xs text-slate-400 font-mono">أدخل رمز الـ JWT المشفر (Encoded Token):</label>
+            <textarea 
+              [(ngModel)]="jwtInput"
+              dir="ltr"
+              rows="3"
+              placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+              class="w-full p-3 rounded-xl bg-slate-950/80 border border-slate-800 font-mono text-xs text-amber-300 focus:outline-none focus:border-amber-500 shadow-inner"
+            ></textarea>
+          </div>
+
+          @if (decodedJwt(); as jwt) {
+            @if (jwt.isValid) {
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Header -->
+                <div class="space-y-2">
+                  <div class="text-xs font-bold text-red-400 flex items-center gap-1.5">
+                    <lucide-icon name="shield-check" class="w-4 h-4"></lucide-icon>
+                    <span>الترويسة (HEADER: Algorithm & Type)</span>
+                  </div>
+                  <pre dir="ltr" class="p-4 rounded-xl bg-slate-950 border border-red-500/20 text-red-300 font-mono text-xs overflow-x-auto">{{ jwt.header | json }}</pre>
+                </div>
+
+                <!-- Payload -->
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between text-xs font-bold text-purple-400">
+                    <span class="flex items-center gap-1.5">
+                      <lucide-icon name="layers" class="w-4 h-4"></lucide-icon>
+                      <span>الحمولة (PAYLOAD: Data Claims)</span>
+                    </span>
+                    @if (jwt.expDateStr) {
+                      <span class="text-[11px] font-mono px-2 py-0.5 rounded" [ngClass]="jwt.isExpired ? 'bg-red-500/20 text-red-300 border border-red-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'">
+                        {{ jwt.isExpired ? '⚠️ منتهي الصلاحية' : '✅ صالح' }}
+                      </span>
+                    }
+                  </div>
+                  <pre dir="ltr" class="p-4 rounded-xl bg-slate-950 border border-purple-500/20 text-purple-300 font-mono text-xs overflow-x-auto">{{ jwt.payload | json }}</pre>
+                  @if (jwt.expDateStr) {
+                    <p class="text-[11px] text-slate-400 font-mono">تاريخ الانتهاء: {{ jwt.expDateStr }}</p>
+                  }
+                </div>
+              </div>
+            } @else {
+              <div class="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono">
+                {{ jwt.error }}
+              </div>
+            }
+          }
+        </div>
+
+        <!-- Widget 4: Crypto, Hash & Base64 Lab -->
+        <div id="crypto" class="p-6 md:p-8 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-6">
+          <div class="flex items-center justify-between border-b border-slate-800/80 pb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                <lucide-icon name="lock" class="w-5 h-5"></lucide-icon>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-white">مختبر التشفير والترميز الشامل (Crypto & Hash Lab)</h3>
+                <p class="text-xs text-slate-400">توليد شفرات الهاش SHA-256, SHA-1، وترميز/فك ترميز Base64 و URL و UUID</p>
+              </div>
+            </div>
+            <button 
+              (click)="calculateCryptoHashes()"
+              class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-600/20"
+            >
+              تحديث وحساب الهاشات
+            </button>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-xs text-slate-400">النص المراد تشفيره أو ترميزه:</label>
+            <input 
+              type="text" 
+              [(ngModel)]="cryptoInput"
+              (input)="calculateCryptoHashes()"
+              placeholder="Enter text to hash or encode..."
+              class="w-full px-4 py-3 rounded-xl bg-slate-950/80 border border-slate-800 text-white font-mono text-sm focus:outline-none focus:border-emerald-500 shadow-inner"
+            />
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- SHA-256 -->
+            <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+              <div class="flex items-center justify-between text-xs text-slate-400 font-mono">
+                <span class="text-emerald-400 font-bold">SHA-256 Hash:</span>
+                <button (click)="copyToClipboard(sha256Result(), 'sha256')" class="hover:text-white">
+                  <lucide-icon [name]="copiedId() === 'sha256' ? 'check' : 'copy'" class="w-3.5 h-3.5"></lucide-icon>
+                </button>
+              </div>
+              <div dir="ltr" class="font-mono text-xs text-slate-300 break-all bg-slate-900/80 p-2.5 rounded-lg">
+                {{ sha256Result() || 'اضغط حساب الهاشات...' }}
+              </div>
+            </div>
+
+            <!-- Base64 -->
+            <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+              <div class="flex items-center justify-between text-xs text-slate-400 font-mono">
+                <span class="text-cyan-400 font-bold">Base64 Encoded:</span>
+                <div class="flex items-center gap-2">
+                  <button (click)="decodeBase64()" class="text-[10px] text-cyan-400 hover:underline">فك الترميز</button>
+                  <button (click)="copyToClipboard(base64Output(), 'base64')" class="hover:text-white">
+                    <lucide-icon [name]="copiedId() === 'base64' ? 'check' : 'copy'" class="w-3.5 h-3.5"></lucide-icon>
+                  </button>
+                </div>
+              </div>
+              <div dir="ltr" class="font-mono text-xs text-slate-300 break-all bg-slate-900/80 p-2.5 rounded-lg">
+                {{ base64Output() || 'اضغط حساب الهاشات...' }}
+              </div>
+            </div>
+
+            <!-- UUID v4 -->
+            <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+              <div class="flex items-center justify-between text-xs text-slate-400 font-mono">
+                <span class="text-purple-400 font-bold">UUID v4 Generator:</span>
+                <div class="flex items-center gap-2">
+                  <button (click)="generateRandomUuid()" class="text-[10px] text-purple-400 hover:underline">توليد جديد</button>
+                  <button (click)="copyToClipboard(uuidResult(), 'uuid')" class="hover:text-white">
+                    <lucide-icon [name]="copiedId() === 'uuid' ? 'check' : 'copy'" class="w-3.5 h-3.5"></lucide-icon>
+                  </button>
+                </div>
+              </div>
+              <div dir="ltr" class="font-mono text-xs text-slate-300 break-all bg-slate-900/80 p-2.5 rounded-lg">
+                {{ uuidResult() || 'اضغط توليد جديد...' }}
+              </div>
+            </div>
+
+            <!-- URL Encoded -->
+            <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+              <div class="flex items-center justify-between text-xs text-slate-400 font-mono">
+                <span class="text-amber-400 font-bold">URL Encoded:</span>
+                <div class="flex items-center gap-2">
+                  <button (click)="decodeUrl()" class="text-[10px] text-amber-400 hover:underline">فك الترميز</button>
+                  <button (click)="copyToClipboard(urlEncodedOutput(), 'url-enc')" class="hover:text-white">
+                    <lucide-icon [name]="copiedId() === 'url-enc' ? 'check' : 'copy'" class="w-3.5 h-3.5"></lucide-icon>
+                  </button>
+                </div>
+              </div>
+              <div dir="ltr" class="font-mono text-xs text-slate-300 break-all bg-slate-900/80 p-2.5 rounded-lg">
+                {{ urlEncodedOutput() || 'اضغط حساب الهاشات...' }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Widget 5: Git Problem-Solution Wizard -->
+        <div id="git-wizard" class="p-6 md:p-8 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-6">
+          <div class="flex items-center justify-between border-b border-slate-800/80 pb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400">
+                <lucide-icon name="terminal" class="w-5 h-5"></lucide-icon>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-white">مساعد أوامر Git التفاعلي (Git Wizard)</h3>
+                <p class="text-xs text-slate-400">حل المشاكل الشائعة في الـ Git وتوليد الأوامر الدقيقة لنسخها فوراً</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Problem Selector -->
+            <div class="space-y-2">
+              <label class="text-xs text-slate-400 font-medium">ما هو السيناريو أو المشكلة التي تريد حلها؟</label>
+              <div class="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+                @for (opt of gitProblemOptions; track opt.id) {
+                  <button 
+                    (click)="selectedGitProblem.set(opt.id)"
+                    [ngClass]="selectedGitProblem() === opt.id ? 'bg-orange-500/20 border-orange-500/60 text-orange-200' : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:bg-slate-800'"
+                    class="w-full text-right p-3 rounded-xl border text-xs font-medium transition-all"
+                  >
+                    {{ opt.title }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Command & Solution Preview -->
+            <div class="lg:col-span-2 space-y-4 flex flex-col justify-center p-6 rounded-2xl bg-slate-950 border border-slate-800">
+              <div class="space-y-1">
+                <span class="text-xs font-mono text-orange-400 uppercase tracking-widest">الأمر المقترح:</span>
+                <p class="text-xs text-slate-400">{{ activeGitSolution().desc }}</p>
+              </div>
+
+              <div class="relative group">
+                <pre dir="ltr" class="p-4 rounded-xl bg-slate-900 border border-slate-700 font-mono text-sm text-emerald-400 overflow-x-auto shadow-inner">{{ activeGitSolution().cmd }}</pre>
+                <button 
+                  (click)="copyToClipboard(activeGitSolution().cmd, 'git-cmd')"
+                  class="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold transition-all shadow-md"
+                >
+                  <lucide-icon [name]="copiedId() === 'git-cmd' ? 'check' : 'copy'" class="w-3.5 h-3.5"></lucide-icon>
+                  <span>{{ copiedId() === 'git-cmd' ? 'تم النسخ!' : 'نسخ الأمر' }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Widget 6: HTTP & cURL Generator -->
+        <div id="http-builder" class="p-6 md:p-8 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-6">
+          <div class="flex items-center justify-between border-b border-slate-800/80 pb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                <lucide-icon name="globe" class="w-5 h-5"></lucide-icon>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-white">صانع ومختبر طلبات HTTP & cURL</h3>
+                <p class="text-xs text-slate-400">تجهيز استدعاءات الـ API وتوليد أوامر cURL وأكواد Fetch تلقائياً</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <div class="lg:col-span-1 space-y-1.5">
+              <label class="text-xs text-slate-400 font-mono">Method:</label>
+              <select 
+                [(ngModel)]="httpMethod"
+                class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono text-sm focus:outline-none focus:border-blue-500"
+              >
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+                <option value="PATCH">PATCH</option>
+                <option value="DELETE">DELETE</option>
+              </select>
+            </div>
+
+            <div class="lg:col-span-3 space-y-1.5">
+              <label class="text-xs text-slate-400 font-mono">Endpoint URL:</label>
+              <input 
+                type="text" 
+                [(ngModel)]="httpUrl"
+                dir="ltr"
+                placeholder="https://api.example.com/v1/..."
+                class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-blue-300 font-mono text-sm focus:outline-none focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+              <div class="space-y-1.5">
+                <label class="text-xs text-slate-400 font-mono">Authorization Header (اختياري):</label>
+                <input 
+                  type="text" 
+                  [(ngModel)]="httpAuthToken"
+                  dir="ltr"
+                  placeholder="Bearer token..."
+                  class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 font-mono text-xs focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-xs text-slate-400 font-mono">JSON Body Payload:</label>
+                <textarea 
+                  [(ngModel)]="httpRequestBody"
+                  dir="ltr"
+                  rows="6"
+                  class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- Generated Output Tabs -->
+            <div class="space-y-4">
+              <div class="flex items-center justify-between text-xs text-slate-400">
+                <span class="font-bold text-blue-400">أمر cURL المولد:</span>
+                <button (click)="copyToClipboard(generatedCurl(), 'curl')" class="flex items-center gap-1 hover:text-white font-mono">
+                  <lucide-icon [name]="copiedId() === 'curl' ? 'check' : 'copy'" class="w-3 h-3"></lucide-icon>
+                  <span>{{ copiedId() === 'curl' ? 'تم النسخ!' : 'نسخ cURL' }}</span>
+                </button>
+              </div>
+              <pre dir="ltr" class="p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto h-[110px]">{{ generatedCurl() }}</pre>
+
+              <div class="flex items-center justify-between text-xs text-slate-400">
+                <span class="font-bold text-cyan-400">كود JavaScript (Fetch API):</span>
+                <button (click)="copyToClipboard(generatedFetchCode(), 'fetch')" class="flex items-center gap-1 hover:text-white font-mono">
+                  <lucide-icon [name]="copiedId() === 'fetch' ? 'check' : 'copy'" class="w-3 h-3"></lucide-icon>
+                  <span>{{ copiedId() === 'fetch' ? 'تم النسخ!' : 'نسخ الكود' }}</span>
+                </button>
+              </div>
+              <pre dir="ltr" class="p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-cyan-300 overflow-x-auto h-[110px]">{{ generatedFetchCode() }}</pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Widget 7: Cron Schedule Generator -->
+        <div id="cron" class="p-6 md:p-8 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-6">
+          <div class="flex items-center justify-between border-b border-slate-800/80 pb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-center text-violet-400">
+                <lucide-icon name="clock" class="w-5 h-5"></lucide-icon>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-white">مولد ومفسر تعابير Cron (Cron Expression Visualizer)</h3>
+                <p class="text-xs text-slate-400">بناء الجدولة الزمنية للمهام في الخلفية مع ترجمة وتفسير فوري باللغة العربية</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div class="space-y-1">
+              <label class="text-xs text-slate-400 font-mono">الدقيقة (Minute)</label>
+              <input type="text" [(ngModel)]="cronMin" dir="ltr" class="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-violet-300 font-mono text-center text-sm" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-xs text-slate-400 font-mono">الساعة (Hour)</label>
+              <input type="text" [(ngModel)]="cronHour" dir="ltr" class="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-violet-300 font-mono text-center text-sm" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-xs text-slate-400 font-mono">يوم الشهر (Day)</label>
+              <input type="text" [(ngModel)]="cronDayMonth" dir="ltr" class="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-violet-300 font-mono text-center text-sm" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-xs text-slate-400 font-mono">الشهر (Month)</label>
+              <input type="text" [(ngModel)]="cronMonth" dir="ltr" class="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-violet-300 font-mono text-center text-sm" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-xs text-slate-400 font-mono">يوم الأسبوع (Day of Week)</label>
+              <input type="text" [(ngModel)]="cronDayWeek" dir="ltr" class="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-violet-300 font-mono text-center text-sm" />
+            </div>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-slate-950 border border-violet-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="space-y-1">
+              <div class="text-xl font-mono font-bold text-violet-400 tracking-wider">{{ fullCronExpression() }}</div>
+              <p class="text-xs text-slate-300 font-medium">{{ cronHumanReadable() }}</p>
+            </div>
+            <button 
+              (click)="copyToClipboard(fullCronExpression(), 'cron-exp')"
+              class="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold flex items-center gap-2 transition-colors"
+            >
+              <lucide-icon [name]="copiedId() === 'cron-exp' ? 'check' : 'copy'" class="w-4 h-4"></lucide-icon>
+              <span>{{ copiedId() === 'cron-exp' ? 'تم النسخ!' : 'نسخ التعبير' }}</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  }
+
+  <!-- ========================================== -->
+  <!-- 5. Tab 2: Architecture Blueprints          -->
+  <!-- ========================================== -->
+  @if (hubService.activeTab() === 'blueprints') {
+    <section class="space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-bold text-white">الهياكل المعمارية المعتمدة (Architectural Blueprints)</h2>
+          <p class="text-xs text-slate-400">نماذج ومجلدات معمارية جاهزة مع أفضل الممارسات لتخصص {{ hubService.currentTrack().title }}</p>
+        </div>
+      </div>
+
+      <!-- Blueprints Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        @for (bp of hubService.filteredBlueprints(); track bp.id) {
+          <div class="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between space-y-4 hover:border-indigo-500/40 transition-all shadow-xl">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                  {{ bp.pattern }}
+                </span>
+                <button (click)="openBlueprintModal(bp)" class="text-slate-400 hover:text-white">
+                  <lucide-icon name="maximize-2" class="w-4 h-4"></lucide-icon>
+                </button>
+              </div>
+
+              <h3 class="text-lg font-bold text-white">{{ bp.title }}</h3>
+              <p class="text-xs text-slate-400 leading-relaxed">{{ bp.description }}</p>
+
+              <!-- Tree Preview -->
+              <pre dir="ltr" class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 font-mono text-[11px] text-cyan-300 max-h-48 overflow-y-auto">{{ bp.treeStructure }}</pre>
+
+              <!-- Benefits -->
+              <div class="space-y-1">
+                <span class="text-[11px] font-bold text-slate-300">أبرز المميزات:</span>
+                <ul class="text-xs text-slate-400 space-y-1 list-disc list-inside">
+                  @for (ben of bp.benefits; track ben) {
+                    <li>{{ ben }}</li>
+                  }
+                </ul>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+              <button 
+                (click)="openBlueprintModal(bp)"
+                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all"
+              >
+                عرض الكود والنموذج الكامل
+              </button>
+              <button (click)="copyToClipboard(bp.treeStructure, bp.id)" class="text-xs font-mono text-slate-400 hover:text-white flex items-center gap-1">
+                <lucide-icon [name]="copiedId() === bp.id ? 'check' : 'copy'" class="w-3.5 h-3.5 text-cyan-400"></lucide-icon>
+                <span>نسخ الهيكل</span>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Roadmap Section for current track -->
+      <div class="p-6 md:p-8 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-6">
+        <div class="flex items-center gap-3 border-b border-slate-800/80 pb-4">
+          <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+            <lucide-icon name="trending-up" class="w-5 h-5"></lucide-icon>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-white">خارطة طريق التخصص (Curated Mastery Roadmap)</h3>
+            <p class="text-xs text-slate-400">المسار التدريجي من المبتدئ وحتى مستوى الـ Staff/Principal</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          @for (step of hubService.currentTrack().roadmapSteps; track step.level) {
+            <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+              <div class="text-xs font-bold text-indigo-400 font-mono border-b border-slate-800 pb-2">
+                {{ step.level }}
+              </div>
+              <ul class="space-y-2 text-xs text-slate-300">
+                @for (topic of step.topics; track topic) {
+                  <li class="flex items-start gap-2">
+                    <lucide-icon name="check-circle-2" class="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0"></lucide-icon>
+                    <span>{{ topic }}</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- ========================================== -->
+  <!-- 6. Tab 3: Production Readiness Checklists  -->
+  <!-- ========================================== -->
+  @if (hubService.activeTab() === 'checklists') {
+    <section class="space-y-6">
+      <div class="p-6 rounded-3xl bg-gradient-to-r from-slate-900 to-indigo-950 border border-indigo-500/30 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
+        <div class="space-y-1 text-right w-full md:w-auto">
+          <h2 class="text-lg md:text-xl font-bold text-white flex items-center gap-2">
+            <lucide-icon name="check-square" class="w-5 h-5 text-emerald-400"></lucide-icon>
+            <span>قائمة تدقيق الجاهزية للإنتاج (Production Readiness Checklist)</span>
+          </h2>
+          <p class="text-xs text-slate-400">تحقق من اكتمال المعايير الأمنية، الأداء، والوصولية قبل إطلاق مشروعك</p>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div class="w-full md:w-64 space-y-2">
+          <div class="flex justify-between text-xs font-mono font-bold">
+            <span class="text-slate-300">نسبة الاكتمال:</span>
+            <span class="text-emerald-400">{{ hubService.checklistProgress() }}%</span>
+          </div>
+          <div class="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+            <div class="h-full bg-gradient-to-r from-emerald-500 to-cyan-400 transition-all duration-300" [style.width.%]="hubService.checklistProgress()"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Checklist Items -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        @for (item of hubService.filteredChecklists(); track item.id) {
+          <div 
+            (click)="hubService.toggleChecklist(item.id)"
+            [ngClass]="hubService.isChecklistCompleted(item.id) ? 'bg-emerald-950/20 border-emerald-500/40 shadow-emerald-500/5' : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'"
+            class="p-5 rounded-2xl border transition-all cursor-pointer flex items-start gap-4 shadow-lg group"
+          >
+            <div 
+              class="w-6 h-6 rounded-lg flex items-center justify-center border mt-0.5 shrink-0 transition-all"
+              [ngClass]="hubService.isChecklistCompleted(item.id) ? 'bg-emerald-500 border-emerald-400 text-black' : 'bg-slate-950 border-slate-700 text-transparent group-hover:border-slate-500'"
+            >
+              <lucide-icon name="check" class="w-4 h-4 stroke-[3]"></lucide-icon>
+            </div>
+
+            <div class="space-y-1.5 flex-1">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded" [ngClass]="item.severity === 'critical' ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'">
+                  {{ item.category }} • {{ item.severity === 'critical' ? 'حرج ⚠️' : 'موصى به ⭐' }}
+                </span>
+              </div>
+              <h4 class="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors" [ngClass]="{'line-through text-slate-400': hubService.isChecklistCompleted(item.id)}">
+                {{ item.title }}
+              </h4>
+              <p class="text-xs text-slate-400 leading-relaxed">{{ item.description }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- ========================================== -->
+  <!-- 7. Tab 4: Cheat Sheets & Daily Commands    -->
+  <!-- ========================================== -->
+  @if (hubService.activeTab() === 'cheatsheets') {
+    <section class="space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-bold text-white">أوامر سريعة لا يستغني عنها المطور (Curated Cheat Sheet)</h2>
+          <p class="text-xs text-slate-400">أوامر طرفية منتقاة للـ Git, Docker, Linux, Databases مع زر نسخ فوري</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        @for (cmd of hubService.filteredCommands(); track cmd.command) {
+          <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 hover:border-slate-700 transition-all shadow-lg flex flex-col justify-between">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-indigo-400 font-bold border border-slate-700">
+                  {{ cmd.category }}
+                </span>
+                <div class="flex gap-1">
+                  @for (tag of cmd.tags; track tag) {
+                    <span class="text-[9px] font-mono text-slate-500">#{{ tag }}</span>
+                  }
+                </div>
+              </div>
+              <p class="text-xs text-slate-300 font-medium">{{ cmd.description }}</p>
+            </div>
+
+            <div class="relative group mt-2">
+              <pre dir="ltr" class="p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto shadow-inner pr-12">{{ cmd.command }}</pre>
+              <button 
+                (click)="copyToClipboard(cmd.command, cmd.command)"
+                class="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                title="نسخ الأمر"
+              >
+                <lucide-icon [name]="copiedId() === cmd.command ? 'check' : 'copy'" class="w-3.5 h-3.5 text-cyan-400"></lucide-icon>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- ========================================== -->
+  <!-- 8. Tab 5: Curated Resources & Gems         -->
+  <!-- ========================================== -->
+  @if (hubService.activeTab() === 'resources') {
+    <section class="space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-bold text-white">المصادر والمكتبات المفتوحة الأهم (Curated Gems)</h2>
+          <p class="text-xs text-slate-400">أقوى التوثيقات الرسمية، الحزم المعتمدة، والواجهات البرمجية المجانية</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        @for (res of hubService.filteredResources(); track res.id) {
+          <a 
+            [href]="res.url" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="group p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-cyan-500/50 transition-all flex flex-col justify-between space-y-4 shadow-lg hover:shadow-cyan-500/5"
+          >
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
+                  {{ res.category }}
+                </span>
+                @if (res.starsOrPopularity) {
+                  <span class="text-[10px] font-mono text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded">
+                    {{ res.starsOrPopularity }}
+                  </span>
+                }
+              </div>
+
+              <h3 class="text-base font-bold text-white group-hover:text-cyan-300 transition-colors flex items-center gap-1.5">
+                <span>{{ res.title }}</span>
+                <lucide-icon name="external-link" class="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity"></lucide-icon>
+              </h3>
+
+              <p class="text-xs text-slate-400 leading-relaxed">{{ res.description }}</p>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-mono text-cyan-400">
+              <span class="truncate max-w-[200px]">{{ res.url }}</span>
+              <lucide-icon name="arrow-left" class="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform"></lucide-icon>
+            </div>
+          </a>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- ========================================== -->
+  <!-- 9. Tab 6: AI Developer Prompt Studio       -->
+  <!-- ========================================== -->
+  @if (hubService.activeTab() === 'prompts') {
+    <section class="space-y-6">
+      <div class="p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-fuchsia-950/40 to-slate-900 border border-fuchsia-500/30 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
+        <div class="space-y-1 text-right">
+          <h2 class="text-lg md:text-xl font-bold text-white flex items-center gap-2">
+            <lucide-icon name="sparkles" class="w-5 h-5 text-fuchsia-400"></lucide-icon>
+            <span>استوديو أوامر الذكاء الاصطناعي للمطورين (AI Prompt Studio)</span>
+          </h2>
+          <p class="text-xs text-slate-400">قوالب أوامر عالية الدقة لمراجعة الكود، كتابة الاختبارات، وتحسين قواعد البيانات</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        @for (prompt of hubService.filteredPrompts(); track prompt.id) {
+          <div class="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-4 hover:border-fuchsia-500/40 transition-all shadow-xl flex flex-col justify-between">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30">
+                  {{ prompt.category }}
+                </span>
+                <span class="text-[10px] text-slate-500 font-mono">{{ prompt.variables.length }} متغيرات</span>
+              </div>
+
+              <h3 class="text-base font-bold text-white">{{ prompt.title }}</h3>
+              <p class="text-xs text-slate-400 leading-relaxed">{{ prompt.description }}</p>
+
+              <pre class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 text-xs text-slate-300 line-clamp-3 font-mono opacity-80">{{ prompt.prompt }}</pre>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+              <button 
+                (click)="openPromptModal(prompt)"
+                class="px-4 py-2 bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-fuchsia-600/20"
+              >
+                تخصيص وتعبئة المتغيرات
+              </button>
+              <button (click)="copyToClipboard(prompt.prompt, prompt.id)" class="text-xs font-mono text-slate-400 hover:text-white flex items-center gap-1">
+                <lucide-icon [name]="copiedId() === prompt.id ? 'check' : 'copy'" class="w-3.5 h-3.5 text-fuchsia-400"></lucide-icon>
+                <span>نسخ القالب الخام</span>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- ========================================== -->
+  <!-- 10. Blueprint Modal View                   -->
+  <!-- ========================================== -->
+  @if (selectedBlueprint(); as bp) {
+    <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 md:p-8 space-y-6 shadow-2xl animate-in fade-in zoom-in-95">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div>
+            <span class="text-xs font-mono text-cyan-400 font-bold">{{ bp.pattern }}</span>
+            <h3 class="text-xl font-bold text-white">{{ bp.title }}</h3>
+          </div>
+          <button (click)="closeBlueprintModal()" class="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white">
+            <lucide-icon name="x" class="w-5 h-5"></lucide-icon>
+          </button>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <h4 class="text-xs font-bold text-slate-400 mb-1.5">الهيكل الشجري للمجلدات (Folder Structure):</h4>
+            <pre dir="ltr" class="p-4 rounded-2xl bg-slate-950 border border-slate-800 font-mono text-xs text-cyan-300 overflow-x-auto">{{ bp.treeStructure }}</pre>
+          </div>
+
+          @if (bp.sampleCode) {
+            <div>
+              <div class="flex items-center justify-between text-xs text-slate-400 mb-1.5">
+                <span class="font-bold text-emerald-400">{{ bp.sampleCodeTitle }}</span>
+                <button (click)="copyToClipboard(bp.sampleCode, 'sample-code')" class="hover:text-white flex items-center gap-1">
+                  <lucide-icon [name]="copiedId() === 'sample-code' ? 'check' : 'copy'" class="w-3.5 h-3.5 text-emerald-400"></lucide-icon>
+                  <span>نسخ الكود</span>
+                </button>
+              </div>
+              <pre dir="ltr" class="p-4 rounded-2xl bg-slate-950 border border-slate-800 font-mono text-xs text-emerald-300 overflow-x-auto">{{ bp.sampleCode }}</pre>
+            </div>
+          }
+        </div>
+
+        <div class="flex justify-end pt-4 border-t border-slate-800">
+          <button (click)="closeBlueprintModal()" class="px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold">
+            إغلاق
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ========================================== -->
+  <!-- 11. AI Prompt Customizer Modal             -->
+  <!-- ========================================== -->
+  @if (selectedPrompt(); as pr) {
+    <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div class="bg-slate-900 border border-fuchsia-500/40 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 md:p-8 space-y-6 shadow-2xl animate-in fade-in zoom-in-95">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div>
+            <span class="text-xs font-mono text-fuchsia-400 font-bold">{{ pr.category }}</span>
+            <h3 class="text-xl font-bold text-white">{{ pr.title }}</h3>
+          </div>
+          <button (click)="closePromptModal()" class="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white">
+            <lucide-icon name="x" class="w-5 h-5"></lucide-icon>
+          </button>
+        </div>
+
+        <!-- Inputs for Variables -->
+        <div class="space-y-3">
+          <h4 class="text-xs font-bold text-slate-300">أدخل قيم المتغيرات لتوليد الأمر المكتمل:</h4>
+          <div class="grid grid-cols-1 gap-3">
+            @for (v of pr.variables; track v) {
+              <div class="space-y-1">
+                <label class="text-xs font-mono text-fuchsia-300">{{ '{{' + v + '}}' }}:</label>
+                @if (v === 'code' || v === 'sql_query') {
+                  <textarea 
+                    [ngModel]="promptVariables()[v]" 
+                    (ngModelChange)="updatePromptVariable(v, $event)"
+                    rows="4" 
+                    dir="ltr"
+                    [placeholder]="'أدخل كود ' + v + ' هنا...'"
+                    class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-slate-200 focus:outline-none focus:border-fuchsia-500"
+                  ></textarea>
+                } @else {
+                  <input 
+                    type="text" 
+                    [ngModel]="promptVariables()[v]" 
+                    (ngModelChange)="updatePromptVariable(v, $event)"
+                    [placeholder]="'قيمة ' + v"
+                    class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-fuchsia-500"
+                  />
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Result Preview -->
+        <div class="space-y-2">
+          <h4 class="text-xs font-bold text-slate-300">معاينة الأمر النهائي للنسخ:</h4>
+          <pre class="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-emerald-300 overflow-x-auto max-h-52 font-mono">{{ getFilledPrompt() }}</pre>
+        </div>
+
+        <div class="flex items-center justify-between pt-4 border-t border-slate-800">
+          <button 
+            (click)="copyToClipboard(getFilledPrompt(), 'filled-prompt')"
+            class="px-6 py-2.5 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-xs font-bold flex items-center gap-2 transition-all shadow-lg shadow-fuchsia-600/20"
+          >
+            <lucide-icon [name]="copiedId() === 'filled-prompt' ? 'check' : 'copy'" class="w-4 h-4"></lucide-icon>
+            <span>{{ copiedId() === 'filled-prompt' ? 'تم النسخ بنجاح!' : 'نسخ الأمر المكتمل' }}</span>
+          </button>
+          <button (click)="closePromptModal()" class="px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold">
+            إغلاق
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>
