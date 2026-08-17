@@ -669,6 +669,36 @@
                   </div>
                 </div>
 
+                <!-- PAGE ATTACHED VIDEO / LECTURE EXPLANATION PLAYER -->
+                <div *ngIf="curPage.video" class="my-4 p-4 rounded-3xl bg-slate-900/95 border border-indigo-500/40 shadow-2xl space-y-3 animate-in fade-in">
+                  <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
+                    <div class="flex items-center gap-2">
+                      <span class="p-1.5 rounded-xl bg-indigo-600/30 text-indigo-400 text-sm">🎬</span>
+                      <h4 class="text-xs font-black text-white truncate">{{ curPage.video.title || 'فيديو وشرح الصفحة التفاعلي' }}</h4>
+                      <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">
+                        {{ curPage.video.type === 'local' ? 'ملف محلي ⚡' : curPage.video.type === 'youtube' ? 'YouTube' : 'Google Drive' }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Video Screen -->
+                  <div class="rounded-2xl overflow-hidden bg-black shadow-inner">
+                    <video *ngIf="curPage.video.type === 'local'" 
+                           [src]="curPage.video.videoBlobUrl || curPage.video.url" 
+                           controls 
+                           class="w-full max-h-[420px] mx-auto object-contain bg-black" 
+                           playsinline>
+                    </video>
+
+                    <iframe *ngIf="curPage.video.type !== 'local'" 
+                            [src]="getSafeVideoUrl(curPage.video)" 
+                            class="w-full aspect-video border-0 bg-black" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                    </iframe>
+                  </div>
+                </div>
+
                 <!-- Image Page Display Surface (FLUID HIGH RESOLUTION VIEW) -->
                 <div *ngIf="curPage.type === 'image'" class="space-y-3">
                   <div class="flex items-center justify-between text-xs opacity-75 px-1">
@@ -1500,6 +1530,55 @@
                 <p class="text-[11px] text-slate-400 leading-relaxed">تُستخدم هذه الصفحة كفاصل بين الفصول أو مكان لتدوين ملاحظات القراء.</p>
               </div>
             </ng-container>
+
+            <!-- PAGE VIDEO & LECTURE EXPLANATION PANEL (FOR ANY PAGE) -->
+            <div class="space-y-3 bg-black/30 p-3.5 rounded-2xl border border-white/10 text-xs">
+              <div class="flex items-center justify-between border-b border-white/10 pb-2">
+                <span class="font-bold text-teal-300 flex items-center gap-1.5 text-xs">
+                  <span>🎬</span> فيديو وشرح الصفحة التفاعلي
+                </span>
+                <span *ngIf="studioBook.pages[selectedPageIndex].video" class="px-2 py-0.5 rounded-full text-[10px] bg-teal-500/20 text-teal-300 font-bold">
+                  ✓ فيديو مرفق
+                </span>
+              </div>
+
+              <!-- Video Upload & Link Options -->
+              <div class="grid grid-cols-2 gap-2">
+                <label class="py-2.5 px-3 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-500 hover:to-indigo-500 text-white font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer shadow-md transition-all">
+                  <input type="file" accept="video/*" class="hidden" (change)="onPageVideoFileSelected($event, studioBook.pages[selectedPageIndex])" />
+                  <span>📁 فيديو من الجهاز</span>
+                </label>
+
+                <button (click)="showPageVideoUrlPrompt = !showPageVideoUrlPrompt" 
+                        class="py-2.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 font-bold text-[11px] flex items-center justify-center gap-1.5 transition-all">
+                  <span>🔗 رابط (YouTube/Drive)</span>
+                </button>
+              </div>
+
+              <!-- URL Input Prompt Box -->
+              <div *ngIf="showPageVideoUrlPrompt" class="space-y-2 bg-slate-950 p-3 rounded-xl border border-white/10 animate-in fade-in">
+                <input type="text" [(ngModel)]="pageVideoTitleInput" placeholder="عنوان الفيديو (مثال: شرح المسألة)..." class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white" />
+                <input type="url" [(ngModel)]="pageVideoUrlInput" placeholder="رابط YouTube أو Google Drive أو MP4..." class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white dir-ltr text-right" />
+                <button (click)="addPageVideoByUrl(studioBook.pages[selectedPageIndex], pageVideoUrlInput, pageVideoTitleInput)" 
+                        class="w-full py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-lg text-xs shadow-md">
+                  حفظ وربط الفيديو ⚡
+                </button>
+              </div>
+
+              <!-- Attached Video Preview Card -->
+              <div *ngIf="studioBook.pages[selectedPageIndex].video as pageVid" class="p-3 rounded-xl bg-slate-950 border border-teal-500/30 space-y-2">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="text-lg">🎬</span>
+                    <div class="truncate text-right">
+                      <span class="text-xs font-bold text-slate-100 block truncate">{{ pageVid.title || 'فيديو الصفحة' }}</span>
+                      <span class="text-[10px] text-teal-400 font-mono">{{ pageVid.type }}</span>
+                    </div>
+                  </div>
+                  <button (click)="deletePageVideo(studioBook.pages[selectedPageIndex])" class="text-red-400 hover:text-red-300 text-xs px-1.5 py-0.5 bg-red-500/10 rounded font-bold" title="حذف الفيديو">✕ حذف</button>
+                </div>
+              </div>
+            </div>
 
             <!-- Colorful Reader Notes & Margins Callout Component for Any Page -->
             <div class="bg-slate-950/90 p-3 rounded-2xl border border-white/10 space-y-2.5 text-xs">

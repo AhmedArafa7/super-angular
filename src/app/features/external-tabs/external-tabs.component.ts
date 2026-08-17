@@ -1,22 +1,17 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, ExternalLink, Trash2, Plus, Bookmark, Search, Tag, Globe } from 'lucide-angular';
-
-export interface ExternalTabItem {
-  id: string;
-  title: string;
-  url: string;
-  category: string;
-  notes?: string;
-  createdAt: string;
-  favicon?: string;
-}
+import { RouterModule } from '@angular/router';
+import { 
+  LucideAngularModule, ExternalLink, Trash2, Plus, Bookmark, Search, Tag, 
+  Globe, Pin, PinOff, LayoutDashboard, Maximize2, Sparkles, AppWindow
+} from 'lucide-angular';
+import { ExternalTabsService, ExternalTabItem } from '../../core/services/external-tabs.service';
 
 @Component({
   selector: 'app-external-tabs',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, RouterModule, LucideAngularModule],
   template: `
     <div class="p-8 max-w-7xl mx-auto flex flex-col min-h-screen animate-in fade-in duration-700 font-sans text-right" dir="rtl">
       <!-- Header -->
@@ -26,18 +21,18 @@ export interface ExternalTabItem {
             <span class="p-3 bg-indigo-600/20 border border-indigo-500/30 rounded-2xl text-indigo-400">
               <lucide-icon [img]="Bookmark" class="size-8"></lucide-icon>
             </span>
-            أرشيف التبويبات الخارجية
+            أرشيف التبويبات والأقسام الخارجية
           </h1>
           <p class="text-slate-400 text-base mt-2 max-w-2xl leading-relaxed">
-            ودع استهلاك الرامات في المتصفح! احفظ روابط فيسبوك والمواقع الخارجية هنا، وأغلق التبويبات الزائدة وأنت مطمئن لتعود لها في أي وقت. (حفظ محلي فائق السرعة).
+            احفظ روابط المواقع والملفات والمجلدات الخارجية هنا، وافتحها <strong class="text-indigo-400">كقسم مباشر داخل المنصة</strong> أو ثبتها بالشريط الجانبي مثل باقي الأقسام.
           </p>
         </div>
 
         <button 
           (click)="openAddModal()" 
-          class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-3.5 rounded-2xl shadow-xl shadow-indigo-600/20 transition-all flex items-center gap-2">
+          class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-3.5 rounded-2xl shadow-xl shadow-indigo-600/20 transition-all flex items-center gap-2 cursor-pointer">
           <lucide-icon [img]="Plus" class="size-5"></lucide-icon>
-          حفظ تبويب جديد
+          حفظ تبويب أو قسم جديد
         </button>
       </div>
 
@@ -49,7 +44,7 @@ export interface ExternalTabItem {
           <input 
             type="text" 
             [(ngModel)]="searchQuery" 
-            placeholder="ابحث في الروابط المحفوظة..." 
+            placeholder="ابحث في الروابط والأقسام المحفوظة..." 
             class="w-full pr-12 pl-4 bg-slate-900 border border-white/10 text-white placeholder:text-slate-500 rounded-2xl h-12 focus:outline-none focus:border-indigo-500/50 shadow-inner">
         </div>
 
@@ -58,14 +53,14 @@ export interface ExternalTabItem {
           <button 
             (click)="selectedCategory.set('all')"
             [class]="selectedCategory() === 'all' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'"
-            class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap">
+            class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer">
             الكل ({{ tabs().length }})
           </button>
           @for (cat of categories; track cat) {
             <button 
               (click)="selectedCategory.set(cat)"
               [class]="selectedCategory() === cat ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'"
-              class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap">
+              class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer">
               {{ cat }}
             </button>
           }
@@ -82,10 +77,18 @@ export interface ExternalTabItem {
               <div>
                 <!-- Top Meta -->
                 <div class="flex items-center justify-between mb-4">
-                  <span class="px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-[10px] font-bold text-indigo-300 flex items-center gap-1">
-                    <lucide-icon [img]="Tag" class="size-3"></lucide-icon>
-                    {{ tab.category }}
-                  </span>
+                  <div class="flex items-center gap-2">
+                    <span class="px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-[10px] font-bold text-indigo-300 flex items-center gap-1">
+                      <lucide-icon [img]="Tag" class="size-3"></lucide-icon>
+                      {{ tab.category }}
+                    </span>
+                    @if (tab.isPinnedToSidebar) {
+                      <span class="px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded-full text-[9px] font-bold text-amber-300 flex items-center gap-1">
+                        <lucide-icon [img]="Pin" class="size-2.5"></lucide-icon>
+                        مثبت بالشريط
+                      </span>
+                    }
+                  </div>
                   <span class="text-[11px] text-slate-500 font-mono">{{ tab.createdAt | date:'yyyy/MM/dd' }}</span>
                 </div>
 
@@ -99,8 +102,10 @@ export interface ExternalTabItem {
                     }
                   </div>
                   <div class="min-w-0 flex-1">
-                    <h3 class="font-bold text-white text-base truncate group-hover:text-indigo-300 transition-colors">{{ tab.title }}</h3>
-                    <a [href]="tab.url" target="_blank" class="text-xs text-slate-400 hover:text-indigo-400 truncate block dir-ltr text-right mt-0.5">{{ tab.url }}</a>
+                    <a [routerLink]="['/external-tabs/view', tab.id]" class="font-bold text-white text-base truncate block hover:text-indigo-300 transition-colors cursor-pointer">
+                      {{ tab.title }}
+                    </a>
+                    <span class="text-xs text-slate-400 truncate block dir-ltr text-right mt-0.5">{{ tab.url }}</span>
                   </div>
                 </div>
 
@@ -110,20 +115,43 @@ export interface ExternalTabItem {
               </div>
 
               <!-- Actions -->
-              <div class="flex items-center justify-between pt-4 border-t border-white/5 mt-4">
-                <button 
-                  (click)="deleteTab(tab.id)" 
-                  class="text-slate-500 hover:text-red-400 p-2 rounded-xl hover:bg-red-500/10 transition-colors" title="حذف الرابط">
-                  <lucide-icon [img]="Trash2" class="size-4"></lucide-icon>
-                </button>
+              <div class="flex items-center justify-between pt-4 border-t border-white/5 mt-4 gap-2">
+                <!-- Delete & Pin Actions -->
+                <div class="flex items-center gap-1">
+                  <button 
+                    (click)="deleteTab(tab.id)" 
+                    class="text-slate-500 hover:text-red-400 p-2 rounded-xl hover:bg-red-500/10 transition-colors cursor-pointer" title="حذف الرابط">
+                    <lucide-icon [img]="Trash2" class="size-4"></lucide-icon>
+                  </button>
 
-                <a 
-                  [href]="tab.url" 
-                  target="_blank" 
-                  class="bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-indigo-500/30">
-                  <span>فتح الموقع</span>
-                  <lucide-icon [img]="ExternalLink" class="size-3.5"></lucide-icon>
-                </a>
+                  <button 
+                    (click)="togglePin(tab.id)" 
+                    [title]="tab.isPinnedToSidebar ? 'إلغاء التثبيت من الشريط الجانبي' : 'تثبيت كقسم في الشريط الجانبي'" 
+                    [class]="tab.isPinnedToSidebar ? 'text-amber-400 bg-amber-500/10' : 'text-slate-500 hover:text-amber-400 hover:bg-amber-500/10'"
+                    class="p-2 rounded-xl transition-colors cursor-pointer">
+                    <lucide-icon [img]="tab.isPinnedToSidebar ? PinOff : Pin" class="size-4"></lucide-icon>
+                  </button>
+                </div>
+
+                <!-- Launch Buttons -->
+                <div class="flex items-center gap-2">
+                  <!-- External Tab Fallback -->
+                  <a 
+                    [href]="tab.url" 
+                    target="_blank" 
+                    title="فتح في لسان خارجي جديد"
+                    class="bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white px-2.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1 border border-white/10">
+                    <lucide-icon [img]="ExternalLink" class="size-3.5"></lucide-icon>
+                  </a>
+
+                  <!-- Open as In-App Section (Primary Action) -->
+                  <a 
+                    [routerLink]="['/external-tabs/view', tab.id]" 
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-lg shadow-indigo-600/30">
+                    <lucide-icon [img]="AppWindow" class="size-3.5"></lucide-icon>
+                    <span>فتح كقسم</span>
+                  </a>
+                </div>
               </div>
             </div>
           }
@@ -135,11 +163,11 @@ export interface ExternalTabItem {
             <lucide-icon [img]="Bookmark" class="size-10"></lucide-icon>
           </div>
           <h3 class="text-xl font-bold text-white mb-2">لا توجد تبويبات محفوظة</h3>
-          <p class="text-slate-400 text-sm max-w-sm mb-6">قم بحفظ روابط المواقع التي تتركها مفتوحة عادة لتوفير مساحة الذاكرة في المتصفح.</p>
+          <p class="text-slate-400 text-sm max-w-sm mb-6">قم بحفظ روابط المواقع التي تريد فتحها كأقسام داخل المنصة أو الرجوع لها لاحقاً.</p>
           <button 
             (click)="openAddModal()" 
-            class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-3 rounded-xl text-sm transition-all shadow-lg">
-            أضف أول رابط الآن
+            class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-3 rounded-xl text-sm transition-all shadow-lg cursor-pointer">
+            أضف أول رابط وقسم الآن
           </button>
         </div>
       }
@@ -148,12 +176,12 @@ export interface ExternalTabItem {
       @if (showModal) {
         <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div class="bg-slate-900 border border-white/10 rounded-[2.5rem] w-full max-w-lg p-8 shadow-2xl animate-in zoom-in-95 duration-200">
-            <h3 class="text-2xl font-black text-white mb-6">حفظ تبويب خارجي جديد</h3>
+            <h3 class="text-2xl font-black text-white mb-6">حفظ تبويب أو قسم خارجي جديد</h3>
             
             <div class="space-y-4">
               <div>
-                <label class="block text-xs font-bold text-slate-400 mb-2">عنوان الموقع أو الصفحة</label>
-                <input type="text" [(ngModel)]="formTitle" placeholder="مثال: فيسبوك - مجموعة العمل..." class="w-full bg-black/40 border border-white/10 text-white rounded-xl px-4 h-12 focus:outline-none focus:border-indigo-500">
+                <label class="block text-xs font-bold text-slate-400 mb-2">عنوان الموقع أو القسم</label>
+                <input type="text" [(ngModel)]="formTitle" placeholder="مثال: Google Drive أو كورس الباكاند..." class="w-full bg-black/40 border border-white/10 text-white rounded-xl px-4 h-12 focus:outline-none focus:border-indigo-500">
               </div>
 
               <div>
@@ -172,13 +200,21 @@ export interface ExternalTabItem {
 
               <div>
                 <label class="block text-xs font-bold text-slate-400 mb-2">ملاحظات سريعة (اختياري)</label>
-                <textarea [(ngModel)]="formNotes" placeholder="لماذا تركت هذا الرابط مفتوحاً؟" class="w-full bg-black/40 border border-white/10 text-white rounded-xl p-4 h-24 focus:outline-none focus:border-indigo-500 resize-none"></textarea>
+                <textarea [(ngModel)]="formNotes" placeholder="ملاحظات توضيحية حول هذا القسم..." class="w-full bg-black/40 border border-white/10 text-white rounded-xl p-4 h-20 focus:outline-none focus:border-indigo-500 resize-none"></textarea>
+              </div>
+
+              <!-- Pin to Sidebar Option -->
+              <div class="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-xl">
+                <input type="checkbox" id="pinSidebar" [(ngModel)]="formPinToSidebar" class="size-4 text-indigo-600 rounded">
+                <label for="pinSidebar" class="text-xs font-bold text-white cursor-pointer select-none">
+                  تثبيت كقسم دائم في القائمة الجانبية (Sidebar)
+                </label>
               </div>
             </div>
 
             <div class="flex gap-4 mt-8">
-              <button (click)="showModal = false" class="flex-1 bg-white/5 hover:bg-white/10 text-white font-bold py-3.5 rounded-xl transition-all">إلغاء</button>
-              <button (click)="saveTab()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-600/30">حفظ في الأرشيف المحلي</button>
+              <button (click)="showModal = false" class="flex-1 bg-white/5 hover:bg-white/10 text-white font-bold py-3.5 rounded-xl transition-all cursor-pointer">إلغاء</button>
+              <button (click)="saveTab()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-600/30 cursor-pointer">حفظ في الأرشيف ⚡</button>
             </div>
           </div>
         </div>
@@ -190,6 +226,8 @@ export interface ExternalTabItem {
   `]
 })
 export class ExternalTabsComponent implements OnInit {
+  externalTabsService = inject(ExternalTabsService);
+
   ExternalLink = ExternalLink;
   Trash2 = Trash2;
   Plus = Plus;
@@ -197,8 +235,14 @@ export class ExternalTabsComponent implements OnInit {
   Search = Search;
   Tag = Tag;
   Globe = Globe;
+  Pin = Pin;
+  PinOff = PinOff;
+  LayoutDashboard = LayoutDashboard;
+  Maximize2 = Maximize2;
+  Sparkles = Sparkles;
+  AppWindow = AppWindow;
 
-  tabs = signal<ExternalTabItem[]>([]);
+  tabs = this.externalTabsService.tabs;
   searchQuery = '';
   selectedCategory = signal<string>('all');
   
@@ -209,32 +253,10 @@ export class ExternalTabsComponent implements OnInit {
   formUrl = '';
   formCategory = 'تواصل اجتماعي';
   formNotes = '';
-
-  private STORAGE_KEY = 'si_neuro_external_tabs_vault';
+  formPinToSidebar = false;
 
   ngOnInit() {
-    this.loadFromLocalStorage();
-  }
-
-  loadFromLocalStorage() {
-    if (typeof window === 'undefined') return;
-    try {
-      const data = localStorage.getItem(this.STORAGE_KEY);
-      if (data) {
-        this.tabs.set(JSON.parse(data));
-      }
-    } catch (e) {
-      console.error('Failed to load tabs', e);
-    }
-  }
-
-  saveToLocalStorage(items: ExternalTabItem[]) {
-    if (typeof window === 'undefined') return;
-    try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(items));
-    } catch (e) {
-      console.error('Failed to save tabs', e);
-    }
+    this.externalTabsService.loadTabs();
   }
 
   onUrlBlur() {
@@ -259,45 +281,32 @@ export class ExternalTabsComponent implements OnInit {
     this.formUrl = '';
     this.formCategory = this.categories[0];
     this.formNotes = '';
+    this.formPinToSidebar = false;
     this.showModal = true;
   }
 
   saveTab() {
     if (!this.formTitle.trim() || !this.formUrl.trim()) return;
 
-    let formattedUrl = this.formUrl.trim();
-    if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
-      formattedUrl = 'https://' + formattedUrl;
-    }
-
-    let favicon = '';
-    try {
-      const domain = new URL(formattedUrl).hostname;
-      favicon = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
-    } catch {}
-
-    const newItem: ExternalTabItem = {
-      id: 'tab_' + Date.now(),
-      title: this.formTitle.trim(),
-      url: formattedUrl,
+    this.externalTabsService.addTab({
+      title: this.formTitle,
+      url: this.formUrl,
       category: this.formCategory,
-      notes: this.formNotes.trim() || undefined,
-      createdAt: new Date().toISOString(),
-      favicon
-    };
+      notes: this.formNotes,
+      isPinnedToSidebar: this.formPinToSidebar
+    });
 
-    const updated = [newItem, ...this.tabs()];
-    this.tabs.set(updated);
-    this.saveToLocalStorage(updated);
     this.showModal = false;
   }
 
   deleteTab(id: string) {
     if (confirm('هل أنت متأكد من حذف هذا الرابط من الأرشيف؟')) {
-      const updated = this.tabs().filter(t => t.id !== id);
-      this.tabs.set(updated);
-      this.saveToLocalStorage(updated);
+      this.externalTabsService.deleteTab(id);
     }
+  }
+
+  togglePin(id: string) {
+    this.externalTabsService.togglePinToSidebar(id);
   }
 
   filteredTabs = () => {
@@ -310,3 +319,4 @@ export class ExternalTabsComponent implements OnInit {
     });
   };
 }
+

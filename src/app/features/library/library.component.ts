@@ -66,6 +66,17 @@ export interface PageAudio {
   autoPlay?: boolean;
 }
 
+export interface PageVideo {
+  id: string;
+  title?: string;
+  url?: string;
+  videoBlob?: Blob;
+  videoBlobUrl?: string;
+  type: 'local' | 'youtube' | 'drive' | 'url';
+  driveFileId?: string;
+  autoPlay?: boolean;
+}
+
 export interface BookPage {
   id: string;
   type: 'image' | 'text' | 'blank';
@@ -76,6 +87,7 @@ export interface BookPage {
   textContent?: string;
   extractedText?: string;
   audio?: PageAudio;
+  video?: PageVideo;
   filter: PageImageFilter;
   selected?: boolean;
   isOcrLoading?: boolean;
@@ -2219,6 +2231,78 @@ export class LibraryComponent {
     if (this.activeAudioElement) {
       this.activeAudioElement.muted = this.isAudioMuted;
     }
+  }
+
+  // --- PAGE VIDEO EXPLANATIONS & EMBEDS ---
+  pageVideoUrlInput = '';
+  pageVideoTitleInput = '';
+  showPageVideoUrlPrompt = false;
+
+  onPageVideoFileSelected(event: Event, page: BookPage) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      const blobUrl = URL.createObjectURL(file);
+      page.video = {
+        id: 'vid_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+        title: file.name,
+        videoBlob: file,
+        videoBlobUrl: blobUrl,
+        type: 'local',
+        autoPlay: false
+      };
+      this.saveStudioDraft(true);
+      this.toast.show(`تم إرفاق فيديو الشرح "${file.name}" بالصفحة بنجاح! 🎬⚡`, 'success');
+      input.value = '';
+    }
+  }
+
+  addPageVideoByUrl(page: BookPage, rawUrl: string, title?: string) {
+    if (!rawUrl || !rawUrl.trim()) return;
+    const url = rawUrl.trim();
+    let type: 'youtube' | 'drive' | 'url' = 'url';
+    let formattedUrl = url;
+
+    const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/|live\/))([^&?\n]+)/);
+    if (ytMatch && ytMatch[1].length === 11) {
+      type = 'youtube';
+      formattedUrl = `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?autoplay=0&rel=0`;
+    } else if (url.includes('drive.google.com')) {
+      type = 'drive';
+      const driveMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (driveMatch) {
+        formattedUrl = `https://drive.google.com/file/d/${driveMatch[1]}/preview`;
+      }
+    }
+
+    page.video = {
+      id: 'vid_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      title: title || (type === 'youtube' ? 'شرح يوتيوب' : type === 'drive' ? 'فيديو Google Drive' : 'فيديو تعليمي'),
+      url: formattedUrl,
+      type: type,
+      autoPlay: false
+    };
+    this.saveStudioDraft(true);
+    this.toast.show('تم ربط وإرفاق فيديو الشرح بالصفحة بنجاح! 🎬', 'success');
+    this.pageVideoUrlInput = '';
+    this.pageVideoTitleInput = '';
+    this.showPageVideoUrlPrompt = false;
+  }
+
+  deletePageVideo(page: BookPage) {
+    if (page.video?.videoBlobUrl && page.video.videoBlobUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(page.video.videoBlobUrl);
+    }
+    page.video = undefined;
+    this.saveStudioDraft(true);
+    this.toast.show('تم حذف الفيديو المرفق من الصفحة', 'info');
+  }
+
+  getSafeVideoUrl(video?: PageVideo): SafeResourceUrl | null {
+    if (!video) return null;
+    const url = video.videoBlobUrl || video.url;
+    if (!url) return null;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 
   formatTimeSeconds(sec: number): string {

@@ -41,6 +41,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: "inkscape", label: "محرر SVG - Inkscape", icon: "pen-tool", restricted: false, isPermanent: true, status: 'NEW', route: 'inkscape', category: 'core' },
   { id: "dev-hub", label: "مركز المطورين", icon: "code-2", restricted: false, isPermanent: true, status: 'NEW', route: 'dev-hub', category: 'dev' },
   { id: "opencode", label: "مساعد البرمجة OpenCode", icon: "terminal", restricted: false, isPermanent: true, status: 'NEW', route: 'opencode', category: 'dev' },
+  { id: "local-player", label: "مشغل الوسائط المحلي", icon: "film", restricted: false, isPermanent: true, status: 'NEW', route: 'local-player', category: 'tools' },
   { id: "external-tabs", label: "أرشيف التبويبات الخارجية", icon: "bookmark", restricted: false, isPermanent: true, status: 'NEW', route: 'external-tabs', category: 'tools' },
   { id: "html-editor", label: "محرر HTML الشامل", icon: "code", restricted: false, isPermanent: true, status: 'NEW', route: 'html-editor', category: 'dev' },
   { id: "file-manager", label: "مدير الملفات", icon: "file-archive", restricted: false, isPermanent: true, status: 'NEW', route: 'file-manager', category: 'tools' },

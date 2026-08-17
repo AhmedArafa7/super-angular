@@ -8,6 +8,7 @@ import { GlobalStateService } from '../../core/services/global-state.service';
 import { OfflineQueueService } from '../../core/services/offline-queue.service';
 import { FirebaseService } from '../../core/services/firebase.service';
 import { CustomModuleStorageService } from '../../features/ai-module-builder/custom-module-viewer.component';
+import { ExternalTabsService } from '../../core/services/external-tabs.service';
 import { SettingsService } from '../../core/settings.service';
 import { LucideAngularModule, LogOut, User, Settings, LayoutDashboard, CloudUpload, CheckCircle2, XCircle, CloudCog, Chrome, UserPlus, Users, Search, ChevronDown, ChevronRight, Moon, Sun, PanelLeftClose, PanelLeftOpen, Languages } from 'lucide-angular';
 
@@ -39,6 +40,7 @@ export class AppSidebarComponent {
   firebase = inject(FirebaseService);
   globalState = inject(GlobalStateService);
   moduleStorage = inject(CustomModuleStorageService);
+  externalTabsService = inject(ExternalTabsService);
   settingsService = inject(SettingsService);
   
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
@@ -118,7 +120,20 @@ export class AppSidebarComponent {
         route: `custom-module/${mod.id}`
       }));
 
-    return [...baseItems, ...customModules];
+    // Dynamically append user pinned external tabs as first-class in-app sections
+    const pinnedExternalTabs = this.externalTabsService.tabs()
+      .filter(tab => tab.isPinnedToSidebar)
+      .map(tab => ({
+        id: `ext-${tab.id}`,
+        label: tab.title,
+        icon: 'bookmark',
+        restricted: false,
+        status: 'NEW' as const,
+        category: 'tools' as const,
+        route: `external-tabs/view/${tab.id}`
+      }));
+
+    return [...baseItems, ...customModules, ...pinnedExternalTabs];
   }
 
   get pinnedItems(): NavItem[] {
