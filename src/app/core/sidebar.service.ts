@@ -3,6 +3,7 @@ import { Injectable, signal, computed } from '@angular/core';
 export type NavItemId = "chat" | "peer-chat" | "stream" | "market" | "features" | "admin" | "notifications" | "learning" | "wallet" | "dashboard" | "offers" | "hisn" | "launcher" | "lab" | "directory" | "agent-ai" | "ads" | "vault" | "downloads" | "time" | "deals" | "health" | "qa" | "microcontroller-lab" | "library" | "settings" | "study-ai" | "arcade" | "sheets";
 
 export type SidebarPosition = "left" | "right" | "top" | "bottom" | "floating";
+export type NavSortMode = 'default' | 'most-used' | 'alphabetical' | 'custom';
 
 @Injectable({
   providedIn: 'root'
@@ -30,8 +31,78 @@ export class SidebarService {
   readonly recentItemIds = signal<string[]>([]);
   readonly hasUnsavedChanges = signal<boolean>(false);
 
+  // --- NEW: Custom Aliases, Usage Analytics & Sort Modes ---
+  readonly customAliases = signal<Record<string, string[]>>({});
+  readonly itemUsageStats = signal<Record<string, number>>({});
+  readonly sortMode = signal<NavSortMode>('default');
+
   constructor() {
     this.loadState();
+  }
+
+  // --- Custom Aliases Methods ---
+  getAliases(itemId: string): string[] {
+    return this.customAliases()[itemId] || [];
+  }
+
+  setAliases(itemId: string, aliases: string[]): void {
+    const clean = aliases.map(a => a.trim()).filter(Boolean);
+    this.customAliases.update(prev => ({
+      ...prev,
+      [itemId]: clean
+    }));
+    this.markUnsaved();
+  }
+
+  addAlias(itemId: string, alias: string): void {
+    const trimmed = alias.trim();
+    if (!trimmed) return;
+    const current = this.getAliases(itemId);
+    if (!current.includes(trimmed)) {
+      this.setAliases(itemId, [...current, trimmed]);
+    }
+  }
+
+  removeAlias(itemId: string, alias: string): void {
+    const current = this.getAliases(itemId);
+    this.setAliases(itemId, current.filter(a => a !== alias));
+  }
+
+  // --- Usage Tracking Methods ---
+  getItemUsageCount(itemId: string): number {
+    return this.itemUsageStats()[itemId] || 0;
+  }
+
+  incrementItemUsage(itemId: string): void {
+    this.itemUsageStats.update(stats => {
+      const count = (stats[itemId] || 0) + 1;
+      return { ...stats, [itemId]: count };
+    });
+    this.saveState();
+  }
+
+  // --- Sort Mode Management ---
+  setSortMode(mode: NavSortMode): void {
+    this.sortMode.set(mode);
+    this.markUnsaved();
+  }
+
+  // --- Universal Search Matching ---
+  matchesSearch(item: { id: string; label: string; route?: string; aliases?: string[] }, query: string): boolean {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+
+    // 1. Label match
+    if (item.label.toLowerCase().includes(q)) return true;
+    // 2. ID or route match
+    if (item.id.toLowerCase().includes(q) || (item.route && item.route.toLowerCase().includes(q))) return true;
+    // 3. Built-in aliases match
+    if (item.aliases && item.aliases.some(a => a.toLowerCase().includes(q))) return true;
+    // 4. Custom user aliases match
+    const userAliases = this.getAliases(item.id);
+    if (userAliases.some(a => a.toLowerCase().includes(q))) return true;
+
+    return false;
   }
 
   toggleShowAllUnpinnedAtBottom(): void {
@@ -59,6 +130,7 @@ export class SidebarService {
   }
 
   addRecentItem(id: string): void {
+    this.incrementItemUsage(id);
     const current = this.recentItemIds().filter(i => i !== id);
     const updated = [id, ...current].slice(0, 4);
     this.recentItemIds.set(updated);
@@ -283,7 +355,10 @@ export class SidebarService {
         isFloatingIconsOnly: this.isFloatingIconsOnly(),
         floatingOrientation: this.floatingOrientation(),
         collapsedCategories: this.collapsedCategories(),
-        recentItemIds: this.recentItemIds()
+        recentItemIds: this.recentItemIds(),
+        customAliases: this.customAliases(),
+        itemUsageStats: this.itemUsageStats(),
+        sortMode: this.sortMode()
       };
       localStorage.setItem('Si-Neuro-sidebar-prefs-v4', JSON.stringify(state));
     }
@@ -311,6 +386,9 @@ export class SidebarService {
           if (parsed.floatingOrientation !== undefined) this.floatingOrientation.set(parsed.floatingOrientation);
           if (parsed.collapsedCategories !== undefined) this.collapsedCategories.set(parsed.collapsedCategories);
           if (parsed.recentItemIds !== undefined) this.recentItemIds.set(parsed.recentItemIds);
+          if (parsed.customAliases !== undefined) this.customAliases.set(parsed.customAliases);
+          if (parsed.itemUsageStats !== undefined) this.itemUsageStats.set(parsed.itemUsageStats);
+          if (parsed.sortMode !== undefined) this.sortMode.set(parsed.sortMode);
         } catch (e) {
           console.error("Failed to parse sidebar prefs", e);
         }

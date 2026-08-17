@@ -47,9 +47,9 @@
       }
     </div>
 
-    <!-- Quick Search Filter Input Bar -->
+    <!-- Quick Search Filter Input Bar & Sort Mode Switcher -->
     @if (!sidebar.isCollapsed()) {
-      <div class="px-3 pt-3 shrink-0" dir="rtl">
+      <div class="px-3 pt-3 shrink-0 space-y-2" dir="rtl">
         <div class="relative flex items-center bg-black/30 border border-white/10 rounded-xl focus-within:border-indigo-500/60 transition-colors px-2.5 py-1.5">
           <lucide-icon [img]="Search" class="w-4 h-4 text-slate-400 shrink-0 ml-2"></lucide-icon>
           <input #searchInput
@@ -63,6 +63,36 @@
           } @else {
             <span class="text-[9px] font-mono text-slate-500 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded shrink-0">Ctrl+K</span>
           }
+        </div>
+
+        <!-- Sort Mode Quick Switcher Pills -->
+        <div class="flex items-center justify-between gap-1 p-1 bg-black/25 rounded-xl border border-white/5 text-[10px]">
+          <button (click)="sidebar.setSortMode('default')" 
+                  [class.bg-indigo-600]="sidebar.sortMode() === 'default'"
+                  [class.text-white]="sidebar.sortMode() === 'default'"
+                  [class.text-slate-400]="sidebar.sortMode() !== 'default'"
+                  class="flex-1 py-1 rounded-lg font-bold text-center transition-all cursor-pointer hover:text-white" title="الترتيب الافتراضي حسب التصنيفات">
+            ⚡ افتراضي
+          </button>
+          
+          <button (click)="sidebar.setSortMode('most-used')" 
+                  [class.bg-gradient-to-r]="sidebar.sortMode() === 'most-used'"
+                  [class.from-amber-600]="sidebar.sortMode() === 'most-used'"
+                  [class.to-orange-500]="sidebar.sortMode() === 'most-used'"
+                  [class.text-white]="sidebar.sortMode() === 'most-used'"
+                  [class.text-slate-400]="sidebar.sortMode() !== 'most-used'"
+                  class="flex-1 py-1 rounded-lg font-bold text-center transition-all cursor-pointer hover:text-white flex items-center justify-center gap-1" title="الأقسام الأكثر استخداماً وزيارة في الأعلى">
+            <span>🔥</span>
+            <span>الأكثر استخداماً</span>
+          </button>
+
+          <button (click)="sidebar.setSortMode('alphabetical')" 
+                  [class.bg-indigo-600]="sidebar.sortMode() === 'alphabetical'"
+                  [class.text-white]="sidebar.sortMode() === 'alphabetical'"
+                  [class.text-slate-400]="sidebar.sortMode() !== 'alphabetical'"
+                  class="flex-1 py-1 rounded-lg font-bold text-center transition-all cursor-pointer hover:text-white" title="الترتيب الأبجدي">
+            🔤 أبجدي
+          </button>
         </div>
       </div>
     }

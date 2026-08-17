@@ -1,6 +1,7 @@
 import { Component, Input, inject, ViewChild, ElementRef, TemplateRef, ViewContainerRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { Overlay, OverlayModule, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
@@ -10,7 +11,7 @@ import { SidebarService } from '../../../core/sidebar.service';
 @Component({
   selector: 'app-sidebar-item',
   standalone: true,
-  imports: [CommonModule, RouterModule, LucideAngularModule, OverlayModule],
+  imports: [CommonModule, RouterModule, FormsModule, LucideAngularModule, OverlayModule],
   templateUrl: './sidebar-item.component.html'
 })
 export class SidebarItemComponent {
@@ -24,11 +25,13 @@ export class SidebarItemComponent {
   private viewContainerRef = inject(ViewContainerRef);
   
   @ViewChild('contextMenu') contextMenuTemplate!: TemplateRef<any>;
-  @ViewChild('subMenuTemplate') subMenuTemplate!: TemplateRef<any>; // إضافة الـ subMenu template
+  @ViewChild('subMenuTemplate') subMenuTemplate!: TemplateRef<any>;
   private overlayRef: OverlayRef | null = null;
   private subMenuOverlayRef: OverlayRef | null = null;
 
-  // ... (نحتفظ بـ onContextMenu)
+  // Custom Search Aliases Dialog State
+  showAliasesModal = false;
+  newAliasText = '';
 
   openSubmenu(event: MouseEvent, target: HTMLElement) {
     event.stopPropagation();
@@ -39,7 +42,7 @@ export class SidebarItemComponent {
       .withPositions([{
         originX: 'end', originY: 'top',
         overlayX: 'start', overlayY: 'top',
-        offsetX: 8 // مسافة بسيطة بين القائمتين
+        offsetX: 8
       }]);
 
     this.subMenuOverlayRef = this.overlay.create({
@@ -76,6 +79,35 @@ export class SidebarItemComponent {
       case 'downloads': return 'text-indigo-400';
       default: return 'text-muted-foreground';
     }
+  }
+
+  get customAliases(): string[] {
+    return this.sidebar.getAliases(this.item.id);
+  }
+
+  get usageCount(): number {
+    return this.sidebar.getItemUsageCount(this.item.id);
+  }
+
+  openAliasesModal() {
+    this.closeContextMenu();
+    this.showAliasesModal = true;
+    this.newAliasText = '';
+  }
+
+  closeAliasesModal() {
+    this.showAliasesModal = false;
+    this.newAliasText = '';
+  }
+
+  addAlias() {
+    if (!this.newAliasText.trim()) return;
+    this.sidebar.addAlias(this.item.id, this.newAliasText.trim());
+    this.newAliasText = '';
+  }
+
+  removeAlias(alias: string) {
+    this.sidebar.removeAlias(this.item.id, alias);
   }
 
   onContextMenu(event: MouseEvent) {

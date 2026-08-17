@@ -38,16 +38,28 @@
 <!-- Context Menu Template -->
 <ng-template #contextMenu>
   <div class="w-64 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-2 animate-in fade-in zoom-in-95" dir="rtl">
-    <div class="px-2 py-1.5 text-xs text-indigo-400 opacity-70 mb-1 truncate text-right font-medium">
-      التحكم في {{ item.label }}
+    <div class="px-2 py-1.5 flex items-center justify-between border-b border-white/10 mb-1">
+      <span class="text-xs text-indigo-400 font-bold truncate">{{ item.label }}</span>
+      <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-300 font-mono" title="عدد مرات الفتح">
+        ⚡ {{ usageCount }} مرة
+      </span>
     </div>
-    <div class="h-px bg-white/10 mb-1"></div>
     
     <div class="p-1 space-y-0.5">
       <a [routerLink]="['/' + (item.route || item.id)]" (click)="closeContextMenu()" class="group w-full flex items-center gap-3 px-2.5 py-2 text-sm rounded-lg hover:bg-white/10 transition-all text-slate-300 hover:text-white text-right">
         <lucide-icon name="external-link" class="w-4 h-4 text-slate-400 group-hover:text-white transition-colors shrink-0"></lucide-icon>
         <span class="flex-1">فتح القسم</span>
       </a>
+
+      <!-- NEW: Custom Search Aliases Trigger -->
+      <button (click)="openAliasesModal()" class="group w-full flex items-center gap-3 px-2.5 py-2 text-sm rounded-lg hover:bg-indigo-600/20 text-indigo-300 hover:text-indigo-200 text-right transition-all">
+        <lucide-icon name="tags" class="w-4 h-4 text-indigo-400 group-hover:text-indigo-300 transition-colors shrink-0"></lucide-icon>
+        <span class="flex-1 font-medium">إدارة أسماء ووسوم البحث</span>
+        @if (customAliases.length > 0) {
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-500 text-white font-mono font-bold">{{ customAliases.length }}</span>
+        }
+      </button>
+
       <a [routerLink]="['/settings']" [queryParams]="{ tab: item.id }" (click)="closeContextMenu()" class="group w-full flex items-center gap-3 px-2.5 py-2 text-sm rounded-lg hover:bg-white/10 transition-all text-slate-300 hover:text-white text-right">
         <lucide-icon name="settings-2" class="w-4 h-4 text-slate-400 group-hover:text-white transition-colors shrink-0"></lucide-icon>
         <span class="flex-1">إعدادات القسم العامة</span>
@@ -65,24 +77,24 @@
           <lucide-icon name="chevron-left" class="w-3.5 h-3.5 text-indigo-500 group-hover/btn:text-indigo-300 transition-colors shrink-0"></lucide-icon>
         </button>
         <div class="absolute right-full bottom-0 mr-1.5 w-48 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-1.5 hidden group-hover/submenu:block z-50 animate-in fade-in zoom-in-95 duration-100">
-           <button (click)="sidebar.setPosition('left'); closeContextMenu()" class="group/subbtn w-full flex items-center gap-2.5 px-2 py-1.5 text-xs rounded-md text-slate-300 hover:text-white hover:bg-white/10 text-right transition-all">
+           <button (click)="sidebar.setPosition('left'); closeContextMenu()" class="group/subbtn w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs rounded-md text-slate-300 hover:text-white hover:bg-white/10 text-right transition-all">
              <lucide-icon name="panel-left" class="w-3.5 h-3.5 text-slate-400 group-hover/subbtn:text-white transition-colors shrink-0"></lucide-icon>
              <span class="flex-1">الشريط الأيسر</span>
            </button>
-           <button (click)="sidebar.setPosition('right'); closeContextMenu()" class="group/subbtn w-full flex items-center gap-2.5 px-2 py-1.5 text-xs rounded-md text-slate-300 hover:text-white hover:bg-white/10 text-right transition-all">
+           <button (click)="sidebar.setPosition('right'); closeContextMenu()" class="group/subbtn w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs rounded-md text-slate-300 hover:text-white hover:bg-white/10 text-right transition-all">
              <lucide-icon name="panel-right" class="w-3.5 h-3.5 text-slate-400 group-hover/subbtn:text-white transition-colors shrink-0"></lucide-icon>
              <span class="flex-1">الشريط الأيمن</span>
            </button>
-           <button (click)="sidebar.setPosition('top'); closeContextMenu()" class="group/subbtn w-full flex items-center gap-2.5 px-2 py-1.5 text-xs rounded-md text-slate-300 hover:text-white hover:bg-white/10 text-right transition-all">
+           <button (click)="sidebar.setPosition('top'); closeContextMenu()" class="group/subbtn w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs rounded-md text-slate-300 hover:text-white hover:bg-white/10 text-right transition-all">
              <lucide-icon name="panel-top" class="w-3.5 h-3.5 text-slate-400 group-hover/subbtn:text-white transition-colors shrink-0"></lucide-icon>
              <span class="flex-1">شريط علوي</span>
            </button>
-           <button (click)="sidebar.setPosition('bottom'); closeContextMenu()" class="group/subbtn w-full flex items-center gap-2.5 px-2 py-1.5 text-xs rounded-md text-slate-300 hover:text-white hover:bg-white/10 text-right transition-all">
+           <button (click)="sidebar.setPosition('bottom'); closeContextMenu()" class="group/subbtn w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs rounded-md text-slate-300 hover:text-white hover:bg-white/10 text-right transition-all">
              <lucide-icon name="panel-bottom" class="w-3.5 h-3.5 text-slate-400 group-hover/subbtn:text-white transition-colors shrink-0"></lucide-icon>
              <span class="flex-1">شريط سفلي</span>
            </button>
            <div class="h-px bg-white/10 my-1"></div>
-           <button (click)="sidebar.setPosition('floating'); closeContextMenu()" class="group/subbtn w-full flex items-center gap-2.5 px-2 py-1.5 text-xs rounded-md text-amber-400 hover:text-amber-300 hover:bg-white/10 text-right transition-all">
+           <button (click)="sidebar.setPosition('floating'); closeContextMenu()" class="group/subbtn w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs rounded-md text-amber-400 hover:text-amber-300 hover:bg-white/10 text-right transition-all">
              <lucide-icon name="orbit" class="w-3.5 h-3.5 text-amber-500 group-hover/subbtn:text-amber-400 transition-colors shrink-0"></lucide-icon>
              <span class="flex-1 font-bold">الوضع العائم</span>
            </button>
@@ -112,3 +124,77 @@
     </a>
   </div>
 </ng-template>
+
+<!-- Interactive Custom Search Aliases Dialog / Modal -->
+<div *ngIf="showAliasesModal" class="fixed inset-0 z-[300] bg-black/70 backdrop-blur-md flex items-center justify-center p-4" dir="rtl" (click)="closeAliasesModal()">
+  <div class="bg-slate-900 border border-white/15 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col p-6 space-y-5 animate-in fade-in zoom-in-95" (click)="$event.stopPropagation()">
+    
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400">
+          <lucide-icon [name]="item.icon" class="w-5 h-5"></lucide-icon>
+        </div>
+        <div>
+          <h3 class="text-base font-black text-white">أسماء ووسوم البحث</h3>
+          <p class="text-xs text-slate-400 font-medium">لقسم: <strong class="text-indigo-300">{{ item.label }}</strong></p>
+        </div>
+      </div>
+      <button (click)="closeAliasesModal()" class="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl transition">✕</button>
+    </div>
+
+    <!-- Description -->
+    <p class="text-xs text-slate-300 leading-relaxed bg-white/5 p-3 rounded-2xl border border-white/5">
+      💡 أضف أي مرادفات أو أسماء بديلة أو وسوم (مثال: <strong>يوتيوب</strong>، <strong>فيديوهاتي</strong>، <strong>درايف</strong>). بمجرد كتابة أي منها في شريط البحث، سيظهر هذا القسم فوراً!
+    </p>
+
+    <!-- Add New Alias Input -->
+    <div class="flex items-center gap-2">
+      <input type="text" 
+             [(ngModel)]="newAliasText" 
+             (keydown.enter)="addAlias()"
+             placeholder="اكتب اسماً أو وسماً إضافياً (مثال: يوتيوب)..." 
+             class="flex-1 bg-black/40 border border-white/15 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors" />
+      <button (click)="addAlias()" 
+              [disabled]="!newAliasText.trim()"
+              class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl transition shadow-lg shadow-indigo-600/20 cursor-pointer shrink-0">
+        + إضافة
+      </button>
+    </div>
+
+    <!-- User Custom Aliases Badges List -->
+    <div class="space-y-2">
+      <span class="text-xs font-bold text-slate-300 block">الوسوم المخصصة المضافة ({{ customAliases.length }}):</span>
+      <div class="flex flex-wrap gap-2 min-h-12 p-3 rounded-2xl bg-black/30 border border-white/5">
+        @for (alias of customAliases; track alias) {
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold animate-in fade-in">
+            <span>{{ alias }}</span>
+            <button (click)="removeAlias(alias)" class="hover:text-red-400 text-[10px] font-bold p-0.5 rounded transition">✕</button>
+          </span>
+        } @empty {
+          <span class="text-xs text-slate-500 italic">لا توجد وسوم مخصصة حتى الآن. اكتب اسماً واضغط إضافة.</span>
+        }
+      </div>
+    </div>
+
+    <!-- Built-in Default Aliases for Reference -->
+    @if (item.aliases && item.aliases.length > 0) {
+      <div class="space-y-1.5 pt-1 border-t border-white/10">
+        <span class="text-[11px] font-bold text-slate-400 block">المرادفات الافتراضية للنظام:</span>
+        <div class="flex flex-wrap gap-1.5">
+          @for (defAlias of item.aliases; track defAlias) {
+            <span class="px-2 py-0.5 rounded-lg bg-white/5 text-slate-400 text-[10px] font-mono border border-white/5">{{ defAlias }}</span>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Modal Footer -->
+    <div class="pt-2 flex justify-end">
+      <button (click)="closeAliasesModal()" class="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-lg transition">
+        تم الحفظ والإغلاق ✓
+      </button>
+    </div>
+
+  </div>
+</div>

@@ -139,6 +139,7 @@ export class AppSidebarComponent {
   get pinnedItems(): NavItem[] {
     const pinnedList = this.sidebar.pinnedItems();
     const visible = this.visibleItems;
+    const mode = this.sidebar.sortMode();
     
     // Map pinned IDs to actual NavItem objects in the exact order saved by user
     let items: NavItem[] = [];
@@ -149,9 +150,15 @@ export class AppSidebarComponent {
       }
     }
 
-    const q = this.searchQuery().trim().toLowerCase();
+    if (mode === 'most-used') {
+      items.sort((a, b) => this.sidebar.getItemUsageCount(b.id) - this.sidebar.getItemUsageCount(a.id));
+    } else if (mode === 'alphabetical') {
+      items.sort((a, b) => a.label.localeCompare(b.label, 'ar'));
+    }
+
+    const q = this.searchQuery().trim();
     if (q) {
-      items = items.filter(item => item.label.toLowerCase().includes(q));
+      items = visible.filter(item => this.sidebar.matchesSearch(item, q));
     }
     return items;
   }
@@ -161,9 +168,16 @@ export class AppSidebarComponent {
     const visible = this.visibleItems;
     let items = visible.filter(item => !pinnedList.includes(item.id));
 
-    const q = this.searchQuery().trim().toLowerCase();
+    const mode = this.sidebar.sortMode();
+    if (mode === 'most-used') {
+      items.sort((a, b) => this.sidebar.getItemUsageCount(b.id) - this.sidebar.getItemUsageCount(a.id));
+    } else if (mode === 'alphabetical') {
+      items.sort((a, b) => a.label.localeCompare(b.label, 'ar'));
+    }
+
+    const q = this.searchQuery().trim();
     if (q) {
-      items = items.filter(item => item.label.toLowerCase().includes(q));
+      items = items.filter(item => this.sidebar.matchesSearch(item, q));
     }
     return items;
   }

@@ -33,6 +33,46 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
           <div>
             <p class="text-sm text-slate-400 mb-3">اسحب العناصر لإعادة ترتيبها أو انقر لتثبيتها، ثم اضغط على "حفظ التغييرات".</p>
             
+            <!-- Sort Mode Selector Card -->
+            <div class="bg-slate-950/60 border border-white/10 rounded-2xl p-4 mb-4 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <span>⚡</span> نظام ترتيب الأقسام:
+                </span>
+                <span class="text-[10px] text-indigo-400 font-bold bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
+                  {{ sidebar.sortMode() === 'most-used' ? 'الأكثر استخداماً فوق' : (sidebar.sortMode() === 'alphabetical' ? 'أبجدي' : 'ترتيب مخصص / افتراضي') }}
+                </span>
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                <button (click)="sidebar.setSortMode('default')" 
+                        [class.bg-indigo-600]="sidebar.sortMode() === 'default'"
+                        [class.text-white]="sidebar.sortMode() === 'default'"
+                        [class.bg-white/5]="sidebar.sortMode() !== 'default'"
+                        [class.text-slate-400]="sidebar.sortMode() !== 'default'"
+                        class="py-2 px-2 rounded-xl text-xs font-bold transition-all border border-white/5 text-center cursor-pointer">
+                  ⚡ افتراضي / مخصص
+                </button>
+                <button (click)="sidebar.setSortMode('most-used')" 
+                        [class.bg-gradient-to-r]="sidebar.sortMode() === 'most-used'"
+                        [class.from-amber-600]="sidebar.sortMode() === 'most-used'"
+                        [class.to-orange-500]="sidebar.sortMode() === 'most-used'"
+                        [class.text-white]="sidebar.sortMode() === 'most-used'"
+                        [class.bg-white/5]="sidebar.sortMode() !== 'most-used'"
+                        [class.text-slate-400]="sidebar.sortMode() !== 'most-used'"
+                        class="py-2 px-2 rounded-xl text-xs font-bold transition-all border border-white/5 text-center cursor-pointer flex items-center justify-center gap-1">
+                  <span>🔥</span> الأكثر استخداماً
+                </button>
+                <button (click)="sidebar.setSortMode('alphabetical')" 
+                        [class.bg-indigo-600]="sidebar.sortMode() === 'alphabetical'"
+                        [class.text-white]="sidebar.sortMode() === 'alphabetical'"
+                        [class.bg-white/5]="sidebar.sortMode() !== 'alphabetical'"
+                        [class.text-slate-400]="sidebar.sortMode() !== 'alphabetical'"
+                        class="py-2 px-2 rounded-xl text-xs font-bold transition-all border border-white/5 text-center cursor-pointer">
+                  🔤 أبجدي
+                </button>
+              </div>
+            </div>
+
             <div cdkDropList class="space-y-2" (cdkDropListDropped)="drop($event)">
               @for (item of sortedItems; track item.id) {
                 <div cdkDrag class="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 transition-colors cursor-move group">
@@ -41,7 +81,15 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
                     <div class="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
                       <svg [lucideIcon]="item.icon" class="w-4 h-4 text-indigo-400"></svg>
                     </div>
-                    <span class="text-white font-medium">{{ item.label }}</span>
+                    <div>
+                      <span class="text-white font-medium block text-xs">{{ item.label }}</span>
+                      <div class="flex items-center gap-2 mt-0.5">
+                        <span class="text-[10px] text-amber-400/90 font-mono">🔥 {{ sidebar.getItemUsageCount(item.id) }} فتح</span>
+                        @if (sidebar.getAliases(item.id).length > 0) {
+                          <span class="text-[10px] text-indigo-300 font-mono">🏷️ {{ sidebar.getAliases(item.id).length }} وسم</span>
+                        }
+                      </div>
+                    </div>
                   </div>
                   
                   <button (click)="togglePin(item.id)" 
@@ -54,23 +102,22 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
                 </div>
               }
 
-                        <!-- Mode Toggle Section (The new requested feature) -->
-          <div class="bg-indigo-950/40 border border-indigo-500/30 rounded-2xl p-4 flex items-center justify-between">
-            <div class="space-y-1">
-              <h4 class="text-sm font-bold text-white flex items-center gap-2">
-                <span>وضع إظهار جميع الأقسام (غير المثبتة أسفل القائمة)</span>
-                <span class="bg-indigo-500 text-white text-[9px] px-2 py-0.5 rounded-full font-black">جديد ⚡</span>
-              </h4>
-              <p class="text-xs text-slate-400 leading-relaxed">عند التفعيل، تظهر كل الأقسام في الشريط الجانبي دائماً، بحيث تكون الأقسام غير المثبتة في الأسفل ليسهل تثبيتها بنقرة واحدة.</p>
+            <!-- Mode Toggle Section (The new requested feature) -->
+            <div class="bg-indigo-950/40 border border-indigo-500/30 rounded-2xl p-4 flex items-center justify-between mt-4">
+              <div class="space-y-1">
+                <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                  <span>وضع إظهار جميع الأقسام (غير المثبتة أسفل القائمة)</span>
+                  <span class="bg-indigo-500 text-white text-[9px] px-2 py-0.5 rounded-full font-black">جديد ⚡</span>
+                </h4>
+                <p class="text-xs text-slate-400 leading-relaxed">عند التفعيل، تظهر كل الأقسام في الشريط الجانبي دائماً، بحيث تكون الأقسام غير المثبتة في الأسفل ليسهل تثبيتها بنقرة واحدة.</p>
+              </div>
+              <button (click)="sidebar.toggleShowAllUnpinnedAtBottom()" 
+                      [ngClass]="sidebar.showAllUnpinnedAtBottom() ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'bg-white/10 text-slate-400'"
+                      class="relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none">
+                <span [ngClass]="sidebar.showAllUnpinnedAtBottom() ? 'translate-x-0' : '-translate-x-5'"
+                      class="pointer-events-none inline-block size-6 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out"></span>
+              </button>
             </div>
-            <button (click)="sidebar.toggleShowAllUnpinnedAtBottom()" 
-                    [ngClass]="sidebar.showAllUnpinnedAtBottom() ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'bg-white/10 text-slate-400'"
-                    class="relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none">
-              <span [ngClass]="sidebar.showAllUnpinnedAtBottom() ? 'translate-x-0' : '-translate-x-5'"
-                    class="pointer-events-none inline-block size-6 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out"></span>
-            </button>
-          </div>
-
 
             </div>
           </div>

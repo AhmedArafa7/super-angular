@@ -1098,77 +1098,116 @@
 </div>
 
 <!-- ADVANCED BOOK CREATOR STUDIO MODAL -->
-<div *ngIf="showBookStudioDialog" class="fixed inset-0 z-50 flex items-center justify-center p-2 md:p-6 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200" dir="rtl">
-  <div class="bg-[#0f172a] border border-white/15 rounded-[2.5rem] w-full max-w-6xl h-[94vh] text-white shadow-2xl flex flex-col overflow-hidden">
+<div *ngIf="showBookStudioDialog" class="fixed inset-0 z-50 flex items-center justify-center p-2 md:p-4 bg-black/90 backdrop-blur-2xl animate-in fade-in duration-200" dir="rtl">
+  <div class="bg-[#0b1120] border border-white/15 rounded-3xl w-full max-w-[98vw] 2xl:max-w-7xl h-[96vh] text-white shadow-2xl flex flex-col overflow-hidden">
     
     <!-- Studio Header -->
-    <div class="bg-slate-900/90 border-b border-white/10 px-6 py-4 flex flex-wrap items-center justify-between gap-4 shrink-0">
+    <div class="bg-slate-900/95 border-b border-white/10 px-4 md:px-6 py-3 flex flex-wrap items-center justify-between gap-3 shrink-0">
       <div class="flex items-center gap-3">
-        <div class="size-11 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white flex items-center justify-center font-black text-xl shadow-lg">
+        <div class="size-10 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white flex items-center justify-center font-black text-lg shadow-lg">
           ✨
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h2 class="text-xl md:text-2xl font-black bg-gradient-to-l from-white via-slate-100 to-indigo-300 bg-clip-text text-transparent">
+            <h2 class="text-lg md:text-xl font-black bg-gradient-to-l from-white via-slate-100 to-indigo-300 bg-clip-text text-transparent">
               استوديو صانع الكتب المتطور
             </h2>
-            <span *ngIf="hasSavedDraft" class="px-2.5 py-0.5 rounded-full text-[10px] bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold flex items-center gap-1">
-              💾 مسودة محفوظة تلقائياً {{ draftSavedAt ? '(' + draftSavedAt + ')' : '' }}
+            <span *ngIf="hasSavedDraft" class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold flex items-center gap-1">
+              💾 مسودة محفوظة {{ draftSavedAt ? '(' + draftSavedAt + ')' : '' }}
             </span>
           </div>
-          <p class="text-xs text-slate-400">حفظ وتأمين المسودة تلقائياً • فلاتر تحسين القراءة • AI OCR • إدارة وتنسيق الصفحات</p>
+          <p class="text-[11px] text-slate-400">فلاتر تحسين القراءة • AI OCR • دمج الصوت والفيديو والهوامش</p>
         </div>
       </div>
 
-      <!-- Studio Mode & Action Tabs -->
+      <!-- Studio Layout Modes & Primary Action Tabs -->
       <div class="flex items-center gap-2 flex-wrap">
-        <div class="flex items-center bg-white/5 border border-white/10 rounded-2xl p-1">
-          <button (click)="studioTab = 'pages'" [ngClass]="studioTab === 'pages' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'" class="px-4 py-1.5 rounded-xl text-xs transition-all">
-            🖼️ الصفحات والفلاتر ({{ studioBook.pages.length }})
+        
+        <!-- View Modes Switcher -->
+        <div class="flex items-center bg-black/40 border border-white/10 rounded-2xl p-1 gap-0.5">
+          <button (click)="setStudioLayoutMode('split')" 
+                  [ngClass]="studioLayoutMode === 'split' ? 'bg-indigo-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-white'" 
+                  class="px-2.5 py-1.5 rounded-xl text-xs flex items-center gap-1 transition-all cursor-pointer" 
+                  title="تقسيم جانبي: شبكة الصفحات مع لوحة التعديل بجانبها">
+            <span>🪟</span>
+            <span class="hidden sm:inline">تقسيم مريح</span>
           </button>
-          <button (click)="studioTab = 'details'" [ngClass]="studioTab === 'details' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'" class="px-4 py-1.5 rounded-xl text-xs transition-all">
+
+          <button (click)="setStudioLayoutMode('grid')" 
+                  [ngClass]="studioLayoutMode === 'grid' ? 'bg-indigo-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-white'" 
+                  class="px-2.5 py-1.5 rounded-xl text-xs flex items-center gap-1 transition-all cursor-pointer" 
+                  title="عرض كامل 100% لشبكة الصفحات لسهولة الفحص والترتيب">
+            <span>▦</span>
+            <span class="hidden sm:inline">شبكة كاملة</span>
+          </button>
+
+          <button (click)="setStudioLayoutMode('single')" 
+                  [ngClass]="studioLayoutMode === 'single' ? 'bg-indigo-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-white'" 
+                  class="px-2.5 py-1.5 rounded-xl text-xs flex items-center gap-1 transition-all cursor-pointer" 
+                  title="معاينة كبيرة للتركيز على تحرير صفحة واحدة">
+            <span>📄</span>
+            <span class="hidden sm:inline">صفحة مفردة</span>
+          </button>
+
+          <button (click)="setStudioLayoutMode('spread')" 
+                  [ngClass]="studioLayoutMode === 'spread' ? 'bg-indigo-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-white'" 
+                  class="px-2.5 py-1.5 rounded-xl text-xs flex items-center gap-1 transition-all cursor-pointer" 
+                  title="معاينة صفحتين متجاورتين ككتاب مفتوح">
+            <span>📖</span>
+            <span class="hidden sm:inline">كتاب مفتوح</span>
+          </button>
+        </div>
+
+        <div class="h-6 w-px bg-white/10 hidden sm:block"></div>
+
+        <!-- Details / Pages Tab Switcher -->
+        <div class="flex items-center bg-white/5 border border-white/10 rounded-2xl p-1">
+          <button (click)="studioTab = 'pages'" [ngClass]="studioTab === 'pages' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'" class="px-3 py-1.5 rounded-xl text-xs transition-all">
+            🖼️ الصفحات ({{ studioBook.pages.length }})
+          </button>
+          <button (click)="studioTab = 'details'" [ngClass]="studioTab === 'details' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'" class="px-3 py-1.5 rounded-xl text-xs transition-all">
             📋 بيانات الكتاب
           </button>
         </div>
 
-        <button (click)="saveStudioDraft(false)" class="px-3 h-10 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-500/30 text-emerald-300 text-xs font-bold transition-all flex items-center gap-1.5" title="حفظ مسودة العمل اليدوية">
-          💾 حفظ مسودة
+        <button (click)="saveStudioDraft(false)" class="px-3 h-9 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-500/30 text-emerald-300 text-xs font-bold transition-all flex items-center gap-1" title="حفظ مسودة">
+          💾 حفظ
         </button>
 
-        <button *ngIf="hasSavedDraft" (click)="resetOrStartFreshStudio()" class="px-3 h-10 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 text-xs font-bold transition-all flex items-center gap-1" title="مسح المسودة والبدء بكتاب جديد">
-          🗑️ مسودة جديدة
+        <button *ngIf="hasSavedDraft" (click)="resetOrStartFreshStudio()" class="px-2.5 h-9 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 text-xs font-bold transition-all flex items-center gap-1" title="مسودة جديدة">
+          🗑️
         </button>
 
-        <button (click)="closeBookStudio()" class="size-10 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center font-bold text-lg border border-white/10 transition-all">
+        <button (click)="closeBookStudio()" class="size-9 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center font-bold text-base border border-white/10 transition-all">
           ✕
         </button>
       </div>
     </div>
 
     <!-- Studio Content Body -->
-    <div class="flex-1 flex flex-col min-h-0 overflow-hidden relative p-4 md:p-6 space-y-4">
+    <div class="flex-1 flex flex-col min-h-0 overflow-hidden relative p-3 md:p-5 space-y-3">
       
       <!-- Details Tab -->
-      <div *ngIf="studioTab === 'details'" class="max-w-3xl mx-auto w-full space-y-6 overflow-y-auto p-4 bg-slate-900/50 border border-white/10 rounded-3xl custom-scrollbar">
-        <h3 class="text-lg font-bold text-indigo-400 border-b border-white/10 pb-2">تفاصيل وبيانات الكتاب</h3>
+      <div *ngIf="studioTab === 'details'" class="max-w-3xl mx-auto w-full space-y-5 overflow-y-auto p-5 bg-slate-900/50 border border-white/10 rounded-3xl custom-scrollbar">
+        <h3 class="text-base font-bold text-indigo-400 border-b border-white/10 pb-2">تفاصيل وبيانات الكتاب</h3>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-bold text-slate-300 mb-1">عنوان الكتاب / الرواية *</label>
             <input type="text" [(ngModel)]="studioBook.title" placeholder="مثال: عبقرية عمر" 
-                   class="w-full bg-white/5 border border-white/10 rounded-2xl h-12 px-4 text-sm text-white focus:outline-none focus:border-indigo-500 font-bold" />
+                   class="w-full bg-white/5 border border-white/10 rounded-2xl h-11 px-4 text-xs text-white focus:outline-none focus:border-indigo-500 font-bold" />
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-300 mb-1">اسم الكاتب / المؤلف</label>
             <input type="text" [(ngModel)]="studioBook.author" placeholder="مثال: عباس العقاد" 
-                   class="w-full bg-white/5 border border-white/10 rounded-2xl h-12 px-4 text-sm text-white focus:outline-none focus:border-indigo-500" />
+                   class="w-full bg-white/5 border border-white/10 rounded-2xl h-11 px-4 text-xs text-white focus:outline-none focus:border-indigo-500" />
           </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-bold text-slate-300 mb-1">تصنيف الكتاب</label>
-            <select [(ngModel)]="studioBook.category" class="w-full bg-slate-900 border border-white/10 rounded-2xl h-12 px-4 text-sm text-white focus:outline-none focus:border-indigo-500">
+            <select [(ngModel)]="studioBook.category" class="w-full bg-slate-900 border border-white/10 rounded-2xl h-11 px-4 text-xs text-white focus:outline-none focus:border-indigo-500">
               <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
             </select>
           </div>
@@ -1176,428 +1215,294 @@
           <div>
             <label class="block text-xs font-bold text-slate-300 mb-1">رابط الغلاف (أو سيتم اعتماد أول صفحة)</label>
             <input type="text" [(ngModel)]="studioBook.coverUrl" placeholder="https://..." 
-                   class="w-full bg-white/5 border border-white/10 rounded-2xl h-12 px-4 text-sm text-white focus:outline-none focus:border-indigo-500" />
+                   class="w-full bg-white/5 border border-white/10 rounded-2xl h-11 px-4 text-xs text-white focus:outline-none focus:border-indigo-500" />
           </div>
         </div>
 
         <div>
           <label class="block text-xs font-bold text-slate-300 mb-1">نبذة ووصف محتوى الكتاب</label>
           <textarea [(ngModel)]="studioBook.description" rows="4" placeholder="اكتب نبذة مختارات من مقدمة هذا الكتاب..." 
-                    class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white focus:outline-none focus:border-indigo-500 leading-relaxed"></textarea>
+                    class="w-full bg-white/5 border border-white/10 rounded-2xl p-3 text-xs text-white focus:outline-none focus:border-indigo-500 leading-relaxed"></textarea>
         </div>
       </div>
 
       <!-- Pages & Filters Tab -->
-      <div *ngIf="studioTab === 'pages'" class="flex-1 flex flex-col min-h-0 space-y-4">
+      <div *ngIf="studioTab === 'pages'" class="flex-1 flex flex-col min-h-0 space-y-3">
         
-        <!-- Action Toolbar -->
-        <div class="bg-slate-900/90 border border-white/15 rounded-2xl p-3 md:p-4 flex flex-col gap-3 shrink-0 shadow-xl">
+        <!-- Action Toolbar (Streamlined & Compact) -->
+        <div class="bg-slate-900/90 border border-white/15 rounded-2xl p-2.5 md:p-3 flex flex-col gap-2.5 shrink-0 shadow-xl">
           
           <!-- Row 1: Primary Add & Import Actions -->
-          <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div class="flex items-center justify-between gap-2.5 flex-wrap">
             <div class="flex items-center gap-2 flex-wrap">
-              <!-- Inline Always Visible Book Title Input -->
-              <div class="flex items-center gap-2 bg-indigo-950/90 border border-amber-500/50 rounded-xl px-3 py-1 shadow-md">
-                <span class="text-xs font-bold text-amber-300 whitespace-nowrap">📖 عنوان الكتاب:</span>
-                <input type="text" [(ngModel)]="studioBook.title" (ngModelChange)="saveStudioDraft(true)" placeholder="اكتب عنوان الكتاب هنا..." 
-                       class="w-40 md:w-56 bg-slate-900 border border-white/10 rounded-lg h-8 px-2.5 text-xs text-white font-bold focus:outline-none focus:border-amber-400" />
+              <!-- Inline Book Title Input -->
+              <div class="flex items-center gap-1.5 bg-indigo-950/90 border border-amber-500/50 rounded-xl px-2.5 py-0.5 shadow-md">
+                <span class="text-[11px] font-bold text-amber-300 whitespace-nowrap">📖 العنوان:</span>
+                <input type="text" [(ngModel)]="studioBook.title" (ngModelChange)="saveStudioDraft(true)" placeholder="عنوان الكتاب..." 
+                       class="w-36 md:w-48 bg-slate-900 border border-white/10 rounded-lg h-7 px-2 text-xs text-white font-bold focus:outline-none focus:border-amber-400" />
               </div>
 
               <!-- Upload Images Button -->
-              <label class="px-4 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-2 cursor-pointer transition-all shadow-md">
+              <label class="px-3.5 h-8 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md">
                 <input type="file" multiple accept="image/*" class="hidden" (change)="onStudioImagesSelected($event)" />
                 <span>📷 رفع صور الصفحات</span>
               </label>
 
-              <!-- Paste Image from Clipboard Button (PROMINENT & DIRECT) -->
+              <!-- Paste Image from Clipboard Button -->
               <button (click)="pasteImageFromClipboard()" 
-                      class="px-4 h-10 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-black text-xs flex items-center gap-2 transition-all shadow-lg shadow-emerald-900/30 transform hover:scale-[1.02]"
+                      class="px-3.5 h-8 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-black text-xs flex items-center gap-1.5 transition-all shadow-md"
                       title="لصق صورة من الحافظة مباشرة دون تحميلها على الجهاز (يمكنك أيضاً ضغط Ctrl+V في أي مكان)">
-                <span class="text-base">📋</span>
-                <span>لصق من الحافظة (Ctrl+V)</span>
+                <span>📋</span>
+                <span>لصق (Ctrl+V)</span>
               </button>
 
               <!-- Direct Target Page Number Upload Tool -->
-              <div class="flex items-center gap-1.5 bg-indigo-950/70 border border-indigo-500/40 rounded-xl p-1 px-2.5 text-xs shadow-sm">
-                <span class="text-indigo-300 font-bold">رقم الصفحة:</span>
+              <div class="flex items-center gap-1 bg-indigo-950/70 border border-indigo-500/40 rounded-xl p-0.5 px-2 text-xs shadow-sm">
+                <span class="text-indigo-300 font-bold text-[11px]">رقم #:</span>
                 <input type="number" min="1" [(ngModel)]="targetPageNumber" placeholder="23" 
-                       class="w-12 h-8 bg-slate-900 border border-white/10 rounded-lg text-center font-mono font-bold text-emerald-400 focus:outline-none focus:border-indigo-500 text-xs" />
+                       class="w-10 h-7 bg-slate-900 border border-white/10 rounded-lg text-center font-mono font-bold text-emerald-400 focus:outline-none focus:border-indigo-500 text-xs" />
                 
-                <label class="px-3 h-8 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all shadow-sm" 
-                       title="رفع صورة مخصصة مباشرة لرقم الصفحة المحدد (مثل صفحة 23) مع توليد صفحات فارغة تلقائياً">
+                <label class="px-2 h-7 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all" 
+                       title="رفع صورة مخصصة مباشرة لرقم الصفحة المحدد">
                   <input type="file" accept="image/*" multiple class="hidden" (change)="uploadImageToSpecificPageNumber($event)" />
                   <span>📷 إدراج بالصفحة {{ targetPageNumber ? '#' + targetPageNumber : '' }}</span>
                 </label>
               </div>
             </div>
 
-            <!-- Page Creation Options -->
+            <!-- Page Creation & Grid Density Controls -->
             <div class="flex items-center gap-2">
-              <button (click)="insertBlankPage()" class="px-3.5 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-all">
-                📄 صفحة فارغة
+              <button (click)="insertBlankPage()" class="px-2.5 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 font-bold text-xs flex items-center gap-1 transition-all">
+                📄 + فارغة
               </button>
 
-              <button (click)="addTextPageToStudio()" class="px-3.5 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-all">
-                📝 صفحة نصية
+              <button (click)="addTextPageToStudio()" class="px-2.5 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 font-bold text-xs flex items-center gap-1 transition-all">
+                📝 + نصية
               </button>
+
+              <!-- Grid Density Selector (when in split or grid mode) -->
+              <div *ngIf="studioLayoutMode === 'split' || studioLayoutMode === 'grid'" class="flex items-center gap-1 bg-black/40 border border-white/10 rounded-xl p-0.5 text-[11px]">
+                <span class="text-slate-400 font-bold px-1">الشبكة:</span>
+                <button (click)="setStudioGridDensity('compact')" [ngClass]="studioGridDensity === 'compact' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'" class="px-2 py-0.5 rounded-lg transition-all cursor-pointer" title="كثيفة (6-8 أعمدة)">كثيفة</button>
+                <button (click)="setStudioGridDensity('medium')" [ngClass]="studioGridDensity === 'medium' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'" class="px-2 py-0.5 rounded-lg transition-all cursor-pointer" title="متوسطة (4 أعمدة)">متوسطة</button>
+                <button (click)="setStudioGridDensity('comfortable')" [ngClass]="studioGridDensity === 'comfortable' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'" class="px-2 py-0.5 rounded-lg transition-all cursor-pointer" title="كبيرة ومريحة (2-3 أعمدة)">كبيرة</button>
+              </div>
             </div>
           </div>
 
           <!-- Row 2: Reading Presets & Multi-Selection Actions -->
-          <div class="flex items-center justify-between gap-3 flex-wrap border-t border-white/10 pt-2.5">
+          <div class="flex items-center justify-between gap-2 flex-wrap border-t border-white/10 pt-2 text-xs">
             <!-- Quick Presets for All Image Pages -->
             <div class="flex items-center gap-1.5 flex-wrap">
               <span class="text-[11px] text-slate-400 font-bold ml-1">فلاتر القراءة:</span>
-              <button (click)="applyFilterPresetToAllPages('original')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] font-bold">أصلية</button>
-              <button (click)="applyFilterPresetToAllPages('document')" class="px-2.5 py-1 rounded-lg bg-emerald-600/80 hover:bg-emerald-500 text-white text-[11px] font-bold">📜 مستندات (B&W)</button>
-              <button (click)="applyFilterPresetToAllPages('night')" class="px-2.5 py-1 rounded-lg bg-purple-600/80 hover:bg-purple-500 text-white text-[11px] font-bold">🌙 ليلي</button>
-              <button (click)="applyFilterPresetToAllPages('grayscale')" class="px-2.5 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-[11px] font-bold">رمادي</button>
-              <button (click)="applyFilterPresetToAllPages('contrast')" class="px-2.5 py-1 rounded-lg bg-amber-600/80 hover:bg-amber-500 text-white text-[11px] font-bold">تباين عالي</button>
+              <button (click)="applyFilterPresetToAllPages('original')" class="px-2 py-0.5 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] font-bold">أصلية</button>
+              <button (click)="applyFilterPresetToAllPages('document')" class="px-2 py-0.5 rounded-lg bg-emerald-600/80 hover:bg-emerald-500 text-white text-[11px] font-bold">📜 مستندات (B&W)</button>
+              <button (click)="applyFilterPresetToAllPages('night')" class="px-2 py-0.5 rounded-lg bg-purple-600/80 hover:bg-purple-500 text-white text-[11px] font-bold">🌙 ليلي</button>
+              <button (click)="applyFilterPresetToAllPages('grayscale')" class="px-2 py-0.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-[11px] font-bold">رمادي</button>
+              <button (click)="applyFilterPresetToAllPages('contrast')" class="px-2 py-0.5 rounded-lg bg-amber-600/80 hover:bg-amber-500 text-white text-[11px] font-bold">تباين عالي</button>
             </div>
 
             <!-- Multi-selection & OCR Bulk Actions -->
             <div class="flex items-center gap-2">
-              <button (click)="selectAllPages(true)" class="px-3 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-slate-300 font-bold">تحديد الكل</button>
-              <button (click)="selectAllPages(false)" class="px-3 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-slate-300 font-bold">إلغاء</button>
+              <button (click)="selectAllPages(true)" class="px-2.5 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-slate-300 font-bold">تحديد الكل</button>
+              <button (click)="selectAllPages(false)" class="px-2.5 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-slate-300 font-bold">إلغاء</button>
 
-              <button *ngIf="selectedPagesCount > 0" (click)="deleteSelectedPages()" class="px-3 h-8 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-bold flex items-center gap-1">
+              <button *ngIf="selectedPagesCount > 0" (click)="deleteSelectedPages()" class="px-2.5 h-7 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 text-[11px] font-bold flex items-center gap-1">
                 🗑️ حذف المحدد ({{ selectedPagesCount }})
               </button>
 
-              <button *ngIf="selectedPagesCount > 0" (click)="extractTextFromSelectedPagesAI()" [disabled]="isBulkOcrRunning" class="px-3 h-8 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold flex items-center gap-1 shadow-md">
+              <button *ngIf="selectedPagesCount > 0" (click)="extractTextFromSelectedPagesAI()" [disabled]="isBulkOcrRunning" class="px-2.5 h-7 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[11px] font-bold flex items-center gap-1 shadow-md">
                 🤖 AI OCR للمحدد
               </button>
             </div>
           </div>
         </div>
 
-        <!-- Main Workspace (Grid of Pages + Selected Page Filter Inspector) -->
-        <div class="flex-1 flex flex-col md:flex-row gap-4 min-h-0 overflow-hidden">
+        <!-- ================================================================= -->
+        <!-- VIEW MODE 1: SPLIT STUDIO VIEW                                    -->
+        <!-- ================================================================= -->
+        <div *ngIf="studioLayoutMode === 'split'" class="flex-1 flex flex-row gap-4 min-h-0 overflow-hidden">
           
-          <!-- Pages Grid List -->
-          <div class="flex-1 overflow-y-auto p-2 bg-slate-950/50 border border-white/10 rounded-3xl custom-scrollbar">
-            <div *ngIf="studioBook.pages.length === 0" class="flex flex-col items-center justify-center py-24 text-center">
+          <div class="flex-1 overflow-y-auto p-3 bg-slate-950/60 border border-white/10 rounded-3xl custom-scrollbar">
+            <div *ngIf="studioBook.pages.length === 0" class="flex flex-col items-center justify-center py-20 text-center">
               <div class="size-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4 text-3xl">📚</div>
-              <h4 class="font-bold text-lg mb-1">لا توجد صفحات بعد</h4>
-              <p class="text-xs text-slate-400 mb-6">قم برفع صور أوراق الكتاب، أو إدراج صفحة فارغة لتنسيق الكتاب.</p>
+              <h4 class="font-bold text-base mb-1">لا توجد صفحات بعد</h4>
+              <p class="text-xs text-slate-400 mb-5">قم برفع صور أوراق الكتاب، أو إدراج صفحة فارغة لتنسيق الكتاب.</p>
               
-              <label class="px-6 h-12 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm flex items-center gap-2 cursor-pointer shadow-xl transition-all">
+              <label class="px-5 h-11 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-xl transition-all">
                 <input type="file" multiple accept="image/*" class="hidden" (change)="onStudioImagesSelected($event)" />
                 📷 رفع صور الصفحات الآن
               </label>
             </div>
 
-            <div *ngIf="studioBook.pages.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            <div *ngIf="studioBook.pages.length > 0" 
+                 class="grid gap-3"
+                 [ngClass]="{
+                   'grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6': studioGridDensity === 'compact',
+                   'grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4': studioGridDensity === 'medium',
+                   'grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3': studioGridDensity === 'comfortable'
+                 }">
               <div *ngFor="let page of studioBook.pages; let idx = index"
                    (click)="selectedPageIndex = idx"
                    [ngClass]="{
-                     'ring-2 ring-indigo-500 bg-indigo-950/30': selectedPageIndex === idx,
+                     'ring-2 ring-indigo-500 bg-indigo-950/40': selectedPageIndex === idx,
                      'bg-slate-900/80 border-white/10': selectedPageIndex !== idx,
                      'border-emerald-500/50': page.selected
                    }"
-                   class="relative group rounded-2xl border p-2 flex flex-col transition-all cursor-pointer overflow-hidden">
+                   class="relative group rounded-2xl border p-2 flex flex-col transition-all cursor-pointer overflow-hidden shadow-sm hover:border-indigo-500/40">
                 
-                <!-- Card Header Badges & Selector -->
                 <div class="flex items-center justify-between gap-1 mb-1.5 z-10">
                   <div class="flex items-center gap-1">
                     <span class="size-6 rounded-lg bg-indigo-600/90 text-white font-mono text-[11px] font-bold flex items-center justify-center shadow-md">
                       {{ idx + 1 }}
                     </span>
-                    <span *ngIf="page.audio" class="size-6 rounded-lg bg-amber-500/20 text-amber-300 text-xs flex items-center justify-center font-bold" title="تحتوي هذه الصفحة على صوت/تعليق">🎵</span>
+                    <span *ngIf="page.audio" class="size-5 rounded-lg bg-amber-500/20 text-amber-300 text-[10px] flex items-center justify-center font-bold" title="تحتوي على صوت">🎵</span>
+                    <span *ngIf="page.video" class="size-5 rounded-lg bg-teal-500/20 text-teal-300 text-[10px] flex items-center justify-center font-bold" title="تحتوي على فيديو">🎬</span>
                   </div>
 
                   <input type="checkbox" [checked]="page.selected" (change)="togglePageSelection(idx); $event.stopPropagation()" class="size-4 rounded accent-indigo-600 cursor-pointer" />
                 </div>
 
-                <!-- Page Thumbnail Surface -->
                 <div class="aspect-[3/4] bg-slate-950 rounded-xl overflow-hidden relative flex items-center justify-center border border-white/5">
-                  
-                  <!-- Image Page Preview -->
                   <ng-container *ngIf="page.type === 'image'">
                     <img [src]="page.processedImageUrl || page.imageUrl" [alt]="'صفحة ' + (idx + 1)" class="w-full h-full object-contain" />
-                    
-                    <span *ngIf="page.filter.preset !== 'original'" class="absolute bottom-1 right-1 bg-black/80 backdrop-blur-md text-[9px] font-bold text-amber-300 px-1.5 py-0.5 rounded-md border border-white/10">
+                    <span *ngIf="page.filter.preset !== 'original'" class="absolute bottom-1 right-1 bg-black/80 backdrop-blur-md text-[8px] font-bold text-amber-300 px-1 py-0.5 rounded border border-white/10">
                       {{ page.filter.preset }}
                     </span>
                   </ng-container>
 
-                  <!-- Blank Page Preview -->
                   <div *ngIf="page.type === 'blank'" class="flex flex-col items-center justify-center p-3 text-center opacity-60">
                     <span class="text-2xl mb-1">📄</span>
                     <span class="text-[10px] font-bold text-slate-300">صفحة فارغة</span>
-                    <span class="text-[8px] text-slate-500">فاصل / ملاحظات</span>
                   </div>
 
-                  <!-- Text Page Preview -->
                   <div *ngIf="page.type === 'text'" class="p-2 text-right w-full h-full overflow-hidden text-[9px] text-slate-300 leading-tight">
                     <span class="font-bold text-indigo-400 block mb-1 truncate">{{ page.textTitle || 'صفحة نصية' }}</span>
                     <p class="line-clamp-6 opacity-70">{{ page.textContent || 'نص فارغ...' }}</p>
                   </div>
 
-                  <!-- OCR Loading Spinner -->
                   <div *ngIf="page.isOcrLoading" class="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center gap-1">
-                    <div class="size-6 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
-                    <span class="text-[9px] text-indigo-300 font-bold">جاري OCR...</span>
+                    <div class="size-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
+                    <span class="text-[8px] text-indigo-300 font-bold">OCR...</span>
                   </div>
                 </div>
 
-                <!-- Extracted Text Indicator -->
-                <div *ngIf="page.extractedText" class="mt-1.5 flex items-center gap-1 text-[9px] text-emerald-400 font-bold">
-                  <span>✓ تم استخراج النص (AI)</span>
-                </div>
-
-                <!-- Page Action Controls -->
                 <div class="mt-2 flex items-center justify-between gap-1 border-t border-white/10 pt-1.5">
                   <div class="flex items-center gap-1">
                     <button (click)="movePageUp(idx); $event.stopPropagation()" [disabled]="idx === 0" class="size-6 rounded bg-white/5 hover:bg-white/10 disabled:opacity-30 text-[10px] flex items-center justify-center">▲</button>
                     <button (click)="movePageDown(idx); $event.stopPropagation()" [disabled]="idx === studioBook.pages.length - 1" class="size-6 rounded bg-white/5 hover:bg-white/10 disabled:opacity-30 text-[10px] flex items-center justify-center">▼</button>
                   </div>
-
                   <div class="flex items-center gap-1">
-                    <button (click)="duplicatePage(idx); $event.stopPropagation()" class="size-6 rounded bg-white/5 hover:bg-white/10 text-[10px] flex items-center justify-center" title="تكرار الصفحة">📋</button>
-                    <button (click)="deletePage(idx); $event.stopPropagation()" class="size-6 rounded bg-red-500/20 hover:bg-red-500/30 text-red-400 text-[10px] flex items-center justify-center" title="حذف الصفحة">🗑️</button>
+                    <button (click)="duplicatePage(idx); $event.stopPropagation()" class="size-6 rounded bg-white/5 hover:bg-white/10 text-[10px] flex items-center justify-center" title="تكرار">📋</button>
+                    <button (click)="deletePage(idx); $event.stopPropagation()" class="size-6 rounded bg-red-500/20 hover:bg-red-500/30 text-red-400 text-[10px] flex items-center justify-center" title="حذف">🗑️</button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Active Page Inspector & Filter Controls Sidebar -->
-          <div *ngIf="studioBook.pages[selectedPageIndex]" class="w-full md:w-80 p-4 bg-slate-900/80 border border-white/10 rounded-3xl flex flex-col space-y-4 overflow-y-auto custom-scrollbar shrink-0">
+          <div *ngIf="studioBook.pages[selectedPageIndex]" class="w-80 md:w-96 p-4 bg-slate-900/90 border border-white/10 rounded-3xl flex flex-col space-y-4 overflow-y-auto custom-scrollbar shrink-0 shadow-2xl">
             
             <div class="flex items-center justify-between border-b border-white/10 pb-2">
               <div class="flex items-center gap-2">
-                <span class="text-xs font-bold text-indigo-400">الصفحة {{ selectedPageIndex + 1 }}</span>
+                <span class="text-xs font-bold text-indigo-400">تعديل الصفحة {{ selectedPageIndex + 1 }}</span>
                 <span class="text-[10px] bg-white/5 px-2 py-0.5 rounded-full text-slate-400 font-mono">{{ studioBook.pages[selectedPageIndex].type }}</span>
               </div>
-
-              <!-- Quick Move Page to Position -->
               <div class="flex items-center gap-1">
-                <span class="text-[10px] text-slate-400 font-bold">نقل لرقم #:</span>
-                <input type="number" min="1" #newPosInput [value]="selectedPageIndex + 1" (change)="movePageToPosition(selectedPageIndex, +newPosInput.value)" class="w-12 h-7 bg-slate-950 border border-white/10 rounded-lg text-center text-xs font-mono text-emerald-400 font-bold focus:outline-none focus:border-indigo-500" />
+                <span class="text-[10px] text-slate-400 font-bold">نقل لرقم:</span>
+                <input type="number" min="1" #newPosInput [value]="selectedPageIndex + 1" (change)="movePageToPosition(selectedPageIndex, +newPosInput.value)" class="w-11 h-6 bg-slate-950 border border-white/10 rounded-lg text-center text-xs font-mono text-emerald-400 font-bold focus:outline-none focus:border-indigo-500" />
               </div>
             </div>
 
-            <!-- If Selected Page is Image: Filters & OCR Controls -->
             <ng-container *ngIf="studioBook.pages[selectedPageIndex].type === 'image'">
-              
-              <!-- Preset Selector -->
               <div>
                 <label class="block text-[11px] font-bold text-slate-300 mb-1.5">فلتر التحسين المسبق:</label>
                 <div class="grid grid-cols-2 gap-1.5">
                   <button (click)="applyFilterPresetToPage(studioBook.pages[selectedPageIndex], 'original')" 
                           [class.font-bold]="studioBook.pages[selectedPageIndex].filter.preset === 'original'"
-                          class="py-1.5 px-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-center border border-white/5">أصلية</button>
-                  
+                          class="py-1 px-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-center border border-white/5">أصلية</button>
                   <button (click)="applyFilterPresetToPage(studioBook.pages[selectedPageIndex], 'document')" 
                           [class.font-bold]="studioBook.pages[selectedPageIndex].filter.preset === 'document'"
-                          class="py-1.5 px-2 rounded-xl bg-emerald-600/30 text-emerald-300 hover:bg-emerald-600/50 text-xs text-center border border-emerald-500/30">📜 مستندات (B&W)</button>
-                  
+                          class="py-1 px-2 rounded-xl bg-emerald-600/30 text-emerald-300 hover:bg-emerald-600/50 text-xs text-center border border-emerald-500/30">📜 مستندات</button>
                   <button (click)="applyFilterPresetToPage(studioBook.pages[selectedPageIndex], 'night')" 
                           [class.font-bold]="studioBook.pages[selectedPageIndex].filter.preset === 'night'"
-                          class="py-1.5 px-2 rounded-xl bg-purple-600/30 text-purple-300 hover:bg-purple-600/50 text-xs text-center border border-purple-500/30">🌙 ليلي</button>
-                  
+                          class="py-1 px-2 rounded-xl bg-purple-600/30 text-purple-300 hover:bg-purple-600/50 text-xs text-center border border-purple-500/30">🌙 ليلي</button>
                   <button (click)="applyFilterPresetToPage(studioBook.pages[selectedPageIndex], 'contrast')" 
                           [class.font-bold]="studioBook.pages[selectedPageIndex].filter.preset === 'contrast'"
-                          class="py-1.5 px-2 rounded-xl bg-amber-600/30 text-amber-300 hover:bg-amber-600/50 text-xs text-center border border-amber-500/30">⚡ تباين عالي</button>
+                          class="py-1 px-2 rounded-xl bg-amber-600/30 text-amber-300 hover:bg-amber-600/50 text-xs text-center border border-amber-500/30">⚡ تباين عالي</button>
                 </div>
               </div>
 
-              <!-- Manual Filter Controls -->
-              <div class="space-y-3 bg-black/20 p-3 rounded-2xl border border-white/5 text-xs">
+              <div class="space-y-2.5 bg-black/30 p-3 rounded-2xl border border-white/5 text-xs">
                 <div>
-                  <div class="flex justify-between text-[11px] mb-1">
+                  <div class="flex justify-between text-[10px] mb-1">
                     <span>السطوع (Brightness)</span>
                     <span class="font-mono">{{ studioBook.pages[selectedPageIndex].filter.brightness }}%</span>
                   </div>
                   <input type="range" min="-100" max="100" [(ngModel)]="studioBook.pages[selectedPageIndex].filter.brightness" (input)="renderFilteredPageImage(studioBook.pages[selectedPageIndex])" class="w-full accent-indigo-500" />
                 </div>
-
                 <div>
-                  <div class="flex justify-between text-[11px] mb-1">
+                  <div class="flex justify-between text-[10px] mb-1">
                     <span>التباين (Contrast)</span>
                     <span class="font-mono">{{ studioBook.pages[selectedPageIndex].filter.contrast }}%</span>
                   </div>
                   <input type="range" min="-100" max="100" [(ngModel)]="studioBook.pages[selectedPageIndex].filter.contrast" (input)="renderFilteredPageImage(studioBook.pages[selectedPageIndex])" class="w-full accent-indigo-500" />
                 </div>
-
                 <div class="flex items-center justify-between pt-1">
-                  <span class="text-[11px]">تدوير الصفحة:</span>
-                  <button (click)="rotatePageImage(studioBook.pages[selectedPageIndex], 90)" class="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold">
-                    🔄 تدوير 90° ({{ studioBook.pages[selectedPageIndex].filter.rotation }}°)
+                  <span class="text-[11px] font-bold">تدوير:</span>
+                  <button (click)="rotatePageImage(studioBook.pages[selectedPageIndex], 90)" class="px-3 py-1 bg-white/5 hover:bg-white/10 rounded-xl text-xs flex items-center gap-1">
+                    <span>🔄 90°</span>
                   </button>
                 </div>
               </div>
 
-              <!-- AI OCR Button -->
-              <button (click)="extractTextFromPageAI(studioBook.pages[selectedPageIndex])" 
-                      [disabled]="studioBook.pages[selectedPageIndex].isOcrLoading"
-                      class="w-full h-11 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg flex items-center justify-center gap-2 transition-all">
+              <button (click)="extractTextFromPageAI(studioBook.pages[selectedPageIndex])" [disabled]="studioBook.pages[selectedPageIndex].isOcrLoading" class="w-full py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5">
                 <span *ngIf="studioBook.pages[selectedPageIndex].isOcrLoading" class="animate-spin">⏳</span>
                 <span>🤖 استخراج النص بالذكاء الاصطناعي (AI OCR)</span>
               </button>
-
-              <!-- Extracted Text Area -->
-              <div *ngIf="studioBook.pages[selectedPageIndex].extractedText !== undefined">
-                <label class="block text-[11px] font-bold text-emerald-400 mb-1">النص المستخرج بالذكاء الاصطناعي:</label>
-                <textarea [(ngModel)]="studioBook.pages[selectedPageIndex].extractedText" rows="4" 
-                          class="w-full bg-slate-950 border border-emerald-500/30 rounded-xl p-2.5 text-xs text-slate-100 font-sans leading-relaxed focus:outline-none focus:border-emerald-500"></textarea>
-              </div>
-
-              <!-- PAGE AUDIO NARRATION & RECORDING PANEL -->
-              <div class="space-y-3 bg-black/30 p-3.5 rounded-2xl border border-white/10 text-xs">
-                <div class="flex items-center justify-between border-b border-white/10 pb-2">
-                  <span class="font-bold text-amber-300 flex items-center gap-1.5 text-xs">
-                    <span>🎙️</span> التعليق والصوتيات للصفحة
-                  </span>
-                  <span *ngIf="studioBook.pages[selectedPageIndex].audio" class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-300 font-bold">
-                    ✓ صوت مرفق
-                  </span>
-                </div>
-
-                <!-- Audio Recording Status / Controls -->
-                <ng-container *ngIf="isRecordingAudio && recordingTargetPage === studioBook.pages[selectedPageIndex]; else notRecordingTmpl">
-                  <div class="p-3 rounded-xl bg-red-500/20 border border-red-500/40 text-center space-y-2 animate-pulse">
-                    <div class="flex items-center justify-center gap-2 text-red-300 font-bold text-xs">
-                      <span class="size-3 rounded-full bg-red-500 animate-ping"></span>
-                      <span>جاري التسجيل الصوتي المباشر...</span>
-                    </div>
-                    <span class="font-mono text-base font-black text-white block">{{ formatTimeSeconds(recordingSeconds) }}</span>
-                    <button (click)="stopMicRecording()" class="w-full py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-md">
-                      ⏹️ إيقاف وحفظ التسجيل
-                    </button>
-                  </div>
-                </ng-container>
-                <ng-template #notRecordingTmpl>
-                  <div class="grid grid-cols-2 gap-2">
-                    <button (click)="startMicRecording(studioBook.pages[selectedPageIndex])" 
-                            [disabled]="isRecordingAudio"
-                            class="py-2.5 px-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-[11px] flex items-center justify-center gap-1.5 shadow-md transition-all">
-                      <span>🎙️</span> تسجيل بالمايك
-                    </button>
-
-                    <label class="py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer shadow-md transition-all">
-                      <input type="file" accept="audio/*" class="hidden" (change)="onPageAudioFileSelected($event, studioBook.pages[selectedPageIndex])" />
-                      <span>🎵 رفع ملف صوتي</span>
-                    </label>
-                  </div>
-
-                  <button (click)="toggleTTSForPage(studioBook.pages[selectedPageIndex])" 
-                          class="w-full py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/30 text-purple-200 font-bold text-xs flex items-center justify-center gap-1.5 transition-all">
-                    <span>🗣️</span>
-                    <span>{{ isTTSPlaying && activeTTSPageId === studioBook.pages[selectedPageIndex].id ? '⏹️ إيقاف القراءة الصوتية (TTS)' : 'قراءة النص صوتياً بالذكاء الاصطناعي (TTS)' }}</span>
-                  </button>
-                </ng-template>
-
-                <!-- Attached Audio Player Card if Audio Exists -->
-                <div *ngIf="studioBook.pages[selectedPageIndex].audio as pageAudio" class="p-3 rounded-xl bg-slate-950 border border-emerald-500/30 space-y-2">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2 min-w-0">
-                      <button (click)="togglePageAudioPlay(studioBook.pages[selectedPageIndex])" 
-                              class="size-8 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center justify-center text-xs shrink-0 shadow-md">
-                        {{ isAudioPlaying && activeAudioPageId === studioBook.pages[selectedPageIndex].id ? '⏸️' : '▶️' }}
-                      </button>
-                      <div class="truncate text-right">
-                        <span class="text-xs font-bold text-slate-100 block truncate">{{ pageAudio.title || 'صوت الصفحة' }}</span>
-                        <span class="text-[10px] text-emerald-400 font-mono">{{ formatTimeSeconds(pageAudio.duration || currentAudioTime) }}</span>
-                      </div>
-                    </div>
-                    <button (click)="deletePageAudio(studioBook.pages[selectedPageIndex])" class="text-red-400 hover:text-red-300 text-xs px-1 font-bold" title="حذف الملف الصوتي">✕</button>
-                  </div>
-                </div>
-              </div>
-
             </ng-container>
 
-            <!-- If Selected Page is Text Page -->
-            <ng-container *ngIf="studioBook.pages[selectedPageIndex].type === 'text'">
-              <div>
-                <label class="block text-xs font-bold text-slate-300 mb-1">عنوان الصفحة / الفصل:</label>
-                <input type="text" [(ngModel)]="studioBook.pages[selectedPageIndex].textTitle" placeholder="مثال: الفصل الأول" class="w-full bg-white/5 border border-white/10 rounded-xl h-10 px-3 text-xs text-white" />
+            <div class="bg-slate-950/80 p-3 rounded-2xl border border-white/10 space-y-2 text-xs">
+              <span class="font-bold text-amber-300 text-[11px] block">🎙️ التعليق الصوتي للصفحة:</span>
+              <div class="flex items-center gap-1.5">
+                <button *ngIf="!isRecordingAudio" (click)="startMicRecording(studioBook.pages[selectedPageIndex])" class="flex-1 py-1.5 bg-red-600/80 hover:bg-red-500 text-white font-bold rounded-xl text-[11px] flex items-center justify-center gap-1 shadow-sm">
+                  <span>⏺️ تسجيل صوت</span>
+                </button>
+                <button *ngIf="isRecordingAudio" (click)="stopMicRecording()" class="flex-1 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-[11px] flex items-center justify-center gap-1 animate-pulse">
+                  <span>⏹️ إيقاف ({{ recordingSeconds }}ث)</span>
+                </button>
+                <label class="flex-1 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-bold rounded-xl text-[11px] flex items-center justify-center gap-1 cursor-pointer">
+                  <input type="file" accept="audio/*" class="hidden" (change)="onPageAudioFileSelected($event, studioBook.pages[selectedPageIndex])" />
+                  <span>📁 رفع MP3</span>
+                </label>
               </div>
 
-              <div>
-                <label class="block text-xs font-bold text-slate-300 mb-1">محتوى الصفحة النصية:</label>
-                <textarea [(ngModel)]="studioBook.pages[selectedPageIndex].textContent" rows="10" placeholder="اكتب أو الصق نص الصفحة هنا..." class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs text-white leading-relaxed focus:outline-none focus:border-indigo-500"></textarea>
+              <div *ngIf="studioBook.pages[selectedPageIndex].audio as pageAud" class="p-2 rounded-xl bg-black/40 border border-amber-500/30 flex items-center justify-between">
+                <span class="text-[10px] text-amber-300 font-mono truncate">🎵 {{ pageAud.title || 'ملف صوتي مسجل' }}</span>
+                <button (click)="deletePageAudio(studioBook.pages[selectedPageIndex])" class="text-red-400 text-xs font-bold px-1 hover:text-red-300">✕</button>
               </div>
-            </ng-container>
+            </div>
 
-            <!-- If Selected Page is Blank Page -->
-            <ng-container *ngIf="studioBook.pages[selectedPageIndex].type === 'blank'">
-              <div class="p-4 bg-white/5 border border-white/10 rounded-2xl text-center space-y-2">
-                <span class="text-3xl block">📄</span>
-                <h4 class="font-bold text-sm text-slate-200">صفحة فارغة (فاصل)</h4>
-                <p class="text-[11px] text-slate-400 leading-relaxed">تُستخدم هذه الصفحة كفاصل بين الفصول أو مكان لتدوين ملاحظات القراء.</p>
-              </div>
-            </ng-container>
-
-            <!-- PAGE VIDEO & LECTURE EXPLANATION PANEL (FOR ANY PAGE) -->
-            <div class="space-y-3 bg-black/30 p-3.5 rounded-2xl border border-white/10 text-xs">
-              <div class="flex items-center justify-between border-b border-white/10 pb-2">
-                <span class="font-bold text-teal-300 flex items-center gap-1.5 text-xs">
-                  <span>🎬</span> فيديو وشرح الصفحة التفاعلي
-                </span>
-                <span *ngIf="studioBook.pages[selectedPageIndex].video" class="px-2 py-0.5 rounded-full text-[10px] bg-teal-500/20 text-teal-300 font-bold">
-                  ✓ فيديو مرفق
-                </span>
-              </div>
-
-              <!-- Video Upload & Link Options -->
-              <div class="grid grid-cols-2 gap-2">
-                <label class="py-2.5 px-3 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-500 hover:to-indigo-500 text-white font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer shadow-md transition-all">
+            <div class="bg-slate-950/80 p-3 rounded-2xl border border-white/10 space-y-2 text-xs">
+              <span class="font-bold text-teal-300 text-[11px] block">🎬 فيديو الشرح المصاحب:</span>
+              <div class="grid grid-cols-2 gap-1.5">
+                <label class="py-1.5 px-2 rounded-xl bg-teal-600/30 hover:bg-teal-600/50 border border-teal-500/40 text-teal-200 font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer">
                   <input type="file" accept="video/*" class="hidden" (change)="onPageVideoFileSelected($event, studioBook.pages[selectedPageIndex])" />
                   <span>📁 فيديو من الجهاز</span>
                 </label>
-
-                <button (click)="showPageVideoUrlPrompt = !showPageVideoUrlPrompt" 
-                        class="py-2.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 font-bold text-[11px] flex items-center justify-center gap-1.5 transition-all">
+                <button (click)="showPageVideoUrlPrompt = !showPageVideoUrlPrompt" class="py-1.5 px-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-bold text-[11px] flex items-center justify-center gap-1">
                   <span>🔗 رابط (YouTube/Drive)</span>
                 </button>
               </div>
 
-              <!-- URL Input Prompt Box -->
-              <div *ngIf="showPageVideoUrlPrompt" class="space-y-2 bg-slate-950 p-3 rounded-xl border border-white/10 animate-in fade-in">
-                <input type="text" [(ngModel)]="pageVideoTitleInput" placeholder="عنوان الفيديو (مثال: شرح المسألة)..." class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white" />
-                <input type="url" [(ngModel)]="pageVideoUrlInput" placeholder="رابط YouTube أو Google Drive أو MP4..." class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white dir-ltr text-right" />
-                <button (click)="addPageVideoByUrl(studioBook.pages[selectedPageIndex], pageVideoUrlInput, pageVideoTitleInput)" 
-                        class="w-full py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-lg text-xs shadow-md">
+              <div *ngIf="showPageVideoUrlPrompt" class="space-y-1.5 bg-black/40 p-2.5 rounded-xl border border-white/10">
+                <input type="text" [(ngModel)]="pageVideoTitleInput" placeholder="عنوان الفيديو..." class="w-full bg-slate-900 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white" />
+                <input type="url" [(ngModel)]="pageVideoUrlInput" placeholder="رابط YouTube أو Google Drive..." class="w-full bg-slate-900 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white dir-ltr text-right" />
+                <button (click)="addPageVideoByUrl(studioBook.pages[selectedPageIndex], pageVideoUrlInput, pageVideoTitleInput)" class="w-full py-1 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-lg text-xs">
                   حفظ وربط الفيديو ⚡
                 </button>
               </div>
 
-              <!-- Attached Video Preview Card -->
-              <div *ngIf="studioBook.pages[selectedPageIndex].video as pageVid" class="p-3 rounded-xl bg-slate-950 border border-teal-500/30 space-y-2">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2 min-w-0">
-                    <span class="text-lg">🎬</span>
-                    <div class="truncate text-right">
-                      <span class="text-xs font-bold text-slate-100 block truncate">{{ pageVid.title || 'فيديو الصفحة' }}</span>
-                      <span class="text-[10px] text-teal-400 font-mono">{{ pageVid.type }}</span>
-                    </div>
-                  </div>
-                  <button (click)="deletePageVideo(studioBook.pages[selectedPageIndex])" class="text-red-400 hover:text-red-300 text-xs px-1.5 py-0.5 bg-red-500/10 rounded font-bold" title="حذف الفيديو">✕ حذف</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Colorful Reader Notes & Margins Callout Component for Any Page -->
-            <div class="bg-slate-950/90 p-3 rounded-2xl border border-white/10 space-y-2.5 text-xs">
-              <div class="flex items-center justify-between">
-                <span class="font-bold text-amber-300 text-[11px] flex items-center gap-1">✍️ إضافة ملاحظة / هامش مخصص</span>
-                <span class="text-[10px] text-slate-400 font-mono">({{ studioBook.pages[selectedPageIndex].notes?.length || 0 }})</span>
-              </div>
-
-              <!-- Palette Color Picker -->
-              <div class="flex items-center justify-between bg-black/40 p-1.5 rounded-xl border border-white/5">
-                <span class="text-[10px] text-slate-400 font-bold">اختر لون الملاحظة:</span>
-                <div class="flex items-center gap-1.5">
-                  <button (click)="newNoteColor = 'gold'" [class.scale-125]="newNoteColor === 'gold'" class="size-5 rounded-full bg-amber-400 ring-2 ring-white/20 transition-all" title="أصفر ذهبي"></button>
-                  <button (click)="newNoteColor = 'emerald'" [class.scale-125]="newNoteColor === 'emerald'" class="size-5 rounded-full bg-emerald-400 ring-2 ring-white/20 transition-all" title="أخضر زمردي"></button>
-                  <button (click)="newNoteColor = 'crimson'" [class.scale-125]="newNoteColor === 'crimson'" class="size-5 rounded-full bg-rose-500 ring-2 ring-white/20 transition-all" title="أحمر أرجواني"></button>
-                  <button (click)="newNoteColor = 'sky'" [class.scale-125]="newNoteColor === 'sky'" class="size-5 rounded-full bg-sky-400 ring-2 ring-white/20 transition-all" title="أزرق سماوي"></button>
-                  <button (click)="newNoteColor = 'violet'" [class.scale-125]="newNoteColor === 'violet'" class="size-5 rounded-full bg-purple-400 ring-2 ring-white/20 transition-all" title="بنفسجي ملكي"></button>
-                </div>
-              </div>
 
               <div class="flex gap-1.5">
                 <textarea [(ngModel)]="newNoteText" placeholder="اكتب ملاحظتك التوضيحية أو الهامش هنا..." rows="2" class="flex-1 bg-slate-900 border border-white/10 rounded-xl p-2 text-xs text-white focus:outline-none focus:border-amber-400 leading-relaxed"></textarea>

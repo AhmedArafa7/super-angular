@@ -494,6 +494,9 @@ export class LibraryComponent {
   showBookStudioDialog = false;
   studioTab: 'details' | 'pages' | 'editor' = 'pages';
   studioBookMode: 'image' | 'text' = 'image';
+  studioLayoutMode: 'split' | 'grid' | 'single' | 'spread' = 'split';
+  studioGridDensity: 'compact' | 'medium' | 'comfortable' = 'medium';
+  isInspectorCollapsed = false;
 
   studioBook = {
     title: '',
@@ -2303,6 +2306,27 @@ export class LibraryComponent {
     const url = video.videoBlobUrl || video.url;
     if (!url) return null;
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  }
+
+  // --- STUDIO LAYOUT & VIEW MODES ---
+  setStudioLayoutMode(mode: 'split' | 'grid' | 'single' | 'spread') {
+    this.studioLayoutMode = mode;
+  }
+
+  setStudioGridDensity(density: 'compact' | 'medium' | 'comfortable') {
+    this.studioGridDensity = density;
+  }
+
+  studioPrevPage() {
+    if (this.selectedPageIndex > 0) {
+      this.selectedPageIndex--;
+    }
+  }
+
+  studioNextPage() {
+    if (this.selectedPageIndex < this.studioBook.pages.length - 1) {
+      this.selectedPageIndex++;
+    }
   }
 
   formatTimeSeconds(sec: number): string {
