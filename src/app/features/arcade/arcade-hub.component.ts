@@ -417,6 +417,8 @@ export class ArcadeHubComponent implements OnInit {
       this.router.navigate(['/arcade/flashcards']);
     } else if (id === 'number-guesser') {
       this.router.navigate(['/arcade/number-guesser']);
+    } else if (id === 'subway-surfers' || id === 'metro-dash') {
+      this.router.navigate(['/arcade/subway-surfers-3d']);
     } else if (id === 'adventure-time') {
       this.router.navigate(['/arcade/adventure-time']);
     } else if (id === 'godot-builder') {

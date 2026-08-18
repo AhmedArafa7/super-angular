@@ -196,13 +196,6 @@ export interface PlayerSession {
                 {{ digits }} أرقام {{ digits === 4 ? '⭐ (قياسي)' : '' }}
               </button>
             </div>
-
-            <div class="flex items-center justify-between pt-2 border-t border-white/5">
-              <span class="text-xs text-slate-400 font-bold">السماح بتكرار الأرقام في الكود (مثال: 442)</span>
-              <button (click)="allowDuplicates = !allowDuplicates" class="px-4 py-1.5 rounded-xl text-xs font-bold transition-all" [ngClass]="allowDuplicates ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-white/5 text-slate-400 border border-white/10'">
-                {{ allowDuplicates ? 'مسموح بالتكرار' : 'أرقام فريدة غير مكررة 🔒' }}
-              </button>
-            </div>
           </div>
 
           <!-- Local Mode Type Selection -->
@@ -293,11 +286,17 @@ export interface PlayerSession {
               </h2>
             </div>
 
-            <div class="flex items-center gap-3 bg-white/5 px-5 py-2.5 rounded-2xl border border-white/5">
-              <span class="text-xs text-slate-400 font-bold">طول الكود:</span>
-              <span class="font-mono text-base font-black text-amber-400 bg-amber-500/10 px-3 py-0.5 rounded-lg border border-amber-500/20">
-                {{ codeLength }} أرقام
-              </span>
+            <div class="flex flex-wrap items-center gap-3">
+              <div *ngIf="secretsMap[currentTurnPlayer]" class="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 px-4 py-2 rounded-2xl">
+                <span class="text-xs text-slate-400 font-bold">🔐 رقمك السري:</span>
+                <span class="font-mono text-base font-black text-amber-300 tracking-widest">{{ secretsMap[currentTurnPlayer] }}</span>
+              </div>
+              <div class="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-2xl border border-white/5">
+                <span class="text-xs text-slate-400 font-bold">طول الكود:</span>
+                <span class="font-mono text-base font-black text-amber-400">
+                  {{ codeLength }} أرقام
+                </span>
+              </div>
             </div>
           </div>
 
@@ -332,33 +331,33 @@ export interface PlayerSession {
           </div>
 
           <!-- Recent Feedback Card (Clean Dynamic Contextual Verbal Feedback) -->
-          <div *ngIf="lastFeedback" 
+          <div *ngIf="getCurrentPlayerLastFeedback() as fb" 
                class="p-6 rounded-3xl text-center space-y-4 animate-in zoom-in-95 shadow-2xl transition-all border"
                [ngClass]="{
-                 'bg-rose-950/30 border-rose-500/40 shadow-rose-500/10': lastFeedback.bulls === 0 && lastFeedback.cows === 0,
-                 'bg-emerald-950/30 border-emerald-500/40 shadow-emerald-500/10': lastFeedback.bulls > 0 && lastFeedback.cows === 0,
-                 'bg-amber-950/30 border-amber-500/40 shadow-amber-500/10': lastFeedback.bulls === 0 && lastFeedback.cows > 0,
-                 'bg-indigo-950/30 border-indigo-500/40 shadow-indigo-500/10': lastFeedback.bulls > 0 && lastFeedback.cows > 0
+                 'bg-rose-950/30 border-rose-500/40 shadow-rose-500/10': fb.bulls === 0 && fb.cows === 0,
+                 'bg-emerald-950/30 border-emerald-500/40 shadow-emerald-500/10': fb.bulls > 0 && fb.cows === 0,
+                 'bg-amber-950/30 border-amber-500/40 shadow-amber-500/10': fb.bulls === 0 && fb.cows > 0,
+                 'bg-indigo-950/30 border-indigo-500/40 shadow-indigo-500/10': fb.bulls > 0 && fb.cows > 0
                }">
             
             <div class="flex items-center justify-between border-b border-white/10 pb-3">
-              <span class="text-xs font-bold text-slate-400">نتيجة تخمين (<span class="text-amber-400 font-bold">{{ lastFeedback.player }}</span>):</span>
-              <span class="font-mono text-xl font-black text-amber-300 bg-black/40 px-4 py-1 rounded-xl border border-white/10 tracking-widest">{{ lastFeedback.guess }}</span>
+              <span class="text-xs font-bold text-slate-400">نتيجة تخمينك الأخير:</span>
+              <span class="font-mono text-xl font-black text-amber-300 bg-black/40 px-4 py-1 rounded-xl border border-white/10 tracking-widest">{{ fb.guess }}</span>
             </div>
 
             <!-- Main Dynamic Natural Language Feedback Sentence -->
             <div class="p-5 rounded-2xl border text-sm md:text-base font-black leading-relaxed shadow-lg"
                  [ngClass]="{
-                   'bg-rose-500/10 border-rose-500/30 text-rose-300': lastFeedback.bulls === 0 && lastFeedback.cows === 0,
-                   'bg-emerald-500/10 border-emerald-500/30 text-emerald-300': lastFeedback.bulls > 0 && lastFeedback.cows === 0,
-                   'bg-amber-500/10 border-amber-500/30 text-amber-300': lastFeedback.bulls === 0 && lastFeedback.cows > 0,
-                   'bg-indigo-500/10 border-indigo-500/30 text-indigo-200': lastFeedback.bulls > 0 && lastFeedback.cows > 0
+                   'bg-rose-500/10 border-rose-500/30 text-rose-300': fb.bulls === 0 && fb.cows === 0,
+                   'bg-emerald-500/10 border-emerald-500/30 text-emerald-300': fb.bulls > 0 && fb.cows === 0,
+                   'bg-amber-500/10 border-amber-500/30 text-amber-300': fb.bulls === 0 && fb.cows > 0,
+                   'bg-indigo-500/10 border-indigo-500/30 text-indigo-200': fb.bulls > 0 && fb.cows > 0
                  }">
-              {{ lastFeedback.message }}
+              {{ fb.message }}
             </div>
 
-            <!-- 5-Second Turn Switch Countdown Alert -->
-            <div *ngIf="isTurnSwitching()" class="flex items-center justify-between bg-amber-500/10 border border-amber-500/30 px-4 py-3 rounded-2xl text-xs text-amber-300 font-bold animate-pulse">
+            <!-- 5-Second Turn Switch Countdown Alert (Pass & Play Only) -->
+            <div *ngIf="isTurnSwitching() && !isVsAi" class="flex items-center justify-between bg-amber-500/10 border border-amber-500/30 px-4 py-3 rounded-2xl text-xs text-amber-300 font-bold animate-pulse">
               <div class="flex items-center gap-2">
                 <span class="text-base">⏳</span>
                 <span>انتقال الدور إلى (<span class="text-white font-bold">{{ getNextPlayerName() }}</span>) خلال <span class="font-mono text-sm font-black text-amber-400">{{ countdownSeconds() }}</span> ثوانٍ...</span>
@@ -369,22 +368,28 @@ export interface PlayerSession {
             </div>
           </div>
 
-          <!-- History Table of Previous Guesses -->
+          <!-- AI Thinking Status -->
+          <div *ngIf="isAiThinking" class="p-4 bg-purple-950/40 border border-purple-500/30 rounded-2xl text-center flex items-center justify-center gap-3 animate-pulse text-purple-300 text-xs font-bold">
+            <span class="animate-spin text-sm">🤖</span>
+            <span>الذكاء الاصطناعي يقوم بالتخمين سراً...</span>
+          </div>
+
+          <!-- History Table of Previous Guesses (Filtered per current player only) -->
           <div class="space-y-3">
             <div class="flex justify-between items-center">
-              <h3 class="text-sm font-bold text-slate-300">جدول سجل التخمينات ({{ guessHistory.length }}):</h3>
-              <span class="text-xs text-slate-500">مرتبة من الأحدث إلى الأقدم</span>
+              <h3 class="text-sm font-bold text-slate-300">سجل تخميناتك السابقة ({{ getCurrentPlayerHistory().length }}):</h3>
+              <span class="text-xs text-slate-500">خاص بك فقط • مرتب من الأحدث للأقدم</span>
             </div>
 
-            <div *ngIf="guessHistory.length === 0" class="bg-black/20 border border-white/5 rounded-2xl p-8 text-center text-slate-500 text-xs">
-              لم يتم تقديم أي تخمينات بعد. أدخل التخمين الأول في الخانة الرئيسية أعلاه! 🚀
+            <div *ngIf="getCurrentPlayerHistory().length === 0" class="bg-black/20 border border-white/5 rounded-2xl p-8 text-center text-slate-500 text-xs">
+              لم تقم بأي تخمينات بعد. أدخل تخمينك في الخانة الرئيسية أعلاه! 🚀
             </div>
 
-            <div *ngIf="guessHistory.length > 0" class="overflow-hidden rounded-2xl border border-white/10 bg-slate-950/80">
+            <div *ngIf="getCurrentPlayerHistory().length > 0" class="overflow-hidden rounded-2xl border border-white/10 bg-slate-950/80">
               <table class="w-full text-right text-xs">
                 <thead class="bg-white/5 text-slate-400 font-bold border-b border-white/10">
                   <tr>
-                    <th class="p-3 text-center">اللاعب</th>
+                    <th class="p-3 text-center">#</th>
                     <th class="p-3 text-center">الرقم المترشح</th>
                     <th class="p-3 text-right">التقييم والملاحظة</th>
                     <th class="p-3 text-center">🎯 صح مكانه صح</th>
@@ -393,8 +398,8 @@ export interface PlayerSession {
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-white/5 font-mono">
-                  <tr *ngFor="let h of guessHistory" class="hover:bg-white/5 transition-colors">
-                    <td class="p-3 text-center font-sans font-bold text-amber-300">{{ h.player }}</td>
+                  <tr *ngFor="let h of getCurrentPlayerHistory(); let i = index" class="hover:bg-white/5 transition-colors">
+                    <td class="p-3 text-center font-sans font-bold text-amber-400">{{ getCurrentPlayerHistory().length - i }}</td>
                     <td class="p-3 text-center font-black text-base text-white tracking-widest">{{ h.guess }}</td>
                     <td class="p-3 text-right font-sans font-bold text-[11px]"
                         [ngClass]="{
@@ -476,14 +481,13 @@ export class NumberGuesserComponent implements OnInit, OnDestroy {
   // Setup properties
   selectedMode: 'local' | 'p2p' | 'online_pro' = 'local';
   codeLength: number = 4; // 3, 4, or 5
-  allowDuplicates: boolean = false;
   isVsAi: boolean = true;
   playerList: string[] = ['اللاعب 1', 'الكمبيوتر (AI)'];
 
   // Secret setup phase
   currentSetupIndex: number = 0;
   tempSecretCode: string = '';
-  showSecretInput: boolean = false;
+  showSecretInput: boolean = true;
   secretSetupError: string = '';
   secretsMap: { [player: string]: string } = {};
 
@@ -562,11 +566,12 @@ export class NumberGuesserComponent implements OnInit, OnDestroy {
     if (this.selectedMode === 'local' && this.isVsAi) {
       this.playerList = [this.playerList[0] || 'اللاعب 1', 'الكمبيوتر (AI)'];
       // Generate AI Secret Code automatically
-      this.secretsMap['الكمبيوتر (AI)'] = this.generateRandomCode(this.codeLength, this.allowDuplicates);
+      this.secretsMap['الكمبيوتر (AI)'] = this.generateRandomCode(this.codeLength);
     }
 
     this.currentSetupIndex = 0;
     this.tempSecretCode = '';
+    this.showSecretInput = true;
     this.secretSetupError = '';
     this.gameState.set('secret_setup');
   }
@@ -607,31 +612,36 @@ export class NumberGuesserComponent implements OnInit, OnDestroy {
       this.secretSetupError = 'يجب إدخال أرقام فقط (0-9).';
       return false;
     }
-    if (!this.allowDuplicates && new Set(code).size !== code.length) {
-      this.secretSetupError = 'خيار الأرقام المكررة غير مفعل. يجب إدخال أرقام فريدة.';
-      return false;
-    }
     return true;
   }
 
-  generateRandomCode(length: number, allowDup: boolean): string {
+  generateRandomCode(length: number): string {
     const digits = ['0','1','2','3','4','5','6','7','8','9'];
-    if (!allowDup) {
-      let shuffled = [...digits].sort(() => 0.5 - Math.random());
-      return shuffled.slice(0, length).join('');
-    } else {
-      let res = '';
-      for (let i = 0; i < length; i++) {
-        res += digits[Math.floor(Math.random() * 10)];
-      }
-      return res;
+    let res = '';
+    for (let i = 0; i < length; i++) {
+      res += digits[Math.floor(Math.random() * 10)];
     }
+    return res;
+  }
+
+  isAiThinking: boolean = false;
+
+  getCurrentPlayerHistory(): GuessRecord[] {
+    return this.guessHistory.filter(h => h.player === this.currentTurnPlayer);
+  }
+
+  getCurrentPlayerLastFeedback(): GuessRecord | null {
+    if (this.lastFeedback && this.lastFeedback.player === this.currentTurnPlayer) {
+      return this.lastFeedback;
+    }
+    return this.guessHistory.find(h => h.player === this.currentTurnPlayer) || null;
   }
 
   // --- Step 3: Start Playing ---
   startMatch() {
     this.clearCountdown();
     this.isTurnSwitching.set(false);
+    this.isAiThinking = false;
     this.guessHistory = [];
     this.lastFeedback = null;
     this.currentGuessInput = '';
@@ -642,17 +652,12 @@ export class NumberGuesserComponent implements OnInit, OnDestroy {
 
   // --- Submit candidate guess from Main Input Box ---
   submitGuess() {
-    if (this.isTurnSwitching()) return;
+    if (this.isTurnSwitching() || this.isAiThinking) return;
 
     const guess = this.currentGuessInput.trim();
 
     if (guess.length !== this.codeLength || !/^\d+$/.test(guess)) {
       this.guessError = `الرجاء إدخال رقم سري مكون من ${this.codeLength} أرقام.`;
-      return;
-    }
-
-    if (!this.allowDuplicates && new Set(guess).size !== guess.length) {
-      this.guessError = 'الرجاء إدخال أرقام غير مكررة.';
       return;
     }
 
@@ -687,7 +692,16 @@ export class NumberGuesserComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Start 5-second countdown before switching turn
+    // If playing vs AI, let AI make a secret turn automatically
+    if (this.selectedMode === 'local' && this.isVsAi) {
+      this.isAiThinking = true;
+      setTimeout(() => {
+        this.handleAiTurn();
+      }, 700);
+      return;
+    }
+
+    // If Pass & Play multiplayer, start turn switch countdown
     this.startTurnCountdown();
   }
 
@@ -768,15 +782,10 @@ export class NumberGuesserComponent implements OnInit, OnDestroy {
     const idx = this.playerList.indexOf(this.currentTurnPlayer);
     const nextIdx = (idx + 1) % this.playerList.length;
     this.currentTurnPlayer = this.playerList[nextIdx];
-
-    // If next player is AI bot, trigger AI turn automatically
-    if (this.currentTurnPlayer === 'الكمبيوتر (AI)') {
-      setTimeout(() => this.handleAiTurn(), 1200);
-    }
   }
 
   handleAiTurn() {
-    const aiGuess = this.generateRandomCode(this.codeLength, this.allowDuplicates);
+    const aiGuess = this.generateRandomCode(this.codeLength);
     const humanPlayer = this.playerList[0];
     const humanSecret = this.secretsMap[humanPlayer];
 
@@ -793,17 +802,14 @@ export class NumberGuesserComponent implements OnInit, OnDestroy {
       timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     };
 
-    this.lastFeedback = record;
     this.guessHistory.unshift(record);
+    this.isAiThinking = false;
 
     if (feedback.bulls === this.codeLength) {
       this.clearCountdown();
       this.triggerWin('الكمبيوتر (AI)', humanSecret);
       return;
     }
-
-    // 5-second countdown after AI guess as well
-    this.startTurnCountdown();
   }
 
   // --- Dynamic Arabic Feedback Generator ---
@@ -862,6 +868,7 @@ export class NumberGuesserComponent implements OnInit, OnDestroy {
 
   triggerWin(winner: string, winningCode: string) {
     this.clearCountdown();
+    this.isAiThinking = false;
     this.winnerName = winner;
     this.winningCode = winningCode;
     this.totalAttempts = this.guessHistory.filter(h => h.player === winner).length;
@@ -870,11 +877,13 @@ export class NumberGuesserComponent implements OnInit, OnDestroy {
 
   restartGame() {
     this.clearCountdown();
+    this.isAiThinking = false;
     this.proceedToSecretSetup();
   }
 
   resetToSetup() {
     this.clearCountdown();
+    this.isAiThinking = false;
     this.gameState.set('setup');
   }
 }

@@ -330,47 +330,47 @@ import { SuperArcadeBridgeService } from '../../core/services/super-arcade-bridg
     </div>
   `,
   styles: [`
-    #arena-menu-overlay { font-family: 'Fredoka One', system-ui, sans-serif; }
+    #arena-menu-overlay { font-family: 'Cairo', 'Fredoka One', system-ui, sans-serif; }
     #arena-menu-container {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 40px;
-      padding: 2rem 1.5rem;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(20px);
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      border-radius: 36px;
+      padding: 2.2rem 1.6rem 1.6rem;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
     }
     .arena-btn {
       width: 100%;
-      height: 4rem;
-      border-radius: 9999px;
+      height: 3.6rem;
+      border-radius: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
+      gap: 0.6rem;
       font-weight: 900;
-      font-size: 1.5rem;
-      letter-spacing: 0.1em;
+      font-size: 1.15rem;
       color: white;
-      transition: all 0.2s ease;
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       cursor: pointer;
       position: relative;
       overflow: hidden;
     }
-    .arena-btn:hover { transform: translateY(-4px); filter: brightness(1.1); }
-    .arena-btn:active { transform: translateY(4px); }
+    .arena-btn:hover { transform: translateY(-3px); filter: brightness(1.1); }
+    .arena-btn:active { transform: translateY(2px); }
     
-    .btn-play { background: #ff0066; border-bottom: 6px solid #cc0052; box-shadow: 0 5px 15px rgba(255,0,102,0.4); }
-    .btn-join { background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); height: 3rem; font-size: 1.2rem; }
-    .btn-local { background: #ff9900; border-bottom: 6px solid #cc7a00; box-shadow: 0 5px 15px rgba(255,153,0,0.4); }
-    .btn-online { background: #3366ff; border-bottom: 6px solid #2952cc; box-shadow: 0 5px 15px rgba(51,102,255,0.4); }
-    .btn-quit { background: #33cc33; border-bottom: 6px solid #29a329; box-shadow: 0 5px 15px rgba(51,204,51,0.4); }
+    .btn-play { background: linear-gradient(135deg, #f59e0b, #ea580c, #ef4444); border-bottom: 5px solid #991b1b; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4); }
+    .btn-join { background: rgba(30, 41, 59, 0.85); border: 2px solid rgba(56, 189, 248, 0.6); border-bottom: 4px solid rgba(2, 132, 199, 0.8); height: 3.1rem; font-size: 1.05rem; color: #38bdf8; }
+    .btn-local { background: linear-gradient(135deg, #8b5cf6, #6d28d9); border-bottom: 5px solid #4c1d95; box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4); }
+    .btn-online { background: linear-gradient(135deg, #ec4899, #be185d); border-bottom: 5px solid #831843; box-shadow: 0 8px 24px rgba(236, 72, 153, 0.4); }
+    .btn-quit { background: rgba(255, 255, 255, 0.08); border: 2px solid rgba(255, 255, 255, 0.18); border-bottom: 3px solid rgba(255, 255, 255, 0.25); box-shadow: none; color: #cbd5e1; height: 3rem; font-size: 0.95rem; }
+    .btn-quit:hover { background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; }
 
     .pro-lock-overlay {
       position: absolute;
       inset: 0;
-      background: rgba(0,0,0,0.6);
+      background: rgba(15, 23, 42, 0.75);
       backdrop-filter: blur(4px);
-      border-radius: 9999px;
+      border-radius: 20px;
       z-index: 20;
       display: flex;
       align-items: center;
@@ -378,7 +378,6 @@ import { SuperArcadeBridgeService } from '../../core/services/super-arcade-bridg
       color: #fbbf24;
       font-weight: 900;
       font-size: 0.875rem;
-      letter-spacing: 0.1em;
       text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
   `]
@@ -946,6 +945,7 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
     const genre = this.game.genre?.toLowerCase() || '';
 
     const customGradients: Record<string, string> = {
+      'subway-surfers': 'radial-gradient(circle at center, rgba(15, 23, 42, 0.4) 0%, rgba(2, 6, 23, 0.95) 100%)',
       'space-shooter': 'radial-gradient(circle at center, #1e1b4b 0%, #03000a 100%)',
       'tank-battle': 'linear-gradient(135deg, #18181b 0%, #27272a 50%, #09090b 100%)',
       'air-hockey': 'radial-gradient(circle at center, #0f172a 0%, #020617 100%)',
