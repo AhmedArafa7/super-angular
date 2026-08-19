@@ -63,58 +63,58 @@ interface LeaderboardEntry {
          (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)">
       
       <!-- Top HUD (Visible during active gameplay) -->
-      <div *ngIf="gameState === 'PLAYING' || gameState === 'PAUSED'" class="absolute top-4 inset-x-4 z-20 flex items-center justify-between pointer-events-none">
+      <div *ngIf="gameState === 'PLAYING' || gameState === 'PAUSED'" class="absolute top-2 sm:top-4 inset-x-2 sm:inset-x-4 z-20 flex items-center justify-between pointer-events-none gap-1 sm:gap-2">
         
         <!-- Left HUD: Coins, Keys, Multiplier -->
-        <div class="flex items-center gap-2 pointer-events-auto">
-          <div class="bg-black/75 backdrop-blur-md border border-amber-400/40 px-3.5 py-1.5 rounded-2xl flex items-center gap-2 shadow-xl">
-            <span class="text-lg">🪙</span>
-            <span class="text-base font-black text-amber-300">{{ totalCoins.toLocaleString() }}</span>
-            <span class="text-xs text-amber-200/70">(+{{ coins }})</span>
+        <div class="flex items-center gap-1 sm:gap-2 pointer-events-auto">
+          <div class="bg-black/75 backdrop-blur-md border border-amber-400/40 px-2 sm:px-3.5 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl flex items-center gap-1 sm:gap-2 shadow-xl">
+            <span class="text-sm sm:text-lg">🪙</span>
+            <span class="text-xs sm:text-base font-black text-amber-300">{{ totalCoins.toLocaleString() }}</span>
+            <span class="text-[9px] sm:text-xs text-amber-200/70 hidden sm:inline">(+{{ coins }})</span>
           </div>
 
-          <div class="bg-black/75 backdrop-blur-md border border-cyan-400/40 px-3.5 py-1.5 rounded-2xl flex items-center gap-2 shadow-xl">
-            <span class="text-lg">🔑</span>
-            <span class="text-base font-black text-cyan-300">{{ totalKeys }}</span>
+          <div class="bg-black/75 backdrop-blur-md border border-cyan-400/40 px-2 sm:px-3.5 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl flex items-center gap-1 sm:gap-2 shadow-xl">
+            <span class="text-sm sm:text-lg">🔑</span>
+            <span class="text-xs sm:text-base font-black text-cyan-300">{{ totalKeys }}</span>
           </div>
 
-          <div class="bg-gradient-to-r from-amber-500 to-orange-600 px-3 py-1.5 rounded-2xl font-black text-xs text-slate-950 shadow-lg animate-pulse">
+          <div class="bg-gradient-to-r from-amber-500 to-orange-600 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl font-black text-[10px] sm:text-xs text-slate-950 shadow-lg animate-pulse">
             x{{ scoreMultiplier }}
           </div>
         </div>
 
         <!-- Center HUD: Distance & Score -->
         <div class="flex flex-col items-center">
-          <div class="text-2xl sm:text-3xl font-black text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] tracking-wider">
-            {{ score.toLocaleString() }} <span class="text-sm font-bold text-amber-400">متر</span>
+          <div class="text-lg sm:text-3xl font-black text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] tracking-wider">
+            {{ score.toLocaleString() }} <span class="text-[11px] sm:text-sm font-bold text-amber-400">متر</span>
           </div>
 
           <!-- Police Chase Distance Meter -->
-          <div class="w-36 sm:w-48 bg-slate-900/80 border border-white/20 rounded-full h-3 overflow-hidden p-0.5 mt-1 shadow-md">
+          <div class="w-24 sm:w-48 bg-slate-900/80 border border-white/20 rounded-full h-2 sm:h-3 overflow-hidden p-0.5 mt-0.5 sm:mt-1 shadow-md">
             <div class="h-full rounded-full transition-all duration-150" 
                  [ngClass]="chaseDistance < 15 ? 'bg-red-500 animate-pulse' : (chaseDistance < 30 ? 'bg-amber-500' : 'bg-emerald-500')"
                  [style.width.%]="Math.min(100, (chaseDistance / 60) * 100)"></div>
           </div>
-          <span class="text-[10px] text-slate-300 font-bold mt-0.5">👮‍♂️ مسافة الشرطي: {{ Math.round(chaseDistance) }}م</span>
+          <span class="text-[8px] sm:text-[10px] text-slate-300 font-bold mt-0.5">👮‍♂️ {{ Math.round(chaseDistance) }}م</span>
         </div>
 
         <!-- Right HUD: Missions Toggle, Pause, Sound -->
-        <div class="flex items-center gap-2 pointer-events-auto">
-          <button (click)="toggleMissionsBanner()" class="bg-black/75 hover:bg-black border border-white/20 p-2.5 rounded-2xl transition-all shadow-xl cursor-pointer text-xs font-bold text-amber-300">
-            🎯 المهمات ({{ getCompletedMissionsCount() }}/3)
+        <div class="flex items-center gap-1 sm:gap-2 pointer-events-auto">
+          <button (click)="toggleMissionsBanner()" class="bg-black/75 hover:bg-black border border-white/20 p-1.5 sm:p-2.5 rounded-xl sm:rounded-2xl transition-all shadow-xl cursor-pointer text-[10px] sm:text-xs font-bold text-amber-300">
+            🎯 <span class="hidden sm:inline">المهمات</span> ({{ getCompletedMissionsCount() }}/3)
           </button>
-          <button (click)="toggleSound()" class="bg-black/75 hover:bg-black border border-white/20 p-2.5 rounded-2xl transition-all shadow-xl cursor-pointer">
+          <button (click)="toggleSound()" class="bg-black/75 hover:bg-black border border-white/20 p-1.5 sm:p-2.5 rounded-xl sm:rounded-2xl transition-all shadow-xl cursor-pointer text-xs sm:text-base">
             <span *ngIf="!isMuted">🔊</span>
             <span *ngIf="isMuted">🔇</span>
           </button>
-          <button (click)="pauseGame()" class="bg-black/75 hover:bg-black border border-white/20 px-3 py-2 rounded-2xl text-xs font-black transition-all shadow-xl cursor-pointer flex items-center gap-1.5">
-            ⏸️ إيقاف
+          <button (click)="pauseGame()" class="bg-black/75 hover:bg-black border border-white/20 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-black transition-all shadow-xl cursor-pointer flex items-center gap-1">
+            ⏸️ <span class="hidden sm:inline">إيقاف</span>
           </button>
         </div>
       </div>
 
       <!-- Missions Banner Dropdown in HUD -->
-      <div *ngIf="showMissionsBanner && (gameState === 'PLAYING' || gameState === 'PAUSED')" class="absolute top-20 left-4 z-30 w-72 bg-slate-900/95 border-2 border-amber-500/50 backdrop-blur-md rounded-2xl p-3 shadow-2xl animate-in fade-in duration-200">
+      <div *ngIf="showMissionsBanner && (gameState === 'PLAYING' || gameState === 'PAUSED')" class="absolute top-16 sm:top-20 left-2 sm:left-4 z-30 w-64 sm:w-72 bg-slate-900/95 border-2 border-amber-500/50 backdrop-blur-md rounded-2xl p-3 shadow-2xl animate-in fade-in duration-200">
         <div class="flex items-center justify-between border-b border-white/10 pb-1.5 mb-2">
           <span class="text-xs font-black text-amber-400">🎯 مهمات المستوى {{ missionTier }}</span>
           <span class="text-[10px] text-slate-400">المضاعف: x{{ scoreMultiplier }}</span>
@@ -133,16 +133,16 @@ interface LeaderboardEntry {
       </div>
 
       <!-- Streak Multiplier HUD Badge -->
-      <div *ngIf="streakCombo > 2 && gameState === 'PLAYING'" class="absolute top-24 left-6 z-20 pointer-events-none animate-bounce">
-        <div class="bg-gradient-to-r from-yellow-400 via-amber-500 to-red-500 text-slate-950 font-black px-4 py-1.5 rounded-2xl text-sm shadow-2xl border-2 border-white">
+      <div *ngIf="streakCombo > 2 && gameState === 'PLAYING'" class="absolute top-20 sm:top-24 left-4 sm:left-6 z-20 pointer-events-none animate-bounce">
+        <div class="bg-gradient-to-r from-yellow-400 via-amber-500 to-red-500 text-slate-950 font-black px-3 sm:px-4 py-1 sm:py-1.5 rounded-2xl text-xs sm:text-sm shadow-2xl border-2 border-white">
           ⚡ STREAK x{{ getComboMultiplier() }}! ({{ streakCombo }})
         </div>
       </div>
 
       <!-- Active Power-ups Bar -->
-      <div class="absolute top-20 right-6 z-20 flex flex-col gap-1.5 pointer-events-none">
+      <div class="absolute top-16 sm:top-20 right-3 sm:right-6 z-20 flex flex-col gap-1 sm:gap-1.5 pointer-events-none">
         <ng-container *ngFor="let pKey of powerupKeys">
-          <div *ngIf="powerups[pKey]?.active" class="bg-slate-900/90 border border-amber-400/50 backdrop-blur-md px-3 py-1 rounded-2xl text-xs font-bold text-amber-300 shadow-xl flex items-center gap-1.5 animate-pulse">
+          <div *ngIf="powerups[pKey]?.active" class="bg-slate-900/90 border border-amber-400/50 backdrop-blur-md px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-bold text-amber-300 shadow-xl flex items-center gap-1.5 animate-pulse">
             <span>{{ powerupConfigs[pKey].icon }}</span>
             <span>{{ powerupConfigs[pKey].name }}:</span>
             <span class="text-white font-black">{{ Math.ceil(powerups[pKey].timer) }}ث</span>
@@ -150,39 +150,39 @@ interface LeaderboardEntry {
         </ng-container>
 
         <!-- Side Collision Strike Warning Badge -->
-        <div *ngIf="stumbleCount > 0 && gameState === 'PLAYING'" class="bg-red-950/95 border-2 border-red-500 text-red-200 font-black px-3.5 py-1.5 rounded-2xl text-xs shadow-[0_0_20px_rgba(239,68,68,0.7)] flex items-center gap-2 backdrop-blur-md animate-pulse">
-          <span class="text-base animate-bounce">⚠️</span>
+        <div *ngIf="stumbleCount > 0 && gameState === 'PLAYING'" class="bg-red-950/95 border-2 border-red-500 text-red-200 font-black px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs shadow-[0_0_20px_rgba(239,68,68,0.7)] flex items-center gap-1.5 sm:gap-2 backdrop-blur-md animate-pulse">
+          <span class="text-sm sm:text-base animate-bounce">⚠️</span>
           <div class="flex flex-col">
             <span class="text-red-400 font-black">اصطدام جانبي ({{ stumbleCount }}/2)</span>
-            <span class="text-[10px] text-red-200">خبطة ثانية = إمساك فوراً! (تعافٍ: {{ Math.ceil(stumbleResetTimer) }}ث)</span>
+            <span class="text-[9px] sm:text-[10px] text-red-200">خبطة ثانية = إمساك فوراً! (تعافٍ: {{ Math.ceil(stumbleResetTimer) }}ث)</span>
           </div>
         </div>
       </div>
 
       <!-- Local 2-Player Inspector Action Buttons (When mode is local_vs) -->
-      <div *ngIf="activeMode === 'local_vs' && gameState === 'PLAYING'" class="absolute bottom-6 inset-x-6 z-30 flex items-center justify-between pointer-events-auto">
-        <div class="bg-black/80 backdrop-blur-md border border-cyan-500/40 p-3 rounded-2xl flex items-center gap-2 shadow-2xl">
-          <span class="text-xs font-black text-cyan-300">🎮 تحكم الهارب:</span>
-          <span class="text-xs text-white">الأسهم ⬅️ ➡️ ⬆️ ⬇️</span>
+      <div *ngIf="activeMode === 'local_vs' && gameState === 'PLAYING'" class="absolute bottom-4 sm:bottom-6 inset-x-3 sm:inset-x-6 z-30 flex items-center justify-between pointer-events-auto">
+        <div class="bg-black/80 backdrop-blur-md border border-cyan-500/40 p-2 sm:p-3 rounded-xl sm:rounded-2xl flex items-center gap-2 shadow-2xl">
+          <span class="text-[11px] sm:text-xs font-black text-cyan-300">🎮 تحكم الهارب:</span>
+          <span class="text-[11px] sm:text-xs text-white">⬅️ ➡️ ⬆️ ⬇️</span>
         </div>
 
-        <div class="bg-black/80 backdrop-blur-md border border-amber-500/40 p-2.5 rounded-2xl flex items-center gap-2 shadow-2xl">
-          <span class="text-xs font-black text-amber-300">👮‍♂️ قدرات الشرطي (P2):</span>
-          <button (click)="triggerCopBoost()" [disabled]="copBoostCd > 0" class="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-600 disabled:opacity-40 text-slate-950 font-black text-xs rounded-xl cursor-pointer">
-            💨 تيربو (W) {{ copBoostCd > 0 ? '(' + copBoostCd + 's)' : '' }}
+        <div class="bg-black/80 backdrop-blur-md border border-amber-500/40 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1.5 sm:gap-2 shadow-2xl">
+          <span class="text-[11px] sm:text-xs font-black text-amber-300 hidden sm:inline">👮‍♂️ الشرطي:</span>
+          <button (click)="triggerCopBoost()" [disabled]="copBoostCd > 0" class="px-2.5 sm:px-3 py-1 sm:py-1.5 bg-gradient-to-r from-amber-500 to-orange-600 disabled:opacity-40 text-slate-950 font-black text-[10px] sm:text-xs rounded-xl cursor-pointer">
+            💨 تيربو
           </button>
-          <button (click)="triggerCopTrap()" [disabled]="copTrapCd > 0" class="px-3 py-1.5 bg-gradient-to-r from-red-500 to-rose-600 disabled:opacity-40 text-white font-black text-xs rounded-xl cursor-pointer">
-            🚧 فخ (S) {{ copTrapCd > 0 ? '(' + copTrapCd + 's)' : '' }}
+          <button (click)="triggerCopTrap()" [disabled]="copTrapCd > 0" class="px-2.5 sm:px-3 py-1 sm:py-1.5 bg-gradient-to-r from-red-500 to-rose-600 disabled:opacity-40 text-white font-black text-[10px] sm:text-xs rounded-xl cursor-pointer">
+            🚧 فخ
           </button>
-          <button (click)="triggerCopDog()" [disabled]="copDogCd > 0" class="px-3 py-1.5 bg-gradient-to-r from-purple-500 to-indigo-600 disabled:opacity-40 text-white font-black text-xs rounded-xl cursor-pointer">
-            🐕 هجوم الكلب (E) {{ copDogCd > 0 ? '(' + copDogCd + 's)' : '' }}
+          <button (click)="triggerCopDog()" [disabled]="copDogCd > 0" class="px-2.5 sm:px-3 py-1 sm:py-1.5 bg-gradient-to-r from-purple-500 to-indigo-600 disabled:opacity-40 text-white font-black text-[10px] sm:text-xs rounded-xl cursor-pointer">
+            🐕 كلب
           </button>
         </div>
       </div>
 
       <!-- Floating Banner Announcements -->
-      <div *ngIf="floatingBannerText" class="absolute top-28 inset-x-0 z-30 flex justify-center pointer-events-none animate-in fade-in zoom-in duration-200">
-        <div class="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 text-slate-950 font-black px-6 py-2.5 rounded-full shadow-2xl border-2 border-white text-sm">
+      <div *ngIf="floatingBannerText" class="absolute top-20 sm:top-28 inset-x-0 z-30 flex justify-center pointer-events-none animate-in fade-in zoom-in duration-200 px-4">
+        <div class="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 text-slate-950 font-black px-4 sm:px-6 py-1.5 sm:py-2.5 rounded-full shadow-2xl border-2 border-white text-xs sm:text-sm text-center">
           {{ floatingBannerText }}
         </div>
       </div>
@@ -191,15 +191,15 @@ interface LeaderboardEntry {
       <div #canvasContainer class="absolute inset-0 w-full h-full z-0"></div>
 
       <!-- Tap to Play Sprint Prompt (Intro State) -->
-      <div *ngIf="gameState === 'INTRO_IDLE'" (click)="startSprintFromIntro()" class="absolute inset-0 z-20 flex flex-col items-center justify-end pb-24 bg-gradient-to-t from-black/80 via-transparent to-transparent cursor-pointer">
-        <div class="bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 px-8 py-4 rounded-full font-black text-xl shadow-[0_0_40px_rgba(245,158,11,0.8)] animate-bounce border-2 border-white">
-          🏃‍♂️ اضغط في أي مكان لبدء الجري والهروب!
+      <div *ngIf="gameState === 'INTRO_IDLE'" (click)="startSprintFromIntro()" class="absolute inset-0 z-20 flex flex-col items-center justify-end pb-16 sm:pb-24 bg-gradient-to-t from-black/80 via-transparent to-transparent cursor-pointer px-4 text-center">
+        <div class="bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 px-6 sm:px-8 py-3 sm:py-4 rounded-full font-black text-base sm:text-xl shadow-[0_0_40px_rgba(245,158,11,0.8)] animate-bounce border-2 border-white">
+          🏃‍♂️ اضغط في أي مكان لبدء الجري!
         </div>
-        <p class="text-xs text-slate-300 font-bold mt-3">استخدم الأسهم ⬅️ ➡️ أو اسحب الشاشة للمراوغة، ⬆️ للقفز، ⬇️ للتزحلق تحت الحواجز</p>
+        <p class="text-[11px] sm:text-xs text-slate-300 font-bold mt-2 sm:mt-3">اسحب الشاشة ⬅️ ➡️ للمراوغة، ⬆️ للقفز، ⬇️ للتزحلق</p>
       </div>
 
       <!-- ================= 1. START MENU OVERLAY (TROPICAL BEACH DASH EDITION) ================= -->
-      <div *ngIf="gameState === 'MENU'" class="absolute inset-0 z-40 flex items-center justify-center p-3 sm:p-4 bg-gradient-to-br from-sky-500 via-cyan-600 to-blue-900 overflow-hidden select-none">
+      <div *ngIf="gameState === 'MENU'" class="absolute inset-0 z-40 flex items-center justify-center p-2 sm:p-4 bg-gradient-to-br from-sky-500 via-cyan-600 to-blue-900 overflow-hidden select-none">
         
         <!-- Tropical Sunny Ocean & Beach Backdrop Overlay -->
         <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-amber-200/30 via-transparent to-blue-950/80"></div>
@@ -222,7 +222,7 @@ interface LeaderboardEntry {
         </div>
 
         <!-- Center Station Card (Beach Resort Edition) -->
-        <div class="relative w-full max-w-[450px] bg-slate-900/90 backdrop-blur-xl border-2 border-cyan-500/60 rounded-[36px] p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.95)] flex flex-col items-center text-center">
+        <div class="relative w-full max-w-[440px] max-h-[94dvh] overflow-y-auto bg-slate-900/90 backdrop-blur-xl border-2 border-cyan-500/60 rounded-[28px] sm:rounded-[36px] p-4 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.95)] flex flex-col items-center text-center">
           
           <!-- Small Beach Palm Badge at Top Edge -->
           <div class="absolute -top-3.5 inset-x-0 mx-auto w-12 h-6 bg-slate-900 border border-cyan-500 rounded-full flex items-center justify-center shadow-lg text-sm z-20">
@@ -230,105 +230,105 @@ interface LeaderboardEntry {
           </div>
 
           <!-- Header Section: Inspector Portrait + BEACH DASH Title + Beach Cruiser Train -->
-          <div class="w-full flex items-center justify-between mt-1 mb-3">
+          <div class="w-full flex items-center justify-between mt-0.5 sm:mt-1 mb-2 sm:mb-3">
             <!-- Inspector Portrait -->
-            <div class="w-16 h-16 rounded-2xl bg-gradient-to-b from-blue-950 to-slate-900 border border-cyan-400/40 flex items-center justify-center text-3xl shadow-lg relative overflow-hidden">
-              <span class="transform scale-125">👮‍♂️</span>
+            <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-b from-blue-950 to-slate-900 border border-cyan-400/40 flex items-center justify-center text-2xl sm:text-3xl shadow-lg relative overflow-hidden shrink-0">
+              <span class="transform scale-110 sm:scale-125">👮‍♂️</span>
             </div>
 
             <!-- Center Title & Arabic Subtitle -->
             <div class="flex flex-col items-center flex-1 px-2">
-              <h1 class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 via-amber-400 to-orange-500 tracking-wider drop-shadow-[0_2px_12px_rgba(245,158,11,0.7)] font-sans">
+              <h1 class="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 via-amber-400 to-orange-500 tracking-wider drop-shadow-[0_2px_12px_rgba(245,158,11,0.7)] font-sans">
                 BEACH DASH 🏖️
               </h1>
-              <span class="text-xs font-bold text-cyan-200 mt-0.5 tracking-wide">الهروب عبر شاطئ البحر الاستوائي</span>
+              <span class="text-[10px] sm:text-xs font-bold text-cyan-200 mt-0.5 tracking-wide">الهروب عبر شاطئ البحر الاستوائي</span>
             </div>
 
             <!-- Beach Train Graphic -->
-            <div class="w-16 h-16 rounded-2xl bg-gradient-to-b from-cyan-950 to-blue-900 border border-cyan-400/40 flex items-center justify-center text-3xl shadow-lg relative overflow-hidden">
-              <span class="transform scale-125">🚆</span>
+            <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-b from-cyan-950 to-blue-900 border border-cyan-400/40 flex items-center justify-center text-2xl sm:text-3xl shadow-lg relative overflow-hidden shrink-0">
+              <span class="transform scale-110 sm:scale-125">🚆</span>
             </div>
           </div>
 
           <!-- Stats / Wallet Pill Bar (ذهب / طاقة / مستوى) -->
-          <div class="w-full bg-black/75 border border-white/15 rounded-2xl py-2 px-3 flex items-center justify-between text-xs font-black mb-4 shadow-inner">
+          <div class="w-full bg-black/75 border border-white/15 rounded-xl sm:rounded-2xl py-1.5 sm:py-2 px-2.5 sm:px-3 flex items-center justify-between text-[11px] sm:text-xs font-black mb-3 sm:mb-4 shadow-inner">
             <div class="flex items-center gap-1 text-amber-300">
-              <span class="text-slate-400 font-bold text-[10px]">ذهب:</span>
+              <span class="text-slate-400 font-bold text-[9px] sm:text-[10px]">ذهب:</span>
               <span>🪙 {{ totalCoins.toLocaleString() }}</span>
             </div>
             <div class="w-px h-3.5 bg-white/20"></div>
             <div class="flex items-center gap-1 text-cyan-300">
-              <span class="text-slate-400 font-bold text-[10px]">طاقة:</span>
+              <span class="text-slate-400 font-bold text-[9px] sm:text-[10px]">طاقة:</span>
               <span>⚡ 4</span>
             </div>
             <div class="w-px h-3.5 bg-white/20"></div>
             <div class="flex items-center gap-1 text-orange-400">
-              <span class="text-slate-400 font-bold text-[10px]">مستوى:</span>
+              <span class="text-slate-400 font-bold text-[9px] sm:text-[10px]">مستوى:</span>
               <span>{{ missionTier }} (x{{ scoreMultiplier }}) 🔑 {{ totalKeys }}</span>
             </div>
           </div>
 
           <!-- 4 Ticket-Style Play Mode Buttons -->
-          <div class="flex flex-col gap-2.5 w-full">
+          <div class="flex flex-col gap-2 sm:gap-2.5 w-full">
             
             <!-- Ticket 1: Single Player (Green) -->
-            <button (click)="startGame('single')" class="relative w-full h-12 bg-emerald-950/70 hover:bg-emerald-900/90 border-2 border-emerald-500/80 rounded-2xl flex items-center justify-between px-3 shadow-[0_0_15px_rgba(16,185,129,0.25)] transition-all transform hover:scale-[1.02] cursor-pointer group">
-              <div class="flex items-center gap-2.5">
-                <span class="text-[10px] font-black text-emerald-400 border-l-2 border-dashed border-emerald-500/50 pl-2.5 py-0.5">Ticket 1</span>
-                <span class="font-black text-sm text-emerald-300 group-hover:text-white">🎮 اللعب الفردي (كلاسيك)</span>
+            <button (click)="startGame('single')" class="relative w-full h-11 sm:h-12 bg-emerald-950/70 hover:bg-emerald-900/90 border-2 border-emerald-500/80 rounded-xl sm:rounded-2xl flex items-center justify-between px-3 shadow-[0_0_15px_rgba(16,185,129,0.25)] transition-all transform hover:scale-[1.02] cursor-pointer group">
+              <div class="flex items-center gap-2">
+                <span class="text-[9px] sm:text-[10px] font-black text-emerald-400 border-l-2 border-dashed border-emerald-500/50 pl-2 py-0.5">Ticket 1</span>
+                <span class="font-black text-xs sm:text-sm text-emerald-300 group-hover:text-white">🎮 اللعب الفردي (كلاسيك)</span>
               </div>
-              <span class="text-lg">🎮</span>
+              <span class="text-base sm:text-lg">🎮</span>
             </button>
 
             <!-- Ticket 2: Local VS (Blue) -->
-            <button (click)="startGame('local_vs')" class="relative w-full h-12 bg-cyan-950/70 hover:bg-cyan-900/90 border-2 border-cyan-500/80 rounded-2xl flex items-center justify-between px-3 shadow-[0_0_15px_rgba(6,182,212,0.25)] transition-all transform hover:scale-[1.02] cursor-pointer group">
-              <div class="flex items-center gap-2.5">
-                <span class="text-[10px] font-black text-cyan-400 border-l-2 border-dashed border-cyan-500/50 pl-2.5 py-0.5">Ticket 2</span>
-                <span class="font-black text-sm text-cyan-300 group-hover:text-white">👥 اللعب محلياً (شرطي ضد هارب)</span>
+            <button (click)="startGame('local_vs')" class="relative w-full h-11 sm:h-12 bg-cyan-950/70 hover:bg-cyan-900/90 border-2 border-cyan-500/80 rounded-xl sm:rounded-2xl flex items-center justify-between px-3 shadow-[0_0_15px_rgba(6,182,212,0.25)] transition-all transform hover:scale-[1.02] cursor-pointer group">
+              <div class="flex items-center gap-2">
+                <span class="text-[9px] sm:text-[10px] font-black text-cyan-400 border-l-2 border-dashed border-cyan-500/50 pl-2 py-0.5">Ticket 2</span>
+                <span class="font-black text-xs sm:text-sm text-cyan-300 group-hover:text-white">👥 اللعب محلياً (شرطي ضد هارب)</span>
               </div>
-              <span class="text-lg">👥</span>
+              <span class="text-base sm:text-lg">👥</span>
             </button>
 
             <!-- Ticket 3: Private Room P2P (Charcoal/Silver) -->
-            <button (click)="openRoomModal()" class="relative w-full h-12 bg-slate-800/90 hover:bg-slate-700 border-2 border-slate-500/80 rounded-2xl flex items-center justify-between px-3 shadow-md transition-all transform hover:scale-[1.02] cursor-pointer group">
-              <div class="flex items-center gap-2.5">
-                <span class="text-[10px] font-black text-slate-400 border-l-2 border-dashed border-slate-500/50 pl-2.5 py-0.5">Ticket 3</span>
-                <span class="font-black text-sm text-slate-200 group-hover:text-white">🎯 إنشاء غرفة خاصة (P2P Online)</span>
+            <button (click)="openRoomModal()" class="relative w-full h-11 sm:h-12 bg-slate-800/90 hover:bg-slate-700 border-2 border-slate-500/80 rounded-xl sm:rounded-2xl flex items-center justify-between px-3 shadow-md transition-all transform hover:scale-[1.02] cursor-pointer group">
+              <div class="flex items-center gap-2">
+                <span class="text-[9px] sm:text-[10px] font-black text-slate-400 border-l-2 border-dashed border-slate-500/50 pl-2 py-0.5">Ticket 3</span>
+                <span class="font-black text-xs sm:text-sm text-slate-200 group-hover:text-white">🎯 إنشاء غرفة خاصة (P2P Online)</span>
               </div>
-              <span class="text-lg">🔗</span>
+              <span class="text-base sm:text-lg">🔗</span>
             </button>
 
             <!-- Ticket Pro: Online Pro (Purple) -->
-            <button (click)="startProMode()" class="relative w-full h-12 bg-purple-950/70 hover:bg-purple-900/90 border-2 border-purple-500/80 rounded-2xl flex items-center justify-between px-3 shadow-[0_0_15px_rgba(168,85,247,0.25)] transition-all transform hover:scale-[1.02] cursor-pointer group">
-              <div class="flex items-center gap-2.5">
-                <span class="text-[10px] font-black text-purple-400 border-l-2 border-dashed border-purple-500/50 pl-2.5 py-0.5">Pro</span>
-                <span class="font-black text-sm text-purple-300 group-hover:text-white">🏆 اللعب أونلاين Pro (للمحترفين)</span>
+            <button (click)="startProMode()" class="relative w-full h-11 sm:h-12 bg-purple-950/70 hover:bg-purple-900/90 border-2 border-purple-500/80 rounded-xl sm:rounded-2xl flex items-center justify-between px-3 shadow-[0_0_15px_rgba(168,85,247,0.25)] transition-all transform hover:scale-[1.02] cursor-pointer group">
+              <div class="flex items-center gap-2">
+                <span class="text-[9px] sm:text-[10px] font-black text-purple-400 border-l-2 border-dashed border-purple-500/50 pl-2 py-0.5">Pro</span>
+                <span class="font-black text-xs sm:text-sm text-purple-300 group-hover:text-white">🏆 اللعب أونلاين Pro (للمحترفين)</span>
               </div>
-              <span class="text-lg">🏆</span>
+              <span class="text-base sm:text-lg">🏆</span>
             </button>
 
           </div>
 
           <!-- Bottom 3 Action Pills: Heroes, Spin Wheel, Shop -->
-          <div class="grid grid-cols-3 gap-2 w-full mt-3.5">
-            <button (click)="openLeaderboard()" class="py-2 px-1 bg-slate-800/90 hover:bg-slate-700 border border-white/10 rounded-2xl text-xs font-black text-slate-300 flex items-center justify-center gap-1.5 shadow-md cursor-pointer transition-all hover:scale-105">
-              <span class="text-base">👑</span>
+          <div class="grid grid-cols-3 gap-1.5 sm:gap-2 w-full mt-3 sm:mt-3.5">
+            <button (click)="openLeaderboard()" class="py-2 px-1 bg-slate-800/90 hover:bg-slate-700 border border-white/10 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-black text-slate-300 flex items-center justify-center gap-1 shadow-md cursor-pointer transition-all hover:scale-105">
+              <span class="text-sm sm:text-base">👑</span>
               <span>Heroes</span>
             </button>
 
-            <button (click)="openWheel()" class="py-2 px-1 bg-slate-800/90 hover:bg-slate-700 border border-white/10 rounded-2xl text-xs font-black text-slate-300 flex items-center justify-center gap-1.5 shadow-md cursor-pointer transition-all hover:scale-105">
-              <span class="text-base">🎡</span>
-              <span>Spin Wheel</span>
+            <button (click)="openWheel()" class="py-2 px-1 bg-slate-800/90 hover:bg-slate-700 border border-white/10 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-black text-slate-300 flex items-center justify-center gap-1 shadow-md cursor-pointer transition-all hover:scale-105">
+              <span class="text-sm sm:text-base">🎡</span>
+              <span>Wheel</span>
             </button>
 
-            <button (click)="openShop()" class="py-2 px-1 bg-slate-800/90 hover:bg-slate-700 border border-white/10 rounded-2xl text-xs font-black text-slate-300 flex items-center justify-center gap-1.5 shadow-md cursor-pointer transition-all hover:scale-105">
-              <span class="text-base">🏪</span>
+            <button (click)="openShop()" class="py-2 px-1 bg-slate-800/90 hover:bg-slate-700 border border-white/10 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-black text-slate-300 flex items-center justify-center gap-1 shadow-md cursor-pointer transition-all hover:scale-105">
+              <span class="text-sm sm:text-base">🏪</span>
               <span>Shop</span>
             </button>
           </div>
 
           <!-- Exit Link -->
-          <button (click)="exitToArcade()" class="mt-3.5 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer flex items-center gap-1">
+          <button (click)="exitToArcade()" class="mt-2.5 sm:mt-3.5 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer flex items-center gap-1">
             <span>العودة إلى صالة الألعاب</span> <lucide-icon [img]="ArrowRight" class="w-3.5 h-3.5"></lucide-icon>
           </button>
 
@@ -358,17 +358,17 @@ interface LeaderboardEntry {
       </div>
 
       <!-- ================= 3. LIVING 3D CINEMATIC GAME OVER UI ================= -->
-      <div *ngIf="gameState === 'GAMEOVER'" class="absolute inset-0 z-50 flex flex-col justify-between p-3 sm:p-6 bg-gradient-to-t from-black/60 via-transparent to-black/40 animate-in fade-in duration-300 select-none pointer-events-none">
+      <div *ngIf="gameState === 'GAMEOVER'" class="absolute inset-0 z-50 flex flex-col justify-between p-2 sm:p-6 bg-gradient-to-t from-black/60 via-transparent to-black/40 animate-in fade-in duration-300 select-none pointer-events-none">
         
         <!-- Top Loss Title Banner (Pointer Events Auto) -->
-        <div class="flex flex-col items-center text-center mt-1 sm:mt-2 pointer-events-auto">
-          <div class="bg-red-600/95 border border-red-400 text-white text-[11px] sm:text-xs font-black px-4 py-0.5 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.8)] mb-1 tracking-widest uppercase animate-bounce">
+        <div class="flex flex-col items-center text-center mt-1 sm:mt-2 pointer-events-auto px-2">
+          <div class="bg-red-600/95 border border-red-400 text-white text-[10px] sm:text-xs font-black px-3.5 sm:px-4 py-0.5 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.8)] mb-1 tracking-widest uppercase animate-bounce">
             GAME OVER
           </div>
-          <h2 class="text-3xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-orange-400 to-red-500 drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]">
+          <h2 class="text-2xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-orange-400 to-red-500 drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]">
             لقد خسرت!
           </h2>
-          <p class="text-xs sm:text-sm text-yellow-300 font-bold mt-1 bg-black/75 border border-yellow-500/40 px-4 py-0.5 rounded-full shadow-lg backdrop-blur-md">
+          <p class="text-[11px] sm:text-sm text-yellow-300 font-bold mt-0.5 sm:mt-1 bg-black/75 border border-yellow-500/40 px-3 sm:px-4 py-0.5 rounded-full shadow-lg backdrop-blur-md">
             {{ gameOverSubtitle }}
           </p>
         </div>
@@ -377,34 +377,34 @@ interface LeaderboardEntry {
         <div class="flex-1 w-full pointer-events-none"></div>
 
         <!-- Bottom Floating Dock: Sleek Horizontal 3D Stats + Action Buttons (Pointer Events Auto) -->
-        <div class="w-full max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md border-2 border-amber-400/80 rounded-[28px] shadow-[0_15px_40px_rgba(0,0,0,0.9)] pointer-events-auto mb-1">
+        <div class="w-full max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2.5 sm:gap-3 p-2.5 sm:p-4 bg-slate-950/85 backdrop-blur-md border-2 border-amber-400/80 rounded-2xl sm:rounded-[28px] shadow-[0_15px_40px_rgba(0,0,0,0.9)] pointer-events-auto mb-1">
           
           <!-- Horizontal Stats Strip -->
-          <div class="grid grid-cols-3 gap-2 sm:gap-4 w-full md:w-auto flex-1 text-center border-b md:border-b-0 md:border-l border-white/15 pb-2.5 md:pb-0 md:pl-4">
+          <div class="grid grid-cols-3 gap-1.5 sm:gap-4 w-full md:w-auto flex-1 text-center border-b md:border-b-0 md:border-l border-white/15 pb-2 md:pb-0 md:pl-4">
             
             <!-- 1. المجمّع -->
-            <div class="flex flex-col items-center bg-black/50 rounded-2xl p-2 border border-white/10 shadow-inner">
-              <span class="text-[11px] sm:text-xs font-bold text-slate-300">المجمّع</span>
-              <span class="text-lg sm:text-2xl font-black text-yellow-300 font-mono drop-shadow-[0_2px_6px_rgba(253,224,71,0.6)]">
-                {{ score.toLocaleString() }} <span class="text-[10px] text-amber-400">م</span>
+            <div class="flex flex-col items-center bg-black/50 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 border border-white/10 shadow-inner">
+              <span class="text-[10px] sm:text-xs font-bold text-slate-300">المجمّع</span>
+              <span class="text-base sm:text-2xl font-black text-yellow-300 font-mono drop-shadow-[0_2px_6px_rgba(253,224,71,0.6)]">
+                {{ score.toLocaleString() }} <span class="text-[9px] sm:text-[10px] text-amber-400">م</span>
               </span>
             </div>
 
             <!-- 2. العملات -->
-            <div class="flex flex-col items-center bg-black/50 rounded-2xl p-2 border border-white/10 shadow-inner">
-              <span class="text-[11px] sm:text-xs font-bold text-slate-300">العملات</span>
+            <div class="flex flex-col items-center bg-black/50 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 border border-white/10 shadow-inner">
+              <span class="text-[10px] sm:text-xs font-bold text-slate-300">العملات</span>
               <div class="flex items-center gap-1">
-                <span class="text-lg sm:text-2xl font-black text-yellow-300 font-mono drop-shadow-[0_2px_6px_rgba(253,224,71,0.6)]">
+                <span class="text-base sm:text-2xl font-black text-yellow-300 font-mono drop-shadow-[0_2px_6px_rgba(253,224,71,0.6)]">
                   {{ coins.toLocaleString() }}
                 </span>
-                <span class="text-xs animate-pulse">🪙</span>
+                <span class="text-[10px] sm:text-xs animate-pulse">🪙</span>
               </div>
             </div>
 
             <!-- 3. المسافة -->
-            <div class="flex flex-col items-center bg-black/50 rounded-2xl p-2 border border-white/10 shadow-inner">
-              <span class="text-[11px] sm:text-xs font-bold text-slate-300">المسافة</span>
-              <span class="text-base sm:text-xl font-black text-cyan-300 font-mono drop-shadow-[0_2px_6px_rgba(6,182,212,0.6)]">
+            <div class="flex flex-col items-center bg-black/50 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 border border-white/10 shadow-inner">
+              <span class="text-[10px] sm:text-xs font-bold text-slate-300">المسافة</span>
+              <span class="text-sm sm:text-xl font-black text-cyan-300 font-mono drop-shadow-[0_2px_6px_rgba(6,182,212,0.6)]">
                 {{ (score / 1000).toFixed(1) }} كلم
               </span>
             </div>
@@ -412,25 +412,25 @@ interface LeaderboardEntry {
           </div>
 
           <!-- 3D Tactile Pop-Out Buttons -->
-          <div class="flex items-center gap-2.5 w-full md:w-auto">
+          <div class="flex items-center gap-2 w-full md:w-auto">
             
             <!-- Green Button: العب مرة أخرى (3D Pop-Out) -->
             <button (click)="restartCurrentGame()" 
-                    class="flex-1 md:flex-initial px-6 py-3.5 bg-gradient-to-b from-[#22c55e] to-[#15803d] border-t-2 border-l-2 border-r-2 border-[#86efac] border-b-[6px] border-[#14532d] hover:border-b-[8px] hover:-translate-y-1 active:border-b-[2px] active:translate-y-1 rounded-2xl shadow-[0_8px_20px_rgba(34,197,94,0.6)] cursor-pointer text-white font-black text-base sm:text-lg flex items-center justify-center gap-2 transition-all duration-100 select-none">
-              <span class="text-xl">🔄</span>
+                    class="flex-1 md:flex-initial px-4 sm:px-6 py-2.5 sm:py-3.5 bg-gradient-to-b from-[#22c55e] to-[#15803d] border-t-2 border-l-2 border-r-2 border-[#86efac] border-b-[5px] sm:border-b-[6px] border-[#14532d] hover:border-b-[7px] hover:-translate-y-0.5 active:border-b-[2px] active:translate-y-1 rounded-xl sm:rounded-2xl shadow-[0_8px_20px_rgba(34,197,94,0.6)] cursor-pointer text-white font-black text-sm sm:text-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-all duration-100 select-none">
+              <span class="text-base sm:text-xl">🔄</span>
               <span class="whitespace-nowrap">العب مرة أخرى</span>
             </button>
 
             <!-- Blue Button: القائمة (3D Pop-Out) -->
             <button (click)="backToMenuFromGameOver()" 
-                    class="px-4 py-3.5 bg-gradient-to-b from-[#0ea5e9] to-[#0369a1] border-t-2 border-l-2 border-r-2 border-[#7dd3fc] border-b-[6px] border-[#0c4a6e] hover:border-b-[8px] hover:-translate-y-1 active:border-b-[2px] active:translate-y-1 rounded-2xl shadow-[0_6px_16px_rgba(14,165,233,0.5)] cursor-pointer text-white font-black text-sm sm:text-base flex items-center justify-center gap-1.5 transition-all duration-100 select-none">
+                    class="px-3 sm:px-4 py-2.5 sm:py-3.5 bg-gradient-to-b from-[#0ea5e9] to-[#0369a1] border-t-2 border-l-2 border-r-2 border-[#7dd3fc] border-b-[5px] sm:border-b-[6px] border-[#0c4a6e] hover:border-b-[7px] hover:-translate-y-0.5 active:border-b-[2px] active:translate-y-1 rounded-xl sm:rounded-2xl shadow-[0_6px_16px_rgba(14,165,233,0.5)] cursor-pointer text-white font-black text-xs sm:text-base flex items-center justify-center gap-1 transition-all duration-100 select-none">
               <span>🏠</span>
               <span class="hidden sm:inline">الرئيسية</span>
             </button>
 
             <!-- Yellow Button: المتجر (3D Pop-Out) -->
             <button (click)="openShopFromGameOver()" 
-                    class="px-4 py-3.5 bg-gradient-to-b from-[#f59e0b] to-[#b45309] border-t-2 border-l-2 border-r-2 border-[#fef08a] border-b-[6px] border-[#78350f] hover:border-b-[8px] hover:-translate-y-1 active:border-b-[2px] active:translate-y-1 rounded-2xl shadow-[0_6px_16px_rgba(245,158,11,0.5)] cursor-pointer text-slate-950 font-black text-sm sm:text-base flex items-center justify-center gap-1.5 transition-all duration-100 select-none">
+                    class="px-3 sm:px-4 py-2.5 sm:py-3.5 bg-gradient-to-b from-[#f59e0b] to-[#b45309] border-t-2 border-l-2 border-r-2 border-[#fef08a] border-b-[5px] sm:border-b-[6px] border-[#78350f] hover:border-b-[7px] hover:-translate-y-0.5 active:border-b-[2px] active:translate-y-1 rounded-xl sm:rounded-2xl shadow-[0_6px_16px_rgba(245,158,11,0.5)] cursor-pointer text-slate-950 font-black text-xs sm:text-base flex items-center justify-center gap-1 transition-all duration-100 select-none">
               <span>🏪</span>
               <span class="hidden sm:inline">المتجر</span>
             </button>
@@ -440,7 +440,7 @@ interface LeaderboardEntry {
         </div>
 
         <!-- Footer Bottom Spacer -->
-        <div class="mb-1"></div>
+        <div class="mb-0.5 sm:mb-1"></div>
 
       </div>
 
@@ -465,42 +465,42 @@ interface LeaderboardEntry {
       </div>
 
       <!-- ================= 5. SHOP MODAL (3 TABS WITH 3D GLOWING STARS) ================= -->
-      <div *ngIf="showShopModal" class="absolute inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in zoom-in duration-200">
-        <div class="relative w-full max-w-xl bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border-2 border-amber-500/60 rounded-[36px] p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.95)] flex flex-col max-h-[92vh] overflow-hidden">
+      <div *ngIf="showShopModal" class="absolute inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in zoom-in duration-200">
+        <div class="relative w-full max-w-xl bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border-2 border-amber-500/60 rounded-[28px] sm:rounded-[36px] p-3.5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.95)] flex flex-col max-h-[92dvh] overflow-hidden">
           
           <!-- Header -->
-          <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
-            <div class="flex items-center gap-3">
-              <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-2xl shadow-lg border border-amber-300">
+          <div class="flex items-center justify-between border-b border-white/10 pb-3 sm:pb-4 mb-3 sm:mb-4">
+            <div class="flex items-center gap-2 sm:gap-3">
+              <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-xl sm:text-2xl shadow-lg border border-amber-300 shrink-0">
                 🏪
               </div>
               <div>
-                <h3 class="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-400 to-orange-500">
+                <h3 class="text-base sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-400 to-orange-500">
                   متجر وترقيات Metro Dash ⚡
                 </h3>
-                <p class="text-xs text-slate-400 font-bold">طور قدراتك للوصول لأعلى سكور وافتح شخصيات وألواح نادرة</p>
+                <p class="text-[10px] sm:text-xs text-slate-400 font-bold">طور قدراتك وافتح شخصيات وألواح نادرة</p>
               </div>
             </div>
 
             <!-- Wallet Pill -->
-            <div class="flex items-center gap-2 bg-black/80 px-4 py-2 rounded-2xl border border-amber-500/50 shadow-inner">
-              <span class="text-xl animate-bounce">🪙</span>
-              <span class="text-base font-black text-amber-300">{{ totalCoins.toLocaleString() }}</span>
+            <div class="flex items-center gap-1.5 sm:gap-2 bg-black/80 px-2.5 sm:px-4 py-1 sm:py-2 rounded-xl sm:rounded-2xl border border-amber-500/50 shadow-inner">
+              <span class="text-base sm:text-xl animate-bounce">🪙</span>
+              <span class="text-xs sm:text-base font-black text-amber-300">{{ totalCoins.toLocaleString() }}</span>
             </div>
           </div>
 
           <!-- 3 Tabs Navigation -->
-          <div class="grid grid-cols-3 gap-2 bg-black/50 p-1.5 rounded-2xl mb-4 border border-white/10 shadow-inner">
-            <button (click)="shopTab = 'powers'" class="py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1.5" [ngClass]="shopTab === 'powers' ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 shadow-lg scale-105' : 'text-slate-400 hover:text-white'">
-              <span class="text-sm">⚡</span>
+          <div class="grid grid-cols-3 gap-1.5 sm:gap-2 bg-black/50 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl mb-3 sm:mb-4 border border-white/10 shadow-inner">
+            <button (click)="shopTab = 'powers'" class="py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1" [ngClass]="shopTab === 'powers' ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 shadow-lg scale-105' : 'text-slate-400 hover:text-white'">
+              <span class="text-xs sm:text-sm">⚡</span>
               <span>القدرات</span>
             </button>
-            <button (click)="shopTab = 'characters'" class="py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1.5" [ngClass]="shopTab === 'characters' ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 shadow-lg scale-105' : 'text-slate-400 hover:text-white'">
-              <span class="text-sm">👕</span>
+            <button (click)="shopTab = 'characters'" class="py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1" [ngClass]="shopTab === 'characters' ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 shadow-lg scale-105' : 'text-slate-400 hover:text-white'">
+              <span class="text-xs sm:text-sm">👕</span>
               <span>الشخصيات</span>
             </button>
-            <button (click)="shopTab = 'boards'" class="py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1.5" [ngClass]="shopTab === 'boards' ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 shadow-lg scale-105' : 'text-slate-400 hover:text-white'">
-              <span class="text-sm">🛹</span>
+            <button (click)="shopTab = 'boards'" class="py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1" [ngClass]="shopTab === 'boards' ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 shadow-lg scale-105' : 'text-slate-400 hover:text-white'">
+              <span class="text-xs sm:text-sm">🛹</span>
               <span>الألواح</span>
             </button>
           </div>
@@ -743,21 +743,20 @@ interface LeaderboardEntry {
                     </div>
                   </div>
 
-                  <p class="text-xs text-slate-300 font-medium">{{ powerupConfigs[pKey].desc }}</p>
+                  <p class="text-[10px] sm:text-xs text-slate-300 font-medium line-clamp-2">{{ powerupConfigs[pKey].desc }}</p>
 
                   <!-- Duration Stat Comparison Badges -->
-                  <div class="flex items-center gap-2 mt-1">
-                    <div class="bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 text-[10px] font-black px-2.5 py-0.5 rounded-lg">
-                      ⏱️ المدة: {{ powerupConfigs[pKey].durations[(userUpgrades[pKey] || 1) - 1] }}ث
+                  <div class="flex items-center gap-1.5 sm:gap-2 mt-0.5 sm:mt-1 flex-wrap">
+                    <div class="bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-0.5 rounded-lg">
+                      ⏱️ {{ powerupConfigs[pKey].durations[(userUpgrades[pKey] || 1) - 1] }}ث
                     </div>
 
-                    <div *ngIf="(userUpgrades[pKey] || 1) < 5" class="bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-[10px] font-black px-2.5 py-0.5 rounded-lg flex items-center gap-1">
-                      <span>➔ المستوى التالي: {{ powerupConfigs[pKey].durations[userUpgrades[pKey] || 1] }}ث</span>
-                      <span class="text-emerald-400 font-extrabold">(+{{ powerupConfigs[pKey].durations[userUpgrades[pKey] || 1] - powerupConfigs[pKey].durations[(userUpgrades[pKey] || 1) - 1] }}ث)</span>
+                    <div *ngIf="(userUpgrades[pKey] || 1) < 5" class="bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-0.5 rounded-lg flex items-center gap-1">
+                      <span>➔ التالي: {{ powerupConfigs[pKey].durations[userUpgrades[pKey] || 1] }}ث</span>
                     </div>
 
-                    <div *ngIf="(userUpgrades[pKey] || 1) >= 5" class="bg-amber-500/20 border border-amber-400/50 text-amber-300 text-[10px] font-black px-2.5 py-0.5 rounded-lg">
-                      👑 أقصى ترقية (Max Level)
+                    <div *ngIf="(userUpgrades[pKey] || 1) >= 5" class="bg-amber-500/20 border border-amber-400/50 text-amber-300 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-0.5 rounded-lg">
+                      👑 أقصى ترقية
                     </div>
                   </div>
 
@@ -765,15 +764,15 @@ interface LeaderboardEntry {
               </div>
 
               <!-- Right: 3D Tactile Upgrade Button -->
-              <div class="flex items-center sm:self-center">
+              <div class="flex items-center sm:self-center w-full sm:w-auto">
                 <button (click)="buyPowerUpgrade(pKey)" 
                         [disabled]="(userUpgrades[pKey] || 1) >= 5 || totalCoins < powerupConfigs[pKey].costs[userUpgrades[pKey] || 1]"
-                        class="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 hover:from-amber-300 hover:to-orange-400 disabled:opacity-40 disabled:pointer-events-none text-slate-950 font-black text-xs rounded-2xl shadow-[0_4px_15px_rgba(245,158,11,0.4)] transition-all transform active:scale-95 cursor-pointer flex items-center justify-center gap-2 border border-amber-300">
-                  <span *ngIf="(userUpgrades[pKey] || 1) < 5" class="text-base">⚡</span>
-                  <span *ngIf="(userUpgrades[pKey] || 1) >= 5" class="text-base">👑</span>
-                  <div class="flex flex-col text-right">
-                    <span>{{ (userUpgrades[pKey] || 1) >= 5 ? 'مكتمل بالكامل' : 'ترقية المستوى' }}</span>
-                    <span *ngIf="(userUpgrades[pKey] || 1) < 5" class="text-[11px] text-slate-950 font-extrabold flex items-center gap-1">
+                        class="w-full sm:w-auto px-4 sm:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 hover:from-amber-300 hover:to-orange-400 disabled:opacity-40 disabled:pointer-events-none text-slate-950 font-black text-[11px] sm:text-xs rounded-xl sm:rounded-2xl shadow-[0_4px_15px_rgba(245,158,11,0.4)] transition-all transform active:scale-95 cursor-pointer flex items-center justify-center gap-2 border border-amber-300">
+                  <span *ngIf="(userUpgrades[pKey] || 1) < 5" class="text-sm sm:text-base">⚡</span>
+                  <span *ngIf="(userUpgrades[pKey] || 1) >= 5" class="text-sm sm:text-base">👑</span>
+                  <div class="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-1">
+                    <span>{{ (userUpgrades[pKey] || 1) >= 5 ? 'مكتمل' : 'ترقية' }}</span>
+                    <span *ngIf="(userUpgrades[pKey] || 1) < 5" class="text-[10px] sm:text-[11px] text-slate-950 font-extrabold flex items-center gap-0.5">
                       🪙 {{ powerupConfigs[pKey].costs[userUpgrades[pKey] || 1].toLocaleString() }}
                     </span>
                   </div>
@@ -784,39 +783,39 @@ interface LeaderboardEntry {
           </div>
 
           <!-- Tab 2: Character Skins with Rich 3D Visual Previews -->
-          <div *ngIf="shopTab === 'characters'" class="flex-1 overflow-y-auto pr-1 grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          <div *ngIf="shopTab === 'characters'" class="flex-1 overflow-y-auto pr-1 grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3.5">
             <div *ngFor="let skin of characterSkins" 
-                 class="bg-slate-900/95 border-2 rounded-3xl p-4 flex flex-col justify-between shadow-2xl transition-all relative overflow-hidden group"
+                 class="bg-slate-900/95 border-2 rounded-2xl sm:rounded-3xl p-3 sm:p-4 flex flex-col justify-between shadow-2xl transition-all relative overflow-hidden group"
                  [ngClass]="selectedSkin === skin.id ? 'border-emerald-500 bg-emerald-950/30 ring-2 ring-emerald-500/20' : 'border-white/10 hover:border-amber-400/40'">
               
-              <div class="flex items-start gap-3.5">
+              <div class="flex items-start gap-2.5 sm:gap-3.5">
                 <!-- 3D Character Avatar Preview Box -->
-                <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br {{ skin.iconBg }} border border-white/20 flex flex-col items-center justify-center relative shadow-inner shrink-0 overflow-hidden">
+                <div class="w-16 h-16 sm:w-24 sm:h-24 rounded-xl sm:rounded-2xl bg-gradient-to-br {{ skin.iconBg }} border border-white/20 flex flex-col items-center justify-center relative shadow-inner shrink-0 overflow-hidden">
                   <div class="absolute inset-0 bg-radial from-white/20 to-transparent pointer-events-none"></div>
                   
                   <!-- Character Visual Icon / Avatar Art -->
-                  <div class="text-3xl sm:text-4xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)] transform group-hover:scale-110 transition-transform">
+                  <div class="text-2xl sm:text-4xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)] transform group-hover:scale-110 transition-transform">
                     {{ skin.badgeEmoji }}
                   </div>
                   
                   <!-- Floating Mini Character Color Tag -->
-                  <div class="absolute bottom-1 px-2 py-0.5 bg-black/60 backdrop-blur-md rounded-full border border-white/20 text-[9px] font-black text-white">
+                  <div class="absolute bottom-0.5 sm:bottom-1 px-1.5 sm:px-2 py-0.5 bg-black/60 backdrop-blur-md rounded-full border border-white/20 text-[8px] sm:text-[9px] font-black text-white">
                     {{ skin.id === 'jake' ? 'ORIGINAL' : (skin.id === 'cyborg' ? 'MYTHIC' : 'ELITE') }}
                   </div>
                 </div>
 
                 <!-- Character Details & Perks -->
                 <div class="flex-1 min-w-0">
-                  <div class="flex items-center justify-between gap-1 mb-1">
-                    <span class="font-black text-base text-white truncate">{{ skin.name }}</span>
-                    <span *ngIf="selectedSkin === skin.id" class="bg-emerald-500 text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded-full shadow shrink-0">مفعل</span>
-                    <span *ngIf="skin.unlocked && selectedSkin !== skin.id" class="bg-slate-800 text-cyan-300 border border-cyan-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">مفتوح</span>
+                  <div class="flex items-center justify-between gap-1 mb-0.5 sm:mb-1">
+                    <span class="font-black text-sm sm:text-base text-white truncate">{{ skin.name }}</span>
+                    <span *ngIf="selectedSkin === skin.id" class="bg-emerald-500 text-slate-950 text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full shadow shrink-0">مفعل</span>
+                    <span *ngIf="skin.unlocked && selectedSkin !== skin.id" class="bg-slate-800 text-cyan-300 border border-cyan-500/30 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0">مفتوح</span>
                   </div>
 
-                  <p class="text-xs text-slate-300 leading-relaxed mb-2">{{ skin.desc }}</p>
+                  <p class="text-[10px] sm:text-xs text-slate-300 leading-relaxed mb-1 sm:mb-2 line-clamp-2">{{ skin.desc }}</p>
 
                   <!-- Special Perk Badge -->
-                  <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] font-bold text-amber-300">
+                  <div class="inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg sm:rounded-xl bg-amber-500/10 border border-amber-500/30 text-[10px] sm:text-[11px] font-bold text-amber-300">
                     <span>{{ skin.perk }}</span>
                   </div>
                 </div>
@@ -825,46 +824,46 @@ interface LeaderboardEntry {
               <!-- Purchase / Select Action Button -->
               <button (click)="selectOrBuySkin(skin)" 
                       [disabled]="!skin.unlocked && totalCoins < skin.price"
-                      class="mt-3.5 w-full py-2.5 text-xs font-black rounded-2xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                      class="mt-2.5 sm:mt-3.5 w-full py-2 sm:py-2.5 text-[11px] sm:text-xs font-black rounded-xl sm:rounded-2xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2"
                       [ngClass]="selectedSkin === skin.id ? 'bg-emerald-500 text-slate-950 cursor-default' : (skin.unlocked ? 'bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-400/40' : 'bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 hover:brightness-110')">
                 <span>{{ selectedSkin === skin.id ? 'مفعل في اللعبة ✔️' : (skin.unlocked ? 'ارتداء الشخصية 👕' : 'فتح الشخصية 🛒') }}</span>
-                <span *ngIf="!skin.unlocked" class="text-[11px] font-black bg-slate-950/20 px-2 py-0.5 rounded-full">🪙 {{ skin.price.toLocaleString() }}</span>
+                <span *ngIf="!skin.unlocked" class="text-[10px] sm:text-[11px] font-black bg-slate-950/20 px-1.5 sm:px-2 py-0.5 rounded-full">🪙 {{ skin.price.toLocaleString() }}</span>
               </button>
             </div>
           </div>
 
           <!-- Tab 3: Hoverboards with Rich 3D Visual Previews -->
-          <div *ngIf="shopTab === 'boards'" class="flex-1 overflow-y-auto pr-1 grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          <div *ngIf="shopTab === 'boards'" class="flex-1 overflow-y-auto pr-1 grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3.5">
             <div *ngFor="let board of hoverboardsList" 
-                 class="bg-slate-900/95 border-2 rounded-3xl p-4 flex flex-col justify-between shadow-2xl transition-all relative overflow-hidden group"
+                 class="bg-slate-900/95 border-2 rounded-2xl sm:rounded-3xl p-3 sm:p-4 flex flex-col justify-between shadow-2xl transition-all relative overflow-hidden group"
                  [ngClass]="selectedBoard === board.id ? 'border-cyan-400 bg-cyan-950/30 ring-2 ring-cyan-400/20' : 'border-white/10 hover:border-cyan-500/40'">
               
-              <div class="flex items-start gap-3.5">
+              <div class="flex items-start gap-2.5 sm:gap-3.5">
                 <!-- 3D Hoverboard Visual Preview Box -->
-                <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br {{ board.iconBg }} border border-white/20 flex flex-col items-center justify-center relative shadow-inner shrink-0 overflow-hidden">
+                <div class="w-16 h-16 sm:w-24 sm:h-24 rounded-xl sm:rounded-2xl bg-gradient-to-br {{ board.iconBg }} border border-white/20 flex flex-col items-center justify-center relative shadow-inner shrink-0 overflow-hidden">
                   <div class="absolute inset-0 bg-radial from-white/20 to-transparent pointer-events-none"></div>
                   
-                  <div class="text-3xl sm:text-4xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)] transform group-hover:scale-110 group-hover:rotate-12 transition-transform">
+                  <div class="text-2xl sm:text-4xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)] transform group-hover:scale-110 group-hover:rotate-12 transition-transform">
                     🛹
                   </div>
 
-                  <div class="absolute bottom-1 px-2 py-0.5 bg-black/60 backdrop-blur-md rounded-full border border-white/20 text-[9px] font-black text-cyan-300">
+                  <div class="absolute bottom-0.5 sm:bottom-1 px-1.5 sm:px-2 py-0.5 bg-black/60 backdrop-blur-md rounded-full border border-white/20 text-[8px] sm:text-[9px] font-black text-cyan-300">
                     {{ board.id === 'classic' ? 'STANDARD' : (board.id === 'quantum' ? 'ULTRA' : 'SPECIAL') }}
                   </div>
                 </div>
 
                 <!-- Board Details & Perks -->
                 <div class="flex-1 min-w-0">
-                  <div class="flex items-center justify-between gap-1 mb-1">
-                    <span class="font-black text-base text-white truncate">{{ board.name }}</span>
-                    <span *ngIf="selectedBoard === board.id" class="bg-cyan-400 text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded-full shadow shrink-0">مجهز</span>
-                    <span *ngIf="board.unlocked && selectedBoard !== board.id" class="bg-slate-800 text-cyan-300 border border-cyan-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">مفتوح</span>
+                  <div class="flex items-center justify-between gap-1 mb-0.5 sm:mb-1">
+                    <span class="font-black text-sm sm:text-base text-white truncate">{{ board.name }}</span>
+                    <span *ngIf="selectedBoard === board.id" class="bg-cyan-400 text-slate-950 text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full shadow shrink-0">مجهز</span>
+                    <span *ngIf="board.unlocked && selectedBoard !== board.id" class="bg-slate-800 text-cyan-300 border border-cyan-500/30 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0">مفتوح</span>
                   </div>
 
-                  <p class="text-xs text-slate-300 leading-relaxed mb-2">{{ board.desc }}</p>
+                  <p class="text-[10px] sm:text-xs text-slate-300 leading-relaxed mb-1 sm:mb-2 line-clamp-2">{{ board.desc }}</p>
 
                   <!-- Special Perk Badge -->
-                  <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-[11px] font-bold text-cyan-300">
+                  <div class="inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg sm:rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-[10px] sm:text-[11px] font-bold text-cyan-300">
                     <span>{{ board.perk }}</span>
                   </div>
                 </div>
@@ -873,35 +872,35 @@ interface LeaderboardEntry {
               <!-- Purchase / Select Action Button -->
               <button (click)="selectOrBuyBoard(board)" 
                       [disabled]="!board.unlocked && totalCoins < board.price"
-                      class="mt-3.5 w-full py-2.5 text-xs font-black rounded-2xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                      class="mt-2.5 sm:mt-3.5 w-full py-2 sm:py-2.5 text-[11px] sm:text-xs font-black rounded-xl sm:rounded-2xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2"
                       [ngClass]="selectedBoard === board.id ? 'bg-cyan-400 text-slate-950 cursor-default' : (board.unlocked ? 'bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-400/40' : 'bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 hover:brightness-110')">
                 <span>{{ selectedBoard === board.id ? 'مجهز في اللعبة ✔️' : (board.unlocked ? 'تجهيز اللوح 🛹' : 'شراء اللوح 🛒') }}</span>
-                <span *ngIf="!board.unlocked" class="text-[11px] font-black bg-slate-950/20 px-2 py-0.5 rounded-full">🪙 {{ board.price.toLocaleString() }}</span>
+                <span *ngIf="!board.unlocked" class="text-[10px] sm:text-[11px] font-black bg-slate-950/20 px-1.5 sm:px-2 py-0.5 rounded-full">🪙 {{ board.price.toLocaleString() }}</span>
               </button>
             </div>
           </div>
 
           <!-- Close Shop Button -->
-          <button (click)="closeShop()" class="w-full mt-4 py-3 bg-slate-800/90 hover:bg-slate-700 text-white font-black text-xs rounded-2xl transition-all cursor-pointer border border-white/10">
+          <button (click)="closeShop()" class="w-full mt-3 sm:mt-4 py-2.5 sm:py-3 bg-slate-800/90 hover:bg-slate-700 text-white font-black text-xs rounded-xl sm:rounded-2xl transition-all cursor-pointer border border-white/10">
             إغلاق المتجر
           </button>
         </div>
       </div>
 
       <!-- ================= 6. LUCKY SPIN WHEEL MODAL ================= -->
-      <div *ngIf="showWheelModal" class="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-        <div class="relative w-full max-w-sm bg-slate-900 border-2 border-amber-500/50 rounded-[32px] p-6 shadow-2xl flex flex-col items-center text-center">
-          <h3 class="text-2xl font-black text-amber-400 mb-1">🎡 عجلة الحظ اليومية</h3>
-          <p class="text-xs text-slate-400 mb-4">أدر العجلة واربح عملات ومفاتيح وصناديق مفاجآت!</p>
+      <div *ngIf="showWheelModal" class="absolute inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md">
+        <div class="relative w-full max-w-sm max-h-[94dvh] overflow-y-auto bg-slate-900 border-2 border-amber-500/50 rounded-[28px] sm:rounded-[32px] p-4 sm:p-6 shadow-2xl flex flex-col items-center text-center">
+          <h3 class="text-xl sm:text-2xl font-black text-amber-400 mb-1">🎡 عجلة الحظ اليومية</h3>
+          <p class="text-[11px] sm:text-xs text-slate-400 mb-3 sm:mb-4">أدر العجلة واربح عملات ومفاتيح وصناديق مفاجآت!</p>
 
           <!-- Wheel Canvas -->
-          <div class="relative w-72 h-72 flex items-center justify-center mb-4">
-            <div class="absolute -top-3 z-20 text-3xl font-black text-red-500 drop-shadow-lg">▼</div>
-            <canvas #wheelCanvas width="280" height="280" class="rounded-full shadow-2xl border-4 border-amber-400"></canvas>
+          <div class="relative w-60 h-60 sm:w-72 sm:h-72 flex items-center justify-center mb-3 sm:mb-4">
+            <div class="absolute -top-3 z-20 text-2xl sm:text-3xl font-black text-red-500 drop-shadow-lg">▼</div>
+            <canvas #wheelCanvas width="280" height="280" class="w-56 h-56 sm:w-68 sm:h-68 rounded-full shadow-2xl border-4 border-amber-400"></canvas>
           </div>
 
           <!-- Spin Button -->
-          <button (click)="spinWheel()" [disabled]="isSpinningWheel" class="w-full py-3.5 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 disabled:opacity-50 text-slate-950 font-black text-base rounded-2xl shadow-xl transition-all cursor-pointer mb-2">
+          <button (click)="spinWheel()" [disabled]="isSpinningWheel" class="w-full py-3 sm:py-3.5 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 disabled:opacity-50 text-slate-950 font-black text-sm sm:text-base rounded-xl sm:rounded-2xl shadow-xl transition-all cursor-pointer mb-2">
             <span>{{ isSpinningWheel ? 'جاري الدوران... ⏳' : '🎲 تدوير العجلة مجاناً!' }}</span>
           </button>
 
@@ -912,12 +911,12 @@ interface LeaderboardEntry {
       </div>
 
       <!-- ================= 7. LEADERBOARD MODAL ================= -->
-      <div *ngIf="showLeaderboardModal" class="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-        <div class="relative w-full max-w-sm bg-slate-900 border-2 border-purple-500/50 rounded-[32px] p-6 shadow-2xl flex flex-col items-center">
-          <h3 class="text-2xl font-black text-purple-400 mb-1">🏆 لوحة الأبطال القياسية</h3>
-          <p class="text-xs text-slate-400 mb-4">أفضل السكورات المسجلة في شاطئ المترو الاستوائي 🏖️</p>
+      <div *ngIf="showLeaderboardModal" class="absolute inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md">
+        <div class="relative w-full max-w-sm max-h-[94dvh] overflow-y-auto bg-slate-900 border-2 border-purple-500/50 rounded-[28px] sm:rounded-[32px] p-4 sm:p-6 shadow-2xl flex flex-col items-center">
+          <h3 class="text-xl sm:text-2xl font-black text-purple-400 mb-1">🏆 لوحة الأبطال القياسية</h3>
+          <p class="text-[11px] sm:text-xs text-slate-400 mb-3 sm:mb-4">أفضل السكورات المسجلة في شاطئ المترو الاستوائي 🏖️</p>
 
-          <div class="w-full flex flex-col gap-2 mb-4">
+          <div class="w-full flex flex-col gap-2 mb-3 sm:mb-4">
             <div *ngFor="let rec of leaderboardList; let idx = index" class="bg-slate-950/80 border border-white/10 rounded-2xl p-3 flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <span class="text-2xl">{{ ['🥇','🥈','🥉','4️⃣','5️⃣'][idx] || '🎖️' }}</span>
@@ -1255,7 +1254,13 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     const width = container.clientWidth || window.innerWidth;
     const height = container.clientHeight || window.innerHeight;
     if (width > 0 && height > 0) {
-      this.camera.aspect = width / height;
+      const aspect = width / height;
+      this.camera.aspect = aspect;
+      if (aspect < 1.0) {
+        this.camera.fov = Math.min(80, Math.max(60, 60 / (aspect * 0.85 + 0.15)));
+      } else {
+        this.camera.fov = 60;
+      }
       this.camera.updateProjectionMatrix();
       this.renderer.setSize(width, height);
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -1418,8 +1423,10 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     this.scene.background = new THREE.Color(0x38bdf8); // Bright Tropical Summer Sky Blue
     this.scene.fog = new THREE.FogExp2(0xbae6fd, 0.0035); // Light Coastal Sea-Spray Haze
 
-    // Camera
-    this.camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 450);
+    // Camera with adaptive responsive FOV for portrait mobile screens
+    const aspect = width / height;
+    const initialFov = aspect < 1.0 ? Math.min(80, Math.max(60, 60 / (aspect * 0.85 + 0.15))) : 60;
+    this.camera = new THREE.PerspectiveCamera(initialFov, aspect, 0.1, 450);
     this.camera.position.set(0, 5.5, 9.5);
 
     // Renderer
