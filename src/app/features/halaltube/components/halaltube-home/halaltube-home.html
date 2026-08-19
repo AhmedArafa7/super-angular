@@ -65,31 +65,31 @@
     </div>
   }
 
-  <div class="home-layout flex flex-1 overflow-hidden p-6 gap-6">
+  <div class="home-layout flex flex-1 overflow-hidden p-3 sm:p-6 gap-3 sm:gap-6">
     <!-- Subscriptions Sidebar (Hidden on small screens) -->
     <div class="subs-sidebar hidden lg:block w-56 flex-shrink-0">
       <app-subscription-bar></app-subscription-bar>
     </div>
 
     <!-- Main Content Layout -->
-    <div class="main-content flex-1 min-w-0 overflow-y-auto hide-scrollbar pb-10 space-y-10">
+    <div class="main-content flex-1 min-w-0 overflow-y-auto hide-scrollbar pb-10 space-y-6 sm:space-y-10">
       
       <!-- Hero Native Ad -->
       <app-nexus-native-ads adSlot="home-hero" category="الكل" class="block mb-4"></app-nexus-native-ads>
 
       <!-- Loading State (Skeleton Cards) - Only for initial load -->
       @if (halaltube.isFeedLoading() && standardVideosList().length === 0) {
-        <div class="video-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 gap-y-8 animate-pulse">
+        <div class="video-grid grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 gap-y-4 sm:gap-y-8 animate-pulse">
           @for (i of [1,2,3,4,5,6,7,8]; track i) {
-            <div class="flex flex-col gap-3">
+            <div class="flex flex-col gap-2 sm:gap-3">
               <div class="w-full aspect-video bg-[#222222] rounded-xl border border-white/5 flex items-center justify-center">
-                <lucide-icon [img]="Video" class="w-12 h-12 text-slate-700"></lucide-icon>
+                <lucide-icon [img]="Video" class="w-8 h-8 sm:w-12 sm:h-12 text-slate-700"></lucide-icon>
               </div>
-              <div class="flex gap-3 px-1">
-                <div class="w-9 h-9 rounded-full bg-[#222222] shrink-0 mt-0.5"></div>
-                <div class="flex flex-col flex-1 gap-2 pt-1">
-                  <div class="h-4 bg-[#222222] rounded w-[90%]"></div>
-                  <div class="h-4 bg-[#222222] rounded w-[60%]"></div>
+              <div class="flex gap-2 sm:gap-3 px-0.5 sm:px-1">
+                <div class="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-[#222222] shrink-0 mt-0.5"></div>
+                <div class="flex flex-col flex-1 gap-1.5 sm:gap-2 pt-0.5 sm:pt-1">
+                  <div class="h-3 sm:h-4 bg-[#222222] rounded w-[90%]"></div>
+                  <div class="h-3 sm:h-4 bg-[#222222] rounded w-[60%]"></div>
                 </div>
               </div>
             </div>
@@ -99,43 +99,42 @@
 
       <!-- Offline / Cache Banner -->
       @if (halaltube.isUsingCachedData()) {
-        <div class="flex items-center justify-between bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-4 py-2.5 mx-2">
-          <div class="flex items-center gap-2 text-indigo-300 text-xs font-bold">
+        <div class="flex items-center justify-between bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-4 py-2.5 mx-1 text-xs">
+          <div class="flex items-center gap-2 text-indigo-300">
             <div class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
-            <span>تطبيق يعمل بالبيانات المحفوظة مؤقتاً لعدم توفر اتصال أو لحماية الحصة (Offline/Cache Mode)</span>
+            <span>وضع عدم الاتصال: يتم عرض الفيديوهات المحفوظة مؤقتاً</span>
           </div>
-          <button class="flex items-center gap-1.5 text-indigo-400 hover:text-white bg-indigo-500/20 hover:bg-indigo-500/40 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors" (click)="halaltube.forceRefresh()">
-            <lucide-icon [img]="RefreshCcw" class="w-3.5 h-3.5"></lucide-icon>
-            تحديث يدوي
+          <button class="flex items-center gap-1.5 text-indigo-400 hover:text-white bg-indigo-500/20 hover:bg-indigo-500/40 px-3 py-1 rounded-lg font-bold transition-colors cursor-pointer" (click)="halaltube.forceRefresh()">
+            تحديث
           </button>
         </div>
       }
 
-      <!-- SECTION 1: SHORTS SHELF -->
-      @if (!halaltube.isFeedLoading() && shortsList().length > 0) {
-        <div class="bg-slate-900/40 border border-white/5 rounded-3xl p-5 space-y-4 text-right animate-in fade-in duration-300">
-          <div class="flex flex-row-reverse justify-between items-center" style="display: flex; justify-content: space-between; align-items: center;">
-            <div class="flex items-center gap-2" style="display: flex; align-items: center; gap: 8px;">
-              <h3 class="text-base font-black text-white">Shorts halaltube ⚡</h3>
-              <lucide-icon [img]="Video" class="w-5 h-5 text-red-500"></lucide-icon>
+      <!-- SECTION 1: SHORTS ROW -->
+      @if (shortsList().length > 0) {
+        <div class="shorts-section bg-gradient-to-br from-slate-900/40 via-slate-900/10 to-red-950/10 border border-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-3 sm:space-y-4 shadow-xl">
+          <div class="flex items-center justify-between border-b border-white/5 pb-2.5 sm:pb-3">
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm sm:text-base font-black text-white">فيديوهات قصيرة 🎬</h3>
+              <lucide-icon [img]="Video" class="w-4 h-4 sm:w-5 sm:h-5 text-red-500"></lucide-icon>
             </div>
             
             <div class="flex items-center gap-2" style="display: flex; align-items: center; gap: 8px;">
-              <span class="text-xs text-slate-400 font-bold">التنسيق:</span>
+              <span class="text-xs text-slate-400 font-bold hidden sm:inline">التنسيق:</span>
               <div class="flex items-center bg-slate-950 border border-white/10 rounded-xl p-1" style="display: flex; align-items: center; border-radius: 12px; background: #020617; border: 1px solid rgba(255, 255, 255, 0.1); padding: 4px;">
                 <button 
                   (click)="decreaseShortsRows()" 
                   [disabled]="shortsRows() <= 1"
-                  class="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition disabled:opacity-40 disabled:hover:bg-transparent"
-                  style="width: 28px; height: 28px; border: none; background: transparent; cursor: pointer; color: #94a3b8;">
+                  class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition disabled:opacity-40 disabled:hover:bg-transparent"
+                  style="border: none; background: transparent; cursor: pointer; color: #94a3b8;">
                   -
                 </button>
-                <span class="w-8 text-center text-xs font-black text-white" style="width: 32px; text-align: center; font-weight: 900;">{{ shortsRows() }}</span>
+                <span class="w-6 sm:w-8 text-center text-xs font-black text-white" style="text-align: center; font-weight: 900;">{{ shortsRows() }}</span>
                 <button 
                   (click)="increaseShortsRows()" 
                   [disabled]="shortsRows() >= 3"
-                  class="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition disabled:opacity-40 disabled:hover:bg-transparent"
-                  style="width: 28px; height: 28px; border: none; background: transparent; cursor: pointer; color: #94a3b8;">
+                  class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition disabled:opacity-40 disabled:hover:bg-transparent"
+                  style="border: none; background: transparent; cursor: pointer; color: #94a3b8;">
                   +
                 </button>
               </div>
@@ -166,41 +165,41 @@
 
       <!-- SECTION 2: EXPLORE TOPICS -->
       @if (!halaltube.isFeedLoading()) {
-        <div class="bg-gradient-to-br from-slate-900/60 via-slate-900/30 to-indigo-950/20 border border-white/5 rounded-3xl p-6 space-y-5 text-right shadow-xl">
-          <div class="flex items-center justify-between border-b border-white/5 pb-3">
-            <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
-                <lucide-icon [img]="Compass" class="w-5 h-5"></lucide-icon>
+        <div class="bg-gradient-to-br from-slate-900/60 via-slate-900/30 to-indigo-950/20 border border-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-3 sm:space-y-5 text-right shadow-xl">
+          <div class="flex items-center justify-between border-b border-white/5 pb-2.5 sm:pb-3">
+            <div class="flex items-center gap-2 sm:gap-2.5">
+              <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                <lucide-icon [img]="Compass" class="w-4 h-4 sm:w-5 sm:h-5"></lucide-icon>
               </div>
               <div>
-                <h3 class="text-base font-black text-white">استكشاف المزيد من المواضيع ✨</h3>
-                <p class="text-xs text-slate-400">تصفح محتوى قنوات موثوقة حسب اهتماماتك المفضلة</p>
+                <h3 class="text-sm sm:text-base font-black text-white">استكشاف المزيد من المواضيع ✨</h3>
+                <p class="text-[10px] sm:text-xs text-slate-400">تصفح محتوى قنوات موثوقة حسب اهتماماتك المفضلة</p>
               </div>
             </div>
           </div>
 
-          <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar py-1">
+          <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto hide-scrollbar py-1">
             @for (topic of exploreTopics; track topic) {
               <button 
                 (click)="setExploreTopic(topic)"
-                class="px-4 py-2 rounded-xl text-xs font-bold transition-all border whitespace-nowrap"
+                class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all border whitespace-nowrap"
                 [ngClass]="activeExploreTopic() === topic ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-500/20 scale-105' : 'bg-slate-950/50 border-white/10 text-slate-400 hover:border-white/20 hover:text-white'">
                 {{ topic }}
               </button>
             }
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pt-2">
+          <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 pt-2">
             @for (video of exploreTopicVideos(); track video.id) {
-              <div class="video-card group cursor-pointer relative flex flex-col gap-2.5 bg-slate-950/50 p-3 rounded-2xl border border-white/5 hover:border-indigo-500/30 transition-all duration-300" [routerLink]="['/stream/watch', video.id]">
-                <div class="thumbnail-wrapper relative w-full aspect-video rounded-xl overflow-hidden bg-slate-900 border border-white/5">
+              <div class="video-card group cursor-pointer relative flex flex-col gap-2 sm:gap-2.5 bg-slate-950/50 p-2 sm:p-3 rounded-xl sm:rounded-2xl border border-white/5 hover:border-indigo-500/30 transition-all duration-300" [routerLink]="['/stream/watch', video.id]">
+                <div class="thumbnail-wrapper relative w-full aspect-video rounded-lg sm:rounded-xl overflow-hidden bg-slate-900 border border-white/5">
                   <img crossorigin="anonymous" [src]="getSafeThumbnail(video)" [alt]="video.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
-                  <span class="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm text-white px-2 py-0.5 rounded text-[10px] font-bold">{{ video.duration || '12:00' }}</span>
+                  <span class="absolute bottom-1.5 left-1.5 bg-black/80 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold">{{ video.duration || '12:00' }}</span>
                 </div>
-                <div class="flex flex-col gap-1">
-                  <h4 class="text-xs font-bold text-white leading-snug line-clamp-2 group-hover:text-indigo-400 transition-colors">{{ video.title }}</h4>
-                  <div class="flex items-center justify-between text-[10px] text-slate-400 mt-1">
-                    <span>{{ video.author }}</span>
+                <div class="flex flex-col gap-0.5 sm:gap-1">
+                  <h4 class="text-[11px] sm:text-xs font-bold text-white leading-snug line-clamp-2 group-hover:text-indigo-400 transition-colors">{{ video.title }}</h4>
+                  <div class="flex items-center justify-between text-[9px] sm:text-[10px] text-slate-400 mt-0.5 sm:mt-1">
+                    <span class="truncate max-w-[70px] sm:max-w-none">{{ video.author }}</span>
                     <span>{{ video.views || '100K' }}</span>
                   </div>
                 </div>
@@ -212,36 +211,36 @@
 
       <!-- SECTION 5: RECOMMENDED MAIN FEED -->
       @if (!halaltube.isFeedLoading() && standardVideosList().length > 0) {
-        <div class="space-y-4 text-right">
+        <div class="space-y-3 sm:space-y-4 text-right">
           <div class="flex items-center gap-2 px-1">
-            <lucide-icon [img]="Layers" class="w-5 h-5 text-indigo-400"></lucide-icon>
-            <h3 class="text-lg font-black text-white">مقترحات القنوات التفاعلية 🌟</h3>
+            <lucide-icon [img]="Layers" class="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400"></lucide-icon>
+            <h3 class="text-base sm:text-lg font-black text-white">مقترحات القنوات التفاعلية 🌟</h3>
           </div>
 
-          <div class="video-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 gap-y-8">
+          <div class="video-grid grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 gap-y-4 sm:gap-y-8">
             @for (video of standardVideosList().slice(0, visibleCount()); track video.id) {
-              <div class="video-card group cursor-pointer relative flex flex-col gap-3" [routerLink]="['/stream/watch', video.id]">
+              <div class="video-card group cursor-pointer relative flex flex-col gap-2 sm:gap-3" [routerLink]="['/stream/watch', video.id]">
                 
                 <div class="thumbnail-wrapper relative w-full rounded-xl overflow-hidden bg-slate-900 border border-white/5 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-indigo-500/10 group-hover:-translate-y-1" [ngClass]="video.isShorts ? 'aspect-[9/16]' : 'aspect-video'">
                   <img crossorigin="anonymous" [src]="getSafeThumbnail(video)" [alt]="video.title" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy">
                   
                   @if (video.isShorts) {
-                    <span class="absolute top-2 right-2 bg-gradient-to-br from-red-600 to-red-800 text-white px-2 py-0.5 rounded text-[10px] font-black shadow-lg">SHORTS</span>
+                    <span class="absolute top-2 right-2 bg-gradient-to-br from-red-600 to-red-800 text-white px-2 py-0.5 rounded text-[8px] sm:text-[10px] font-black shadow-lg">SHORTS</span>
                   }
                   
                   @if (video.duration) {
-                    <span class="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-[10px] font-bold">{{ video.duration }}</span>
+                    <span class="absolute bottom-1.5 left-1.5 bg-black/80 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold">{{ video.duration }}</span>
                   }
                 </div>
 
-                <div class="video-info flex gap-3 items-start px-1">
-                  <img crossorigin="anonymous" [src]="getAvatarUrl(video)" class="w-9 h-9 rounded-full bg-slate-800 border border-white/10 shrink-0 object-cover mt-0.5" [alt]="video.author">
+                <div class="video-info flex gap-2 sm:gap-3 items-start px-0.5 sm:px-1">
+                  <img crossorigin="anonymous" [src]="getAvatarUrl(video)" class="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-slate-800 border border-white/10 shrink-0 object-cover mt-0.5" [alt]="video.author">
                   
                   <div class="info-text flex flex-col min-w-0 flex-1">
-                    <h3 class="text-sm font-bold text-white leading-snug line-clamp-2 mb-1 group-hover:text-indigo-400 transition-colors">{{ video.title }}</h3>
-                    <p class="text-xs text-slate-400 font-medium truncate hover:text-slate-300">{{ video.author }}</p>
-                    <p class="text-[11px] text-slate-500 font-medium mt-0.5">
-                      @if (video.views) { <span>{{ video.views }} مشاهدة</span> }
+                    <h3 class="text-xs sm:text-sm font-bold text-white leading-snug line-clamp-2 mb-0.5 sm:mb-1 group-hover:text-indigo-400 transition-colors">{{ video.title }}</h3>
+                    <p class="text-[10px] sm:text-xs text-slate-400 font-medium truncate hover:text-slate-300">{{ video.author }}</p>
+                    <p class="text-[9px] sm:text-[11px] text-slate-500 font-medium mt-0.5">
+                      @if (video.views) { <span>{{ video.views }}</span> }
                       <span> • {{ halaltube.formatPublishedDate(video.publishedAt) }}</span>
                     </p>
                   </div>

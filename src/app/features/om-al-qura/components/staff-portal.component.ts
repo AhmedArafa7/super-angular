@@ -240,56 +240,46 @@ import { ImageFallbackDirective } from '../../../shared/directives/image-fallbac
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div *ngFor="let p of service.products()" class="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+        <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+          <div *ngFor="let p of service.products()" class="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-3 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
             <div>
-              <div class="relative h-44 rounded-2xl overflow-hidden mb-4 bg-slate-100">
+              <div class="relative h-32 sm:h-44 rounded-xl sm:rounded-2xl overflow-hidden mb-2.5 sm:mb-4 bg-slate-100">
                 <img [src]="p.imageUrl" [alt]="p.name" appImageFallback class="w-full h-full object-cover">
-                <div *ngIf="p.isBoycott" class="absolute top-2 right-2 bg-rose-600 text-white px-2.5 py-1 rounded-full text-xs font-black shadow-md flex items-center gap-1">
-                  <svg lucideIcon="ban" class="w-3.5 h-3.5"></svg>
+                <div *ngIf="p.isBoycott" class="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 bg-rose-600 text-white px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-xs font-black shadow-md flex items-center gap-1">
+                  <svg lucideIcon="ban" class="w-3 sm:w-3.5 h-3 sm:h-3.5"></svg>
                   <span>مقاطعة</span>
                 </div>
-                <div *ngIf="p.stockQuantity <= 0" class="absolute top-2 left-2 bg-slate-900 text-white px-2.5 py-1 rounded-full text-xs font-black shadow-md">
-                  نفد من المخزون
+                <div *ngIf="p.stockQuantity <= 0" class="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 bg-slate-900 text-white px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-xs font-black shadow-md">
+                  نفد
                 </div>
               </div>
 
-              <h3 class="font-black text-slate-900 dark:text-white text-lg mb-1">{{ p.name }}</h3>
-              <p class="text-xs text-slate-500 mb-3">{{ p.description }}</p>
+              <h3 class="font-black text-slate-900 dark:text-white text-xs sm:text-lg mb-1 truncate">{{ p.name }}</h3>
+              <p class="text-[10px] sm:text-xs text-slate-500 mb-2 sm:mb-3 line-clamp-1 sm:line-clamp-none">{{ p.description }}</p>
 
-              <div class="space-y-1.5 text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl mb-4">
+              <div class="space-y-1 sm:space-y-1.5 text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 p-2 sm:p-3 rounded-xl mb-3 sm:mb-4">
                 <div class="flex justify-between">
                   <span>السعر:</span>
-                  <span class="font-bold text-emerald-600 dark:text-emerald-400 text-sm">{{ p.price }} ج.م</span>
+                  <span class="font-bold text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm">{{ p.price }} ج.م</span>
                 </div>
                 <div class="flex justify-between">
-                  <span>العدد المتوفر:</span>
+                  <span>المتوفر:</span>
                   <span class="font-bold" [ngClass]="p.stockQuantity <= 5 ? 'text-rose-600' : 'text-slate-800 dark:text-white'">{{ p.stockQuantity }} قطعة</span>
                 </div>
-                <div class="flex justify-between">
+                <div class="flex justify-between hidden sm:flex">
                   <span>مكان المنتج بالمحل:</span>
                   <span class="font-bold text-slate-800 dark:text-white">{{ p.locationInStore }}</span>
-                </div>
-                <div *ngIf="p.isBoycott" class="text-rose-600 font-bold border-t border-rose-100 pt-1.5 mt-1.5">
-                  البدائل: {{ p.boycottAlternatives.join(' ، ') || 'لا توجد بدائل محددة' }}
                 </div>
               </div>
             </div>
 
-            <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <button (click)="openEditProduct(p)" class="flex-1 py-1.5 px-3 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-bold hover:bg-blue-200 transition-all flex items-center justify-center gap-1">
-                <svg lucideIcon="edit-3" class="w-3.5 h-3.5"></svg>
-                <span>تعديل المنتج</span>
+            <div class="flex flex-wrap gap-1.5 sm:gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button (click)="openEditProduct(p)" class="flex-1 py-1 sm:py-1.5 px-2 sm:px-3 rounded-lg sm:rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-[10px] sm:text-xs font-bold hover:bg-blue-200 transition-all flex items-center justify-center gap-1">
+                <svg lucideIcon="edit-3" class="w-3 sm:w-3.5 h-3 sm:h-3.5"></svg>
+                <span>تعديل</span>
               </button>
               
-              <div class="flex items-center gap-1">
-                <input type="number" [(ngModel)]="stockUpdateAmount[p.id]" placeholder="الكمية" class="w-16 p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-xs font-bold text-center border-none">
-                <button (click)="quickUpdateStock(p, stockUpdateAmount[p.id] || 10)" class="py-1.5 px-3 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 text-xs font-bold hover:bg-emerald-200 shrink-0">
-                  إضافة
-                </button>
-              </div>
-
-              <button (click)="service.deleteProduct(p.id)" class="py-1.5 px-3 rounded-xl bg-rose-100 text-rose-700 text-xs font-bold hover:bg-rose-200 shrink-0">
+              <button (click)="service.deleteProduct(p.id)" class="py-1 sm:py-1.5 px-2 sm:px-3 rounded-lg sm:rounded-xl bg-rose-100 text-rose-700 text-[10px] sm:text-xs font-bold hover:bg-rose-200 shrink-0">
                 حذف
               </button>
             </div>

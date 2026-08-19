@@ -380,6 +380,28 @@ import { SuperArcadeBridgeService } from '../../core/services/super-arcade-bridg
       font-size: 0.875rem;
       text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
+
+    @media (max-width: 640px) {
+      #arena-menu-container {
+        padding: 1.5rem 1.1rem 1.1rem;
+        border-radius: 24px;
+        gap: 0.75rem;
+      }
+      .arena-btn {
+        height: 3rem;
+        font-size: 0.95rem;
+        border-radius: 14px;
+        gap: 0.4rem;
+      }
+      .btn-join {
+        height: 2.7rem;
+        font-size: 0.88rem;
+      }
+      .btn-quit {
+        height: 2.4rem;
+        font-size: 0.85rem;
+      }
+    }
   `]
 })
 export class ArcadeArenaComponent implements OnInit, OnDestroy {

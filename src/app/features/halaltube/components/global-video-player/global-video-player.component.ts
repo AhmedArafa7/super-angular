@@ -18,11 +18,11 @@ import { SafePipe } from '../../../../core/pipes/safe.pipe'; // Need to ensure w
         [style.z-index]="videoState.playerMode() === 'floating' ? '9999' : '40'"
         [style.background]="'black'"
         [style.top]="videoState.playerMode() === 'full' ? (videoState.playerRect()?.top + 'px') : 'auto'"
-        [style.bottom]="videoState.playerMode() === 'floating' ? '24px' : 'auto'"
+        [style.bottom]="videoState.playerMode() === 'floating' ? (isMobileScreen() ? '16px' : '24px') : 'auto'"
         [style.left]="videoState.playerMode() === 'full' ? (videoState.playerRect()?.left + 'px') : 'auto'"
-        [style.right]="videoState.playerMode() === 'floating' ? '24px' : 'auto'"
-        [style.width]="videoState.playerMode() === 'full' ? (videoState.playerRect()?.width + 'px') : '320px'"
-        [style.height]="videoState.playerMode() === 'full' ? (videoState.playerRect()?.height + 'px') : '180px'"
+        [style.right]="videoState.playerMode() === 'floating' ? (isMobileScreen() ? '16px' : '24px') : 'auto'"
+        [style.width]="videoState.playerMode() === 'full' ? (videoState.playerRect()?.width + 'px') : (isMobileScreen() ? 'calc(100vw - 32px)' : '320px')"
+        [style.height]="videoState.playerMode() === 'full' ? (videoState.playerRect()?.height + 'px') : (isMobileScreen() ? 'calc((100vw - 32px) * 9 / 16)' : '180px')"
         (click)="onPlayerWrapperClick($event)"
       >
         <!-- Loading State -->
@@ -152,6 +152,18 @@ export class GlobalVideoPlayerComponent {
   Sparkles = Sparkles;
 
   isOptimizing = signal<boolean>(false);
+  windowWidth = signal<number>(typeof window !== 'undefined' ? window.innerWidth : 1200);
+
+  @HostListener('window:resize')
+  onWindowResize() {
+    if (typeof window !== 'undefined') {
+      this.windowWidth.set(window.innerWidth);
+    }
+  }
+
+  isMobileScreen(): boolean {
+    return this.windowWidth() < 640;
+  }
 
   constructor() {
     effect(() => {

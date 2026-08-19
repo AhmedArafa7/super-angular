@@ -211,128 +211,94 @@ import { AppModalComponent } from '../../../shared/components/modal/app-modal.co
 
       </div>
 
-      <!-- Main Product Grid with Alternatives Highlight -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <!-- Main Product Grid with Alternatives Highlight (2 columns on mobile, 2 on tablet, 3 on lg, 4 on xl) -->
+      <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
         <div *ngFor="let p of filteredProducts()" 
-             class="bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
+             class="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
           <div>
             <!-- Image & Badges -->
-            <div class="relative h-48 bg-slate-100 overflow-hidden">
+            <div class="relative h-36 sm:h-48 bg-slate-100 overflow-hidden">
               <img [src]="p.imageUrl" [alt]="p.name" appImageFallback class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
               
               <button (click)="service.toggleFavorite(p.id)" 
                       [attr.aria-label]="service.userFavoriteProductIds().includes(p.id) ? 'إزالة من المفضلة' : 'إضافة للمفضلة'"
                       [title]="service.userFavoriteProductIds().includes(p.id) ? 'إزالة من المفضلة' : 'إضافة للمفضلة'"
-                      class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex items-center justify-center text-rose-500 shadow-md hover:scale-110 transition-all">
-                <svg lucideIcon="heart" class="w-5 h-5" [ngClass]="{'fill-rose-500': service.userFavoriteProductIds().includes(p.id)}"></svg>
+                      class="absolute top-2 right-2 sm:top-3 sm:right-3 w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex items-center justify-center text-rose-500 shadow-md hover:scale-110 transition-all">
+                <svg lucideIcon="heart" class="w-4 h-4 sm:w-5 sm:h-5" [ngClass]="{'fill-rose-500': service.userFavoriteProductIds().includes(p.id)}"></svg>
               </button>
 
               <!-- Purchase Rate / Top Seller Smart Badge -->
               <div *ngIf="p.salesCount > 0"
-                   class="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-black shadow-md flex items-center gap-1 backdrop-blur-md z-10"
+                   class="absolute top-2 left-2 sm:top-3 sm:left-3 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[11px] font-black shadow-md flex items-center gap-1 backdrop-blur-md z-10"
                    [ngClass]="topSellingProductId() === p.id ? 'bg-amber-400 text-slate-950 ring-2 ring-amber-500 animate-pulse' : 'bg-emerald-800/90 text-emerald-100 border border-emerald-600/40'">
-                <svg lucideIcon="flame" class="w-3.5 h-3.5" [ngClass]="topSellingProductId() === p.id ? 'text-slate-950 fill-slate-950' : 'text-amber-400 fill-amber-400'"></svg>
-                <span>{{ topSellingProductId() === p.id ? 'الأكثر مبيعاً 🏆' : ('معدل الشراء: ' + p.salesCount + ' طلب') }}</span>
+                <svg lucideIcon="flame" class="w-3 h-3 sm:w-3.5 sm:h-3.5" [ngClass]="topSellingProductId() === p.id ? 'text-slate-950 fill-slate-950' : 'text-amber-400 fill-amber-400'"></svg>
+                <span>{{ topSellingProductId() === p.id ? 'الأكثر مبيعاً 🏆' : ('شراء: ' + p.salesCount) }}</span>
               </div>
 
               <!-- Boycott Tag -->
               <div *ngIf="p.isBoycott" 
-                   class="absolute text-white px-2.5 py-1 rounded-full text-[11px] font-black shadow-md flex items-center gap-1 z-10"
-                   [ngClass]="p.salesCount > 0 ? 'top-11 left-3 bg-rose-600/95' : 'top-3 left-3 bg-rose-600'">
-                <svg lucideIcon="shield-alert" class="w-3.5 h-3.5"></svg>
+                   class="absolute text-white px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[11px] font-black shadow-md flex items-center gap-1 z-10"
+                   [ngClass]="p.salesCount > 0 ? 'top-8 sm:top-11 left-2 sm:left-3 bg-rose-600/95' : 'top-2 sm:top-3 left-2 sm:left-3 bg-rose-600'">
+                <svg lucideIcon="shield-alert" class="w-3 h-3 sm:w-3.5 sm:h-3.5"></svg>
                 <span>مقاطعة</span>
               </div>
 
               <!-- Discount Tag -->
-              <div *ngIf="p.discountPercent > 0" class="absolute top-3 right-14 bg-amber-400 text-slate-950 px-2.5 py-1 rounded-full text-[11px] font-black shadow-md">
-                خصم {{ p.discountPercent }}% 🔥
+              <div *ngIf="p.discountPercent > 0" class="absolute top-2 right-10 sm:top-3 sm:right-14 bg-amber-400 text-slate-950 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[11px] font-black shadow-md">
+                خصم {{ p.discountPercent }}%
               </div>
 
               <!-- Remaining Stock Badge for Customer -->
-              <div *ngIf="p.stockQuantity > 0" class="absolute bottom-3 right-3 px-2.5 py-1 rounded-xl text-[11px] font-black shadow-md flex items-center gap-1 backdrop-blur-md"
+              <div *ngIf="p.stockQuantity > 0" class="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg sm:rounded-xl text-[9px] sm:text-[11px] font-black shadow-md flex items-center gap-1 backdrop-blur-md"
                    [ngClass]="p.stockQuantity <= 5 ? 'bg-amber-500 text-slate-950 font-black animate-pulse' : 'bg-slate-900/80 text-white border border-slate-700'">
-                <svg lucideIcon="box" class="w-3.5 h-3.5"></svg>
-                <span>المتبقي بالمخزن: {{ p.stockQuantity }} قطعة</span>
+                <svg lucideIcon="box" class="w-3 h-3 sm:w-3.5 sm:h-3.5"></svg>
+                <span>متبقي: {{ p.stockQuantity }}</span>
               </div>
 
-              <div *ngIf="p.stockQuantity <= 0" class="absolute inset-0 bg-slate-950/75 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center">
-                <span class="bg-rose-600 text-white font-black text-xs px-3 py-1 rounded-full mb-2">نفد المنتج!</span>
-                <p *ngIf="p.expectedRestockDate" class="text-xs text-amber-300 font-bold mb-1">
-                  ⏳ موعد التوفر المتوقع: {{ p.expectedRestockDate }}
+              <div *ngIf="p.stockQuantity <= 0" class="absolute inset-0 bg-slate-950/75 backdrop-blur-xs flex flex-col items-center justify-center p-2 sm:p-4 text-center">
+                <span class="bg-rose-600 text-white font-black text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full mb-1 sm:mb-2">نفد المنتج!</span>
+                <p *ngIf="p.expectedRestockDate" class="text-[10px] sm:text-xs text-amber-300 font-bold mb-1">
+                  ⏳ يتوفر: {{ p.expectedRestockDate }}
                 </p>
-                <p class="text-[11px] text-slate-200">سيظهر لك البديل التلقائي المطابق بالأسفل</p>
+                <p class="text-[9px] sm:text-[11px] text-slate-200 hidden sm:block">سيظهر لك البديل التلقائي المطابق بالأسفل</p>
               </div>
             </div>
 
             <!-- Content -->
-            <div class="p-5 space-y-3">
-              <div class="flex justify-between items-start">
-                <div>
-                  <div class="flex items-center gap-1.5 mb-1">
-                    <span class="text-[10px] text-slate-400 font-bold block">{{ p.category }}</span>
-                    <span *ngIf="p.salesCount > 0" class="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-black px-2 py-0.5 rounded-md border border-emerald-300/40 flex items-center gap-1">
-                      <svg lucideIcon="shopping-cart" class="w-3 h-3 text-emerald-600 dark:text-emerald-400"></svg>
-                      <span>{{ p.salesCount }} عملية شراء</span>
-                    </span>
+            <div class="p-3 sm:p-5 space-y-2 sm:space-y-3">
+              <div class="flex justify-between items-start gap-1">
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-1 mb-0.5 sm:mb-1">
+                    <span class="text-[9px] sm:text-[10px] text-slate-400 font-bold truncate block">{{ p.category }}</span>
                   </div>
-                  <h3 class="font-black text-slate-900 dark:text-white text-base leading-tight">{{ p.name }}</h3>
+                  <h3 class="font-black text-slate-900 dark:text-white text-xs sm:text-base leading-tight truncate sm:line-clamp-2">{{ p.name }}</h3>
                 </div>
-                <div class="text-left">
-                  <span class="text-xl font-black text-emerald-600 dark:text-emerald-400">
-                    {{ p.discountPercent > 0 ? (p.price * (1 - p.discountPercent / 100) | number:'1.0-0') : p.price }} <span class="text-xs">ج.م</span>
+                <div class="text-left shrink-0">
+                  <span class="text-sm sm:text-xl font-black text-emerald-600 dark:text-emerald-400">
+                    {{ p.discountPercent > 0 ? (p.price * (1 - p.discountPercent / 100) | number:'1.0-0') : p.price }} <span class="text-[10px] sm:text-xs">ج.م</span>
                   </span>
-                  <span *ngIf="p.discountPercent > 0" class="block text-[10px] text-rose-500 line-through font-bold">
+                  <span *ngIf="p.discountPercent > 0" class="block text-[9px] sm:text-[10px] text-rose-500 line-through font-bold">
                     {{ p.price }} ج.م
                   </span>
                 </div>
               </div>
 
-              <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">{{ p.description }}</p>
-
-              <!-- Active Pending Order Badge for Product -->
-              <div *ngIf="orderedProductIdsInPending().has(p.id)" class="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 text-[11px] font-bold text-indigo-800 dark:text-indigo-300 flex items-center gap-1.5">
-                <svg lucideIcon="check-circle-2" class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0"></svg>
-                <span>اشتريته مسبقاً (طلبك الحالي قيد التنفيذ)</span>
-              </div>
-
-              <!-- Warehouse Stock Badge if stored in back warehouse -->
-              <div *ngIf="p.isInWarehouse || p.locationInWarehouse" class="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 text-[11px] font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
-                <svg lucideIcon="warehouse" class="w-3.5 h-3.5 text-amber-600"></svg>
-                <span>متوفر بالمخزن الداخلي: {{ p.locationInWarehouse || 'المخزن الخلفي' }}</span>
-              </div>
-
-              <!-- Boycott Alternatives Section -->
-              <div *ngIf="p.isBoycott" class="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800/60 space-y-1.5">
-                <div *ngIf="p.boycottReason" class="text-[11px] font-bold text-rose-700 dark:text-rose-400 flex items-center gap-1">
-                  <svg lucideIcon="info" class="w-3.5 h-3.5 text-rose-600"></svg>
-                  <span>سبب المقاطعة: {{ p.boycottReason }}</span>
-                </div>
-
-                <div *ngIf="p.boycottAlternatives.length > 0">
-                  <div class="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 mb-1">
-                    <svg lucideIcon="check-circle-2" class="w-4 h-4 text-emerald-600"></svg>
-                    <span>البدائل الوطنية المطابقة (مرتبة من الأفضل):</span>
-                  </div>
-                  <ol class="list-decimal list-inside text-xs text-emerald-700 dark:text-emerald-400 space-y-0.5 font-medium">
-                    <li *ngFor="let alt of p.boycottAlternatives">{{ alt }}</li>
-                  </ol>
-                </div>
-              </div>
+              <p class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 line-clamp-1 sm:line-clamp-2 leading-relaxed">{{ p.description }}</p>
 
               <!-- Stock Quantity & Shelf Location Display for Customer -->
-              <div class="text-xs flex flex-wrap justify-between items-center pt-2.5 border-t border-slate-100 dark:border-slate-800 font-bold gap-2">
-                <button (click)="openProductMapModal(p)" class="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
-                  <svg lucideIcon="map-pin" class="w-3.5 h-3.5 text-indigo-500"></svg>
-                  <span>الرف: {{ p.locationInStore || 'الممر الرئيسي' }}</span>
+              <div class="text-[10px] sm:text-xs flex flex-wrap justify-between items-center pt-1.5 sm:pt-2.5 border-t border-slate-100 dark:border-slate-800 font-bold gap-1 sm:gap-2">
+                <button (click)="openProductMapModal(p)" class="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-0.5">
+                  <svg lucideIcon="map-pin" class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-indigo-500"></svg>
+                  <span class="truncate max-w-[80px] sm:max-w-none">الرف: {{ p.locationInStore || 'الممر' }}</span>
                 </button>
 
-                <span *ngIf="p.stockQuantity > 5" class="text-emerald-600 dark:text-emerald-400 font-black flex items-center gap-1">
-                  <svg lucideIcon="check" class="w-3.5 h-3.5"></svg>
-                  <span>متوفر: {{ p.stockQuantity }} قطعة</span>
+                <span *ngIf="p.stockQuantity > 5" class="text-emerald-600 dark:text-emerald-400 font-black flex items-center gap-0.5">
+                  <svg lucideIcon="check" class="w-3 h-3 sm:w-3.5 sm:h-3.5"></svg>
+                  <span>متوفر</span>
                 </span>
 
-                <span *ngIf="p.stockQuantity > 0 && p.stockQuantity <= 5" class="text-amber-600 dark:text-amber-400 font-black flex items-center gap-1">
-                  🔥 متبقي {{ p.stockQuantity }} فقط!
+                <span *ngIf="p.stockQuantity > 0 && p.stockQuantity <= 5" class="text-amber-600 dark:text-amber-400 font-black">
+                  🔥 {{ p.stockQuantity }} فقط!
                 </span>
 
                 <span *ngIf="p.stockQuantity <= 0" class="text-rose-600 dark:text-rose-400 font-black">
@@ -343,20 +309,11 @@ import { AppModalComponent } from '../../../shared/components/modal/app-modal.co
           </div>
 
           <!-- Add to Cart Action -->
-          <div class="p-5 pt-0 space-y-2">
-            <div *ngIf="cartQuantities().get(p.id) as inCart" class="flex items-center justify-center gap-2 text-[11px] font-bold">
-              <span class="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-300/40">
-                في السلة: {{ inCart }} قطعة
-              </span>
-              <span class="text-slate-400">•</span>
-              <span class="text-slate-500 dark:text-slate-400">
-                متبقي: {{ p.stockQuantity - inCart }} قطعة
-              </span>
-            </div>
+          <div class="p-3 sm:p-5 pt-0 space-y-1.5 sm:space-y-2">
             <button (click)="service.addToCart(p)" [disabled]="p.stockQuantity <= 0 || (cartQuantities().get(p.id) || 0) >= p.stockQuantity"
-                    class="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
-              <svg lucideIcon="shopping-cart" class="w-4 h-4"></svg>
-              <span>{{ p.stockQuantity > 0 ? ((cartQuantities().get(p.id) || 0) >= p.stockQuantity ? 'وصلت للحد الأقصى' : 'إضافة لسلة الشراء') : 'المنتج غير متوفر حالياً' }}</span>
+                    class="w-full py-2 sm:py-3 rounded-xl sm:rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-1.5 sm:gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
+              <svg lucideIcon="shopping-cart" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></svg>
+              <span>{{ p.stockQuantity > 0 ? ((cartQuantities().get(p.id) || 0) >= p.stockQuantity ? 'الحد الأقصى' : 'إضافة للسلة') : 'غير متوفر' }}</span>
             </button>
           </div>
         </div>

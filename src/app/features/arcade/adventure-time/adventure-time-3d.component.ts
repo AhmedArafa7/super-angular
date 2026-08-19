@@ -9,43 +9,40 @@ import * as THREE from 'three';
   standalone: true,
   imports: [CommonModule, LucideAngularModule],
   template: `
-    <div [style.height.px]="containerHeight" class="relative w-full min-h-[480px] bg-slate-950 overflow-hidden font-sans rounded-3xl border border-white/10" dir="rtl">
+    <div [style.height.px]="containerHeight" class="relative w-full min-h-[480px] bg-slate-950 overflow-hidden font-sans rounded-2xl sm:rounded-3xl border border-white/10" dir="rtl">
       <!-- HUD -->
-      <div class="absolute top-4 inset-x-4 z-20 flex items-center justify-between pointer-events-none">
-        <div class="flex items-center gap-3 pointer-events-auto">
-          <button (click)="goBack()" class="bg-black/80 hover:bg-black backdrop-blur-md border border-white/20 text-white px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 shadow-xl cursor-pointer">
-            <lucide-icon [img]="ArrowRight" class="w-4 h-4"></lucide-icon> العودة للأركيد
+      <div class="absolute top-2 sm:top-4 inset-x-2 sm:inset-x-4 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+        <div class="flex items-center gap-1.5 sm:gap-3 pointer-events-auto">
+          <button (click)="goBack()" class="bg-black/80 hover:bg-black backdrop-blur-md border border-white/20 text-white px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1.5 sm:gap-2 shadow-xl cursor-pointer">
+            <lucide-icon [img]="ArrowRight" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></lucide-icon> <span class="hidden sm:inline">العودة للأركيد</span>
           </button>
-          <div class="bg-black/80 backdrop-blur-md border border-emerald-500/30 text-white px-4 py-2.5 rounded-2xl flex items-center gap-3 shadow-xl">
-            <span class="text-xs text-emerald-400 font-bold">البطل:</span>
-            <span class="text-sm font-black">{{ currentHero }}</span>
-            <button (click)="switchHero()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[10px] font-black px-2.5 py-1 rounded-2xl transition-all cursor-pointer">
+          <div class="bg-black/80 backdrop-blur-md border border-emerald-500/30 text-white px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1.5 sm:gap-3 shadow-xl">
+            <span class="text-[10px] sm:text-xs text-emerald-400 font-bold hidden sm:inline">البطل:</span>
+            <span class="text-xs sm:text-sm font-black">{{ currentHero }}</span>
+            <button (click)="switchHero()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-xl sm:rounded-2xl transition-all cursor-pointer">
               تبديل 🐶/🧒
             </button>
           </div>
         </div>
-        <div class="flex items-center gap-3 pointer-events-auto">
-          <div class="bg-black/80 backdrop-blur-md border border-red-500/30 text-white px-4 py-2.5 rounded-2xl flex items-center gap-2 shadow-xl">
-            <lucide-icon [img]="Heart" class="w-4 h-4 text-red-500"></lucide-icon>
-            <div class="w-28 h-2.5 bg-slate-800 rounded-full overflow-hidden">
+        <div class="flex items-center gap-1.5 sm:gap-3 pointer-events-auto flex-wrap">
+          <div class="bg-black/80 backdrop-blur-md border border-red-500/30 text-white px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1.5 sm:gap-2 shadow-xl">
+            <lucide-icon [img]="Heart" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500"></lucide-icon>
+            <div class="w-16 sm:w-28 h-2 sm:h-2.5 bg-slate-800 rounded-full overflow-hidden">
               <div class="h-full bg-gradient-to-r from-red-500 to-rose-400 transition-all duration-300" [style.width.%]="hp"></div>
             </div>
-            <span class="text-xs font-black">{{ hp }}</span>
+            <span class="text-[10px] sm:text-xs font-black">{{ hp }}</span>
           </div>
-          <div class="bg-black/80 backdrop-blur-md border border-amber-500/30 text-white px-4 py-2.5 rounded-2xl flex items-center gap-2 shadow-xl">
-            <lucide-icon [img]="Trophy" class="w-4 h-4 text-amber-400"></lucide-icon>
-            <span class="text-xs font-black">النقاط: {{ score }}</span>
+          <div class="bg-black/80 backdrop-blur-md border border-amber-500/30 text-white px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1 sm:gap-2 shadow-xl">
+            <lucide-icon [img]="Trophy" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400"></lucide-icon>
+            <span class="text-[10px] sm:text-xs font-black">{{ score }}</span>
           </div>
-          <div class="bg-black/80 backdrop-blur-md border border-cyan-500/30 text-white px-4 py-2.5 rounded-2xl flex items-center gap-2 shadow-xl">
-            <span class="text-xs text-cyan-400 font-bold">الموجة: {{ wave }}</span>
+          <div class="bg-black/80 backdrop-blur-md border border-cyan-500/30 text-white px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1 sm:gap-2 shadow-xl hidden sm:flex">
+            <span class="text-xs text-cyan-400 font-bold">م: {{ wave }}</span>
           </div>
-          <div class="bg-black/80 backdrop-blur-md border border-purple-500/30 text-white px-4 py-2.5 rounded-2xl flex items-center gap-2 shadow-xl">
-            <span class="text-xs text-purple-400 font-bold">المستوى: {{ playerLevel }}</span>
+          <div class="bg-black/80 backdrop-blur-md border border-purple-500/30 text-white px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl flex items-center gap-1 sm:gap-2 shadow-xl hidden sm:flex">
+            <span class="text-xs text-purple-400 font-bold">Lvl {{ playerLevel }}</span>
           </div>
-          <div class="bg-black/80 backdrop-blur-md border border-amber-500/30 text-white px-4 py-2.5 rounded-2xl flex items-center gap-2 shadow-xl">
-            <span class="text-xs text-amber-400 font-bold">{{ dayPhaseIcon }} {{ dayPhaseLabel }}</span>
-          </div>
-          <button (click)="saveGame()" class="bg-black/80 hover:bg-black backdrop-blur-md border border-white/20 text-white px-3 py-2.5 rounded-2xl text-[10px] font-bold transition-all cursor-pointer pointer-events-auto shadow-xl">
+          <button (click)="saveGame()" class="bg-black/80 hover:bg-black backdrop-blur-md border border-white/20 text-white px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-bold transition-all cursor-pointer pointer-events-auto shadow-xl">
             💾 حفظ
           </button>
         </div>

@@ -101,7 +101,7 @@
     <!-- Main Content Area -->
     <ng-container *ngIf="!isLoading(); else loadingTmpl">
       <ng-container *ngIf="filteredBooks.length > 0; else emptyTmpl">
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-6">
           <div
             *ngFor="let book of filteredBooks"
             class="group relative bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:border-indigo-500/50 transition-all duration-300 shadow-xl flex flex-col h-full"
@@ -114,81 +114,81 @@
                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 loading="lazy"
               />
-              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-4">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-2 sm:p-4">
                 <button
                   *ngIf="!book.isPersonalPdf"
                   (click)="openBookReader(book)"
-                  class="w-full bg-indigo-600 hover:bg-indigo-500 rounded-xl gap-2 h-11 flex items-center justify-center text-white font-bold text-sm transition-all shadow-lg shadow-indigo-600/30"
+                  class="w-full bg-indigo-600 hover:bg-indigo-500 rounded-xl gap-1.5 sm:gap-2 h-8 sm:h-11 flex items-center justify-center text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-indigo-600/30"
                 >
-                  <svg lucideIcon="book-open" class="size-4"></svg>
-                  تصفح وقراءة الفصول
+                  <svg lucideIcon="book-open" class="size-3.5 sm:size-4"></svg>
+                  <span>قراءة</span>
                 </button>
 
                 <button
                   *ngIf="book.isPersonalPdf"
                   (click)="openPdfViewer(book)"
-                  class="w-full bg-emerald-600 hover:bg-emerald-500 rounded-xl gap-2 h-11 flex items-center justify-center text-white font-bold text-sm transition-all shadow-lg shadow-emerald-600/30"
+                  class="w-full bg-emerald-600 hover:bg-emerald-500 rounded-xl gap-1.5 sm:gap-2 h-8 sm:h-11 flex items-center justify-center text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-emerald-600/30"
                 >
-                  <svg lucideIcon="file-text" class="size-4"></svg>
-                  عرض كتاب الـ PDF المحفوظ
+                  <svg lucideIcon="file-text" class="size-3.5 sm:size-4"></svg>
+                  <span>عرض PDF</span>
                 </button>
               </div>
 
               <!-- Top Right Category Badge -->
-              <div class="absolute top-2 right-2 flex flex-col gap-1 items-end">
-                <span class="inline-block bg-black/70 backdrop-blur-md text-white border border-white/10 px-2.5 py-1 rounded-full text-[10px] font-bold">
+              <div class="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 flex flex-col gap-1 items-end">
+                <span class="inline-block bg-black/70 backdrop-blur-md text-white border border-white/10 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-bold truncate max-w-[80px] sm:max-w-none">
                   {{ book.category }}
                 </span>
-                <span *ngIf="book.isPersonalPdf" class="inline-block bg-emerald-500/90 text-slate-950 backdrop-blur-md px-2 py-0.5 rounded-full text-[9px] font-black shadow-md">
-                  📕 PDF شخصي محفوظ
+                <span *ngIf="book.isPersonalPdf" class="inline-block bg-emerald-500/90 text-slate-950 backdrop-blur-md px-1.5 sm:px-2 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black shadow-md">
+                  📕 PDF
                 </span>
               </div>
 
               <!-- Top Left Actions / Rating Badge -->
-              <div class="absolute top-2 left-2 flex items-center gap-1 z-10">
+              <div class="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 flex items-center gap-1 z-10">
                 <button (click)="$event.stopPropagation(); openBookStudioForEdit(book)"
-                        class="size-7 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center justify-center font-bold text-xs shadow-lg transition-all transform hover:scale-110"
+                        class="size-6 sm:size-7 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center justify-center font-bold text-[10px] sm:text-xs shadow-lg transition-all transform hover:scale-110"
                         title="تعديل هذا الكتاب في استوديو الكتب">
                   ✏️
                 </button>
 
                 <button *ngIf="book.isPersonalPdf" (click)="$event.stopPropagation(); deletePersonalPdfBook(book.id)"
-                        class="size-7 rounded-full bg-red-500/80 hover:bg-red-600 text-white flex items-center justify-center font-bold text-xs shadow-md transition-all"
+                        class="size-6 sm:size-7 rounded-full bg-red-500/80 hover:bg-red-600 text-white flex items-center justify-center font-bold text-[10px] sm:text-xs shadow-md transition-all"
                         title="حذف الكتاب الشخصي من متصفحك">
                   ✕
                 </button>
 
-                <span *ngIf="book.rating && !book.isPersonalPdf" class="inline-flex items-center gap-1 bg-amber-500/90 text-slate-950 font-black px-2.5 py-0.5 rounded-full text-[10px] shadow-md">
+                <span *ngIf="book.rating && !book.isPersonalPdf" class="inline-flex items-center gap-0.5 bg-amber-500/90 text-slate-950 font-black px-1.5 sm:px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] shadow-md">
                   ⭐ {{ book.rating }}
                 </span>
               </div>
 
-              <div *ngIf="book.status === 'pending'" class="absolute top-2 left-2">
-                <span class="inline-block bg-amber-500/80 text-white px-3 py-1 rounded-full text-[11px] font-medium animate-pulse">قيد المراجعة</span>
+              <div *ngIf="book.status === 'pending'" class="absolute top-1.5 left-1.5 sm:top-2 sm:left-2">
+                <span class="inline-block bg-amber-500/80 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[11px] font-medium animate-pulse">مراجعة</span>
               </div>
             </div>
 
             <!-- Book Info -->
-            <div class="p-4 flex flex-col flex-1 text-right">
-              <h3 class="font-bold text-base md:text-lg text-white line-clamp-1 mb-0.5" [title]="book.title">{{ book.title }}</h3>
-              <p class="text-xs text-indigo-300 font-semibold mb-2 line-clamp-1">{{ book.author }}</p>
+            <div class="p-2.5 sm:p-4 flex flex-col flex-1 text-right">
+              <h3 class="font-bold text-xs sm:text-base md:text-lg text-white line-clamp-1 mb-0.5" [title]="book.title">{{ book.title }}</h3>
+              <p class="text-[10px] sm:text-xs text-indigo-300 font-semibold mb-1 sm:mb-2 line-clamp-1">{{ book.author }}</p>
               
-              <p *ngIf="book.description" class="text-[11px] text-slate-400 line-clamp-2 mb-3 leading-relaxed">
+              <p *ngIf="book.description" class="text-[9px] sm:text-[11px] text-slate-400 line-clamp-2 mb-2 sm:mb-3 leading-relaxed hidden sm:block">
                 {{ book.description }}
               </p>
 
-              <div class="mt-auto flex items-center justify-between gap-2 border-t border-white/5 pt-3">
-                <div class="flex items-center gap-1 text-[10px] text-slate-400 font-bold">
-                  <svg lucideIcon="download" class="size-3 text-indigo-400"></svg>
+              <div class="mt-auto flex items-center justify-between gap-1 sm:gap-2 border-t border-white/5 pt-2 sm:pt-3">
+                <div class="flex items-center gap-1 text-[9px] sm:text-[10px] text-slate-400 font-bold">
+                  <svg lucideIcon="download" class="size-2.5 sm:size-3 text-indigo-400"></svg>
                   <span>{{ book.downloadCount | number }}</span>
                 </div>
 
-                <div *ngIf="book.ratingCount" class="flex items-center gap-1 text-[10px] text-amber-400 font-bold">
+                <div *ngIf="book.ratingCount" class="flex items-center gap-0.5 text-[9px] sm:text-[10px] text-amber-400 font-bold">
                   <span>({{ book.ratingCount }})</span>
-                  <svg lucideIcon="star" class="size-3 fill-amber-400 text-amber-400"></svg>
+                  <svg lucideIcon="star" class="size-2.5 sm:size-3 fill-amber-400 text-amber-400"></svg>
                 </div>
 
-                <div class="flex items-center gap-1 text-[10px] text-slate-500 font-mono">
+                <div class="flex items-center gap-1 text-[9px] sm:text-[10px] text-slate-500 font-mono">
                   <span>{{ book.fileSize }}</span>
                 </div>
               </div>

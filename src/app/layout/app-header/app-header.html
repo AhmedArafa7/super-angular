@@ -1,10 +1,10 @@
-<header class="h-16 border-b border-white/5 bg-slate-950/60 backdrop-blur-xl flex items-center justify-between px-6 z-20 flex-row-reverse shrink-0 animate-in fade-in slide-in-from-top-full duration-700 ease-out">
+<header class="h-14 sm:h-16 border-b border-white/5 bg-slate-950/60 backdrop-blur-xl flex items-center justify-between px-3 sm:px-6 z-20 flex-row-reverse shrink-0 animate-in fade-in slide-in-from-top-full duration-700 ease-out">
   <!-- Right Side (Search & Sidebar toggle) -->
-  <div class="flex items-center gap-4 flex-row-reverse">
+  <div class="flex items-center gap-2 sm:gap-4 flex-row-reverse">
     
     <!-- Sidebar Toggle -->
-    <button class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors" (click)="sidebar.toggleCollapsed()" title="فتح/إغلاق القائمة">
-      <svg lucideIcon="menu" class="w-5 h-5"></svg>
+    <button class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors" (click)="sidebar.toggleCollapsed()" title="فتح/إغلاق القائمة">
+      <svg lucideIcon="menu" class="w-4 h-4 sm:w-5 sm:h-5"></svg>
     </button>
 
     <!-- Global Search -->
@@ -17,53 +17,53 @@
   </div>
   
   <!-- Left Side (Wallet, Notifications, Profile) -->
-  <div class="flex items-center gap-3 flex-row-reverse">
+  <div class="flex items-center gap-1.5 sm:gap-3 flex-row-reverse">
     
     <!-- Hide Header Toggle -->
-    <button class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors" (click)="sidebar.toggleHeader()" title="إخفاء الشريط العلوي">
-      <svg lucideIcon="chevron-up" class="w-5 h-5"></svg>
+    <button class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors hidden sm:flex" (click)="sidebar.toggleHeader()" title="إخفاء الشريط العلوي">
+      <svg lucideIcon="chevron-up" class="w-4 h-4 sm:w-5 sm:h-5"></svg>
     </button>
     
-    <div class="h-6 w-px bg-white/10 mx-1"></div>
+    <div class="h-5 sm:h-6 w-px bg-white/10 mx-0.5 sm:mx-1 hidden sm:block"></div>
     
     <!-- Global Friends Hub Button -->
-    <button (click)="showGlobalFriendsModal = true" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all relative group" title="قائمة الأصدقاء">
-      <span class="text-base">👥</span>
+    <button (click)="showGlobalFriendsModal = true" class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all relative group" title="قائمة الأصدقاء">
+      <span class="text-sm sm:text-base">👥</span>
       @if (globalState.friends().length > 0) {
-        <span class="absolute top-2 left-2.5 h-4 min-w-[16px] px-1 flex items-center justify-center bg-indigo-600 rounded-full border-2 border-slate-950 text-[10px] font-black text-white">
+        <span class="absolute top-1 sm:top-2 left-1.5 sm:left-2.5 h-3.5 sm:h-4 min-w-[14px] sm:min-w-[16px] px-1 flex items-center justify-center bg-indigo-600 rounded-full border-2 border-slate-950 text-[9px] sm:text-[10px] font-black text-white">
           {{ globalState.friends().length }}
         </span>
       }
     </button>
 
-    <div class="h-6 w-px bg-white/10 mx-1"></div>
+    <div class="h-5 sm:h-6 w-px bg-white/10 mx-0.5 sm:mx-1"></div>
 
     <!-- Notifications -->
-    <button class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all relative group" (click)="globalState.clearNotifications()">
-      <svg lucideIcon="bell" class="w-5 h-5 group-hover:animate-pulse"></svg>
+    <button class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all relative group" (click)="globalState.clearNotifications()">
+      <svg lucideIcon="bell" class="w-4 h-4 sm:w-5 sm:h-5 group-hover:animate-pulse"></svg>
       @if (globalState.unreadNotificationsCount() > 0) {
-        <span class="absolute top-2 left-2.5 h-4 min-w-[16px] px-1 flex items-center justify-center bg-red-500 rounded-full border-2 border-slate-950 text-[10px] font-black text-white shadow-lg shadow-red-500/20 transform scale-100 transition-transform group-hover:scale-110">
+        <span class="absolute top-1 sm:top-2 left-1.5 sm:left-2.5 h-3.5 sm:h-4 min-w-[14px] sm:min-w-[16px] px-1 flex items-center justify-center bg-red-500 rounded-full border-2 border-slate-950 text-[9px] sm:text-[10px] font-black text-white shadow-lg shadow-red-500/20 transform scale-100 transition-transform group-hover:scale-110">
           {{ globalState.unreadNotificationsCount() }}
         </span>
       }
     </button>
     
-    <div class="h-6 w-px bg-white/10 mx-1"></div>
+    <div class="h-5 sm:h-6 w-px bg-white/10 mx-0.5 sm:mx-1"></div>
     
     <!-- Wallet Balance -->
-    <button class="h-10 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 flex items-center gap-2.5 text-xs font-bold text-white transition-all flex-row-reverse group cursor-pointer">
-      <div class="p-1 rounded-md bg-indigo-500/20 text-indigo-400 group-hover:scale-110 transition-transform">
-        <svg lucideIcon="wallet" class="w-3.5 h-3.5"></svg>
+    <button class="h-8 sm:h-10 px-2 sm:px-4 rounded-lg sm:rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 flex items-center gap-1.5 sm:gap-2.5 text-[11px] sm:text-xs font-bold text-white transition-all flex-row-reverse group cursor-pointer">
+      <div class="p-0.5 sm:p-1 rounded-md bg-indigo-500/20 text-indigo-400 group-hover:scale-110 transition-transform">
+        <svg lucideIcon="wallet" class="w-3 h-3 sm:w-3.5 sm:h-3.5"></svg>
       </div>
       <span class="tracking-tight">{{ globalState.formattedBalance() }}</span>
     </button>
 
     <!-- User Profile -->
-    <button [routerLink]="['/profile']" class="flex items-center gap-2 hover:opacity-80 transition-opacity ml-2 flex-row-reverse cursor-pointer" title="الانتقال إلى الملف الشخصي">
+    <button [routerLink]="['/profile']" class="flex items-center gap-1.5 sm:gap-2 hover:opacity-80 transition-opacity ml-1 sm:ml-2 flex-row-reverse cursor-pointer" title="الانتقال إلى الملف الشخصي">
       @if (globalState.userProfile().avatarUrl && globalState.userProfile().avatarUrl !== 'https://i.pravatar.cc/150?u=a042581f4e29026704d') {
-        <img [src]="globalState.userProfile().avatarUrl" alt="Profile" class="w-9 h-9 rounded-full border border-white/10 object-cover shadow-sm" />
+        <img [src]="globalState.userProfile().avatarUrl" alt="Profile" class="w-7 h-7 sm:w-9 sm:h-9 rounded-full border border-white/10 object-cover shadow-sm" />
       } @else {
-        <div class="w-9 h-9 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold shadow-sm">
+        <div class="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xs sm:text-sm font-bold shadow-sm">
           {{ globalState.userProfile().firstLetter }}
         </div>
       }

@@ -12,7 +12,7 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3 } from 'lucide-ang
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule, LucideAngularModule],
   template: `
-    <div class="min-h-full bg-slate-950 p-6 md:p-10 text-right overflow-y-auto custom-scrollbar" dir="rtl">
+    <div class="min-h-full bg-slate-950 p-3 sm:p-6 md:p-10 text-right overflow-y-auto custom-scrollbar" dir="rtl">
       
       <!-- Incoming Game Invites -->
       <div *ngIf="globalState.activeGameInvites().length > 0" class="fixed top-20 right-6 z-[100] flex flex-col gap-3 max-w-sm w-full">
@@ -39,14 +39,14 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3 } from 'lucide-ang
       </div>
 
       <!-- Friends Bar -->
-      <div class="mb-6 flex items-center justify-between bg-slate-900/50 border border-white/5 rounded-2xl p-4 backdrop-blur-sm shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
-        <div class="flex items-center gap-4 overflow-x-auto scrollbar-hide flex-1">
-          <div class="flex items-center gap-3">
-             <span class="text-slate-400 text-xs font-bold whitespace-nowrap ml-2">الأصدقاء:</span>
+      <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-900/50 border border-white/5 rounded-2xl p-3 sm:p-4 backdrop-blur-sm shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
+        <div class="flex items-center gap-3 overflow-x-auto scrollbar-hide flex-1 py-1">
+          <div class="flex items-center gap-2 sm:gap-3">
+             <span class="text-slate-400 text-xs font-bold whitespace-nowrap ml-1 sm:ml-2">الأصدقاء:</span>
              <ng-container *ngFor="let friend of globalState.friends()">
                <div class="relative group cursor-pointer">
-                 <img [src]="friend.avatarUrl" class="w-10 h-10 rounded-full border-2 border-transparent hover:border-indigo-500 object-cover transition-all duration-300" />
-                 <span class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#0B0F19]"
+                 <img [src]="friend.avatarUrl" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-transparent hover:border-indigo-500 object-cover transition-all duration-300" />
+                 <span class="absolute bottom-0 right-0 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border-2 border-[#0B0F19]"
                        [ngClass]="{
                          'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]': friend.status === 'online',
                          'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)] animate-pulse': friend.status === 'in-game',
@@ -62,21 +62,21 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3 } from 'lucide-ang
         </div>
         
         <!-- Add Friend -->
-        <div class="flex items-center gap-2 shrink-0 border-r border-white/10 pr-4 ml-2">
-           <button (click)="showSubmitGameModal = true" class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl px-4 h-9 text-xs font-bold transition-all flex items-center gap-2">
-             <lucide-icon [img]="UserPlus" class="w-4 h-4"></lucide-icon>
+        <div class="flex items-center gap-2 shrink-0 border-t sm:border-t-0 sm:border-r border-white/10 pt-2 sm:pt-0 sm:pr-4 sm:ml-2 justify-end">
+           <button (click)="showSubmitGameModal = true" class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl px-3 sm:px-4 h-8 sm:h-9 text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1.5 sm:gap-2">
+             <lucide-icon [img]="UserPlus" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></lucide-icon>
              أضف لعبتك
            </button>
            
            <ng-container *ngIf="showAddFriend; else addBtn">
-             <input type="text" [(ngModel)]="newFriendName" (keyup.enter)="addFriend()" [disabled]="isAdding" placeholder="اسم المستخدم..." class="px-3 h-9 bg-black/40 border border-indigo-500/50 rounded-xl text-xs text-white text-right focus:outline-none focus:bg-black/60 w-36 transition-all disabled:opacity-50" />
-             <button (click)="addFriend()" [disabled]="isAdding" class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl px-4 h-9 text-xs font-bold transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50 min-w-[70px]">
+             <input type="text" [(ngModel)]="newFriendName" (keyup.enter)="addFriend()" [disabled]="isAdding" placeholder="اسم المستخدم..." class="px-3 h-8 sm:h-9 bg-black/40 border border-indigo-500/50 rounded-xl text-xs text-white text-right focus:outline-none focus:bg-black/60 w-28 sm:w-36 transition-all disabled:opacity-50" />
+             <button (click)="addFriend()" [disabled]="isAdding" class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl px-3 sm:px-4 h-8 sm:h-9 text-xs font-bold transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50 min-w-[60px] sm:min-w-[70px]">
                {{ isAdding ? 'جاري...' : 'إضافة' }}
              </button>
            </ng-container>
            <ng-template #addBtn>
-             <button (click)="showAddFriend = true" class="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl px-4 h-9 text-xs font-bold transition-all hover:scale-105 active:scale-95">
-               <lucide-icon [img]="UserPlus" class="w-4 h-4 text-indigo-400"></lucide-icon>
+             <button (click)="showAddFriend = true" class="flex items-center gap-1.5 sm:gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl px-3 sm:px-4 h-8 sm:h-9 text-[11px] sm:text-xs font-bold transition-all hover:scale-105 active:scale-95">
+               <lucide-icon [img]="UserPlus" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-400"></lucide-icon>
                إضافة صديق
              </button>
            </ng-template>
@@ -84,37 +84,37 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3 } from 'lucide-ang
       </div>
 
       <!-- Add Game Modal -->
-      <div *ngIf="showSubmitGameModal" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
-        <div class="bg-slate-900 border border-white/10 rounded-3xl p-8 w-full max-w-md shadow-2xl">
-           <h3 class="text-2xl font-black text-white mb-6">أضف لعبتك الخاصة</h3>
-           <input type="text" [(ngModel)]="newGameUrl" placeholder="رابط اللعبة (URL)..." class="w-full h-12 bg-black/40 border border-indigo-500/50 rounded-2xl text-sm text-white px-4 mb-4" />
-           <input type="text" [(ngModel)]="newGameTitle" placeholder="اسم اللعبة..." class="w-full h-12 bg-black/40 border border-indigo-500/50 rounded-2xl text-sm text-white px-4 mb-6" />
-           <div class="flex gap-4">
-             <button (click)="showSubmitGameModal = false" class="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl">إلغاء</button>
-             <button (click)="submitGame()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl">إرسال</button>
+      <div *ngIf="showSubmitGameModal" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6">
+        <div class="bg-slate-900 border border-white/10 rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl">
+           <h3 class="text-xl sm:text-2xl font-black text-white mb-4 sm:mb-6">أضف لعبتك الخاصة</h3>
+           <input type="text" [(ngModel)]="newGameUrl" placeholder="رابط اللعبة (URL)..." class="w-full h-11 sm:h-12 bg-black/40 border border-indigo-500/50 rounded-2xl text-xs sm:text-sm text-white px-4 mb-3 sm:mb-4" />
+           <input type="text" [(ngModel)]="newGameTitle" placeholder="اسم اللعبة..." class="w-full h-11 sm:h-12 bg-black/40 border border-indigo-500/50 rounded-2xl text-xs sm:text-sm text-white px-4 mb-5 sm:mb-6" />
+           <div class="flex gap-3 sm:gap-4">
+             <button (click)="showSubmitGameModal = false" class="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm">إلغاء</button>
+             <button (click)="submitGame()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm">إرسال</button>
            </div>
         </div>
       </div>
 
       <!-- Hero Section -->
-      <div class="relative mb-12 rounded-[2.5rem] overflow-hidden border border-white/5 bg-slate-900 shadow-2xl">
+      <div class="relative mb-8 sm:mb-12 rounded-2xl sm:rounded-[2.5rem] overflow-hidden border border-white/5 bg-slate-900 shadow-2xl">
         <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent z-10"></div>
-        <div class="w-full h-[400px] bg-slate-800 flex items-center justify-center opacity-50 grayscale hover:grayscale-0 transition-all duration-1000">
+        <div class="w-full h-64 sm:h-[400px] bg-slate-800 flex items-center justify-center opacity-50 grayscale hover:grayscale-0 transition-all duration-1000">
             <img src="https://images.unsplash.com/photo-1596515828859-e9ceec5c4839?q=80&w=1000&auto=format&fit=crop" class="w-full h-full object-cover" alt="Tank Battle Feature" (error)="onImageError($event)" />
          </div>
         
-        <div class="absolute bottom-0 inset-x-0 p-8 md:p-12 z-20 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
+        <div class="absolute bottom-0 inset-x-0 p-4 sm:p-8 md:p-12 z-20 flex flex-col md:flex-row items-start md:items-end justify-between gap-4 sm:gap-6">
            <div class="max-w-2xl text-right">
-              <div class="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/20 border border-indigo-500/30 rounded-full mb-4 backdrop-blur-md">
-                 <span class="w-2 h-2 rounded-full bg-indigo-400 animate-ping"></span>
-                 <span class="text-xs font-bold text-indigo-300">Super Arcade Platform</span>
+              <div class="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-0.5 sm:py-1 bg-indigo-500/20 border border-indigo-500/30 rounded-full mb-2 sm:mb-4 backdrop-blur-md">
+                 <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-indigo-400 animate-ping"></span>
+                 <span class="text-[10px] sm:text-xs font-bold text-indigo-300">Super Arcade Platform</span>
               </div>
-              <h1 class="text-3xl md:text-5xl font-black text-white mb-3 tracking-tight">معرض ألعاب التسلية الذكية</h1>
-              <p class="text-slate-300 text-sm md:text-base font-medium leading-relaxed">استمتع بـ 20+ لعبة ممتعة فردية وجماعية، أو ابنِ لعبتك المخصصة بالذكاء الاصطناعي وانشرها للجميع!</p>
+              <h1 class="text-xl sm:text-3xl md:text-5xl font-black text-white mb-2 sm:mb-3 tracking-tight">معرض ألعاب التسلية الذكية</h1>
+              <p class="text-slate-300 text-xs sm:text-sm md:text-base font-medium leading-relaxed line-clamp-2 sm:line-clamp-none">استمتع بـ 20+ لعبة ممتعة فردية وجماعية، أو ابنِ لعبتك المخصصة بالذكاء الاصطناعي وانشرها للجميع!</p>
            </div>
 
-           <div class="flex gap-4">
-              <button (click)="playGame('tank-battle')" class="bg-indigo-600 hover:bg-indigo-500 text-white font-black px-8 py-4 rounded-2xl shadow-xl shadow-indigo-600/30 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-3 text-base">
+           <div class="flex gap-4 w-full sm:w-auto">
+              <button (click)="playGame('tank-battle')" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-black px-4 sm:px-8 py-2.5 sm:py-4 rounded-xl sm:rounded-2xl shadow-xl shadow-indigo-600/30 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center gap-2 sm:gap-3 text-xs sm:text-base">
                  <span>العب اللعبة الأكثر شعبية ⚡</span>
               </button>
            </div>
@@ -122,35 +122,35 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3 } from 'lucide-ang
       </div>
 
       <!-- Main Section Header -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 mb-6 sm:mb-8 border-b border-white/5 pb-4 sm:pb-6">
         <div>
-          <h2 class="text-2xl font-black text-white flex items-center gap-3">
-            <svg xmlns="http://www.w3.org/2000/svg" class="text-indigo-500 size-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <h2 class="text-xl sm:text-2xl font-black text-white flex items-center gap-2 sm:gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="text-indigo-500 size-6 sm:size-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             مكتبة الألعاب السيادية
           </h2>
-          <p class="text-sm text-slate-400 mr-11">ألعاب تعمل بالكامل داخل بيئة نكسوس، بدون إعلانات وبسيادة كاملة.</p>
+          <p class="text-xs sm:text-sm text-slate-400 mr-8 sm:mr-11 mt-0.5">ألعاب تعمل بالكامل داخل بيئة نكسوس، بدون إعلانات وبسيادة كاملة.</p>
         </div>
       </div>
 
-      <!-- Games Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+      <!-- Games Grid (2 columns on mobile, 2 on tablet, 3 on lg laptop, 4 on xl laptop) -->
+      <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 md:gap-8">
         <!-- AI Game Creator Card (+ Button) -->
         <div 
           [routerLink]="['/arcade/ai-builder']"
           class="group relative cursor-pointer">
-          <div class="aspect-[4/3] rounded-[2rem] border-2 border-dashed border-indigo-500/40 hover:border-indigo-400 bg-slate-900/60 hover:bg-indigo-950/30 transition-all duration-500 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-indigo-500/20 flex flex-col items-center justify-center p-6 text-center">
+          <div class="aspect-[4/3] rounded-2xl sm:rounded-[2rem] border-2 border-dashed border-indigo-500/40 hover:border-indigo-400 bg-slate-900/60 hover:bg-indigo-950/30 transition-all duration-500 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-indigo-500/20 flex flex-col items-center justify-center p-3 sm:p-6 text-center">
             
-            <div class="w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 shadow-xl mb-4">
-              <lucide-icon [img]="Plus" class="w-8 h-8"></lucide-icon>
+            <div class="w-10 h-10 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 shadow-xl mb-2 sm:mb-4">
+              <lucide-icon [img]="Plus" class="w-5 h-5 sm:w-8 sm:h-8"></lucide-icon>
             </div>
 
-            <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full mb-2">
-              <lucide-icon [img]="Sparkles" class="w-3 h-3 text-amber-400"></lucide-icon>
-              <span class="text-[10px] font-black text-amber-400">استوديو الذكاء الاصطناعي</span>
+            <div class="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 bg-amber-500/10 border border-amber-500/20 rounded-full mb-1 sm:mb-2">
+              <lucide-icon [img]="Sparkles" class="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-400"></lucide-icon>
+              <span class="text-[8px] sm:text-[10px] font-black text-amber-400">ذكاء اصطناعي</span>
             </div>
 
-            <h3 class="text-lg font-black text-white group-hover:text-indigo-300 transition-colors">اصنع لعبة جديدة⚡</h3>
-            <p class="text-xs text-slate-400 mt-1 font-medium leading-relaxed">ابنِ لعبة Arcade تفاعلية بالذكاء الاصطناعي مخصصة لك</p>
+            <h3 class="text-xs sm:text-base md:text-lg font-black text-white group-hover:text-indigo-300 transition-colors">اصنع لعبة جديدة ⚡</h3>
+            <p class="text-[9px] sm:text-xs text-slate-400 mt-0.5 sm:mt-1 font-medium leading-relaxed line-clamp-2">ابنِ لعبة تفاعلية بالذكاء الاصطناعي</p>
           </div>
         </div>
 
@@ -158,51 +158,51 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3 } from 'lucide-ang
         <div 
           [routerLink]="['/arcade/godot-builder']"
           class="group relative cursor-pointer">
-          <div class="aspect-[4/3] rounded-[2rem] border-2 border-dashed border-purple-500/40 hover:border-purple-400 bg-slate-900/60 hover:bg-purple-950/30 transition-all duration-500 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-purple-500/20 flex flex-col items-center justify-center p-6 text-center">
+          <div class="aspect-[4/3] rounded-2xl sm:rounded-[2rem] border-2 border-dashed border-purple-500/40 hover:border-purple-400 bg-slate-900/60 hover:bg-purple-950/30 transition-all duration-500 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-purple-500/20 flex flex-col items-center justify-center p-3 sm:p-6 text-center">
             
-            <div class="w-16 h-16 rounded-2xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400 group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300 shadow-xl mb-4">
-              <span class="text-3xl">🎮</span>
+            <div class="w-10 h-10 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400 group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300 shadow-xl mb-2 sm:mb-4">
+              <span class="text-xl sm:text-3xl">🎮</span>
             </div>
 
-            <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/10 border border-purple-500/20 rounded-full mb-2">
-              <span class="text-[10px] font-black text-purple-400">محرك Godot</span>
+            <div class="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 bg-purple-500/10 border border-purple-500/20 rounded-full mb-1 sm:mb-2">
+              <span class="text-[8px] sm:text-[10px] font-black text-purple-400">محرك Godot</span>
             </div>
 
-            <h3 class="text-lg font-black text-white group-hover:text-purple-300 transition-colors">لعبة Godot جديدة🎮</h3>
-            <p class="text-xs text-slate-400 mt-1 font-medium leading-relaxed">ابنِ لعبة حقيقية بمحرك Godot بالذكاء الاصطناعي</p>
+            <h3 class="text-xs sm:text-base md:text-lg font-black text-white group-hover:text-purple-300 transition-colors">لعبة Godot جديدة 🎮</h3>
+            <p class="text-[9px] sm:text-xs text-slate-400 mt-0.5 sm:mt-1 font-medium leading-relaxed line-clamp-2">ابنِ لعبة بمحرك Godot الذكي</p>
           </div>
         </div>
 
         <div *ngFor="let game of games" class="group relative">
-          <div class="aspect-[4/3] rounded-[2rem] overflow-hidden border border-white/5 bg-slate-900 transition-all duration-500 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-indigo-500/10 flex flex-col">
+          <div class="aspect-[4/3] rounded-2xl sm:rounded-[2rem] overflow-hidden border border-white/5 bg-slate-900 transition-all duration-500 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-indigo-500/10 flex flex-col">
             <div class="flex-1 bg-slate-800 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity">
                  <img *ngIf="game.thumbnail" [src]="game.thumbnail" class="w-full h-full object-cover" [alt]="game.title" (error)="game.thumbnail = ''" />
-                <svg *ngIf="!game.thumbnail" xmlns="http://www.w3.org/2000/svg" class="size-20 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                <svg *ngIf="!game.thumbnail" xmlns="http://www.w3.org/2000/svg" class="size-12 sm:size-20 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             </div>
             
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-6 flex flex-col justify-end text-right">
-              <h3 class="text-xl font-black text-white mb-1">{{ game.title }}</h3>
-              <p class="text-[10px] text-slate-400 mb-4 line-clamp-2">{{ game.description }}</p>
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-3 sm:p-6 flex flex-col justify-end text-right">
+              <h3 class="text-xs sm:text-base md:text-xl font-black text-white mb-0.5 sm:mb-1 truncate">{{ game.title }}</h3>
+              <p class="text-[9px] sm:text-[10px] text-slate-400 mb-2 sm:mb-4 line-clamp-1 sm:line-clamp-2">{{ game.description }}</p>
               
-              <div class="flex gap-2 justify-end opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-                <button *ngIf="game.id.startsWith('custom_game_')" (click)="editGame(game.id)" class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold h-9 px-3 text-xs flex items-center gap-1 shadow cursor-pointer">
-                  <lucide-icon [img]="Edit3" class="w-3.5 h-3.5"></lucide-icon>
-                  تعديل ✏️
+              <div class="flex gap-1.5 sm:gap-2 justify-end sm:opacity-0 sm:group-hover:opacity-100 transform sm:translate-y-4 sm:group-hover:translate-y-0 transition-all duration-300">
+                <button *ngIf="game.id.startsWith('custom_game_')" (click)="editGame(game.id)" class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg sm:rounded-xl font-bold h-7 sm:h-9 px-2 sm:px-3 text-[10px] sm:text-xs flex items-center gap-1 shadow cursor-pointer">
+                  <span>✏️</span>
                 </button>
-                <button *ngIf="game.status === 'available'" (click)="openInviteModalForGame(game)" class="bg-indigo-600/90 hover:bg-indigo-600 text-white rounded-xl font-bold h-9 px-3 text-xs flex items-center gap-1 shadow cursor-pointer">
-                  دعوة ✉️
+                <button *ngIf="game.status === 'available'" (click)="openInviteModalForGame(game)" class="bg-indigo-600/90 hover:bg-indigo-600 text-white rounded-lg sm:rounded-xl font-bold h-7 sm:h-9 px-2 sm:px-3 text-[10px] sm:text-xs flex items-center gap-1 shadow cursor-pointer">
+                  <span class="hidden sm:inline">دعوة ✉️</span>
+                  <span class="sm:hidden">✉️</span>
                 </button>
-                <button *ngIf="game.status === 'available'" (click)="playGame(game.id)" class="bg-white text-black hover:bg-white/90 rounded-xl font-bold h-9 px-4 text-sm cursor-pointer">
-                  العب الآن
+                <button *ngIf="game.status === 'available'" (click)="playGame(game.id)" class="bg-white text-black hover:bg-white/90 rounded-lg sm:rounded-xl font-bold h-7 sm:h-9 px-2.5 sm:px-4 text-[11px] sm:text-sm cursor-pointer whitespace-nowrap">
+                  العب
                 </button>
-                <button *ngIf="game.status !== 'available'" disabled class="bg-white/10 text-white/40 rounded-xl font-bold h-9 px-4 text-sm cursor-not-allowed">
+                <button *ngIf="game.status !== 'available'" disabled class="bg-white/10 text-white/40 rounded-lg sm:rounded-xl font-bold h-7 sm:h-9 px-2.5 sm:px-4 text-[11px] sm:text-sm cursor-not-allowed">
                   قريباً
                 </button>
               </div>
             </div>
           </div>
-          <span *ngIf="game.id.startsWith('custom_game_')" class="absolute top-4 right-4 bg-emerald-500 text-slate-950 text-xs font-black px-3 py-1 rounded-full border border-emerald-300 shadow">منشورة حديثاً 🚀</span>
-          <span *ngIf="game.status === 'coming_soon'" class="absolute top-4 right-4 bg-slate-800 text-white text-xs font-bold px-3 py-1 rounded-full border border-white/10">قريباً</span>
+          <span *ngIf="game.id.startsWith('custom_game_')" class="absolute top-2 right-2 sm:top-4 sm:right-4 bg-emerald-500 text-slate-950 text-[9px] sm:text-xs font-black px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-emerald-300 shadow">جديدة 🚀</span>
+          <span *ngIf="game.status === 'coming_soon'" class="absolute top-2 right-2 sm:top-4 sm:right-4 bg-slate-800 text-white text-[9px] sm:text-xs font-bold px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-white/10">قريباً</span>
         </div>
       </div>
 

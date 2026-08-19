@@ -1,24 +1,26 @@
-<div class="flex flex-col h-[calc(100vh-6rem)] max-w-5xl mx-auto pt-4 pb-6 px-4 font-sans text-right relative" dir="rtl">
+<div class="flex flex-col h-[calc(100vh-5rem)] sm:h-[calc(100vh-6rem)] max-w-5xl mx-auto pt-2 sm:pt-4 pb-3 sm:pb-6 px-2 sm:px-4 font-sans text-right relative" dir="rtl">
   
   <!-- Main Glass Container Card -->
-  <div class="flex-1 overflow-hidden flex flex-col glass rounded-[3.5rem] relative shadow-2xl border border-white/5 bg-slate-950/40 backdrop-blur-xl">
+  <div class="flex-1 overflow-hidden flex flex-col glass rounded-2xl sm:rounded-[3.5rem] relative shadow-2xl border border-white/5 bg-slate-950/40 backdrop-blur-xl">
     
     <!-- 1. Header Toolbar Panel -->
-    <header class="p-6 border-b border-white/5 flex flex-col md:flex-row items-center justify-between gap-4 relative z-10 bg-slate-950/20 backdrop-blur-md">
-      <div class="flex items-center gap-3 flex-row-reverse">
-        <div class="size-10 bg-indigo-500/10 border border-indigo-500/20 rounded-full flex items-center justify-center animate-pulse">
-          <svg lucideIcon="sparkles" class="size-5 text-indigo-400"></svg>
-        </div>
-        <div class="text-right">
-          <h2 class="text-lg font-headline font-bold text-white tracking-tight flex items-center gap-2 justify-end">
-            نظام الحوار العصبي الذكي
-            <span class="text-[9px] uppercase font-black px-2 py-0.5 rounded-full border border-indigo-500/20 bg-indigo-500/5 text-indigo-400 tracking-wider">v5.5</span>
-          </h2>
-          <p class="text-[10px] text-slate-400">مساعدك الذكي لتوليد المعرفة ودعم اتخاذ القرار عبر موديلاتك الخاصة.</p>
+    <header class="p-3 sm:p-6 border-b border-white/5 flex flex-col md:flex-row items-center justify-between gap-2.5 sm:gap-4 relative z-10 bg-slate-950/20 backdrop-blur-md">
+      <div class="flex items-center gap-2 sm:gap-3 flex-row-reverse w-full md:w-auto justify-between md:justify-start">
+        <div class="flex items-center gap-2 flex-row-reverse">
+          <div class="size-8 sm:size-10 bg-indigo-500/10 border border-indigo-500/20 rounded-full flex items-center justify-center animate-pulse shrink-0">
+            <svg lucideIcon="sparkles" class="size-4 sm:size-5 text-indigo-400"></svg>
+          </div>
+          <div class="text-right">
+            <h2 class="text-sm sm:text-lg font-headline font-bold text-white tracking-tight flex items-center gap-1.5 justify-end">
+              نظام الحوار العصبي
+              <span class="text-[8px] sm:text-[9px] uppercase font-black px-1.5 sm:px-2 py-0.5 rounded-full border border-indigo-500/20 bg-indigo-500/5 text-indigo-400 tracking-wider">v5.5</span>
+            </h2>
+            <p class="text-[9px] sm:text-[10px] text-slate-400 hidden xs:block">مساعدك الذكي لتوليد المعرفة ودعم اتخاذ القرار.</p>
+          </div>
         </div>
       </div>
 
-      <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+      <div class="flex items-center gap-2 sm:gap-3 w-full md:w-auto justify-between sm:justify-end">
         <!-- Model Metadata display badge -->
         <div *ngIf="selectedModelDetails" class="hidden sm:flex flex-col text-right px-3 py-1 bg-white/5 border border-white/5 rounded-xl">
           <span class="text-[9px] text-indigo-400 font-bold">حدود الذاكرة والمدخلات</span>
@@ -29,7 +31,7 @@
         <select 
           [ngModel]="chatService.selectedModel()"
           (ngModelChange)="chatService.selectedModel.set($event)"
-          class="bg-slate-900 border border-white/10 h-10 px-4 rounded-xl text-white text-xs font-bold focus:outline-none focus:border-indigo-500 cursor-pointer">
+          class="bg-slate-900 border border-white/10 h-8 sm:h-10 px-2 sm:px-4 rounded-xl text-white text-[11px] sm:text-xs font-bold focus:outline-none focus:border-indigo-500 cursor-pointer flex-1 sm:flex-none">
           <option *ngFor="let m of chatService.activeModelsList" [value]="m.id" class="bg-slate-950 text-right">
             {{ m.label }}
           </option>
@@ -40,17 +42,17 @@
           (click)="showSettings.set(!showSettings())"
           [class.bg-indigo-500]="showSettings()"
           [class.text-white]="showSettings()"
-          class="h-10 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 flex items-center gap-2 text-slate-300 hover:text-white transition-all text-xs font-bold"
+          class="h-8 sm:h-10 px-2.5 sm:px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 flex items-center gap-1.5 text-slate-300 hover:text-white transition-all text-[11px] sm:text-xs font-bold"
           title="مفاتيح ومزودي API">
-          <svg lucideIcon="settings" class="size-4"></svg>
-          <span>ربط API Key</span>
+          <svg lucideIcon="settings" class="size-3.5 sm:size-4"></svg>
+          <span class="hidden sm:inline">ربط API</span>
         </button>
 
         <button 
           (click)="clearHistory()"
-          class="size-10 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-red-400 transition-colors"
+          class="size-8 sm:size-10 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-red-400 transition-colors"
           title="مسح السجل">
-          <svg lucideIcon="trash-2" class="size-4"></svg>
+          <svg lucideIcon="trash-2" class="size-3.5 sm:size-4"></svg>
         </button>
       </div>
     </header>
@@ -259,29 +261,29 @@
     </main>
 
     <!-- 4. Bottom Input panel -->
-    <footer class="p-6 border-t border-white/5 relative z-10 bg-slate-950/20 backdrop-blur-md">
+    <footer class="p-3 sm:p-6 border-t border-white/5 relative z-10 bg-slate-950/20 backdrop-blur-md">
       
       <!-- Attachment preview bar -->
-      <div *ngIf="uploadedAttachment" class="mb-4 p-3 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl flex items-center justify-between flex-row-reverse max-w-sm ml-auto animate-in slide-in-from-bottom-2">
-        <span class="text-xs font-bold text-indigo-300 truncate pl-3">{{ uploadedAttachment.name }}</span>
+      <div *ngIf="uploadedAttachment" class="mb-2 sm:mb-4 p-2 sm:p-3 bg-indigo-500/5 border border-indigo-500/10 rounded-xl sm:rounded-2xl flex items-center justify-between flex-row-reverse max-w-sm ml-auto animate-in slide-in-from-bottom-2">
+        <span class="text-[11px] sm:text-xs font-bold text-indigo-300 truncate pl-3">{{ uploadedAttachment.name }}</span>
         <button 
           (click)="uploadedAttachment = null"
-          class="size-6 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+          class="size-5 sm:size-6 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
           ✕
         </button>
       </div>
 
       <!-- Edit message notification bar -->
-      <div *ngIf="editingMsgId" class="mb-3 px-4 text-xs font-bold text-indigo-400 flex items-center gap-2 justify-end">
-        <span>أنت تقوم بتعديل رسالة نشطة حالياً. اضغط Enter لتطبيق التعديل.</span>
-        <svg lucideIcon="settings" class="size-3.5 animate-spin"></svg>
+      <div *ngIf="editingMsgId" class="mb-2 sm:mb-3 px-2 sm:px-4 text-[11px] sm:text-xs font-bold text-indigo-400 flex items-center gap-1.5 justify-end">
+        <span>تعديل رسالة نشطة. اضغط Enter للتطبيق.</span>
+        <svg lucideIcon="settings" class="size-3 sm:size-3.5 animate-spin"></svg>
       </div>
 
-      <div class="flex items-center gap-4 flex-row-reverse">
+      <div class="flex items-center gap-2 sm:gap-4 flex-row-reverse">
         <!-- Mock attachment upload trigger button -->
         <label 
-          class="size-14 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0">
-          <svg lucideIcon="plus" class="size-5"></svg>
+          class="size-10 sm:size-14 rounded-xl sm:rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0">
+          <svg lucideIcon="plus" class="size-4 sm:size-5"></svg>
           <input type="file" class="hidden" (change)="triggerMockUpload($event)" accept="image/*" />
         </label>
 
@@ -291,16 +293,16 @@
             type="text" 
             [(ngModel)]="inputText"
             (keydown.enter)="handleSend()"
-            placeholder="اسألني عن الأكواد، الصحة، تنظيم الوقت، أو اكتب /imagine لرسم صورة..."
-            class="w-full bg-white/5 border border-white/10 h-14 rounded-2xl text-white px-5 pl-16 text-right focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 text-sm"
+            placeholder="اسألني عن أي شيء، أو /imagine لرسم صورة..."
+            class="w-full bg-white/5 border border-white/10 h-10 sm:h-14 rounded-xl sm:rounded-2xl text-white px-3 sm:px-5 pl-12 sm:pl-16 text-right focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 text-xs sm:text-sm"
           />
 
           <!-- Send confirmation action button -->
           <button 
             (click)="handleSend()"
             [disabled]="isThinking || (!inputText.trim() && !uploadedAttachment)"
-            class="absolute left-3.5 top-1/2 -translate-y-1/2 size-8 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-            <svg lucideIcon="send" class="size-4 text-white"></svg>
+            class="absolute left-2 sm:left-3.5 top-1/2 -translate-y-1/2 size-7 sm:size-8 rounded-lg sm:rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+            <svg lucideIcon="send" class="size-3.5 sm:size-4 text-white"></svg>
           </button>
         </div>
       </div>
