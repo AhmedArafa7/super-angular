@@ -22,6 +22,9 @@ interface CharacterSkin {
   color: number;
   hatColor: number;
   desc: string;
+  perk: string;
+  iconBg: string;
+  badgeEmoji: string;
 }
 
 interface HoverboardItem {
@@ -31,6 +34,8 @@ interface HoverboardItem {
   unlocked: boolean;
   color: number;
   desc: string;
+  perk: string;
+  iconBg: string;
 }
 
 interface MissionItem {
@@ -143,6 +148,15 @@ interface LeaderboardEntry {
             <span class="text-white font-black">{{ Math.ceil(powerups[pKey].timer) }}ث</span>
           </div>
         </ng-container>
+
+        <!-- Side Collision Strike Warning Badge -->
+        <div *ngIf="stumbleCount > 0 && gameState === 'PLAYING'" class="bg-red-950/95 border-2 border-red-500 text-red-200 font-black px-3.5 py-1.5 rounded-2xl text-xs shadow-[0_0_20px_rgba(239,68,68,0.7)] flex items-center gap-2 backdrop-blur-md animate-pulse">
+          <span class="text-base animate-bounce">⚠️</span>
+          <div class="flex flex-col">
+            <span class="text-red-400 font-black">اصطدام جانبي ({{ stumbleCount }}/2)</span>
+            <span class="text-[10px] text-red-200">خبطة ثانية = إمساك فوراً! (تعافٍ: {{ Math.ceil(stumbleResetTimer) }}ث)</span>
+          </div>
+        </div>
       </div>
 
       <!-- Local 2-Player Inspector Action Buttons (When mode is local_vs) -->
@@ -184,38 +198,38 @@ interface LeaderboardEntry {
         <p class="text-xs text-slate-300 font-bold mt-3">استخدم الأسهم ⬅️ ➡️ أو اسحب الشاشة للمراوغة، ⬆️ للقفز، ⬇️ للتزحلق تحت الحواجز</p>
       </div>
 
-      <!-- ================= 1. START MENU OVERLAY (1:1 CAIRO METRO DASH EDITION) ================= -->
-      <div *ngIf="gameState === 'MENU'" class="absolute inset-0 z-40 flex items-center justify-center p-3 sm:p-4 bg-slate-950 overflow-hidden select-none">
+      <!-- ================= 1. START MENU OVERLAY (TROPICAL BEACH DASH EDITION) ================= -->
+      <div *ngIf="gameState === 'MENU'" class="absolute inset-0 z-40 flex items-center justify-center p-3 sm:p-4 bg-gradient-to-br from-sky-500 via-cyan-600 to-blue-900 overflow-hidden select-none">
         
-        <!-- Authentic Railroad Tracks Station Background -->
-        <img src="assets/images/metro-tracks-bg.jpg" class="absolute inset-0 w-full h-full object-cover object-center" (error)="onBgImgErr($event)" />
-        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/50 to-slate-950/80"></div>
+        <!-- Tropical Sunny Ocean & Beach Backdrop Overlay -->
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-amber-200/30 via-transparent to-blue-950/80"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-slate-950/70"></div>
 
-        <!-- Left Side Floating Badge: Metro Dash Runner Avatar -->
+        <!-- Left Side Floating Badge: Beach Dash Runner Avatar -->
         <div class="absolute left-4 sm:left-12 top-20 hidden md:flex flex-col items-center gap-1.5 z-10">
           <div class="w-16 h-16 rounded-full border-2 border-cyan-400/80 bg-slate-900/90 p-1 shadow-[0_0_25px_rgba(6,182,212,0.6)] flex items-center justify-center">
-            <span class="text-3xl">🏃‍♂️</span>
+            <span class="text-3xl">🏄‍♂️</span>
           </div>
-          <span class="text-xs font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">Metro Dash</span>
+          <span class="text-xs font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">Beach Dash</span>
         </div>
 
-        <!-- Right Side Floating Badge: Metro Line 3 Avatar -->
+        <!-- Right Side Floating Badge: Tropical Coast Avatar -->
         <div class="absolute right-4 sm:right-12 top-20 hidden md:flex flex-col items-center gap-1.5 z-10">
           <div class="w-16 h-16 rounded-full border-2 border-amber-400/80 bg-slate-900/90 p-1 shadow-[0_0_25px_rgba(245,158,11,0.6)] flex items-center justify-center">
-            <span class="text-3xl">🚇</span>
+            <span class="text-3xl">🏖️</span>
           </div>
-          <span class="text-xs font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">Metro Line 3</span>
+          <span class="text-xs font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">Tropical Coast</span>
         </div>
 
-        <!-- Center Station Card (1:1 with target design) -->
-        <div class="relative w-full max-w-[450px] bg-slate-900/90 backdrop-blur-xl border-2 border-slate-700/80 rounded-[36px] p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.95)] flex flex-col items-center text-center">
+        <!-- Center Station Card (Beach Resort Edition) -->
+        <div class="relative w-full max-w-[450px] bg-slate-900/90 backdrop-blur-xl border-2 border-cyan-500/60 rounded-[36px] p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.95)] flex flex-col items-center text-center">
           
-          <!-- Small Egyptian Flag Badge at Top Edge -->
-          <div class="absolute -top-3.5 inset-x-0 mx-auto w-12 h-6 bg-slate-900 border border-slate-600 rounded-full flex items-center justify-center shadow-lg text-sm z-20">
-            🇪🇬
+          <!-- Small Beach Palm Badge at Top Edge -->
+          <div class="absolute -top-3.5 inset-x-0 mx-auto w-12 h-6 bg-slate-900 border border-cyan-500 rounded-full flex items-center justify-center shadow-lg text-sm z-20">
+            🌴
           </div>
 
-          <!-- Header Section: Inspector Portrait + METRO DASH Title + Metro Train -->
+          <!-- Header Section: Inspector Portrait + BEACH DASH Title + Beach Cruiser Train -->
           <div class="w-full flex items-center justify-between mt-1 mb-3">
             <!-- Inspector Portrait -->
             <div class="w-16 h-16 rounded-2xl bg-gradient-to-b from-blue-950 to-slate-900 border border-cyan-400/40 flex items-center justify-center text-3xl shadow-lg relative overflow-hidden">
@@ -224,15 +238,15 @@ interface LeaderboardEntry {
 
             <!-- Center Title & Arabic Subtitle -->
             <div class="flex flex-col items-center flex-1 px-2">
-              <h1 class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-100 to-cyan-300 tracking-wider drop-shadow-[0_2px_12px_rgba(6,182,212,0.7)] font-sans">
-                METRO DASH
+              <h1 class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 via-amber-400 to-orange-500 tracking-wider drop-shadow-[0_2px_12px_rgba(245,158,11,0.7)] font-sans">
+                BEACH DASH 🏖️
               </h1>
-              <span class="text-xs font-bold text-slate-300 mt-0.5 tracking-wide">الهروب عبر محطات المترو</span>
+              <span class="text-xs font-bold text-cyan-200 mt-0.5 tracking-wide">الهروب عبر شاطئ البحر الاستوائي</span>
             </div>
 
-            <!-- Metro Train Graphic -->
-            <div class="w-16 h-16 rounded-2xl bg-gradient-to-b from-slate-900 to-emerald-950 border border-emerald-400/40 flex items-center justify-center text-3xl shadow-lg relative overflow-hidden">
-              <span class="transform scale-125">🚇</span>
+            <!-- Beach Train Graphic -->
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-b from-cyan-950 to-blue-900 border border-cyan-400/40 flex items-center justify-center text-3xl shadow-lg relative overflow-hidden">
+              <span class="transform scale-125">🚆</span>
             </div>
           </div>
 
@@ -343,59 +357,91 @@ interface LeaderboardEntry {
         </div>
       </div>
 
-      <!-- ================= 3. 1:1 CAIRO METRO GAME OVER OVERLAY ================= -->
-      <div *ngIf="gameState === 'GAMEOVER'" class="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
+      <!-- ================= 3. LIVING 3D CINEMATIC GAME OVER UI ================= -->
+      <div *ngIf="gameState === 'GAMEOVER'" class="absolute inset-0 z-50 flex flex-col justify-between p-3 sm:p-6 bg-gradient-to-t from-black/60 via-transparent to-black/40 animate-in fade-in duration-300 select-none pointer-events-none">
         
-        <!-- Main Game Over Card -->
-        <div class="relative w-full max-w-sm rounded-[36px] p-6 shadow-2xl flex flex-col items-center text-center overflow-hidden border-2 border-amber-500/60 bg-gradient-to-b from-slate-900/95 via-slate-950/98 to-slate-950">
+        <!-- Top Loss Title Banner (Pointer Events Auto) -->
+        <div class="flex flex-col items-center text-center mt-1 sm:mt-2 pointer-events-auto">
+          <div class="bg-red-600/95 border border-red-400 text-white text-[11px] sm:text-xs font-black px-4 py-0.5 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.8)] mb-1 tracking-widest uppercase animate-bounce">
+            GAME OVER
+          </div>
+          <h2 class="text-3xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-orange-400 to-red-500 drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]">
+            لقد خسرت!
+          </h2>
+          <p class="text-xs sm:text-sm text-yellow-300 font-bold mt-1 bg-black/75 border border-yellow-500/40 px-4 py-0.5 rounded-full shadow-lg backdrop-blur-md">
+            {{ gameOverSubtitle }}
+          </p>
+        </div>
+
+        <!-- Center 3D Viewport is 100% Open & Unblocked to showcase Jake, Inspector, and the Beach! -->
+        <div class="flex-1 w-full pointer-events-none"></div>
+
+        <!-- Bottom Floating Dock: Sleek Horizontal 3D Stats + Action Buttons (Pointer Events Auto) -->
+        <div class="w-full max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md border-2 border-amber-400/80 rounded-[28px] shadow-[0_15px_40px_rgba(0,0,0,0.9)] pointer-events-auto mb-1">
           
-          <!-- Background Artwork image if available -->
-          <img src="/games/subway-surfers/gameover-bg.jpg" class="absolute inset-0 w-full h-full object-cover opacity-25 pointer-events-none" (error)="onBgImgErr($event)">
-
-          <!-- Loss Title & 1:1 Cairo Arabic Heading -->
-          <div class="relative z-10 flex flex-col items-center">
-            <div class="bg-red-600/90 border border-red-400 text-white text-[11px] font-black px-4 py-1 rounded-full shadow-lg mb-2 tracking-widest uppercase">
-              GAME OVER
+          <!-- Horizontal Stats Strip -->
+          <div class="grid grid-cols-3 gap-2 sm:gap-4 w-full md:w-auto flex-1 text-center border-b md:border-b-0 md:border-l border-white/15 pb-2.5 md:pb-0 md:pl-4">
+            
+            <!-- 1. المجمّع -->
+            <div class="flex flex-col items-center bg-black/50 rounded-2xl p-2 border border-white/10 shadow-inner">
+              <span class="text-[11px] sm:text-xs font-bold text-slate-300">المجمّع</span>
+              <span class="text-lg sm:text-2xl font-black text-yellow-300 font-mono drop-shadow-[0_2px_6px_rgba(253,224,71,0.6)]">
+                {{ score.toLocaleString() }} <span class="text-[10px] text-amber-400">م</span>
+              </span>
             </div>
-            <h2 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-orange-400 to-red-500 drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
-              لقد خسرت!
-            </h2>
-            <p class="text-xs text-slate-300 font-bold mt-1 mb-4">{{ gameOverSubtitle }}</p>
+
+            <!-- 2. العملات -->
+            <div class="flex flex-col items-center bg-black/50 rounded-2xl p-2 border border-white/10 shadow-inner">
+              <span class="text-[11px] sm:text-xs font-bold text-slate-300">العملات</span>
+              <div class="flex items-center gap-1">
+                <span class="text-lg sm:text-2xl font-black text-yellow-300 font-mono drop-shadow-[0_2px_6px_rgba(253,224,71,0.6)]">
+                  {{ coins.toLocaleString() }}
+                </span>
+                <span class="text-xs animate-pulse">🪙</span>
+              </div>
+            </div>
+
+            <!-- 3. المسافة -->
+            <div class="flex flex-col items-center bg-black/50 rounded-2xl p-2 border border-white/10 shadow-inner">
+              <span class="text-[11px] sm:text-xs font-bold text-slate-300">المسافة</span>
+              <span class="text-base sm:text-xl font-black text-cyan-300 font-mono drop-shadow-[0_2px_6px_rgba(6,182,212,0.6)]">
+                {{ (score / 1000).toFixed(1) }} كلم
+              </span>
+            </div>
+
           </div>
 
-          <!-- 1:1 Stats Panel matching screenshot -->
-          <div class="relative z-10 w-full bg-slate-900/90 border border-white/15 rounded-3xl p-4 shadow-2xl flex flex-col gap-2.5 mb-5">
-            <div class="flex items-center justify-between border-b border-white/10 pb-2">
-              <span class="text-xs font-bold text-slate-400">المجمّع (النقاط):</span>
-              <span class="text-lg font-black text-amber-400">{{ score.toLocaleString() }} م</span>
-            </div>
-            <div class="flex items-center justify-between border-b border-white/10 pb-2">
-              <span class="text-xs font-bold text-slate-400">العملات المجمعة:</span>
-              <span class="text-lg font-black text-amber-300 flex items-center gap-1">🪙 {{ coins.toLocaleString() }}</span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-slate-400">المسافة المقطوعة:</span>
-              <span class="text-sm font-black text-cyan-300">{{ (score / 1000).toFixed(1) }} كلم</span>
-            </div>
-          </div>
-
-          <!-- 3 Action Buttons (1:1 with Loss Screen) -->
-          <div class="relative z-10 flex flex-col gap-2.5 w-full">
-            <button (click)="restartCurrentGame()" class="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-slate-950 font-black text-base rounded-2xl shadow-xl transition-all transform hover:scale-[1.02] cursor-pointer flex items-center justify-center gap-2 border border-emerald-300">
-              <span>🔄 العب مرة أخرى</span>
+          <!-- 3D Tactile Pop-Out Buttons -->
+          <div class="flex items-center gap-2.5 w-full md:w-auto">
+            
+            <!-- Green Button: العب مرة أخرى (3D Pop-Out) -->
+            <button (click)="restartCurrentGame()" 
+                    class="flex-1 md:flex-initial px-6 py-3.5 bg-gradient-to-b from-[#22c55e] to-[#15803d] border-t-2 border-l-2 border-r-2 border-[#86efac] border-b-[6px] border-[#14532d] hover:border-b-[8px] hover:-translate-y-1 active:border-b-[2px] active:translate-y-1 rounded-2xl shadow-[0_8px_20px_rgba(34,197,94,0.6)] cursor-pointer text-white font-black text-base sm:text-lg flex items-center justify-center gap-2 transition-all duration-100 select-none">
+              <span class="text-xl">🔄</span>
+              <span class="whitespace-nowrap">العب مرة أخرى</span>
             </button>
 
-            <div class="grid grid-cols-2 gap-2 w-full">
-              <button (click)="openShopFromGameOver()" class="py-3 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-black text-xs rounded-2xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5 border border-yellow-300">
-                <span>🏪 المتجر</span>
-              </button>
-              <button (click)="backToMenuFromGameOver()" class="py-3 bg-slate-800 hover:bg-slate-700 text-white font-black text-xs rounded-2xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5 border border-white/20">
-                <span>🏠 القائمة الرئيسية</span>
-              </button>
-            </div>
+            <!-- Blue Button: القائمة (3D Pop-Out) -->
+            <button (click)="backToMenuFromGameOver()" 
+                    class="px-4 py-3.5 bg-gradient-to-b from-[#0ea5e9] to-[#0369a1] border-t-2 border-l-2 border-r-2 border-[#7dd3fc] border-b-[6px] border-[#0c4a6e] hover:border-b-[8px] hover:-translate-y-1 active:border-b-[2px] active:translate-y-1 rounded-2xl shadow-[0_6px_16px_rgba(14,165,233,0.5)] cursor-pointer text-white font-black text-sm sm:text-base flex items-center justify-center gap-1.5 transition-all duration-100 select-none">
+              <span>🏠</span>
+              <span class="hidden sm:inline">الرئيسية</span>
+            </button>
+
+            <!-- Yellow Button: المتجر (3D Pop-Out) -->
+            <button (click)="openShopFromGameOver()" 
+                    class="px-4 py-3.5 bg-gradient-to-b from-[#f59e0b] to-[#b45309] border-t-2 border-l-2 border-r-2 border-[#fef08a] border-b-[6px] border-[#78350f] hover:border-b-[8px] hover:-translate-y-1 active:border-b-[2px] active:translate-y-1 rounded-2xl shadow-[0_6px_16px_rgba(245,158,11,0.5)] cursor-pointer text-slate-950 font-black text-sm sm:text-base flex items-center justify-center gap-1.5 transition-all duration-100 select-none">
+              <span>🏪</span>
+              <span class="hidden sm:inline">المتجر</span>
+            </button>
+
           </div>
 
         </div>
+
+        <!-- Footer Bottom Spacer -->
+        <div class="mb-1"></div>
+
       </div>
 
       <!-- ================= 4. PAUSE MODAL ================= -->
@@ -466,16 +512,218 @@ interface LeaderboardEntry {
               <!-- Left: 3D Icon + Info -->
               <div class="flex items-center gap-3.5 flex-1">
                 
-                <!-- Distinct 3D Glowing Icon Container -->
-                <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-lg border relative overflow-hidden flex-shrink-0"
+                <!-- Distinct High-Fidelity 3D Rendered Icon Container -->
+                <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl flex items-center justify-center p-1 shadow-2xl border-2 relative overflow-hidden flex-shrink-0"
                      [ngClass]="{
-                       'bg-gradient-to-br from-red-600 via-rose-700 to-indigo-900 border-rose-400/60 shadow-[0_0_20px_rgba(244,63,94,0.4)]': pKey === 'magnet',
-                       'bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-600 border-yellow-300 shadow-[0_0_20px_rgba(245,158,11,0.5)]': pKey === 'multiplier',
-                       'bg-gradient-to-br from-cyan-500 via-teal-600 to-slate-900 border-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.4)]': pKey === 'hoverboard',
-                       'bg-gradient-to-br from-purple-600 via-violet-700 to-indigo-950 border-purple-300 shadow-[0_0_20px_rgba(168,85,247,0.4)]': pKey === 'sneakers',
-                       'bg-gradient-to-br from-orange-500 via-red-600 to-rose-900 border-orange-300 shadow-[0_0_20px_rgba(249,115,22,0.5)]': pKey === 'jetpack'
+                       'bg-gradient-to-b from-slate-900 via-red-950/80 to-slate-950 border-rose-500/70 shadow-[0_0_25px_rgba(244,63,94,0.5)]': pKey === 'magnet',
+                       'bg-gradient-to-b from-slate-900 via-amber-950/80 to-slate-950 border-yellow-400/70 shadow-[0_0_25px_rgba(245,158,11,0.55)]': pKey === 'multiplier',
+                       'bg-gradient-to-b from-slate-900 via-cyan-950/80 to-slate-950 border-cyan-400/70 shadow-[0_0_25px_rgba(6,182,212,0.55)]': pKey === 'hoverboard',
+                       'bg-gradient-to-b from-slate-900 via-emerald-950/80 to-slate-950 border-emerald-400/70 shadow-[0_0_25px_rgba(16,185,129,0.5)]': pKey === 'sneakers',
+                       'bg-gradient-to-b from-slate-900 via-orange-950/80 to-slate-950 border-orange-400/70 shadow-[0_0_25px_rgba(249,115,22,0.55)]': pKey === 'jetpack'
                      }">
-                  <span class="transform hover:scale-110 transition-transform">{{ powerupConfigs[pKey].icon }}</span>
+                  
+                  <!-- 1. Ultra-Realistic 3D Horseshoe Magnet -->
+                  <svg *ngIf="pKey === 'magnet'" class="w-full h-full drop-shadow-[0_4px_16px_rgba(239,68,68,0.9)]" viewBox="0 0 100 100" fill="none">
+                    <defs>
+                      <radialGradient id="magBody3D" cx="30%" cy="30%" r="75%">
+                        <stop offset="0%" stop-color="#ff6b6b"/>
+                        <stop offset="45%" stop-color="#dc2626"/>
+                        <stop offset="85%" stop-color="#881337"/>
+                        <stop offset="100%" stop-color="#450a0a"/>
+                      </radialGradient>
+                      <linearGradient id="chrome3D" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#ffffff"/>
+                        <stop offset="35%" stop-color="#e2e8f0"/>
+                        <stop offset="65%" stop-color="#64748b"/>
+                        <stop offset="100%" stop-color="#cbd5e1"/>
+                      </linearGradient>
+                      <radialGradient id="goldCoin3D" cx="35%" cy="35%" r="65%">
+                        <stop offset="0%" stop-color="#fef08a"/>
+                        <stop offset="45%" stop-color="#facc15"/>
+                        <stop offset="80%" stop-color="#ca8a04"/>
+                        <stop offset="100%" stop-color="#713f12"/>
+                      </radialGradient>
+                      <linearGradient id="goldRingGrad" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stop-color="#fef08a"/>
+                        <stop offset="50%" stop-color="#eab308"/>
+                        <stop offset="100%" stop-color="#854d0e"/>
+                      </linearGradient>
+                      <filter id="magSparkGlow" x="-30%" y="-30%" width="160%" height="160%">
+                        <feGaussianBlur stdDeviation="2.5" result="blur"/>
+                        <feMerge>
+                          <feMergeNode in="blur"/>
+                          <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                      </filter>
+                    </defs>
+
+                    <!-- Drop Shadow -->
+                    <ellipse cx="50" cy="88" rx="34" ry="7" fill="#000000" opacity="0.6"/>
+
+                    <!-- 3D Red Horseshoe Body -->
+                    <path d="M22 28 V 56 C 22 71.5 34.5 83 50 83 C 65.5 83 78 71.5 78 56 V 28 H 60 V 56 C 60 61.5 55.5 66 50 66 C 44.5 66 40 61.5 40 56 V 28 H 22 Z" fill="url(#magBody3D)" stroke="#991b1b" stroke-width="1.5"/>
+
+                    <!-- Specular 3D Highlight Shine -->
+                    <path d="M26 30 V 56 C 26 68 36 76.5 50 76.5" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+
+                    <!-- Left Chrome Pole Tip with Gold Collar & N label -->
+                    <rect x="20.5" y="14" width="19" height="16" rx="3" fill="url(#chrome3D)" stroke="#475569" stroke-width="1"/>
+                    <rect x="20.5" y="27" width="19" height="3" fill="url(#goldRingGrad)"/>
+                    <text x="30" y="25" fill="#0f172a" font-size="10" font-weight="900" text-anchor="middle" font-family="sans-serif">N</text>
+
+                    <!-- Right Chrome Pole Tip with Gold Collar & S label -->
+                    <rect x="58.5" y="14" width="19" height="16" rx="3" fill="url(#chrome3D)" stroke="#475569" stroke-width="1"/>
+                    <rect x="58.5" y="27" width="19" height="3" fill="url(#goldRingGrad)"/>
+                    <text x="68" y="25" fill="#0f172a" font-size="10" font-weight="900" text-anchor="middle" font-family="sans-serif">S</text>
+
+                    <!-- Electric Blue Spark Arc -->
+                    <path d="M30 18 Q 50 6 68 18" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round" fill="none" filter="url(#magSparkGlow)"/>
+                    <path d="M30 18 Q 50 6 68 18" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                    
+                    <!-- Pulsing Blue Lightning Sparks -->
+                    <path d="M35 17 L44 11 L41 19 L53 13 L51 21 L63 17" stroke="#00f0ff" stroke-width="1.8" stroke-linecap="round" fill="none" filter="url(#magSparkGlow)"/>
+
+                    <!-- Central Floating 3D Gold Coin with Star -->
+                    <ellipse cx="50" cy="40" rx="14" ry="14" fill="url(#goldCoin3D)" stroke="#facc15" stroke-width="1.5"/>
+                    <polygon points="50,30 53,37 60,37 55,42 57,49 50,45 43,49 45,42 40,37 47,37" fill="#fef08a" stroke="#ca8a04" stroke-width="0.8"/>
+
+                    <!-- Magnetic Attraction Waves -->
+                    <path d="M12 24 C 8 36 8 50 15 62" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" opacity="0.75" stroke-dasharray="3 3"/>
+                    <path d="M88 24 C 92 36 92 50 85 62" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" opacity="0.75" stroke-dasharray="3 3"/>
+                  </svg>
+
+                  <!-- 2. Ultra-Realistic 3D Cyber Hoverboard -->
+                  <svg *ngIf="pKey === 'hoverboard'" class="w-full h-full drop-shadow-[0_4px_16px_rgba(6,182,212,0.9)]" viewBox="0 0 100 100" fill="none">
+                    <defs>
+                      <linearGradient id="hbHullGrad" x1="15" y1="20" x2="85" y2="70" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#0284c7"/>
+                        <stop offset="35%" stop-color="#0369a1"/>
+                        <stop offset="70%" stop-color="#082f49"/>
+                        <stop offset="100%" stop-color="#0f172a"/>
+                      </linearGradient>
+                      <linearGradient id="hbCarbonDeck" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#1e293b"/>
+                        <stop offset="50%" stop-color="#0f172a"/>
+                        <stop offset="100%" stop-color="#020617"/>
+                      </linearGradient>
+                      <linearGradient id="hbGoldStripe" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stop-color="#fef08a"/>
+                        <stop offset="50%" stop-color="#facc15"/>
+                        <stop offset="100%" stop-color="#ea580c"/>
+                      </linearGradient>
+                      <linearGradient id="hbThrusterFire" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#ffffff"/>
+                        <stop offset="25%" stop-color="#38bdf8"/>
+                        <stop offset="70%" stop-color="#0284c7"/>
+                        <stop offset="100%" stop-color="#0369a1" stop-opacity="0"/>
+                      </linearGradient>
+                      <filter id="hbNeonGlow" x="-30%" y="-30%" width="160%" height="160%">
+                        <feGaussianBlur stdDeviation="2.5" result="blur"/>
+                        <feMerge>
+                          <feMergeNode in="blur"/>
+                          <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                      </filter>
+                    </defs>
+
+                    <!-- Ground Shadow & Anti-Gravity Energy Disc -->
+                    <ellipse cx="50" cy="86" rx="38" ry="9" fill="#000000" opacity="0.5"/>
+                    <ellipse cx="50" cy="83" rx="32" ry="7" fill="none" stroke="#00f0ff" stroke-width="2.5" stroke-dasharray="4 3" filter="url(#hbNeonGlow)"/>
+
+                    <!-- Left Jet Thruster & Flame -->
+                    <rect x="25" y="50" width="10" height="15" rx="3" fill="#1e293b" stroke="#facc15" stroke-width="1.2"/>
+                    <polygon points="26,65 34,65 30,86" fill="url(#hbThrusterFire)" filter="url(#hbNeonGlow)"/>
+
+                    <!-- Right Jet Thruster & Flame -->
+                    <rect x="65" y="50" width="10" height="15" rx="3" fill="#1e293b" stroke="#facc15" stroke-width="1.2"/>
+                    <polygon points="66,65 74,65 70,86" fill="url(#hbThrusterFire)" filter="url(#hbNeonGlow)"/>
+
+                    <!-- 3D Aerodynamic Hull -->
+                    <path d="M12 43 C 8 35 24 27 50 27 C 76 27 92 35 88 43 L 84 52 C 80 58 68 62 50 62 C 32 62 20 58 16 52 Z" fill="#034e7b" stroke="#00f0ff" stroke-width="1"/>
+
+                    <!-- Neon Glowing Outer Hull -->
+                    <path d="M12 41 C 8 33 24 25 50 25 C 76 25 92 33 88 41 C 84 48 72 52 50 52 C 28 52 16 48 12 41 Z" fill="url(#hbHullGrad)" stroke="#00f0ff" stroke-width="2.5" filter="url(#hbNeonGlow)"/>
+
+                    <!-- Top Carbon Fiber Grip Pad -->
+                    <path d="M18 39 C 16 33 28 28 50 28 C 72 28 84 33 82 39 C 80 43 70 47 50 47 C 30 47 20 43 18 39 Z" fill="url(#hbCarbonDeck)" stroke="#0284c7" stroke-width="1"/>
+
+                    <!-- Carbon Hex Texture Lines -->
+                    <line x1="32" y1="32" x2="38" y2="44" stroke="#334155" stroke-width="1"/>
+                    <line x1="42" y1="30" x2="48" y2="45" stroke="#334155" stroke-width="1"/>
+                    <line x1="58" y1="30" x2="52" y2="45" stroke="#334155" stroke-width="1"/>
+                    <line x1="68" y1="32" x2="62" y2="44" stroke="#334155" stroke-width="1"/>
+
+                    <!-- Central Racing Livery Stripe -->
+                    <path d="M47 28 H 53 L 52 47 H 48 Z" fill="url(#hbGoldStripe)"/>
+
+                    <!-- Foot Placement Rings -->
+                    <ellipse cx="30" cy="37" rx="6" ry="3.2" fill="#06b6d4" opacity="0.85"/>
+                    <ellipse cx="70" cy="37" rx="6" ry="3.2" fill="#06b6d4" opacity="0.85"/>
+
+                    <!-- Specular Light Reflection -->
+                    <path d="M22 35 C 32 31 68 31 78 35" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+                  </svg>
+
+                  <!-- 3. Ultra-Realistic 3D 2X Multiplier Star -->
+                  <svg *ngIf="pKey === 'multiplier'" class="w-full h-full drop-shadow-[0_4px_16px_rgba(245,158,11,0.9)]" viewBox="0 0 100 100" fill="none">
+                    <defs>
+                      <radialGradient id="starGold3D" cx="40%" cy="40%" r="65%">
+                        <stop offset="0%" stop-color="#fffbeb"/>
+                        <stop offset="25%" stop-color="#fef08a"/>
+                        <stop offset="55%" stop-color="#facc15"/>
+                        <stop offset="85%" stop-color="#d97706"/>
+                        <stop offset="100%" stop-color="#78350f"/>
+                      </radialGradient>
+                    </defs>
+                    <polygon points="50,8 62,34 92,36 68,56 76,86 50,68 24,86 32,56 8,36 38,34" fill="url(#starGold3D)" stroke="#fef08a" stroke-width="2"/>
+                    <circle cx="50" cy="48" r="16" fill="#082f49" stroke="#38bdf8" stroke-width="2.5"/>
+                    <text x="50" y="55" fill="#facc15" font-size="18" font-weight="900" text-anchor="middle" font-family="sans-serif" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.8))">2X</text>
+                  </svg>
+
+                  <!-- 4. Ultra-Realistic 3D Winged Spring Sneakers -->
+                  <svg *ngIf="pKey === 'sneakers'" class="w-full h-full drop-shadow-[0_4px_16px_rgba(16,185,129,0.9)]" viewBox="0 0 100 100" fill="none">
+                    <defs>
+                      <linearGradient id="snk3DGrad" x1="15" y1="30" x2="85" y2="70" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#34d399"/>
+                        <stop offset="50%" stop-color="#10b981"/>
+                        <stop offset="100%" stop-color="#065f46"/>
+                      </linearGradient>
+                    </defs>
+                    <!-- Sneaker Upper -->
+                    <path d="M18 55 C 18 55 22 34 40 30 C 50 28 56 36 60 42 L 76 44 C 82 44 86 50 84 56 L 80 62 C 76 68 68 70 60 70 H 26 C 21 70 18 66 18 61 V 55 Z" fill="url(#snk3DGrad)" stroke="#6ee7b7" stroke-width="2"/>
+                    <!-- White Sole -->
+                    <path d="M18 61 H 80 C 83 61 85 64 83 66 L 80 69 H 22 C 19 69 18 67 18 64 V 61 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+                    <!-- Heavy-Duty Suspension Spring -->
+                    <path d="M34 70 C 30 75 38 78 42 81 C 46 84 38 87 34 90" stroke="#facc15" stroke-width="4" stroke-linecap="round" fill="none"/>
+                    <!-- Hermes Wing -->
+                    <path d="M30 32 C 20 25 18 15 28 12 C 38 10 44 18 40 30 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" opacity="0.95"/>
+                  </svg>
+
+                  <!-- 5. Ultra-Realistic 3D Jetpack -->
+                  <svg *ngIf="pKey === 'jetpack'" class="w-full h-full drop-shadow-[0_4px_16px_rgba(249,115,22,0.9)]" viewBox="0 0 100 100" fill="none">
+                    <defs>
+                      <linearGradient id="jet3DGrad" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#38bdf8"/>
+                        <stop offset="50%" stop-color="#0284c7"/>
+                        <stop offset="100%" stop-color="#0c4a6e"/>
+                      </linearGradient>
+                      <linearGradient id="jet3DFlame" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#ffffff"/>
+                        <stop offset="25%" stop-color="#facc15"/>
+                        <stop offset="70%" stop-color="#f97316"/>
+                        <stop offset="100%" stop-color="#dc2626" stop-opacity="0"/>
+                      </linearGradient>
+                    </defs>
+                    <!-- Left & Right Cylinders -->
+                    <rect x="24" y="20" width="18" height="42" rx="9" fill="url(#jet3DGrad)" stroke="#facc15" stroke-width="2"/>
+                    <rect x="58" y="20" width="18" height="42" rx="9" fill="url(#jet3DGrad)" stroke="#facc15" stroke-width="2"/>
+                    <!-- Center Module -->
+                    <rect x="36" y="32" width="28" height="20" rx="5" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+                    <!-- Fiery Exhaust Cones -->
+                    <polygon points="26,62 40,62 33,88" fill="url(#jet3DFlame)"/>
+                    <polygon points="60,62 74,62 67,88" fill="url(#jet3DFlame)"/>
+                  </svg>
+
                 </div>
 
                 <!-- Text & Stars -->
@@ -535,50 +783,100 @@ interface LeaderboardEntry {
             </div>
           </div>
 
-          <!-- Tab 2: Character Skins -->
-          <div *ngIf="shopTab === 'characters'" class="flex-1 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div *ngFor="let skin of characterSkins" class="bg-slate-900/90 border-2 rounded-3xl p-4 flex flex-col justify-between shadow-xl transition-all"
-                 [ngClass]="selectedSkin === skin.id ? 'border-emerald-500 bg-emerald-950/20' : 'border-white/10'">
+          <!-- Tab 2: Character Skins with Rich 3D Visual Previews -->
+          <div *ngIf="shopTab === 'characters'" class="flex-1 overflow-y-auto pr-1 grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            <div *ngFor="let skin of characterSkins" 
+                 class="bg-slate-900/95 border-2 rounded-3xl p-4 flex flex-col justify-between shadow-2xl transition-all relative overflow-hidden group"
+                 [ngClass]="selectedSkin === skin.id ? 'border-emerald-500 bg-emerald-950/30 ring-2 ring-emerald-500/20' : 'border-white/10 hover:border-amber-400/40'">
               
-              <div>
-                <div class="flex items-center justify-between mb-1.5">
-                  <span class="font-black text-base text-white">{{ skin.name }}</span>
-                  <span *ngIf="selectedSkin === skin.id" class="bg-emerald-500 text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded-full shadow">مفعل حالياً</span>
-                  <span *ngIf="skin.unlocked && selectedSkin !== skin.id" class="bg-slate-800 text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded-full">مفتوح</span>
+              <div class="flex items-start gap-3.5">
+                <!-- 3D Character Avatar Preview Box -->
+                <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br {{ skin.iconBg }} border border-white/20 flex flex-col items-center justify-center relative shadow-inner shrink-0 overflow-hidden">
+                  <div class="absolute inset-0 bg-radial from-white/20 to-transparent pointer-events-none"></div>
+                  
+                  <!-- Character Visual Icon / Avatar Art -->
+                  <div class="text-3xl sm:text-4xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)] transform group-hover:scale-110 transition-transform">
+                    {{ skin.badgeEmoji }}
+                  </div>
+                  
+                  <!-- Floating Mini Character Color Tag -->
+                  <div class="absolute bottom-1 px-2 py-0.5 bg-black/60 backdrop-blur-md rounded-full border border-white/20 text-[9px] font-black text-white">
+                    {{ skin.id === 'jake' ? 'ORIGINAL' : (skin.id === 'cyborg' ? 'MYTHIC' : 'ELITE') }}
+                  </div>
                 </div>
-                <p class="text-xs text-slate-300">{{ skin.desc }}</p>
+
+                <!-- Character Details & Perks -->
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between gap-1 mb-1">
+                    <span class="font-black text-base text-white truncate">{{ skin.name }}</span>
+                    <span *ngIf="selectedSkin === skin.id" class="bg-emerald-500 text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded-full shadow shrink-0">مفعل</span>
+                    <span *ngIf="skin.unlocked && selectedSkin !== skin.id" class="bg-slate-800 text-cyan-300 border border-cyan-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">مفتوح</span>
+                  </div>
+
+                  <p class="text-xs text-slate-300 leading-relaxed mb-2">{{ skin.desc }}</p>
+
+                  <!-- Special Perk Badge -->
+                  <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] font-bold text-amber-300">
+                    <span>{{ skin.perk }}</span>
+                  </div>
+                </div>
               </div>
 
+              <!-- Purchase / Select Action Button -->
               <button (click)="selectOrBuySkin(skin)" 
                       [disabled]="!skin.unlocked && totalCoins < skin.price"
-                      class="mt-4 w-full py-2.5 text-xs font-black rounded-2xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
-                      [ngClass]="selectedSkin === skin.id ? 'bg-emerald-500 text-slate-950 cursor-default' : (skin.unlocked ? 'bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-400/40' : 'bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950')">
-                <span>{{ selectedSkin === skin.id ? 'مفعل ✔️' : (skin.unlocked ? 'ارتداء الشخصية 👕' : 'فتح الشخصية 🛒') }}</span>
-                <span *ngIf="!skin.unlocked" class="text-[11px] font-black">🪙 {{ skin.price.toLocaleString() }}</span>
+                      class="mt-3.5 w-full py-2.5 text-xs font-black rounded-2xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                      [ngClass]="selectedSkin === skin.id ? 'bg-emerald-500 text-slate-950 cursor-default' : (skin.unlocked ? 'bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-400/40' : 'bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 hover:brightness-110')">
+                <span>{{ selectedSkin === skin.id ? 'مفعل في اللعبة ✔️' : (skin.unlocked ? 'ارتداء الشخصية 👕' : 'فتح الشخصية 🛒') }}</span>
+                <span *ngIf="!skin.unlocked" class="text-[11px] font-black bg-slate-950/20 px-2 py-0.5 rounded-full">🪙 {{ skin.price.toLocaleString() }}</span>
               </button>
             </div>
           </div>
 
-          <!-- Tab 3: Hoverboards -->
-          <div *ngIf="shopTab === 'boards'" class="flex-1 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div *ngFor="let board of hoverboardsList" class="bg-slate-900/90 border-2 rounded-3xl p-4 flex flex-col justify-between shadow-xl transition-all"
-                 [ngClass]="selectedBoard === board.id ? 'border-cyan-400 bg-cyan-950/20' : 'border-white/10'">
+          <!-- Tab 3: Hoverboards with Rich 3D Visual Previews -->
+          <div *ngIf="shopTab === 'boards'" class="flex-1 overflow-y-auto pr-1 grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            <div *ngFor="let board of hoverboardsList" 
+                 class="bg-slate-900/95 border-2 rounded-3xl p-4 flex flex-col justify-between shadow-2xl transition-all relative overflow-hidden group"
+                 [ngClass]="selectedBoard === board.id ? 'border-cyan-400 bg-cyan-950/30 ring-2 ring-cyan-400/20' : 'border-white/10 hover:border-cyan-500/40'">
               
-              <div>
-                <div class="flex items-center justify-between mb-1.5">
-                  <span class="font-black text-base text-white">{{ board.name }}</span>
-                  <span *ngIf="selectedBoard === board.id" class="bg-cyan-400 text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded-full shadow">مجهز حالياً</span>
-                  <span *ngIf="board.unlocked && selectedBoard !== board.id" class="bg-slate-800 text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded-full">مفتوح</span>
+              <div class="flex items-start gap-3.5">
+                <!-- 3D Hoverboard Visual Preview Box -->
+                <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br {{ board.iconBg }} border border-white/20 flex flex-col items-center justify-center relative shadow-inner shrink-0 overflow-hidden">
+                  <div class="absolute inset-0 bg-radial from-white/20 to-transparent pointer-events-none"></div>
+                  
+                  <div class="text-3xl sm:text-4xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)] transform group-hover:scale-110 group-hover:rotate-12 transition-transform">
+                    🛹
+                  </div>
+
+                  <div class="absolute bottom-1 px-2 py-0.5 bg-black/60 backdrop-blur-md rounded-full border border-white/20 text-[9px] font-black text-cyan-300">
+                    {{ board.id === 'classic' ? 'STANDARD' : (board.id === 'quantum' ? 'ULTRA' : 'SPECIAL') }}
+                  </div>
                 </div>
-                <p class="text-xs text-slate-300">{{ board.desc }}</p>
+
+                <!-- Board Details & Perks -->
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between gap-1 mb-1">
+                    <span class="font-black text-base text-white truncate">{{ board.name }}</span>
+                    <span *ngIf="selectedBoard === board.id" class="bg-cyan-400 text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded-full shadow shrink-0">مجهز</span>
+                    <span *ngIf="board.unlocked && selectedBoard !== board.id" class="bg-slate-800 text-cyan-300 border border-cyan-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">مفتوح</span>
+                  </div>
+
+                  <p class="text-xs text-slate-300 leading-relaxed mb-2">{{ board.desc }}</p>
+
+                  <!-- Special Perk Badge -->
+                  <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-[11px] font-bold text-cyan-300">
+                    <span>{{ board.perk }}</span>
+                  </div>
+                </div>
               </div>
 
+              <!-- Purchase / Select Action Button -->
               <button (click)="selectOrBuyBoard(board)" 
                       [disabled]="!board.unlocked && totalCoins < board.price"
-                      class="mt-4 w-full py-2.5 text-xs font-black rounded-2xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
-                      [ngClass]="selectedBoard === board.id ? 'bg-cyan-400 text-slate-950 cursor-default' : (board.unlocked ? 'bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-400/40' : 'bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950')">
-                <span>{{ selectedBoard === board.id ? 'مجهز ✔️' : (board.unlocked ? 'تجهيز اللوح 🛹' : 'شراء اللوح 🛒') }}</span>
-                <span *ngIf="!board.unlocked" class="text-[11px] font-black">🪙 {{ board.price.toLocaleString() }}</span>
+                      class="mt-3.5 w-full py-2.5 text-xs font-black rounded-2xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                      [ngClass]="selectedBoard === board.id ? 'bg-cyan-400 text-slate-950 cursor-default' : (board.unlocked ? 'bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-400/40' : 'bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 hover:brightness-110')">
+                <span>{{ selectedBoard === board.id ? 'مجهز في اللعبة ✔️' : (board.unlocked ? 'تجهيز اللوح 🛹' : 'شراء اللوح 🛒') }}</span>
+                <span *ngIf="!board.unlocked" class="text-[11px] font-black bg-slate-950/20 px-2 py-0.5 rounded-full">🪙 {{ board.price.toLocaleString() }}</span>
               </button>
             </div>
           </div>
@@ -617,7 +915,7 @@ interface LeaderboardEntry {
       <div *ngIf="showLeaderboardModal" class="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
         <div class="relative w-full max-w-sm bg-slate-900 border-2 border-purple-500/50 rounded-[32px] p-6 shadow-2xl flex flex-col items-center">
           <h3 class="text-2xl font-black text-purple-400 mb-1">🏆 لوحة الأبطال القياسية</h3>
-          <p class="text-xs text-slate-400 mb-4">أفضل السكورات المسجلة في مترو القاهرة</p>
+          <p class="text-xs text-slate-400 mb-4">أفضل السكورات المسجلة في شاطئ المترو الاستوائي 🏖️</p>
 
           <div class="w-full flex flex-col gap-2 mb-4">
             <div *ngFor="let rec of leaderboardList; let idx = index" class="bg-slate-950/80 border border-white/10 rounded-2xl p-3 flex items-center justify-between">
@@ -761,11 +1059,11 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
   // Upgrades & Shop Config
   powerupKeys = ['magnet', 'multiplier', 'hoverboard', 'sneakers', 'jetpack'];
   powerupConfigs: Record<string, PowerupConfig> = {
-    magnet: { name: 'المغناطيس الخارق', icon: '🧲', desc: 'جذب العملات تلقائياً من جميع المسارات', durations: [10, 14, 18, 22, 28], costs: [0, 100, 250, 500, 1000] },
-    multiplier: { name: 'مضاعف النقاط 2X', icon: '⭐', desc: 'مضاعفة نقاط السكور والعملات المجمعة', durations: [12, 16, 20, 25, 32], costs: [0, 150, 300, 600, 1200] },
-    hoverboard: { name: 'لوح التزلج النفاث', icon: '🛹', desc: 'حماية كاملة من الاصطدام الأول وتحويم سريع', durations: [15, 20, 25, 30, 40], costs: [0, 200, 400, 800, 1500] },
-    sneakers: { name: 'حذاء القفز العالي', icon: '👟', desc: 'قفزات هوائية مضاعفة للوصول لأسطح القطارات', durations: [10, 14, 18, 22, 28], costs: [0, 100, 250, 500, 1000] },
-    jetpack: { name: 'صاروخ حورس النفاث (Pharaoh Jetpack) 🦅👑', icon: '🦅', desc: 'أجنحة حورس الذهبية والنفاثة الفرعونية! تحليق أسطوري في السماء فوق كل العوائق مع مسار عملات ذهبية ضخم', durations: [8, 11, 14, 18, 24], costs: [0, 250, 500, 1000, 2000] }
+    magnet: { name: 'المغناطيس الخارق', icon: '🧲', desc: 'جذب العملات تلقائياً من جميع المسارات الشاطئية', durations: [10, 15, 20, 26, 35], costs: [0, 1500, 5000, 15000, 35000] },
+    multiplier: { name: 'مضاعف النقاط 2X', icon: '⭐', desc: 'مضاعفة نقاط السكور والعملات المجمعة', durations: [12, 18, 24, 30, 40], costs: [0, 2000, 6000, 18000, 40000] },
+    hoverboard: { name: 'لوح التزلج النفاث', icon: '🛹', desc: 'حماية كاملة من الاصطدام الأول وتحويم سريع', durations: [15, 22, 30, 40, 55], costs: [0, 2500, 7500, 20000, 45000] },
+    sneakers: { name: 'حذاء القفز العالي', icon: '👟', desc: 'قفزات هوائية مضاعفة للوصول لأسطح القطارات', durations: [10, 15, 20, 26, 35], costs: [0, 1500, 5000, 15000, 35000] },
+    jetpack: { name: 'الصاروخ النفاث الشاطئي (Beach Jetpack) 🚀🌊', icon: '🚀', desc: 'صاروخ نفاث فائق السرعة! تحليق أسطوري في سماء الشاطئ فوق كل العوائق مع مسار عملات ذهبية ضخم', durations: [8, 12, 16, 22, 30], costs: [0, 3000, 9000, 25000, 55000] }
   };
 
   userUpgrades: Record<string, number> = { magnet: 1, multiplier: 1, hoverboard: 1, sneakers: 1, jetpack: 1 };
@@ -778,16 +1076,131 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
   };
 
   characterSkins: CharacterSkin[] = [
-    { id: 'jake', name: 'جيك (الهارب الأصلي)', price: 0, unlocked: true, color: 0x1d4ed8, hatColor: 0xdc2626, desc: 'البطل الكلاسيكي مع القبعة الحمراء والفيست الأزرق' },
-    { id: 'fresh', name: 'فريش (عازف الإيقاع)', price: 1500, unlocked: false, color: 0x10b981, hatColor: 0xf59e0b, desc: 'سماعات ضخمة وسرعة مراوغة أعلى' },
-    { id: 'tricky', name: 'تريكي (المتزلجة الذكية)', price: 3000, unlocked: false, color: 0xec4899, hatColor: 0x8b5cf6, desc: 'خفيفة الحركة وقفزات هوائية أعلى' },
-    { id: 'cairo_king', name: 'صقر القاهرة (فرعوني)', price: 5000, unlocked: false, color: 0xfacc15, hatColor: 0x0f172a, desc: 'زي أسطوري مع درع ذهبي لامع' }
+    { 
+      id: 'jake', 
+      name: 'جيك (الهارب الكلاسيكي)', 
+      price: 0, 
+      unlocked: true, 
+      color: 0x1d4ed8, 
+      hatColor: 0xdc2626, 
+      desc: 'البطل الكلاسيكي بالفيست الأزرق وقبعة التزلج الحمراء', 
+      perk: '🎮 متوازن وسريع الاستجابة', 
+      iconBg: 'from-blue-600 to-indigo-900', 
+      badgeEmoji: '🧢' 
+    },
+    { 
+      id: 'fresh', 
+      name: 'فريش (عازف الإيقاع)', 
+      price: 8500, 
+      unlocked: false, 
+      color: 0x10b981, 
+      hatColor: 0xf59e0b, 
+      desc: 'سماعات DJ مضيئة، سترة خضراء، ومسجل Boombox عملاق على ظهره', 
+      perk: '⚡ +15% سرعة مراوغة بين المسارات', 
+      iconBg: 'from-emerald-600 to-teal-950', 
+      badgeEmoji: '🎧' 
+    },
+    { 
+      id: 'tricky', 
+      name: 'تريكي (المتزلجة الذكية)', 
+      price: 22000, 
+      unlocked: false, 
+      color: 0xec4899, 
+      hatColor: 0x8b5cf6, 
+      desc: 'طاقية بنفسجية وضفائر شقراء مع جاكيت وردي وسادات ركبة', 
+      perk: '🦘 قفزات هوائية أعلى بنسبة 20%', 
+      iconBg: 'from-pink-600 to-purple-950', 
+      badgeEmoji: '🎀' 
+    },
+    { 
+      id: 'beach_king', 
+      name: 'بطل الشاطئ (Beach Surfer)', 
+      price: 45000, 
+      unlocked: false, 
+      color: 0x06b6d4, 
+      hatColor: 0xfacc15, 
+      desc: 'قميص هاواي استوائي مزهر، نظارة شمسية، ولوح ركوب أمواج على الظهر', 
+      perk: '🏖️ +25% مدة أطول لجميع القدرات', 
+      iconBg: 'from-cyan-500 to-blue-950', 
+      badgeEmoji: '🏄‍♂️' 
+    },
+    { 
+      id: 'ninja', 
+      name: 'نينجا الظل (Shadow Shinobi)', 
+      price: 75000, 
+      unlocked: false, 
+      color: 0x0f172a, 
+      hatColor: 0xdc2626, 
+      desc: 'درع الشينوبي الأسود مع سيوف كاتا مزدوجة ووشاح أحمر طائر', 
+      perk: '🥷 درع حماية تلقائي من أول تعثر', 
+      iconBg: 'from-slate-800 to-rose-950', 
+      badgeEmoji: '🥷' 
+    },
+    { 
+      id: 'cyborg', 
+      name: 'السايبورغ الذهبي (Cyber 3000)', 
+      price: 120000, 
+      unlocked: false, 
+      color: 0xfacc15, 
+      hatColor: 0x38bdf8, 
+      desc: 'درع تيتانيوم ذهبي خارق مع مفاعل بلازما مشع في الصدر وعين ليزر', 
+      perk: '👑 مضاعف سكور دائم 2X لكل الجريات', 
+      iconBg: 'from-amber-400 to-yellow-950', 
+      badgeEmoji: '🤖' 
+    }
   ];
 
   hoverboardsList: HoverboardItem[] = [
-    { id: 'classic', name: 'لوح الشارع الكلاسيكي', price: 0, unlocked: true, color: 0xd97706, desc: 'حماية كاملة من أول اصطدام' },
-    { id: 'cyber', name: 'لوح السايبر النيون', price: 1200, unlocked: false, color: 0x06b6d4, desc: 'سرعة تحويم مضاعفة وتوهج ليلي' },
-    { id: 'pharaoh', name: 'لوح رمسيس الذهبي', price: 2500, unlocked: false, color: 0xfacc15, desc: 'يجذب العملات القريبة تلقائياً' }
+    { 
+      id: 'classic', 
+      name: 'لوح الشارع الكلاسيكي', 
+      price: 0, 
+      unlocked: true, 
+      color: 0xd97706, 
+      desc: 'لوح التزلج الأساسي بحماية كاملة من الاصطدام الأول', 
+      perk: '🛡️ حماية اصطدام كاملة', 
+      iconBg: 'from-amber-600 to-orange-950' 
+    },
+    { 
+      id: 'cyber', 
+      name: 'لوح السايبر النيون', 
+      price: 14000, 
+      unlocked: false, 
+      color: 0x06b6d4, 
+      desc: 'إطار نيون فيروزي فائق التوهج مع محركات دفع بلازمية', 
+      perk: '💨 تيربو وسرعة تحويم أعلى', 
+      iconBg: 'from-cyan-500 to-blue-950' 
+    },
+    { 
+      id: 'tsunami', 
+      name: 'لوح تسونامي الاستوائي', 
+      price: 32000, 
+      unlocked: false, 
+      color: 0x0284c7, 
+      desc: 'لوح ركوب أمواج بحري يجذب العملات المجاورة تلقائياً', 
+      perk: '🧲 جذب عملات تلقائي مستمر', 
+      iconBg: 'from-sky-500 to-indigo-950' 
+    },
+    { 
+      id: 'dragon', 
+      name: 'لوح التنين الناري 🔥', 
+      price: 65000, 
+      unlocked: false, 
+      color: 0xef4444, 
+      desc: 'لهب بركاني مشتعل يحرق أي حاجز يعترض طريقك على المسار', 
+      perk: '💥 تدمير الحواجز الخفيفة', 
+      iconBg: 'from-red-600 to-orange-950' 
+    },
+    { 
+      id: 'quantum', 
+      name: 'لوح البلازما الكمي ⚡', 
+      price: 110000, 
+      unlocked: false, 
+      color: 0xa855f7, 
+      desc: 'تكنولوجيا فضائية فائقة تجعل مدة اللوح تدوم 60 ثانية كاملة', 
+      perk: '⏳ مدة تحويم خارقة 60 ثانية', 
+      iconBg: 'from-purple-600 to-slate-950' 
+    }
   ];
 
   selectedSkin = 'jake';
@@ -813,12 +1226,16 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
   private trackChunks: THREE.Group[] = [];
   private nextSpawnZ = -50;
 
-  // 3D Characters
+  // 3D Characters & Collision State
   private runner: any = null;
   private inspector: any = null;
   private runnerStridePhase = 0;
   private copStridePhase = 0;
   private revivesUsedThisRound = 0;
+  stumbleCount = 0;
+  stumbleResetTimer = 0;
+  screenShakeTimer = 0;
+  screenShakeIntensity = 0;
 
   ngOnInit() {
     this.loadPersistedData();
@@ -829,6 +1246,20 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     this.initThreeJS();
     this.initAudio();
     this.drawWheel();
+  }
+
+  @HostListener('window:resize')
+  onWindowResize() {
+    if (!this.canvasContainerRef || !this.renderer || !this.camera) return;
+    const container = this.canvasContainerRef.nativeElement;
+    const width = container.clientWidth || window.innerWidth;
+    const height = container.clientHeight || window.innerHeight;
+    if (width > 0 && height > 0) {
+      this.camera.aspect = width / height;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(width, height);
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    }
   }
 
   ngOnDestroy() {
@@ -862,6 +1293,26 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     this.selectedSkin = localStorage.getItem('subway_selected_skin') || 'jake';
     this.selectedBoard = localStorage.getItem('subway_selected_board') || 'classic';
 
+    const savedSkins = localStorage.getItem('subway_unlocked_skins');
+    if (savedSkins) {
+      try {
+        const unlockedIds: string[] = JSON.parse(savedSkins);
+        this.characterSkins.forEach(s => {
+          if (unlockedIds.includes(s.id)) s.unlocked = true;
+        });
+      } catch(e) {}
+    }
+
+    const savedBoards = localStorage.getItem('subway_unlocked_boards');
+    if (savedBoards) {
+      try {
+        const unlockedIds: string[] = JSON.parse(savedBoards);
+        this.hoverboardsList.forEach(b => {
+          if (unlockedIds.includes(b.id)) b.unlocked = true;
+        });
+      } catch(e) {}
+    }
+
     const savedRecords = localStorage.getItem('subway_leaderboard_data');
     if (savedRecords) {
       try { this.leaderboardList = JSON.parse(savedRecords); } catch(e) {}
@@ -875,6 +1326,13 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     localStorage.setItem('subway_user_upgrades', JSON.stringify(this.userUpgrades));
     localStorage.setItem('subway_selected_skin', this.selectedSkin);
     localStorage.setItem('subway_selected_board', this.selectedBoard);
+
+    const unlockedSkinIds = this.characterSkins.filter(s => s.unlocked).map(s => s.id);
+    localStorage.setItem('subway_unlocked_skins', JSON.stringify(unlockedSkinIds));
+
+    const unlockedBoardIds = this.hoverboardsList.filter(b => b.unlocked).map(b => b.id);
+    localStorage.setItem('subway_unlocked_boards', JSON.stringify(unlockedBoardIds));
+
     localStorage.setItem('subway_leaderboard_data', JSON.stringify(this.leaderboardList));
   }
 
@@ -955,10 +1413,10 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     const width = container.clientWidth || window.innerWidth;
     const height = container.clientHeight || window.innerHeight;
 
-    // Scene with Warm Egyptian Dusk Atmosphere
+    // Scene with Sunny Tropical Beach Atmosphere
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x180f07); // Warm Egyptian dusk
-    this.scene.fog = new THREE.FogExp2(0x180f07, 0.005);
+    this.scene.background = new THREE.Color(0x38bdf8); // Bright Tropical Summer Sky Blue
+    this.scene.fog = new THREE.FogExp2(0xbae6fd, 0.0035); // Light Coastal Sea-Spray Haze
 
     // Camera
     this.camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 450);
@@ -970,22 +1428,37 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(this.renderer.domElement);
 
-    // Warm Sun & Egyptian Ambient Lights
-    const hemiLight = new THREE.HemisphereLight(0xffedd5, 0x78350f, 0.9);
+    // Warm Tropical Sun & Ocean Ambient Lights
+    const hemiLight = new THREE.HemisphereLight(0xe0f2fe, 0xfde047, 1.2); // Sky blue above, golden sand bounce below
     this.scene.add(hemiLight);
 
-    const sunLight = new THREE.DirectionalLight(0xfef08a, 1.35);
-    sunLight.position.set(15, 35, 20);
+    const sunLight = new THREE.DirectionalLight(0xfffbeb, 1.6); // Radiant tropical sun
+    sunLight.position.set(20, 45, 25);
     this.scene.add(sunLight);
 
-    const warmAmbient = new THREE.AmbientLight(0xd97706, 0.35);
+    const warmAmbient = new THREE.AmbientLight(0xffffff, 0.4);
     this.scene.add(warmAmbient);
 
-    // Build World Track Chunks (Pharaonic Temple Environment)
+    // Infinite 360-Degree Tropical Sky Dome & Sand Floor (Guarantees zero black screen at any camera rotation)
+    const skyGeo = new THREE.SphereGeometry(380, 32, 16);
+    const skyMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.BackSide });
+    const skyDome = new THREE.Mesh(skyGeo, skyMat);
+    this.scene.add(skyDome);
+
+    const groundGeo = new THREE.PlaneGeometry(800, 800);
+    const groundMat = new THREE.MeshLambertMaterial({ color: 0xfacc15 });
+    const groundMesh = new THREE.Mesh(groundGeo, groundMat);
+    groundMesh.rotation.x = -Math.PI / 2;
+    groundMesh.position.y = -0.12;
+    this.scene.add(groundMesh);
+
+    // Build World Track Chunks (Tropical Beach Resort Environment)
     this.buildTrackEnvironment();
 
     // Build Characters
     this.runner = this.buildJakeCharacter();
+    this.applySelectedSkinToRunner();
+    this.applySelectedBoardToRunner();
     this.scene.add(this.runner.root);
 
     this.inspector = this.buildPoliceCharacter();
@@ -1000,23 +1473,32 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     const CHUNK_LENGTH = 60;
     const NUM_CHUNKS = 5;
 
-    // Materials for Pharaonic Environment
-    const sandTile1Mat = new THREE.MeshLambertMaterial({ color: 0x854d0e });
-    const sandTile2Mat = new THREE.MeshLambertMaterial({ color: 0x5c330a });
-    const sandstoneWallMat = new THREE.MeshLambertMaterial({ color: 0x92400e });
-    const pylonMat = new THREE.MeshLambertMaterial({ color: 0xb45309 });
-    const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.85, roughness: 0.2 });
-    const lapisMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, metalness: 0.5, roughness: 0.3 });
-    const turquoiseMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, metalness: 0.6, roughness: 0.2 });
-    const torchGlowMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
-    const railMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.9, roughness: 0.15 });
-    const tieMat = new THREE.MeshLambertMaterial({ color: 0x451a03 });
+    // Materials for Tropical Beach Resort Environment
+    const sandTile1Mat = new THREE.MeshLambertMaterial({ color: 0xfde047 }); // Bright sunny beach sand
+    const sandTile2Mat = new THREE.MeshLambertMaterial({ color: 0xfacc15 }); // Warm golden sand
+    const oceanWaterMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.1, metalness: 0.4 }); // Crystal turquoise sea
+    const oceanFoamMat = new THREE.MeshBasicMaterial({ color: 0xf8fafc, transparent: true, opacity: 0.85 }); // Foamy white shoreline
+    const palmTrunkMat = new THREE.MeshLambertMaterial({ color: 0x78350f }); // Coconut palm wood
+    const palmLeaf1Mat = new THREE.MeshLambertMaterial({ color: 0x16a34a }); // Lush palm fronds
+    const palmLeaf2Mat = new THREE.MeshLambertMaterial({ color: 0x22c55e }); // Bright palm leaves
+    const coconutMat = new THREE.MeshLambertMaterial({ color: 0x451a03 }); // Brown coconuts
+    const woodDockMat = new THREE.MeshLambertMaterial({ color: 0x92400e }); // Rustic boardwalk wood
+    const railMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.85, roughness: 0.2 }); // Coastal steel rails
+    const tieMat = new THREE.MeshLambertMaterial({ color: 0x78350f }); // Teak wooden sleepers
+
+    // Umbrella & Surfboard Color Palettes
+    const umbrellaMatRed = new THREE.MeshLambertMaterial({ color: 0xef4444 });
+    const umbrellaMatWhite = new THREE.MeshLambertMaterial({ color: 0xf8fafc });
+    const umbrellaMatCyan = new THREE.MeshLambertMaterial({ color: 0x06b6d4 });
+    const umbrellaMatYellow = new THREE.MeshLambertMaterial({ color: 0xfacc15 });
+    const lifebuoyRed = new THREE.MeshLambertMaterial({ color: 0xdc2626 });
+    const lifebuoyWhite = new THREE.MeshLambertMaterial({ color: 0xffffff });
 
     for (let c = 0; c < NUM_CHUNKS; c++) {
       const chunk = new THREE.Group();
       chunk.position.z = -c * CHUNK_LENGTH;
 
-      // 1. Alternating Two-Tone Sandstone Floor Tiles (Visibly Rushing Past)
+      // 1. Alternating Two-Tone Golden Beach Sand Tiles (Visibly Rushing Past)
       for (let fz = -CHUNK_LENGTH / 2; fz < CHUNK_LENGTH / 2; fz += 4) {
         const isOdd = Math.abs(Math.round(fz / 4)) % 2 === 1;
         const tileGeo = new THREE.PlaneGeometry(36, 4);
@@ -1026,7 +1508,24 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
         chunk.add(tile);
       }
 
-      // 2. High-Contrast Golden Rails and Carved Wooden Ties
+      // 2. Turquoise Ocean Waters with Foamy Shoreline on Both Flanks
+      [-22, 22].forEach(ox => {
+        // Deep turquoise ocean plane
+        const waterGeo = new THREE.PlaneGeometry(16, CHUNK_LENGTH);
+        const water = new THREE.Mesh(waterGeo, oceanWaterMat);
+        water.rotation.x = -Math.PI / 2;
+        water.position.set(ox, -0.05, 0);
+
+        // Foamy shoreline wave crest
+        const foamGeo = new THREE.PlaneGeometry(1.6, CHUNK_LENGTH);
+        const foam = new THREE.Mesh(foamGeo, oceanFoamMat);
+        foam.rotation.x = -Math.PI / 2;
+        foam.position.set(ox > 0 ? ox - 8.2 : ox + 8.2, 0.01, 0);
+
+        chunk.add(water, foam);
+      });
+
+      // 3. High-Contrast Coastal Rails and Teak Wooden Ties
       [-3.6, 0, 3.6].forEach(x => {
         [-0.7, 0.7].forEach(rx => {
           const railGeo = new THREE.BoxGeometry(0.14, 0.18, CHUNK_LENGTH);
@@ -1035,130 +1534,161 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
           chunk.add(rail);
         });
 
-        // Wooden Ties with Gold Plates
+        // Teak Wooden Ties with Chrome Fasteners
         const tieGeo = new THREE.BoxGeometry(2.0, 0.12, 0.45);
         for (let tz = -CHUNK_LENGTH / 2; tz < CHUNK_LENGTH / 2; tz += 1.4) {
           const tie = new THREE.Mesh(tieGeo, tieMat);
           tie.position.set(x, 0.05, tz);
 
-          // Golden Tie Bolt
-          const bolt = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.14, 0.1), goldMat);
+          const bolt = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.14, 0.1), railMat);
           bolt.position.set(x, 0.07, tz);
 
           chunk.add(tie, bolt);
         }
       });
 
-      // 3. Pharaonic Sandstone Temple Side Walls
-      [-9.5, 9.5].forEach(wx => {
-        const wallGeo = new THREE.BoxGeometry(1.2, 10, CHUNK_LENGTH);
-        const wall = new THREE.Mesh(wallGeo, sandstoneWallMat);
-        wall.position.set(wx, 5, 0);
+      // 4. Tropical Coconut Palm Trees (أشجار النخيل الاستوائية على جانبي المسار)
+      [-7.2, 7.2].forEach(px => {
+        for (let pz = -CHUNK_LENGTH / 2 + 6; pz < CHUNK_LENGTH / 2; pz += 18) {
+          const palmGroup = new THREE.Group();
+          palmGroup.position.set(px, 0, pz);
 
-        // Golden Hieroglyphic Frieze Cornice along the top of wall
-        const friezeGeo = new THREE.BoxGeometry(1.4, 0.7, CHUNK_LENGTH);
-        const frieze = new THREE.Mesh(friezeGeo, goldMat);
-        frieze.position.set(wx, 9.7, 0);
+          // Curved Palm Trunk
+          const trunkGeo = new THREE.CylinderGeometry(0.32, 0.48, 7.5, 8);
+          const trunk = new THREE.Mesh(trunkGeo, palmTrunkMat);
+          trunk.position.set(px > 0 ? -0.4 : 0.4, 3.75, 0);
+          trunk.rotation.z = px > 0 ? -0.1 : 0.1;
+          palmGroup.add(trunk);
 
-        // Torch Sconces on Walls
-        for (let tz = -CHUNK_LENGTH / 2 + 10; tz < CHUNK_LENGTH / 2; tz += 20) {
-          const scone = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.8, 0.5), goldMat);
-          scone.position.set(wx > 0 ? wx - 0.7 : wx + 0.7, 4.5, tz);
+          // Palm Crown with 6 Lush Fronds
+          const crownY = 7.3;
+          for (let f = 0; f < 6; f++) {
+            const angle = (f * Math.PI * 2) / 6;
+            const frondGeo = new THREE.BoxGeometry(0.55, 0.06, 2.8);
+            const frond = new THREE.Mesh(frondGeo, f % 2 === 0 ? palmLeaf1Mat : palmLeaf2Mat);
+            frond.position.set(Math.sin(angle) * 1.3, crownY - 0.2, Math.cos(angle) * 1.3);
+            frond.rotation.y = angle;
+            frond.rotation.x = 0.35;
+            palmGroup.add(frond);
+          }
 
-          const flame = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), torchGlowMat);
-          flame.position.set(wx > 0 ? wx - 0.7 : wx + 0.7, 5.1, tz);
-          chunk.add(scone, flame);
-        }
+          // Cluster of Brown Coconuts
+          for (let k = 0; k < 3; k++) {
+            const coconut = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 8), coconutMat);
+            const cAngle = (k * Math.PI * 2) / 3;
+            coconut.position.set(Math.sin(cAngle) * 0.35, crownY - 0.25, Math.cos(cAngle) * 0.35);
+            palmGroup.add(coconut);
+          }
 
-        chunk.add(wall, frieze);
-      });
-
-      // 4. Fluted Lotus Temple Columns of Luxor (الأعمدة الفرعونية)
-      [-6.2, 6.2].forEach(cx => {
-        for (let cz = -CHUNK_LENGTH / 2 + 8; cz < CHUNK_LENGTH / 2; cz += 22) {
-          const colGroup = new THREE.Group();
-          colGroup.position.set(cx, 0, cz);
-
-          // Column Shaft
-          const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.65, 8.5, 12), pylonMat);
-          shaft.position.y = 4.25;
-
-          // Lapis & Gold Painted Bands
-          const band1 = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.52, 0.4, 12), lapisMat);
-          band1.position.y = 6.8;
-          const band2 = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.52, 0.3, 12), turquoiseMat);
-          band2.position.y = 2.5;
-
-          // Lotus Flower Capital at top
-          const capital = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 0.52, 1.2, 12), goldMat);
-          capital.position.y = 8.8;
-
-          colGroup.add(shaft, band1, band2, capital);
-          chunk.add(colGroup);
+          chunk.add(palmGroup);
         }
       });
 
-      // 5. Monumental Pharaonic Pylon Archway with Winged Solar Disc of Horus
-      const pylonArch = new THREE.Group();
-      pylonArch.position.set(0, 0, 0);
+      // 5. Striped Beach Umbrellas & Wooden Sun Loungers (شماسي ملونة وكراسي بحر)
+      [-10.2, 10.2].forEach((ux, uIdx) => {
+        for (let uz = -CHUNK_LENGTH / 2 + 12; uz < CHUNK_LENGTH / 2; uz += 24) {
+          const umbrellaGroup = new THREE.Group();
+          umbrellaGroup.position.set(ux, 0, uz);
 
-      // Pylon Towers (Left & Right)
-      const pL = new THREE.Mesh(new THREE.BoxGeometry(2.4, 10.5, 2.6), pylonMat);
-      pL.position.set(-8.2, 5.25, 0);
-      const pR = new THREE.Mesh(new THREE.BoxGeometry(2.4, 10.5, 2.6), pylonMat);
-      pR.position.set(8.2, 5.25, 0);
+          // Umbrella Pole
+          const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 3.2, 8), woodDockMat);
+          pole.position.y = 1.6;
+          umbrellaGroup.add(pole);
 
-      // Heavy Sandstone Lintel Beam spanning over tracks
-      const lintel = new THREE.Mesh(new THREE.BoxGeometry(19, 1.6, 2.8), pylonMat);
-      lintel.position.set(0, 9.8, 0);
+          // Striped Umbrella Canopy
+          const canopyGeo = new THREE.ConeGeometry(1.6, 0.65, 12);
+          const canopyMat = (uIdx + uz) % 2 === 0 ? umbrellaMatRed : umbrellaMatCyan;
+          const canopy = new THREE.Mesh(canopyGeo, canopyMat);
+          canopy.position.y = 3.2;
+          umbrellaGroup.add(canopy);
 
-      // Sculpted Golden Winged Sun Disc of Horus (قرص الشمس المجنح) in center of beam
-      const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.18, 16), goldMat);
-      disc.rotation.x = Math.PI / 2;
-      disc.position.set(0, 9.8, 1.45);
+          // White accent rim
+          const rim = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.05, 6, 16), umbrellaMatWhite);
+          rim.rotation.x = Math.PI / 2;
+          rim.position.y = 2.9;
+          umbrellaGroup.add(rim);
 
-      const wingL = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.45, 0.12), goldMat);
-      wingL.position.set(-1.8, 9.8, 1.45);
-      wingL.rotation.z = 0.15;
+          // Wooden Sun Lounger under umbrella
+          const lounger = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.22, 2.2), woodDockMat);
+          lounger.position.set(0, 0.15, 0.2);
+          const loungerMat = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.08, 2.0), umbrellaMatWhite);
+          loungerMat.position.set(0, 0.28, 0.2);
+          umbrellaGroup.add(lounger, loungerMat);
 
-      const wingR = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.45, 0.12), goldMat);
-      wingR.position.set(1.8, 9.8, 1.45);
-      wingR.rotation.z = -0.15;
-
-      pylonArch.add(pL, pR, lintel, disc, wingL, wingR);
-      chunk.add(pylonArch);
-
-      // 6. Golden Guardian Sphinx Statues along the sides
-      [-6.2, 6.2].forEach(sx => {
-        const statueGroup = new THREE.Group();
-        statueGroup.position.set(sx, 0, -CHUNK_LENGTH / 2 + 19);
-
-        // Stone Pedestal
-        const ped = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.2, 2.6), pylonMat);
-        ped.position.y = 0.6;
-
-        // Golden Sphinx Body
-        const sBody = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.0, 2.0), goldMat);
-        sBody.position.y = 1.7;
-
-        // Pharaonic Nemes Head
-        const sHead = new THREE.Mesh(new THREE.SphereGeometry(0.48, 12, 12), goldMat);
-        sHead.position.set(0, 2.4, 0.7);
-
-        // Lapis Royal Crown
-        const sCrown = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.5, 0.4), lapisMat);
-        sCrown.position.set(0, 2.5, 0.7);
-
-        statueGroup.add(ped, sBody, sHead, sCrown);
-        chunk.add(statueGroup);
+          chunk.add(umbrellaGroup);
+        }
       });
+
+      // 6. Upright Colorful Surfboards Planted in Sand
+      [-8.6, 8.6].forEach(sx => {
+        const boardGroup = new THREE.Group();
+        boardGroup.position.set(sx, 0, -CHUNK_LENGTH / 2 + 20);
+
+        const boardGeo = new THREE.BoxGeometry(0.55, 2.4, 0.1);
+        const boardMat = new THREE.MeshStandardMaterial({ color: sx > 0 ? 0xec4899 : 0x06b6d4, roughness: 0.3 });
+        const surfboard = new THREE.Mesh(boardGeo, boardMat);
+        surfboard.position.y = 1.1;
+        surfboard.rotation.z = sx > 0 ? -0.15 : 0.15;
+
+        // Stripe on surfboard
+        const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.57, 0.35, 0.12), umbrellaMatYellow);
+        stripe.position.set(0, 1.1, 0);
+        surfboard.add(stripe);
+
+        boardGroup.add(surfboard);
+        chunk.add(boardGroup);
+      });
+
+      // 7. Coastal Tropical Boardwalk Archway
+      const archGroup = new THREE.Group();
+      archGroup.position.set(0, 0, 0);
+
+      // Wooden Posts (Left & Right)
+      [-6.5, 6.5].forEach(postX => {
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 9.0, 10), woodDockMat);
+        post.position.set(postX, 4.5, 0);
+
+        // Lifebuoy hanging on each post!
+        const buoy = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.14, 8, 16), lifebuoyRed);
+        buoy.position.set(postX > 0 ? postX - 0.5 : postX + 0.5, 4.2, 0);
+        const buoyStripe1 = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.16, 0.32), lifebuoyWhite);
+        buoyStripe1.position.copy(buoy.position);
+        archGroup.add(post, buoy, buoyStripe1);
+      });
+
+      // Overhead Tropical Bamboo & Surfboard Sign
+      const lintel = new THREE.Mesh(new THREE.BoxGeometry(14.5, 1.1, 1.2), woodDockMat);
+      lintel.position.set(0, 8.5, 0);
+
+      // Canvas Sign: "BEACH DASH 🏄‍♂️🌴"
+      const signCanvas = document.createElement('canvas');
+      signCanvas.width = 512;
+      signCanvas.height = 128;
+      const sCtx = signCanvas.getContext('2d');
+      if (sCtx) {
+        sCtx.fillStyle = '#0284c7';
+        sCtx.fillRect(0, 0, 512, 128);
+        sCtx.lineWidth = 8;
+        sCtx.strokeStyle = '#facc15';
+        sCtx.strokeRect(4, 4, 504, 120);
+        sCtx.fillStyle = '#ffffff';
+        sCtx.font = 'bold 44px Cairo, sans-serif';
+        sCtx.textAlign = 'center';
+        sCtx.fillText('🌊 شاطئ المترو الاستوائي 🏖️🏄‍♂️', 256, 78);
+      }
+      const sTex = new THREE.CanvasTexture(signCanvas);
+      const signMesh = new THREE.Mesh(new THREE.PlaneGeometry(8.5, 2.0), new THREE.MeshBasicMaterial({ map: sTex }));
+      signMesh.position.set(0, 8.5, 0.65);
+
+      archGroup.add(lintel, signMesh);
+      chunk.add(archGroup);
 
       this.scene.add(chunk);
       this.trackChunks.push(chunk);
     }
   }
 
-  // --- 1:1 Jake Character Builder ---
+  // --- 1:1 Jake Character Builder (Back Facing Player, Running Forward into Tunnel) ---
   private buildJakeCharacter() {
     const root = new THREE.Group();
     const bodyGroup = new THREE.Group();
@@ -1168,23 +1698,26 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     const torsoGroup = new THREE.Group();
     torsoGroup.position.y = 1.5;
 
-    const torsoGeo = new THREE.BoxGeometry(0.85, 1.1, 0.55);
+    const torsoGeo = new THREE.BoxGeometry(0.85, 1.1, 0.52);
     const torsoMat = new THREE.MeshLambertMaterial({ color: 0x1d4ed8 }); // Denim Blue
     const torso = new THREE.Mesh(torsoGeo, torsoMat);
     torsoGroup.add(torso);
 
-    // White Hoodie inner collar
-    const hoodieGeo = new THREE.BoxGeometry(0.45, 0.95, 0.57);
+    // White Hoodie chest & collar (Facing Forward into -Z)
+    const hoodieGeo = new THREE.BoxGeometry(0.42, 0.95, 0.15);
     const hoodieMat = new THREE.MeshLambertMaterial({ color: 0xf8fafc });
     const hoodie = new THREE.Mesh(hoodieGeo, hoodieMat);
-    hoodie.position.set(0, 0.08, 0);
+    hoodie.position.set(0, 0.08, -0.22);
     torsoGroup.add(hoodie);
 
-    // Olive Backpack
-    const packGeo = new THREE.BoxGeometry(0.65, 0.85, 0.35);
-    const packMat = new THREE.MeshLambertMaterial({ color: 0x3f6212 });
+    // Olive / Brown Street Backpack (Mounted on BACK facing player +Z)
+    const packGeo = new THREE.BoxGeometry(0.65, 0.85, 0.32);
+    const packMat = new THREE.MeshLambertMaterial({ color: 0x4d3822 });
     const backpack = new THREE.Mesh(packGeo, packMat);
-    backpack.position.set(0, 0, -0.38);
+    backpack.position.set(0, 0, 0.32);
+    const packPocket = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.12), new THREE.MeshLambertMaterial({ color: 0x3f6212 }));
+    packPocket.position.set(0, -0.15, 0.18);
+    backpack.add(packPocket);
     torsoGroup.add(backpack);
 
     bodyGroup.add(torsoGroup);
@@ -1196,19 +1729,21 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     const headGeo = new THREE.SphereGeometry(0.36, 16, 16);
     const headMat = new THREE.MeshLambertMaterial({ color: 0xffedd5 });
     const head = new THREE.Mesh(headGeo, headMat);
+    head.position.set(0, 0, -0.04);
     headGroup.add(head);
 
-    // Red Cap with Green Visor
+    // Red Cap with Classic Backwards Visor (Facing Player +Z)
     const capGeo = new THREE.CylinderGeometry(0.38, 0.4, 0.22, 16);
     const capMat = new THREE.MeshLambertMaterial({ color: 0xdc2626 });
     const cap = new THREE.Mesh(capGeo, capMat);
     cap.position.set(0, 0.2, 0);
     headGroup.add(cap);
 
-    const visorGeo = new THREE.BoxGeometry(0.42, 0.05, 0.3);
+    // Backwards Green Visor pointing towards player (+Z)
+    const visorGeo = new THREE.BoxGeometry(0.42, 0.05, 0.28);
     const visorMat = new THREE.MeshLambertMaterial({ color: 0x16a34a });
     const visor = new THREE.Mesh(visorGeo, visorMat);
-    visor.position.set(0, 0.22, -0.32);
+    visor.position.set(0, 0.18, 0.28);
     headGroup.add(visor);
 
     bodyGroup.add(headGroup);
@@ -1230,12 +1765,12 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     rightArm.position.y = -0.4;
     rightArmGroup.add(rightArm);
 
-    // Spray Can in Hand
+    // Spray Can in Right Hand (Pointing Forward into -Z)
     const canGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.32, 12);
     const canMat = new THREE.MeshLambertMaterial({ color: 0x06b6d4 });
     const sprayCan = new THREE.Mesh(canGeo, canMat);
-    sprayCan.position.set(0, -0.75, 0.15);
-    sprayCan.rotation.x = Math.PI / 4;
+    sprayCan.position.set(0, -0.75, -0.15);
+    sprayCan.rotation.x = -Math.PI / 4;
     rightArmGroup.add(sprayCan);
     bodyGroup.add(rightArmGroup);
 
@@ -1246,8 +1781,9 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     const legMat = new THREE.MeshLambertMaterial({ color: 0x1e3a8a });
     const leftLeg = new THREE.Mesh(legGeo, legMat);
     leftLeg.position.y = -0.45;
+    // Shoe pointing forward into -Z
     const leftShoe = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.18, 0.45), new THREE.MeshLambertMaterial({ color: 0xdc2626 }));
-    leftShoe.position.set(0, -0.85, 0.08);
+    leftShoe.position.set(0, -0.85, -0.08);
     leftLegGroup.add(leftLeg, leftShoe);
     bodyGroup.add(leftLegGroup);
 
@@ -1256,14 +1792,15 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     rightLegGroup.position.set(0.24, 0.95, 0);
     const rightLeg = new THREE.Mesh(legGeo, legMat);
     rightLeg.position.y = -0.45;
+    // Shoe pointing forward into -Z
     const rightShoe = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.18, 0.45), new THREE.MeshLambertMaterial({ color: 0xdc2626 }));
-    rightShoe.position.set(0, -0.85, 0.08);
+    rightShoe.position.set(0, -0.85, -0.08);
     rightLegGroup.add(rightLeg, rightShoe);
     bodyGroup.add(rightLegGroup);
 
-    // Pharaonic Horus Jetpack 3D Model
+    // Pharaonic Horus Jetpack 3D Model (Mounted on BACK facing player +Z)
     const pharaohJetpack = new THREE.Group();
-    pharaohJetpack.position.set(0, 1.55, -0.45);
+    pharaohJetpack.position.set(0, 1.55, 0.36);
     const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.85, roughness: 0.2 });
     const flameMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
 
@@ -1279,52 +1816,362 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     });
 
     const leftWing = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.35, 0.05), goldMat);
-    leftWing.position.set(-0.75, 0.2, -0.05);
+    leftWing.position.set(-0.75, 0.2, 0.05);
     leftWing.rotation.z = 0.25;
     const rightWing = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.35, 0.05), goldMat);
-    rightWing.position.set(0.75, 0.2, -0.05);
+    rightWing.position.set(0.75, 0.2, 0.05);
     rightWing.rotation.z = -0.25;
     pharaohJetpack.add(leftWing, rightWing);
     pharaohJetpack.visible = false;
     bodyGroup.add(pharaohJetpack);
 
-    // Hoverboard
+    // High-Tech Cyber Hoverboard (Under Runner's Feet)
     const hoverboard = new THREE.Group();
     hoverboard.position.y = -0.1;
-    const boardMat = new THREE.MeshLambertMaterial({ color: 0xd97706 });
-    const boardMesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.12, 2.2), boardMat);
-    const boardGlow = new THREE.Mesh(new THREE.BoxGeometry(1.26, 0.06, 2.26), new THREE.MeshBasicMaterial({ color: 0x06b6d4 }));
-    boardGlow.position.y = -0.05;
-    hoverboard.add(boardMesh, boardGlow);
+
+    const boardDeckMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.25, metalness: 0.6 });
+    const carbonGripMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.7 });
+    const neonGlowMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
+    const goldAccentMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.9, roughness: 0.1 });
+    const plasmaConeMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+
+    // 1. Aerodynamic Main Deck
+    const boardMesh = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.14, 2.3), boardDeckMat);
+    hoverboard.add(boardMesh);
+
+    // Top Carbon Grip Pads (Front & Rear Foot Placements)
+    [-0.55, 0.55].forEach(pz => {
+      const pad = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.04, 0.7), carbonGripMat);
+      pad.position.set(0, 0.08, pz);
+      boardMesh.add(pad);
+    });
+
+    // Center Gold Livery Stripe
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 2.1), goldAccentMat);
+    stripe.position.y = 0.08;
+    boardMesh.add(stripe);
+
+    // 2. Full Perimeter Neon LED Light Strip
+    const boardGlow = new THREE.Mesh(new THREE.BoxGeometry(1.24, 0.06, 2.38), neonGlowMat);
+    boardGlow.position.y = -0.04;
+    hoverboard.add(boardGlow);
+
+    // 3. Dual Anti-Gravity Plasma Thrusters Underneath
+    [-0.35, 0.35].forEach(tx => {
+      const thruster = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.35, 12), carbonGripMat);
+      thruster.position.set(tx, -0.2, -0.6);
+
+      const flame = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.45, 10), plasmaConeMat);
+      flame.rotation.x = Math.PI;
+      flame.position.set(0, -0.38, 0);
+      thruster.add(flame);
+
+      hoverboard.add(thruster);
+    });
+
     hoverboard.visible = false;
-    root.add(hoverboard);
+
+    // Dynamic Ground Shadow Blob
+    const shadowGeo = new THREE.PlaneGeometry(1.5, 1.5);
+    const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.38 });
+    const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
+    shadowMesh.rotation.x = -Math.PI / 2;
+    shadowMesh.position.y = 0.03;
+    root.add(shadowMesh);
 
     return {
       root,
       bodyGroup,
       torsoGroup,
       torso,
+      hoodie,
+      backpack,
       headGroup,
       head,
+      cap,
+      visor,
       leftArmGroup,
       rightArmGroup,
+      leftArm,
+      rightArm,
       leftLegGroup,
       rightLegGroup,
       leftLeg,
       rightLeg,
+      leftShoe,
+      rightShoe,
       hoverboard,
       pharaohJetpack,
       leftWing,
       rightWing,
       sprayCan,
+      shadowMesh,
+      customAccessoryGroup: null,
       laneIndex: 1,
       targetX: 0,
+      vx: 0,
       y: 0,
       vy: 0,
       isJumping: false,
       isSliding: false,
       slideTimer: 0
     };
+  }
+
+  // --- Dynamic 3D Character Customizer (تبديل مظهر وهيئة الشخصية في المشهد ثلاثي الأبعاد) ---
+  applySelectedSkinToRunner() {
+    if (!this.runner) return;
+    const skinId = this.selectedSkin || 'jake';
+
+    // 1. Remove previous custom skin accessories
+    if (this.runner.customAccessoryGroup) {
+      this.runner.bodyGroup.remove(this.runner.customAccessoryGroup);
+      this.runner.customAccessoryGroup = null;
+    }
+    const accGroup = new THREE.Group();
+    this.runner.customAccessoryGroup = accGroup;
+    this.runner.bodyGroup.add(accGroup);
+
+    const torso = this.runner.torso;
+    const hoodie = this.runner.hoodie;
+    const backpack = this.runner.backpack;
+    const cap = this.runner.cap;
+    const visor = this.runner.visor;
+    const leftArm = this.runner.leftArm;
+    const rightArm = this.runner.rightArm;
+    const leftLeg = this.runner.leftLeg;
+    const rightLeg = this.runner.rightLeg;
+    const leftShoe = this.runner.leftShoe;
+    const rightShoe = this.runner.rightShoe;
+
+    // Reset base visibilities
+    cap.visible = true;
+    visor.visible = true;
+    backpack.visible = true;
+
+    if (skinId === 'jake') {
+      // 🧢 جيك (الهارب الكلاسيكي)
+      torso.material = new THREE.MeshLambertMaterial({ color: 0x1d4ed8 }); // Denim Blue
+      hoodie.material = new THREE.MeshLambertMaterial({ color: 0xf8fafc }); // White hoodie
+      backpack.material = new THREE.MeshLambertMaterial({ color: 0x4d3822 }); // Brown backpack
+      cap.material = new THREE.MeshLambertMaterial({ color: 0xdc2626 }); // Red cap
+      visor.material = new THREE.MeshLambertMaterial({ color: 0x16a34a }); // Green visor
+      leftArm.material = new THREE.MeshLambertMaterial({ color: 0x1d4ed8 });
+      rightArm.material = new THREE.MeshLambertMaterial({ color: 0x1d4ed8 });
+      leftLeg.material = new THREE.MeshLambertMaterial({ color: 0x1e3a8a }); // Jeans
+      rightLeg.material = new THREE.MeshLambertMaterial({ color: 0x1e3a8a });
+      leftShoe.material = new THREE.MeshLambertMaterial({ color: 0xdc2626 }); // Red shoes
+      rightShoe.material = new THREE.MeshLambertMaterial({ color: 0xdc2626 });
+    } else if (skinId === 'fresh') {
+      // 🎧 فريش (عازف الإيقاع - DJ)
+      torso.material = new THREE.MeshLambertMaterial({ color: 0x10b981 }); // Emerald Green jacket
+      hoodie.material = new THREE.MeshLambertMaterial({ color: 0xfacc15 }); // Gold zipper trim
+      cap.material = new THREE.MeshLambertMaterial({ color: 0xf59e0b }); // Golden orange beanie
+      visor.visible = false;
+      backpack.visible = false;
+
+      leftArm.material = new THREE.MeshLambertMaterial({ color: 0x10b981 });
+      rightArm.material = new THREE.MeshLambertMaterial({ color: 0x10b981 });
+      leftLeg.material = new THREE.MeshLambertMaterial({ color: 0x365314 }); // Olive cargo pants
+      rightLeg.material = new THREE.MeshLambertMaterial({ color: 0x365314 });
+      leftShoe.material = new THREE.MeshLambertMaterial({ color: 0x38bdf8 }); // Cyan high-tops
+      rightShoe.material = new THREE.MeshLambertMaterial({ color: 0x38bdf8 });
+
+      // Big Over-Ear DJ Headphones with Cyan Glowing Rings
+      const hpMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3 });
+      const hpGlowMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
+      const hpBand = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.06, 8, 16, Math.PI), hpMat);
+      hpBand.position.set(0, 2.65, -0.04);
+      hpBand.rotation.z = Math.PI;
+      const hpLeft = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.12, 12), hpGlowMat);
+      hpLeft.position.set(-0.44, 2.35, -0.04);
+      hpLeft.rotation.z = Math.PI / 2;
+      const hpRight = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.12, 12), hpGlowMat);
+      hpRight.position.set(0.44, 2.35, -0.04);
+      hpRight.rotation.z = Math.PI / 2;
+      accGroup.add(hpBand, hpLeft, hpRight);
+
+      // Giant Stereo Boombox on Back with Twin Subwoofers!
+      const boomboxGeo = new THREE.BoxGeometry(1.0, 0.65, 0.38);
+      const boomboxMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.3 });
+      const boombox = new THREE.Mesh(boomboxGeo, boomboxMat);
+      boombox.position.set(0, 1.5, 0.38);
+      [-0.28, 0.28].forEach(bx => {
+        const sub = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.05, 12), new THREE.MeshBasicMaterial({ color: 0x0f172a }));
+        sub.position.set(bx, 0, 0.2);
+        sub.rotation.x = Math.PI / 2;
+        const subCore = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), hpGlowMat);
+        subCore.position.set(bx, 0, 0.22);
+        boombox.add(sub, subCore);
+      });
+      accGroup.add(boombox);
+    } else if (skinId === 'tricky') {
+      // 🎀 تريكي (المتزلجة الذكية)
+      torso.material = new THREE.MeshLambertMaterial({ color: 0xec4899 }); // Hot Pink crop jacket
+      hoodie.material = new THREE.MeshLambertMaterial({ color: 0xa855f7 }); // Lavender purple under-top
+      backpack.material = new THREE.MeshLambertMaterial({ color: 0xec4899 }); // Pink skate pack
+      cap.material = new THREE.MeshLambertMaterial({ color: 0x8b5cf6 }); // Violet skater beanie
+      visor.visible = false;
+      leftArm.material = new THREE.MeshLambertMaterial({ color: 0xffedd5 }); // Bare arms
+      rightArm.material = new THREE.MeshLambertMaterial({ color: 0xffedd5 });
+      leftLeg.material = new THREE.MeshLambertMaterial({ color: 0x0284c7 }); // Denim shorts
+      rightLeg.material = new THREE.MeshLambertMaterial({ color: 0x0284c7 });
+      leftShoe.material = new THREE.MeshLambertMaterial({ color: 0xf43f5e }); // Rose sneakers
+      rightShoe.material = new THREE.MeshLambertMaterial({ color: 0xf43f5e });
+
+      // Blonde Skater Braids on sides
+      const hairMat = new THREE.MeshLambertMaterial({ color: 0xfde047 });
+      [-0.38, 0.38].forEach(hx => {
+        const pigtail = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 0.6, 8), hairMat);
+        pigtail.position.set(hx, 2.1, 0.05);
+        pigtail.rotation.z = hx > 0 ? -0.2 : 0.2;
+        const ribbon = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.03, 6, 12), new THREE.MeshBasicMaterial({ color: 0xec4899 }));
+        ribbon.position.set(hx, 2.35, 0.05);
+        ribbon.rotation.x = Math.PI / 2;
+        accGroup.add(pigtail, ribbon);
+      });
+
+      // Purple Skater Knee Pads
+      const padMat = new THREE.MeshStandardMaterial({ color: 0x7c3aed, roughness: 0.4 });
+      [-0.24, 0.24].forEach(px => {
+        const pad = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.22, 0.14), padMat);
+        pad.position.set(px, 0.5, -0.16);
+        accGroup.add(pad);
+      });
+    } else if (skinId === 'beach_king') {
+      // 🏄‍♂️ بطل الشاطئ (Beach Surfer)
+      torso.material = new THREE.MeshLambertMaterial({ color: 0x06b6d4 }); // Turquoise Hawaiian Shirt
+      hoodie.material = new THREE.MeshLambertMaterial({ color: 0xfacc15 }); // Tropical yellow floral collar
+      backpack.visible = false;
+      cap.material = new THREE.MeshLambertMaterial({ color: 0xfacc15 }); // Sun-kissed golden hair
+      visor.visible = false;
+      leftArm.material = new THREE.MeshLambertMaterial({ color: 0xffedd5 });
+      rightArm.material = new THREE.MeshLambertMaterial({ color: 0xffedd5 });
+      leftLeg.material = new THREE.MeshLambertMaterial({ color: 0xfacc15 }); // Sunny Yellow Boardshorts
+      rightLeg.material = new THREE.MeshLambertMaterial({ color: 0xfacc15 });
+      leftShoe.material = new THREE.MeshLambertMaterial({ color: 0x0284c7 });
+      rightShoe.material = new THREE.MeshLambertMaterial({ color: 0x0284c7 });
+
+      // Gold Sunglasses perched on Head
+      const glassMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.9, roughness: 0.1 });
+      const lensMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
+      const sunFrame = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 0.12), glassMat);
+      sunFrame.position.set(0, 2.5, -0.26);
+      const lensL = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.16, 0.08), lensMat);
+      lensL.position.set(-0.18, 2.5, -0.28);
+      const lensR = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.16, 0.08), lensMat);
+      lensR.position.set(0.18, 2.5, -0.28);
+      accGroup.add(sunFrame, lensL, lensR);
+
+      // Mini Surfboard strapped diagonally on back
+      const miniBoardGeo = new THREE.BoxGeometry(0.48, 1.5, 0.1);
+      const miniBoardMat = new THREE.MeshStandardMaterial({ color: 0xec4899, roughness: 0.3 });
+      const miniBoard = new THREE.Mesh(miniBoardGeo, miniBoardMat);
+      miniBoard.position.set(0.1, 1.55, 0.34);
+      miniBoard.rotation.z = 0.35;
+      const boardStripe = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.25, 0.12), new THREE.MeshLambertMaterial({ color: 0x06b6d4 }));
+      boardStripe.position.set(0, 0.2, 0);
+      miniBoard.add(boardStripe);
+      accGroup.add(miniBoard);
+    } else if (skinId === 'ninja') {
+      // 🥷 نينجا الظل (Shadow Shinobi)
+      torso.material = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5 }); // Matte Black
+      hoodie.material = new THREE.MeshLambertMaterial({ color: 0xdc2626 }); // Crimson Crest
+      backpack.visible = false;
+      cap.material = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 });
+      visor.material = new THREE.MeshBasicMaterial({ color: 0xef4444 }); // Glowing red headband
+      leftArm.material = new THREE.MeshStandardMaterial({ color: 0x0f172a });
+      rightArm.material = new THREE.MeshStandardMaterial({ color: 0x0f172a });
+      leftLeg.material = new THREE.MeshStandardMaterial({ color: 0x0f172a });
+      rightLeg.material = new THREE.MeshStandardMaterial({ color: 0x0f172a });
+      leftShoe.material = new THREE.MeshLambertMaterial({ color: 0xfacc15 });
+      rightShoe.material = new THREE.MeshLambertMaterial({ color: 0xfacc15 });
+
+      // Red Fluttering Headband Tail ribbons behind head
+      const ribbonMat = new THREE.MeshBasicMaterial({ color: 0xdc2626 });
+      const ribbonL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.6, 0.04), ribbonMat);
+      ribbonL.position.set(-0.15, 2.2, 0.32);
+      ribbonL.rotation.x = 0.4;
+      const ribbonR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.7, 0.04), ribbonMat);
+      ribbonR.position.set(0.12, 2.15, 0.32);
+      ribbonR.rotation.x = 0.45;
+      accGroup.add(ribbonL, ribbonR);
+
+      // Dual Crossed Samurai Katanas in Sheaths on Back
+      const katanaMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4 });
+      const goldHiltMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.9 });
+      [-0.45, 0.45].forEach(kx => {
+        const sheath = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 1.4, 8), katanaMat);
+        sheath.position.set(0, 1.6, 0.34);
+        sheath.rotation.z = kx;
+        const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.35, 8), goldHiltMat);
+        hilt.position.set(0, 0.8, 0);
+        sheath.add(hilt);
+        accGroup.add(sheath);
+      });
+    } else if (skinId === 'cyborg') {
+      // 🤖 السايبورغ الذهبي (Cyber Cyborg 3000)
+      const goldArmorMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.95, roughness: 0.08 });
+      const cyanCoreMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
+      const darkTitaniumMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.2 });
+
+      torso.material = goldArmorMat;
+      hoodie.material = cyanCoreMat; // Glowing Arc Reactor in Chest
+      backpack.visible = false;
+      cap.material = goldArmorMat; // Chrome Helmet
+      visor.material = cyanCoreMat; // HUD Visor
+      leftArm.material = darkTitaniumMat;
+      rightArm.material = darkTitaniumMat;
+      leftLeg.material = goldArmorMat;
+      rightLeg.material = goldArmorMat;
+      leftShoe.material = cyanCoreMat;
+      rightShoe.material = cyanCoreMat;
+
+      // Arc Reactor Pulsing Core Ring
+      const reactorRing = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.04, 8, 16), cyanCoreMat);
+      reactorRing.position.set(0, 1.55, -0.28);
+      accGroup.add(reactorRing);
+
+      // Dual Jet Exhaust Thrusters on Back
+      [-0.22, 0.22].forEach(tx => {
+        const thruster = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.5, 10), darkTitaniumMat);
+        thruster.position.set(tx, 1.55, 0.34);
+        const glowFlame = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.3, 8), cyanCoreMat);
+        glowFlame.rotation.x = Math.PI;
+        glowFlame.position.set(0, -0.32, 0);
+        thruster.add(glowFlame);
+        accGroup.add(thruster);
+      });
+    }
+  }
+
+  // --- Dynamic 3D Hoverboard Customizer (تبديل شكل ولون لوح التزلج ثلاثي الأبعاد) ---
+  applySelectedBoardToRunner() {
+    if (!this.runner || !this.runner.hoverboard) return;
+    const boardId = this.selectedBoard || 'classic';
+    const board = this.runner.hoverboard;
+
+    if (boardId === 'classic') {
+      board.children.forEach((c: any) => {
+        if (c.material && c.material.color) c.material.color.setHex(0xd97706);
+      });
+    } else if (boardId === 'cyber') {
+      board.children.forEach((c: any) => {
+        if (c.material && c.material.color) c.material.color.setHex(0x00f0ff);
+      });
+    } else if (boardId === 'tsunami') {
+      board.children.forEach((c: any) => {
+        if (c.material && c.material.color) c.material.color.setHex(0x0284c7);
+      });
+    } else if (boardId === 'dragon') {
+      board.children.forEach((c: any) => {
+        if (c.material && c.material.color) c.material.color.setHex(0xef4444);
+      });
+    } else if (boardId === 'quantum') {
+      board.children.forEach((c: any) => {
+        if (c.material && c.material.color) c.material.color.setHex(0xa855f7);
+      });
+    }
   }
 
   // --- Police Inspector & Running Bulldog Companion ---
@@ -1421,88 +2268,504 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
 
   private createMysteryBox() {
     const group = new THREE.Group();
-    const geo = new THREE.BoxGeometry(0.9, 0.9, 0.9);
-    const mat = new THREE.MeshLambertMaterial({ color: 0x9333ea });
-    const mesh = new THREE.Mesh(geo, mat);
-    const ribbon = new THREE.Mesh(new THREE.BoxGeometry(0.94, 0.94, 0.2), new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.8 }));
-    group.add(mesh, ribbon);
-    group.userData = { type: 'mystery_box' };
+    // 1. Purple gift cube with gold trim
+    const geo = new THREE.BoxGeometry(0.95, 0.95, 0.95);
+    const mat = new THREE.MeshStandardMaterial({ color: 0x9333ea, roughness: 0.3, metalness: 0.3 });
+    const box = new THREE.Mesh(geo, mat);
+
+    const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.9, roughness: 0.1 });
+    
+    // Golden Ribbons wrapping around all 4 sides
+    const ribbonV = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.98, 0.22), goldMat);
+    const ribbonH = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.98, 0.98), goldMat);
+    
+    // Golden Question Mark '?' 3D glyph on front and back
+    const qTopGeo = new THREE.TorusGeometry(0.18, 0.05, 8, 16, Math.PI * 1.3);
+    const qTopF = new THREE.Mesh(qTopGeo, goldMat);
+    qTopF.position.set(0, 0.15, 0.50);
+    const qDotF = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), goldMat);
+    qDotF.position.set(0, -0.22, 0.50);
+
+    const qTopB = new THREE.Mesh(qTopGeo, goldMat);
+    qTopB.position.set(0, 0.15, -0.50);
+    qTopB.rotation.y = Math.PI;
+    const qDotB = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), goldMat);
+    qDotB.position.set(0, -0.22, -0.50);
+
+    // Glowing Halo
+    const haloMat = new THREE.MeshBasicMaterial({ color: 0xc084fc, transparent: true, opacity: 0.35 });
+    const halo = new THREE.Mesh(new THREE.SphereGeometry(0.85, 10, 10), haloMat);
+
+    group.add(box, ribbonV, ribbonH, qTopF, qDotF, qTopB, qDotB, halo);
+    group.userData = { type: 'mystery_box', baseY: 1.4 };
     return group;
+  }
+
+  private openMysteryBox() {
+    const rewards = [
+      { type: 'coins', amount: Math.floor(Math.random() * 300) + 150, text: 'عملة ذهبية 🪙' },
+      { type: 'keys', amount: 1, text: 'مفتاح ذهبي 🔑' },
+      { type: 'coins', amount: 500, text: 'كنز ذهبي ضخم 💰' }
+    ];
+    const picked = rewards[Math.floor(Math.random() * rewards.length)];
+    if (picked.type === 'coins') {
+      this.coins += picked.amount;
+      this.totalCoins += picked.amount;
+      this.showBanner(`🎁 صندوق المفاجآت: +${picked.amount} ${picked.text}!`);
+    } else {
+      this.totalKeys += picked.amount;
+      this.showBanner(`🎁 صندوق المفاجآت: +${picked.amount} ${picked.text}!`);
+    }
+    this.savePersistedData();
+    this.playPowerupSound();
   }
 
   private createPowerupMesh(pType: string) {
     const group = new THREE.Group();
-    const geo = new THREE.SphereGeometry(0.55, 16, 16);
-    const mat = new THREE.MeshLambertMaterial({ 
-      color: pType === 'magnet' ? 0xef4444 : (pType === 'jetpack' ? 0xf59e0b : (pType === 'sneakers' ? 0x10b981 : 0x06b6d4)) 
-    });
-    const mesh = new THREE.Mesh(geo, mat);
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.7, 0.06, 8, 20), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    ring.rotation.x = Math.PI / 2;
-    group.add(mesh, ring);
-    group.userData = { type: 'powerup', pType };
+
+    if (pType === 'magnet') {
+      // 🧲 Iconic Ultra-Detailed Red & Silver Horseshoe Magnet (مغناطيس العملات الخارق)
+      const redMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.25, metalness: 0.2 });
+      const silverMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.95, roughness: 0.05 });
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.9, roughness: 0.15 });
+      const sparkMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+
+      // Curved Red Horseshoe main body (arch)
+      const bodyGeo = new THREE.TorusGeometry(0.55, 0.15, 16, 28, Math.PI);
+      const magnetBody = new THREE.Mesh(bodyGeo, redMat);
+      magnetBody.rotation.z = Math.PI; // Opening upwards
+
+      // Silver Pole Tips on Left & Right with gold isolation rings
+      const tipL = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.32, 16), silverMat);
+      tipL.position.set(-0.55, 0.16, 0);
+      const ringL = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.03, 8, 16), goldMat);
+      ringL.position.set(-0.55, 0.02, 0);
+      ringL.rotation.x = Math.PI / 2;
+
+      const tipR = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.32, 16), silverMat);
+      tipR.position.set(0.55, 0.16, 0);
+      const ringR = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.03, 8, 16), goldMat);
+      ringR.position.set(0.55, 0.02, 0);
+      ringR.rotation.x = Math.PI / 2;
+
+      // Central Golden Coin floating between the magnetic poles
+      const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.08, 16), goldMat);
+      coin.position.set(0, 0.18, 0);
+      coin.rotation.x = Math.PI / 2;
+
+      // Magnetic Blue Spark Arc bridging the poles
+      const spark = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.035, 6, 16, Math.PI), sparkMat);
+      spark.position.set(0, 0.3, 0);
+
+      // Pulsing Cyan Flux Rings hovering above tips
+      const fluxL = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.03, 8, 16), sparkMat);
+      fluxL.position.set(-0.55, 0.38, 0);
+      fluxL.rotation.x = Math.PI / 2;
+
+      const fluxR = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.03, 8, 16), sparkMat);
+      fluxR.position.set(0.55, 0.38, 0);
+      fluxR.rotation.x = Math.PI / 2;
+
+      // Glowing Aura Spheres
+      const glow = new THREE.Mesh(new THREE.SphereGeometry(0.9, 12, 12), new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.28 }));
+
+      group.add(magnetBody, tipL, ringL, tipR, ringR, coin, spark, fluxL, fluxR, glow);
+    } else if (pType === 'multiplier') {
+      // ⭐ 2X Multiplier Golden Star with Glowing '2X' Badge
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.9, roughness: 0.15 });
+      const cyanMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, roughness: 0.2 });
+
+      // 5-Pointed Star Shape
+      const starCenter = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.2, 16), goldMat);
+      group.add(starCenter);
+
+      for (let i = 0; i < 5; i++) {
+        const angle = (i * 2 * Math.PI) / 5;
+        const pt = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.55, 4), goldMat);
+        pt.position.set(Math.sin(angle) * 0.45, Math.cos(angle) * 0.45, 0);
+        pt.rotation.z = -angle;
+        group.add(pt);
+      }
+
+      // '2X' Center Badge (Double embossed disks)
+      const badge = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.26, 16), cyanMat);
+      badge.rotation.x = Math.PI / 2;
+      group.add(badge);
+
+      // Orbiting Golden Energy Rings
+      const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.8, 0.04, 8, 24), new THREE.MeshBasicMaterial({ color: 0xfacc15 }));
+      const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.04, 8, 24), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+      ring1.rotation.x = Math.PI / 3;
+      ring2.rotation.y = Math.PI / 3;
+      group.add(ring1, ring2);
+    } else if (pType === 'sneakers') {
+      // 👟 Super Spring-Loaded Winged High-Top Sneaker
+      const greenMat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.4 });
+      const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.85, roughness: 0.2 });
+
+      // Shoe body
+      const sole = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.15, 0.9), whiteMat);
+      sole.position.y = 0.08;
+      const upper = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.35, 0.8), greenMat);
+      upper.position.set(0, 0.28, 0.05);
+      const ankle = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.35, 0.4), greenMat);
+      ankle.position.set(0, 0.55, -0.15);
+
+      // Golden Spring Coil underneath!
+      const spring = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.4, 12), goldMat);
+      spring.position.y = -0.22;
+
+      // Hermes Angel Wings on both sides
+      const wingL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.3, 0.5), whiteMat);
+      wingL.position.set(-0.25, 0.45, -0.1);
+      wingL.rotation.z = 0.35;
+      const wingR = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.3, 0.5), whiteMat);
+      wingR.position.set(0.25, 0.45, -0.1);
+      wingR.rotation.z = -0.35;
+
+      const glow = new THREE.Mesh(new THREE.SphereGeometry(0.85, 10, 10), new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.25 }));
+
+      group.add(sole, upper, ankle, spring, wingL, wingR, glow);
+    } else if (pType === 'hoverboard') {
+      // 🛹 High-Tech Cyber Aerodynamic Hoverboard (لوح التزلج النفاث الخارق)
+      const deckMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.25, metalness: 0.6 });
+      const carbonMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.7 });
+      const neonCyanMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
+      const goldStripeMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.9, roughness: 0.1 });
+      const plasmaFlameMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+
+      // 1. Aerodynamic Main Deck Shell
+      const deckGeo = new THREE.BoxGeometry(0.72, 0.10, 1.6);
+      const deck = new THREE.Mesh(deckGeo, deckMat);
+      group.add(deck);
+
+      // Top Carbon Grip Traction Pad
+      const gripPad = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.04, 1.3), carbonMat);
+      gripPad.position.y = 0.06;
+      deck.add(gripPad);
+
+      // Center Gold Racing Stripe
+      const racingStripe = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, 1.4), goldStripeMat);
+      racingStripe.position.y = 0.06;
+      deck.add(racingStripe);
+
+      // 2. Full Perimeter Neon LED Light Strip
+      const neonRim = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.04, 1.66), neonCyanMat);
+      neonRim.position.y = -0.02;
+      group.add(neonRim);
+
+      // 3. Dual Anti-Gravity Plasma Thrusters Underneath
+      [-0.24, 0.24].forEach(tx => {
+        const housing = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.28, 12), carbonMat);
+        housing.position.set(tx, -0.15, -0.4);
+
+        const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.13, 0.1, 12), goldStripeMat);
+        nozzle.position.set(0, -0.16, 0);
+        housing.add(nozzle);
+
+        // Glowing Blue Plasma Exhaust Cone
+        const flame = new THREE.Mesh(new THREE.ConeGeometry(0.10, 0.35, 10), plasmaFlameMat);
+        flame.rotation.x = Math.PI;
+        flame.position.set(0, -0.32, 0);
+        housing.add(flame);
+
+        group.add(housing);
+      });
+
+      // 4. Anti-Gravity Hover Field Ring Underneath
+      const hoverField = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.03, 8, 20), neonCyanMat);
+      hoverField.position.set(0, -0.22, 0);
+      hoverField.rotation.x = Math.PI / 2;
+      group.add(hoverField);
+
+      // Glowing Ambient Halo
+      const halo = new THREE.Mesh(new THREE.SphereGeometry(0.95, 12, 12), new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.26 }));
+      group.add(halo);
+    } else {
+      // 🚀 Pharaoh Horus Rocket Jetpack
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.9, roughness: 0.15 });
+      const flameMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+
+      [-0.28, 0.28].forEach(ox => {
+        const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 0.9, 12), goldMat);
+        cyl.position.x = ox;
+        const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 0.2, 12), goldMat);
+        nozzle.position.set(ox, -0.55, 0);
+        const flame = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.45, 10), flameMat);
+        flame.rotation.x = Math.PI;
+        flame.position.set(ox, -0.85, 0);
+        group.add(cyl, nozzle, flame);
+      });
+
+      // Eagle wings
+      const wingL = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.28, 0.05), goldMat);
+      wingL.position.set(-0.6, 0.15, 0);
+      wingL.rotation.z = 0.25;
+      const wingR = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.28, 0.05), goldMat);
+      wingR.position.set(0.6, 0.15, 0);
+      wingR.rotation.z = -0.25;
+
+      const glow = new THREE.Mesh(new THREE.SphereGeometry(0.95, 10, 10), new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.3 }));
+
+      group.add(wingL, wingR, glow);
+    }
+
+    group.userData = { type: 'powerup', pType, baseY: 1.4 };
     return group;
   }
 
   private createCairoMetroTrain(isMoving: boolean = false, speed: number = 0, hasRamp: boolean = false) {
     const group = new THREE.Group();
     const length = 28;
-    const height = 4.2;
+    const height = 4.3;
+    const width = 2.85;
 
-    // Train Body (Cairo Blue with Golden Pharaoh Stripe)
-    const bodyGeo = new THREE.BoxGeometry(2.85, height, length);
-    const bodyMat = new THREE.MeshLambertMaterial({ color: 0x0284c7 });
+    // --- Materials Palette for High-Realism Train ---
+    const bodyMat = new THREE.MeshStandardMaterial({ 
+      color: isMoving ? 0x0284c7 : 0x0891b2, 
+      roughness: 0.35, 
+      metalness: 0.45 
+    });
+    const undercarriageMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
+    const wheelSteelMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.9, roughness: 0.15 });
+    const chromeHubMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.95, roughness: 0.05 });
+    const coralStripeMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.4 });
+    const goldBandMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.85, roughness: 0.2 });
+    const windowGlassMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.1, metalness: 0.9, emissive: 0x0284c7, emissiveIntensity: 0.4 });
+    const windowFrameMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.3 });
+    const doorMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.75, roughness: 0.25 });
+    const roofMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 });
+    const hvacMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5, metalness: 0.4 });
+    const xenonLightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const redMarkerMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+    const darkGlassMat = new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.1, metalness: 0.9 });
+
+    // 1. Main Train Body Shell
+    const bodyGeo = new THREE.BoxGeometry(width, height - 0.7, length);
     const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.position.y = height / 2;
+    body.position.y = height / 2 + 0.35;
     group.add(body);
 
-    const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.85, roughness: 0.2 });
-    const roofBand = new THREE.Mesh(new THREE.BoxGeometry(2.95, 0.35, length), goldMat);
-    roofBand.position.y = height + 0.15;
-    group.add(roofBand);
+    // Aerodynamic Curved Roof
+    const roofGeo = new THREE.CylinderGeometry(width / 2, width / 2, length, 16, 1, false, 0, Math.PI);
+    const roof = new THREE.Mesh(roofGeo, roofMat);
+    roof.rotation.x = Math.PI / 2;
+    roof.rotation.z = Math.PI;
+    roof.position.set(0, height, 0);
+    group.add(roof);
 
-    // Front Windshield Slope
-    const cabinGeo = new THREE.BoxGeometry(2.6, 1.8, 1.5);
-    const darkGlassMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.1 });
-    const cabin = new THREE.Mesh(cabinGeo, darkGlassMat);
-    cabin.position.set(0, 2.6, length / 2 + 0.3);
-    cabin.rotation.x = -0.3;
-    group.add(cabin);
-
-    // Dual Glowing Headlights
-    const lightMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
-    [-0.8, 0.8].forEach(lx => {
-      const headlight = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 10), lightMat);
-      headlight.position.set(lx, 1.3, length / 2 + 0.15);
-      group.add(headlight);
+    // Corrugated Roof Ribs (Sleek aerodynamic longitudinal lines)
+    [-0.8, -0.4, 0, 0.4, 0.8].forEach(rx => {
+      const rib = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.08, length - 1), goldBandMat);
+      rib.position.set(rx, height + (width / 2) * Math.cos(rx / 1.5) - 0.25, 0);
+      group.add(rib);
     });
 
-    // Front Arabic Destination Board: "مترو القاهرة 🚇"
-    const boardCanvas = document.createElement('canvas');
-    boardCanvas.width = 256;
-    boardCanvas.height = 64;
-    const ctx = boardCanvas.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = '#0a0f1d';
-      ctx.fillRect(0, 0, 256, 64);
-      ctx.fillStyle = '#facc15';
-      ctx.font = 'bold 24px Cairo, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('مترو القاهرة 🚇✨', 128, 42);
-    }
-    const tex = new THREE.CanvasTexture(boardCanvas);
-    const destMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.65), new THREE.MeshBasicMaterial({ map: tex }));
-    destMesh.position.set(0, 3.5, length / 2 + 0.08);
-    group.add(destMesh);
+    // 2. Rooftop HVAC Climate Units & Ventilation Pods
+    [-length / 4, length / 4].forEach(hz => {
+      const hvac = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.45, 3.8), hvacMat);
+      hvac.position.set(0, height + 0.35, hz);
+      
+      // Fan grills on top of HVAC
+      [-1.0, 1.0].forEach(fz => {
+        const fan = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.08, 12), undercarriageMat);
+        fan.position.set(0, 0.25, fz);
+        hvac.add(fan);
+      });
+      group.add(hvac);
+    });
 
-    // Front Ramp for stationary trains
+    // High-Voltage Electrical Roof Conduit
+    const conduit = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, length - 4, 8), chromeHubMat);
+    conduit.rotation.x = Math.PI / 2;
+    conduit.position.set(0.95, height + 0.15, 0);
+    group.add(conduit);
+
+    // 3. Side Racing Stripes & Coach Livery
+    const sideStripeL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.55, length), coralStripeMat);
+    sideStripeL.position.set(-width / 2 - 0.02, height / 2 + 0.1, 0);
+    const sideStripeR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.55, length), coralStripeMat);
+    sideStripeR.position.set(width / 2 + 0.02, height / 2 + 0.1, 0);
+
+    const bottomGoldL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.18, length), goldBandMat);
+    bottomGoldL.position.set(-width / 2 - 0.02, 1.0, 0);
+    const bottomGoldR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.18, length), goldBandMat);
+    bottomGoldR.position.set(width / 2 + 0.02, 1.0, 0);
+    group.add(sideStripeL, sideStripeR, bottomGoldL, bottomGoldR);
+
+    // 4. Detailed Passenger Windows & Bi-fold Doors (Both sides)
+    for (let wz = -length / 2 + 3.2; wz <= length / 2 - 3.2; wz += 3.4) {
+      const isDoorBay = Math.abs(wz) < 2.0;
+
+      if (isDoorBay) {
+        // Bi-fold Passenger Sliding Doors
+        [-width / 2 - 0.03, width / 2 + 0.03].forEach(dx => {
+          const door = new THREE.Mesh(new THREE.BoxGeometry(0.06, 2.6, 1.8), doorMat);
+          door.position.set(dx, 2.0, wz);
+
+          // Door window glass
+          const doorWin = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.2, 0.6), windowGlassMat);
+          doorWin.position.set(0, 0.4, 0);
+          door.add(doorWin);
+          group.add(door);
+        });
+      } else {
+        // Passenger Window with Frame
+        [-width / 2 - 0.03, width / 2 + 0.03].forEach(wx => {
+          const frame = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.35, 1.8), windowFrameMat);
+          frame.position.set(wx, 2.7, wz);
+
+          const glass = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.15, 1.6), windowGlassMat);
+          glass.position.set(0, 0, 0);
+          frame.add(glass);
+          group.add(frame);
+        });
+      }
+    }
+
+    // 5. Undercarriage Bogies & Steel Flanged Wheels
+    [-length / 3.2, length / 3.2].forEach(bz => {
+      const bogie = new THREE.Group();
+      bogie.position.set(0, 0.4, bz);
+
+      // Cast iron bogie frame
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.35, 3.8), undercarriageMat);
+      bogie.add(frame);
+
+      // 4 Steel Disc Wheels per bogie (Total 8 wheels per car)
+      [-0.95, 0.95].forEach(wx => {
+        [-1.3, 1.3].forEach(wz => {
+          const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.18, 16), wheelSteelMat);
+          wheel.rotation.z = Math.PI / 2;
+          wheel.position.set(wx, 0, wz);
+
+          const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.22, 12), chromeHubMat);
+          hub.rotation.z = Math.PI / 2;
+          wheel.add(hub);
+
+          bogie.add(wheel);
+        });
+      });
+
+      // Center suspension pivot
+      const pivot = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.4, 10), undercarriageMat);
+      pivot.position.y = 0.25;
+      bogie.add(pivot);
+
+      group.add(bogie);
+    });
+
+    // 6. Front Nose Cab / Ramp
     if (hasRamp) {
-      const rampGeo = new THREE.BoxGeometry(2.4, 0.3, 7.0);
-      const rampMat = new THREE.MeshLambertMaterial({ color: 0xb45309 });
-      const ramp = new THREE.Mesh(rampGeo, rampMat);
-      ramp.position.set(0, height / 2, length / 2 + 3.5);
-      ramp.rotation.x = 0.52; // Angled ramp to roof
-      group.add(ramp);
+      // High-Detail Teak Boardwalk Loading Ramp (9 units long)
+      const rampLengthZ = 9.0;
+      const angle = Math.atan2(height, rampLengthZ);
+      const hypotenuse = Math.sqrt(height * height + rampLengthZ * rampLengthZ);
+
+      // Teak Wood Plank with non-slip safety trims
+      const rampMat = new THREE.MeshLambertMaterial({ color: 0x92400e });
+      const rampPlank = new THREE.Mesh(new THREE.BoxGeometry(width - 0.1, 0.22, hypotenuse), rampMat);
+      rampPlank.position.set(0, height / 2, length / 2 + (rampLengthZ / 2));
+      rampPlank.rotation.x = angle;
+      group.add(rampPlank);
+
+      // Non-slip yellow tread lines along the ramp
+      for (let s = -hypotenuse / 2 + 1; s < hypotenuse / 2 - 1; s += 1.5) {
+        const step = new THREE.Mesh(new THREE.BoxGeometry(width - 0.3, 0.25, 0.15), goldBandMat);
+        step.position.set(0, height / 2 + (s * Math.sin(angle)), length / 2 + (rampLengthZ / 2) + (s * Math.cos(angle)));
+        step.rotation.x = angle;
+        group.add(step);
+      }
+
+      // Illuminated safety guide railings
+      const railCyanMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, metalness: 0.8 });
+      [-width / 2 + 0.05, width / 2 - 0.05].forEach(rx => {
+        const handrail = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.45, hypotenuse), railCyanMat);
+        handrail.position.set(rx, height / 2, length / 2 + (rampLengthZ / 2));
+        handrail.rotation.x = angle;
+        group.add(handrail);
+      });
+
+      // Heavy triangular support truss
+      const truss = new THREE.Mesh(new THREE.BoxGeometry(2.6, 2.2, 0.4), undercarriageMat);
+      truss.position.set(0, 1.1, length / 2 + 4.5);
+      group.add(truss);
+    } else {
+      // Aerodynamic Sloped Driver Cabin
+      const cabNose = new THREE.Mesh(new THREE.BoxGeometry(width * 0.94, 2.0, 1.6), bodyMat);
+      cabNose.position.set(0, 2.5, length / 2 + 0.3);
+      cabNose.rotation.x = -0.26;
+      group.add(cabNose);
+
+      // Wide Panoramic Tinted Windshield
+      const windshield = new THREE.Mesh(new THREE.BoxGeometry(width * 0.82, 1.3, 0.1), darkGlassMat);
+      windshield.position.set(0, 2.85, length / 2 + 0.95);
+      windshield.rotation.x = -0.26;
+      group.add(windshield);
+
+      // Dual Windshield Wipers
+      [-0.45, 0.45].forEach(wix => {
+        const wiper = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.6, 0.04), undercarriageMat);
+        wiper.position.set(wix, 2.7, length / 2 + 1.02);
+        wiper.rotation.z = 0.3;
+        wiper.rotation.x = -0.26;
+        group.add(wiper);
+      });
+
+      // Heavy-Duty Steel Cowcatcher / Pilot Bumper with Hazard Stripes
+      const bumper = new THREE.Mesh(new THREE.BoxGeometry(width + 0.15, 0.7, 0.6), undercarriageMat);
+      bumper.position.set(0, 0.55, length / 2 + 0.5);
+      
+      const hazardPlate = new THREE.Mesh(new THREE.BoxGeometry(width, 0.45, 0.06), goldBandMat);
+      hazardPlate.position.set(0, 0, 0.32);
+      bumper.add(hazardPlate);
+      group.add(bumper);
+
+      // Heavy Knuckle Train Coupler in center
+      const coupler = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.35, 0.8), chromeHubMat);
+      coupler.position.set(0, 0.55, length / 2 + 0.9);
+      group.add(coupler);
+
+      // Dual High-Power Xenon Headlights with Chrome Rings
+      [-0.85, 0.85].forEach(lx => {
+        const bezel = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.1, 12), chromeHubMat);
+        bezel.rotation.x = Math.PI / 2;
+        bezel.position.set(lx, 1.45, length / 2 + 0.45);
+
+        const lens = new THREE.Mesh(new THREE.SphereGeometry(0.20, 10, 10), xenonLightMat);
+        lens.position.set(0, 0.06, 0);
+        bezel.add(lens);
+        group.add(bezel);
+      });
+
+      // Dual Top Red Marker Lights
+      [-0.95, 0.95].forEach(rx => {
+        const redLed = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), redMarkerMat);
+        redLed.position.set(rx, 3.8, length / 2 + 0.35);
+        group.add(redLed);
+      });
+
+      // Digital LED Destination Display: "قطار الشاطئ السريع 🏖️🏄‍♂️"
+      const boardCanvas = document.createElement('canvas');
+      boardCanvas.width = 256;
+      boardCanvas.height = 64;
+      const ctx = boardCanvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#082f49';
+        ctx.fillRect(0, 0, 256, 64);
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#facc15';
+        ctx.strokeRect(2, 2, 252, 60);
+        ctx.fillStyle = '#fde047';
+        ctx.font = 'bold 22px Cairo, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('قطار الشاطئ السريع 🏖️🏄‍♂️', 128, 42);
+      }
+      const tex = new THREE.CanvasTexture(boardCanvas);
+      const destMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 0.6), new THREE.MeshBasicMaterial({ map: tex }));
+      destMesh.position.set(0, 3.55, length / 2 + 0.38);
+      group.add(destMesh);
     }
 
     group.userData = { type: 'train', length, height, isMoving, speed, hasRamp };
@@ -1511,33 +2774,44 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
 
   private createBarrier(isSlideBarrier: boolean) {
     const group = new THREE.Group();
-    const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.85, roughness: 0.2 });
-    const stoneMat = new THREE.MeshLambertMaterial({ color: 0xb45309 });
+    const woodMat = new THREE.MeshLambertMaterial({ color: 0x92400e });
+    const bambooMat = new THREE.MeshLambertMaterial({ color: 0xca8a04 });
+    const redMat = new THREE.MeshLambertMaterial({ color: 0xef4444 });
+    const whiteMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
 
     if (isSlideBarrier) {
-      // High barrier to slide under
+      // High Tropical Driftwood Arch to slide under
       const barGeo = new THREE.BoxGeometry(3.0, 0.45, 0.2);
-      const bar = new THREE.Mesh(barGeo, goldMat);
+      const bar = new THREE.Mesh(barGeo, woodMat);
       bar.position.set(0, 2.2, 0);
       group.add(bar);
 
-      const pL = new THREE.Mesh(new THREE.BoxGeometry(0.25, 2.4, 0.25), stoneMat);
+      // Warning hazard stripes
+      const stripeGeo = new THREE.BoxGeometry(2.8, 0.2, 0.24);
+      const stripe = new THREE.Mesh(stripeGeo, redMat);
+      stripe.position.set(0, 2.2, 0);
+      group.add(stripe);
+
+      const pL = new THREE.Mesh(new THREE.BoxGeometry(0.25, 2.4, 0.25), bambooMat);
       pL.position.set(-1.4, 1.2, 0);
-      const pR = new THREE.Mesh(new THREE.BoxGeometry(0.25, 2.4, 0.25), stoneMat);
+      const pR = new THREE.Mesh(new THREE.BoxGeometry(0.25, 2.4, 0.25), bambooMat);
       pR.position.set(1.4, 1.2, 0);
       group.add(pL, pR);
 
       group.userData = { type: 'barrier_slide' };
     } else {
-      // Low barrier to jump over
-      const hurdleGeo = new THREE.BoxGeometry(3.0, 0.9, 0.25);
-      const hurdle = new THREE.Mesh(hurdleGeo, stoneMat);
+      // Low Tropical Bamboo Hurdle with Red/White Lifebuoy to jump over
+      const hurdleGeo = new THREE.BoxGeometry(3.0, 0.85, 0.25);
+      const hurdle = new THREE.Mesh(hurdleGeo, bambooMat);
       hurdle.position.set(0, 0.45, 0);
 
-      const goldTrim = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.2, 0.3), goldMat);
-      goldTrim.position.set(0, 0.85, 0);
+      // Lifebuoy in center of hurdle
+      const buoy = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.09, 8, 16), redMat);
+      buoy.position.set(0, 0.45, 0.15);
+      const buoyRing = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.12, 0.2), whiteMat);
+      buoyRing.position.set(0, 0.45, 0.15);
 
-      group.add(hurdle, goldTrim);
+      group.add(hurdle, buoy, buoyRing);
       group.userData = { type: 'barrier_jump' };
     }
     return group;
@@ -1607,8 +2881,8 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
         this.worldObjects.push(train);
 
         // Smooth coin line up the ramp onto the roof
-        this.spawnCoinArc(tLane, z + 8, 4, 3.0, 4.6, 1.0);
-        this.spawnCoinLine(tLane, z - 4, 5, 3.2, 5.0);
+        this.spawnCoinArc(tLane, z + 10, 4, 2.8, 4.4, 0.8);
+        this.spawnCoinLine(tLane, z - 2, 5, 3.0, 4.8);
 
         // Center lane has open coin line and low hurdle
         const hurdle = this.createBarrier(false);
@@ -1738,13 +3012,21 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     this.animationFrameId = requestAnimationFrame(this.animate);
     const dt = Math.min(this.clock.getDelta(), 0.1);
 
-    if (this.gameState === 'PLAYING') {
-      this.updateGame(dt);
-    } else if (this.gameState === 'INTRO_IDLE') {
-      this.updateIntroIdle(dt);
-    }
+    try {
+      if (this.gameState === 'PLAYING') {
+        this.updateGame(dt);
+      } else if (this.gameState === 'INTRO_IDLE') {
+        this.updateIntroIdle(dt);
+      } else if (this.gameState === 'GAMEOVER' || this.gameState === 'SAVEME') {
+        this.updateGameOverScene(dt);
+      }
 
-    this.renderer.render(this.scene, this.camera);
+      if (this.renderer && this.scene && this.camera) {
+        this.renderer.render(this.scene, this.camera);
+      }
+    } catch (err) {
+      console.error('SubwaySurfers render loop error:', err);
+    }
   };
 
   private updateIntroIdle(dt: number) {
@@ -1753,13 +3035,63 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     }
   }
 
+  private updateGameOverScene(dt: number) {
+    if (!this.runner) return;
+    const t = Date.now() * 0.001;
+
+    // 1. Cinematic dynamic elevated camera framing Jake, Inspector, and the sunny beach background
+    const targetCamX = this.runner.root.position.x;
+    const targetCamY = 4.2 + Math.sin(t * 1.5) * 0.06;
+    const targetCamZ = this.runner.root.position.z + 7.0;
+    this.camera.position.x += (targetCamX - this.camera.position.x) * 6.0 * dt;
+    this.camera.position.y += (targetCamY - this.camera.position.y) * 6.0 * dt;
+    this.camera.position.z += (targetCamZ - this.camera.position.z) * 6.0 * dt;
+    this.camera.lookAt(this.runner.root.position.x * 0.5, 1.4, this.runner.root.position.z - 15.0);
+
+    // 2. Jake Sitting Exhausted on the track ties facing forward
+    this.runner.root.position.y = 0.1;
+    this.runner.root.rotation.y = 0;
+    this.runner.leftLegGroup.rotation.x = 0.85;
+    this.runner.rightLegGroup.rotation.x = 0.85;
+    this.runner.leftLegGroup.rotation.z = -0.15;
+    this.runner.rightLegGroup.rotation.z = 0.15;
+
+    // 3. Heavy panting and exhausted breathing cycle
+    const panting = Math.sin(t * 4.2);
+    this.runner.bodyGroup.position.y = panting * 0.05;
+    this.runner.torsoGroup.rotation.x = 0.15 + panting * 0.05;
+
+    // 4. Holding his head with right hand & rubbing head from the crash
+    this.runner.rightArmGroup.rotation.x = -1.6 + Math.sin(t * 2.0) * 0.06;
+    this.runner.rightArmGroup.rotation.z = -0.4;
+    this.runner.leftArmGroup.rotation.x = 0.4;
+
+    // 5. Looking left and right with dizzy head wobble
+    this.runner.headGroup.rotation.y = Math.sin(t * 1.4) * 0.35;
+    this.runner.headGroup.rotation.x = 0.1 + panting * 0.04;
+
+    // 6. Police Inspector & Dog standing beside Jake looking triumphant
+    if (this.inspector) {
+      this.inspector.root.position.set(this.runner.root.position.x + 2.0, 0, this.runner.root.position.z + 1.2);
+      this.inspector.root.lookAt(this.runner.root.position.x, 0.5, this.runner.root.position.z - 5.0);
+      this.inspector.head.rotation.y = Math.sin(t * 1.1) * 0.12;
+      this.inspector.dog.rotation.y = Math.sin(t * 2.5) * 0.15;
+    }
+  }
+
   private updateGame(dt: number) {
-    // Dynamic Subway running speed (starts at 15.0 m/s ~54 km/h and accelerates smoothly)
-    const baseSpeed = 15.0 + Math.min(18.0, (this.score / 2500) * 2.5);
+    // 50% Balanced Arcade/Realistic Speed Curve (Starts comfortably at 14.0 m/s ~50 km/h, scales smoothly to 24.0 m/s)
+    const baseSpeed = 14.0 + Math.min(10.0, (this.score / 5000) * 2.0);
     const moveZ = baseSpeed * dt;
 
     this.score += Math.round(moveZ * this.scoreMultiplier);
     this.trackMission('distance', Math.round(moveZ));
+
+    // Invulnerability shield timer countdown
+    if (this.invulnerabilityTimer > 0) {
+      this.invulnerabilityTimer -= dt;
+      if (this.invulnerabilityTimer < 0) this.invulnerabilityTimer = 0;
+    }
 
     // Power-up Timer Countdown
     this.powerupKeys.forEach(k => {
@@ -1777,8 +3109,11 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     if (this.copTrapCd > 0) this.copTrapCd = Math.max(0, Math.round((this.copTrapCd - dt) * 10) / 10);
     if (this.copDogCd > 0) this.copDogCd = Math.max(0, Math.round((this.copDogCd - dt) * 10) / 10);
 
-    // Runner Lateral Movement Lerp
-    this.runner.root.position.x += (this.runner.targetX - this.runner.root.position.x) * 16.0 * dt;
+    // 100% Realistic Lateral Spring Inertia & Momentum Physics
+    const targetX = this.runner.targetX;
+    const currentX = this.runner.root.position.x;
+    this.runner.vx = (this.runner.vx || 0) + (targetX - currentX) * 55.0 * dt - (this.runner.vx || 0) * 12.0 * dt;
+    this.runner.root.position.x += this.runner.vx * dt;
 
     // Runner Jump & Slide Physics
     if (this.runner.isSliding) {
@@ -1803,19 +3138,23 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
         const hasRamp = !!obj.userData['hasRamp'];
 
         if (Math.abs(rx - ox) < 1.35) {
-          // Front ramp area
-          if (hasRamp && rz <= (oz + halfLen + 5.5) && rz >= (oz + halfLen)) {
-            const rampProgress = THREE.MathUtils.clamp(((oz + halfLen + 5.5) - rz) / 5.5, 0, 1);
+          const rampLengthZ = 9.0;
+          // Front ramp area: smooth elevation from track floor up to rooftop
+          if (hasRamp && rz <= (oz + halfLen + rampLengthZ + 0.8) && rz >= (oz + halfLen)) {
+            const rampProgress = THREE.MathUtils.clamp(((oz + halfLen + rampLengthZ) - rz) / rampLengthZ, 0, 1);
             targetGroundY = Math.max(targetGroundY, rampProgress * (height + 0.25));
           } else if (rz < (oz + halfLen) && rz > (oz - halfLen - 0.5)) {
-            // Rooftop area
-            targetGroundY = Math.max(targetGroundY, height + 0.25);
+            // Rooftop area: strictly ONLY allowed if player came up via ramp or is already jumping across rooftops
+            if (this.runner.y >= (height - 0.8) || (hasRamp && rz >= (oz + halfLen - 1.5))) {
+              targetGroundY = Math.max(targetGroundY, height + 0.25);
+            }
           }
         }
       }
     }
 
-    // 2. Vertical Movement & Gravity
+    // 2. Vertical Movement & 100% Real Scaled Gravity Physics (32 m/s² natural human parabola)
+    const gravity = 32.0;
     if (this.powerups['jetpack']?.active) {
       this.runner.pharaohJetpack.visible = true;
       const targetFlightY = 8.5;
@@ -1832,9 +3171,9 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
       if (this.runner.isJumping) {
         // Player is actively jumping
         this.runner.y += this.runner.vy * dt;
-        this.runner.vy -= 44.0 * dt;
+        this.runner.vy -= gravity * dt;
 
-        // Land on ground or train roof when falling
+        // Land on ground or train roof when falling with natural landing dampening
         if (this.runner.vy <= 0 && this.runner.y <= targetGroundY) {
           this.runner.y = targetGroundY;
           this.runner.vy = 0;
@@ -1843,8 +3182,8 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
       } else {
         // Player is not jumping: check if walking, ascending ramp, or falling off
         if (this.runner.y > targetGroundY + 0.05) {
-          // Stepped off train roof or ramp into the open air -> Apply realistic falling gravity!
-          this.runner.vy -= 44.0 * dt;
+          // Stepped off train roof or ramp into the open air -> Apply natural falling gravity
+          this.runner.vy -= gravity * dt;
           this.runner.y += this.runner.vy * dt;
           if (this.runner.y <= targetGroundY) {
             this.runner.y = targetGroundY;
@@ -1865,47 +3204,92 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     }
     this.runner.root.position.y = this.runner.y;
 
+    // Update dynamic ground shadow scaling and opacity based on jump height
+    if (this.runner.shadowMesh) {
+      const heightAboveGround = Math.max(0, this.runner.y - targetGroundY);
+      const shadowScale = THREE.MathUtils.clamp(1.0 - heightAboveGround * 0.12, 0.35, 1.1);
+      this.runner.shadowMesh.scale.set(shadowScale, shadowScale, shadowScale);
+      this.runner.shadowMesh.material.opacity = THREE.MathUtils.clamp(0.40 - heightAboveGround * 0.06, 0.08, 0.40);
+      this.runner.shadowMesh.position.y = targetGroundY + 0.03;
+    }
+
     // Dynamic Character Running & Stride Animation
-    const strideFreq = baseSpeed * 1.15;
+    const strideFreq = baseSpeed * 1.05;
     this.runnerStridePhase += dt * strideFreq;
 
     if (this.runner.isSliding) {
-      // Dive-Slide Pose
-      this.runner.bodyGroup.rotation.x = Math.PI / 2.3;
+      // Dive-Slide Pose (Diving forward under hurdles)
+      this.runner.headGroup.rotation.x = 0.2;
+      this.runner.bodyGroup.rotation.x = -Math.PI / 2.3;
+      this.runner.bodyGroup.rotation.y = 0;
+      this.runner.bodyGroup.rotation.z = 0;
       this.runner.bodyGroup.position.y = -0.65;
-      this.runner.leftLegGroup.rotation.x = 0.9;
-      this.runner.rightLegGroup.rotation.x = 0.9;
-      this.runner.leftArmGroup.rotation.x = 1.0;
-      this.runner.rightArmGroup.rotation.x = 1.0;
+      this.runner.leftLegGroup.rotation.set(-0.9, 0, 0);
+      this.runner.rightLegGroup.rotation.set(-0.9, 0, 0);
+      this.runner.leftArmGroup.rotation.set(-1.0, 0, 0);
+      this.runner.rightArmGroup.rotation.set(-1.0, 0, 0);
     } else if (this.runner.isJumping) {
       // Jump Pose: Arms up, legs bent back
-      this.runner.bodyGroup.rotation.x = -0.15;
+      this.runner.headGroup.rotation.x = 0;
+      this.runner.bodyGroup.rotation.x = 0.15;
+      this.runner.bodyGroup.rotation.y = 0;
+      this.runner.bodyGroup.rotation.z = 0;
       this.runner.bodyGroup.position.y = 0;
-      this.runner.leftArmGroup.rotation.x = -1.4;
-      this.runner.rightArmGroup.rotation.x = -1.4;
-      this.runner.leftLegGroup.rotation.x = 0.6;
-      this.runner.rightLegGroup.rotation.x = -0.3;
+      this.runner.leftArmGroup.rotation.set(1.4, 0, 0);
+      this.runner.rightArmGroup.rotation.set(1.4, 0, 0);
+      this.runner.leftLegGroup.rotation.set(-0.6, 0, 0);
+      this.runner.rightLegGroup.rotation.set(0.3, 0, 0);
+    } else if (this.powerups['jetpack']?.active) {
+      // 🚀 Superhero / Pharaonic Jetpack True Flight Pose (طيران حقيقي بالصاروخ النفاث في السماء)
+      const vx = this.runner.vx || 0;
+      const flightHoverBob = Math.sin(Date.now() * 0.007) * 0.05;
+
+      // Aerodynamic Forward Flight Pitch (~45 degrees forward into tunnel) with roll into steering
+      this.runner.bodyGroup.rotation.x = -Math.PI / 3.8 + flightHoverBob;
+      this.runner.bodyGroup.rotation.z = -vx * 0.045; // Fighter jet roll
+      this.runner.bodyGroup.rotation.y = vx * 0.025;
+      this.runner.bodyGroup.position.y = 0.15 + flightHoverBob;
+
+      // Head tilted up to face forward while flying into tunnel
+      this.runner.headGroup.rotation.x = 0.45;
+
+      // Streamlined straight legs back with slipstream trailing (Facing player +Z)
+      this.runner.leftLegGroup.rotation.set(-0.25 + Math.sin(Date.now() * 0.009) * 0.04, 0, 0.08);
+      this.runner.rightLegGroup.rotation.set(-0.25 - Math.sin(Date.now() * 0.009) * 0.04, 0, -0.08);
+
+      // Streamlined arms alongside jetpack for aerodynamic steering
+      this.runner.leftArmGroup.rotation.set(-0.45 + Math.sin(Date.now() * 0.01) * 0.05, 0, 0.25);
+      this.runner.rightArmGroup.rotation.set(-0.45 + Math.sin(Date.now() * 0.01) * 0.05, 0, -0.25);
+
+      // Flapping golden wings
+      if (this.runner.leftWing && this.runner.rightWing) {
+        this.runner.leftWing.rotation.z = 0.35 + Math.sin(Date.now() * 0.02) * 0.25;
+        this.runner.rightWing.rotation.z = -0.35 - Math.sin(Date.now() * 0.02) * 0.25;
+      }
     } else if (this.powerups['hoverboard']?.active) {
       // Surfing Pose on Hoverboard
-      this.runner.bodyGroup.rotation.x = 0.05;
+      this.runner.headGroup.rotation.x = 0;
+      this.runner.bodyGroup.rotation.x = -0.05;
       this.runner.bodyGroup.rotation.y = 0.4;
+      this.runner.bodyGroup.rotation.z = 0;
       this.runner.bodyGroup.position.y = 0;
-      this.runner.leftArmGroup.rotation.x = -0.4;
-      this.runner.rightArmGroup.rotation.x = 0.5;
-      this.runner.leftLegGroup.rotation.x = 0.2;
-      this.runner.rightLegGroup.rotation.x = -0.2;
+      this.runner.leftArmGroup.rotation.set(0.4, 0, 0);
+      this.runner.rightArmGroup.rotation.set(-0.5, 0, 0);
+      this.runner.leftLegGroup.rotation.set(-0.2, 0, 0);
+      this.runner.rightLegGroup.rotation.set(0.2, 0, 0);
     } else {
-      // Active Sprint Running Pose
-      const lateralVel = (this.runner.targetX - this.runner.root.position.x);
-      this.runner.bodyGroup.rotation.x = 0.15; // Forward lean
-      this.runner.bodyGroup.rotation.z = -lateralVel * 0.12; // Bank into turns
-      this.runner.bodyGroup.rotation.y = lateralVel * 0.08;
-      this.runner.bodyGroup.position.y = Math.abs(Math.sin(this.runnerStridePhase * 2)) * 0.12;
+      // Active Sprint Running Pose with 100% Real Banking & Centrifugal Tilt
+      const vx = this.runner.vx || 0;
+      this.runner.headGroup.rotation.x = 0;
+      this.runner.bodyGroup.rotation.x = -0.12 - (baseSpeed / 30.0) * 0.06; // Forward aerodynamic lean into tunnel
+      this.runner.bodyGroup.rotation.z = -vx * 0.025; // Organic bank into turns
+      this.runner.bodyGroup.rotation.y = vx * 0.015;
+      this.runner.bodyGroup.position.y = Math.abs(Math.sin(this.runnerStridePhase * 2)) * 0.10;
 
-      this.runner.leftLegGroup.rotation.x = Math.sin(this.runnerStridePhase) * 0.95;
-      this.runner.rightLegGroup.rotation.x = -Math.sin(this.runnerStridePhase) * 0.95;
-      this.runner.leftArmGroup.rotation.x = -Math.sin(this.runnerStridePhase) * 0.85;
-      this.runner.rightArmGroup.rotation.x = Math.sin(this.runnerStridePhase) * 0.85;
+      this.runner.leftLegGroup.rotation.set(-Math.sin(this.runnerStridePhase) * 0.85, 0, 0);
+      this.runner.rightLegGroup.rotation.set(Math.sin(this.runnerStridePhase) * 0.85, 0, 0);
+      this.runner.leftArmGroup.rotation.set(Math.sin(this.runnerStridePhase) * 0.75, 0, 0);
+      this.runner.rightArmGroup.rotation.set(-Math.sin(this.runnerStridePhase) * 0.75, 0, 0);
     }
 
     // Inspector AI Lerp
@@ -1926,6 +3310,12 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     // Chase distance meter recovery
     this.chaseDistance = Math.min(65.0, this.chaseDistance + dt * 1.5);
 
+    // Inspector catch condition if chase distance drops too low
+    if (this.chaseDistance <= 2.8 && this.invulnerabilityTimer <= 0) {
+      this.handleFatalObstacleHit('👮‍♂️ تم الإمساك بك من الشرطي والكلب!');
+      return;
+    }
+
     // Streak Combo Timer
     if (this.comboTimer > 0) {
       this.comboTimer -= dt;
@@ -1934,36 +3324,55 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
       }
     }
 
-    // Update World Track Chunks (Infinite scrolling)
+    // Stumble Strike Recovery Timer (6s clean run clears strike 1)
+    if (this.stumbleResetTimer > 0) {
+      this.stumbleResetTimer -= dt;
+      if (this.stumbleResetTimer <= 0) {
+        this.stumbleCount = 0;
+      }
+    }
+
+    // Update World Track Chunks (Infinite scrolling with seamless while-loop wrapping)
     const CHUNK_LENGTH = 60;
     const NUM_CHUNKS = 5;
     this.trackChunks.forEach(chunk => {
       chunk.position.z += moveZ;
-      if (chunk.position.z > CHUNK_LENGTH) {
+      while (chunk.position.z > CHUNK_LENGTH) {
         chunk.position.z -= NUM_CHUNKS * CHUNK_LENGTH;
       }
     });
 
     // Update World Objects
+    let passingTrainDraft = 0;
     for (let i = this.worldObjects.length - 1; i >= 0; i--) {
       const obj = this.worldObjects[i];
       obj.position.z += moveZ;
 
       if (obj.userData['type'] === 'train' && obj.userData['isMoving']) {
         obj.position.z += (obj.userData['speed'] as number) * dt;
+        if (Math.abs(obj.position.z) < 12.0 && Math.abs(obj.position.x - this.runner.root.position.x) > 2.0) {
+          passingTrainDraft = (Math.random() - 0.5) * 0.04;
+        }
       }
 
       if (obj.userData['type'] === 'coin' || obj.userData['type'] === 'key') {
         obj.rotation.y += 3.5 * dt;
-        if (this.powerups['magnet']?.active) {
+        if (this.powerups['magnet']?.active || this.powerups['jetpack']?.active) {
           const dist = obj.position.distanceTo(this.runner.root.position);
-          if (dist < 25.0) {
+          if (dist < (this.powerups['jetpack']?.active ? 28.0 : 25.0)) {
             obj.position.lerp(this.runner.root.position, 16.0 * dt);
           }
         }
       }
 
+      if (obj.userData['type'] === 'powerup' || obj.userData['type'] === 'mystery_box') {
+        obj.rotation.y += 2.5 * dt;
+        const baseY = (obj.userData['baseY'] as number) || 1.4;
+        obj.position.y = baseY + Math.sin(Date.now() * 0.005 + i) * 0.15;
+      }
+
       this.checkCollisions(obj, i);
+      if (this.gameState !== 'PLAYING') return;
 
       if (obj.position.z > 25) {
         this.scene.remove(obj);
@@ -1977,11 +3386,17 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
       this.spawnWorldSegment();
     }
 
-    // Dynamic Camera Follow
-    this.camera.position.x = this.runner.root.position.x * 0.45;
-    this.camera.position.y = (this.runner.y > 4 ? 8.5 : 5.5) + this.runner.root.position.y * 0.3;
-    this.camera.position.z = this.runner.root.position.z + 9.0;
-    this.camera.lookAt(this.runner.root.position.x * 0.2, this.runner.y * 0.3 + 2.0, -18);
+    // Dynamic Camera Follow with passing train draft and collision screen shake
+    let shakeX = 0, shakeY = 0;
+    if (this.screenShakeTimer > 0) {
+      this.screenShakeTimer -= dt;
+      shakeX = (Math.random() - 0.5) * this.screenShakeIntensity;
+      shakeY = (Math.random() - 0.5) * this.screenShakeIntensity;
+    }
+    this.camera.position.x = rx * 0.45 + passingTrainDraft + shakeX;
+    this.camera.position.y = 5.5 + Math.max(0, this.runner.y) * 0.45 + shakeY;
+    this.camera.position.z = 9.0;
+    this.camera.lookAt(rx * 0.2, 2.0 + Math.max(0, this.runner.y) * 0.35, -18);
   }
 
   // --- Collisions ---
@@ -2001,59 +3416,61 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
         this.savePersistedData();
         this.playPowerupSound();
         this.showBanner('🔑 حصلت على مفتاح ذهبي!');
-        this.voiceCallout('مفتاح رائع!');
         this.scene.remove(obj);
         this.worldObjects.splice(index, 1);
       }
       return;
     }
 
-    // 1. Coin Collection
+    // 1. Mystery Box Collection
+    if (obj.userData['type'] === 'mystery_box') {
+      if (Math.abs(rx - ox) < 1.4 && Math.abs(rz - oz) < 1.6 && Math.abs(ry - oy) < 2.0) {
+        this.openMysteryBox();
+        this.scene.remove(obj);
+        this.worldObjects.splice(index, 1);
+      }
+      return;
+    }
+
+    // 2. Coin Collection (with High-Pitched Arpeggio Sound & Streak Combos)
     if (obj.userData['type'] === 'coin') {
-      if (Math.abs(rx - ox) < 1.2 && Math.abs(rz - oz) < 1.5 && Math.abs(ry - oy) < 1.8) {
-        this.streakCombo++;
-        this.comboTimer = 1.6;
+      if (Math.abs(rx - ox) < 1.2 && Math.abs(rz - oz) < 1.4 && Math.abs(ry - oy) < 1.8) {
         const mult = this.getComboMultiplier();
         const add = (this.powerups['multiplier']?.active ? 2 : 1) * mult;
         this.coins += add;
         this.totalCoins += add;
-        this.trackMission('coins', add);
+        this.score += 60 * mult;
+        this.savePersistedData();
         this.playCoinSound();
-        this.savePersistedData();
+
+        // Increment Streak Combo
+        this.streakCombo++;
+        this.comboTimer = 2.5;
+
+        this.trackMission('coins', add);
+
         this.scene.remove(obj);
         this.worldObjects.splice(index, 1);
       }
       return;
     }
 
-    // 2. Mystery Box Collection
-    if (obj.userData['type'] === 'mystery_box') {
-      if (Math.abs(rx - ox) < 1.3 && Math.abs(rz - oz) < 1.6) {
-        const winCoins = Math.floor(Math.random() * 200) + 50;
-        this.coins += winCoins;
-        this.totalCoins += winCoins;
-        this.showBanner(`🎁 صندوق المفاجآت: +${winCoins} عملة ذهبية!`);
-        this.playPowerupSound();
-        this.savePersistedData();
-        this.scene.remove(obj);
-        this.worldObjects.splice(index, 1);
-      }
-      return;
-    }
-
-    // 3. Power-up Collection
+    // 3. Powerup Pickup Collection
     if (obj.userData['type'] === 'powerup') {
-      if (Math.abs(rx - ox) < 1.3 && Math.abs(rz - oz) < 1.6) {
-        const pType = obj.userData['pType'] as string;
+      if (Math.abs(rx - ox) < 1.3 && Math.abs(rz - oz) < 1.4 && Math.abs(ry - oy) < 1.8) {
+        const pType = obj.userData['pType'];
         const dur = this.powerupConfigs[pType].durations[(this.userUpgrades[pType] || 1) - 1];
         this.powerups[pType] = { active: true, timer: dur };
+
         if (pType === 'hoverboard') {
           this.runner.hoverboard.visible = true;
           this.trackMission('hoverboard', 1);
         }
+
         this.trackMission('powerup', 1);
         this.playPowerupSound();
         this.showBanner(`⭐ ${this.powerupConfigs[pType].name} مفعل! (${dur}ث)`);
+
         this.scene.remove(obj);
         this.worldObjects.splice(index, 1);
       }
@@ -2062,44 +3479,71 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
 
     if (this.invulnerabilityTimer > 0) return;
 
-    // 4. Train Collision
+    // 4. Train Collision (Frontal Fatal vs Side Stumble)
     if (obj.userData['type'] === 'train') {
       const halfLen = (obj.userData['length'] as number) / 2;
       const height = (obj.userData['height'] as number) || 4.2;
+      const hasRamp = !!obj.userData['hasRamp'];
 
-      if (Math.abs(rx - ox) < 1.05) {
-        // Body collision only if below rooftop level inside train bounds
-        if (rz < (oz + halfLen - 0.5) && rz > (oz - halfLen + 0.5)) {
-          if (ry < (height - 0.5)) {
-            this.handleObstacleHit('💥 اصطدمت بقطار مترو الفراعنة السريع!');
-          }
-        }
+      // Safe if player is legitimately running on the rooftop
+      if (ry >= (height - 0.6)) {
+        return;
       }
+
+      // Safe if train has ramp and player is entering smoothly via the front ramp
+      if (hasRamp && rz >= (oz + halfLen - 1.5) && Math.abs(rx - ox) < 1.35) {
+        return;
+      }
+
+      // A) Direct Frontal / In-Lane Train Collision -> Instant 1-Hit Fatal Death
+      if (Math.abs(rx - ox) < 1.45 && rz <= (oz + halfLen + 0.8) && rz >= (oz - halfLen - 0.5)) {
+        this.handleFatalObstacleHit('💥 اصطدمت بمقدمة قطار المترو السريع!');
+        return;
+      }
+
+      // B) Side Contact / Scrape on train edge (Player brushing into train side wall) -> 2-Strike Stumble
+      if (Math.abs(rx - ox) >= 1.45 && Math.abs(rx - ox) < 2.4 && rz <= (oz + halfLen + 0.5) && rz >= (oz - halfLen - 0.5)) {
+        // Bounce runner away from train side wall
+        if (rx < ox) {
+          this.runner.vx = -8.0;
+        } else {
+          this.runner.vx = 8.0;
+        }
+        this.handleSideStumble('⚠️ ارتطمت بجدار القطار الجانبي!');
+        return;
+      }
+
       return;
     }
 
-    // 5. Jump Barrier Collision
+    // 5. Jump Barrier Collision (Stone Hurdle)
     if (obj.userData['type'] === 'barrier_jump') {
-      if (Math.abs(rx - ox) < 1.2 && Math.abs(rz - oz) < 1.0) {
-        if (ry < 1.2) {
-          this.handleObstacleHit('🚧 اصطدمت بالحاجز الحجري! كان يجب القفز!');
+      if (Math.abs(rx - ox) < 1.35 && Math.abs(rz - oz) < 1.3) {
+        if (ry < 0.65) {
+          // Direct frontal hit without jumping -> Fatal Instant Death
+          this.handleFatalObstacleHit('🚧 اصطدمت بالحاجز الحجري دون قفز!');
+        } else if (ry < 1.25) {
+          // Clipped top edge -> 2-Strike Stumble
+          this.handleSideStumble('⚠️ تعثرت بالحاجز الحجري!');
         }
       }
       return;
     }
 
-    // 6. Slide Barrier Collision
+    // 6. Slide Barrier Collision (Overhead Barrier)
     if (obj.userData['type'] === 'barrier_slide') {
-      if (Math.abs(rx - ox) < 1.2 && Math.abs(rz - oz) < 1.0) {
+      if (Math.abs(rx - ox) < 1.35 && Math.abs(rz - oz) < 1.3) {
         if (!this.runner.isSliding) {
-          this.handleObstacleHit('🚧 اصطدمت بالحاجز العلوي! كان يجب التزحلق!');
+          // Direct hit without sliding -> Fatal Instant Death
+          this.handleFatalObstacleHit('🚧 اصطدمت بالحاجز العلوي دون تزحلق!');
         }
       }
       return;
     }
   }
 
-  private handleObstacleHit(subtitle: string) {
+  // --- Collision Handlers: Fatal (1-Hit Death) vs Side Stumble (2-Strikes System) ---
+  private handleFatalObstacleHit(subtitle: string) {
     if (this.invulnerabilityTimer > 0) return;
 
     if (this.powerups['hoverboard']?.active) {
@@ -2107,13 +3551,62 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
       this.runner.hoverboard.visible = false;
       this.invulnerabilityTimer = 2.5;
       this.playCrashSound();
-      this.showBanner('🛹 لوح التزلج حماك من الاصطدام!');
+      this.showBanner('🛹 لوح التزلج تحطم وحماك من الاصطدام القاتل!');
       return;
     }
 
     this.playCrashSound();
+    this.screenShakeTimer = 0.5;
+    this.screenShakeIntensity = 0.55;
     this.saveMeSubtitle = subtitle;
-    this.triggerSaveMeModal('🚨 كدت أن تُمسك!', subtitle);
+
+    // Clear any train or obstacle directly covering Jake so camera and characters are 100% visible
+    for (let i = this.worldObjects.length - 1; i >= 0; i--) {
+      const obj = this.worldObjects[i];
+      if (Math.abs(obj.position.z - this.runner.root.position.z) < 20) {
+        this.scene.remove(obj);
+        this.worldObjects.splice(i, 1);
+      }
+    }
+
+    this.triggerSaveMeModal('💥 اصطدام قاتل بقطار الشاطئ السريع!', subtitle);
+  }
+
+  private handleSideStumble(subtitle: string) {
+    if (this.invulnerabilityTimer > 0) return;
+
+    if (this.powerups['hoverboard']?.active) {
+      this.powerups['hoverboard'].active = false;
+      this.runner.hoverboard.visible = false;
+      this.invulnerabilityTimer = 2.0;
+      this.playCrashSound();
+      this.showBanner('🛹 لوح التزلج حماك من التعثر!');
+      return;
+    }
+
+    this.stumbleCount++;
+    this.screenShakeTimer = 0.35;
+    this.screenShakeIntensity = 0.28;
+
+    if (this.stumbleCount === 1) {
+      // Strike 1: Stumble, police inspector rushes right behind you (5m)!
+      this.chaseDistance = 5.0;
+      this.stumbleResetTimer = 6.0;
+      this.invulnerabilityTimer = 0.35; // short debounce so rapid consecutive hit triggers Strike 2
+      this.playTone(180, 'sawtooth', 0.3);
+      this.playTone(90, 'square', 0.4);
+      this.showBanner('⚠️ الخبطة الأولى (1/2)! الشرطي خلفك مباشرة! خبطة ثانية وستخسر!');
+      this.voiceCallout('انتبه! الشرطي اقترب!');
+
+      // Bounce runner back safely into current lane
+      this.runner.root.position.x = this.LANES[this.runner.laneIndex];
+      this.runner.targetX = this.LANES[this.runner.laneIndex];
+    } else {
+      // Strike 2: Hit train twice -> INSTANT FATAL DEATH!
+      this.stumbleCount = 0;
+      this.stumbleResetTimer = 0;
+      this.handleFatalObstacleHit('👮‍♂️ أمسك بك الشرطي بعد اصطدامك الثاني بالقطار!');
+    }
   }
 
   // --- Quick Revive / Save Me ---
@@ -2151,21 +3644,59 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     if (this.saveMeInterval) clearInterval(this.saveMeInterval);
     this.revivesUsedThisRound++;
     this.savePersistedData();
-    this.invulnerabilityTimer = 3.5;
+    this.invulnerabilityTimer = 4.0;
     this.chaseDistance = 45.0;
+    this.stumbleCount = 0;
+    this.stumbleResetTimer = 0;
+    this.screenShakeTimer = 0;
+    this.screenShakeIntensity = 0;
 
-    // Clear Obstacles around player
+    // Reset Runner & Inspector Poses & Camera
+    this.runner.y = 0;
+    this.runner.vy = 0;
+    this.runner.isJumping = false;
+    this.runner.isSliding = false;
+    this.runner.root.position.set(this.LANES[this.runner.laneIndex], 0, 0);
+    this.runner.root.rotation.set(0, 0, 0);
+    this.runner.bodyGroup.position.set(0, 0, 0);
+    this.runner.bodyGroup.rotation.set(0, 0, 0);
+    this.runner.torsoGroup.rotation.set(0, 0, 0);
+    this.runner.headGroup.rotation.set(0, 0, 0);
+    this.runner.leftArmGroup.rotation.set(0, 0, 0);
+    this.runner.rightArmGroup.rotation.set(0, 0, 0);
+    this.runner.leftLegGroup.rotation.set(0, 0, 0);
+    this.runner.rightLegGroup.rotation.set(0, 0, 0);
+    this.runner.hoverboard.visible = false;
+    this.runner.hoverboard.position.set(0, -0.1, 0);
+    this.runner.hoverboard.rotation.set(0, 0, 0);
+
+    if (this.inspector) {
+      this.inspector.root.position.set(this.LANES[this.runner.laneIndex], 0, 8);
+      this.inspector.root.rotation.set(0, 0, 0);
+    }
+
+    if (this.camera) {
+      this.camera.position.set(0, 5.5, 9.0);
+      this.camera.lookAt(0, 2.0, -18);
+    }
+
+    // Clear only immediately dangerous obstacles in player vicinity (-25 to +25)
     for (let i = this.worldObjects.length - 1; i >= 0; i--) {
       const obj = this.worldObjects[i];
-      if (obj.userData['type'] === 'train' || obj.userData['type'] === 'barrier_jump' || obj.userData['type'] === 'barrier_slide') {
+      if (obj.position.z > -25 && obj.position.z < 30) {
         this.scene.remove(obj);
         this.worldObjects.splice(i, 1);
       }
     }
 
+    // Ensure horizon is populated
+    while (this.nextSpawnZ > -280) {
+      this.spawnWorldSegment();
+    }
+
     this.gameState = 'PLAYING';
     this.startMusic();
-    this.showBanner('⚡ تم الإنعاش! موجة انفجار طهرت السكة!');
+    this.showBanner('⚡ تم الإنعاش! درع الحماية مفعل لـ 4 ثوانٍ!');
   }
 
   skipSaveMeAndGameOver() {
@@ -2175,6 +3706,15 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     this.stopMusic();
     this.savePersistedData();
     this.recordLeaderboardEntry();
+
+    // Clear any obstacles or train obstructing the camera view
+    for (let i = this.worldObjects.length - 1; i >= 0; i--) {
+      const obj = this.worldObjects[i];
+      if (Math.abs(obj.position.z - this.runner.root.position.z) < 22) {
+        this.scene.remove(obj);
+        this.worldObjects.splice(i, 1);
+      }
+    }
   }
 
   // --- Controls Handling (Keyboard & Touch Swipes) ---
@@ -2221,9 +3761,52 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     }
   }
 
+  private isTrainBlockingLane(targetLaneIndex: number): boolean {
+    const targetX = this.LANES[targetLaneIndex];
+    const rz = this.runner.root.position.z;
+    const ry = this.runner.y;
+
+    for (let i = 0; i < this.worldObjects.length; i++) {
+      const obj = this.worldObjects[i];
+      if (obj.userData['type'] === 'train') {
+        const ox = obj.position.x;
+        const oz = obj.position.z;
+        const halfLen = (obj.userData['length'] as number) / 2;
+        const height = (obj.userData['height'] as number) || 4.2;
+        const hasRamp = !!obj.userData['hasRamp'];
+
+        if (Math.abs(ox - targetX) < 0.6) {
+          // If player is on rooftop height, they can leap across train roofs
+          if (ry >= (height - 0.8)) {
+            continue;
+          }
+
+          // If the train has a ramp and player is entering in front of the ramp
+          if (hasRamp && rz >= (oz + halfLen)) {
+            continue;
+          }
+
+          // Train solid body occupies [oz - halfLen, oz + halfLen]
+          if (rz <= (oz + halfLen + 0.6) && rz >= (oz - halfLen - 0.6)) {
+            return true; // Lane is physically blocked by the train body!
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   private moveRunnerLeft() {
     if (this.runner.laneIndex > 0) {
-      this.runner.laneIndex--;
+      const targetLane = this.runner.laneIndex - 1;
+      if (this.isTrainBlockingLane(targetLane)) {
+        // Physical collision with solid train side wall -> Bounce back!
+        this.runner.vx = 7.0;
+        this.runner.root.position.x += 0.25;
+        this.handleSideStumble('⚠️ ارتطمت بجدار القطار الجانبي!');
+        return;
+      }
+      this.runner.laneIndex = targetLane;
       this.runner.targetX = this.LANES[this.runner.laneIndex];
       this.trackMission('lane_changes', 1);
     }
@@ -2231,7 +3814,15 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
 
   private moveRunnerRight() {
     if (this.runner.laneIndex < 2) {
-      this.runner.laneIndex++;
+      const targetLane = this.runner.laneIndex + 1;
+      if (this.isTrainBlockingLane(targetLane)) {
+        // Physical collision with solid train side wall -> Bounce back!
+        this.runner.vx = -7.0;
+        this.runner.root.position.x -= 0.25;
+        this.handleSideStumble('⚠️ ارتطمت بجدار القطار الجانبي!');
+        return;
+      }
+      this.runner.laneIndex = targetLane;
       this.runner.targetX = this.LANES[this.runner.laneIndex];
       this.trackMission('lane_changes', 1);
     }
@@ -2240,7 +3831,7 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
   private runnerJump() {
     if (!this.runner.isJumping) {
       this.runner.isJumping = true;
-      this.runner.vy = this.powerups['sneakers']?.active ? 20.0 : 15.0;
+      this.runner.vy = this.powerups['sneakers']?.active ? 22.0 : 16.5;
       this.playJumpSound();
       this.trackMission('jumps', 1);
     }
@@ -2248,9 +3839,9 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
 
   private runnerSlide() {
     this.runner.isSliding = true;
-    this.runner.slideTimer = 0.7;
+    this.runner.slideTimer = 0.75;
     if (this.runner.y > 0) {
-      this.runner.vy = -36.0; // Fast dive-down drop onto ground
+      this.runner.vy = -32.0; // Responsive air dive-down drop onto rails
     }
     this.playTone(160, 'sawtooth', 0.15);
     this.trackMission('slides', 1);
@@ -2314,20 +3905,48 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     this.revivesUsedThisRound = 0;
     this.chaseDistance = 40.0;
     this.invulnerabilityTimer = 0;
+    this.stumbleCount = 0;
+    this.stumbleResetTimer = 0;
+    this.screenShakeTimer = 0;
+    this.screenShakeIntensity = 0;
 
     // Reset Runner & Inspector
     this.runner.laneIndex = 1;
     this.runner.targetX = 0;
     this.runner.root.position.set(0, 0, 0);
+    this.runner.root.rotation.set(0, 0, 0);
+    this.runner.bodyGroup.position.set(0, 0, 0);
+    this.runner.bodyGroup.rotation.set(0, 0, 0);
+    this.runner.torsoGroup.rotation.set(0, 0, 0);
+    this.runner.headGroup.rotation.set(0, 0, 0);
+    this.runner.leftArmGroup.rotation.set(0, 0, 0);
+    this.runner.rightArmGroup.rotation.set(0, 0, 0);
+    this.runner.leftLegGroup.rotation.set(0, 0, 0);
+    this.runner.rightLegGroup.rotation.set(0, 0, 0);
     this.runner.y = 0;
     this.runner.vy = 0;
     this.runner.isJumping = false;
     this.runner.isSliding = false;
     this.runner.hoverboard.visible = false;
+    this.runner.hoverboard.position.set(0, -0.1, 0);
+    this.runner.hoverboard.rotation.set(0, 0, 0);
 
     this.inspector.laneIndex = 1;
     this.inspector.targetX = 0;
     this.inspector.root.position.set(0, 0, 8);
+    this.inspector.root.rotation.set(0, 0, 0);
+
+    // Reset Track Chunks
+    const CHUNK_LENGTH = 60;
+    this.trackChunks.forEach((chunk, index) => {
+      chunk.position.z = -index * CHUNK_LENGTH;
+    });
+
+    // Reset Camera
+    if (this.camera) {
+      this.camera.position.set(0, 5.5, 9.0);
+      this.camera.lookAt(0, 2.0, -18);
+    }
 
     // Clear and Pre-populate World Objects Ahead Immediately
     this.worldObjects.forEach(obj => this.scene.remove(obj));
@@ -2406,13 +4025,16 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
   selectOrBuySkin(skin: CharacterSkin) {
     if (skin.unlocked) {
       this.selectedSkin = skin.id;
+      this.applySelectedSkinToRunner();
       this.savePersistedData();
       this.showBanner(`👕 تم ارتداء ${skin.name}!`);
     } else if (this.totalCoins >= skin.price) {
       this.totalCoins -= skin.price;
       skin.unlocked = true;
       this.selectedSkin = skin.id;
+      this.applySelectedSkinToRunner();
       this.savePersistedData();
+      this.playPowerupSound();
       this.showBanner(`🎉 مبروك فتح ${skin.name}!`);
     }
   }
@@ -2420,13 +4042,16 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
   selectOrBuyBoard(board: HoverboardItem) {
     if (board.unlocked) {
       this.selectedBoard = board.id;
+      this.applySelectedBoardToRunner();
       this.savePersistedData();
       this.showBanner(`🛹 تم تجهيز ${board.name}!`);
     } else if (this.totalCoins >= board.price) {
       this.totalCoins -= board.price;
       board.unlocked = true;
       this.selectedBoard = board.id;
+      this.applySelectedBoardToRunner();
       this.savePersistedData();
+      this.playPowerupSound();
       this.showBanner(`🎉 مبروك فتح ${board.name}!`);
     }
   }

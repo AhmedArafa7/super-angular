@@ -10,7 +10,7 @@ import { FirebaseService } from '../../core/services/firebase.service';
 import { CustomModuleStorageService } from '../../features/ai-module-builder/custom-module-viewer.component';
 import { ExternalTabsService } from '../../core/services/external-tabs.service';
 import { SettingsService } from '../../core/settings.service';
-import { LucideAngularModule, LogOut, User, Settings, LayoutDashboard, CloudUpload, CheckCircle2, XCircle, CloudCog, Chrome, UserPlus, Users, Search, ChevronDown, ChevronRight, Moon, Sun, PanelLeftClose, PanelLeftOpen, Languages } from 'lucide-angular';
+import { LucideAngularModule, LogOut, User, Settings, LayoutDashboard, CloudUpload, CheckCircle2, XCircle, CloudCog, Chrome, UserPlus, Users, Search, ChevronDown, ChevronRight, ChevronLeft, EyeOff, Moon, Sun, PanelLeftClose, PanelLeftOpen, Languages } from 'lucide-angular';
 
 import { SidebarItemComponent } from './sidebar-item/sidebar-item.component';
 import { FloatingOrbComponent } from './floating-orb/floating-orb.component';
@@ -97,6 +97,8 @@ export class AppSidebarComponent {
   Search = Search;
   ChevronDown = ChevronDown;
   ChevronRight = ChevronRight;
+  ChevronLeft = ChevronLeft;
+  EyeOff = EyeOff;
   Moon = Moon;
   Sun = Sun;
   PanelLeftClose = PanelLeftClose;

@@ -7,6 +7,17 @@
        [ngStyle]="{'width': sidebar.isCollapsed() ? '80px' : sidebar.width() + 'px'}"
        (click)="showUserProfileDropdown = false">
           
+    <!-- Edge Collapse / Tuck Handle attached to sidebar -->
+    @if (sidebar.position() === 'left' || sidebar.position() === 'right') {
+      <button 
+        (click)="sidebar.setVisible(false)" 
+        class="absolute top-1/2 -translate-y-1/2 z-[60] w-5 h-14 bg-[#0B0F19]/95 hover:bg-indigo-950/80 border-y border-white/10 text-slate-400 hover:text-indigo-300 flex items-center justify-center transition-all cursor-pointer shadow-xl group hover:w-6.5"
+        [ngClass]="sidebar.position() === 'right' ? '-left-5 rounded-l-xl border-l border-r-0' : '-right-5 rounded-r-xl border-r border-l-0'"
+        title="إخفاء الشريط الجانبي في الجنب (اسحب أو اضغط)">
+        <lucide-icon [img]="sidebar.position() === 'right' ? ChevronRight : ChevronLeft" class="w-3.5 h-3.5 group-hover:scale-125 transition-transform"></lucide-icon>
+      </button>
+    }
+
     <!-- Resize Handle -->
     @if (!sidebar.isCollapsed() && (sidebar.position() === 'left' || sidebar.position() === 'right')) {
       <div class="absolute inset-y-0 w-4 cursor-col-resize hover:bg-indigo-500/50 z-[100] transition-colors"
@@ -30,6 +41,10 @@
           </div>
           
           <div class="flex gap-1 items-center">
+            <!-- Hide Sidebar to Side Button -->
+            <button (click)="sidebar.setVisible(false)" class="p-1.5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer" title="إخفاء الشريط الجانبي في الجنب">
+              <lucide-icon [img]="EyeOff" class="w-4 h-4"></lucide-icon>
+            </button>
             <button (click)="sidebar.setPosition('floating')" class="p-1.5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors" title="تحويل لدائرة عائمة">
               <lucide-icon name="layers" class="w-4 h-4 text-indigo-400"></lucide-icon>
             </button>
@@ -39,9 +54,12 @@
           </div>
         </div>
       } @else {
-        <div class="w-full flex justify-center">
-          <button (click)="sidebar.toggleCollapsed()" class="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/50 flex items-center justify-center hover:bg-indigo-500/30 transition-colors" title="توسيع الشريط الجانبي (Ctrl + B)">
+        <div class="w-full flex justify-center items-center gap-1.5">
+          <button (click)="sidebar.toggleCollapsed()" class="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/50 flex items-center justify-center hover:bg-indigo-500/30 transition-colors cursor-pointer" title="توسيع الشريط الجانبي (Ctrl + B)">
             <lucide-icon [img]="PanelLeftOpen" class="text-indigo-400 w-4 h-4"></lucide-icon>
+          </button>
+          <button (click)="sidebar.setVisible(false)" class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer" title="إخفاء في الجنب">
+            <lucide-icon [img]="EyeOff" class="w-4 h-4"></lucide-icon>
           </button>
         </div>
       }
