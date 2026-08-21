@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>القنبلة الموقوتة</title>
+    <title>Hot Potato 🥔🔥💣</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -13,9 +13,9 @@
         
         <!-- Menu Screen -->
         <div id="menu-screen" class="screen active">
-            <div class="bomb-logo">💣</div>
-            <h1 class="title">القنبلة الموقوتة</h1>
-            <p class="subtitle">مررها قبل أن تنفجر!</p>
+            <div class="potato-logo">🥔</div>
+            <h1 class="title">Hot Potato 🥔🔥💣</h1>
+            <p class="subtitle">أجب عن السؤال بسرعة ومرر البطاطس المشتعلة قبل أن تنفجر في يدك!</p>
             
             <div class="lobby-box mt-30">
                 <button class="btn btn-primary" onclick="startLocalGame()">🕹️ لعب محلي (جهاز واحد)</button>
@@ -27,8 +27,8 @@
             <div class="rules mt-30">
                 <p>القواعد:</p>
                 <ul>
-                    <li>1. عندما تنفجر القنبلة، اللاعب الذي بيده الهاتف يخسر!</li>
-                    <li>2. قل كلمة تطابق المطلوب ثم اضغط "تمرير".</li>
+                    <li>1. عندما تحترق البطاطس، اللاعب الذي يحملها يخسر!</li>
+                    <li>2. أجب عن السؤال العام ثم اضغط "تمرير" قبل أن تنفجر البطاطس.</li>
                 </ul>
             </div>
         </div>
@@ -81,35 +81,189 @@
 
         <!-- Game Screen (Shared) -->
         <div id="game-screen" class="screen">
-            <div id="turn-indicator" class="mt-20" style="font-size: 1.5rem; color: #facc15;">
+            <div id="game-arena">
+                <div class="room">
+                    <div class="wall"></div>
+                    <div class="floor"></div>
+                    <div class="danger-clock"><span class="dc-hand"></span></div>
+                    <div class="warning-sign ws1">⚠</div>
+                    <div class="warning-sign ws2">💣</div>
+                    <div class="crack cr1"></div>
+                    <div class="crack cr2"></div>
+                    <div class="drip d1"></div>
+                    <div class="drip d2"></div>
+                    <div class="fog fg1"></div>
+                    <div class="fog fg2"></div>
+                    <div class="balloon b1"></div>
+                    <div class="balloon b2"></div>
+                    <div class="pendant"><span class="glow"></span></div>
+                    <div class="window">
+                        <div class="moon"></div>
+                        <div class="star st1"></div>
+                        <div class="star st2"></div>
+                        <div class="star st3"></div>
+                        <div class="cloud c1"></div>
+                        <div class="cloud c2"></div>
+                        <div class="lightning"></div>
+                        <span class="window-bar h"></span>
+                        <span class="window-bar v"></span>
+                    </div>
+                    <div class="cobweb tl"></div>
+                    <div class="cobweb tr"></div>
+                    <div class="hazard"></div>
+                    <div class="flower fw1"></div>
+                    <div class="flower fw2"></div>
+                    <div class="curtain l"></div>
+                    <div class="curtain r"></div>
+                    <div class="frame fr1"></div>
+                    <div class="frame fr2"></div>
+                    <div class="shelf"></div>
+                    <div class="clock">
+                        <span class="clock-hand"></span>
+                    </div>
+                    <div class="lamp"></div>
+                    <div class="plant"></div>
+                    <div class="cat">
+                        <span class="cat-ear-l"></span>
+                        <span class="cat-ear-r"></span>
+                        <span class="cat-eye l"></span>
+                        <span class="cat-eye r"></span>
+                        <span class="cat-nose"></span>
+                        <span class="cat-tail"></span>
+                    </div>
+                    <div class="ball"></div>
+                    <div class="carpet"></div>
+                    <div class="danger-ring"></div>
+                    <div class="danger-glow"></div>
+                    <div class="spider sp1"></div>
+                    <div class="spider sp2"></div>
+                </div>
+                <div class="characters-container">
+                    <div class="character-wrapper" id="char-0">
+                            <div class="character player1">
+                            <div class="head">
+                                <div class="hair curly"></div>
+                                <div class="face">
+                                    <div class="eyebrow left"></div>
+                                    <div class="eyebrow right"></div>
+                                    <div class="eye left"></div>
+                                    <div class="eye right"></div>
+                                    <div class="cheek left"></div>
+                                    <div class="cheek right"></div>
+                                    <div class="nose"></div>
+                                    <div class="mouth"></div>
+                                </div>
+                            </div>
+                            <div class="body">
+                                <div class="arm left"><span class="hand"></span></div>
+                                <div class="arm right"><span class="hand"></span></div>
+                                <div class="badge">1</div>
+                            </div>
+                            <div class="leg left"></div>
+                            <div class="leg right"></div>
+                            <div class="sweat"></div>
+                        </div>
+                        <div class="player-name">اللاعب 1</div>
+                        <button class="pass-btn" onclick="passPotato()">تمرير ⏭️</button>
+                    </div>
+                    <div class="character-wrapper" id="char-1">
+                        <div class="character player2">
+                            <div class="head">
+                                <div class="hair cap"></div>
+                                <div class="face">
+                                    <div class="eyebrow left"></div>
+                                    <div class="eyebrow right"></div>
+                                    <div class="eye left"></div>
+                                    <div class="eye right"></div>
+                                    <div class="cheek left"></div>
+                                    <div class="cheek right"></div>
+                                    <div class="nose"></div>
+                                    <div class="mouth"></div>
+                                </div>
+                            </div>
+                            <div class="body">
+                                <div class="arm left"><span class="hand"></span></div>
+                                <div class="arm right"><span class="hand"></span></div>
+                                <div class="badge">2</div>
+                            </div>
+                            <div class="leg left"></div>
+                            <div class="leg right"></div>
+                            <div class="sweat"></div>
+                        </div>
+                        <div class="player-name">اللاعب 2</div>
+                        <button class="pass-btn" onclick="passPotato()">تمرير ⏭️</button>
+                    </div>
+                    <div class="character-wrapper" id="char-2">
+                        <div class="character player3">
+                            <div class="head">
+                                <div class="hair flat-cap"></div>
+                                <div class="face">
+                                    <div class="eyebrow left"></div>
+                                    <div class="eyebrow right"></div>
+                                    <div class="eye left"></div>
+                                    <div class="eye right"></div>
+                                    <div class="cheek left"></div>
+                                    <div class="cheek right"></div>
+                                    <div class="nose"></div>
+                                    <div class="mouth"></div>
+                                </div>
+                            </div>
+                            <div class="body">
+                                <div class="arm left"><span class="hand"></span></div>
+                                <div class="arm right"><span class="hand"></span></div>
+                                <div class="badge">3</div>
+                            </div>
+                            <div class="leg left"></div>
+                            <div class="leg right"></div>
+                            <div class="sweat"></div>
+                        </div>
+                        <div class="player-name">اللاعب 3</div>
+                        <button class="pass-btn" onclick="passPotato()">تمرير ⏭️</button>
+                    </div>
+                </div>
+                
+                <div id="potato-container">
+                    <div id="potato">
+                        <div class="potato-core">🥔</div>
+                        <span class="flame f1"></span>
+                        <span class="flame f2"></span>
+                        <span class="flame f3"></span>
+                        <span class="smoke s1"></span>
+                        <span class="smoke s2"></span>
+                        <span class="spark k1"></span>
+                        <span class="spark k2"></span>
+                        <span class="spark k3"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="turn-indicator">
                 <span id="local-turn-text" class="hidden">مرر الهاتف! 📱</span>
                 <span id="online-turn-text" class="hidden">دور: <span id="current-player-name">...</span></span>
             </div>
             
-            <div class="category-box mt-20">
-                <p>المطلوب:</p>
+            <div class="category-box">
+                <p>السؤال:</p>
                 <h2 id="category-text">تحميل...</h2>
+                <div id="question-options"></div>
+                <button id="reveal-answer-btn" class="reveal-btn" onclick="toggleRevealAnswer()">إظهار الإجابة 👁️</button>
             </div>
             
-            <div class="bomb-container mt-30">
-                <div id="bomb" class="bomb-visual">💣</div>
+            <div id="action-controls" class="hidden">
+                <p style="color: #ef4444; font-weight: bold; margin-bottom: 10px;" id="action-prompt">أسرع! أجب عن السؤال ثم اضغط تمرير!</p>
+                <button class="btn btn-danger" onclick="passPotato()">تمرير! ⏭️</button>
             </div>
-            
-            <div id="action-controls" class="mt-30 hidden">
-                <p style="color: #ef4444; font-weight: bold; margin-bottom: 10px;" id="action-prompt">أسرع! انطق كلمة واضغط تمرير!</p>
-                <button class="btn btn-danger" onclick="passBomb()">تمرير! ⏭️</button>
-            </div>
-            <div id="wait-controls" class="mt-30 hidden">
+            <div id="wait-controls" class="hidden">
                 <p style="color: #9ca3af;">انتظر دورك...</p>
             </div>
         </div>
 
         <!-- Explosion Screen (Shared) -->
         <div id="explosion-screen" class="screen">
-            <div class="explosion-visual">💥</div>
-            <h1 class="explosion-title">بووووم!</h1>
-            <p class="explosion-text" id="loser-msg">لقد انفجرت القنبلة في وجه <span id="loser-name" style="color:#ef4444;">...</span>!</p>
-            <p class="explosion-text hidden" id="local-loser-msg">انفجرت القنبلة! اللاعب الذي بيده الهاتف قد خسر! 💀</p>
+            <div class="explosion-visual">🍟💥</div>
+            <h1 class="explosion-title">انفجرت البطاطس!</h1>
+            <p class="explosion-text" id="loser-msg">احترقت البطاطس في يد <span id="loser-name" style="color:#ef4444;">...</span>! 🔥</p>
+            <p class="explosion-text hidden" id="local-loser-msg">احترقت البطاطس! اللاعب الذي يحملها خسر! 💀</p>
             
             <div id="host-restart-controls" class="hidden mt-30">
                 <button class="btn btn-primary" onclick="startOnlineGame()">لعب جولة أخرى</button>

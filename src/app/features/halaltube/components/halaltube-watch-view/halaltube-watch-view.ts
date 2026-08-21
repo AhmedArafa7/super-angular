@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, OnDestroy, input, computed, signal, ElementRef, HostListener, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { SiNeuroVideoPlayerComponent } from '../nexus-video-player/nexus-video-player';
 import { WatchDescriptionComponent } from '../watch-page/watch-description/watch-description';
 import { WatchActionsComponent } from '../watch-page/watch-actions/watch-actions';
@@ -11,6 +11,7 @@ import { VideoProductSelectorComponent } from '../utils/video-product-selector/v
 import { VideoSourceDetectorComponent } from '../utils/video-source-detector/video-source-detector';
 import { NexusNativeAdsComponent } from '../nexus-native-ads/nexus-native-ads';
 import { halaltubeService } from '../../halaltube.service';
+import { HalaltubePlaylistService } from '../../services/halaltube-playlist.service';
 import { SidebarService } from '../../../../core/sidebar.service';
 import { VideoStateService } from '../../../../core/services/video-state.service';
 import { YoutubeDiscoveryService } from '../../../../core/services/youtube-discovery.service';
@@ -50,7 +51,9 @@ export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
   
   sidebar = inject(SidebarService);
   halaltube = inject(halaltubeService);
+  playlistSvc = inject(HalaltubePlaylistService);
   router = inject(Router);
+  route = inject(ActivatedRoute);
   videoState = inject(VideoStateService);
   discovery = inject(YoutubeDiscoveryService);
   piped = inject(PipedApiService);
@@ -108,6 +111,12 @@ export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.sidebar.setCollapsed(true);
+    this.route.queryParamMap.subscribe(params => {
+      const listId = params.get('list');
+      if (listId) {
+        this.playlistSvc.initQueue(listId, this.id());
+      }
+    });
     setTimeout(() => {
       this.updatePlayerRect();
       const scrollTargets = [window, document, document.body, document.querySelector('.watch-view-container'), document.querySelector('.main-content'), document.querySelector('main')];

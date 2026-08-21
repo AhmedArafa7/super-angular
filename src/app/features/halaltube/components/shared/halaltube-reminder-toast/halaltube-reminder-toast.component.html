@@ -1,0 +1,115 @@
+<div *ngIf="isVisible && reminder" class="reminder-toast-wrapper fixed top-6 left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 z-[999999] w-[94vw] max-w-md pointer-events-auto" dir="rtl">
+  <div class="glass-card bg-slate-900/95 backdrop-blur-2xl border border-indigo-500/40 rounded-3xl p-5 shadow-[0_20px_60px_-15px_rgba(79,70,229,0.4)] text-white overflow-hidden relative group">
+    
+    <!-- Ambient Glow Background -->
+    <div class="absolute -top-12 -right-12 w-36 h-36 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none"></div>
+    <div class="absolute -bottom-12 -left-12 w-36 h-36 bg-rose-500/15 rounded-full blur-2xl pointer-events-none"></div>
+
+    <!-- Header -->
+    <div class="flex items-center justify-between gap-3 mb-3 border-b border-white/10 pb-3">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 shrink-0 animate-pulse">
+          <lucide-icon [img]="Bell" size="18"></lucide-icon>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5">
+            <span class="text-[11px] font-black uppercase tracking-wider text-indigo-400 bg-indigo-500/15 px-2 py-0.5 rounded-md border border-indigo-500/30">تذكير المتابعة</span>
+            @if (reminder.streak > 0) {
+              <span class="text-[11px] font-bold text-amber-400 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/30 flex items-center gap-1">
+                <lucide-icon [img]="Flame" size="12" class="text-amber-400"></lucide-icon>
+                <span>{{ reminder.streak }} أيام</span>
+              </span>
+            }
+          </div>
+          <h4 class="text-xs font-black text-slate-200 truncate mt-0.5 max-w-[230px]" [title]="reminder.playlist.title">
+            {{ reminder.playlist.title }}
+          </h4>
+        </div>
+      </div>
+
+      <button (click)="close()" class="w-7 h-7 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition shrink-0" title="إغلاق">
+        <lucide-icon [img]="X" size="15"></lucide-icon>
+      </button>
+    </div>
+
+    <!-- Suggested Video Row -->
+    <div class="flex gap-3 bg-slate-950/70 border border-white/5 rounded-2xl p-2.5 mb-3 group-hover:border-indigo-500/30 transition-all">
+      <!-- Thumbnail -->
+      <div class="relative w-28 aspect-video rounded-xl overflow-hidden bg-slate-900 shrink-0 border border-white/10">
+        <img [src]="reminder.nextVideo.thumbnail" [alt]="reminder.nextVideo.title" class="w-full h-full object-cover" />
+        @if (reminder.nextVideo.duration) {
+          <span class="absolute bottom-1 left-1 bg-black/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm">
+            {{ reminder.nextVideo.duration }}
+          </span>
+        }
+        <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <lucide-icon [img]="Play" size="16" class="text-white drop-shadow"></lucide-icon>
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div class="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+        <div>
+          <span class="text-[10px] text-indigo-300 font-semibold block mb-0.5">الفيديو التالي في الخطة:</span>
+          <h5 class="text-xs font-bold text-white leading-snug line-clamp-2" [title]="reminder.nextVideo.title">
+            {{ reminder.nextVideo.title }}
+          </h5>
+        </div>
+        <div class="flex items-center justify-between text-[10px] text-slate-400 mt-1">
+          <span class="truncate font-medium">{{ reminder.nextVideo.author }}</span>
+          <span class="text-slate-500 font-bold shrink-0">متبقي {{ reminder.remaining }} مقطع</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress Target Bar -->
+    <div class="bg-slate-950/50 rounded-xl p-2 mb-3 border border-white/5 flex items-center justify-between text-[11px] font-bold">
+      <span class="text-slate-400">إنجاز اليوم:</span>
+      <div class="flex items-center gap-2">
+        <div class="w-24 h-2 bg-slate-800 rounded-full overflow-hidden">
+          <div 
+            class="h-full bg-gradient-to-r from-indigo-500 to-emerald-400 transition-all duration-500" 
+            [style.width.%]="reminder.todayProgress.target > 0 ? (reminder.todayProgress.done / reminder.todayProgress.target) * 100 : 0">
+          </div>
+        </div>
+        <span class="text-indigo-300 font-black">{{ reminder.todayProgress.done }} / {{ reminder.todayProgress.target }}</span>
+      </div>
+    </div>
+
+    <!-- Interactive Actions Buttons -->
+    <div class="grid grid-cols-2 gap-2">
+      <!-- 1. Watch Now -->
+      <button 
+        (click)="watchNow()" 
+        class="col-span-1 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-black text-xs py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer">
+        <lucide-icon [img]="Play" size="14"></lucide-icon>
+        <span>شاهد الآن</span>
+      </button>
+
+      <!-- 2. Mark as Watched directly from notification -->
+      <button 
+        (click)="markWatched()" 
+        class="col-span-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 hover:border-emerald-500/60 font-black text-xs py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer">
+        <lucide-icon [img]="CheckCircle2" size="14" class="text-emerald-400"></lucide-icon>
+        <span>تمت المشاهدة ✓</span>
+      </button>
+
+      <!-- 3. Snooze 15 min -->
+      <button 
+        (click)="snooze(15)" 
+        class="col-span-1 bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-white border border-white/10 font-bold text-[11px] py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer">
+        <lucide-icon [img]="Clock" size="13" class="text-slate-400"></lucide-icon>
+        <span>تأجيل 15 دقيقة</span>
+      </button>
+
+      <!-- 4. Skip Video -->
+      <button 
+        (click)="skip()" 
+        class="col-span-1 bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-white border border-white/10 font-bold text-[11px] py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer">
+        <lucide-icon [img]="SkipForward" size="13" class="text-slate-400"></lucide-icon>
+        <span>تخطي للفيديو التالي</span>
+      </button>
+    </div>
+
+  </div>
+</div>

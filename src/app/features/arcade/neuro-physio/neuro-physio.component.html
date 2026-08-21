@@ -1,0 +1,697 @@
+<div class="min-h-screen bg-slate-950 text-white font-sans overflow-x-hidden select-none pb-12" dir="rtl">
+
+  <!-- ================= TOP BANNER & CYBER HEADER ================= -->
+  <header class="relative w-full bg-gradient-to-r from-slate-950 via-cyan-950/80 to-slate-950 border-b border-cyan-500/30 px-3 sm:px-6 py-2.5 sm:py-3.5 shadow-[0_4px_25px_rgba(6,182,212,0.15)] flex flex-wrap items-center justify-between gap-3 sticky top-0 z-40 backdrop-blur-xl">
+    <!-- Game Title & Branding -->
+    <div class="flex items-center gap-2.5 sm:gap-3">
+      <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-700 border-2 border-cyan-300 flex items-center justify-center text-2xl sm:text-3xl shadow-[0_0_20px_rgba(6,182,212,0.5)]">
+        🦾
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-base sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-amber-300 to-orange-400 tracking-wider drop-shadow-[0_2px_10px_rgba(6,182,212,0.6)]">
+            NEURO-PHYSIO CODEX: CAIRO
+          </h1>
+          <span class="text-[9px] sm:text-xs font-black px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-400/50 text-cyan-300 shadow">
+            v1.3 AI
+          </span>
+        </div>
+        <p class="text-[10px] sm:text-xs text-slate-400 font-bold">
+          عيادة د. عبد الله للعلاج الطبيعي والروبوتات المتقدمة • القاهرة 🇪🇬
+        </p>
+      </div>
+    </div>
+
+    <!-- Quick Stats Bar (EGP, Reputation, Codex, Time) -->
+    <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+      <!-- Cairo Credits (EGP) -->
+      <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/60 border border-amber-500/40 text-amber-300 text-xs sm:text-sm font-black shadow-inner">
+        <span class="text-sm sm:text-base">🪙</span>
+        <span>{{ cairoCredits.toLocaleString() }} <span class="text-[10px] text-amber-400 font-normal">ج.م</span></span>
+      </div>
+
+      <!-- Reputation -->
+      <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/60 border border-yellow-500/40 text-yellow-300 text-xs sm:text-sm font-black shadow-inner">
+        <span>⭐</span>
+        <span>{{ reputationStars }} <span class="text-[10px] text-yellow-400 font-normal">({{ curedPatientsCount }} متعافى)</span></span>
+      </div>
+
+      <!-- Codex Fragments -->
+      <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/60 border border-cyan-500/40 text-cyan-300 text-xs sm:text-sm font-black shadow-inner">
+        <span>🧬</span>
+        <span>{{ codexFragments }} <span class="text-[10px] text-cyan-400 font-normal">كودكس</span></span>
+      </div>
+
+      <!-- Audio Mute Toggle -->
+      <button (click)="toggleMute()" class="w-9 h-9 rounded-xl bg-slate-900 border border-white/10 hover:border-cyan-400 text-slate-300 hover:text-white flex items-center justify-center transition-all cursor-pointer">
+        <lucide-icon [img]="isMuted ? VolumeX : Volume2" class="w-4 h-4"></lucide-icon>
+      </button>
+
+      <!-- Exit Button -->
+      <button (click)="exitToArcade()" class="px-3 py-1.5 rounded-xl bg-slate-900 border border-white/10 hover:border-red-400 text-slate-300 hover:text-white text-xs font-bold flex items-center gap-1 transition-all cursor-pointer">
+        <lucide-icon [img]="ArrowRight" class="w-3.5 h-3.5"></lucide-icon>
+        <span class="hidden sm:inline">الألعاب</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= 1. START MENU MODES OVERLAY (3 STANDARDIZED MODES) ================= -->
+  <div *ngIf="gameState === 'MENU'" class="max-w-6xl mx-auto px-4 py-8 sm:py-12">
+    <!-- Hero Banner Card -->
+    <div class="relative rounded-[28px] sm:rounded-[36px] overflow-hidden border-2 border-cyan-500/50 bg-gradient-to-br from-slate-900 via-slate-950 to-cyan-950 p-6 sm:p-12 shadow-[0_20px_60px_rgba(6,182,212,0.25)] mb-8 text-center flex flex-col items-center">
+      <div class="inline-flex items-center gap-2 px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-full text-cyan-300 text-xs font-black mb-3">
+        <span>🇪🇬 مختبر الروبوتات العصبية • القاهرة الجديدة</span>
+      </div>
+      <h2 class="text-2xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-cyan-300 mb-4 tracking-tight leading-snug">
+        العلاج الطبيعي يلتقي بهندسة البرمجيات والروبوتات
+      </h2>
+      <p class="max-w-2xl text-xs sm:text-base text-slate-300 leading-relaxed mb-6 font-medium">
+        انضم إلى الدكتور عبد الله، أخصائي العلاج الطبيعي والمطور البرمجي، في تطوير خوارزمية <strong>Rehab-Logic v1.3</strong>، وبناء الأطراف البيوميكانيكية، وبرمجة الأذرع الروبوتية لإنقاذ المرضى وتحقيق الشفاء التام!
+      </p>
+
+      <!-- 3 Standard Play Mode Selection Cards (Rule Compliance) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 w-full max-w-4xl">
+        
+        <!-- Mode 1: Local Play / Clinic Story (Green) -->
+        <button (click)="startLocalPlay()" class="relative bg-gradient-to-b from-emerald-950/80 to-slate-900 hover:from-emerald-900/90 border-2 border-emerald-500/70 hover:border-emerald-400 rounded-2xl sm:rounded-3xl p-5 sm:p-6 text-right transition-all transform hover:scale-[1.02] shadow-[0_10px_30px_rgba(16,185,129,0.2)] cursor-pointer group flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition-transform">
+              🎮
+            </div>
+            <div class="text-[10px] font-black text-emerald-400 mb-1">الوضع الأساسي (قصة العيادة)</div>
+            <h3 class="text-base sm:text-lg font-black text-white group-hover:text-emerald-300 mb-2">1. اللعب محلياً (Local Clinic)</h3>
+            <p class="text-[11px] text-slate-400 leading-relaxed">
+              إدارة عيادة القاهرة، تشخيص الحالات الفردية، كتابة كود ريهاب-لوجيك، وبرمجة الروبوتات محلياً.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs font-black text-emerald-300">
+            <span>ابدأ الجلسة الآن</span>
+            <span>⬅️</span>
+          </div>
+        </button>
+
+        <!-- Mode 2: Private Room / P2P Co-Op (Blue/Cyan) -->
+        <button (click)="openRoomModal()" class="relative bg-gradient-to-b from-cyan-950/80 to-slate-900 hover:from-cyan-900/90 border-2 border-cyan-500/70 hover:border-cyan-400 rounded-2xl sm:rounded-3xl p-5 sm:p-6 text-right transition-all transform hover:scale-[1.02] shadow-[0_10px_30px_rgba(6,182,212,0.2)] cursor-pointer group flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-cyan-500/20 border border-cyan-400 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition-transform">
+              🔗
+            </div>
+            <div class="text-[10px] font-black text-cyan-400 mb-1">غرفة مشتركة أونلاين P2P</div>
+            <h3 class="text-base sm:text-lg font-black text-white group-hover:text-cyan-300 mb-2">2. إنشاء غرفة (Private Room)</h3>
+            <p class="text-[11px] text-slate-400 leading-relaxed">
+              أنشئ غرفة خاصة وشارك الكود مع أصدقائك للتعاون في تشخيص الحالات المعقدة وبرمجة الروبوتات سوياً.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs font-black text-cyan-300">
+            <span>إنشاء أو انضمام</span>
+            <span>🔗</span>
+          </div>
+        </button>
+
+        <!-- Mode 3: Online Pro Mode / Ranked (Purple) -->
+        <button (click)="startProMode()" class="relative bg-gradient-to-b from-purple-950/80 to-slate-900 hover:from-purple-900/90 border-2 border-purple-500/70 hover:border-purple-400 rounded-2xl sm:rounded-3xl p-5 sm:p-6 text-right transition-all transform hover:scale-[1.02] shadow-[0_10px_30px_rgba(168,85,247,0.2)] cursor-pointer group flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-400 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition-transform">
+              🏆
+            </div>
+            <div class="text-[10px] font-black text-purple-400 mb-1">حصري لمشتركي Pro</div>
+            <h3 class="text-base sm:text-lg font-black text-white group-hover:text-purple-300 mb-2">3. لعب أونلاين Pro Mode</h3>
+            <p class="text-[11px] text-slate-400 leading-relaxed">
+              تحديات طوارئ عصبية مباشرة، ومنافسات برمجة سريعة ضد أطباء ريهاب حول العالم مع مزامنة سحابية.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs font-black text-purple-300">
+            <span>دخول وضع المحترفين</span>
+            <span>👑</span>
+          </div>
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 2. PRIVATE ROOM MODAL ================= -->
+  <div *ngIf="gameState === 'ROOM_LOBBY'" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
+    <div class="w-full max-w-md bg-slate-900 border-2 border-cyan-400 rounded-3xl p-6 shadow-2xl text-center">
+      <div class="text-4xl mb-2">🔗 📡</div>
+      <h3 class="text-xl font-black text-cyan-300 mb-1">غرفة التشخيص والبرمجة المشتركة</h3>
+      <p class="text-xs text-slate-400 mb-4">كود غرفتك لمشاركته مع طبيب زميل:</p>
+
+      <div class="w-full bg-black/80 border-2 border-dashed border-cyan-400/60 rounded-2xl py-3 px-4 text-2xl font-mono font-black text-amber-300 tracking-widest mb-4">
+        {{ roomCode }}
+      </div>
+
+      <div class="bg-slate-950 border border-white/10 rounded-2xl p-3 mb-5 text-right text-xs">
+        <span class="font-bold text-slate-400 block mb-1.5">الأطباء المتصلون في الغرفة:</span>
+        <div *ngFor="let p of connectedPlayers" class="flex items-center gap-2 text-cyan-200 font-bold py-1">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>{{ p }}</span>
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button (click)="startRoomGame()" class="flex-1 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black rounded-xl shadow-lg cursor-pointer">
+          بدء الجلسة المشتركة 🚀
+        </button>
+        <button (click)="backToMenu()" class="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl cursor-pointer">
+          إلغاء
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 3. PRO UPGRADE MODAL ================= -->
+  <div *ngIf="gameState === 'PRO_MODAL'" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
+    <div class="w-full max-w-md bg-gradient-to-b from-purple-950 to-slate-900 border-2 border-purple-400 rounded-3xl p-6 shadow-2xl text-center">
+      <div class="text-4xl mb-2">👑 🏆</div>
+      <h3 class="text-2xl font-black text-purple-300 mb-1">الترقية إلى وضع Pro Mode</h3>
+      <p class="text-xs text-slate-300 mb-4">وفقاً لسياسة التكلفة والميزات المتقدمة، يتطلب اللعب الأونلاين التنافسي والمزامنة السحابية اشتراك Pro.</p>
+
+      <div class="bg-black/60 border border-purple-500/30 rounded-2xl p-4 text-right text-xs space-y-2 mb-5">
+        <div class="flex items-center gap-2 text-purple-200">
+          <span>✨</span>
+          <span>مزامنة سحابية فورية لحالات العيادة ومكتبة الكود.</span>
+        </div>
+        <div class="flex items-center gap-2 text-purple-200">
+          <span>🏆</span>
+          <span>دخول قائمة المتصدرين العالمية لأطباء الكودكس.</span>
+        </div>
+        <div class="flex items-center gap-2 text-purple-200">
+          <span>⚡</span>
+          <span>حالات طوارئ عصبية وجراحات روبوتية متقدمة مجانية.</span>
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button (click)="confirmProUpgrade()" class="flex-1 py-3 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-400 hover:to-pink-500 text-white font-black rounded-xl shadow-lg cursor-pointer">
+          تفعيل وضع Pro والبدء ⚡
+        </button>
+        <button (click)="backToMenu()" class="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl cursor-pointer">
+          رجوع
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 4. MAIN GAMEPLAY INTERFACE ================= -->
+  <div *ngIf="gameState === 'PLAYING'" class="max-w-7xl mx-auto px-2 sm:px-4 pt-3">
+    
+    <!-- Top Interactive 3D/Pixel Isometric Clinic View Canvas -->
+    <div class="relative w-full h-44 sm:h-64 rounded-2xl sm:rounded-3xl overflow-hidden border-2 border-cyan-500/40 shadow-[0_10px_35px_rgba(0,0,0,0.8)] mb-4 bg-slate-950">
+      <canvas #clinicCanvas width="960" height="320" class="w-full h-full object-cover"></canvas>
+      
+      <!-- Overlaid HUD Badges -->
+      <div class="absolute top-2.5 right-2.5 flex items-center gap-2 pointer-events-none">
+        <div class="px-2.5 py-1 bg-slate-950/80 border border-cyan-400/50 rounded-xl text-[10px] sm:text-xs font-black text-cyan-300 backdrop-blur-md">
+          🤖 الروبوت: Synapse-3000 (جاهز)
+        </div>
+        <div class="px-2.5 py-1 bg-slate-950/80 border border-amber-400/50 rounded-xl text-[10px] sm:text-xs font-black text-amber-300 backdrop-blur-md">
+          📍 عيادة القاهرة المركزية
+        </div>
+      </div>
+
+      <!-- Time of Day Selector Pill -->
+      <div class="absolute top-2.5 left-2.5 flex items-center gap-1 bg-slate-950/80 border border-white/15 rounded-xl p-1 backdrop-blur-md">
+        <button (click)="timeOfDay = 'morning'" [class.bg-sky-600]="timeOfDay === 'morning'" class="px-2 py-0.5 rounded-lg text-[10px] font-black text-white transition-colors cursor-pointer">صباح ☀️</button>
+        <button (click)="timeOfDay = 'sunset'" [class.bg-amber-600]="timeOfDay === 'sunset'" class="px-2 py-0.5 rounded-lg text-[10px] font-black text-white transition-colors cursor-pointer">غروب 🌇</button>
+        <button (click)="timeOfDay = 'night'" [class.bg-indigo-700]="timeOfDay === 'night'" class="px-2 py-0.5 rounded-lg text-[10px] font-black text-white transition-colors cursor-pointer">ليل 🌙</button>
+      </div>
+
+      <!-- Bottom Overlay: Dr. Abdullah Speech Dialogue Box -->
+      <div class="absolute bottom-2 inset-x-2 sm:inset-x-4 bg-slate-950/90 border border-cyan-400/60 rounded-xl sm:rounded-2xl p-2 sm:p-2.5 flex items-center gap-2.5 sm:gap-3 backdrop-blur-md shadow-lg">
+        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-b from-blue-900 to-slate-950 border border-cyan-300 flex items-center justify-center text-xl shrink-0 shadow">
+          👨🏾‍⚕️
+        </div>
+        <div class="flex-1 overflow-hidden">
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] sm:text-xs font-black text-cyan-300">د. عبد الله:</span>
+            <span class="text-[9px] text-slate-400 font-mono">Rehab-Logic v1.3</span>
+          </div>
+          <p class="text-[11px] sm:text-xs font-bold text-white truncate">
+            "{{ abdullahDialogue }}"
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs Pill Bar -->
+    <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
+      <button (click)="selectTab('cases')" [class.bg-cyan-600]="activeTab === 'cases'" [class.bg-slate-900]="activeTab !== 'cases'" class="px-3 sm:px-4 py-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-black border border-white/10 hover:border-cyan-400 text-white flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer">
+        <span>📋 الحالات النشطة</span>
+      </button>
+
+      <button (click)="selectTab('diagnosis')" [class.bg-cyan-600]="activeTab === 'diagnosis'" [class.bg-slate-900]="activeTab !== 'diagnosis'" class="px-3 sm:px-4 py-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-black border border-white/10 hover:border-cyan-400 text-white flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer">
+        <span>🧠 التشخيص والـ EMG</span>
+      </button>
+
+      <button (click)="selectTab('ide')" [class.bg-cyan-600]="activeTab === 'ide'" [class.bg-slate-900]="activeTab !== 'ide'" class="px-3 sm:px-4 py-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-black border border-white/10 hover:border-cyan-400 text-white flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer">
+        <span>💻 محرر كود ريهاب-لوجيك</span>
+      </button>
+
+      <button (click)="selectTab('workshop')" [class.bg-cyan-600]="activeTab === 'workshop'" [class.bg-slate-900]="activeTab !== 'workshop'" class="px-3 sm:px-4 py-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-black border border-white/10 hover:border-cyan-400 text-white flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer">
+        <span>🦾 ورشة الأطراف والروبوت</span>
+      </button>
+
+      <button (click)="selectTab('treatment')" [class.bg-cyan-600]="activeTab === 'treatment'" [class.bg-slate-900]="activeTab !== 'treatment'" class="px-3 sm:px-4 py-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-black border border-white/10 hover:border-cyan-400 text-white flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer">
+        <span>⚡ جلسة العلاج الآلي</span>
+      </button>
+
+      <button (click)="selectTab('management')" [class.bg-cyan-600]="activeTab === 'management'" [class.bg-slate-900]="activeTab !== 'management'" class="px-3 sm:px-4 py-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-black border border-white/10 hover:border-cyan-400 text-white flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer">
+        <span>🏥 إدارة العيادة</span>
+      </button>
+
+      <button (click)="selectTab('research')" [class.bg-cyan-600]="activeTab === 'research'" [class.bg-slate-900]="activeTab !== 'research'" class="px-3 sm:px-4 py-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-black border border-white/10 hover:border-cyan-400 text-white flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer">
+        <span>🧬 شجرة أبحاث الكودكس</span>
+      </button>
+    </div>
+
+    <!-- ================= TAB CONTENT 1: ACTIVE CASES ================= -->
+    <div *ngIf="activeTab === 'cases'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div *ngFor="let p of patients" class="bg-slate-900/90 border-2 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-xl transition-all" [class.border-cyan-400]="selectedPatient.id === p.id" [class.border-white/10]="selectedPatient.id !== p.id">
+        <div class="flex items-start justify-between gap-3 mb-3">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-950 to-slate-900 border border-cyan-400/50 flex items-center justify-center text-2xl shadow">
+              {{ p.avatar }}
+            </div>
+            <div>
+              <h3 class="text-sm sm:text-base font-black text-white">{{ p.name }}</h3>
+              <p class="text-[10px] sm:text-xs text-slate-400">{{ p.profession }} • {{ p.age }} سنة</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-black px-2.5 py-1 rounded-full" [class.bg-emerald-950]="p.status === 'cured'" [class.text-emerald-400]="p.status === 'cured'" [class.bg-amber-950]="p.status !== 'cured'" [class.text-amber-400]="p.status !== 'cured'">
+            {{ p.status === 'cured' ? '✅ تم الشفاء' : p.status === 'coded' ? '💻 مبرمج وجاهز' : p.status === 'diagnosed' ? '🧠 تم الفحص' : '🔍 بانتظار الفحص' }}
+          </span>
+        </div>
+
+        <div class="bg-black/50 rounded-xl p-3 border border-white/5 mb-3 text-xs">
+          <div class="font-bold text-cyan-300 mb-1">الإصابة: {{ p.injury }}</div>
+          <p class="text-slate-300 text-[11px] leading-relaxed">{{ p.description }}</p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 mb-4 text-center text-[10px] font-bold">
+          <div class="bg-slate-950 p-2 rounded-xl border border-white/5">
+            <span class="text-slate-400 block">المفصل:</span>
+            <span class="text-cyan-300">{{ p.bodyPartLabel }}</span>
+          </div>
+          <div class="bg-slate-950 p-2 rounded-xl border border-white/5">
+            <span class="text-slate-400 block">المدى الحركي:</span>
+            <span class="text-amber-300">{{ p.currentROM }}° / {{ p.targetROM }}°</span>
+          </div>
+          <div class="bg-slate-950 p-2 rounded-xl border border-white/5">
+            <span class="text-slate-400 block">المكافأة:</span>
+            <span class="text-emerald-300">{{ p.rewardEGP }} ج.م</span>
+          </div>
+        </div>
+
+        <button (click)="selectPatient(p)" class="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs rounded-xl shadow transition-all cursor-pointer">
+          {{ p.status === 'cured' ? 'مراجعة بيانات الحالة 🔍' : 'اختيار ومتابعة العلاج 🚀' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= TAB CONTENT 2: NEURAL & EMG DIAGNOSTICS ================= -->
+    <div *ngIf="activeTab === 'diagnosis'" class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <!-- Left: Oscilloscope & Frequency Tuner -->
+      <div class="lg:col-span-7 bg-slate-900/90 border-2 border-cyan-400/40 rounded-3xl p-4 sm:p-6 shadow-xl flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-base font-black text-cyan-300 flex items-center gap-2">
+              <lucide-icon [img]="Activity" class="w-5 h-5 text-cyan-400"></lucide-icon>
+              معمل راسم الإشارات العصبية (EMG & Neural Oscilloscope)
+            </h3>
+            <span class="text-xs font-mono text-amber-300">التردد المستهدف: {{ selectedPatient.requiredFrequency }} Hz</span>
+          </div>
+          
+          <!-- Oscilloscope Canvas -->
+          <div class="w-full h-44 rounded-2xl overflow-hidden border border-emerald-500/40 bg-black mb-4 relative shadow-inner">
+            <canvas #emgCanvas width="640" height="180" class="w-full h-full"></canvas>
+            <div class="absolute bottom-2 right-2 text-[9px] font-mono text-emerald-400 bg-black/70 px-2 py-0.5 rounded border border-emerald-500/30">
+              CH-1: Synaptic Signal | CH-2: EMG
+            </div>
+          </div>
+
+          <!-- Frequency Tuner Slider -->
+          <div class="bg-black/60 rounded-2xl p-4 border border-white/10 mb-4">
+            <div class="flex items-center justify-between text-xs font-bold mb-2">
+              <span class="text-slate-300">مقبض ضبط التردد العصبي (Synapse Dial):</span>
+              <span class="text-cyan-300 font-mono text-sm">{{ currentFrequencySlider }} Hz</span>
+            </div>
+            <input type="range" min="2" max="30" step="1" [ngModel]="currentFrequencySlider" (ngModelChange)="onFrequencyChange($event)" class="w-full accent-cyan-400 cursor-pointer mb-2">
+            <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+              <span>ثيتا (2-8 Hz)</span>
+              <span>ألفا (8-14 Hz)</span>
+              <span>بيتا (14-30 Hz)</span>
+            </div>
+          </div>
+
+          <!-- Matching Score Bar -->
+          <div class="mb-4">
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <span class="text-slate-300">تطابق الرنين العصبي:</span>
+              <span [class.text-emerald-400]="frequencyMatchScore >= 85" [class.text-amber-400]="frequencyMatchScore < 85" class="font-black">{{ frequencyMatchScore }}%</span>
+            </div>
+            <div class="w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-white/10">
+              <div class="h-full transition-all duration-150" [class.bg-emerald-400]="frequencyMatchScore >= 85" [class.bg-amber-400]="frequencyMatchScore < 85" [style.width.%]="frequencyMatchScore"></div>
+            </div>
+          </div>
+        </div>
+
+        <button (click)="runDiagnosticScan()" [disabled]="isScanningSynapses" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 disabled:opacity-50 text-slate-950 font-black text-sm rounded-2xl shadow-lg transition-all cursor-pointer">
+          {{ isScanningSynapses ? 'جاري فحص المسارات العصبية... ⏳' : scanCompleted ? 'إعادة الفحص العصبي 🔄' : 'تنفيذ المسح التشخيصي العصبي ⚡' }}
+        </button>
+      </div>
+
+      <!-- Right: Anatomy Zone Scanner & Diagnostic Report -->
+      <div class="lg:col-span-5 bg-slate-900/90 border-2 border-white/10 rounded-3xl p-4 sm:p-6 shadow-xl flex flex-col justify-between">
+        <div>
+          <h3 class="text-base font-black text-white mb-3 flex items-center gap-2">
+            <span>🧬</span>
+            <span>تقرير التشخيص البيوميكانيكي</span>
+          </h3>
+
+          <!-- Interactive Biomechanical Anatomy Visualizer -->
+          <div class="w-full bg-black/60 rounded-2xl p-4 border border-white/10 text-center mb-4 relative">
+            <div class="text-6xl mb-2">
+              {{ selectedPatient.bodyPart === 'ankle' ? '🦶' : selectedPatient.bodyPart === 'knee' ? '🦿' : selectedPatient.bodyPart === 'spine' ? '🦴' : '💪' }}
+            </div>
+            <div class="text-sm font-black text-cyan-300">{{ selectedPatient.bodyPartLabel }}</div>
+            <p class="text-[11px] text-slate-400 mt-1">
+              {{ scanCompleted ? 'تم رصد التمزق بدقة: ' + selectedPatient.injury : 'قم بضبط التردد واضغط مسح تشخيصي لكشف موقع التمزق العصبي.' }}
+            </p>
+          </div>
+
+          <!-- Diagnostic Metrics -->
+          <div class="space-y-2 text-xs font-bold">
+            <div class="flex justify-between p-2 rounded-xl bg-slate-950 border border-white/5">
+              <span class="text-slate-400">جودة إشارة الـ EMG:</span>
+              <span class="text-emerald-400 font-mono">{{ selectedPatient.emgSignalQuality }}%</span>
+            </div>
+            <div class="flex justify-between p-2 rounded-xl bg-slate-950 border border-white/5">
+              <span class="text-slate-400">سلامة المشابك العصبية:</span>
+              <span class="text-cyan-300 font-mono">{{ selectedPatient.synapseIntegrity }}%</span>
+            </div>
+            <div class="flex justify-between p-2 rounded-xl bg-slate-950 border border-white/5">
+              <span class="text-slate-400">الحد الأقصى المسموح للألم:</span>
+              <span class="text-red-400 font-mono">{{ selectedPatient.painThreshold }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <button *ngIf="scanCompleted" (click)="selectTab('ide')" class="w-full mt-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 text-slate-950 font-black text-xs rounded-2xl shadow transition-all cursor-pointer">
+          الانتقال لكتابة كود ريهاب-لوجيك 💻 ⬅️
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= TAB CONTENT 3: REHAB-LOGIC IDE ================= -->
+    <div *ngIf="activeTab === 'ide'" class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <!-- Left: Code Editor -->
+      <div class="lg:col-span-8 bg-slate-900/90 border-2 border-cyan-400/40 rounded-3xl p-4 sm:p-6 shadow-xl flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">💻</span>
+              <h3 class="text-base font-black text-cyan-300">Rehab-Logic IDE v1.3 (محرر خوارزميات العلاج)</h3>
+            </div>
+            <span class="text-xs font-mono text-slate-400">المريض: {{ selectedPatient.name }}</span>
+          </div>
+
+          <!-- Code Snippets Pill Toolbar -->
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 scrollbar-none text-[10px] font-mono">
+            <button (click)="insertCodeSnippet('{CHECK_NEURAL_SENSORY_INPUT}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 cursor-pointer">+ فحص الإشارة</button>
+            <button (click)="insertCodeSnippet('{ROTATE: +15_DEG}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 cursor-pointer">+ زاوية حركة</button>
+            <button (click)="insertCodeSnippet('{NEURAL_HEAL: BIOCURRENT_LOW}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-500/30 cursor-pointer">+ نبضة شفاء</button>
+            <button (click)="insertCodeSnippet('{PHYSIO_PATH_FIND}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-500/30 cursor-pointer">+ مسار آمن</button>
+          </div>
+
+          <!-- Code Editor Textarea -->
+          <div class="relative w-full bg-slate-950 border border-cyan-500/40 rounded-2xl p-3 font-mono text-xs text-green-400 shadow-inner mb-3">
+            <textarea [(ngModel)]="currentCode" (input)="playCodeKeySound()" rows="12" class="w-full bg-transparent outline-none resize-none font-mono text-xs leading-relaxed text-cyan-200" dir="ltr"></textarea>
+          </div>
+
+          <!-- Validation Errors -->
+          <div *ngIf="codeValidationErrors.length > 0" class="bg-red-950/80 border border-red-500/50 rounded-xl p-3 mb-3 text-xs text-red-300">
+            <div *ngFor="let err of codeValidationErrors" class="flex items-center gap-1.5">
+              <span>⚠️</span>
+              <span>{{ err }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button (click)="compileAndVerifyCode()" class="py-3 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 text-slate-950 font-black text-xs rounded-xl shadow cursor-pointer">
+            ترجمة وفحص أمان الكود ⚙️
+          </button>
+          <button (click)="runCodeSimulation()" [disabled]="isSimulatingCode" class="py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 text-slate-950 font-black text-xs rounded-xl shadow cursor-pointer">
+            {{ isSimulatingCode ? 'جاري المحاكاة... ⏳' : 'تشغيل محاكاة الروبوت 🤖' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Right: Simulation Output Terminal -->
+      <div class="lg:col-span-4 bg-slate-900/90 border-2 border-white/10 rounded-3xl p-4 sm:p-6 shadow-xl flex flex-col justify-between">
+        <div>
+          <h3 class="text-base font-black text-white mb-3 flex items-center gap-2">
+            <span>📟</span>
+            <span>طرفية المحاكاة الآلية</span>
+          </h3>
+
+          <div class="w-full bg-black/80 border border-white/10 rounded-2xl p-3 font-mono text-xs text-cyan-300 min-h-[220px] max-h-[260px] overflow-y-auto space-y-1.5 mb-4" dir="ltr">
+            <div class="text-slate-500">// Rehab-Logic Console v1.3</div>
+            <div *ngFor="let log of simulationLog" class="text-[11px] leading-relaxed">
+              {{ log }}
+            </div>
+            <div *ngIf="simulationLog.length === 0" class="text-slate-500 text-[11px]">
+              > بانتظار تشغيل المحاكاة لاختبار أمان العزم والحساسات...
+            </div>
+          </div>
+        </div>
+
+        <button *ngIf="isCodeValid" (click)="selectTab('treatment')" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 text-slate-950 font-black text-xs rounded-2xl shadow transition-all cursor-pointer">
+          الانتقال لغرفة العلاج الآلي ⚡ ⬅️
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= TAB CONTENT 4: BIOMECHANICAL WORKSHOP ================= -->
+    <div *ngIf="activeTab === 'workshop'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div *ngFor="let part of bionicParts" class="bg-slate-900/90 border-2 border-white/10 hover:border-cyan-400/50 rounded-3xl p-5 shadow-xl transition-all flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-2xl bg-cyan-950 border border-cyan-400/40 flex items-center justify-center text-2xl">
+                {{ part.icon }}
+              </div>
+              <div>
+                <h3 class="text-sm sm:text-base font-black text-white">{{ part.name }}</h3>
+                <span class="text-[10px] text-cyan-300 font-bold">{{ part.typeLabel }} • المستوى {{ part.level }}/{{ part.maxLevel }}</span>
+              </div>
+            </div>
+            <span class="text-xs font-black text-amber-300">🪙 {{ part.costEGP }} ج.م</span>
+          </div>
+
+          <p class="text-xs text-slate-300 leading-relaxed mb-4">{{ part.description }}</p>
+
+          <div class="grid grid-cols-3 gap-2 mb-4 text-center text-[10px] font-bold">
+            <div class="bg-slate-950 p-2 rounded-xl border border-white/5">
+              <span class="text-slate-400 block">الدقة:</span>
+              <span class="text-cyan-300">+{{ part.precisionBonus }}%</span>
+            </div>
+            <div class="bg-slate-950 p-2 rounded-xl border border-white/5">
+              <span class="text-slate-400 block">السرعة:</span>
+              <span class="text-amber-300">+{{ part.speedBonus }}%</span>
+            </div>
+            <div class="bg-slate-950 p-2 rounded-xl border border-white/5">
+              <span class="text-slate-400 block">الراحة:</span>
+              <span class="text-emerald-300">+{{ part.comfortBonus }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <button (click)="upgradeBionicPart(part)" [disabled]="part.level >= part.maxLevel || cairoCredits < part.costEGP" class="w-full py-2.5 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 disabled:opacity-40 text-slate-950 font-black text-xs rounded-xl shadow cursor-pointer">
+          {{ part.level >= part.maxLevel ? 'أعلى مستوى تم الوصول إليه ⭐' : 'ترقية القطعة (' + part.costEGP + ' ج.م) 🔧' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= TAB CONTENT 5: LIVE ROBOTIC THERAPY SESSION ================= -->
+    <div *ngIf="activeTab === 'treatment'" class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <!-- Left: Telemetry & Controls -->
+      <div class="lg:col-span-8 bg-slate-900/90 border-2 border-cyan-400/50 rounded-3xl p-4 sm:p-6 shadow-xl flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-base sm:text-lg font-black text-cyan-300 flex items-center gap-2">
+              <span>⚡</span>
+              <span>غرفة العلاج الآلي الحي (Synapse-3000 Active Session)</span>
+            </h3>
+            <span class="text-xs font-mono text-amber-300">المريض: {{ selectedPatient.name }}</span>
+          </div>
+
+          <!-- Live Telemetry Gauges Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-5">
+            <!-- Heart Rate -->
+            <div class="bg-black/60 border border-red-500/30 rounded-2xl p-3 text-center">
+              <span class="text-[10px] text-slate-400 block">نبضات القلب</span>
+              <span class="text-xl font-black text-red-400 font-mono">{{ patientHeartRate }} <span class="text-[10px]">BPM</span></span>
+            </div>
+
+            <!-- Pain Level Gauge -->
+            <div class="bg-black/60 border border-amber-500/30 rounded-2xl p-3 text-center">
+              <span class="text-[10px] text-slate-400 block">مستوى الألم اللحظي</span>
+              <span class="text-xl font-black font-mono" [class.text-emerald-400]="livePainLevel < 40" [class.text-red-400]="livePainLevel >= 50">{{ livePainLevel }}%</span>
+            </div>
+
+            <!-- ROM Progress -->
+            <div class="bg-black/60 border border-cyan-500/30 rounded-2xl p-3 text-center">
+              <span class="text-[10px] text-slate-400 block">زاوية الروبوت</span>
+              <span class="text-xl font-black text-cyan-300 font-mono">{{ Math.round(roboticArmAngle) }}°</span>
+            </div>
+
+            <!-- Synapse Healing -->
+            <div class="bg-black/60 border border-emerald-500/30 rounded-2xl p-3 text-center">
+              <span class="text-[10px] text-slate-400 block">التئام المشابك</span>
+              <span class="text-xl font-black text-emerald-400 font-mono">{{ liveSynapseHealing }}%</span>
+            </div>
+          </div>
+
+          <!-- Overall Session Progress Bar -->
+          <div class="bg-black/60 rounded-2xl p-4 border border-white/10 mb-5">
+            <div class="flex justify-between text-xs font-bold mb-1.5">
+              <span class="text-slate-300">تقدم جلسة العلاج الآلي:</span>
+              <span class="text-cyan-300 font-mono font-black">{{ treatmentProgress }}%</span>
+            </div>
+            <div class="w-full h-3.5 bg-slate-950 rounded-full overflow-hidden border border-white/10">
+              <div class="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-emerald-400 transition-all duration-200" [style.width.%]="treatmentProgress"></div>
+            </div>
+          </div>
+
+          <!-- Doctor Real-Time Interventions -->
+          <div class="bg-slate-950/80 border border-cyan-500/30 rounded-2xl p-3.5 mb-4">
+            <span class="text-xs font-bold text-slate-300 block mb-2">تدخلات الطبيب اللحظية أثناء حركة الروبوت:</span>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <button (click)="triggerGentlePulse()" [disabled]="!isTreatmentRunning" class="py-2 px-3 bg-cyan-950 hover:bg-cyan-900 border border-cyan-400/60 rounded-xl text-cyan-300 text-xs font-bold transition-all disabled:opacity-40 cursor-pointer">
+                ✨ نبضة تبريد مهدئة
+              </button>
+              <button (click)="triggerServoCalibrate()" [disabled]="!isTreatmentRunning" class="py-2 px-3 bg-amber-950 hover:bg-amber-900 border border-amber-400/60 rounded-xl text-amber-300 text-xs font-bold transition-all disabled:opacity-40 cursor-pointer">
+                ⚙️ موازنة عزم السيرفو
+              </button>
+              <button (click)="triggerEmergencyStop()" [disabled]="!isTreatmentRunning" class="py-2 px-3 bg-red-950 hover:bg-red-900 border border-red-500/80 rounded-xl text-red-300 text-xs font-black transition-all disabled:opacity-40 cursor-pointer">
+                🛑 إيقاف الطوارئ
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <button (click)="startLiveTreatment()" [disabled]="isTreatmentRunning" class="w-full py-3.5 bg-gradient-to-r from-cyan-400 to-blue-600 hover:from-cyan-300 disabled:opacity-50 text-slate-950 font-black text-sm sm:text-base rounded-2xl shadow-xl transition-all cursor-pointer">
+          {{ isTreatmentRunning ? 'الجلسة جارية بالروبوت... 🤖' : 'بدء تنفيذ جلسة العلاج الطبيعي الآلي 🚀' }}
+        </button>
+      </div>
+
+      <!-- Right: Treatment Logs Terminal -->
+      <div class="lg:col-span-4 bg-slate-900/90 border-2 border-white/10 rounded-3xl p-4 sm:p-6 shadow-xl flex flex-col justify-between">
+        <div>
+          <h3 class="text-base font-black text-white mb-3 flex items-center gap-2">
+            <span>📋</span>
+            <span>سجل حركة الروبوت واستجابة المريض</span>
+          </h3>
+
+          <div class="w-full bg-black/80 border border-white/10 rounded-2xl p-3 font-mono text-xs text-green-400 min-h-[260px] max-h-[300px] overflow-y-auto space-y-1.5 mb-4" dir="ltr">
+            <div *ngFor="let log of treatmentLogs" class="text-[11px] leading-relaxed">
+              {{ log }}
+            </div>
+          </div>
+        </div>
+
+        <div class="p-3 bg-slate-950 rounded-2xl border border-white/5 text-center text-xs text-slate-400">
+          حماية أمان المريض مفعلة عبر خوارزمية ريهاب-لوجيك v1.3
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= TAB CONTENT 6: CLINIC TYCOON MANAGEMENT ================= -->
+    <div *ngIf="activeTab === 'management'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div *ngFor="let room of clinicRooms" class="bg-slate-900/90 border-2 border-white/10 hover:border-cyan-400/50 rounded-3xl p-5 shadow-xl transition-all flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-2xl bg-cyan-950 border border-cyan-400/40 flex items-center justify-center text-2xl">
+                {{ room.icon }}
+              </div>
+              <div>
+                <h3 class="text-sm sm:text-base font-black text-white">{{ room.name }}</h3>
+                <span class="text-[10px] text-cyan-300 font-bold">المستوى {{ room.level }}/{{ room.maxLevel }}</span>
+              </div>
+            </div>
+            <span class="text-xs font-black text-amber-300">🪙 {{ room.costEGP }} ج.م</span>
+          </div>
+
+          <p class="text-xs text-slate-300 leading-relaxed mb-3">{{ room.description }}</p>
+          
+          <div class="p-2.5 bg-slate-950 rounded-xl border border-white/5 text-xs text-emerald-300 font-bold mb-4">
+            {{ room.bonus }}
+          </div>
+        </div>
+
+        <button (click)="upgradeClinicRoom(room)" [disabled]="room.level >= room.maxLevel || cairoCredits < room.costEGP" class="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 disabled:opacity-40 text-slate-950 font-black text-xs rounded-xl shadow cursor-pointer">
+          {{ room.level >= room.maxLevel ? 'أقصى ترقية للمبنى ⭐' : 'ترقية الوحدة (' + room.costEGP + ' ج.م) 🏥' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= TAB CONTENT 7: CODEX RESEARCH TREE ================= -->
+    <div *ngIf="activeTab === 'research'" class="space-y-4">
+      <div *ngFor="let node of researchNodes" class="bg-slate-900/90 border-2 rounded-3xl p-5 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4" [class.border-cyan-400]="node.unlocked" [class.border-white/10]="!node.unlocked">
+        <div class="flex items-center gap-3.5">
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0" [class.bg-cyan-950]="node.unlocked" [class.bg-slate-800]="!node.unlocked" [class.border-2]="true" [class.border-cyan-400]="node.unlocked" [class.border-white/10]="!node.unlocked">
+            {{ node.icon }}
+          </div>
+          <div>
+            <h4 class="text-sm sm:text-base font-black text-white mb-1">{{ node.title }}</h4>
+            <p class="text-xs text-slate-300 max-w-xl leading-relaxed">{{ node.effect }}</p>
+          </div>
+        </div>
+
+        <div class="w-full sm:w-auto flex sm:flex-col items-center sm:items-end justify-between gap-2 shrink-0">
+          <span class="text-xs font-black text-cyan-300">🧬 {{ node.costCodex }} نقاط كودكس</span>
+          <button (click)="unlockResearch(node)" [disabled]="node.unlocked || codexFragments < node.costCodex" class="px-5 py-2.5 rounded-xl font-black text-xs shadow cursor-pointer" [class.bg-emerald-500]="node.unlocked" [class.text-slate-950]="node.unlocked" [class.bg-cyan-500]="!node.unlocked" [class.hover:bg-cyan-400]="!node.unlocked" [class.disabled:opacity-40]="true">
+            {{ node.unlocked ? 'مفعل في الكودكس ✅' : 'فك التشفير 🔓' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================= 5. TREATMENT SUCCESS CELEBRATION MODAL ================= -->
+  <div *ngIf="treatmentSuccessModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in zoom-in">
+    <div class="w-full max-w-md bg-gradient-to-b from-slate-900 via-slate-950 to-cyan-950 border-2 border-cyan-400 rounded-3xl p-6 shadow-2xl text-center">
+      <div class="text-5xl mb-2 animate-bounce">🎉 🦾 🧬</div>
+      <h3 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-cyan-300 mb-1">
+        تم شفاء المريض بنجاح تام!
+      </h3>
+      <p class="text-xs text-slate-300 mb-4">
+        أثبتت خوارزمية <strong>Rehab-Logic v1.3</strong> فعاليتها العالية في استعادة المدى الحركي للمريض دون أي ألم.
+      </p>
+
+      <div class="bg-black/60 border border-cyan-500/30 rounded-2xl p-4 mb-5 grid grid-cols-3 gap-2 text-center text-xs font-black">
+        <div class="bg-slate-900 p-2 rounded-xl border border-white/5">
+          <span class="text-slate-400 block text-[10px]">المكافأة المالية</span>
+          <span class="text-amber-300">+{{ selectedPatient.rewardEGP }} ج.م</span>
+        </div>
+        <div class="bg-slate-900 p-2 rounded-xl border border-white/5">
+          <span class="text-slate-400 block text-[10px]">الخبرة</span>
+          <span class="text-cyan-300">+{{ selectedPatient.rewardXP }} XP</span>
+        </div>
+        <div class="bg-slate-900 p-2 rounded-xl border border-white/5">
+          <span class="text-slate-400 block text-[10px]">نقاط الكودكس</span>
+          <span class="text-emerald-300">+{{ selectedPatient.rewardCodex }} 🧬</span>
+        </div>
+      </div>
+
+      <button (click)="closeSuccessModal()" class="w-full py-3.5 bg-gradient-to-r from-cyan-400 to-blue-600 hover:from-cyan-300 text-slate-950 font-black text-sm rounded-2xl shadow-xl transition-all cursor-pointer">
+        متابعة الحالات التالية 🚀
+      </button>
+    </div>
+  </div>
+
+</div>

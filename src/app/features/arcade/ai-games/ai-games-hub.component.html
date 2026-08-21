@@ -1,0 +1,276 @@
+<div class="min-h-screen bg-slate-950 p-4 sm:p-6 md:p-10 text-white font-sans text-right overflow-y-auto custom-scrollbar relative" dir="rtl">
+  
+  <!-- Ambient Glow Effects -->
+  <div class="fixed top-0 right-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+  <div class="fixed bottom-10 left-1/4 w-96 h-96 bg-fuchsia-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+  <!-- Header & Breadcrumb -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/10 pb-8 mb-8 relative z-10">
+    
+    <div class="flex items-start gap-4">
+      <a routerLink="/arcade" class="p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-slate-300 hover:text-white transition mt-1" title="العودة لمكتبة الألعاب العامة">
+        <lucide-icon [img]="ArrowRight" class="w-6 h-6"></lucide-icon>
+      </a>
+
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 rounded-full mb-3 backdrop-blur-md">
+          <lucide-icon [img]="Sparkles" class="w-4 h-4 text-indigo-400 animate-spin" style="animation-duration: 6s;"></lucide-icon>
+          <span class="text-xs font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 uppercase tracking-wider">
+            Super AI Autonomous Game Universe
+          </span>
+        </div>
+
+        <h1 class="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-white flex items-center gap-3">
+          <span>ألعاب الذكاء الاصطناعي</span>
+          <span class="text-2xl sm:text-3xl">🧬✨</span>
+        </h1>
+        <p class="text-xs sm:text-sm text-slate-400 font-medium mt-2 max-w-2xl leading-relaxed">
+          عالم ألعاب استثنائي يتم تطويره بالكامل بواسطة الذكاء الاصطناعي؛ ألعاب تبتكر قواعدها وتولد مراحل لانهائية وطفرات جديدة كل 5 مراحل، مع سجل تفصيلي لإدارة كل ميكانيكية والتراجع عنها.
+        </p>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex items-center gap-3 shrink-0">
+      <button 
+        (click)="openCreateModal()" 
+        [disabled]="isGenerating()"
+        class="px-5 sm:px-7 py-3.5 sm:py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600 hover:from-indigo-500 hover:to-fuchsia-500 text-white rounded-2xl text-xs sm:text-sm font-black flex items-center gap-2.5 transition-all shadow-xl shadow-indigo-600/30 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 cursor-pointer">
+        <lucide-icon [img]="Plus" class="w-5 h-5"></lucide-icon>
+        <span>ابتكار لعبة جديدة بالذكاء الاصطناعي ⚡</span>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Live Generation Progress Banner (When AI is crafting a game) -->
+  <div *ngIf="isGenerating()" class="mb-8 bg-gradient-to-r from-indigo-950/80 via-purple-950/80 to-slate-900/90 border border-indigo-500/40 rounded-3xl p-5 sm:p-6 shadow-2xl backdrop-blur-xl relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500 z-10">
+    <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500/30 rounded-full blur-2xl pointer-events-none"></div>
+    
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-4 text-right">
+        <div class="w-12 h-12 rounded-2xl bg-indigo-600/30 border border-indigo-400/40 flex items-center justify-center text-indigo-400 shrink-0">
+          <lucide-icon [img]="Cpu" class="w-6 h-6 animate-pulse"></lucide-icon>
+        </div>
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <h3 class="text-sm sm:text-base font-black text-white">الذكاء الاصطناعي يصنع لعبة جديدة الآن...</h3>
+          </div>
+          <p class="text-xs text-indigo-200 font-mono flex items-center gap-2">
+            <span>{{ currentStep() || 'جاري استحضار القصة وهندسة القوانين...' }}</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Animated Pulse Bar -->
+      <div class="w-full sm:w-64 h-2 bg-black/40 rounded-full overflow-hidden border border-white/10">
+        <div class="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 animate-pulse w-full"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8 relative z-10">
+    
+    <div class="bg-slate-900/60 border border-white/5 rounded-2xl p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+        <lucide-icon [img]="Gamepad2" class="w-5 h-5"></lucide-icon>
+      </div>
+      <div>
+        <span class="text-[10px] text-slate-400 font-bold block">الألعاب المطورة</span>
+        <span class="text-base sm:text-lg font-black text-white font-mono">{{ games().length }} لعبة</span>
+      </div>
+    </div>
+
+    <div class="bg-slate-900/60 border border-white/5 rounded-2xl p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-fuchsia-500/20 text-fuchsia-400 flex items-center justify-center shrink-0">
+        <lucide-icon [img]="Sparkles" class="w-5 h-5"></lucide-icon>
+      </div>
+      <div>
+        <span class="text-[10px] text-slate-400 font-bold block">الطفرات المبتكرة</span>
+        <span class="text-base sm:text-lg font-black text-fuchsia-400 font-mono">{{ totalMutationsCount }} طفرة</span>
+      </div>
+    </div>
+
+    <div class="bg-slate-900/60 border border-white/5 rounded-2xl p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+        <lucide-icon [img]="Layers" class="w-5 h-5"></lucide-icon>
+      </div>
+      <div>
+        <span class="text-[10px] text-slate-400 font-bold block">المراحل المتطورة</span>
+        <span class="text-base sm:text-lg font-black text-amber-400 font-mono">{{ totalLevelsCount }} مرحلة</span>
+      </div>
+    </div>
+
+    <div class="bg-slate-900/60 border border-white/5 rounded-2xl p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+        <lucide-icon [img]="Trophy" class="w-5 h-5"></lucide-icon>
+      </div>
+      <div>
+        <span class="text-[10px] text-slate-400 font-bold block">التطوير الذاتي</span>
+        <span class="text-base sm:text-lg font-black text-emerald-400 font-mono">100% AI</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Games Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 relative z-10">
+    
+    <!-- Add Game Trigger Card -->
+    <div 
+      (click)="openCreateModal()"
+      class="group aspect-[4/3] rounded-3xl border-2 border-dashed border-indigo-500/40 hover:border-indigo-400 bg-slate-900/40 hover:bg-indigo-950/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-indigo-500/20 flex flex-col items-center justify-center p-6 text-center cursor-pointer">
+      
+      <div class="w-14 h-14 rounded-2xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 shadow-xl mb-3">
+        <lucide-icon [img]="Plus" class="w-7 h-7"></lucide-icon>
+      </div>
+
+      <div class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full mb-1.5">
+        <lucide-icon [img]="Sparkles" class="w-3 h-3 text-indigo-400"></lucide-icon>
+        <span class="text-[10px] font-black text-indigo-400">توليد ذاتي</span>
+      </div>
+
+      <h3 class="text-base font-black text-white group-hover:text-indigo-300 transition-colors">ابتكر لعبة جديدة ⚡</h3>
+      <p class="text-xs text-slate-400 mt-1 font-medium leading-relaxed">دع الذكاء الاصطناعي يصمم لعبة جديدة بقصة وقوانين ومراحل مبتكرة</p>
+    </div>
+
+    <!-- Active Games Cards -->
+    <div *ngFor="let game of games()" 
+         (click)="openBriefing(game)"
+         class="group relative aspect-[4/3] rounded-3xl overflow-hidden border border-white/10 bg-slate-900/80 hover:border-indigo-500/50 hover:bg-slate-900 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-indigo-500/20 flex flex-col justify-between p-5 cursor-pointer">
+      
+      <!-- Top Badges & Actions -->
+      <div class="flex items-start justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xl shadow-lg shadow-indigo-500/20 border border-white/20">
+            {{ game.theme.icon || '🎮' }}
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span *ngIf="game.generationStatus === 'ready'" class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-bold rounded-full">
+                جاهزة للعب ⚡
+              </span>
+              <span *ngIf="game.generationStatus === 'generating'" class="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-bold rounded-full animate-pulse">
+                جاري التوليد... ⏳
+              </span>
+            </div>
+            <span class="text-[10px] text-slate-400 font-bold block mt-0.5">
+              {{ game.mutations.length || 0 }} طفرات مبتكرة 🧬
+            </span>
+          </div>
+        </div>
+
+        <!-- Share / Delete -->
+        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button (click)="shareGame($event, game)" class="p-1.5 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white rounded-lg transition" title="مشاركة رابط اللعبة">
+            <lucide-icon [img]="Share2" class="w-3.5 h-3.5"></lucide-icon>
+          </button>
+          <button (click)="deleteGame($event, game.id)" class="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg transition" title="حذف اللعبة">
+            <lucide-icon [img]="Trash2" class="w-3.5 h-3.5"></lucide-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Center / Title & Lore -->
+      <div class="my-auto py-2">
+        <h3 class="text-base sm:text-lg font-black text-white group-hover:text-indigo-300 transition-colors line-clamp-1">
+          <!-- Live Loading State vs Ready State -->
+          <ng-container *ngIf="game.generationStatus === 'generating'">
+            <span class="inline-block animate-pulse text-indigo-300">جاري استحضار اسم اللعبة... ⏳</span>
+          </ng-container>
+          <ng-container *ngIf="game.generationStatus === 'ready'">
+            {{ game.title }}
+          </ng-container>
+        </h3>
+        <p class="text-xs text-slate-400 line-clamp-2 mt-1 leading-relaxed">
+          {{ game.generationStatus === 'generating' ? (game.currentGeneratingStep || 'الذكاء الاصطناعي يقوم ببناء القصة والقوانين والمراحل...') : game.tagline }}
+        </p>
+      </div>
+
+      <!-- Bottom Stats & Play Action -->
+      <div class="flex items-center justify-between gap-2 pt-3 border-t border-white/5">
+        <div class="flex items-center gap-3">
+          <div>
+            <span class="text-[9px] text-slate-500 block font-bold">المراحل</span>
+            <span class="text-xs font-black text-indigo-400 font-mono">{{ game.levels.length || 5 }} مرحلة</span>
+          </div>
+          <div>
+            <span class="text-[9px] text-slate-500 block font-bold">أعلى نتيجة</span>
+            <span class="text-xs font-black text-amber-400 font-mono">{{ game.highScore || 0 }}</span>
+          </div>
+        </div>
+
+        <button 
+          *ngIf="game.generationStatus === 'ready'"
+          (click)="openBriefing(game)"
+          class="px-4 py-2 bg-white text-slate-950 hover:bg-indigo-400 hover:text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-lg group-hover:scale-105">
+          <lucide-icon [img]="Play" class="w-3.5 h-3.5 fill-current"></lucide-icon>
+          <span>العب ⚡</span>
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Genre & Creation Modal -->
+  <div *ngIf="showGenreModal()" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" dir="rtl">
+    <div class="bg-slate-900 border border-indigo-500/30 rounded-3xl p-6 sm:p-8 w-full max-w-xl text-right shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200">
+      
+      <div class="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
+        <div>
+          <h3 class="text-xl font-black text-white flex items-center gap-2">
+            <span>ابتكار لعبة جديدة بالذكاء الاصطناعي</span>
+            <span>🧠✨</span>
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5">اختر طابعاً مفضلاً أو دع الذكاء الاصطناعي يقرر بحرية مطلقة!</p>
+        </div>
+        <button (click)="showGenreModal.set(false)" class="p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition">
+          ✕
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+        
+        <!-- Pure Autonomous AI Choice -->
+        <div 
+          (click)="startCreateGame('random')" 
+          class="col-span-1 sm:col-span-2 p-4 bg-gradient-to-r from-indigo-950/60 via-purple-950/60 to-slate-900/80 border-2 border-indigo-500/40 hover:border-indigo-400 rounded-2xl cursor-pointer transition-all hover:scale-[1.01] flex items-center gap-3 group">
+          <div class="w-12 h-12 rounded-xl bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-2xl shrink-0 group-hover:scale-110 transition-transform">
+            🎲
+          </div>
+          <div>
+            <h4 class="text-sm font-black text-white group-hover:text-indigo-300">خيال حر ومفاجأة كاملة (Pure Autonomous AI)</h4>
+            <p class="text-xs text-slate-400">الذكاء الاصطناعي يختار الصنف، الميكانيكا، والقصة بأقصى درجات الإبداع.</p>
+          </div>
+        </div>
+
+        <!-- Available Genres -->
+        <div *ngFor="let genre of availableGenres" 
+             (click)="startCreateGame(genre.id)"
+             class="p-3.5 bg-slate-950/60 border border-white/10 hover:border-indigo-500/40 hover:bg-indigo-950/20 rounded-2xl cursor-pointer transition-all flex items-center gap-3 group">
+          <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+            {{ genre.icon }}
+          </div>
+          <div>
+            <h4 class="text-xs font-black text-white group-hover:text-indigo-300">{{ genre.label }}</h4>
+            <p class="text-[10px] text-slate-400 line-clamp-1">{{ genre.desc }}</p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Briefing Modal Component -->
+  <app-ai-game-briefing-modal 
+    *ngIf="selectedGameForBriefing()" 
+    [game]="selectedGameForBriefing()!"
+    (close)="selectedGameForBriefing.set(null)"
+    (play)="onPlayFromBriefing($event)">
+  </app-ai-game-briefing-modal>
+
+</div>

@@ -295,6 +295,28 @@ export class WalletService {
     return true;
   }
 
+  depositFunds(amount: number, currency: CurrencyCode = 'EGC', description?: string): boolean {
+    const balCopy = { ...this.balances() };
+    balCopy[currency] = (balCopy[currency] || 0) + amount;
+    this.balances.set(balCopy);
+
+    const fromDef = CURRENCIES.find(c => c.code === currency);
+    const newTx: Transaction = {
+      id: `tx_${Math.random().toString(36).substr(2, 9)}`,
+      amount: amount,
+      type: 'deposit',
+      currency,
+      status: 'completed',
+      description: description || `إيداع رصيد جديد: +${amount} ${fromDef?.nameAr || currency}`,
+      timestamp: new Date().toISOString()
+    };
+
+    this.transactions.update(txs => [newTx, ...txs]);
+    this.saveState();
+    this.syncFundsToFirebase(balCopy, this.frozenBalances(), newTx);
+    return true;
+  }
+
   private async syncFundsToFirebase(balances: Record<CurrencyCode, number>, frozenBalances: Record<CurrencyCode, number>, transaction: Transaction): Promise<void> {
     const userId = this.firebaseService.getUserId();
     if (!userId) return;

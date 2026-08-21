@@ -2,311 +2,609 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>جوابك فخ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Absurdo 🤣🃏💥</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&family=Bungee&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; font-family: system-ui, sans-serif; background: #e2e8f0; color: #0f172a; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        .table { flex: 1; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-        
-        .black-card { background: #000; color: white; width: 300px; min-height: 200px; padding: 30px; border-radius: 20px; font-size: 28px; font-weight: 900; line-height: 1.4; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; display: flex; align-items: center; justify-content: center; margin-bottom: 40px; position: relative; }
-        .black-card::after { content: 'جوابك فخ'; position: absolute; bottom: 15px; left: 20px; font-size: 14px; font-weight: bold; color: #fff; opacity: 0.5; }
-        
-        .submissions { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; min-height: 200px; }
-        
-        .white-card { background: white; color: #000; width: 200px; min-height: 250px; padding: 20px; border-radius: 15px; font-size: 22px; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s; position: relative; display: flex; align-items: flex-start; justify-content: center; text-align: center; border: 2px solid transparent; }
-        .white-card:hover { transform: translateY(-10px); }
-        .white-card::after { content: 'جوابك فخ'; position: absolute; bottom: 15px; left: 15px; font-size: 12px; font-weight: bold; color: #000; opacity: 0.3; }
-        .white-card.selected { border-color: #ef4444; transform: translateY(-20px); box-shadow: 0 20px 25px rgba(239,68,68,0.2); }
-        
-        .hand { background: #cbd5e1; padding: 20px; display: flex; gap: 15px; overflow-x: auto; box-shadow: inset 0 5px 10px rgba(0,0,0,0.05); }
-        .hand .white-card { min-width: 150px; min-height: 200px; font-size: 18px; }
-        
-        .hud { position: absolute; top: 20px; right: 20px; left: 20px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
-        .judge-badge { background: #facc15; color: black; padding: 10px 20px; border-radius: 20px; font-size: 18px; font-weight: 900; box-shadow: 0 4px 6px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; }
-        
-        .players-list { background: rgba(255,255,255,0.9); padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); pointer-events: auto; }
-        .player-score { font-weight: bold; margin-bottom: 5px; font-size: 16px; }
-        
-        #btn-confirm { display: none; margin-top: 20px; background: #000; color: white; padding: 15px 40px; border-radius: 30px; font-size: 20px; font-weight: bold; cursor: pointer; border: none; }
-        #btn-confirm:hover { background: #333; }
-        
-        .toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #ef4444; color: white; padding: 20px 40px; border-radius: 20px; font-size: 28px; font-weight: bold; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 200; box-shadow: 0 10px 30px rgba(239,68,68,0.5); }
+        :root {
+            --bg-comic: radial-gradient(circle at center, #312e81 0%, #0f172a 100%);
+            --accent-yellow: #facc15;
+            --accent-pink: #f43f5e;
+            --accent-cyan: #06b6d4;
+            --card-black: linear-gradient(145deg, #18181b, #09090b);
+            --card-white: linear-gradient(145deg, #ffffff, #f1f5f9);
+        }
+
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            user-select: none; -webkit-user-select: none;
+            font-family: 'Tajawal', system-ui, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(rgba(15, 23, 42, 0.85), rgba(30, 27, 75, 0.9)), url('bg.png') no-repeat center center fixed;
+            background-size: cover;
+            color: #ffffff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Comic Pop Background Pattern */
+        .comic-bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Top HUD */
+        .hud {
+            position: relative;
+            z-index: 20;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 24px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 2px solid rgba(244, 63, 94, 0.4);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        .brand-logo {
+            font-family: 'Bungee', 'Tajawal', sans-serif;
+            font-size: 1.5rem;
+            color: var(--accent-yellow);
+            text-shadow: 2px 2px 0px #f43f5e, 4px 4px 0px #000;
+            letter-spacing: 1px;
+        }
+
+        .judge-pill {
+            background: linear-gradient(135deg, #facc15, #f59e0b);
+            color: #000;
+            padding: 6px 18px;
+            border-radius: 25px;
+            font-weight: 900;
+            font-size: 0.95rem;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.5);
+            display: flex; align-items: center; gap: 8px;
+            animation: bounce 1.5s infinite;
+        }
+
+        .scores-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .score-chip {
+            background: rgba(30, 41, 59, 0.9);
+            border: 1.5px solid rgba(255, 255, 255, 0.15);
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .score-chip.active { border-color: var(--accent-yellow); box-shadow: 0 0 10px rgba(250, 204, 21, 0.4); }
+
+        /* Main Game Table Area */
+        .table {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        /* Black Prompt Card (Question) */
+        .black-card {
+            background: var(--card-black);
+            color: #fff;
+            width: 90%;
+            max-width: 480px;
+            min-height: 180px;
+            padding: 28px 32px;
+            border-radius: 24px;
+            font-size: 1.4rem;
+            font-weight: 900;
+            line-height: 1.6;
+            text-align: center;
+            border: 3px solid rgba(244, 63, 94, 0.7);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8), 0 0 25px rgba(244, 63, 94, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+            position: relative;
+            transform: perspective(600px) rotateX(4deg);
+            transition: transform 0.3s ease;
+        }
+        .black-card:hover { transform: perspective(600px) rotateX(0deg) scale(1.02); }
+        .black-card::after {
+            content: 'ABSURDO 🤣';
+            position: absolute;
+            bottom: 12px;
+            left: 20px;
+            font-family: 'Bungee', sans-serif;
+            font-size: 0.75rem;
+            color: var(--accent-yellow);
+            opacity: 0.8;
+        }
+
+        /* Submissions / Answers Area */
+        .instruction-badge {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1.5px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            padding: 6px 20px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .submissions {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            max-width: 900px;
+            min-height: 160px;
+        }
+
+        /* White Cards (Answers) */
+        .white-card {
+            background: var(--card-white);
+            color: #0f172a;
+            width: 170px;
+            min-height: 210px;
+            padding: 20px 16px;
+            border-radius: 20px;
+            font-size: 1.15rem;
+            font-weight: 900;
+            line-height: 1.4;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            text-align: right;
+            border: 3px solid transparent;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s, box-shadow 0.2s;
+        }
+        .white-card:hover {
+            transform: translateY(-12px) scale(1.05);
+            box-shadow: 0 18px 35px rgba(0, 0, 0, 0.6);
+            border-color: var(--accent-yellow);
+        }
+        .white-card.selected {
+            border-color: var(--accent-pink);
+            transform: translateY(-18px) scale(1.08);
+            box-shadow: 0 20px 40px rgba(244, 63, 94, 0.4);
+        }
+        .white-card.revealed {
+            animation: cardFlip 0.4s ease forwards;
+        }
+        .white-card::after {
+            content: '🃏 Absurdo';
+            font-size: 0.75rem;
+            font-weight: 900;
+            color: #94a3b8;
+            margin-top: 10px;
+        }
+
+        /* Hand / Cards in Player's Deck */
+        .hand-container {
+            position: relative;
+            z-index: 20;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(16px);
+            border-top: 2px solid rgba(250, 204, 21, 0.4);
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.6);
+        }
+        .hand-title {
+            font-size: 0.85rem;
+            color: var(--accent-yellow);
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .hand-cards {
+            display: flex;
+            gap: 14px;
+            overflow-x: auto;
+            padding: 8px 4px 14px;
+            scroll-behavior: smooth;
+        }
+        .hand-cards .white-card {
+            min-width: 145px;
+            min-height: 180px;
+            font-size: 1.05rem;
+            flex-shrink: 0;
+        }
+
+        /* Buttons */
+        .btn-action {
+            background: linear-gradient(135deg, #f43f5e, #e11d48);
+            color: #fff;
+            border: none;
+            padding: 14px 36px;
+            border-radius: 28px;
+            font-size: 1.15rem;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(244, 63, 94, 0.5);
+            transition: transform 0.15s, box-shadow 0.2s;
+            margin-top: 15px;
+        }
+        .btn-action:hover { transform: scale(1.06); box-shadow: 0 12px 35px rgba(244, 63, 94, 0.7); }
+        .btn-action:active { transform: scale(0.96); }
+
+        /* Setup / Welcome Screen */
+        .setup-box {
+            background: rgba(15, 23, 42, 0.95);
+            border: 2px solid var(--accent-pink);
+            padding: 40px 30px;
+            border-radius: 30px;
+            text-align: center;
+            max-width: 480px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(244, 63, 94, 0.3);
+        }
+        .setup-title {
+            font-family: 'Bungee', 'Tajawal', sans-serif;
+            font-size: 2.8rem;
+            color: var(--accent-yellow);
+            text-shadow: 3px 3px 0px #f43f5e, 6px 6px 0px #000;
+            margin-bottom: 10px;
+        }
+
+        /* Toast Announcement */
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background: linear-gradient(135deg, #f43f5e, #facc15);
+            color: #000;
+            padding: 24px 45px;
+            border-radius: 28px;
+            font-size: 1.8rem;
+            font-weight: 900;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 300;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8);
+            text-align: center;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        @keyframes cardFlip {
+            0% { transform: rotateY(90deg); opacity: 0; }
+            100% { transform: rotateY(0deg); opacity: 1; }
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
     </style>
 </head>
 <body>
+    <div class="comic-bg-grid"></div>
+
+    <!-- Top HUD Header -->
     <div class="hud">
-        <div class="judge-badge" id="judge-badge" style="display: none;">⚖️ أنت القاضي في هذه الجولة!</div>
-        <div class="players-list" id="players-list">
-            <!-- Scores -->
-        </div>
+        <div class="brand-logo">ABSURDO 🤣💥</div>
+        <div class="judge-pill" id="judge-badge" style="display: none;">⚖️ أنت القاضي في هذه الجولة!</div>
+        <div class="scores-row" id="players-list"></div>
     </div>
     
+    <!-- Table Workspace -->
     <div class="table">
-        <div id="setup-view">
-            <h1 style="font-size: 48px; margin-bottom: 10px;">جوابك فخ</h1>
-            <p style="font-size: 20px; margin-bottom: 30px;">لعبة الحفلات الأكثر إضحاكاً (تحتاج 3 لاعبين)</p>
-            <button id="start-btn" onclick="startGame()" style="background: #ef4444; color: white; border: none; padding: 15px 40px; border-radius: 30px; font-size: 24px; font-weight: bold; cursor: pointer; display: none;">بدء اللعبة</button>
+        <!-- Setup View -->
+        <div id="setup-view" class="setup-box">
+            <div class="setup-title">ABSURDO 🤣</div>
+            <p style="font-size: 1.1rem; color: #cbd5e1; margin-bottom: 25px; line-height: 1.6;">
+                لعبة الحفلات والبطاقات الكوميدية الأكثر جنوناً وإضحاكاً! املأ الفراغات بأظرف وأغرب إجابات، واكسب رضا القاضي!
+            </p>
+            <button id="start-btn" onclick="startGame()" class="btn-action">بدء اللعبة الفورية 🚀</button>
         </div>
         
+        <!-- Game View -->
         <div id="game-view" style="display: none; flex-direction: column; align-items: center; width: 100%;">
             <div class="black-card" id="black-card">...</div>
-            <h3 id="instruction-text" style="color: #64748b; margin-bottom: 20px;">اللاعبون يختارون بطاقاتهم...</h3>
+            <div class="instruction-badge" id="instruction-text">اللاعبون يختارون بطاقاتهم الكوميدية...</div>
             <div class="submissions" id="submissions"></div>
-            <button id="btn-confirm" onclick="confirmSelection()">تأكيد الاختيار</button>
+            <button id="btn-confirm" class="btn-action" style="display: none;" onclick="confirmSelection()">تأكيد الاختيار 🎯</button>
         </div>
     </div>
     
-    <div class="hand" id="hand" style="display: none;"></div>
+    <!-- Player's Hand of White Cards -->
+    <div class="hand-container" id="hand-panel" style="display: none;">
+        <div class="hand-title">
+            <span>🃏 بطاقاتك المتاحة (اختر بطاقة وأرسلها):</span>
+            <span id="hand-count">5 بطاقات</span>
+        </div>
+        <div class="hand-cards" id="hand"></div>
+    </div>
 
+    <!-- Toast Modal -->
     <div class="toast" id="toast"></div>
 
     <script>
         const blackCardsDB = [
             "الشيء الوحيد الذي يخيفني أكثر من الموت هو ____.",
-            "اكتشفت مؤخراً أن سر السعادة هو ____.",
-            "ما هي القوة الخارقة الأسوأ على الإطلاق؟ ____.",
-            "في حقيبتي دائماً يوجد ____ تحسباً لأي طارئ.",
-            "السبب الحقيقي وراء تأخري عن العمل اليوم كان ____."
+            "اكتشفت مؤخراً أن سر السعادة الحقيقي هو ____.",
+            "ما هي القوة الخارقة الأكثر إحراجاً على الإطلاق؟ ____.",
+            "في حقيبتي دائماً يوجد ____ تحسباً لأي كارثة مفاجئة.",
+            "السبب الحقيقي وراء تأخري عن العمل اليوم كان ____.",
+            "عندما أكون وحيداً في الغرفة أحب الاستماع إلى ____.",
+            "أفضل نصيحة سمعتها في حياتي: لا تثق أبداً في شخص يملك ____.",
+            "لو كان بإمكاني حظر شيء واحد من الكوكب فسيكون ____."
         ];
         
         const whiteCardsDB = [
-            "خروف يرتدي نظارة شمسية", "أغاني الأطفال المرعبة", "البصل المفروم", "مدير غاضب", 
-            "Wi-Fi مجاني لكنه بطيء جداً", "كوب قهوة فارغ", "النوم لمدة 14 ساعة", "الضحك في جنازة",
-            "نسيان اسم شخص تتحدث معه", "التظاهر بأنك تفهم الفيزياء الكمية", "صوت المكنسة الكهربائية"
+            "خروف يرتدي نظارة شمسية ويدخن", "أغاني الأطفال المرعبة في منتصف الليل", "البصل المفروم مع الشوكولاتة", "مدير غاضب يتحدث بالصينية", 
+            "واي فاي مجاني لكنه بطيء جداً", "كوب قهوة مسكوب على اللابتوب", "النوم لمدة 16 ساعة متواصلة", "الضحك في مواقف غير مناسبة",
+            "نسيان اسم شخص تتحدث معه منذ ساعة", "التظاهر بفهم الفيزياء الكمية", "صوت المكنسة الكهربائية يوم الجمعة صباحاً",
+            "رسالة صوتية مدتها 9 دقائق", "شاحن هاتف يعمل بزاوية معينة فقط", "طماطم معصورة في الجيب", "بطة تلاحقك بنظرات مشبوهة"
         ];
         
         let state = {
             status: 'waiting',
-            players: [], // {id, score, isJudge}
+            players: [],
             currentBlackCard: '',
-            submissions: [], // {playerId, cardText, isRevealed}
+            submissions: [],
             judgeId: null,
             roundWinner: null
         };
 
-        let myId = 'p_' + Math.floor(Math.random() * 1000);
-        let isHost = false;
+        let myId = 'player_' + Math.floor(Math.random() * 1000);
+        let myName = 'أنت (البطل) 👑';
+        let isHost = true;
         let myHand = [];
         let mySubmission = null;
         let selectedSubmissionIdx = -1;
 
-        // WebRTC
-        window.addEventListener('message', (event) => {
-            const data = event.data;
-            if (!data || !data.type) return;
+        // Web Audio Synthesizer
+        let audioCtx = null;
+        function playSfx(type) {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
 
-            if (data.type === 'SYNC_STATE' && !isHost) {
-                state = data.state;
-                render();
-            } else if (data.type === 'DEAL_CARDS' && data.target === myId) {
-                myHand.push(...data.cards);
-                render();
-            } else if (data.type === 'PLAYER_JOINED' && isHost) {
-                if (!state.players.find(p => p.id === data.playerId)) {
-                    state.players.push({ id: data.playerId, score: 0, isJudge: false });
-                    broadcastState();
-                    renderSetup();
+                if (type === 'card') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                    osc.start(now); osc.stop(now + 0.12);
+                } else if (type === 'win') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.1);
+                    osc.frequency.setValueAtTime(783.99, now + 0.2);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now); osc.stop(now + 0.35);
                 }
-            } else if (data.type === 'SUBMIT_CARD' && isHost) {
-                state.submissions.push({ playerId: data.playerId, cardText: data.cardText, isRevealed: false });
-                checkAllSubmitted();
-            } else if (data.type === 'JUDGE_WINNER' && isHost) {
-                declareWinner(data.playerId);
-            }
-        });
-
-        setTimeout(() => window.parent.postMessage({ type: 'PLAYER_JOINED', playerId: myId }, '*'), 500);
-
-        if (new URLSearchParams(window.location.search).get('mode') === 'local') {
-            isHost = true;
-            state.players.push({id: myId, score: 0, isJudge: false});
-            for(let i=0; i<2; i++) state.players.push({id: 'Bot_'+i, score: 0, isJudge: false});
-            renderSetup();
+            } catch (e) {}
         }
 
-        function renderSetup() {
-            if(!isHost) return;
-            const btn = document.getElementById('start-btn');
-            if (state.players.length >= 3) btn.style.display = 'block';
-        }
+        // Initialize Local Game with 2 Smart Bots
+        window.onload = () => {
+            state.players.push({ id: myId, name: myName, score: 0, isJudge: false });
+            state.players.push({ id: 'bot_1', name: 'الروبوت الضاحك 🤖', score: 0, isJudge: false });
+            state.players.push({ id: 'bot_2', name: 'مستر عبثي 🤡', score: 0, isJudge: false });
+            renderScores();
+        };
 
-        // Host Logic
         function startGame() {
-            startRound();
+            document.getElementById('setup-view').style.display = 'none';
+            document.getElementById('game-view').style.display = 'flex';
+            document.getElementById('hand-panel').style.display = 'flex';
             
-            // Deal initial 5 cards to everyone
-            state.players.forEach(p => {
-                const cards = getRandomWhiteCards(5);
-                if (p.id === myId) myHand.push(...cards);
-                else window.parent.postMessage({ type: 'DEAL_CARDS', target: p.id, cards }, '*');
-            });
+            myHand = getRandomWhiteCards(6);
+            startRound();
         }
 
         function startRound() {
             state.status = 'playing';
             state.submissions = [];
             state.roundWinner = null;
+            mySubmission = null;
+            selectedSubmissionIdx = -1;
+            document.getElementById('btn-confirm').style.display = 'none';
+            
             state.currentBlackCard = blackCardsDB[Math.floor(Math.random() * blackCardsDB.length)];
-            
-            // Rotate judge
-            const oldJudgeIdx = state.players.findIndex(p => p.isJudge);
-            if(oldJudgeIdx !== -1) state.players[oldJudgeIdx].isJudge = false;
-            
-            const newJudgeIdx = oldJudgeIdx === -1 ? 0 : (oldJudgeIdx + 1) % state.players.length;
-            state.players[newJudgeIdx].isJudge = true;
-            state.judgeId = state.players[newJudgeIdx].id;
-            
-            broadcastState();
-        }
+            document.getElementById('black-card').innerText = state.currentBlackCard;
 
-        function getRandomWhiteCards(count) {
-            let cards = [];
-            for(let i=0; i<count; i++) cards.push(whiteCardsDB[Math.floor(Math.random() * whiteCardsDB.length)]);
-            return cards;
-        }
+            // Pick next judge
+            const pCount = state.players.length;
+            const currentJudgeIdx = state.players.findIndex(p => p.id === state.judgeId);
+            const nextJudgeIdx = (currentJudgeIdx + 1) % pCount;
+            
+            state.players.forEach((p, idx) => p.isJudge = (idx === nextJudgeIdx));
+            state.judgeId = state.players[nextJudgeIdx].id;
 
-        function broadcastState() {
-            if(isHost) window.parent.postMessage({ type: 'SYNC_STATE', state }, '*');
-            render();
-        }
-
-        function checkAllSubmitted() {
-            if (state.submissions.length === state.players.length - 1) { // Everyone except judge
-                state.status = 'judging';
-                // Shuffle submissions so judge doesn't know who is who
-                state.submissions.sort(() => Math.random() - 0.5);
-                broadcastState();
+            const isMeJudge = (state.judgeId === myId);
+            document.getElementById('judge-badge').style.display = isMeJudge ? 'flex' : 'none';
+            
+            if (isMeJudge) {
+                document.getElementById('instruction-text').innerText = 'أنت القاضي! انتظر حتى يقدم باقي اللاعبين بطاقاتهم لاختيار أظرف إجابة ⚖️';
             } else {
-                broadcastState();
+                document.getElementById('instruction-text').innerText = 'اختر أفضل بطاقة مضحكة من يدك بالأسفل لتملأ الفراغ!';
             }
-        }
 
-        function declareWinner(winnerId) {
-            const p = state.players.find(p => p.id === winnerId);
-            if(p) p.score++;
-            state.status = 'round_over';
-            state.roundWinner = winnerId;
-            broadcastState();
-            
+            renderScores();
+            renderHand();
+            renderSubmissions();
+
+            // Simulate Bot Submissions after 1.5s
             setTimeout(() => {
-                // Deal 1 card to everyone who submitted
                 state.players.forEach(p => {
-                    if (p.id !== state.judgeId) {
-                        const card = getRandomWhiteCards(1);
-                        if (p.id === myId) myHand.push(...card);
-                        else window.parent.postMessage({ type: 'DEAL_CARDS', target: p.id, cards: card }, '*');
+                    if (p.id !== state.judgeId && p.id !== myId) {
+                        const botCards = getRandomWhiteCards(1);
+                        state.submissions.push({ playerId: p.id, cardText: botCards[0], isRevealed: false });
                     }
                 });
-                startRound();
-            }, 5000);
+                renderSubmissions();
+            }, 1200);
         }
 
-        // Guest/UI Logic
-        function render() {
-            if (state.status === 'waiting') return;
-            
-            document.getElementById('setup-view').style.display = 'none';
-            document.getElementById('game-view').style.display = 'flex';
-            document.getElementById('hand').style.display = 'flex';
-            
-            document.getElementById('black-card').innerText = state.currentBlackCard;
-            
-            const amIJudge = state.judgeId === myId;
-            document.getElementById('judge-badge').style.display = amIJudge ? 'flex' : 'none';
-            
-            let instruction = '';
-            if (state.status === 'playing') {
-                instruction = amIJudge ? 'اللاعبون يختارون إجاباتهم...' : (mySubmission ? 'في انتظار بقية اللاعبين...' : 'اختر ورقة للإجابة!');
-            } else if (state.status === 'judging') {
-                instruction = amIJudge ? 'اختر الإجابة الأكثر إضحاكاً!' : 'القاضي يقرأ الإجابات ويختار الفائز...';
-            } else if (state.status === 'round_over') {
-                instruction = `الفائز في هذه الجولة هو: ${state.roundWinner === myId ? 'أنت!' : 'لاعب '+state.roundWinner.substring(0,3)}`;
-            }
-            document.getElementById('instruction-text').innerText = instruction;
-
-            // Render Submissions
-            const subContainer = document.getElementById('submissions');
-            subContainer.innerHTML = '';
-            state.submissions.forEach((sub, idx) => {
-                const card = document.createElement('div');
-                card.className = `white-card ${selectedSubmissionIdx === idx ? 'selected' : ''}`;
-                
-                // Show text only during judging or if it's over
-                if (state.status === 'judging' || state.status === 'round_over') {
-                    card.innerText = sub.cardText;
-                    if (amIJudge && state.status === 'judging') {
-                        card.onclick = () => { selectedSubmissionIdx = idx; render(); document.getElementById('btn-confirm').style.display = 'block'; };
-                    }
-                    if (state.status === 'round_over' && sub.playerId === state.roundWinner) {
-                        card.style.borderColor = '#facc15'; card.style.background = '#fef08a';
-                    }
-                } else {
-                    card.innerText = 'بطاقة جاهزة';
-                    card.style.background = '#94a3b8';
-                }
-                subContainer.appendChild(card);
+        function renderScores() {
+            const list = document.getElementById('players-list');
+            list.innerHTML = '';
+            state.players.forEach(p => {
+                const chip = document.createElement('div');
+                chip.className = `score-chip ${p.isJudge ? 'active' : ''}`;
+                chip.innerHTML = `${p.isJudge ? '👑 ' : ''}<span>${p.name}:</span> <b style="color:#facc15">${p.score}⭐</b>`;
+                list.appendChild(chip);
             });
+        }
 
-            // Render Hand
-            const handContainer = document.getElementById('hand');
-            handContainer.innerHTML = '';
+        function renderHand() {
+            const hand = document.getElementById('hand');
+            hand.innerHTML = '';
+            const isMeJudge = (state.judgeId === myId);
+
+            if (isMeJudge) {
+                document.getElementById('hand-panel').style.opacity = '0.5';
+                document.getElementById('hand-panel').style.pointerEvents = 'none';
+            } else {
+                document.getElementById('hand-panel').style.opacity = '1';
+                document.getElementById('hand-panel').style.pointerEvents = 'auto';
+            }
+
             myHand.forEach((cardText, idx) => {
                 const card = document.createElement('div');
                 card.className = 'white-card';
                 card.innerText = cardText;
-                
-                if (!amIJudge && state.status === 'playing' && !mySubmission) {
-                    card.onclick = () => submitCard(idx);
-                } else {
-                    card.style.opacity = '0.5';
-                    card.style.cursor = 'not-allowed';
-                }
-                handContainer.appendChild(card);
+                card.onclick = () => selectMyCard(idx);
+                hand.appendChild(card);
             });
-
-            // Render Scores
-            const playersList = document.getElementById('players-list');
-            playersList.innerHTML = '';
-            state.players.forEach(p => {
-                const div = document.createElement('div');
-                div.className = 'player-score';
-                div.innerText = `${p.id === myId ? 'أنت' : 'لاعب '+p.id.substring(0,3)}: ${p.score} نقطة ${p.isJudge ? ' (القاضي)' : ''}`;
-                if (p.id === state.roundWinner) div.style.color = '#16a34a';
-                playersList.appendChild(div);
-            });
-            
-            // Hide confirm button unless judge selected something
-            if (state.status !== 'judging' || !amIJudge) document.getElementById('btn-confirm').style.display = 'none';
-            if (state.status === 'playing') { mySubmission = null; selectedSubmissionIdx = -1; }
+            document.getElementById('hand-count').innerText = `${myHand.length} بطاقات`;
         }
 
-        function submitCard(idx) {
-            const cardText = myHand[idx];
-            myHand.splice(idx, 1);
-            mySubmission = cardText;
-            render();
-            if (isHost) {
-                state.submissions.push({ playerId: myId, cardText, isRevealed: false });
-                checkAllSubmitted();
-            } else {
-                window.parent.postMessage({ type: 'SUBMIT_CARD', playerId: myId, cardText }, '*');
+        function selectMyCard(idx) {
+            if (state.judgeId === myId || mySubmission) return;
+            playSfx('card');
+
+            const chosenText = myHand.splice(idx, 1)[0];
+            mySubmission = chosenText;
+            state.submissions.push({ playerId: myId, cardText: chosenText, isRevealed: false });
+
+            // Refill hand
+            myHand.push(...getRandomWhiteCards(1));
+            renderHand();
+            renderSubmissions();
+
+            // When all submitted, reveal cards
+            checkAllSubmitted();
+        }
+
+        function checkAllSubmitted() {
+            const required = state.players.length - 1;
+            if (state.submissions.length >= required) {
+                state.status = 'judging';
+                // Reveal submissions
+                state.submissions.forEach(s => s.isRevealed = true);
+                renderSubmissions();
+
+                if (state.judgeId === myId) {
+                    document.getElementById('instruction-text').innerText = 'انقر على الإجابة الأكثر إضحاكاً لاختيار الفائز بالنقاط! 🏆';
+                } else {
+                    document.getElementById('instruction-text').innerText = 'القاضي يقرأ الإجابات الآن لاختيار الإجابة الفائزة...';
+                    // If bot is judge, pick randomly after 2.5s
+                    setTimeout(() => {
+                        const randomWinner = state.submissions[Math.floor(Math.random() * state.submissions.length)];
+                        declareWinner(randomWinner.playerId, randomWinner.cardText);
+                    }, 2600);
+                }
             }
         }
 
-        function confirmSelection() {
-            const winner = state.submissions[selectedSubmissionIdx];
-            if(!winner) return;
-            
-            document.getElementById('btn-confirm').style.display = 'none';
-            if (isHost) declareWinner(winner.playerId);
-            else window.parent.postMessage({ type: 'JUDGE_WINNER', playerId: winner.playerId }, '*');
+        function renderSubmissions() {
+            const container = document.getElementById('submissions');
+            container.innerHTML = '';
+
+            state.submissions.forEach((sub, idx) => {
+                const card = document.createElement('div');
+                card.className = `white-card ${sub.isRevealed ? 'revealed' : ''} ${selectedSubmissionIdx === idx ? 'selected' : ''}`;
+                
+                if (sub.isRevealed) {
+                    card.innerText = sub.cardText;
+                    if (state.judgeId === myId) {
+                        card.onclick = () => {
+                            playSfx('card');
+                            selectedSubmissionIdx = idx;
+                            renderSubmissions();
+                            document.getElementById('btn-confirm').style.display = 'block';
+                        };
+                    }
+                } else {
+                    card.style.background = 'linear-gradient(135deg, #1e293b, #0f172a)';
+                    card.style.color = '#facc15';
+                    card.innerText = '❓ إجابة سرية';
+                }
+                container.appendChild(card);
+            });
         }
 
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.innerText = msg;
-            t.style.opacity = '1';
-            setTimeout(() => t.style.opacity = '0', 3000);
+        function confirmSelection() {
+            if (selectedSubmissionIdx >= 0) {
+                const winnerSub = state.submissions[selectedSubmissionIdx];
+                declareWinner(winnerSub.playerId, winnerSub.cardText);
+            }
+        }
+
+        function declareWinner(winnerPlayerId, cardText) {
+            playSfx('win');
+            const winner = state.players.find(p => p.id === winnerPlayerId);
+            if (winner) winner.score += 1;
+
+            const toast = document.getElementById('toast');
+            toast.innerHTML = `🎉 الفائز بالجولة: <b style="color:#fff">${winner ? winner.name : 'لاعب'}</b>!<br><span style="font-size:1.1rem; color:#000;">"${cardText}"</span>`;
+            toast.classList.add('show');
+
+            renderScores();
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                startRound();
+            }, 3200);
+        }
+
+        function getRandomWhiteCards(count) {
+            const list = [];
+            for (let i = 0; i < count; i++) {
+                list.push(whiteCardsDB[Math.floor(Math.random() * whiteCardsDB.length)]);
+            }
+            return list;
         }
     </script>
 </body>

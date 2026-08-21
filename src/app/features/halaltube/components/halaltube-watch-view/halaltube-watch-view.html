@@ -194,6 +194,7 @@
 
 <app-playlist-selector-modal
   [isOpen]="showPlaylistModal()"
+  [videoToSave]="video()"
   (close)="closePlaylistModal()"
   (select)="onPlaylistSelect($event)">
 </app-playlist-selector-modal>

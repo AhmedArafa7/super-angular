@@ -7,9 +7,15 @@ import { ContextMenuItem } from '../../../../../shared/components/context-menu/c
 import { ToastService } from '../../../../../core/services/toast.service';
 import { VideoDownloadService } from '../../../../../core/services/video-download.service';
 import { IndexedDBService } from '../../../../../core/services/indexed-db.service';
-import { LucideAngularModule, MoreVertical, ListPlus, BookmarkPlus, Download, Share2, VideoOff, Loader2 } from 'lucide-angular';
+import { 
+  LucideAngularModule, MoreVertical, ListPlus, BookmarkPlus, Download, Share2, 
+  VideoOff, Loader2, ListVideo, Shuffle, Repeat, CheckCircle2, X, ChevronDown, 
+  ChevronUp, Play, Check, Flame
+} from 'lucide-angular';
 
 import { halaltubeService } from '../../../halaltube.service';
+import { HalaltubePlaylistService } from '../../../services/halaltube-playlist.service';
+import { HalalPlaylistVideo } from '../../../models/halaltube-playlist.model';
 
 @Component({
   selector: 'app-watch-sidebar',
@@ -21,6 +27,7 @@ import { halaltubeService } from '../../../halaltube.service';
 export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   videoState = inject(VideoStateService);
   halaltube = inject(halaltubeService);
+  playlistSvc = inject(HalaltubePlaylistService);
   router = inject(Router);
   contextMenu = inject(ContextMenuService);
 
@@ -36,6 +43,19 @@ export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   Share2 = Share2;
   VideoOff = VideoOff;
   Loader2 = Loader2;
+  ListVideo = ListVideo;
+  Shuffle = Shuffle;
+  Repeat = Repeat;
+  CheckCircle2 = CheckCircle2;
+  X = X;
+  ChevronDown = ChevronDown;
+  ChevronUp = ChevronUp;
+  Play = Play;
+  Check = Check;
+  Flame = Flame;
+
+  // Playlist Queue State
+  isQueueExpanded = signal<boolean>(true);
 
   // Filtering
   categories = ['الكل', 'ذات صلة', 'نفس القناة', 'حديثاً'];
@@ -162,6 +182,58 @@ export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   setCategory(category: string) {
     this.activeCategory.set(category);
     this.currentPage.set(1);
+  }
+
+  // Playlist Queue Actions
+  playQueueVideo(video: HalalPlaylistVideo) {
+    const playlist = this.playlistSvc.activePlaylist();
+    if (!playlist) return;
+
+    const idx = this.playlistSvc.activeQueue().findIndex(v => v.id === video.id);
+    if (idx >= 0) {
+      this.playlistSvc.currentQueueIndex.set(idx);
+    }
+
+    this.router.navigate(['/stream/watch', video.id], {
+      queryParams: { list: playlist.id }
+    });
+  }
+
+  async toggleWatched(video: HalalPlaylistVideo, event: Event) {
+    event.stopPropagation();
+    const playlist = this.playlistSvc.activePlaylist();
+    if (!playlist) return;
+
+    await this.playlistSvc.toggleVideoWatched(playlist.id, video.id);
+  }
+
+  toggleAutoplay() {
+    this.playlistSvc.isAutoplay.update(v => !v);
+    this.toast.show(this.playlistSvc.isAutoplay() ? 'تم تفعيل التشغيل التلقائي للتالي ▶️' : 'تم إيقاف التشغيل التلقائي', 'info');
+  }
+
+  toggleLoop() {
+    this.playlistSvc.isLoop.update(v => !v);
+    this.toast.show(this.playlistSvc.isLoop() ? 'تم تفعيل تكرار القائمة 🔁' : 'تم إيقاف تكرار القائمة', 'info');
+  }
+
+  toggleShuffle() {
+    this.playlistSvc.isShuffle.update(v => !v);
+    const playlist = this.playlistSvc.activePlaylist();
+    if (playlist) {
+      this.playlistSvc.initQueue(playlist.id, this.videoState.activeVideo()?.id);
+      this.toast.show(this.playlistSvc.isShuffle() ? 'تم تفعيل الخلط العشوائي 🔀' : 'تم إيقاف الخلط العشوائي', 'info');
+    }
+  }
+
+  dismissQueue() {
+    this.playlistSvc.activePlaylist.set(null);
+    this.playlistSvc.activeQueue.set([]);
+    this.playlistSvc.currentQueueIndex.set(-1);
+    this.router.navigate([], {
+      queryParams: { list: null },
+      queryParamsHandling: 'merge'
+    });
   }
 
   toggleContextMenu(event: MouseEvent, videoId: string) {

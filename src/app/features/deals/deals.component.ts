@@ -1,8 +1,9 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideDynamicIcon } from '@lucide/angular';
-import { DealsService, Deal, Store, DealCategory, DEAL_CATEGORIES } from '../../core/deals.service';
+import { DealsService, Deal, Store, DealCategory, DEAL_CATEGORIES, DealCategoryDefinition } from '../../core/deals.service';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-deals',
@@ -13,70 +14,76 @@ import { DealsService, Deal, Store, DealCategory, DEAL_CATEGORIES } from '../../
 })
 export class DealsComponent {
   dealsService = inject(DealsService);
-  categoriesList = DEAL_CATEGORIES;
+  toast = inject(ToastService);
+
+  // Available Categories
+  categoriesList: DealCategoryDefinition[] = DEAL_CATEGORIES;
 
   // Search input query
   searchQuery = signal<string>('');
 
-  // Active view filters
-  activeView = signal<'browse' | 'store-view'>('browse');
-  selectedStore = signal<Store | null>(null);
+  // Selected Store view filter
+  selectedStoreId = signal<string | null>(null);
 
-  // Dialog popup controllers
-  showAddDeal = false;
-  showAddStore = false;
+  // Dialog Modals State
+  showAddDeal = signal<boolean>(false);
+  showAddStore = signal<boolean>(false);
+  showDealDetails = signal<Deal | null>(null);
 
-  // Form parameters for new deal
+  // New Deal Form State
   newProductName = '';
-  newPrice = 20;
-  newOriginalPrice = 25;
+  newPrice: number | null = null;
+  newOriginalPrice: number | null = null;
   newCategory: DealCategory = 'groceries';
   newUnit = '1 كجم';
   newStoreId = '';
+  newBranchNote = '';
   newExpiresInDays = 7;
 
-  // Form parameters for new store
+  // New Store Form State
   newStoreName = '';
   newStoreType = 'سوبر ماركت';
   newStoreAddress = '';
+  newStorePhone = '';
 
   constructor() {
-    // Select first store by default if available
+    // Set default store
     const stores = this.dealsService.stores();
     if (stores.length > 0) {
       this.newStoreId = stores[0].id;
     }
   }
 
-  // Get active stores list
-  get stores(): Store[] {
-    return this.dealsService.stores();
-  }
+  // Active stores list
+  stores = computed(() => this.dealsService.stores());
 
-  // Filter and sort daily deals
-  get filteredDeals(): Deal[] {
+  // Filtered and Sorted Deals
+  filteredDeals = computed(() => {
     const list = this.dealsService.deals();
     const activeCat = this.dealsService.activeCategory();
     const sortMode = this.dealsService.activeSort();
     const query = this.searchQuery().toLowerCase().trim();
+    const storeId = this.selectedStoreId();
 
     let result = list;
 
     // 1. Filter by Store if selected
-    if (this.activeView() === 'store-view' && this.selectedStore()) {
-      result = result.filter(d => d.storeId === this.selectedStore()?.id);
+    if (storeId) {
+      result = result.filter(d => d.storeId === storeId);
     }
 
-    // 2. Filter by category
+    // 2. Filter by Category
     if (activeCat !== 'all') {
       result = result.filter(d => d.category === activeCat);
     }
 
-    // 3. Filter by search query
+    // 3. Filter by Search Query
     if (query) {
       result = result.filter(d => 
         d.productName.toLowerCase().includes(query) ||
-        d.storeName.toLowerCase().includes(query)
+        d.storeName.toLowerCase().includes(query) ||
+        (d.categoryLabel || '').toLowerCase().includes(query) ||
+        (d.branchNote || '').toLowerCase().includes(query)
       );
     }
 
@@ -88,9 +95,9 @@ export class DealsComponent {
         break;
       case 'discount':
         sorted.sort((a, b) => {
-          const discountA = a.originalPrice ? ((a.originalPrice - a.price) / a.originalPrice) * 100 : 0;
-          const discountB = b.originalPrice ? ((b.originalPrice - b.price) / b.originalPrice) * 100 : 0;
-          return discountB - discountA;
+          const discA = a.originalPrice ? ((a.originalPrice - a.price) / a.originalPrice) * 100 : 0;
+          const discB = b.originalPrice ? ((b.originalPrice - b.price) / b.originalPrice) * 100 : 0;
+          return discB - discA;
         });
         break;
       case 'confirmations':
@@ -102,40 +109,16 @@ export class DealsComponent {
     }
 
     return sorted;
-  }
+  });
 
-  // Switch category filter
+  // Category selection
   setCategory(cat: DealCategory | 'all'): void {
     this.dealsService.activeCategory.set(cat);
   }
 
-  // Switch sorting mode
+  // Sort selection
   setSort(sort: 'price' | 'discount' | 'confirmations' | 'newest'): void {
     this.dealsService.activeSort.set(sort);
-  }
-
-  // View specific store details page
-  viewStore(store: Store): void {
-    this.selectedStore.set(store);
-    this.activeView.set('store-view');
-  }
-
-  // Return to browse view
-  goBack(): void {
-    this.selectedStore.set(null);
-    this.activeView.set('browse');
-    this.searchQuery.set('');
-  }
-
-  // Confirm price accuracy
-  handleConfirm(deal: Deal): void {
-    this.dealsService.confirmDeal(deal.id);
-  }
-
-  // Report inaccurate price
-  handleReport(deal: Deal): void {
-    this.dealsService.reportDeal(deal.id);
-    alert("شكراً لك! لقد تم الإبلاغ عن هذا العرض وسنقوم بمراجعته.");
   }
 
   // Calculate discount percentage
@@ -144,46 +127,106 @@ export class DealsComponent {
     return Math.round(((deal.originalPrice - deal.price) / deal.originalPrice) * 100);
   }
 
-  // Add new deal listing
-  handlePublishDeal(): void {
-    if (!this.newProductName.trim() || !this.newStoreId) return;
+  // Confirm / Upvote deal price
+  async handleConfirm(deal: Deal): Promise<void> {
+    await this.dealsService.confirmDeal(deal.id);
+    this.toast.show(`شكراً لتأكيدك صحة سعر "${deal.productName}" في ${deal.storeName}!`, 'success');
+  }
 
-    this.dealsService.addDeal(
+  // Report inaccurate deal price
+  async handleReport(deal: Deal): Promise<void> {
+    const confirmed = await this.toast.confirm(`هل أنت متأكد من الإبلاغ عن اختلاف سعر "${deal.productName}" في ${deal.storeName}؟`);
+    if (confirmed) {
+      await this.dealsService.reportDeal(deal.id);
+      this.toast.show('تم تسجيل إبلاغك وسيتم مراجعة العرض والتحقق من الأسعار.', 'info');
+    }
+  }
+
+  // Open Add Deal Modal
+  openAddDealModal(): void {
+    const stores = this.dealsService.stores();
+    if (stores.length > 0 && !this.newStoreId) {
+      this.newStoreId = stores[0].id;
+    }
+    this.showAddDeal.set(true);
+  }
+
+  // Save new deal
+  async handleSaveDeal(): Promise<void> {
+    if (!this.newProductName.trim()) {
+      this.toast.show('يرجى كتابة اسم السلعة أو المنتج.', 'error');
+      return;
+    }
+
+    if (!this.newPrice || this.newPrice <= 0) {
+      this.toast.show('يرجى تحديد سعر العرض بشكل صحيح.', 'error');
+      return;
+    }
+
+    if (!this.newStoreId) {
+      this.toast.show('يرجى اختيار المحل أو إضافة محل جديد.', 'error');
+      return;
+    }
+
+    await this.dealsService.addDeal(
       this.newStoreId,
       this.newProductName,
       this.newPrice,
       this.newOriginalPrice || undefined,
       this.newCategory,
-      this.newUnit,
-      this.newExpiresInDays
+      this.newUnit || '1 قطعة',
+      this.newExpiresInDays,
+      this.newBranchNote
     );
 
-    // Reset inputs
+    // Reset Form
     this.newProductName = '';
-    this.newPrice = 20;
-    this.newOriginalPrice = 25;
-    this.newCategory = 'groceries';
+    this.newPrice = null;
+    this.newOriginalPrice = null;
     this.newUnit = '1 كجم';
-    this.showAddDeal = false;
+    this.newBranchNote = '';
+    this.showAddDeal.set(false);
 
-    alert("تهانينا! تم إدراج العرض بنجاح للجميع.");
+    this.toast.show('تمت إضافة عرض السعر بنجاح والمزامنة مع قاعدة البيانات.', 'success');
   }
 
-  // Create new store Node
-  handleCreateStore(): void {
-    if (!this.newStoreName.trim() || !this.newStoreAddress.trim()) return;
+  // Save new store
+  async handleSaveStore(): Promise<void> {
+    if (!this.newStoreName.trim()) {
+      this.toast.show('يرجى كتابة اسم المحل أو السوبرماركت.', 'error');
+      return;
+    }
 
-    const newId = this.dealsService.addStore(
+    const created = await this.dealsService.addStore(
       this.newStoreName,
-      this.newStoreType,
-      this.newStoreAddress
+      this.newStoreType || 'سوبرماركت',
+      this.newStoreAddress || 'الفرع الرئيسي',
+      this.newStorePhone
     );
 
-    this.newStoreId = newId;
+    this.newStoreId = created.id;
     this.newStoreName = '';
     this.newStoreAddress = '';
-    this.showAddStore = false;
+    this.newStorePhone = '';
+    this.showAddStore.set(false);
 
-    alert("تهانينا! تم تسجيل المحل الجديد بنجاح في النظام.");
+    this.toast.show(`تمت إضافة متجر "${created.name}" بنجاح!`, 'success');
+  }
+
+  // Delete deal
+  async handleDeleteDeal(deal: Deal): Promise<void> {
+    const confirmed = await this.toast.confirm(`هل أنت متأكد من حذف عرض "${deal.productName}"؟`);
+    if (confirmed) {
+      await this.dealsService.deleteDeal(deal.id);
+      this.showDealDetails.set(null);
+      this.toast.show('تم حذف عرض السعر بنجاح.', 'info');
+    }
+  }
+
+  // Share Deal
+  shareDeal(deal: Deal): void {
+    const shareText = `سعر ${deal.productName} في ${deal.storeName} بـ ${deal.price} ج.م فقط! 🏪🛒`;
+    navigator.clipboard.writeText(shareText);
+    this.toast.show('تم نسخ تفاصيل العرض إلى الحافظة بنجاح.', 'success');
   }
 }

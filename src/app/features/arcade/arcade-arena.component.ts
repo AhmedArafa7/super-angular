@@ -550,87 +550,120 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
 
   private gameThemes: Record<string, any> = {
     'subway-surfers': {
-      badge: '🚇 SUBWAY SURFERS 3D 🏃‍♂️👮‍♂️',
+      badge: '🛹 LOOT & SCOOT 💨',
       primaryColor: '#f59e0b',
       borderColor: 'rgba(245, 158, 11, 0.7)',
-      floatingEmojis: '🚇   🏃‍♂️   👮‍♂️   🪙   🛹   ⚡',
+      floatingEmojis: '🛹   🚇   🏃‍♂️   🪙   ⚡',
       badgeBg: 'linear-gradient(135deg, #f59e0b, #ea580c, #ef4444)',
       cardBg: 'linear-gradient(145deg, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.96))'
     },
-    'memory-match': {
-      badge: '🧠 MEMORY MATCH 💡',
-      primaryColor: '#38bdf8',
-      borderColor: 'rgba(56, 189, 248, 0.6)',
-      floatingEmojis: '🧠   💡   ❓   ⭐   ✨',
-      badgeBg: 'linear-gradient(135deg, #0284c7, #8b5cf6)'
+    'sonic-runner': {
+      badge: '🏃‍♂️ SONIC 3D RUNNER ⚡',
+      primaryColor: '#3b82f6',
+      borderColor: 'rgba(59, 130, 246, 0.8)',
+      floatingEmojis: '🦔   💍   🌀   👟   ⚡',
+      badgeBg: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+      cardBg: 'linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 58, 138, 0.95))'
+    },
+    'sonic-boom': {
+      badge: '💥 SONIC BOOM 🔵',
+      primaryColor: '#2563eb',
+      borderColor: 'rgba(37, 99, 235, 0.8)',
+      floatingEmojis: '⚡   💥   🦔   💨   🌟',
+      badgeBg: 'linear-gradient(135deg, #1e40af, #3b82f6)'
+    },
+    'riddle-master': {
+      badge: '🧩 RIDDLE MASTER 💡',
+      primaryColor: '#8b5cf6',
+      borderColor: 'rgba(139, 92, 246, 0.8)',
+      floatingEmojis: '🧩   💡   🕵️‍♂️   📜   ✨',
+      badgeBg: 'linear-gradient(135deg, #7c3aed, #a855f7)'
+    },
+    'schulte-table': {
+      badge: '🧠 SCHULTE TABLE ⚡',
+      primaryColor: '#06b6d4',
+      borderColor: 'rgba(6, 182, 212, 0.8)',
+      floatingEmojis: '🧠   ⚡   🔢   ⏱️   🎯',
+      badgeBg: 'linear-gradient(135deg, #0891b2, #06b6d4)'
+    },
+    'abdullah-clinic': {
+      badge: '💻 THE CODE LAB 🧪',
+      primaryColor: '#06b6d4',
+      borderColor: 'rgba(6, 182, 212, 0.8)',
+      floatingEmojis: '💻   🧪   🦾   🧬   ⚡',
+      badgeBg: 'linear-gradient(135deg, #0891b2, #3b82f6)'
+    },
+    'mindustry': {
+      badge: '🤖 BOTS & BLOCKS 🧱',
+      primaryColor: '#f59e0b',
+      borderColor: 'rgba(245, 158, 11, 0.8)',
+      floatingEmojis: '🤖   🧱   ⚡   🏭   ⚙️',
+      badgeBg: 'linear-gradient(135deg, #d97706, #ea580c)'
+    },
+    'funny-answers': {
+      badge: '🤣 ABSURDO 🃏',
+      primaryColor: '#f43f5e',
+      borderColor: 'rgba(244, 63, 94, 0.8)',
+      floatingEmojis: '🤣   🃏   💥   🤡   👑',
+      badgeBg: 'linear-gradient(135deg, #f43f5e, #facc15)',
+      cardBg: 'linear-gradient(145deg, rgba(30, 27, 75, 0.95), rgba(15, 23, 42, 0.95))'
     },
     'fruit-slicer': {
-      badge: '🍉 FRUIT SLICER ⚔️',
+      badge: '🍉 FRUIT FRENZY ⚔️',
+      primaryColor: '#f59e0b',
+      borderColor: 'rgba(245, 158, 11, 0.8)',
+      floatingEmojis: '🍉   🍍   🍓   🍊   ⚔️',
+      badgeBg: 'linear-gradient(135deg, #d97706, #ef4444)',
+      cardBg: 'linear-gradient(145deg, rgba(46, 16, 101, 0.95), rgba(15, 10, 28, 0.98))'
+    },
+    'werewolf-village': {
+      badge: '🐺 WHO\'S THE WOLF? 🌕',
       primaryColor: '#ef4444',
-      borderColor: 'rgba(239, 68, 68, 0.6)',
-      floatingEmojis: '🍉   🍊   🍍   🍓   ⚔️',
-      badgeBg: 'linear-gradient(135deg, #ef4444, #f59e0b, #10b981)'
-    },
-    'typing-defense': {
-      badge: '⌨️ TYPING DEFENSE ⚡',
-      primaryColor: '#a855f7',
-      borderColor: 'rgba(168, 85, 247, 0.6)',
-      floatingEmojis: '⌨️   ⚡   💥   🔤   🎯',
-      badgeBg: 'linear-gradient(135deg, #a855f7, #ec4899)'
-    },
-    'flappy-clone': {
-      badge: '🐦 FLAPPY BIRD ☁️',
-      primaryColor: '#0284c7',
-      borderColor: 'rgba(2, 132, 199, 0.6)',
-      floatingEmojis: '🐦   ☁️   🍃   🪙   ✨',
-      badgeBg: 'linear-gradient(135deg, #0284c7, #22c55e)'
-    },
-    'air-hockey': {
-      badge: '🏒 AIR HOCKEY ⚡',
-      primaryColor: '#38bdf8',
-      borderColor: 'rgba(56, 189, 248, 0.6)',
-      floatingEmojis: '🏒   🔴   🔵   🏒   ✨',
-      badgeBg: 'linear-gradient(135deg, #0284c7, #38bdf8)'
+      borderColor: 'rgba(239, 68, 68, 0.8)',
+      floatingEmojis: '🐺   🌕   🕯️   🌲   💀',
+      badgeBg: 'linear-gradient(135deg, #991b1b, #ef4444)',
+      cardBg: 'linear-gradient(145deg, rgba(30, 10, 10, 0.95), rgba(15, 23, 42, 0.96))'
     },
     'ludo-party': {
-      badge: '🎲 POLO 🌟',
-      primaryColor: '#a855f7',
-      borderColor: 'rgba(168, 85, 247, 0.7)',
-      floatingEmojis: '🎲   🟣   🌸   ⬛   🟤   ⭐',
-      badgeBg: 'linear-gradient(135deg, #a855f7, #ec4899, #334155, #8b4513)'
+      badge: '💎 FOUR GEMS 🎲',
+      primaryColor: '#d4af37',
+      borderColor: 'rgba(212, 175, 55, 0.8)',
+      floatingEmojis: '💎   🎲   🟣   🌸   ⬛   🟤   ✨',
+      badgeBg: 'linear-gradient(135deg, #d4af37, #aa771c)',
+      cardBg: 'linear-gradient(145deg, rgba(15, 5, 29, 0.95), rgba(8, 1, 18, 0.96))'
     },
     'crazy-uno': {
-      badge: '🎴 JOHN CARD GAME 🎴',
+      badge: '🎴 JOHN 🎴',
       primaryColor: '#a855f7',
-      borderColor: 'rgba(168, 85, 247, 0.7)',
+      borderColor: 'rgba(168, 85, 247, 0.8)',
       floatingEmojis: '🎴   🟪   ⬛   ⚡   JOHN',
       badgeBg: 'linear-gradient(135deg, #7e22ce, #a855f7)',
       cardBg: 'linear-gradient(145deg, rgba(15, 5, 29, 0.95), rgba(8, 1, 18, 0.96))'
     },
     'bomb-arena': {
-      badge: '💣 BOMB ARENA 💥',
+      badge: '💣 BOOM BUDDIES 💥',
       primaryColor: '#f97316',
-      borderColor: 'rgba(249, 115, 22, 0.6)',
+      borderColor: 'rgba(249, 115, 22, 0.8)',
       floatingEmojis: '💥   💣   🔥   💥   💣   🔥',
       badgeBg: 'linear-gradient(135deg, #f97316, #ef4444)'
     },
     'tick-tock-bomb': {
-      badge: '💣 TICK TOCK BOMB ⏰',
+      badge: '🥔 HOT POTATO 🔥',
       primaryColor: '#f97316',
       borderColor: 'rgba(249, 115, 22, 0.8)',
-      floatingEmojis: '💣   ⏰   🔥   💥   ⚡',
+      floatingEmojis: '🥔   💣   ⏰   🔥   💥',
       badgeBg: 'linear-gradient(135deg, #ef4444, #f59e0b)',
       cardBg: 'linear-gradient(145deg, rgba(30, 10, 10, 0.95), rgba(45, 15, 15, 0.95))'
     },
     'space-shooter': {
-      badge: '🚀 SPACE SHOOTER 👾',
+      badge: '🚀 NOVA BLITZ 🌌',
       primaryColor: '#3b82f6',
-      borderColor: 'rgba(59, 130, 246, 0.6)',
+      borderColor: 'rgba(59, 130, 246, 0.8)',
       floatingEmojis: '🚀   👾   💥   ⭐   🌌',
       badgeBg: 'linear-gradient(135deg, #1d4ed8, #7c3aed)'
     },
     'space-deception': {
-      badge: '🚀 SPACE DECEPTION 🔪',
+      badge: '🚀 ASTROTRICK 🔪',
       primaryColor: '#ef4444',
       borderColor: 'rgba(239, 68, 68, 0.8)',
       floatingEmojis: '🚀   🔪   🚨   🌌   👾',
@@ -638,76 +671,146 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
       cardBg: 'linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95))'
     },
     'tank-battle': {
-      badge: '⚔️ TANK BATTLE 💥',
+      badge: '💣 CRAZY SHELLS 💥',
       primaryColor: '#ef4444',
-      borderColor: 'rgba(239, 68, 68, 0.6)',
+      borderColor: 'rgba(239, 68, 68, 0.8)',
       floatingEmojis: '💥   🛡️   💣   🎯   ⚡',
       badgeBg: 'linear-gradient(135deg, #b91c1c, #f59e0b)'
     },
     'cairo-runner': {
-      badge: '🛺 CAIRO RUNNER 🚦',
+      badge: '🏎️ GRIDLOCK GURUS 💨',
       primaryColor: '#f59e0b',
-      borderColor: 'rgba(245, 158, 11, 0.6)',
-      floatingEmojis: '🛺   🚌   🚗   🚦   ⚡',
+      borderColor: 'rgba(245, 158, 11, 0.8)',
+      floatingEmojis: '🏎️   💨   🚗   🚦   ⚡',
       badgeBg: 'linear-gradient(135deg, #d97706, #ef4444)'
     },
     'spot-differences': {
-      badge: '🔍 SPOT DIFFERENCES 👁️',
-      primaryColor: '#8b5cf6',
-      borderColor: 'rgba(139, 92, 246, 0.6)',
-      floatingEmojis: '🔍   👁️   ❓   💡   ✨',
-      badgeBg: 'linear-gradient(135deg, #6d28d9, #0284c7)'
+      badge: '🦅 EAGLE EYE 5 🔍',
+      primaryColor: '#fbbf24',
+      borderColor: 'rgba(251, 191, 36, 0.8)',
+      floatingEmojis: '🦅   🔍   👁️   💡   ✨',
+      badgeBg: 'linear-gradient(135deg, #d97706, #fbbf24)'
+    },
+    'card-battle': {
+      badge: '🧠 NEURAL DECK 🎴',
+      primaryColor: '#6366f1',
+      borderColor: 'rgba(99, 102, 241, 0.8)',
+      floatingEmojis: '🧠   🎴   ⚡   ⚔️   👑',
+      badgeBg: 'linear-gradient(135deg, #4338ca, #be185d)'
+    },
+    'arabic-wordle': {
+      badge: '🔤 LEXICODE 🟩',
+      primaryColor: '#10b981',
+      borderColor: 'rgba(16, 185, 129, 0.8)',
+      floatingEmojis: '🔤   🟩   🟨   🤔   ✨',
+      badgeBg: 'linear-gradient(135deg, #059669, #eab308)'
+    },
+    'flappy-clone': {
+      badge: '🐦 FLYING KONG 🎈',
+      primaryColor: '#0284c7',
+      borderColor: 'rgba(2, 132, 199, 0.8)',
+      floatingEmojis: '🐦   🎈   ☁️   🪙   ✨',
+      badgeBg: 'linear-gradient(135deg, #0284c7, #22c55e)'
+    },
+    'dobble': {
+      badge: '🎯 SYMBOL HUNTER 🔮',
+      primaryColor: '#a855f7',
+      borderColor: 'rgba(168, 85, 247, 0.8)',
+      floatingEmojis: '🎯   ⚡   🔮   ✨   🎲',
+      badgeBg: 'linear-gradient(135deg, #7e22ce, #a855f7)'
+    },
+    'heads-up': {
+      badge: '📱 ON MY HEAD 🤦‍♂️',
+      primaryColor: '#f59e0b',
+      borderColor: 'rgba(245, 158, 11, 0.8)',
+      floatingEmojis: '📱   🤦‍♂️   🎭   🎬   🦁',
+      badgeBg: 'linear-gradient(135deg, #f59e0b, #ef4444)'
+    },
+    'draw-and-guess': {
+      badge: '🎨 SKETCH & GUESS ✏️',
+      primaryColor: '#ec4899',
+      borderColor: 'rgba(236, 72, 153, 0.8)',
+      floatingEmojis: '🎨   ✏️   🖌️   🖼️   ✨',
+      badgeBg: 'linear-gradient(135deg, #ec4899, #8b5cf6)'
+    },
+    'number-hunt': {
+      badge: '🎯 SPOT IT: DIGITS 🔢',
+      primaryColor: '#38bdf8',
+      borderColor: 'rgba(56, 189, 248, 0.8)',
+      floatingEmojis: '🎯   🔢   ⚡   ⏱️   ✨',
+      badgeBg: 'linear-gradient(135deg, #0284c7, #38bdf8)'
+    },
+    'dragon-dungeon': {
+      badge: '🐉 JINX ⚔️',
+      primaryColor: '#f97316',
+      borderColor: 'rgba(249, 115, 22, 0.8)',
+      floatingEmojis: '🐉   ⚔️   🛡️   🔥   💎',
+      badgeBg: 'linear-gradient(135deg, #ea580c, #b91c1c)'
     },
     'strategic-xo': {
-      badge: '❌ STRATEGIC XO ⭕',
+      badge: '❌ SUPER TIC-TAC-TOE ⭕',
       primaryColor: '#06b6d4',
-      borderColor: 'rgba(6, 182, 212, 0.7)',
+      borderColor: 'rgba(6, 182, 212, 0.8)',
       floatingEmojis: '❌   ⭕   🎯   ⚔️   ✨',
       badgeBg: 'linear-gradient(135deg, #06b6d4, #f43f5e)',
       cardBg: 'linear-gradient(145deg, rgba(15, 23, 42, 0.94), rgba(3, 7, 18, 0.96))'
     },
-    'card-battle': {
-      badge: '🃏 CARD BATTLE 🛡️',
-      primaryColor: '#6366f1',
-      borderColor: 'rgba(99, 102, 241, 0.6)',
-      floatingEmojis: '🃏   ⚔️   🛡️   💥   👑',
-      badgeBg: 'linear-gradient(135deg, #4338ca, #be185d)'
+    'spyfall': {
+      badge: '🕵️ THE IMPOSTOR 🔍',
+      primaryColor: '#0ea5e9',
+      borderColor: 'rgba(14, 165, 233, 0.8)',
+      floatingEmojis: '🕵️   🔍   ❓   ⏱️   🕶️',
+      badgeBg: 'linear-gradient(135deg, #0284c7, #4f46e5)',
+      cardBg: 'linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95))'
+    },
+    'squid-game': {
+      badge: '🚦 RED LIGHT, GREEN LIGHT 🦑',
+      primaryColor: '#ef4444',
+      borderColor: 'rgba(239, 68, 68, 0.8)',
+      floatingEmojis: '🚦   🦑   🛑   🟢   🏃‍♂️',
+      badgeBg: 'linear-gradient(135deg, #ef4444, #10b981)'
+    },
+    'escape-room': {
+      badge: '🔐 CIPHER ESCAPE 🚪',
+      primaryColor: '#f59e0b',
+      borderColor: 'rgba(245, 158, 11, 0.8)',
+      floatingEmojis: '🔐   🚪   🗝️   ⏱️   💡',
+      badgeBg: 'linear-gradient(135deg, #d97706, #1e293b)'
     },
     'math-racer': {
-      badge: '🏎️ MATH RACER ⚡',
+      badge: '🏎️ MATH VELOCITY ➕',
       primaryColor: '#eab308',
-      borderColor: 'rgba(234, 179, 8, 0.6)',
+      borderColor: 'rgba(234, 179, 8, 0.8)',
       floatingEmojis: '🏎️   ➕   ➖   ✖️   🏁',
       badgeBg: 'linear-gradient(135deg, #ca8a04, #16a34a)'
     },
-    'dragon-dungeon': {
-      badge: '🐉 DRAGON DUNGEON ⚔️',
-      primaryColor: '#f97316',
-      borderColor: 'rgba(249, 115, 22, 0.6)',
-      floatingEmojis: '🐉   ⚔️   🛡️   🔥   💎',
-      badgeBg: 'linear-gradient(135deg, #ea580c, #b91c1c)'
+    'memory-match': {
+      badge: '🧠 MIND FLIP 🃏',
+      primaryColor: '#38bdf8',
+      borderColor: 'rgba(56, 189, 248, 0.8)',
+      floatingEmojis: '🧠   🃏   💡   ❓   ✨',
+      badgeBg: 'linear-gradient(135deg, #0284c7, #8b5cf6)'
+    },
+    'typing-defense': {
+      badge: '⌨️ TYPE STRIKE 🚀',
+      primaryColor: '#a855f7',
+      borderColor: 'rgba(168, 85, 247, 0.8)',
+      floatingEmojis: '⌨️   🚀   💥   🔤   🎯',
+      badgeBg: 'linear-gradient(135deg, #a855f7, #ec4899)'
+    },
+    'air-hockey': {
+      badge: '🏒 GLOW PUCK ✨',
+      primaryColor: '#38bdf8',
+      borderColor: 'rgba(56, 189, 248, 0.8)',
+      floatingEmojis: '🏒   ✨   🔴   🔵   🏆',
+      badgeBg: 'linear-gradient(135deg, #0284c7, #38bdf8)'
     },
     'snake-arena': {
-      badge: '🐍 SNAKE ARENA 🍎',
+      badge: '🐍 NEON VIPER ⚡',
       primaryColor: '#10b981',
-      borderColor: 'rgba(16, 185, 129, 0.6)',
-      floatingEmojis: '🐍   🍎   ⭐   💥   ✨',
+      borderColor: 'rgba(16, 185, 129, 0.8)',
+      floatingEmojis: '🐍   ⚡   🍎   ⭐   ✨',
       badgeBg: 'linear-gradient(135deg, #059669, #0284c7)'
-    },
-    'werewolf-village': {
-      badge: '🐺 WEREWOLF VILLAGE 🌕',
-      primaryColor: '#64748b',
-      borderColor: 'rgba(100, 116, 139, 0.6)',
-      floatingEmojis: '🐺   🌕   🕯️   🌲   💀',
-      badgeBg: 'linear-gradient(135deg, #334155, #b91c1c)'
-    },
-    'spyfall': {
-      badge: '🕵️ SPYFALL 🔎',
-      primaryColor: '#0ea5e9',
-      borderColor: 'rgba(14, 165, 233, 0.8)',
-      floatingEmojis: '🕵️   🔎   ❓   ⏱️   🕶️',
-      badgeBg: 'linear-gradient(135deg, #0284c7, #4f46e5)',
-      cardBg: 'linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95))'
     }
   };
 
@@ -715,7 +818,14 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
     if (!gameId) return;
     this.bgTimestamp = Date.now();
     this.bgImageFailed = false;
-    this.bgUrl = `/assets/games/${gameId}/bg.png?v=${this.bgTimestamp}`;
+    
+    // First try the game's official high-res thumbnail cover from the outside
+    if (this.game && this.game.thumbnail) {
+      this.bgUrl = this.game.thumbnail.startsWith('/') ? this.game.thumbnail : '/' + this.game.thumbnail;
+    } else {
+      this.bgUrl = `/assets/games/${gameId}/bg.png?v=${this.bgTimestamp}`;
+    }
+
     this.activeTheme = this.gameThemes[gameId] || null;
     
     const tryFetchTheme = (url: string, fallbackUrl?: string) => {

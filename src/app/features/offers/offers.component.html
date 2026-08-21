@@ -1,0 +1,339 @@
+<div class="min-h-screen bg-[#070a13] text-slate-100 p-4 md:p-8 font-['Tajawal'] select-none text-right" dir="rtl">
+
+  <!-- ================= FLOATING TOAST ================= -->
+  @if (toastMsg()) {
+    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-[300] bg-indigo-600/95 backdrop-blur-xl border border-indigo-400/40 text-white px-6 py-3.5 rounded-2xl shadow-2xl shadow-indigo-600/40 flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
+      <lucide-icon name="check-circle-2" class="w-5 h-5 text-emerald-300 shrink-0"></lucide-icon>
+      <span class="font-bold text-xs md:text-sm">{{ toastMsg() }}</span>
+    </div>
+  }
+
+  <div class="max-w-6xl mx-auto space-y-8">
+
+    <!-- ================= 1. HEADER MATCHING SCREENSHOT ================= -->
+    <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-2">
+      
+      <!-- Right: Title & Subtitle with Flag Icon -->
+      <div class="space-y-1.5 text-right">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0 shadow-lg shadow-indigo-500/10">
+            <lucide-icon name="flag" class="w-5 h-5 text-indigo-400"></lucide-icon>
+          </div>
+          <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight font-sans">Negotiation Stream</h1>
+        </div>
+        <p class="text-xs md:text-sm text-slate-400 font-medium font-sans">
+          Manage incoming acquisition proposals from the network.
+        </p>
+      </div>
+
+      <!-- Left: Refresh Stream Button & Action Buttons -->
+      <div class="flex items-center gap-3 flex-wrap">
+        
+        <button 
+          (click)="handleRefresh()"
+          class="h-10 px-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-slate-300 hover:text-white transition-all flex items-center gap-2 cursor-pointer font-sans shadow-md">
+          <lucide-icon name="refresh-cw" class="w-3.5 h-3.5" [class.animate-spin]="isRefreshing()"></lucide-icon>
+          <span>Refresh Stream</span>
+        </button>
+
+        <button 
+          (click)="isNewProposalOpen.set(true)"
+          class="h-10 px-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-indigo-600/30">
+          <span>+</span>
+          <span>تقديم عرض تفاوض</span>
+        </button>
+
+        <button 
+          (click)="handleSeedDemo()"
+          class="h-10 px-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-bold text-indigo-300 hover:text-white transition-all cursor-pointer">
+          <span>⚡ تجربة عرض</span>
+        </button>
+
+      </div>
+
+    </header>
+
+    <!-- ================= 2. MAIN CONTAINER CARD ================= -->
+    <div class="bg-[#111827]/80 border border-white/10 rounded-[32px] overflow-hidden shadow-2xl">
+      
+      <!-- Top Bar: PENDING PROPOSALS -->
+      <div class="px-6 py-4 border-b border-white/5 bg-black/20 flex items-center justify-between">
+        
+        <!-- Filter Tabs -->
+        <div class="flex items-center gap-1.5">
+          <button 
+            (click)="filterStatus.set('all')"
+            [ngClass]="filterStatus() === 'all' ? 'bg-indigo-600/30 border-indigo-500/40 text-indigo-300' : 'text-slate-500 hover:text-slate-300'"
+            class="px-3 py-1 rounded-xl text-[11px] font-bold border border-transparent transition-all">
+            الكل
+          </button>
+          <button 
+            (click)="filterStatus.set('pending')"
+            [ngClass]="filterStatus() === 'pending' ? 'bg-indigo-600/30 border-indigo-500/40 text-indigo-300' : 'text-slate-500 hover:text-slate-300'"
+            class="px-3 py-1 rounded-xl text-[11px] font-bold border border-transparent transition-all">
+            المعلقة
+          </button>
+          <button 
+            (click)="filterStatus.set('accepted')"
+            [ngClass]="filterStatus() === 'accepted' ? 'bg-indigo-600/30 border-indigo-500/40 text-indigo-300' : 'text-slate-500 hover:text-slate-300'"
+            class="px-3 py-1 rounded-xl text-[11px] font-bold border border-transparent transition-all">
+            المقبولة
+          </button>
+        </div>
+
+        <!-- Pending Proposals Counter Header -->
+        <div class="flex items-center gap-2 text-[11px] font-mono font-bold text-indigo-400/80 uppercase tracking-widest">
+          <lucide-icon name="clock" class="w-3.5 h-3.5 text-indigo-400"></lucide-icon>
+          <span>PENDING PROPOSALS ({{ offersService.pendingCount() }})</span>
+        </div>
+
+      </div>
+
+      <!-- Body Area -->
+      <div class="p-8 md:p-14">
+
+        <!-- ===== A. EMPTY STATE (EXACT MATCH WITH SCREENSHOT) ===== -->
+        @if (filteredProposals().length === 0) {
+          
+          <div class="py-16 flex flex-col items-center justify-center text-center space-y-4">
+            
+            <!-- Exchange/Swap Icon in Rounded Blue/Purple Container -->
+            <div class="w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-2xl shadow-indigo-600/20">
+              <lucide-icon name="arrow-left-right" class="w-7 h-7 text-indigo-400"></lucide-icon>
+            </div>
+
+            <!-- Title -->
+            <h3 class="text-base md:text-lg font-black text-white tracking-tight font-sans">
+              Neural Stream Clear
+            </h3>
+
+            <!-- Subtitle -->
+            <p class="text-xs md:text-sm text-slate-400 max-w-sm leading-relaxed font-sans">
+              No active negotiation requests have been detected for your assets.
+            </p>
+
+          </div>
+
+        } @else {
+
+          <!-- ===== B. ACTIVE PROPOSALS FEED ===== -->
+          <div class="space-y-4">
+            
+            @for (proposal of filteredProposals(); track proposal.id) {
+              
+              <div class="bg-black/30 hover:bg-white/5 border border-white/5 hover:border-indigo-500/30 rounded-3xl p-6 transition-all duration-300 space-y-5">
+                
+                <!-- Proposal Top Info -->
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  
+                  <!-- Left: Offered Value & Status Badge -->
+                  <div class="flex items-center gap-3">
+                    <div class="text-right sm:text-left">
+                      <span class="text-xl md:text-2xl font-black text-emerald-400 font-mono">
+                        {{ proposal.offeredAmount.toLocaleString() }} {{ proposal.currency }}
+                      </span>
+                      @if (proposal.originalPrice) {
+                        <p class="text-[10px] text-slate-500 line-through font-mono">
+                          السعر الأصلي: {{ proposal.originalPrice.toLocaleString() }} {{ proposal.currency }}
+                        </p>
+                      }
+                    </div>
+
+                    <!-- Status -->
+                    <span 
+                      [ngClass]="{
+                        'bg-amber-500/10 border-amber-500/20 text-amber-400': proposal.status === 'pending',
+                        'bg-emerald-500/10 border-emerald-500/20 text-emerald-400': proposal.status === 'accepted',
+                        'bg-red-500/10 border-red-500/20 text-red-400': proposal.status === 'declined',
+                        'bg-blue-500/10 border-blue-500/20 text-blue-400': proposal.status === 'countered'
+                      }"
+                      class="px-3 py-1 rounded-full border text-[10px] font-bold">
+                      {{ proposal.status === 'pending' ? 'قيد المراجعة' : proposal.status === 'accepted' ? 'تم القبول' : proposal.status === 'declined' ? 'مرفوض' : 'عرض مقابل' }}
+                    </span>
+                  </div>
+
+                  <!-- Right: Proposer & Asset Info -->
+                  <div class="flex items-center gap-3 text-right">
+                    <div class="space-y-0.5">
+                      <h4 class="text-sm font-black text-white">{{ proposal.assetName }}</h4>
+                      <div class="flex items-center gap-2 text-xs text-slate-400">
+                        <span class="text-indigo-400 font-mono font-bold">{{ proposal.senderNode.username }}</span>
+                        <span>•</span>
+                        <span class="text-[11px] font-mono text-slate-500">{{ proposal.createdAt | date:'yyyy-MM-dd HH:mm' }}</span>
+                      </div>
+                    </div>
+
+                    <img [src]="proposal.senderNode.avatar" class="w-11 h-11 rounded-2xl object-cover border border-white/10" />
+                  </div>
+
+                </div>
+
+                <!-- Message Snippet -->
+                @if (proposal.message) {
+                  <p class="text-xs text-slate-300 bg-white/5 border border-white/5 rounded-2xl p-3.5 leading-relaxed">
+                    "{{ proposal.message }}"
+                  </p>
+                }
+
+                <!-- Counter Offer Alert if countered -->
+                @if (proposal.counterOfferAmount) {
+                  <div class="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-bold flex items-center justify-between">
+                    <span>العرض المقابل المقدم: {{ proposal.counterOfferAmount.toLocaleString() }} {{ proposal.currency }}</span>
+                    <lucide-icon name="message-square" class="w-4 h-4"></lucide-icon>
+                  </div>
+                }
+
+                <!-- Action Buttons if Pending -->
+                @if (proposal.status === 'pending') {
+                  <div class="flex items-center justify-end gap-3 pt-2 border-t border-white/5">
+                    
+                    <button 
+                      (click)="handleDecline(proposal)"
+                      class="px-4 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-bold transition-all cursor-pointer">
+                      رفض العرض ✕
+                    </button>
+
+                    <button 
+                      (click)="openCounterModal(proposal)"
+                      class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 text-xs font-bold transition-all cursor-pointer">
+                      تقديم عرض مقابل 💬
+                    </button>
+
+                    <button 
+                      (click)="handleAccept(proposal)"
+                      class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all shadow-lg shadow-emerald-600/30 cursor-pointer">
+                      قبول وإتمام الاستحواذ ✅
+                    </button>
+
+                  </div>
+                }
+
+              </div>
+
+            }
+
+          </div>
+
+        }
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ================= MODAL 1: CREATE NEW PROPOSAL ================= -->
+  @if (isNewProposalOpen()) {
+    <div class="fixed inset-0 z-[250] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div class="bg-[#111827] border border-white/10 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl space-y-6 animate-in zoom-in-95 duration-200">
+        
+        <div class="flex items-center justify-between border-b border-white/10 pb-4">
+          <h3 class="text-base font-black text-white flex items-center gap-2">
+            <span>✨</span> تقديم عرض تفاوض واستحواذ
+          </h3>
+          <button (click)="isNewProposalOpen.set(false)" class="text-slate-400 hover:text-white font-bold cursor-pointer">✕</button>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1.5">اسم الأصل أو المنتج المراد التفاوض عليه:</label>
+            <input 
+              type="text" 
+              [ngModel]="newAssetName()"
+              (ngModelChange)="newAssetName.set($event)"
+              placeholder="مثال: لوحة ESP32 Pro أو نطاق .axd" 
+              class="w-full h-12 bg-black/40 border border-white/10 rounded-2xl px-4 text-white text-xs font-bold focus:outline-none focus:border-indigo-500" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1.5">المبلغ المقترح:</label>
+              <input 
+                type="number" 
+                [ngModel]="newOfferedAmount()"
+                (ngModelChange)="newOfferedAmount.set($event)"
+                class="w-full h-12 bg-black/40 border border-white/10 rounded-2xl px-4 text-white text-base font-mono font-bold focus:outline-none focus:border-indigo-500" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1.5">العملة:</label>
+              <select 
+                [ngModel]="newCurrency()"
+                (ngModelChange)="newCurrency.set($event)"
+                class="w-full h-12 bg-black/40 border border-white/10 rounded-2xl px-4 text-white text-xs font-bold focus:outline-none focus:border-indigo-500 cursor-pointer">
+                @for (c of availableCurrencies; track c.code) {
+                  <option [value]="c.code" class="bg-slate-900 text-white">{{ c.nameAr }} ({{ c.code }})</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1.5">رسالة التفاوض والملاحظات:</label>
+            <textarea 
+              rows="3" 
+              [ngModel]="newMessage()"
+              (ngModelChange)="newMessage.set($event)"
+              placeholder="اكتب تفاصيل وشروط عرضك..." 
+              class="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-white text-xs font-bold focus:outline-none focus:border-indigo-500 resize-none"></textarea>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <button (click)="isNewProposalOpen.set(false)" class="px-5 py-2.5 rounded-xl bg-white/5 text-slate-300 text-xs font-bold cursor-pointer">إلغاء</button>
+          <button 
+            (click)="submitNewProposal()" 
+            [disabled]="!newAssetName() || !newOfferedAmount() || newOfferedAmount() <= 0"
+            class="px-7 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-black text-xs md:text-sm rounded-2xl shadow-lg cursor-pointer transition-all">
+            إرسال العرض 🚀
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- ================= MODAL 2: COUNTER OFFER ================= -->
+  @if (counterProposalTarget()) {
+    <div class="fixed inset-0 z-[250] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div class="bg-[#111827] border border-white/10 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl space-y-6 animate-in zoom-in-95 duration-200">
+        
+        <div class="flex items-center justify-between border-b border-white/10 pb-4">
+          <h3 class="text-base font-black text-white flex items-center gap-2">
+            <span>💬</span> تقديم عرض سعر مقابل (Counter Offer)
+          </h3>
+          <button (click)="counterProposalTarget.set(null)" class="text-slate-400 hover:text-white font-bold cursor-pointer">✕</button>
+        </div>
+
+        <div class="space-y-4">
+          <div class="bg-black/30 border border-white/5 rounded-2xl p-4 space-y-1">
+            <span class="text-xs text-slate-400">الأصل المستهدف:</span>
+            <h4 class="text-sm font-bold text-white">{{ counterProposalTarget()?.assetName }}</h4>
+            <p class="text-xs text-emerald-400 font-mono">العرض الحالي: {{ counterProposalTarget()?.offeredAmount }} {{ counterProposalTarget()?.currency }}</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1.5">السعر المقابل المطلوب ({{ counterProposalTarget()?.currency }}):</label>
+            <input 
+              type="number" 
+              [ngModel]="counterAmount()"
+              (ngModelChange)="counterAmount.set($event)"
+              class="w-full h-12 bg-black/40 border border-white/10 rounded-2xl px-4 text-white text-base font-mono font-bold focus:outline-none focus:border-indigo-500" />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <button (click)="counterProposalTarget.set(null)" class="px-5 py-2.5 rounded-xl bg-white/5 text-slate-300 text-xs font-bold cursor-pointer">إلغاء</button>
+          <button 
+            (click)="submitCounterOffer()" 
+            [disabled]="!counterAmount() || counterAmount() <= 0"
+            class="px-7 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-xs md:text-sm rounded-2xl shadow-lg cursor-pointer transition-all">
+            إرسال العرض المقابل ✉️
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+</div>

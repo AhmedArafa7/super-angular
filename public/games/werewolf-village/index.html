@@ -2,59 +2,273 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>القرية الملعونة</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Who's the Wolf? 🐺🌕🔍</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; font-family: system-ui, sans-serif; background: #0f172a; color: white; display: flex; flex-direction: column; height: 100vh; overflow: hidden; transition: background 1s; }
-        body.day { background: #38bdf8; }
-        body.night { background: #020617; }
-        
-        .header { text-align: center; padding: 20px; }
-        .phase-text { font-size: 32px; font-weight: 900; }
-        .timer { font-size: 24px; color: #facc15; font-family: monospace; }
-        
-        .main-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        
-        .role-card { background: rgba(0,0,0,0.5); padding: 30px; border-radius: 20px; border: 2px solid white; text-align: center; margin-bottom: 30px; }
-        .role-icon { font-size: 60px; margin-bottom: 10px; }
-        .role-name { font-size: 28px; font-weight: bold; color: #facc15; }
-        
-        .players-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; width: 100%; max-width: 600px; }
-        .player-btn { background: #1e293b; border: 2px solid #334155; color: white; padding: 15px; border-radius: 15px; font-size: 18px; font-weight: bold; cursor: pointer; transition: all 0.2s; position: relative; }
-        .player-btn:hover { border-color: #facc15; transform: scale(1.05); }
-        .player-btn.dead { opacity: 0.3; pointer-events: none; text-decoration: line-through; }
-        .player-btn.voted { border-color: #ef4444; background: #7f1d1d; }
-        .vote-count { position: absolute; top: -10px; right: -10px; background: #ef4444; color: white; width: 25px; height: 25px; border-radius: 50%; font-size: 14px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-        
-        .start-btn { background: #ef4444; color: white; border: none; padding: 15px 40px; border-radius: 30px; font-size: 24px; font-weight: bold; cursor: pointer; }
-        .start-btn:hover { background: #dc2626; }
-        
-        #log { background: rgba(0,0,0,0.8); padding: 10px; border-radius: 10px; max-height: 100px; overflow-y: auto; width: 100%; max-width: 600px; margin-top: 20px; font-size: 14px; color: #94a3b8; }
-        
-        .toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); border: 2px solid #ef4444; padding: 30px 50px; border-radius: 20px; font-size: 32px; font-weight: bold; pointer-events: none; opacity: 0; transition: opacity 0.5s; z-index: 200; text-align: center; }
+        :root {
+            --bg-night: radial-gradient(circle at top, #1e1b4b 0%, #030712 70%, #000000 100%);
+            --bg-day: radial-gradient(circle at top, #0284c7 0%, #0f172a 70%);
+            --blood-red: #ef4444;
+            --gold-moon: #fbbf24;
+            --card-parchment: linear-gradient(135deg, #1e293b, #0f172a);
+        }
+
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            user-select: none; -webkit-user-select: none;
+            font-family: 'Tajawal', system-ui, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(rgba(3, 7, 18, 0.82), rgba(30, 27, 75, 0.88)), url('bg.png') no-repeat center center fixed;
+            background-size: cover;
+            color: #ffffff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: background 1.2s ease;
+            position: relative;
+        }
+        body.day-mode { background: var(--bg-day); }
+
+        /* Full Moon & Fog */
+        .moon {
+            position: fixed;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #fffbeb, #fef08a 60%, #eab308 100%);
+            box-shadow: 0 0 50px rgba(254, 240, 138, 0.6), 0 0 100px rgba(234, 179, 8, 0.3);
+            pointer-events: none;
+            z-index: 1;
+            transition: transform 1.2s ease, opacity 1.2s ease;
+        }
+        body.day-mode .moon {
+            background: radial-gradient(circle at 30% 30%, #fff, #fde047);
+            box-shadow: 0 0 60px rgba(253, 224, 71, 0.8);
+        }
+
+        /* Top Header */
+        .header {
+            position: relative;
+            z-index: 20;
+            text-align: center;
+            padding: 16px 20px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 2px solid rgba(239, 68, 68, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .game-logo {
+            font-family: 'Cinzel', 'Tajawal', serif;
+            font-size: 1.3rem;
+            color: var(--gold-moon);
+            text-shadow: 0 0 15px rgba(251, 191, 36, 0.5);
+            font-weight: 900;
+        }
+        .phase-text { font-size: 1.25rem; font-weight: 900; color: #fff; }
+        .timer { font-size: 1.2rem; color: var(--gold-moon); font-family: monospace; font-weight: 900; }
+
+        /* Main Game Layout */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        /* Role Identity Card */
+        .role-card {
+            background: var(--card-parchment);
+            border: 2px solid var(--gold-moon);
+            padding: 24px 35px;
+            border-radius: 24px;
+            text-align: center;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.7), 0 0 20px rgba(251, 191, 36, 0.2);
+            min-width: 280px;
+            transform: perspective(600px) rotateX(4deg);
+        }
+        .role-icon { font-size: 3.5rem; line-height: 1; margin-bottom: 8px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5)); }
+        .role-name { font-size: 1.6rem; font-weight: 900; color: var(--gold-moon); }
+        .role-desc { font-size: 0.92rem; color: #cbd5e1; margin-top: 6px; line-height: 1.5; }
+
+        /* Instructions & Players Grid */
+        .instruction-box {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 22px;
+            border-radius: 20px;
+            color: #fde047;
+            font-weight: bold;
+            font-size: 1rem;
+            margin-bottom: 18px;
+            text-align: center;
+        }
+
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 14px;
+            width: 100%;
+            max-width: 650px;
+        }
+
+        .player-btn {
+            background: rgba(30, 41, 59, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 16px 10px;
+            border-radius: 18px;
+            font-size: 1.05rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+        .player-btn:hover {
+            border-color: var(--gold-moon);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(251, 191, 36, 0.3);
+        }
+        .player-btn.dead {
+            opacity: 0.35;
+            pointer-events: none;
+            text-decoration: line-through;
+            filter: grayscale(1);
+        }
+        .player-btn.voted {
+            border-color: var(--blood-red);
+            background: rgba(127, 29, 29, 0.8);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+        }
+        .vote-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--blood-red);
+            color: white;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+
+        /* Action Buttons */
+        .btn-action {
+            background: linear-gradient(135deg, #dc2626, #991b1b);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 28px;
+            font-size: 1.2rem;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(220, 38, 38, 0.5);
+            transition: transform 0.15s, box-shadow 0.2s;
+        }
+        .btn-action:hover { transform: scale(1.05); box-shadow: 0 12px 35px rgba(220, 38, 38, 0.7); }
+
+        /* Setup Card */
+        .setup-card {
+            background: rgba(15, 23, 42, 0.95);
+            border: 2px solid var(--gold-moon);
+            padding: 35px 30px;
+            border-radius: 28px;
+            text-align: center;
+            max-width: 460px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.8), 0 0 30px rgba(251, 191, 36, 0.2);
+        }
+
+        /* Village Log Console */
+        #log {
+            background: rgba(2, 6, 23, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 16px;
+            border-radius: 14px;
+            max-height: 80px;
+            overflow-y: auto;
+            width: 100%;
+            max-width: 650px;
+            margin-top: 15px;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            text-align: right;
+        }
+
+        /* Toast Modal */
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background: rgba(15, 23, 42, 0.96);
+            border: 2.5px solid var(--blood-red);
+            padding: 28px 45px;
+            border-radius: 28px;
+            font-size: 1.8rem;
+            font-weight: 900;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.4s, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 200;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 0 0 35px rgba(239, 68, 68, 0.5);
+        }
+        .toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     </style>
 </head>
 <body>
+    <div class="moon"></div>
+
     <div class="header">
-        <div class="phase-text" id="phase-text">غرفة الانتظار</div>
-        <div class="timer" id="timer"></div>
+        <div class="game-logo">🐺 WHO'S THE WOLF?</div>
+        <div class="phase-text" id="phase-text">غرفة الانتظار 🌕</div>
+        <div class="timer" id="timer">00:00</div>
     </div>
     
     <div class="main-content">
-        <div id="setup-view">
-            <h2 id="players-count">اللاعبين: 0</h2>
-            <p>تحتاج 3 لاعبين على الأقل للبدء (MVP)</p>
-            <button class="start-btn" id="start-btn" onclick="startGame()" style="display: none;">بدء اللعبة</button>
+        <!-- Setup View -->
+        <div id="setup-view" class="setup-card">
+            <div style="font-size: 3.5rem; margin-bottom: 10px;">🐺🌕</div>
+            <h1 style="font-size: 2.2rem; color: var(--gold-moon); margin-bottom: 8px;">Who's the Wolf?</h1>
+            <p style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 24px; line-height: 1.6;">
+                هناك مستذئب مخادع يتخفى بين أهالي القرية! تناقشوا نهاراً وحققوا لاكتشاف الخونة قبل أن يحل منتصف الليل وتلتهم الذئاب الجميع!
+            </p>
+            <button class="btn-action" id="start-btn" onclick="startGame()">بدء اللعبة الفورية (مع الذكاء الاصطناعي) 🚀</button>
         </div>
         
+        <!-- Game View -->
         <div id="game-view" style="display: none; width: 100%; flex-direction: column; align-items: center;">
             <div class="role-card">
                 <div class="role-icon" id="my-role-icon">❓</div>
                 <div class="role-name" id="my-role-name">جارِ التوزيع...</div>
-                <div style="font-size: 14px; color: #94a3b8; margin-top: 5px;" id="my-role-desc"></div>
+                <div class="role-desc" id="my-role-desc"></div>
             </div>
             
-            <h3 style="margin-bottom: 15px;" id="instruction"></h3>
+            <div class="instruction-box" id="instruction"></div>
             <div class="players-grid" id="players-grid"></div>
         </div>
         
@@ -64,247 +278,288 @@
     <div class="toast" id="toast"></div>
 
     <script>
-        // WebRTC & State Logic
+        // Web Audio Synthesizer for Atmosphere
+        let audioCtx = null;
+        function playWolfSound(type) {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'howl') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.exponentialRampToValueAtTime(440, now + 0.4);
+                    osc.frequency.exponentialRampToValueAtTime(180, now + 1.2);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
+                    osc.start(now); osc.stop(now + 1.2);
+                } else if (type === 'vote') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(350, now);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now); osc.stop(now + 0.15);
+                }
+            } catch(e) {}
+        }
+
+        // State Logic
         let state = {
-            status: 'waiting', // waiting, night, day, over
-            players: [], // {id, role, isDead, votes: 0}
-            timeRemaining: 0,
-            winner: null
+            status: 'waiting',
+            players: [],
+            phase: 'night',
+            timer: 15,
+            myRole: null
         };
         
-        let myId = 'p_' + Math.floor(Math.random() * 1000);
-        let isHost = false;
-        let timerInterval;
+        let myId = 'player_' + Math.floor(Math.random() * 1000);
+        let timerInterval = null;
 
-        window.addEventListener('message', (event) => {
-            const data = event.data;
-            if (!data || !data.type) return;
+        window.onload = () => {
+            // Auto Setup 5 Players (1 human + 4 AI Bots)
+            state.players = [
+                { id: myId, name: 'أنت (البطل) 👑', isDead: false, votes: 0, role: null },
+                { id: 'bot_1', name: 'الشيخ منصور 👳‍♂️', isDead: false, votes: 0, role: null },
+                { id: 'bot_2', name: 'الحداد صابر ⚒️', isDead: false, votes: 0, role: null },
+                { id: 'bot_3', name: 'الطبيبة ليلى 💉', isDead: false, votes: 0, role: null },
+                { id: 'bot_4', name: 'الحارس راشد 🛡️', isDead: false, votes: 0, role: null }
+            ];
+        };
 
-            if (data.type === 'SYNC_STATE') {
-                state = data.state;
-                render();
-            } else if (data.type === 'PLAYER_JOINED' && isHost) {
-                if (!state.players.find(p => p.id === data.playerId)) {
-                    state.players.push({ id: data.playerId, role: null, isDead: false, votes: 0 });
-                    broadcastState();
-                }
-            } else if (data.type === 'VOTE' && isHost) {
-                processVote(data.playerId, data.targetId);
-            }
-        });
-
-        function broadcastState() {
-            if (!isHost) return;
-            window.parent.postMessage({ type: 'SYNC_STATE', state }, '*');
-            render();
-        }
-
-        setTimeout(() => {
-            window.parent.postMessage({ type: 'PLAYER_JOINED', playerId: myId }, '*');
-        }, 500);
-        
-        // Mock host for local test
-        const params = new URLSearchParams(window.location.search);
-        if (params.get('mode') === 'local') {
-            isHost = true;
-            state.players = [{id: myId, role: null, isDead: false, votes: 0}];
-            for(let i=0; i<4; i++) state.players.push({id: 'Bot_'+i, role: null, isDead: false, votes: 0});
-            render();
-        }
-
-        // Host Logic
         function startGame() {
-            if (state.players.length < 3) return alert('غير كاف');
-            
-            // Assign roles
-            const roles = ['werewolf']; // At least 1 werewolf
-            while(roles.length < state.players.length) roles.push('villager');
-            roles.sort(() => Math.random() - 0.5);
-            
-            state.players.forEach((p, i) => { p.role = roles[i]; p.isDead = false; });
-            
-            startNight();
-        }
-
-        function startNight() {
-            state.status = 'night';
-            state.players.forEach(p => p.votes = 0);
-            state.timeRemaining = 15;
-            document.body.className = 'night';
-            log('حل الليل... استيقظوا أيها المستذئبون لاختيار ضحية.');
-            broadcastState();
-            startHostTimer(() => processNightResults());
-        }
-
-        function startDay() {
-            state.status = 'day';
-            state.players.forEach(p => p.votes = 0);
-            state.timeRemaining = 30;
-            document.body.className = 'day';
-            log('أشرقت الشمس... تناقشوا وصوتوا على المشتبه به.');
-            broadcastState();
-            startHostTimer(() => processDayResults());
-        }
-
-        function startHostTimer(callback) {
-            clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                state.timeRemaining--;
-                if (state.timeRemaining <= 0) {
-                    clearInterval(timerInterval);
-                    callback();
-                } else {
-                    broadcastState();
-                }
-            }, 1000);
-        }
-
-        let votedTracker = {}; // track who voted
-        function processVote(voterId, targetId) {
-            if (votedTracker[voterId]) return;
-            const target = state.players.find(p => p.id === targetId);
-            if (target && !target.isDead) {
-                target.votes++;
-                votedTracker[voterId] = true;
-                broadcastState();
-            }
-        }
-
-        function processNightResults() {
-            votedTracker = {};
-            let highestVote = 0;
-            let target = null;
-            state.players.forEach(p => {
-                if (p.votes > highestVote) { highestVote = p.votes; target = p; }
-            });
-            if (target) {
-                target.isDead = true;
-                log(`تم اغتيال ${target.id} في الليل!`);
-            }
-            checkWin() || startDay();
-        }
-
-        function processDayResults() {
-            votedTracker = {};
-            let highestVote = 0;
-            let target = null;
-            state.players.forEach(p => {
-                if (p.votes > highestVote) { highestVote = p.votes; target = p; }
-            });
-            if (target) {
-                target.isDead = true;
-                log(`صوتت القرية على إعدام ${target.id}! كان دوره: ${target.role}`);
-            } else {
-                log('لم يتم إعدام أحد اليوم.');
-            }
-            checkWin() || startNight();
-        }
-
-        function checkWin() {
-            const alive = state.players.filter(p => !p.isDead);
-            const wolves = alive.filter(p => p.role === 'werewolf').length;
-            const villagers = alive.length - wolves;
-            
-            if (wolves === 0) { state.status = 'over'; state.winner = 'القرويين'; broadcastState(); showToast('فاز القرويون!'); return true; }
-            if (wolves >= villagers) { state.status = 'over'; state.winner = 'المستذئبين'; broadcastState(); showToast('فاز المستذئبون!'); return true; }
-            return false;
-        }
-
-        // Guest Logic & UI
-        let myVote = null;
-        function castVote(targetId) {
-            const me = state.players.find(p => p.id === myId);
-            if (!me || me.isDead) return showToast('أنت ميت لا يمكنك التصويت');
-            if (state.status === 'night' && me.role !== 'werewolf') return showToast('المستذئبون فقط يصوتون في الليل');
-            if (myVote) return showToast('لقد صوتت بالفعل!');
-            
-            myVote = targetId;
-            if (isHost) processVote(myId, targetId);
-            else window.parent.postMessage({ type: 'VOTE', playerId: myId, targetId }, '*');
-            
-            // Visual feedback
-            render();
-        }
-
-        function render() {
-            const me = state.players.find(p => p.id === myId);
-            
-            if (state.status === 'waiting') {
-                document.getElementById('setup-view').style.display = 'block';
-                document.getElementById('game-view').style.display = 'none';
-                document.getElementById('players-count').innerText = `اللاعبين: ${state.players.length}`;
-                if (isHost && state.players.length >= 3) document.getElementById('start-btn').style.display = 'inline-block';
-                return;
-            }
-
             document.getElementById('setup-view').style.display = 'none';
             document.getElementById('game-view').style.display = 'flex';
-            document.body.className = state.status === 'night' ? 'night' : 'day';
             
-            document.getElementById('phase-text').innerText = state.status === 'night' ? 'مرحلة الليل 🌙' : (state.status === 'day' ? 'مرحلة النهار ☀️' : 'انتهت اللعبة');
-            document.getElementById('timer').innerText = `00:${state.timeRemaining.toString().padStart(2, '0')}`;
+            // Assign 1 Werewolf, 1 Doctor, 1 Seer, and Villagers
+            const rolesPool = ['werewolf', 'doctor', 'seer', 'villager', 'villager'];
+            rolesPool.sort(() => Math.random() - 0.5);
 
-            if (me) {
-                const icon = document.getElementById('my-role-icon');
-                const name = document.getElementById('my-role-name');
-                const desc = document.getElementById('my-role-desc');
-                
-                if (me.role === 'werewolf') {
-                    icon.innerText = '🐺'; name.innerText = 'أنت مستذئب!'; name.style.color = '#ef4444';
-                    desc.innerText = 'صوت في الليل لقتل أحد القرويين.';
-                } else {
-                    icon.innerText = '🧑‍🌾'; name.innerText = 'أنت قروي'; name.style.color = '#22c55e';
-                    desc.innerText = 'صوت في النهار لإعدام المستذئبين.';
-                }
-                if (me.isDead) {
-                    name.innerText = 'أنت ميت 👻'; name.style.color = '#94a3b8';
+            state.players.forEach((p, idx) => {
+                p.role = rolesPool[idx];
+                p.isDead = false;
+                p.votes = 0;
+                if (p.id === myId) state.myRole = p.role;
+            });
+
+            renderMyRole();
+            startNightPhase();
+        }
+
+        function renderMyRole() {
+            const icon = document.getElementById('my-role-icon');
+            const name = document.getElementById('my-role-name');
+            const desc = document.getElementById('my-role-desc');
+
+            if (state.myRole === 'werewolf') {
+                icon.innerText = '🐺';
+                name.innerText = 'أنت المستذئب (The Werewolf)';
+                name.style.color = '#ef4444';
+                desc.innerText = 'استيقظ ليلاً وافترس أحد القرويين دون أن يكتشف أحد هويتك نهاراً!';
+            } else if (state.myRole === 'doctor') {
+                icon.innerText = '💉';
+                name.innerText = 'أنت الطبيب المعالج (Doctor)';
+                name.style.color = '#10b981';
+                desc.innerText = 'اختر شخصاً كل ليلة لإنقاذه وحمايته من هجمات المستذئب!';
+            } else if (state.myRole === 'seer') {
+                icon.innerText = '🔮';
+                name.innerText = 'أنت العرّاف (Seer)';
+                name.style.color = '#a855f7';
+                desc.innerText = 'اكشف هوية شخص واحد كل ليلة لمعرفة هل هو مستذئب أم قروي بريء!';
+            } else {
+                icon.innerText = '🧑‍🌾';
+                name.innerText = 'أنت قروي بريء (Villager)';
+                name.style.color = '#38bdf8';
+                desc.innerText = 'نم بهدوء ليلاً، وناقش وصوّت نهاراً لإعدام المستذئب المتنكر!';
+            }
+        }
+
+        function startNightPhase() {
+            state.phase = 'night';
+            document.body.classList.remove('day-mode');
+            document.getElementById('phase-text').innerText = 'حلّ الليل في القرية... 🌑🐺';
+            playWolfSound('howl');
+            logMessage('🌑 حلّ الظلام ونام الجميع... المستذئب يبحث عن ضحية!');
+
+            if (state.myRole === 'werewolf') {
+                document.getElementById('instruction').innerText = 'اختر الضحية التي تريد افتراسها هذه الليلة:';
+            } else if (state.myRole === 'doctor') {
+                document.getElementById('instruction').innerText = 'اختر شخصاً لحمايته من هجوم المستذئب الليلة:';
+            } else if (state.myRole === 'seer') {
+                document.getElementById('instruction').innerText = 'اختر شخصاً لكشف هويته السرية:';
+            } else {
+                document.getElementById('instruction').innerText = 'أنت نائم بأمان في سريرك... انتظر شروق الشمس!';
+            }
+
+            renderPlayersGrid(targetId => handleNightAction(targetId));
+            startTimer(8, () => resolveNight());
+        }
+
+        let nightTarget = null;
+        function handleNightAction(targetId) {
+            playWolfSound('vote');
+            nightTarget = targetId;
+            const target = state.players.find(p => p.id === targetId);
+            if (state.myRole === 'seer' && target) {
+                alert(`🔮 الرؤيا: ${target.name} هو [${target.role === 'werewolf' ? 'مستذئب خائن! 🐺' : 'قروي بريء 🧑‍🌾'}]`);
+            } else {
+                logMessage(`🎯 اخترت التفاعل مع: ${target ? target.name : ''}`);
+            }
+        }
+
+        function resolveNight() {
+            // Pick victim
+            let victimId = null;
+            if (state.myRole === 'werewolf') {
+                victimId = nightTarget || getRandomAliveTarget(myId);
+            } else {
+                const wolf = state.players.find(p => p.role === 'werewolf' && !p.isDead);
+                victimId = getRandomAliveTarget(wolf ? wolf.id : '');
+            }
+
+            if (victimId) {
+                const victim = state.players.find(p => p.id === victimId);
+                if (victim) {
+                    victim.isDead = true;
+                    showToast(`💀 صباح حزين: تم العثور على ${victim.name} مقتولاً!`);
+                    logMessage(`💀 مات ${victim.name} خلال الليل.`);
                 }
             }
 
-            // Grid
+            setTimeout(() => {
+                if (!checkEndGame()) startDayPhase();
+            }, 2500);
+        }
+
+        function startDayPhase() {
+            state.phase = 'day';
+            document.body.classList.add('day-mode');
+            document.getElementById('phase-text').innerText = 'أشرقت الشمس - وقت التصويت! ☀️⚖️';
+            document.getElementById('instruction').innerText = 'ناقشوا وصوّتوا على الشخص المشتبه بأنه المستذئب لإعدامه:';
+            logMessage('☀️ بدأ الاجتماع الصباحي! صوّتوا بحكمة.');
+
+            // Reset votes
+            state.players.forEach(p => p.votes = 0);
+            renderPlayersGrid(targetId => handleDayVote(targetId));
+            startTimer(12, () => resolveDayVotes());
+        }
+
+        function handleDayVote(targetId) {
+            playWolfSound('vote');
+            const target = state.players.find(p => p.id === targetId);
+            if (target) {
+                target.votes += 1;
+                logMessage(`🗳️ صوّتت ضد ${target.name}`);
+                renderPlayersGrid();
+            }
+        }
+
+        function resolveDayVotes() {
+            // Simulate bot votes
+            state.players.forEach(p => {
+                if (p.id !== myId && !p.isDead) {
+                    const randomTarget = state.players.filter(other => !other.isDead)[Math.floor(Math.random() * state.players.filter(other => !other.isDead).length)];
+                    if (randomTarget) randomTarget.votes += 1;
+                }
+            });
+
+            // Find highest voted
+            let maxVotes = -1;
+            let eliminated = null;
+            state.players.forEach(p => {
+                if (!p.isDead && p.votes > maxVotes) {
+                    maxVotes = p.votes;
+                    eliminated = p;
+                }
+            });
+
+            if (eliminated && maxVotes > 0) {
+                eliminated.isDead = true;
+                const wasWolf = (eliminated.role === 'werewolf');
+                showToast(`⚖️ حكمت القرية بإعدام ${eliminated.name}!<br><span style="font-size:1.1rem; color:#fbbf24">${wasWolf ? '🎉 وكان هو المستذئب بالفعل!' : '😢 وللأسف كان بريئاً!'}</span>`);
+                logMessage(`⚖️ تم إعدام ${eliminated.name} (${wasWolf ? 'مستذئب' : 'بريء'}).`);
+            }
+
+            setTimeout(() => {
+                if (!checkEndGame()) startNightPhase();
+            }, 3000);
+        }
+
+        function renderPlayersGrid(onSelect) {
             const grid = document.getElementById('players-grid');
             grid.innerHTML = '';
-            
-            // Reset myVote at start of new phase locally
-            if (state.timeRemaining === (state.status === 'night' ? 15 : 30)) myVote = null;
-
-            let instruction = '';
-            if (me?.isDead) instruction = 'راقب اللعبة بصمت...';
-            else if (state.status === 'night' && me?.role === 'werewolf') instruction = 'اختر ضحيتك!';
-            else if (state.status === 'night') instruction = 'المدينة نائمة... شش!';
-            else if (state.status === 'day') instruction = 'صوت لمن تعتقد أنه مستذئب!';
-            document.getElementById('instruction').innerText = instruction;
 
             state.players.forEach(p => {
                 const btn = document.createElement('div');
-                btn.className = `player-btn ${p.isDead ? 'dead' : ''} ${myVote === p.id ? 'voted' : ''}`;
-                btn.innerText = p.id === myId ? 'أنت' : 'لاعب ' + p.id.substring(0,3);
+                btn.className = `player-btn ${p.isDead ? 'dead' : ''}`;
                 
-                if (p.votes > 0) {
-                    const badge = document.createElement('div');
-                    badge.className = 'vote-count';
-                    badge.innerText = p.votes;
-                    btn.appendChild(badge);
+                const statusIcon = p.isDead ? '🪦' : (p.id === myId ? '👤' : '🧑‍🌾');
+                btn.innerHTML = `
+                    <span style="font-size: 1.8rem;">${statusIcon}</span>
+                    <span>${p.name}</span>
+                    ${p.votes > 0 ? `<div class="vote-count">${p.votes}</div>` : ''}
+                `;
+
+                if (!p.isDead && onSelect) {
+                    btn.onclick = () => onSelect(p.id);
                 }
-                
-                btn.onclick = () => castVote(p.id);
                 grid.appendChild(btn);
             });
         }
 
-        function log(msg) {
-            const div = document.createElement('div');
-            div.innerText = '> ' + msg;
-            const logger = document.getElementById('log');
-            logger.appendChild(div);
-            logger.scrollTop = logger.scrollHeight;
+        function checkEndGame() {
+            const wolfAlive = state.players.some(p => p.role === 'werewolf' && !p.isDead);
+            const humansAlive = state.players.filter(p => p.role !== 'werewolf' && !p.isDead).length;
+
+            if (!wolfAlive) {
+                showToast('🏆 فاز القرويون! تم القضاء على المستذئب بنجاح وعم السلام القرية!');
+                setTimeout(() => location.reload(), 4000);
+                return true;
+            }
+            if (humansAlive <= 1) {
+                showToast('🐺 فاز المستذئب! لقد التهم القرية بالكامل!');
+                setTimeout(() => location.reload(), 4000);
+                return true;
+            }
+            return false;
         }
 
-        function showToast(msg) {
+        function getRandomAliveTarget(excludeId) {
+            const alives = state.players.filter(p => !p.isDead && p.id !== excludeId);
+            if (alives.length === 0) return null;
+            return alives[Math.floor(Math.random() * alives.length)].id;
+        }
+
+        function startTimer(seconds, onComplete) {
+            if (timerInterval) clearInterval(timerInterval);
+            let time = seconds;
+            document.getElementById('timer').innerText = `00:${time < 10 ? '0' : ''}${time}`;
+
+            timerInterval = setInterval(() => {
+                time--;
+                document.getElementById('timer').innerText = `00:${time < 10 ? '0' : ''}${time}`;
+                if (time <= 0) {
+                    clearInterval(timerInterval);
+                    if (onComplete) onComplete();
+                }
+            }, 1000);
+        }
+
+        function showToast(html) {
             const t = document.getElementById('toast');
-            t.innerText = msg;
-            t.style.opacity = '1';
-            setTimeout(() => t.style.opacity = '0', 3000);
+            t.innerHTML = html;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2800);
+        }
+
+        function logMessage(msg) {
+            const log = document.getElementById('log');
+            const item = document.createElement('div');
+            item.innerText = msg;
+            log.prepend(item);
         }
     </script>
 </body>

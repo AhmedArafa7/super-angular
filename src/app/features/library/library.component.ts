@@ -15,6 +15,16 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 export type BookStatus = 'approved' | 'pending' | 'rejected';
 
+export interface BookSection {
+  id: string;
+  title: string;
+  description?: string;
+  order: number;
+  parentSectionId?: string | null;
+  subSections?: BookSection[];
+  isExpanded?: boolean;
+}
+
 export interface Chapter {
   title: string;
   content: string;
@@ -70,16 +80,23 @@ export interface PageVideo {
   id: string;
   title?: string;
   url?: string;
-  videoBlob?: Blob;
-  videoBlobUrl?: string;
+  videoBlobId?: string; // IndexedDB 'book_video_blobs' reference key
+  videoBlob?: Blob; // Temporary during upload or preview
+  videoBlobUrl?: string; // Temporary ObjectURL only active when viewing/playing
   type: 'local' | 'youtube' | 'drive' | 'url';
   driveFileId?: string;
+  fileName?: string;
+  fileSize?: number;
+  duration?: number;
   autoPlay?: boolean;
 }
 
 export interface BookPage {
   id: string;
-  type: 'image' | 'text' | 'blank';
+  type: 'image' | 'text' | 'blank' | 'index';
+  sectionId?: string;
+  sectionTitle?: string;
+  isIndexPage?: boolean;
   imageUrl?: string;
   processedImageUrl?: string;
   imageBlob?: Blob;
@@ -117,6 +134,8 @@ export interface Book {
   pagesCount?: number;
   chapters?: Chapter[];
   pages?: BookPage[];
+  sections?: BookSection[];
+  hasTableOfContents?: boolean;
   isPersonalPdf?: boolean;
   fileDataUrl?: string;
 }
@@ -492,11 +511,17 @@ export class LibraryComponent {
 
   // --- ADVANCED BOOK STUDIO & CREATOR STATE ---
   showBookStudioDialog = false;
-  studioTab: 'details' | 'pages' | 'editor' = 'pages';
+  studioStep: 1 | 2 | 3 | 4 = 1; // 1: Info & Cover, 2: Sections Builder, 3: Content & Media, 4: Preview & Publish
+  studioTab: 'details' | 'pages' | 'sections' | 'editor' = 'details';
   studioBookMode: 'image' | 'text' = 'image';
   studioLayoutMode: 'split' | 'grid' | 'single' | 'spread' = 'split';
   studioGridDensity: 'compact' | 'medium' | 'comfortable' = 'medium';
   isInspectorCollapsed = false;
+  selectedSectionFilter: string = 'all';
+
+  // Quick Inline Section Creation State
+  quickMainSectionTitle = '';
+  quickSubSectionTitleMap: { [sectionId: string]: string } = {};
 
   studioBook = {
     title: '',
@@ -504,8 +529,31 @@ export class LibraryComponent {
     description: '',
     category: 'روايات مصرية',
     coverUrl: '',
-    pages: [] as BookPage[]
+    sections: [] as BookSection[],
+    pages: [] as BookPage[],
+    hasTableOfContents: true
   };
+
+  // --- SECTIONS & HIERARCHICAL FOLDERS STATE ---
+  selectedSectionId: string | null = null;
+  newSectionTitle = '';
+  newSectionDescription = '';
+  newSectionParentId: string | null = null;
+  showAddSectionModal = false;
+  isIngestingFolder = false;
+  folderIngestProgress = { current: 0, total: 0, currentFile: '' };
+
+  // --- ZERO-RAM VIDEO ENGINE STATE ---
+  activeVideoUrl: string | null = null;
+  activeVideoLoading = false;
+  activeVideoError = false;
+
+  // --- TOC DRAWER & LOCAL .VBOOK EXPORT/IMPORT STATE ---
+  showTocDrawer = false;
+  isExportingBook = false;
+  isImportingBook = false;
+  showExportModal = false;
+  selectedBookForExport: Book | null = null;
 
   editingBookId: string | null = null;
   newNoteText = '';
@@ -1023,6 +1071,7 @@ export class LibraryComponent {
   openBookReader(book: Book) {
     this.selectedBookForReading = book;
     this.pageZoom = 1.0;
+    this.showTocDrawer = false;
     
     // Restore saved progress if any
     try {
@@ -1050,13 +1099,18 @@ export class LibraryComponent {
     this.books.update(books =>
       books.map(b => b.id === book.id ? { ...b, downloadCount: (b.downloadCount || 0) + 1 } : b)
     );
+
+    // Zero-RAM Video Engine: Load video on demand for active page only
+    this.loadVideoForActivePage();
   }
 
   closeBookReader() {
     this.saveCurrentProgress();
+    this.revokeCurrentVideo();
     this.selectedBookForReading = null;
     this.activePageIndex = 0;
     this.activeChapterIndex = 0;
+    this.showTocDrawer = false;
     if (this.activeAudioElement) {
       this.activeAudioElement.pause();
       this.isAudioPlaying = false;
@@ -1064,6 +1118,54 @@ export class LibraryComponent {
     if (this.isTTSPlaying && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       this.isTTSPlaying = false;
+    }
+  }
+
+  async loadVideoForActivePage() {
+    // 1. Immediately revoke previous active blob ObjectURL to free RAM
+    this.revokeCurrentVideo();
+
+    if (!this.selectedBookForReading || !this.selectedBookForReading.pages) return;
+    const curPage = this.selectedBookForReading.pages[this.activePageIndex];
+    if (!curPage || !curPage.video) return;
+
+    if (curPage.video.videoBlobId) {
+      this.activeVideoLoading = true;
+      try {
+        const blob = await this.indexedDb.getVideoBlob(curPage.video.videoBlobId);
+        if (blob) {
+          this.activeVideoUrl = URL.createObjectURL(blob);
+          curPage.video.videoBlobUrl = this.activeVideoUrl;
+        }
+      } catch (e) {
+        console.warn('[Zero-RAM Video Engine] Failed loading video blob from IndexedDB:', e);
+      } finally {
+        this.activeVideoLoading = false;
+      }
+    } else if (curPage.video.videoBlob && !curPage.video.videoBlobUrl) {
+      this.activeVideoUrl = URL.createObjectURL(curPage.video.videoBlob);
+      curPage.video.videoBlobUrl = this.activeVideoUrl;
+    } else if (curPage.video.url) {
+      this.activeVideoUrl = curPage.video.url;
+    }
+  }
+
+  revokeCurrentVideo() {
+    if (this.activeVideoUrl && this.activeVideoUrl.startsWith('blob:')) {
+      try {
+        URL.revokeObjectURL(this.activeVideoUrl);
+      } catch (e) {}
+    }
+    this.activeVideoUrl = null;
+    if (this.selectedBookForReading?.pages) {
+      this.selectedBookForReading.pages.forEach(p => {
+        if (p.video?.videoBlobUrl && p.video.videoBlobUrl.startsWith('blob:')) {
+          try {
+            URL.revokeObjectURL(p.video.videoBlobUrl);
+          } catch (e) {}
+          p.video.videoBlobUrl = undefined;
+        }
+      });
     }
   }
 
@@ -1106,9 +1208,11 @@ export class LibraryComponent {
     if (this.selectedBookForReading.pages && this.activePageIndex < this.selectedBookForReading.pages.length - step) {
       this.activePageIndex += step;
       this.saveCurrentProgress();
+      this.loadVideoForActivePage();
     } else if (this.selectedBookForReading.pages && this.activePageIndex < this.selectedBookForReading.pages.length - 1) {
       this.activePageIndex = this.selectedBookForReading.pages.length - 1;
       this.saveCurrentProgress();
+      this.loadVideoForActivePage();
     } else if (this.selectedBookForReading.chapters && this.activeChapterIndex < this.selectedBookForReading.chapters.length - 1) {
       this.activeChapterIndex++;
       this.saveCurrentProgress();
@@ -1121,9 +1225,11 @@ export class LibraryComponent {
     if (this.activePageIndex >= step) {
       this.activePageIndex -= step;
       this.saveCurrentProgress();
+      this.loadVideoForActivePage();
     } else if (this.activePageIndex > 0) {
       this.activePageIndex = 0;
       this.saveCurrentProgress();
+      this.loadVideoForActivePage();
     } else if (this.selectedBookForReading.chapters && this.activeChapterIndex > 0) {
       this.activeChapterIndex--;
       this.saveCurrentProgress();
@@ -1135,9 +1241,26 @@ export class LibraryComponent {
     if (!input || !this.selectedBookForReading?.pages) return;
     const pageNum = parseInt(input.value, 10);
     if (!isNaN(pageNum)) {
-      const targetIndex = Math.max(0, Math.min(pageNum - 1, this.selectedBookForReading.pages.length - 1));
-      this.activePageIndex = targetIndex;
-      this.saveCurrentProgress();
+      this.jumpToPageIndex(pageNum - 1);
+    }
+  }
+
+  jumpToPageIndex(targetIndex: number) {
+    if (!this.selectedBookForReading?.pages) return;
+    const validIndex = Math.max(0, Math.min(targetIndex, this.selectedBookForReading.pages.length - 1));
+    this.activePageIndex = validIndex;
+    this.showTocDrawer = false;
+    this.saveCurrentProgress();
+    this.loadVideoForActivePage();
+  }
+
+  jumpToSection(sectionId: string) {
+    if (!this.selectedBookForReading?.pages) return;
+    const pageIndex = this.selectedBookForReading.pages.findIndex(p => p.sectionId === sectionId);
+    if (pageIndex >= 0) {
+      this.jumpToPageIndex(pageIndex);
+    } else {
+      this.toast.show('لا توجد صفحات مخصصة داخل هذا القسم بعد', 'info');
     }
   }
 
@@ -1562,7 +1685,9 @@ export class LibraryComponent {
       description: book.description || '',
       category: book.category || 'روايات مصرية',
       coverUrl: book.coverUrl || '',
-      pages: book.pages && book.pages.length > 0 ? JSON.parse(JSON.stringify(book.pages)) : []
+      sections: book.sections && book.sections.length > 0 ? JSON.parse(JSON.stringify(book.sections)) : [],
+      pages: book.pages && book.pages.length > 0 ? JSON.parse(JSON.stringify(book.pages)) : [],
+      hasTableOfContents: book.hasTableOfContents ?? true
     };
 
     if (this.studioBook.pages.length === 0 && book.chapters && book.chapters.length > 0) {
@@ -1609,8 +1734,62 @@ export class LibraryComponent {
     }
   }
 
+  get filteredStudioPages(): BookPage[] {
+    if (!this.studioBook.pages) return [];
+    if (this.selectedSectionFilter === 'all') return this.studioBook.pages;
+    if (this.selectedSectionFilter === 'none') return this.studioBook.pages.filter(p => !p.sectionId);
+    return this.studioBook.pages.filter(p => p.sectionId === this.selectedSectionFilter);
+  }
+
+  goToStudioStep(step: 1 | 2 | 3 | 4) {
+    this.studioStep = step;
+  }
+
+  nextStudioStep() {
+    if (this.studioStep === 1) {
+      if (!this.studioBook.title.trim()) {
+        this.toast.show('يرجى إدخال عنوان الكتاب أولاً للمتابعة', 'warning');
+        return;
+      }
+      this.studioStep = 2;
+    } else if (this.studioStep === 2) {
+      this.studioStep = 3;
+    } else if (this.studioStep === 3) {
+      this.studioStep = 4;
+    }
+  }
+
+  prevStudioStep() {
+    if (this.studioStep > 1) {
+      this.studioStep = (this.studioStep - 1) as 1 | 2 | 3 | 4;
+    }
+  }
+
+  addQuickMainSection() {
+    if (!this.quickMainSectionTitle.trim()) {
+      this.toast.show('يرجى كتابة عنوان القسم الرئيسي', 'warning');
+      return;
+    }
+    this.addMainSection(this.quickMainSectionTitle.trim());
+    this.quickMainSectionTitle = '';
+  }
+
+  addQuickSubSection(parentSectionId: string) {
+    const title = (this.quickSubSectionTitleMap[parentSectionId] || '').trim();
+    if (!title) {
+      this.toast.show('يرجى كتابة عنوان القسم الفرعي', 'warning');
+      return;
+    }
+    this.addSubSection(parentSectionId, title);
+    this.quickSubSectionTitleMap[parentSectionId] = '';
+  }
+
   async openBookStudio() {
     this.editingBookId = null;
+    this.studioStep = 1;
+    this.selectedSectionFilter = 'all';
+    this.quickMainSectionTitle = '';
+    this.quickSubSectionTitleMap = {};
     const loaded = await this.loadStudioDraft();
     if (loaded) {
       this.toast.show(`تم استرجاع مسودة الكتاب المحفوظة تلقائياً (${this.studioBook.pages.length} صفحة)`, 'info');
@@ -1621,10 +1800,12 @@ export class LibraryComponent {
         description: '',
         category: 'روايات مصرية',
         coverUrl: '',
-        pages: []
+        sections: [],
+        pages: [],
+        hasTableOfContents: true
       };
       this.selectedPageIndex = 0;
-      this.studioTab = 'pages';
+      this.studioTab = 'details';
     }
     this.showBookStudioDialog = true;
   }
@@ -1635,13 +1816,19 @@ export class LibraryComponent {
 
     await this.clearStudioDraft();
     this.editingBookId = null;
+    this.studioStep = 1;
+    this.selectedSectionFilter = 'all';
+    this.quickMainSectionTitle = '';
+    this.quickSubSectionTitleMap = {};
     this.studioBook = {
       title: '',
       author: '',
       description: '',
       category: 'روايات مصرية',
       coverUrl: '',
-      pages: []
+      sections: [],
+      pages: [],
+      hasTableOfContents: true
     };
     this.selectedPageIndex = 0;
     this.toast.show('تم مسح المسودة والبدء بكتاب جديد', 'info');
@@ -2510,7 +2697,7 @@ export class LibraryComponent {
     }
 
     if (this.studioBook.pages.length === 0) {
-      this.toast.show('يرجى إضافة صفحة واحدة على الأقل للكتاب (صور أو نصوص)', 'error');
+      this.toast.show('يرجى إضافة صفحة أو قسم واحد على الأقل للكتاب', 'error');
       return;
     }
 
@@ -2542,7 +2729,7 @@ export class LibraryComponent {
         id: bookId,
         title: this.studioBook.title,
         author: this.studioBook.author || 'المكتبة العامة',
-        description: this.studioBook.description || `كتاب تم إنشاؤه عبر استوديو الكتب (${this.studioBook.pages.length} صفحة).`,
+        description: this.studioBook.description || `كتاب تفاعلي تم إنشاؤه عبر استوديو الكتب (${this.studioBook.pages.length} صفحة/فيديو).`,
         coverUrl,
         fileUrl: '',
         category: this.studioBook.category,
@@ -2557,7 +2744,16 @@ export class LibraryComponent {
         featured: true,
         pagesCount: this.studioBook.pages.length,
         chapters: chapters.length > 0 ? chapters : undefined,
-        pages: [...this.studioBook.pages]
+        sections: this.studioBook.sections && this.studioBook.sections.length > 0 ? JSON.parse(JSON.stringify(this.studioBook.sections)) : undefined,
+        hasTableOfContents: this.studioBook.hasTableOfContents ?? true,
+        pages: this.studioBook.pages.map(p => ({
+          ...p,
+          video: p.video ? {
+            ...p.video,
+            videoBlob: undefined,
+            videoBlobUrl: undefined
+          } : undefined
+        }))
       };
 
       if (this.editingBookId) {
@@ -2568,7 +2764,7 @@ export class LibraryComponent {
         this.books.update(list => [bookPayload, ...list]);
       }
 
-      // 1. Persist to IndexedDB (created_books - supports large Base64 images without quota limits)
+      // 1. Persist to IndexedDB (created_books)
       try {
         await this.indexedDb.put('created_books', {
           id: bookPayload.id,
@@ -2582,7 +2778,7 @@ export class LibraryComponent {
         console.error('Failed to save studio book to IndexedDB:', e);
       }
 
-      // 2. Persist to LocalStorage (with lightweight fallback for heavy base64 images)
+      // 2. Persist to LocalStorage (with lightweight fallback)
       try {
         const stored = localStorage.getItem('SUPER_INGESTED_BOOKS');
         const list: Book[] = stored ? JSON.parse(stored) : [];
@@ -2620,6 +2816,713 @@ export class LibraryComponent {
       this.isProcessingStudioPublish = false;
     }
   }
+
+  // =========================================================================
+  // --- HIERARCHICAL SECTIONS & CHAPTERS MANAGEMENT ---
+  // =========================================================================
+
+  openAddSectionModal(parentId: string | null = null) {
+    this.newSectionParentId = parentId;
+    this.newSectionTitle = '';
+    this.newSectionDescription = '';
+    this.showAddSectionModal = true;
+  }
+
+  closeAddSectionModal() {
+    this.showAddSectionModal = false;
+    this.newSectionTitle = '';
+    this.newSectionDescription = '';
+    this.newSectionParentId = null;
+  }
+
+  saveNewSection() {
+    this.confirmCreateSection();
+  }
+
+  confirmCreateSection() {
+    if (!this.newSectionTitle.trim()) {
+      this.toast.show('يرجى كتابة عنوان القسم', 'warning');
+      return;
+    }
+
+    if (!this.studioBook.sections) {
+      this.studioBook.sections = [];
+    }
+
+    if (this.newSectionParentId) {
+      this.addSubSection(this.newSectionParentId, this.newSectionTitle.trim(), this.newSectionDescription.trim());
+    } else {
+      this.addMainSection(this.newSectionTitle.trim(), this.newSectionDescription.trim());
+    }
+
+    this.closeAddSectionModal();
+  }
+
+  renameSection(section: BookSection) {
+    const newTitle = prompt('أدخل الاسم الجديد للقسم:', section.title);
+    if (newTitle && newTitle.trim() && newTitle.trim() !== section.title) {
+      section.title = newTitle.trim();
+      if (this.studioBook.pages) {
+        this.studioBook.pages.forEach(p => {
+          if (p.sectionId === section.id) {
+            p.sectionTitle = section.title;
+          }
+        });
+      }
+      this.saveStudioDraft(true);
+      this.toast.show('تم تعديل اسم القسم بنجاح!', 'success');
+    }
+  }
+
+  addMainSection(title?: string, desc?: string): BookSection {
+    if (!this.studioBook.sections) this.studioBook.sections = [];
+    const newSec: BookSection = {
+      id: 'sec_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      title: title || `القسم ${(this.studioBook.sections.length || 0) + 1}`,
+      description: desc || '',
+      order: (this.studioBook.sections.length || 0) + 1,
+      parentSectionId: null,
+      subSections: [],
+      isExpanded: true
+    };
+    this.studioBook.sections.push(newSec);
+    this.saveStudioDraft(true);
+    this.toast.show(`تمت إضافة القسم "${newSec.title}" بنجاح ✨`, 'success');
+    return newSec;
+  }
+
+  addSubSection(parentSectionId: string, title?: string, desc?: string): BookSection | null {
+    if (!this.studioBook.sections) this.studioBook.sections = [];
+    const parent = this.findSectionById(this.studioBook.sections, parentSectionId);
+    if (!parent) return null;
+
+    if (!parent.subSections) parent.subSections = [];
+    const newSubSec: BookSection = {
+      id: 'subsec_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      title: title || `قسم فرعي ${parent.subSections.length + 1}`,
+      description: desc || '',
+      order: parent.subSections.length + 1,
+      parentSectionId: parentSectionId,
+      subSections: [],
+      isExpanded: true
+    };
+    parent.subSections.push(newSubSec);
+    parent.isExpanded = true;
+    this.saveStudioDraft(true);
+    this.toast.show(`تمت إضافة القسم الفرعي "${newSubSec.title}" داخل "${parent.title}" 📁`, 'success');
+    return newSubSec;
+  }
+
+  deleteSection(sectionId: string) {
+    if (!this.studioBook.sections) return;
+    this.deleteSectionRecursive(this.studioBook.sections, sectionId);
+
+    // Unlink section from pages
+    if (this.studioBook.pages) {
+      this.studioBook.pages.forEach(p => {
+        if (p.sectionId === sectionId) {
+          p.sectionId = undefined;
+          p.sectionTitle = undefined;
+        }
+      });
+    }
+
+    this.saveStudioDraft(true);
+    this.toast.show('تم حذف القسم', 'info');
+  }
+
+  private deleteSectionRecursive(sections: BookSection[], id: string): boolean {
+    const idx = sections.findIndex(s => s.id === id);
+    if (idx >= 0) {
+      sections.splice(idx, 1);
+      return true;
+    }
+    for (const s of sections) {
+      if (s.subSections && s.subSections.length > 0) {
+        const deleted = this.deleteSectionRecursive(s.subSections, id);
+        if (deleted) return true;
+      }
+    }
+    return false;
+  }
+
+  findSectionById(sections: BookSection[], id: string): BookSection | null {
+    if (!sections) return null;
+    for (const s of sections) {
+      if (s.id === id) return s;
+      if (s.subSections && s.subSections.length > 0) {
+        const found = this.findSectionById(s.subSections, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  getFlattenedSectionsList(sections?: BookSection[], level: number = 0): { id: string; label: string; section: BookSection; level: number }[] {
+    const list = sections || this.studioBook.sections || [];
+    const result: { id: string; label: string; section: BookSection; level: number }[] = [];
+    for (const s of list) {
+      const prefix = level > 0 ? '　'.repeat(level) + '↳ 📁 ' : '📌 ';
+      result.push({ id: s.id, label: prefix + s.title, section: s, level });
+      if (s.subSections && s.subSections.length > 0) {
+        result.push(...this.getFlattenedSectionsList(s.subSections, level + 1));
+      }
+    }
+    return result;
+  }
+
+  getPagesForSection(pages: BookPage[], sectionId?: string): BookPage[] {
+    if (!pages) return [];
+    if (!sectionId) return pages.filter(p => !p.sectionId);
+    return pages.filter(p => p.sectionId === sectionId);
+  }
+
+  assignPageToSection(page: BookPage, sectionId: string | null) {
+    if (!sectionId) {
+      page.sectionId = undefined;
+      page.sectionTitle = undefined;
+    } else {
+      const sec = this.findSectionById(this.studioBook.sections || [], sectionId);
+      page.sectionId = sectionId;
+      page.sectionTitle = sec?.title || 'قسم';
+    }
+    this.saveStudioDraft(true);
+  }
+
+  cleanFileName(name: string): string {
+    if (!name) return 'عنصر';
+    return name
+      .replace(/\.[^/.]+$/, '')
+      .replace(/^[0-9]+[\s._-]+/, '')
+      .trim() || name;
+  }
+
+  // =========================================================================
+  // --- BULK FOLDER & VIDEO INGESTION (ZERO RAM LEAK) ---
+  // =========================================================================
+
+  async onFolderUploadSelected(event: Event, targetParentSectionId?: string | null) {
+    const input = event.target as HTMLInputElement;
+    const files = input.files;
+    if (!files || files.length === 0) return;
+
+    this.isIngestingFolder = true;
+    this.folderIngestProgress = { current: 0, total: files.length, currentFile: '' };
+
+    try {
+      const videoFiles: File[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        if (f.type.startsWith('video/') || /\.(mp4|webm|mkv|mov|avi|m4v|3gp|flv)$/i.test(f.name)) {
+          videoFiles.push(f);
+        }
+      }
+
+      if (videoFiles.length === 0) {
+        this.toast.show('لم يتم العثور على أي ملفات فيديو داخل هذا المجلد', 'warning');
+        return;
+      }
+
+      // Sort files naturally by relative path
+      videoFiles.sort((a, b) => a.webkitRelativePath.localeCompare(b.webkitRelativePath, undefined, { numeric: true, sensitivity: 'base' }));
+
+      if (!this.studioBook.sections) this.studioBook.sections = [];
+      if (!this.studioBook.pages) this.studioBook.pages = [];
+
+      const sectionPathMap = new Map<string, BookSection>();
+      let bookTitleSuggested = '';
+
+      const targetParentSection = targetParentSectionId
+        ? this.findSectionById(this.studioBook.sections, targetParentSectionId)
+        : null;
+
+      for (let i = 0; i < videoFiles.length; i++) {
+        const file = videoFiles[i];
+        this.folderIngestProgress.current = i + 1;
+        this.folderIngestProgress.total = videoFiles.length;
+        this.folderIngestProgress.currentFile = file.name;
+
+        const relPath = file.webkitRelativePath || file.name;
+        const parts = relPath.split('/').filter(p => !!p.trim());
+
+        let parentSectionId: string | null = targetParentSection ? targetParentSection.id : null;
+        let currentSection: BookSection | null = targetParentSection;
+        let currentPathAccumulator = targetParentSection ? targetParentSection.id : '';
+
+        if (parts.length > 1) {
+          if (!targetParentSection && !bookTitleSuggested && !this.studioBook.title) {
+            bookTitleSuggested = parts[0];
+            this.studioBook.title = parts[0];
+          }
+
+          // If targetParentSection is specified, create sub-sections starting from folder contents
+          const startIndex = targetParentSection ? 0 : (parts.length > 2 ? 1 : 0);
+          for (let d = startIndex; d < parts.length - 1; d++) {
+            const dirName = parts[d];
+            currentPathAccumulator += (currentPathAccumulator ? '/' : '') + dirName;
+
+            if (!sectionPathMap.has(currentPathAccumulator)) {
+              const newSec: BookSection = {
+                id: 'sec_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+                title: dirName,
+                description: `محتويات قسم ${dirName}`,
+                order: sectionPathMap.size + 1,
+                parentSectionId: parentSectionId,
+                subSections: [],
+                isExpanded: true
+              };
+
+              if (parentSectionId) {
+                const parent = this.findSectionById(this.studioBook.sections, parentSectionId);
+                if (parent) {
+                  if (!parent.subSections) parent.subSections = [];
+                  parent.subSections.push(newSec);
+                } else {
+                  this.studioBook.sections.push(newSec);
+                }
+              } else {
+                this.studioBook.sections.push(newSec);
+              }
+
+              sectionPathMap.set(currentPathAccumulator, newSec);
+            }
+
+            currentSection = sectionPathMap.get(currentPathAccumulator)!;
+            parentSectionId = currentSection.id;
+          }
+        } else {
+          if (!currentSection) {
+            const defaultSecName = 'فيديوهات عامة';
+            if (!sectionPathMap.has('default')) {
+              const newSec: BookSection = {
+                id: 'sec_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+                title: defaultSecName,
+                order: this.studioBook.sections.length + 1,
+                parentSectionId: targetParentSectionId || null,
+                subSections: [],
+                isExpanded: true
+              };
+              if (targetParentSection) {
+                if (!targetParentSection.subSections) targetParentSection.subSections = [];
+                targetParentSection.subSections.push(newSec);
+              } else {
+                this.studioBook.sections.push(newSec);
+              }
+              sectionPathMap.set('default', newSec);
+            }
+            currentSection = sectionPathMap.get('default')!;
+          }
+        }
+
+        // 1. Save video Blob directly into IndexedDB without keeping in RAM
+        const videoBlobId = 'vblob_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+        await this.indexedDb.putVideoBlob(videoBlobId, file, {
+          name: file.name,
+          size: file.size,
+          mimeType: file.type || 'video/mp4'
+        });
+
+        const cleanTitle = this.cleanFileName(file.name);
+
+        // 2. Create Page metadata referencing videoBlobId
+        const newPage: BookPage = {
+          id: 'page_vid_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+          type: 'text',
+          textTitle: cleanTitle,
+          textContent: `فيديو وشرح: ${cleanTitle}\nالقسم: ${currentSection?.title || 'عام'}\nاسم الملف: ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)`,
+          sectionId: currentSection?.id,
+          sectionTitle: currentSection?.title,
+          filter: this.createDefaultFilter(),
+          video: {
+            id: 'vid_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+            title: cleanTitle,
+            type: 'local',
+            videoBlobId: videoBlobId,
+            fileName: file.name,
+            fileSize: file.size
+          }
+        };
+
+        this.studioBook.pages.push(newPage);
+      }
+
+      this.studioBook.hasTableOfContents = true;
+      this.saveStudioDraft(true);
+      const msg = targetParentSection
+        ? `تم رفع المجلد وإدراجه كأقسام فرعية داخل "${targetParentSection.title}" بنجاح (${videoFiles.length} فيديو)! 🎬`
+        : `تم استيراد المجلد بنجاح! تم إنشاء ${sectionPathMap.size} قسم و ${videoFiles.length} فيديو تفاعلي 🎬`;
+      this.toast.show(msg, 'success');
+    } catch (err) {
+      console.error('Error uploading folder:', err);
+      this.toast.show('حدث خطأ أثناء قراءة المجلد', 'error');
+    } finally {
+      this.isIngestingFolder = false;
+      input.value = '';
+    }
+  }
+
+  async onBulkVideoFilesSelected(event: Event, targetSectionId?: string) {
+    const input = event.target as HTMLInputElement;
+    const files = input.files;
+    if (!files || files.length === 0) return;
+
+    this.isIngestingFolder = true;
+    try {
+      if (!this.studioBook.sections) this.studioBook.sections = [];
+      if (!this.studioBook.pages) this.studioBook.pages = [];
+
+      let sec = targetSectionId ? this.findSectionById(this.studioBook.sections, targetSectionId) : null;
+      if (!sec) {
+        sec = {
+          id: 'sec_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+          title: `قسم الفيديوهات #${this.studioBook.sections.length + 1}`,
+          order: this.studioBook.sections.length + 1,
+          parentSectionId: null,
+          subSections: [],
+          isExpanded: true
+        };
+        this.studioBook.sections.push(sec);
+      }
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const videoBlobId = 'vblob_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+        await this.indexedDb.putVideoBlob(videoBlobId, file, {
+          name: file.name,
+          size: file.size,
+          mimeType: file.type || 'video/mp4'
+        });
+
+        const cleanTitle = this.cleanFileName(file.name);
+        const newPage: BookPage = {
+          id: 'page_vid_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+          type: 'text',
+          textTitle: cleanTitle,
+          textContent: `شرح تفاعلي: ${cleanTitle}`,
+          sectionId: sec.id,
+          sectionTitle: sec.title,
+          filter: this.createDefaultFilter(),
+          video: {
+            id: 'vid_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+            title: cleanTitle,
+            type: 'local',
+            videoBlobId: videoBlobId,
+            fileName: file.name,
+            fileSize: file.size
+          }
+        };
+        this.studioBook.pages.push(newPage);
+      }
+
+      this.saveStudioDraft(true);
+      this.toast.show(`تمت إضافة ${files.length} فيديوهات إلى القسم "${sec.title}" بنجاح!`, 'success');
+    } catch (err) {
+      console.error('Bulk video upload failed:', err);
+      this.toast.show('حدث خطأ أثناء رفع الفيديوهات', 'error');
+    } finally {
+      this.isIngestingFolder = false;
+      input.value = '';
+    }
+  }
+
+  // =========================================================================
+  // --- LOCAL EXPORT & IMPORT (.VBOOK & STANDALONE HTML) ---
+  // =========================================================================
+
+  countLocalVideos(book: { pages?: BookPage[] } | Book | null): number {
+    if (!book || !book.pages) return 0;
+    return book.pages.filter(p => p.video && (p.video.type === 'local' || p.video.videoBlobId)).length;
+  }
+
+  exportCurrentStudioBook() {
+    const bookPayload: Book = {
+      id: this.editingBookId || ('studio_book_' + Date.now()),
+      title: this.studioBook.title || 'كتاب بدون عنوان',
+      author: this.studioBook.author || 'المكتبة العامة',
+      description: this.studioBook.description || '',
+      coverUrl: this.studioBook.coverUrl || '',
+      fileUrl: '',
+      category: this.studioBook.category,
+      status: 'approved',
+      uploaderId: 'studio_user',
+      uploaderName: 'صانع الكتب',
+      downloadCount: 1,
+      createdAt: new Date().toISOString().split('T')[0],
+      fileSize: `${(this.studioBook.pages.length * 0.4).toFixed(1)} MB`,
+      rating: 5.0,
+      ratingCount: 1,
+      featured: true,
+      pagesCount: this.studioBook.pages.length,
+      sections: this.studioBook.sections,
+      hasTableOfContents: this.studioBook.hasTableOfContents ?? true,
+      pages: this.studioBook.pages
+    };
+    this.exportBookAsVBook(bookPayload);
+  }
+
+  openExportModal(book: Book) {
+    this.selectedBookForExport = book;
+    this.showExportModal = true;
+  }
+
+  closeExportModal() {
+    this.showExportModal = false;
+    this.selectedBookForExport = null;
+  }
+
+  async exportBookAsVBook(book: Book | { title?: string; pages?: BookPage[]; [key: string]: any }) {
+    if (!book) return;
+    this.isExportingBook = true;
+    this.toast.show(`جاري تجميع وتحميل كتاب "${book.title || 'كتاب'}" محلياً... 📦`, 'info');
+
+    try {
+      const videoBlobIds: string[] = [];
+      const pages: BookPage[] = (book.pages as BookPage[]) || [];
+      pages.forEach((p: BookPage) => {
+        if (p.video?.videoBlobId) {
+          videoBlobIds.push(p.video.videoBlobId);
+        }
+      });
+
+      const videoChunksMeta: any[] = [];
+      const videoBlobArray: Blob[] = [];
+      let currentOffset = 0;
+
+      for (const blobId of videoBlobIds) {
+        const blob = await this.indexedDb.getVideoBlob(blobId);
+        if (blob) {
+          const byteLength = blob.size;
+          videoChunksMeta.push({
+            videoBlobId: blobId,
+            byteOffset: currentOffset,
+            byteLength: byteLength,
+            mimeType: blob.type || 'video/mp4'
+          });
+          videoBlobArray.push(blob);
+          currentOffset += byteLength;
+        }
+      }
+
+      const cleanBook: Book = {
+        ...book,
+        pages: pages.map((p: BookPage) => ({
+          ...p,
+          video: p.video ? {
+            ...p.video,
+            videoBlob: undefined,
+            videoBlobUrl: undefined
+          } : undefined
+        }))
+      } as Book;
+
+      const manifest = {
+        format: 'SUPER_VBOOK_V1',
+        exportedAt: new Date().toISOString(),
+        book: cleanBook,
+        videoChunks: videoChunksMeta
+      };
+
+      const manifestStr = JSON.stringify(manifest);
+      const manifestBuffer = new TextEncoder().encode(manifestStr);
+
+      const magic = new TextEncoder().encode('VBOOK1');
+      const headerLenBuffer = new ArrayBuffer(4);
+      new DataView(headerLenBuffer).setUint32(0, manifestBuffer.byteLength, false);
+
+      const finalPackageBlob = new Blob([
+        magic,
+        headerLenBuffer,
+        manifestBuffer,
+        ...videoBlobArray
+      ], { type: 'application/octet-stream' });
+
+      const downloadUrl = URL.createObjectURL(finalPackageBlob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `${this.cleanFileName(book.title || 'كتاب_تفاعلي')}.vbook`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 5000);
+
+      this.toast.show(`تم تحميل حزمة الكتاب "${book.title}.vbook" محلياً بنجاح! 🎉`, 'success');
+      this.closeExportModal();
+    } catch (err) {
+      console.error('Error exporting VBook:', err);
+      this.toast.show('حدث خطأ أثناء تصدير الكتاب', 'error');
+    } finally {
+      this.isExportingBook = false;
+    }
+  }
+
+  async importVBookFile(file: File) {
+    if (!file) return;
+    this.isImportingBook = true;
+    this.toast.show(`جاري استيراد كتاب "${file.name}"... 📥`, 'info');
+
+    try {
+      const headerSlice = file.slice(0, 10);
+      const headerBuffer = await headerSlice.arrayBuffer();
+      const magicStr = new TextDecoder().decode(new Uint8Array(headerBuffer, 0, 6));
+
+      if (magicStr !== 'VBOOK1') {
+        throw new Error('صيغة الملف غير مدعومة (يجب أن يكون ملف .vbook صالح)');
+      }
+
+      const manifestLength = new DataView(headerBuffer).getUint32(6, false);
+      const manifestSlice = file.slice(10, 10 + manifestLength);
+      const manifestText = await manifestSlice.text();
+      const manifest = JSON.parse(manifestText);
+
+      const importedBook: Book = manifest.book;
+      const videoChunks = manifest.videoChunks || [];
+      const binaryStartOffset = 10 + manifestLength;
+
+      // Extract and save video blobs directly into IndexedDB without keeping in RAM
+      for (const chunk of videoChunks) {
+        const chunkBlob = file.slice(
+          binaryStartOffset + chunk.byteOffset,
+          binaryStartOffset + chunk.byteOffset + chunk.byteLength,
+          chunk.mimeType || 'video/mp4'
+        );
+
+        await this.indexedDb.putVideoBlob(chunk.videoBlobId, chunkBlob, {
+          size: chunk.byteLength,
+          mimeType: chunk.mimeType
+        });
+      }
+
+      // Save imported book into IndexedDB
+      await this.indexedDb.put('created_books', {
+        id: importedBook.id,
+        title: importedBook.title,
+        author: importedBook.author,
+        category: importedBook.category,
+        bookData: importedBook,
+        createdAt: importedBook.createdAt
+      });
+
+      // Update Signal
+      this.books.update(list => {
+        const exists = list.some(b => b.id === importedBook.id);
+        if (exists) {
+          return list.map(b => b.id === importedBook.id ? importedBook : b);
+        }
+        return [importedBook, ...list];
+      });
+
+      this.toast.show(`تم استيراد كتاب "${importedBook.title}" بنجاح! (${videoChunks.length} فيديو متضمن) ✨`, 'success');
+      this.openBookReader(importedBook);
+    } catch (err: any) {
+      console.error('Error importing VBook:', err);
+      this.toast.show(err.message || 'فشل استيراد ملف الكتاب', 'error');
+    } finally {
+      this.isImportingBook = false;
+    }
+  }
+
+  onVBookFileInputSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      this.importVBookFile(input.files[0]);
+      input.value = '';
+    }
+  }
+
+  onVBookDrop(event: DragEvent) {
+    event.preventDefault();
+    if (event.dataTransfer && event.dataTransfer.files.length > 0) {
+      const file = event.dataTransfer.files[0];
+      if (file.name.endsWith('.vbook') || file.type === 'application/octet-stream') {
+        this.importVBookFile(file);
+      } else {
+        this.toast.show('يرجى سحب وإفلات ملف بصيغة .vbook', 'warning');
+      }
+    }
+  }
+
+  async exportBookAsStandaloneHtml(book: Book) {
+    if (!book) return;
+    this.isExportingBook = true;
+    this.toast.show(`جاري تصدير صفحة ويب مستقلة لكتاب "${book.title}"... 🌐`, 'info');
+
+    try {
+      const sectionsHtml = (book.sections || []).map((s, idx) => `
+        <div class="section-card">
+          <h3>📌 ${s.title}</h3>
+          <p>${s.description || ''}</p>
+          <div class="subsections">
+            ${(s.subSections || []).map(sub => `<div class="sub-item">📁 ${sub.title}</div>`).join('')}
+          </div>
+        </div>
+      `).join('');
+
+      const pagesHtml = (book.pages || []).map((p, idx) => `
+        <div class="page-card" id="page-${idx + 1}">
+          <div class="page-header">
+            <h4>📄 صفحة ${idx + 1}: ${p.textTitle || ''}</h4>
+            ${p.sectionTitle ? `<span class="badge">${p.sectionTitle}</span>` : ''}
+          </div>
+          ${p.imageUrl ? `<img src="${p.processedImageUrl || p.imageUrl}" alt="صفحة ${idx + 1}" />` : ''}
+          ${p.textContent ? `<p class="page-content">${p.textContent}</p>` : ''}
+          ${p.video ? `<div class="video-notice">🎬 يحتوي هذا الدرس على فيديو مرفق (${p.video.title || 'فيديو'})</div>` : ''}
+        </div>
+      `).join('');
+
+      const htmlContent = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>${book.title} - الكتاب التفاعلي</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #0b1120; color: #fff; margin: 0; padding: 20px; line-height: 1.6; }
+    .container { max-width: 900px; margin: 0 auto; }
+    header { text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px; margin-bottom: 30px; }
+    h1 { color: #f59e0b; margin-bottom: 5px; }
+    .author { color: #94a3b8; font-size: 14px; }
+    .section-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+    .sub-item { margin-right: 20px; color: #38bdf8; font-size: 13px; margin-top: 4px; }
+    .page-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 24px; margin-bottom: 24px; }
+    .badge { background: #4f46e5; padding: 2px 8px; border-radius: 8px; font-size: 11px; }
+    img { max-width: 100%; border-radius: 12px; margin: 15px 0; }
+    .video-notice { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; padding: 12px; border-radius: 12px; margin-top: 10px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>${book.title}</h1>
+      <p class="author">${book.author || 'المكتبة العامة'} • ${book.category}</p>
+      <p>${book.description || ''}</p>
+    </header>
+    <h2>📑 فهرس الأقسام</h2>
+    ${sectionsHtml}
+    <h2>📖 الصفحات والمحتوى</h2>
+    ${pagesHtml}
+  </div>
+</body>
+</html>`;
+
+      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${this.cleanFileName(book.title || 'كتاب')}_offline.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+
+      this.toast.show(`تم تصدير صفحة HTML المستقلة بنجاح!`, 'success');
+      this.closeExportModal();
+    } catch (err) {
+      console.error('Error exporting HTML:', err);
+      this.toast.show('فشل تصدير صفحة الويب', 'error');
+    } finally {
+      this.isExportingBook = false;
+    }
+  }
 }
+
 
 

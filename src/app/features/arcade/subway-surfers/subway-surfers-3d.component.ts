@@ -199,30 +199,29 @@ interface LeaderboardEntry {
       </div>
 
       <!-- ================= 1. START MENU OVERLAY (TROPICAL BEACH DASH EDITION) ================= -->
-      <div *ngIf="gameState === 'MENU'" class="absolute inset-0 z-40 flex items-center justify-center p-2 sm:p-4 bg-gradient-to-br from-sky-500 via-cyan-600 to-blue-900 overflow-hidden select-none">
+      <div *ngIf="gameState === 'MENU'" class="absolute inset-0 z-40 flex items-center justify-center p-2 sm:p-4 pointer-events-none select-none overflow-hidden">
         
-        <!-- Tropical Sunny Ocean & Beach Backdrop Overlay -->
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-amber-200/30 via-transparent to-blue-950/80"></div>
-        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-slate-950/70"></div>
+        <!-- Subtle Tropical Ambient Lighting & Vignette (Allows full view of 3D Beach, Waves & Boy) -->
+        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-slate-950/20 pointer-events-none"></div>
 
         <!-- Left Side Floating Badge: Beach Dash Runner Avatar -->
-        <div class="absolute left-4 sm:left-12 top-20 hidden md:flex flex-col items-center gap-1.5 z-10">
-          <div class="w-16 h-16 rounded-full border-2 border-cyan-400/80 bg-slate-900/90 p-1 shadow-[0_0_25px_rgba(6,182,212,0.6)] flex items-center justify-center">
+        <div class="absolute left-4 sm:left-12 top-20 hidden md:flex flex-col items-center gap-1.5 z-10 pointer-events-auto">
+          <div class="w-16 h-16 rounded-full border-2 border-cyan-400/80 bg-slate-950/80 backdrop-blur-md p-1 shadow-[0_0_25px_rgba(6,182,212,0.6)] flex items-center justify-center">
             <span class="text-3xl">🏄‍♂️</span>
           </div>
           <span class="text-xs font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">Beach Dash</span>
         </div>
 
         <!-- Right Side Floating Badge: Tropical Coast Avatar -->
-        <div class="absolute right-4 sm:right-12 top-20 hidden md:flex flex-col items-center gap-1.5 z-10">
-          <div class="w-16 h-16 rounded-full border-2 border-amber-400/80 bg-slate-900/90 p-1 shadow-[0_0_25px_rgba(245,158,11,0.6)] flex items-center justify-center">
+        <div class="absolute right-4 sm:right-12 top-20 hidden md:flex flex-col items-center gap-1.5 z-10 pointer-events-auto">
+          <div class="w-16 h-16 rounded-full border-2 border-amber-400/80 bg-slate-950/80 backdrop-blur-md p-1 shadow-[0_0_25px_rgba(245,158,11,0.6)] flex items-center justify-center">
             <span class="text-3xl">🏖️</span>
           </div>
           <span class="text-xs font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">Tropical Coast</span>
         </div>
 
-        <!-- Center Station Card (Beach Resort Edition) -->
-        <div class="relative w-full max-w-[440px] max-h-[94dvh] overflow-y-auto bg-slate-900/90 backdrop-blur-xl border-2 border-cyan-500/60 rounded-[28px] sm:rounded-[36px] p-4 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.95)] flex flex-col items-center text-center">
+        <!-- Center Station Card (Beach Resort Edition with Frosted Glass) -->
+        <div class="relative w-full max-w-[440px] max-h-[94dvh] overflow-y-auto bg-slate-950/75 backdrop-blur-2xl border-2 border-cyan-400/50 rounded-[28px] sm:rounded-[36px] p-4 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.9)] flex flex-col items-center text-center pointer-events-auto">
           
           <!-- Small Beach Palm Badge at Top Edge -->
           <div class="absolute -top-3.5 inset-x-0 mx-auto w-12 h-6 bg-slate-900 border border-cyan-500 rounded-full flex items-center justify-center shadow-lg text-sm z-20">
@@ -1225,6 +1224,23 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
   private trackChunks: THREE.Group[] = [];
   private nextSpawnZ = -50;
 
+  // 3D Beach Menu Scene Objects (شاطئ البحر الاستوائي والولد باصص للبحر)
+  private menuBeachGroup: THREE.Group | null = null;
+  private menuOceanWater: THREE.Mesh | null = null;
+  private menuShoreWave: THREE.Mesh | null = null;
+  private menuSeagulls: Array<{
+    group: THREE.Group;
+    leftWing: THREE.Mesh;
+    rightWing: THREE.Mesh;
+    speed: number;
+    radius: number;
+    angle: number;
+    height: number;
+  }> = [];
+  private menuPalmFronds: THREE.Mesh[] = [];
+  private menuSailboats: THREE.Group[] = [];
+  private menuClouds: THREE.Mesh[] = [];
+
   // 3D Characters & Collision State
   private runner: any = null;
   private inspector: any = null;
@@ -1462,6 +1478,9 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     // Build World Track Chunks (Tropical Beach Resort Environment)
     this.buildTrackEnvironment();
 
+    // Build Dedicated 3D Beach Menu Scene (الولد باصص للبحر والشاطئ الاستوائي)
+    this.buildMenuBeachScene();
+
     // Build Characters
     this.runner = this.buildJakeCharacter();
     this.applySelectedSkinToRunner();
@@ -1470,6 +1489,13 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
 
     this.inspector = this.buildPoliceCharacter();
     this.scene.add(this.inspector.root);
+
+    // Initial State: Hide in-game tracks/trains/inspector during Menu
+    if (this.gameState === 'MENU') {
+      if (this.menuBeachGroup) this.menuBeachGroup.visible = true;
+      if (this.inspector?.root) this.inspector.root.visible = false;
+      this.trackChunks.forEach(c => c.visible = false);
+    }
 
     // Start Loop
     this.clock.start();
@@ -1693,6 +1719,278 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
       this.scene.add(chunk);
       this.trackChunks.push(chunk);
     }
+  }
+
+  // --- Dedicated 3D Tropical Beach Scene (شاشة الشاطئ والولد باصص للبحر) ---
+  private buildMenuBeachScene() {
+    this.menuBeachGroup = new THREE.Group();
+    this.menuBeachGroup.name = 'MenuBeachEnvironment';
+
+    // 1. Shimmering Turquoise Ocean Plane with rolling wave geometry
+    const oceanGeo = new THREE.PlaneGeometry(600, 360, 48, 32);
+    const oceanMat = new THREE.MeshStandardMaterial({
+      color: 0x0284c7,
+      roughness: 0.15,
+      metalness: 0.45,
+      flatShading: true
+    });
+    this.menuOceanWater = new THREE.Mesh(oceanGeo, oceanMat);
+    this.menuOceanWater.rotation.x = -Math.PI / 2;
+    this.menuOceanWater.position.set(0, -0.06, -140);
+    this.menuBeachGroup.add(this.menuOceanWater);
+
+    // 2. Animated Shoreline Surf Waves (Foamy white wave that washes up and down the sand)
+    const foamGeo = new THREE.PlaneGeometry(300, 4.5);
+    const foamMat = new THREE.MeshBasicMaterial({
+      color: 0xf8fafc,
+      transparent: true,
+      opacity: 0.85
+    });
+    this.menuShoreWave = new THREE.Mesh(foamGeo, foamMat);
+    this.menuShoreWave.rotation.x = -Math.PI / 2;
+    this.menuShoreWave.position.set(0, 0.02, -12);
+    this.menuBeachGroup.add(this.menuShoreWave);
+
+    // Secondary shallow water gradient band
+    const shallowWaterGeo = new THREE.PlaneGeometry(300, 24);
+    const shallowWaterMat = new THREE.MeshStandardMaterial({
+      color: 0x06b6d4,
+      roughness: 0.2,
+      metalness: 0.3,
+      transparent: true,
+      opacity: 0.7
+    });
+    const shallowWater = new THREE.Mesh(shallowWaterGeo, shallowWaterMat);
+    shallowWater.rotation.x = -Math.PI / 2;
+    shallowWater.position.set(0, -0.02, -22);
+    this.menuBeachGroup.add(shallowWater);
+
+    // 3. Golden Beach Sand Floor & Dunes
+    const sandGeo = new THREE.PlaneGeometry(400, 160);
+    const sandMat = new THREE.MeshLambertMaterial({ color: 0xfacc15 });
+    const sandFloor = new THREE.Mesh(sandGeo, sandMat);
+    sandFloor.rotation.x = -Math.PI / 2;
+    sandFloor.position.set(0, 0, 40);
+    this.menuBeachGroup.add(sandFloor);
+
+    // Warm sun-kissed sand dune mounds
+    const duneMat = new THREE.MeshLambertMaterial({ color: 0xfde047 });
+    [-8, 8, -16, 16].forEach((dx, dIdx) => {
+      const duneGeo = new THREE.SphereGeometry(6, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+      const dune = new THREE.Mesh(duneGeo, duneMat);
+      dune.position.set(dx, -5.2, dIdx % 2 === 0 ? 8 : -2);
+      dune.scale.set(1.6, 0.4, 1.2);
+      this.menuBeachGroup!.add(dune);
+    });
+
+    // 4. Tropical Coconut Palm Trees Framing the Beach
+    const trunkMat = new THREE.MeshLambertMaterial({ color: 0x78350f });
+    const leafMat1 = new THREE.MeshLambertMaterial({ color: 0x16a34a });
+    const leafMat2 = new THREE.MeshLambertMaterial({ color: 0x22c55e });
+    const coconutMat = new THREE.MeshLambertMaterial({ color: 0x451a03 });
+
+    [
+      { x: -5.2, z: -2.5, rotZ: 0.15, scale: 1.1 },
+      { x: -7.5, z: 4.0, rotZ: 0.22, scale: 1.25 },
+      { x: 5.5, z: -3.0, rotZ: -0.18, scale: 1.15 },
+      { x: 8.0, z: 5.0, rotZ: -0.25, scale: 1.3 },
+      { x: -14.0, z: -10.0, rotZ: 0.1, scale: 1.4 },
+      { x: 14.0, z: -10.0, rotZ: -0.1, scale: 1.4 }
+    ].forEach((pConf) => {
+      const palm = new THREE.Group();
+      palm.position.set(pConf.x, 0, pConf.z);
+      palm.scale.set(pConf.scale, pConf.scale, pConf.scale);
+
+      const trunkGeo = new THREE.CylinderGeometry(0.28, 0.45, 7.0, 8);
+      const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+      trunk.position.set(pConf.rotZ > 0 ? 0.4 : -0.4, 3.5, 0);
+      trunk.rotation.z = pConf.rotZ;
+      palm.add(trunk);
+
+      const crownY = 6.8;
+      for (let f = 0; f < 7; f++) {
+        const angle = (f * Math.PI * 2) / 7;
+        const frondGeo = new THREE.BoxGeometry(0.5, 0.05, 3.2);
+        const frond = new THREE.Mesh(frondGeo, f % 2 === 0 ? leafMat1 : leafMat2);
+        frond.position.set(Math.sin(angle) * 1.4, crownY, Math.cos(angle) * 1.4);
+        frond.rotation.y = angle;
+        frond.rotation.x = 0.38;
+        frond.userData = { baseRotZ: frond.rotation.z, baseRotX: 0.38 };
+        this.menuPalmFronds.push(frond);
+        palm.add(frond);
+      }
+
+      // Coconuts
+      for (let k = 0; k < 3; k++) {
+        const coconut = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 8), coconutMat);
+        const cAngle = (k * Math.PI * 2) / 3;
+        coconut.position.set(Math.sin(cAngle) * 0.32, crownY - 0.2, Math.cos(cAngle) * 0.32);
+        palm.add(coconut);
+      }
+
+      this.menuBeachGroup!.add(palm);
+    });
+
+    // 5. Surfboard planted in the sand beside the boy
+    const surfboardGroup = new THREE.Group();
+    surfboardGroup.position.set(1.4, 0, -0.2);
+    surfboardGroup.rotation.z = -0.18;
+    surfboardGroup.rotation.y = -0.3;
+
+    const boardMat = new THREE.MeshStandardMaterial({ color: 0xec4899, roughness: 0.25, metalness: 0.3 });
+    const boardMesh = new THREE.Mesh(new THREE.BoxGeometry(0.55, 2.6, 0.1), boardMat);
+    boardMesh.position.y = 1.0;
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.57, 0.45, 0.12), new THREE.MeshLambertMaterial({ color: 0x06b6d4 }));
+    stripe.position.y = 1.0;
+    const stripe2 = new THREE.Mesh(new THREE.BoxGeometry(0.57, 0.15, 0.12), new THREE.MeshLambertMaterial({ color: 0xfacc15 }));
+    stripe2.position.y = 1.4;
+    surfboardGroup.add(boardMesh, stripe, stripe2);
+    this.menuBeachGroup.add(surfboardGroup);
+
+    // 6. Striped Beach Umbrellas & Wooden Deck Chairs
+    const woodMat = new THREE.MeshLambertMaterial({ color: 0x92400e });
+    const umbRed = new THREE.MeshLambertMaterial({ color: 0xef4444 });
+    const umbCyan = new THREE.MeshLambertMaterial({ color: 0x06b6d4 });
+    const umbWhite = new THREE.MeshLambertMaterial({ color: 0xffffff });
+
+    [
+      { x: -3.8, z: 2.5, mat: umbRed },
+      { x: 4.2, z: 3.2, mat: umbCyan }
+    ].forEach(u => {
+      const uGroup = new THREE.Group();
+      uGroup.position.set(u.x, 0, u.z);
+
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 3.2, 8), woodMat);
+      pole.position.y = 1.6;
+      const canopy = new THREE.Mesh(new THREE.ConeGeometry(1.6, 0.7, 12), u.mat);
+      canopy.position.y = 3.1;
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.06, 6, 16), umbWhite);
+      rim.rotation.x = Math.PI / 2;
+      rim.position.y = 2.8;
+      uGroup.add(pole, canopy, rim);
+
+      // Lounger
+      const lounger = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.2, 2.0), woodMat);
+      lounger.position.set(0.4, 0.15, 0.3);
+      lounger.rotation.y = 0.2;
+      const cushion = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.08, 1.8), umbWhite);
+      cushion.position.set(0.4, 0.26, 0.3);
+      cushion.rotation.y = 0.2;
+      uGroup.add(lounger, cushion);
+
+      this.menuBeachGroup!.add(uGroup);
+    });
+
+    // 7. Starfish & Seashells on the Sand
+    const starfishMat = new THREE.MeshLambertMaterial({ color: 0xf97316 });
+    const shellMat = new THREE.MeshLambertMaterial({ color: 0xfef08a });
+    [
+      { x: -1.2, z: -2.0, isStar: true },
+      { x: 0.8, z: -3.2, isStar: false },
+      { x: 2.2, z: -1.8, isStar: true },
+      { x: -2.5, z: 0.5, isStar: false }
+    ].forEach(s => {
+      if (s.isStar) {
+        const star = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.08, 5), starfishMat);
+        star.position.set(s.x, 0.04, s.z);
+        star.rotation.x = Math.PI / 2;
+        this.menuBeachGroup!.add(star);
+      } else {
+        const shell = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8), shellMat);
+        shell.scale.set(1.4, 0.5, 1.0);
+        shell.position.set(s.x, 0.04, s.z);
+        this.menuBeachGroup!.add(shell);
+      }
+    });
+
+    // 8. 3D Flying Seagulls (طيور النورس في السماء)
+    this.menuSeagulls = [];
+    const birdMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const beakMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+
+    for (let b = 0; b < 5; b++) {
+      const bird = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.6, 6), birdMat);
+      body.rotation.x = Math.PI / 2;
+
+      const beak = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.18, 4), beakMat);
+      beak.rotation.x = Math.PI / 2;
+      beak.position.set(0, 0, -0.38);
+
+      const wingL = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.02, 0.22), birdMat);
+      wingL.position.set(-0.35, 0.05, 0);
+      const wingR = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.02, 0.22), birdMat);
+      wingR.position.set(0.35, 0.05, 0);
+
+      bird.add(body, beak, wingL, wingR);
+      const height = 10 + b * 2.2;
+      bird.position.set((b - 2) * 8, height, -40 - b * 15);
+      this.menuBeachGroup.add(bird);
+
+      this.menuSeagulls.push({
+        group: bird,
+        leftWing: wingL,
+        rightWing: wingR,
+        speed: 0.4 + b * 0.12,
+        radius: 20 + b * 6,
+        angle: (b * Math.PI * 2) / 5,
+        height
+      });
+    }
+
+    // 9. Distant Tropical Islands on the Horizon
+    const islandMat = new THREE.MeshLambertMaterial({ color: 0x15803d });
+    [
+      { x: -75, z: -240, r: 35, h: 14 },
+      { x: 55, z: -260, r: 42, h: 18 },
+      { x: 120, z: -280, r: 28, h: 10 }
+    ].forEach(isl => {
+      const island = new THREE.Mesh(new THREE.SphereGeometry(isl.r, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), islandMat);
+      island.position.set(isl.x, -isl.h * 0.4, isl.z);
+      island.scale.set(1.8, 0.5, 1.2);
+      this.menuBeachGroup!.add(island);
+    });
+
+    // 10. Sailboats on the Sea Horizon
+    this.menuSailboats = [];
+    const hullMat = new THREE.MeshLambertMaterial({ color: 0xf8fafc });
+    const sailMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const sailColorMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
+
+    [-30, 45].forEach((sx, sIdx) => {
+      const boat = new THREE.Group();
+      boat.position.set(sx, 0.2, -160 - sIdx * 40);
+
+      const hull = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.8, 5.5), hullMat);
+      hull.position.y = 0.2;
+      const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 6.0, 8), woodMat);
+      mast.position.set(0, 3.2, 0);
+      const sail1 = new THREE.Mesh(new THREE.ConeGeometry(1.8, 4.8, 3), sIdx === 0 ? sailMat : sailColorMat);
+      sail1.rotation.y = Math.PI / 2;
+      sail1.position.set(0, 3.6, 0.4);
+      sail1.scale.set(0.1, 1.0, 1.0);
+
+      boat.add(hull, mast, sail1);
+      this.menuBeachGroup!.add(boat);
+      this.menuSailboats.push(boat);
+    });
+
+    // 11. Soft Floating Clouds in the Sky
+    const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 });
+    this.menuClouds = [];
+    [
+      { x: -50, y: 35, z: -180, s: 12 },
+      { x: 30, y: 40, z: -200, s: 15 },
+      { x: 90, y: 32, z: -170, s: 10 }
+    ].forEach(c => {
+      const cloud = new THREE.Mesh(new THREE.SphereGeometry(c.s, 10, 8), cloudMat);
+      cloud.position.set(c.x, c.y, c.z);
+      cloud.scale.set(2.2, 0.5, 1.0);
+      this.menuBeachGroup!.add(cloud);
+      this.menuClouds.push(cloud);
+    });
+
+    this.scene.add(this.menuBeachGroup);
   }
 
   // --- 1:1 Jake Character Builder (Back Facing Player, Running Forward into Tunnel) ---
@@ -3020,7 +3318,9 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     const dt = Math.min(this.clock.getDelta(), 0.1);
 
     try {
-      if (this.gameState === 'PLAYING') {
+      if (this.gameState === 'MENU') {
+        this.updateMenuBeachScene(dt);
+      } else if (this.gameState === 'PLAYING') {
         this.updateGame(dt);
       } else if (this.gameState === 'INTRO_IDLE') {
         this.updateIntroIdle(dt);
@@ -3035,6 +3335,107 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
       console.error('SubwaySurfers render loop error:', err);
     }
   };
+
+  // --- Dedicated 3D Beach Scene Animation Loop (الولد باصص للبحر وأمواج الشاطئ) ---
+  private updateMenuBeachScene(dt: number) {
+    const t = Date.now() * 0.001;
+
+    // 1. Ensure Menu Beach is visible and active tracks/trains/inspector are hidden
+    if (this.menuBeachGroup) this.menuBeachGroup.visible = true;
+    if (this.inspector?.root) this.inspector.root.visible = false;
+    this.trackChunks.forEach(c => c.visible = false);
+    this.worldObjects.forEach(o => o.visible = false);
+
+    // 2. Position the Boy standing on the sandy beach shore, facing the sea (-Z)
+    if (this.runner) {
+      this.runner.root.visible = true;
+      this.runner.root.position.set(0, 0, 0);
+      this.runner.root.rotation.set(0, 0, 0); // Directly facing the sea (-Z)
+      this.runner.hoverboard.visible = false;
+      if (this.runner.pharaohJetpack) this.runner.pharaohJetpack.visible = false;
+
+      // Natural Relaxed Beach Idle Pose (باصص للبحر)
+      // Breathing body bob
+      const breath = Math.sin(t * 1.8);
+      this.runner.bodyGroup.position.y = breath * 0.04;
+      this.runner.torsoGroup.rotation.x = 0.03 + breath * 0.02;
+
+      // Looking around the ocean horizon
+      const headLook = Math.sin(t * 0.6) * 0.25;
+      this.runner.headGroup.rotation.y = headLook;
+      this.runner.headGroup.rotation.x = 0.06 + Math.cos(t * 0.8) * 0.03; // gazing slightly up at the horizon
+
+      // Arms relaxed at sides, swaying gently with sea breeze
+      this.runner.leftArmGroup.rotation.set(0.1 + Math.sin(t * 1.5) * 0.05, 0, 0.12);
+      this.runner.rightArmGroup.rotation.set(-0.12 + Math.cos(t * 1.5) * 0.05, 0, -0.15);
+
+      // Natural feet stance on sand
+      this.runner.leftLegGroup.rotation.set(-0.04, 0, 0.08);
+      this.runner.rightLegGroup.rotation.set(0.04, 0, -0.08);
+    }
+
+    // 3. Cinematic Camera: Elevated over-the-shoulder view showing Jake + the vast ocean
+    const camSwayX = Math.sin(t * 0.35) * 0.35;
+    const camSwayY = Math.cos(t * 0.45) * 0.12;
+    this.camera.position.set(1.6 + camSwayX, 2.6 + camSwayY, 3.8);
+    this.camera.lookAt(-0.2, 1.4, -18); // looking out towards the sea horizon
+
+    // 4. Animate Ocean Waves, Shoreline Surf, Seagulls, Palms, Sailboats, Clouds
+    // Ocean rolling waves
+    if (this.menuOceanWater) {
+      const pos = this.menuOceanWater.geometry.getAttribute('position') as THREE.BufferAttribute;
+      if (pos) {
+        for (let i = 0; i < pos.count; i++) {
+          const u = pos.getX(i);
+          const v = pos.getY(i);
+          const wave = Math.sin(u * 0.08 + t * 1.4) * 0.35 + Math.cos(v * 0.12 + t * 1.8) * 0.25;
+          pos.setZ(i, wave);
+        }
+        pos.needsUpdate = true;
+        this.menuOceanWater.geometry.computeVertexNormals();
+      }
+    }
+
+    // Shoreline tide wave
+    if (this.menuShoreWave) {
+      this.menuShoreWave.position.z = -12 + Math.sin(t * 1.2) * 2.2;
+      (this.menuShoreWave.material as THREE.MeshBasicMaterial).opacity = 0.55 + Math.sin(t * 1.2) * 0.35;
+    }
+
+    // Palm fronds gentle breeze sway
+    this.menuPalmFronds.forEach((frond, idx) => {
+      const fT = t * 1.6 + idx * 0.6;
+      frond.rotation.z = (frond.userData['baseRotZ'] || 0) + Math.sin(fT) * 0.08;
+      frond.rotation.x = (frond.userData['baseRotX'] || 0.38) + Math.cos(fT * 0.8) * 0.05;
+    });
+
+    // Seagulls flapping and soaring
+    this.menuSeagulls.forEach(g => {
+      g.angle += g.speed * dt;
+      g.group.position.x = Math.sin(g.angle) * g.radius;
+      g.group.position.z = -35 + Math.cos(g.angle) * (g.radius * 0.5);
+      g.group.position.y = g.height + Math.sin(g.angle * 2) * 0.6;
+      g.group.rotation.y = -g.angle + Math.PI / 2;
+      const wingFlap = Math.sin(Date.now() * 0.012) * 0.55;
+      g.leftWing.rotation.z = wingFlap;
+      g.rightWing.rotation.z = -wingFlap;
+    });
+
+    // Sailboats rocking gently on waves
+    this.menuSailboats.forEach((b, bIdx) => {
+      b.position.x += (bIdx === 0 ? 0.8 : -0.6) * dt;
+      if (b.position.x > 90) b.position.x = -90;
+      if (b.position.x < -90) b.position.x = 90;
+      b.rotation.z = Math.sin(t * 1.5 + bIdx) * 0.06;
+      b.rotation.x = Math.cos(t * 1.2 + bIdx) * 0.04;
+    });
+
+    // Clouds drifting
+    this.menuClouds.forEach(c => {
+      c.position.x += 1.2 * dt;
+      if (c.position.x > 140) c.position.x = -140;
+    });
+  }
 
   private updateIntroIdle(dt: number) {
     if (this.runner) {
@@ -3943,6 +4344,11 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
     this.inspector.root.position.set(0, 0, 8);
     this.inspector.root.rotation.set(0, 0, 0);
 
+    // Switch from Menu Beach to In-Game Tracks
+    if (this.menuBeachGroup) this.menuBeachGroup.visible = false;
+    if (this.inspector?.root) this.inspector.root.visible = true;
+    this.trackChunks.forEach(c => c.visible = true);
+
     // Reset Track Chunks
     const CHUNK_LENGTH = 60;
     this.trackChunks.forEach((chunk, index) => {
@@ -3990,6 +4396,10 @@ export class SubwaySurfers3DComponent implements OnInit, AfterViewInit, OnDestro
 
   backToMenuFromGameOver() {
     this.gameState = 'MENU';
+    if (this.menuBeachGroup) this.menuBeachGroup.visible = true;
+    if (this.inspector?.root) this.inspector.root.visible = false;
+    this.trackChunks.forEach(c => c.visible = false);
+    this.worldObjects.forEach(o => o.visible = false);
   }
 
   // --- Modals & Shop ---

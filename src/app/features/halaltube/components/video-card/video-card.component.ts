@@ -7,10 +7,12 @@ import { FirebaseService } from '../../../../core/services/firebase.service';
 import { VideoDownloadService } from '../../../../core/services/video-download.service';
 import { getInitialAvatarSvg } from '../../../../core/services/button-inspector.service';
 
+import { PlaylistSelectorModalComponent } from '../modals/playlist-selector-modal/playlist-selector-modal';
+
 @Component({
   selector: 'app-video-card',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, LucideAngularModule, PlaylistSelectorModalComponent],
   template: `
     @if (!isHidden()) {
       <div class="video-card group cursor-pointer relative flex flex-col gap-3">
@@ -102,6 +104,12 @@ import { getInitialAvatarSvg } from '../../../../core/services/button-inspector.
             }
           </button>
         </div>
+
+        <app-playlist-selector-modal
+          [isOpen]="showPlaylistModal()"
+          [videoToSave]="video()"
+          (close)="showPlaylistModal.set(false)">
+        </app-playlist-selector-modal>
       </div>
     }
   `
@@ -115,6 +123,7 @@ export class VideoCardComponent {
   private el = inject(ElementRef);
 
   showMenu = signal<boolean>(false);
+  showPlaylistModal = signal<boolean>(false);
   isHidden = signal<boolean>(false);
 
   MoreVertical = MoreVertical;
@@ -189,7 +198,7 @@ export class VideoCardComponent {
   async saveToPlaylist(event: Event) {
     event.stopPropagation();
     this.showMenu.set(false);
-    this.displayToast('فتح قائمة التشغيل للحفظ...');
+    this.showPlaylistModal.set(true);
   }
 
   async downloadVideo(event: Event) {

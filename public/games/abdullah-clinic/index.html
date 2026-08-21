@@ -1,0 +1,3732 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>The Code Lab 💻🧪⚡</title>
+
+  <!-- PWA & Mobile Web App Meta Tags -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="The Code Lab">
+  <meta name="application-name" content="The Code Lab">
+  <meta name="theme-color" content="#06b6d4">
+
+  <!-- Embedded Web App Manifest -->
+  <link rel="manifest" href="data:application/manifest+json;utf-8,%7B%22name%22%3A%22Dr.%20Abdullah%20%E2%80%94%20si-neuro%20Global%20v5.0%22%2C%22short_name%22%3A%22si-neuro%22%2C%22description%22%3A%22Cyber-Medical%20Simulation%20%26%20Neuro-Robotics%20Factory%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23030712%22%2C%22theme_color%22%3A%22%2306b6d4%22%2C%22orientation%22%3A%22any%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20512%20512'%3E%3Crect%20width%3D'512'%20height%3D'512'%20rx%3D'110'%20fill%3D'%230b1120'%2F%3E%3Ccircle%20cx%3D'256'%20cy%3D'256'%20r%3D'210'%20fill%3D'none'%20stroke%3D'%2306b6d4'%20stroke-width%3D'16'%2F%3E%3Ctext%20x%3D'50%25'%20y%3D'55%25'%20font-size%3D'230'%20text-anchor%3D'middle'%20dominant-baseline%3D'central'%3E%F0%9F%91%A8%F0%9F%8F%BE%E2%80%8D%E2%9A%95%EF%B8%8F%3C%2Ftext%3E%3C%2Fsvg%3E%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+
+  <style>
+    /* =========================================================================
+       1. GLOBAL THEME, GLASSMORPHISM & DYNAMIC PALETTES
+       ========================================================================= */
+    :root {
+      --bg-space: #030712;
+      --bg-panel: rgba(11, 15, 25, 0.9);
+      --bg-card: rgba(15, 23, 42, 0.8);
+      --border-cyan: #06b6d4;
+      --border-purple: #8b5cf6;
+      --cyan-bright: #38bdf8;
+      --emerald-bright: #10b981;
+      --gold-bright: #fde047;
+      --pink-bright: #ec4899;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --font-ui: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background-color: var(--bg-space);
+      color: var(--text-main);
+      font-family: var(--font-ui);
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+
+    #game-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-panel);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 0 40px rgba(6, 182, 212, 0.3);
+    }
+
+    #game-container.sineuro-active {
+      box-shadow: 0 0 50px rgba(139, 92, 246, 0.45);
+    }
+
+    /* =========================================================================
+       2. TOP HUD HEADER & STATS
+       ========================================================================= */
+    #hud-header {
+      background: linear-gradient(90deg, rgba(3, 7, 18, 0.95) 0%, rgba(15, 23, 42, 0.9) 50%, rgba(3, 7, 18, 0.95) 100%);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 2px solid rgba(6, 182, 212, 0.4);
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      z-index: 25;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    .doctor-profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .doctor-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #0284c7, #0f172a);
+      border: 2px solid #38bdf8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.5);
+      position: relative;
+    }
+
+    .sineuro-badge-icon {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      font-size: 12px;
+      display: none;
+      filter: drop-shadow(0 0 6px rgba(236, 72, 153, 0.9));
+    }
+
+    .doctor-info h1 {
+      font-size: 13px;
+      font-weight: 900;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-shadow: 0 0 10px rgba(6, 182, 212, 0.6);
+    }
+
+    .version-badge {
+      font-size: 9px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: #0284c7;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-weight: 800;
+    }
+
+    .version-badge.sineuro-badge {
+      background: linear-gradient(135deg, #8b5cf6, #ec4899);
+      box-shadow: 0 0 12px rgba(236, 72, 153, 0.7);
+    }
+
+    .version-badge.uae-badge {
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.8);
+    }
+
+    .doctor-info p {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .stats-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 5px 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+    }
+
+    .stat-pill span:last-child {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .stat-pill.parts { border-color: #06b6d4; color: #67e8f9; }
+    .stat-pill.patients { border-color: #10b981; color: #6ee7b7; }
+    .stat-pill.credits { border-color: #f59e0b; color: #fde047; }
+    .stat-pill.stream { border-color: #a855f7; color: #c084fc; cursor: pointer; }
+    .stat-pill.assistants { border-color: #10b981; color: #34d399; }
+
+    .ctrl-actions {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .hud-btn {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 9px;
+      color: #cbd5e1;
+      padding: 5px 10px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      backdrop-filter: blur(6px);
+    }
+
+    .hud-btn:hover {
+      border-color: #38bdf8;
+      color: #fff;
+      background: rgba(30, 41, 59, 0.95);
+      transform: translateY(-1px);
+    }
+
+    .hud-btn.uae-goal-btn {
+      background: linear-gradient(135deg, #d97706, #b45309);
+      border-color: #fde047;
+      color: #fff;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+    }
+
+    .hud-btn.shop-btn {
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      border-color: #a78bfa;
+      color: #fff;
+      box-shadow: 0 0 12px rgba(124, 58, 237, 0.5);
+    }
+
+    .hud-btn.mode-btn {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      border-color: #38bdf8;
+      color: #fff;
+    }
+
+    .hud-btn.pwa-btn {
+      background: linear-gradient(135deg, #10b981, #047857);
+      border-color: #34d399;
+      color: #fff;
+    }
+
+    /* =========================================================================
+       3. CANVAS & MINIMAP
+       ========================================================================= */
+    #canvas-wrapper {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      background: #020617;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+    }
+
+    #minimap-card {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      width: 140px;
+      height: 90px;
+      background: rgba(3, 7, 18, 0.85);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(6, 182, 212, 0.4);
+      border-radius: 12px;
+      box-shadow: 0 0 18px rgba(0, 0, 0, 0.6);
+      z-index: 30;
+      pointer-events: none;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #minimap-header {
+      font-size: 8px;
+      font-family: var(--font-mono);
+      color: #38bdf8;
+      background: rgba(6, 182, 212, 0.15);
+      padding: 2px 6px;
+      font-weight: 900;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    #minimap-canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    #interaction-prompt {
+      position: absolute;
+      bottom: 85px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(3, 7, 18, 0.92);
+      backdrop-filter: blur(12px);
+      border: 2px solid #06b6d4;
+      border-radius: 16px;
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #38bdf8;
+      box-shadow: 0 0 30px rgba(6, 182, 212, 0.6);
+      display: none;
+      align-items: center;
+      gap: 8px;
+      z-index: 30;
+      animation: pulseGlow 1.2s infinite alternate;
+      pointer-events: none;
+    }
+
+    @keyframes pulseGlow {
+      0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); }
+      100% { transform: translateX(-50%) scale(1.03); box-shadow: 0 0 32px rgba(6, 182, 212, 0.85); }
+    }
+
+    .key-badge {
+      background: linear-gradient(135deg, #06b6d4, #0284c7);
+      color: #030712;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 900;
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    #bottom-bar {
+      background: rgba(3, 7, 18, 0.95);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 6px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      height: 62px;
+      z-index: 20;
+      flex-shrink: 0;
+    }
+
+    #event-log-container {
+      flex: 1;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      border-radius: 10px;
+      padding: 4px 10px;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #38bdf8;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 2px;
+    }
+
+    .log-item { line-height: 1.3; }
+    .log-time { color: #64748b; margin-left: 6px; }
+    .log-tech { color: #67e8f9; }
+    .log-cure { color: #6ee7b7; font-weight: bold; }
+    .log-info { color: #facc15; }
+    .log-shop { color: #c084fc; font-weight: bold; }
+    .log-sineuro { color: #ec4899; font-weight: 900; }
+    .log-fatima { color: #34d399; font-weight: 900; }
+    .log-uae { color: #fbbf24; font-weight: 900; }
+
+    /* =========================================================================
+       4. TOUCH CONTROLS
+       ========================================================================= */
+    #touch-controls-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 35;
+    }
+
+    #joystick-zone {
+      position: absolute;
+      bottom: 15px;
+      left: 15px;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: rgba(15, 23, 42, 0.55);
+      border: 2px dashed rgba(6, 182, 212, 0.45);
+      backdrop-filter: blur(8px);
+      pointer-events: auto;
+      touch-action: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
+    }
+
+    #joystick-knob {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #38bdf8, #0284c7);
+      border: 2px solid #67e8f9;
+      box-shadow: 0 0 18px rgba(6, 182, 212, 0.85);
+      pointer-events: none;
+      transform: translate(0px, 0px);
+      transition: transform 0.04s ease-out;
+    }
+
+    #touch-action-zone {
+      position: absolute;
+      bottom: 15px;
+      right: 15px;
+      pointer-events: auto;
+    }
+
+    .virtual-action-btn {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #06b6d4, #0284c7);
+      border: 3px solid #67e8f9;
+      color: #030712;
+      font-weight: 900;
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 25px rgba(6, 182, 212, 0.7);
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .virtual-action-btn:active {
+      transform: scale(0.92);
+      background: linear-gradient(135deg, #38bdf8, #0369a1);
+      box-shadow: 0 0 35px rgba(56, 189, 248, 0.95);
+    }
+
+    .floating-text {
+      position: absolute;
+      pointer-events: none;
+      font-weight: 900;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      animation: floatUpAnim 1.2s ease-out forwards;
+      z-index: 50;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
+    }
+
+    @keyframes floatUpAnim {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-45px) scale(1.15); }
+    }
+
+    /* =========================================================================
+       5. MODAL OVERLAYS
+       ========================================================================= */
+    .game-modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(3, 7, 18, 0.85);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 60;
+      padding: 16px;
+      animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-card {
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(9, 13, 22, 0.95));
+      border: 2px solid var(--border-cyan);
+      border-radius: 22px;
+      padding: 20px;
+      width: 100%;
+      max-width: 540px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 45px rgba(6, 182, 212, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 90vh;
+      overflow-y: auto;
+      backdrop-filter: blur(20px);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 10px;
+    }
+
+    .modal-header h3 {
+      font-size: 15px;
+      font-weight: 900;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .close-btn {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: #cbd5e1;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .close-btn:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
+
+    .puzzle-instructions {
+      font-size: 12px;
+      color: #cbd5e1;
+      background: rgba(6, 182, 212, 0.12);
+      border: 1px solid rgba(6, 182, 212, 0.35);
+      border-radius: 12px;
+      padding: 10px 14px;
+      line-height: 1.5;
+    }
+
+    .sequence-slots {
+      display: flex;
+      gap: 8px;
+      margin: 6px 0;
+    }
+
+    .slot {
+      flex: 1;
+      height: 44px;
+      border: 2px dashed rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: bold;
+      color: #94a3b8;
+      background: rgba(0, 0, 0, 0.45);
+      text-align: center;
+      padding: 4px;
+    }
+    .slot.filled {
+      border-style: solid;
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.18);
+      color: #6ee7b7;
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+    }
+
+    .code-blocks-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .code-block-btn {
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid #38bdf8;
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: #67e8f9;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: bold;
+      text-align: right;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .code-block-btn:hover {
+      background: rgba(2, 132, 199, 0.9);
+      color: #fff;
+      transform: translateX(-3px);
+    }
+    .code-block-btn:disabled {
+      opacity: 0.45;
+      pointer-events: none;
+      border-color: #475569;
+    }
+
+    .shop-tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 8px;
+    }
+
+    .shop-tab-btn {
+      flex: 1;
+      padding: 8px;
+      border-radius: 10px;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #94a3b8;
+      font-weight: bold;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .shop-tab-btn.active {
+      background: linear-gradient(135deg, #0284c7, #0f172a);
+      border-color: #38bdf8;
+      color: #fff;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
+    }
+
+    .shop-tab-content {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 320px;
+      overflow-y: auto;
+      padding-left: 4px;
+    }
+    .shop-tab-content.active {
+      display: flex;
+    }
+
+    .shop-item-card {
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .shop-item-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .shop-item-icon {
+      font-size: 24px;
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .shop-item-text h4 {
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+    }
+    .shop-item-text p {
+      font-size: 10px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+    .shop-item-level {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: #a78bfa;
+      font-weight: bold;
+    }
+
+    .buy-upgrade-btn {
+      background: linear-gradient(135deg, #10b981, #059669);
+      border: none;
+      border-radius: 9px;
+      color: #fff;
+      font-weight: 900;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 7px 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+    }
+    .buy-upgrade-btn:hover {
+      background: linear-gradient(135deg, #34d399, #10b981);
+      transform: scale(1.03);
+    }
+    .buy-upgrade-btn:disabled {
+      background: #334155;
+      color: #64748b;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .fatima-dialogue-box {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .fatima-avatar-large {
+      font-size: 40px;
+      width: 60px;
+      height: 60px;
+      background: rgba(16, 185, 129, 0.2);
+      border: 2px solid #10b981;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .uae-banner {
+      background: linear-gradient(135deg, #b45309, #d97706, #ef4444);
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+      color: #fff;
+      box-shadow: 0 0 35px rgba(217, 119, 6, 0.65);
+    }
+    .uae-banner h2 {
+      font-size: 18px;
+      font-weight: 900;
+      margin-bottom: 4px;
+      text-shadow: 0 0 12px rgba(255, 255, 255, 0.85);
+    }
+
+    .mode-card-opt {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      border-radius: 14px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mode-card-opt:hover {
+      border-color: #38bdf8;
+      background: rgba(2, 132, 199, 0.15);
+      transform: translateY(-2px);
+    }
+    .mode-card-opt.active {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.15);
+    }
+    .mode-badge {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 900;
+      font-family: var(--font-mono);
+    }
+    .badge-free { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid #10b981; }
+    .badge-p2p { background: rgba(56, 189, 248, 0.2); color: #7dd3fc; border: 1px solid #0284c7; }
+    .badge-pro { background: rgba(245, 158, 11, 0.2); color: #fde047; border: 1px solid #f59e0b; }
+  </style>
+</head>
+<body>
+
+  <!-- ================= MAIN GAME CONTAINER ================= -->
+  <div id="game-container">
+    
+    <!-- Top HUD Header -->
+    <header id="hud-header">
+      <div class="doctor-profile">
+        <div class="doctor-avatar">
+          <span>👨🏾‍⚕️</span>
+          <span class="sineuro-badge-icon" id="avatar-sineuro-badge">🚀</span>
+        </div>
+        <div class="doctor-info">
+          <h1 id="header-title">
+            عيادة د. عبد الله: شركة si-neuro للتكنولوجيا العصبية
+            <span class="version-badge" id="app-version-badge">v5.0</span>
+          </h1>
+          <p id="header-subtitle">مختبر الروبوتات الطبية وعيادة التأهيل العصبي الذكي • القاهرة</p>
+        </div>
+      </div>
+
+      <!-- Resource Stats Bar -->
+      <div class="stats-bar">
+        <div class="stat-pill parts">
+          <span>⚙️ قطع:</span>
+          <span id="stat-tech-parts">0</span>
+        </div>
+
+        <div class="stat-pill patients">
+          <span>👨‍⚕️ متعافين:</span>
+          <span id="stat-cured-patients">0</span>
+        </div>
+
+        <div class="stat-pill credits">
+          <span>🪙 جنيه:</span>
+          <span id="stat-credits">0</span>
+        </div>
+
+        <div class="stat-pill stream" id="stat-stream-pill" onclick="toggleDataStreamUI()">
+          <span>⚡ التدفق:</span>
+          <span id="stat-stream-status">مفصول 🔴</span>
+        </div>
+
+        <div class="stat-pill assistants" id="stat-assistants-pill" style="display: none;">
+          <span>🤖 مساعدين:</span>
+          <span id="stat-assistants-count">0</span>
+        </div>
+
+        <div class="ctrl-actions">
+          <button class="hud-btn uae-goal-btn" onclick="openUaeModal()">🇦🇪 فرع الإمارات</button>
+          <button class="hud-btn shop-btn" onclick="openShopModal()">🛒 المتجر والمهندسين</button>
+          <button class="hud-btn mode-btn" onclick="openModeModal()">🎮 الأنماط</button>
+          <button id="btn-pwa" class="hud-btn pwa-btn" onclick="openPwaModal()">📱 تثبيت</button>
+          <button id="btn-sound" class="hud-btn" onclick="toggleAudio()">🔊 صوت</button>
+          <button id="btn-save" class="hud-btn" onclick="saveGameManual()">💾 حفظ</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Game Viewport Canvas with Dynamic Camera & Smooth Lerp -->
+    <div id="canvas-wrapper">
+      <canvas id="gameCanvas" width="1024" height="520"></canvas>
+
+      <!-- Holographic Radar Mini-Map Widget -->
+      <div id="minimap-card">
+        <div id="minimap-header">
+          <span>📡 RADAR OVERVIEW</span>
+          <span id="minimap-coords">1800x1150</span>
+        </div>
+        <canvas id="minimap-canvas" width="140" height="70"></canvas>
+      </div>
+
+      <!-- Floating Interaction Tooltip -->
+      <div id="interaction-prompt">
+        <span class="key-badge">E</span>
+        <span id="prompt-text">اضغط للتفاعل</span>
+      </div>
+
+      <!-- Touch Controls Layer (Virtual Joystick + Action Button) -->
+      <div id="touch-controls-layer">
+        <div id="joystick-zone">
+          <div id="joystick-knob"></div>
+        </div>
+
+        <div id="touch-action-zone">
+          <button class="virtual-action-btn" id="virtual-interact-btn" onclick="triggerInteraction()">
+            <span>تفاعل</span>
+            <span style="font-size: 11px; font-family: var(--font-mono);">[ E ]</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ================= MODAL 1: CODE & CURE MINI-GAME ================= -->
+      <div id="cure-modal" class="game-modal-overlay">
+        <div class="modal-card">
+          <div class="modal-header">
+            <h3>🧬 خوارزمية العلاج الآلي: Code & Cure</h3>
+            <button class="close-btn" onclick="closeCureModal()">✕</button>
+          </div>
+
+          <div class="puzzle-instructions">
+            💡 <strong>مهمة البرمجة الطبية:</strong> اضغط على كتل الكود بالترتيب المنطقي السليم لمعايرة الذراع الروبوتية وعلاج المريض بنجاح!
+          </div>
+
+          <div class="sequence-slots" id="sequence-slots">
+            <div class="slot" id="slot-0">1. خطوة الفحص</div>
+            <div class="slot" id="slot-1">2. خطوة المعايرة</div>
+            <div class="slot" id="slot-2">3. خطوة التنفيذ</div>
+          </div>
+
+          <div class="code-blocks-container" id="code-blocks-list"></div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+            <button class="hud-btn" onclick="resetCurePuzzle()">🔄 إعادة ترتيب</button>
+            <span id="puzzle-status-text" style="font-size: 12px; color: #94a3b8; font-weight: bold; font-family: var(--font-mono);">اختر الكتلة الأولى...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= MODAL 2: UPGRADES, FATIMA & TEAM SHOP ================= -->
+      <div id="shop-modal" class="game-modal-overlay">
+        <div class="modal-card">
+          <div class="modal-header">
+            <h3>🛒 متجر ترقيات si-neuro وفريق العمل</h3>
+            <button class="close-btn" onclick="closeShopModal()">✕</button>
+          </div>
+
+          <div class="shop-tabs">
+            <button class="shop-tab-btn active" id="tab-btn-upgrades" onclick="switchShopTab('upgrades')">⚡ ترقيات د. عبد الله</button>
+            <button class="shop-tab-btn" id="tab-btn-assistants" onclick="switchShopTab('assistants')">👩‍🔬 المهندسة فاطمة والفريق</button>
+          </div>
+
+          <div class="shop-tab-content active" id="tab-content-upgrades">
+            <div class="shop-item-card">
+              <div class="shop-item-info">
+                <div class="shop-item-icon">⚡</div>
+                <div class="shop-item-text">
+                  <h4>حذاء التسريع السيبراني (Overclock Boots)</h4>
+                  <p>زيادة سرعة حركة د. عبد الله بنسبة +25% لكل مستوى.</p>
+                  <span class="shop-item-level" id="level-speed">المستوى 1 / 5</span>
+                </div>
+              </div>
+              <button class="buy-upgrade-btn" id="btn-buy-speed" onclick="buyUpgrade('speed')">ترقية (100 ج.م)</button>
+            </div>
+
+            <div class="shop-item-card">
+              <div class="shop-item-info">
+                <div class="shop-item-icon">💻</div>
+                <div class="shop-item-text">
+                  <h4>خوارزمية البرمجة المضاعفة (Efficient Coding)</h4>
+                  <p>توليد قطع تكنولوجية إضافية عند كل جلسة تجميع يدوية.</p>
+                  <span class="shop-item-level" id="level-craft">المستوى 1 / 5</span>
+                </div>
+              </div>
+              <button class="buy-upgrade-btn" id="btn-buy-craft" onclick="buyUpgrade('craft')">ترقية (150 ج.م)</button>
+            </div>
+
+            <div class="shop-item-card">
+              <div class="shop-item-info">
+                <div class="shop-item-icon">🦾</div>
+                <div class="shop-item-text">
+                  <h4>محركات سيرفو فائقة العزم (High-Torque Servos)</h4>
+                  <p>زيادة المكافأة المالية المكتسبة من كل مريض متعافى (+75 ج.م).</p>
+                  <span class="shop-item-level" id="level-reward">المستوى 1 / 5</span>
+                </div>
+              </div>
+              <button class="buy-upgrade-btn" id="btn-buy-reward" onclick="buyUpgrade('reward')">ترقية (200 ج.م)</button>
+            </div>
+
+            <div class="shop-item-card">
+              <div class="shop-item-info">
+                <div class="shop-item-icon">🧪</div>
+                <div class="shop-item-text">
+                  <h4>حاقن النانو الذكي (Nano Bio-Synthesizer)</h4>
+                  <p>زيادة كفاءة استهلاك القطع وتسريع فحص الخوارزميات.</p>
+                  <span class="shop-item-level" id="level-nano">المستوى 1 / 5</span>
+                </div>
+              </div>
+              <button class="buy-upgrade-btn" id="btn-buy-nano" onclick="buyUpgrade('nano')">ترقية (250 ج.م)</button>
+            </div>
+          </div>
+
+          <div class="shop-tab-content" id="tab-content-assistants">
+            <div class="shop-item-card" style="border: 2px solid #10b981; background: rgba(16, 185, 129, 0.1);">
+              <div class="shop-item-info">
+                <div class="shop-item-icon">🧕</div>
+                <div class="shop-item-text">
+                  <h4 style="color: #6ee7b7;">المهندسة فاطمة (Eng. Fatima) 🌟</h4>
+                  <p>مساعدة ذكية محجبة تتجول في المعمل، تفحص الخوادم، وتعالج المرضى تلقائياً لتوليد دخل وقطع مستمرة.</p>
+                  <span class="shop-item-level" id="level-fatima" style="color: #34d399;">غير مفعّلة 🔒</span>
+                </div>
+              </div>
+              <button class="buy-upgrade-btn" id="btn-buy-fatima" style="background: linear-gradient(135deg, #10b981, #047857);" onclick="buyFatima()">توظيف (800 ج.م)</button>
+            </div>
+
+            <div class="shop-item-card">
+              <div class="shop-item-info">
+                <div class="shop-item-icon">🤖</div>
+                <div class="shop-item-text">
+                  <h4>مساعد ريبوت ذكي (Rehab-Bot AI Junior)</h4>
+                  <p>يقوم ببرمجة وتوليد +1 قطعة تكنولوجية تلقائياً كل 4 ثوانٍ.</p>
+                  <span class="shop-item-level" id="level-assistants">المستوى 0 / 5</span>
+                </div>
+              </div>
+              <button class="buy-upgrade-btn" id="btn-buy-assistant" onclick="buyAssistant('junior')">توظيف (450 ج.م)</button>
+            </div>
+
+            <div class="shop-item-card">
+              <div class="shop-item-info">
+                <div class="shop-item-icon">🛸</div>
+                <div class="shop-item-text">
+                  <h4>سرب طائرات النانو الحيوية (Bio-Drones Swarm)</h4>
+                  <p>توليد +4 قطع تكنولوجية فائقة السرعة كل ثانيتين.</p>
+                  <span class="shop-item-level" id="level-drones">المستوى 0 / 3</span>
+                </div>
+              </div>
+              <button class="buy-upgrade-btn" id="btn-buy-drones" onclick="buyAssistant('drones')">توظيف (1800 ج.م)</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ================= MODAL 3: ENDGAME - UAE BRANCH EXPANSION ================= -->
+      <div id="uae-modal" class="game-modal-overlay">
+        <div class="modal-card" style="border-color: #f59e0b; box-shadow: 0 0 50px rgba(245, 158, 11, 0.7);">
+          <div class="uae-banner">
+            <h2>🇦🇪 التوسع العالمي: فرع الإمارات (دبي)</h2>
+            <p>هدف نهاية اللعبة الأسطوري لشركة si-neuro للتكنولوجيا العصبية</p>
+          </div>
+
+          <div style="font-size: 13px; color: #cbd5e1; line-height: 1.6; display: flex; flex-direction: column; gap: 10px;">
+            <p>🌟 <strong>متطلبات افتتاح فرع دبي الطبي للروبوتات:</strong></p>
+            
+            <div style="display: flex; flex-direction: column; gap: 6px; background: rgba(0, 0, 0, 0.4); padding: 12px; border-radius: 12px; font-family: var(--font-mono); font-size: 12px;">
+              <div style="display: flex; justify-content: space-between;">
+                <span>🪙 التمويل المطلوب (5,000 ج.م):</span>
+                <span id="uae-req-credits" style="color: #fde047;">0 / 5000</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span>⚙️ قطع تكنولوجية فائقة (80 قطعة):</span>
+                <span id="uae-req-parts" style="color: #67e8f9;">0 / 80</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span>👨‍⚕️ مرضى متعافين (50 مريضاً):</span>
+                <span id="uae-req-patients" style="color: #6ee7b7;">0 / 50</span>
+              </div>
+            </div>
+
+            <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; border-radius: 10px; padding: 10px; font-size: 12px; color: #fde68a;">
+              🏆 <strong>مزايا فرع الإمارات:</strong> مضاعفة الدخل السلبي +100%، شارة الريادة العالمية الذهبية، وتتويج شركة si-neuro كرائدة عالمية في الطب العصبي.
+            </div>
+          </div>
+
+          <button class="buy-upgrade-btn" id="btn-unlock-uae" style="padding: 12px; font-size: 14px; background: linear-gradient(135deg, #f59e0b, #ef4444);" onclick="unlockUaeBranch()">
+            🌟 تدشين فرع الإمارات الآن
+          </button>
+        </div>
+      </div>
+
+      <!-- ================= MODAL 4: FATIMA CONSULTATION ================= -->
+      <div id="fatima-modal" class="game-modal-overlay">
+        <div class="modal-card" style="border-color: #10b981;">
+          <div class="modal-header">
+            <h3 style="color: #6ee7b7;">🧕 استشارة المهندسة فاطمة (Clinical AI Consultation)</h3>
+            <button class="close-btn" onclick="closeFatimaModal()">✕</button>
+          </div>
+
+          <div class="fatima-dialogue-box">
+            <div class="fatima-avatar-large">🧕</div>
+            <div style="font-size: 12px; line-height: 1.5; color: #e2e8f0;">
+              <strong style="color: #6ee7b7;">م. فاطمة:</strong><br>
+              <span id="fatima-speech-text">"أهلاً يا دكتور عبد الله! قمت بمعايرة أجهزة السرير الروبوتية ومتابعة نبضات المريض بدقة، وتدفق البيانات يعمل بكفاءة عالية. هل ترغب في استلام تقرير الأبحاث السريرية؟"</span>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 8px; margin-top: 6px;">
+            <button class="buy-upgrade-btn" style="flex: 1; padding: 10px;" onclick="claimFatimaBoost()">
+              ⚡ استلام تقرير الأبحاث السريرية (+50 ج.م، +2 قطع)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= MODAL 5: PWA / TABLET OFFLINE INSTALL ================= -->
+      <div id="pwa-modal" class="game-modal-overlay">
+        <div class="modal-card">
+          <div class="modal-header">
+            <h3>📱 تثبيت اللعبة على التابلت (PWA Offline)</h3>
+            <button class="close-btn" onclick="closePwaModal()">✕</button>
+          </div>
+
+          <div style="font-size: 12px; color: #cbd5e1; line-height: 1.6; display: flex; flex-direction: column; gap: 10px;">
+            <div style="background: rgba(6, 182, 212, 0.12); border: 1px solid rgba(6, 182, 212, 0.35); border-radius: 12px; padding: 12px;">
+              💎 <strong>جاهز للاستخدام أوفلاين وملء الشاشة:</strong> يمكنك تثبيت عيادة si-neuro على شاشتك الرئيسية للعب بملء الشاشة بدون شريط المتصفح وبدون إنترنت.
+            </div>
+
+            <div id="pwa-native-install-box" style="display: none;">
+              <button class="buy-upgrade-btn" style="width: 100%; padding: 10px; font-size: 13px;" onclick="triggerNativePwaInstall()">
+                📲 تثبيت التطبيق الآن على الجهاز
+              </button>
+            </div>
+
+            <div>
+              <p style="font-weight: bold; color: #38bdf8; margin-bottom: 4px;">📌 خطوات التثبيت على الأجهزة اللوحية (iPad & Android):</p>
+              <ul style="padding-right: 20px; font-size: 11px; color: #94a3b8;">
+                <li><strong>على أجهزة iPad / Safari:</strong> اضغط على زر المشاركة (Share) ثم اختر <em>"إضافة إلى الشاشة الرئيسية" (Add to Home Screen)</em>.</li>
+                <li><strong>على أجهزة Android / Chrome:</strong> اضغط على القائمة (⋮) ثم اختر <em>"تثبيت التطبيق" (Install App)</em> أو <em>"إضافة إلى الشاشة الرئيسية"</em>.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= MODAL 6: GAME MODES SELECTION ================= -->
+      <div id="mode-modal" class="game-modal-overlay">
+        <div class="modal-card">
+          <div class="modal-header">
+            <h3>🎮 أنماط اللعب المعتمدة (Arcade Modes)</h3>
+            <button class="close-btn" onclick="closeModeModal()">✕</button>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="mode-card-opt active" onclick="selectGameMode('local')">
+              <div>
+                <h4 style="color: #6ee7b7; font-size: 14px;">1. اللعب محلياً (Local Play)</h4>
+                <p style="font-size: 11px; color: #94a3b8;">إدارة العيادة الفردية والتعاون المحلي بين د. عبد الله وم. فاطمة على نفس الشاشة.</p>
+              </div>
+              <span class="mode-badge badge-free">نشط ومتاح 🟢</span>
+            </div>
+
+            <div class="mode-card-opt" onclick="selectGameMode('room')">
+              <div>
+                <h4 style="color: #7dd3fc; font-size: 14px;">2. إنشاء غرفة (Private Room/P2P)</h4>
+                <p style="font-size: 11px; color: #94a3b8;">إنشاء رمز عيادة مخصص ومشاركة الحالة التكنولوجية مع الأصدقاء.</p>
+              </div>
+              <span class="mode-badge badge-p2p">غرفة خاصة 📡</span>
+            </div>
+
+            <div class="mode-card-opt" onclick="selectGameMode('online')">
+              <div>
+                <h4 style="color: #fde047; font-size: 14px;">3. لعب أونلاين (Online Matchmaking / Pro Mode)</h4>
+                <p style="font-size: 11px; color: #94a3b8;">المنافسة العالمية وسحابة الترتيب الطبي مخصصة للمشتركين Pro.</p>
+              </div>
+              <span class="mode-badge badge-pro">👑 Pro Mode</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Event Log Bar -->
+    <footer id="bottom-bar">
+      <div id="event-log-container"></div>
+    </footer>
+
+  </div>
+
+  <!-- ================= JAVASCRIPT GAME ENGINE V5.0 ================= -->
+  <script>
+    /* =========================================================================
+       1. DATA MANAGEMENT & LOCALSTORAGE SYSTEM (STRICT CONTRACT PRESERVED)
+       ========================================================================= */
+    const STORAGE_KEY = 'abdullah_clinic_data';
+
+    const gameState = {
+      techParts: 0,
+      curedPatients: 0,
+      cairoCredits: 150,
+      clinicLevel: 1,
+      speedLevel: 1,
+      craftLevel: 1,
+      rewardLevel: 1,
+      nanoLevel: 1,
+      gameMode: 'local',
+      isSiNeuroUnlocked: false,
+      milestoneAnnounced: false,
+      hiredAssistants: 0,
+      engineerLevel: 0,
+      droneLevel: 0,
+      dataStreamActive: false,
+      fatimaUnlocked: false,
+      fatimaLevel: 1,
+      uaeBranchUnlocked: false
+    };
+
+    function loadGame() {
+      try {
+        const savedData = localStorage.getItem(STORAGE_KEY);
+        if (savedData) {
+          const parsed = JSON.parse(savedData);
+          if (parsed.techParts !== undefined) gameState.techParts = Number(parsed.techParts) || 0;
+          if (parsed.curedPatients !== undefined) gameState.curedPatients = Number(parsed.curedPatients) || 0;
+          if (parsed.cairoCredits !== undefined) gameState.cairoCredits = Number(parsed.cairoCredits) || 0;
+          else if (parsed.money !== undefined) gameState.cairoCredits = Number(parsed.money) || 0;
+          if (parsed.clinicLevel !== undefined) gameState.clinicLevel = Number(parsed.clinicLevel) || 1;
+          
+          if (parsed.speedLevel !== undefined) gameState.speedLevel = Number(parsed.speedLevel) || 1;
+          if (parsed.craftLevel !== undefined) gameState.craftLevel = Number(parsed.craftLevel) || 1;
+          if (parsed.rewardLevel !== undefined) gameState.rewardLevel = Number(parsed.rewardLevel) || 1;
+          if (parsed.nanoLevel !== undefined) gameState.nanoLevel = Number(parsed.nanoLevel) || 1;
+
+          if (parsed.isSiNeuroUnlocked !== undefined) gameState.isSiNeuroUnlocked = Boolean(parsed.isSiNeuroUnlocked);
+          if (parsed.milestoneAnnounced !== undefined) gameState.milestoneAnnounced = Boolean(parsed.milestoneAnnounced);
+          if (parsed.hiredAssistants !== undefined) gameState.hiredAssistants = Number(parsed.hiredAssistants) || 0;
+          if (parsed.engineerLevel !== undefined) gameState.engineerLevel = Number(parsed.engineerLevel) || 0;
+          if (parsed.droneLevel !== undefined) gameState.droneLevel = Number(parsed.droneLevel) || 0;
+
+          if (parsed.dataStreamActive !== undefined) gameState.dataStreamActive = Boolean(parsed.dataStreamActive);
+          if (parsed.fatimaUnlocked !== undefined) gameState.fatimaUnlocked = Boolean(parsed.fatimaUnlocked);
+          if (parsed.fatimaLevel !== undefined) gameState.fatimaLevel = Number(parsed.fatimaLevel) || 1;
+          if (parsed.uaeBranchUnlocked !== undefined) gameState.uaeBranchUnlocked = Boolean(parsed.uaeBranchUnlocked);
+
+          if (gameState.curedPatients >= 50) {
+            gameState.isSiNeuroUnlocked = true;
+          }
+
+          addEventLog('تم استرجاع تقدم العيادة وترقياتها بنجاح من الذاكرة المحلية.', 'log-info');
+        } else {
+          addEventLog('مرحباً بك يا د. عبد الله في الإصدار 5.0 الأسطوري لشركة si-neuro!', 'log-info');
+        }
+      } catch (err) {
+        console.error('Error loading clinic save:', err);
+      }
+
+      checkSiNeuroStatus(false);
+      applyUpgrades();
+      updateHUD();
+    }
+
+    function saveGame() {
+      try {
+        const dataToSave = {
+          techParts: gameState.techParts,
+          curedPatients: gameState.curedPatients,
+          cairoCredits: gameState.cairoCredits,
+          money: gameState.cairoCredits,
+          clinicLevel: gameState.clinicLevel,
+          speedLevel: gameState.speedLevel,
+          craftLevel: gameState.craftLevel,
+          rewardLevel: gameState.rewardLevel,
+          nanoLevel: gameState.nanoLevel,
+          isSiNeuroUnlocked: gameState.isSiNeuroUnlocked,
+          milestoneAnnounced: gameState.milestoneAnnounced,
+          hiredAssistants: gameState.hiredAssistants,
+          engineerLevel: gameState.engineerLevel,
+          droneLevel: gameState.droneLevel,
+          dataStreamActive: gameState.dataStreamActive,
+          fatimaUnlocked: gameState.fatimaUnlocked,
+          fatimaLevel: gameState.fatimaLevel,
+          uaeBranchUnlocked: gameState.uaeBranchUnlocked,
+          savedAt: Date.now()
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+      } catch (err) {
+        console.error('Error saving clinic data:', err);
+      }
+      updateHUD();
+    }
+
+    function triggerHaptic(duration = 40) {
+      try {
+        if ('vibrate' in navigator) {
+          navigator.vibrate(duration);
+        }
+      } catch (_) {}
+    }
+
+    function saveGameManual() {
+      saveGame();
+      playTone(600, 'sine', 0.15);
+      triggerHaptic(50);
+      showFloatingText(player.x, player.y - 25, '💾 تم الحفظ بنجاح!', '#38bdf8');
+      addEventLog('تم حفظ بيانات وتقدم العيادة يدوياً.', 'log-info');
+    }
+
+    function updateHUD() {
+      const setTxt = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = val;
+      };
+
+      setTxt('stat-tech-parts', gameState.techParts);
+      setTxt('stat-cured-patients', gameState.curedPatients);
+      setTxt('stat-credits', gameState.cairoCredits);
+
+      const streamStatus = document.getElementById('stat-stream-status');
+      if (streamStatus) {
+        if (gameState.dataStreamActive) {
+          streamStatus.innerText = 'متصل ⚡🟢';
+          streamStatus.style.color = '#34d399';
+        } else {
+          streamStatus.innerText = 'مفصول 🔴';
+          streamStatus.style.color = '#f87171';
+        }
+      }
+
+      const totalAssistants = gameState.hiredAssistants + gameState.engineerLevel + gameState.droneLevel + (gameState.fatimaUnlocked ? 1 : 0);
+      const assistantsPill = document.getElementById('stat-assistants-pill');
+      if (assistantsPill) {
+        if (gameState.isSiNeuroUnlocked || totalAssistants > 0) {
+          assistantsPill.style.display = 'flex';
+          setTxt('stat-assistants-count', totalAssistants);
+        } else {
+          assistantsPill.style.display = 'none';
+        }
+      }
+
+      setTxt('uae-req-credits', `${gameState.cairoCredits} / 5000`);
+      setTxt('uae-req-parts', `${gameState.techParts} / 80`);
+      setTxt('uae-req-patients', `${gameState.curedPatients} / 50`);
+      
+      const btnUae = document.getElementById('btn-unlock-uae');
+      if (btnUae) {
+        if (gameState.uaeBranchUnlocked) {
+          btnUae.innerText = 'تم الافتتاح العالمي بنجاح! 🇦🇪✨';
+          btnUae.disabled = true;
+          btnUae.style.background = '#059669';
+        } else {
+          const canUnlock = gameState.cairoCredits >= 5000 && gameState.techParts >= 80 && gameState.curedPatients >= 50;
+          btnUae.disabled = !canUnlock;
+        }
+      }
+    }
+
+    function addEventLog(message, typeClass = 'log-item') {
+      const logBox = document.getElementById('event-log-container');
+      if (!logBox) return;
+      const now = new Date();
+      const timeStr = now.toTimeString().split(' ')[0];
+      
+      const item = document.createElement('div');
+      item.className = `log-item ${typeClass}`;
+      item.innerHTML = `<span class="log-time">[${timeStr}]</span> ${message}`;
+      
+      logBox.prepend(item);
+      
+      while (logBox.children.length > 45) {
+        logBox.removeChild(logBox.lastChild);
+      }
+    }
+
+    function checkSiNeuroStatus(triggerModalIfNew = true) {
+      if (gameState.curedPatients >= 50 && !gameState.isSiNeuroUnlocked) {
+        gameState.isSiNeuroUnlocked = true;
+        saveGame();
+      }
+
+      const container = document.getElementById('game-container');
+      const badge = document.getElementById('app-version-badge');
+      const avatarBadge = document.getElementById('avatar-sineuro-badge');
+
+      if (gameState.uaeBranchUnlocked) {
+        if (container) container.classList.add('sineuro-active');
+        if (avatarBadge) avatarBadge.style.display = 'block';
+        if (badge) {
+          badge.className = 'version-badge uae-badge';
+          badge.innerText = '🇦🇪 si-neuro UAE Global';
+        }
+      } else if (gameState.isSiNeuroUnlocked) {
+        if (container) container.classList.add('sineuro-active');
+        if (avatarBadge) avatarBadge.style.display = 'block';
+        if (badge) {
+          badge.className = 'version-badge sineuro-badge';
+          badge.innerText = '🚀 si-neuro HQ v5.0';
+        }
+      } else {
+        if (container) container.classList.remove('sineuro-active');
+        if (avatarBadge) avatarBadge.style.display = 'none';
+        if (badge) {
+          badge.className = 'version-badge';
+          badge.innerText = 'v5.0 Master';
+        }
+      }
+    }
+
+    /* =========================================================================
+       3. EXPANDED WORLD & CAMERA
+       ========================================================================= */
+    const WORLD_WIDTH = 1800;
+    const WORLD_HEIGHT = 1150;
+
+    const camera = {
+      x: 0,
+      y: 0,
+      shake: 0
+    };
+
+    function triggerScreenShake(intensity = 10) {
+      camera.shake = intensity;
+      triggerHaptic(intensity * 5);
+    }
+
+    /* =========================================================================
+       4. SOLID WALL COLLIDERS & INTERACTIVE AIRLOCK DOORS
+       ========================================================================= */
+    const buildingWalls = [
+      // Outer Perimeter Walls
+      { x: 50, y: 60, width: WORLD_WIDTH - 100, height: 45, label: 'si-neuro MEDICAL LAB & NEURO-REHAB CENTER • CAIRO HQ' },
+      { x: 50, y: 60, width: 20, height: WORLD_HEIGHT - 120 },
+      { x: WORLD_WIDTH - 70, y: 60, width: 20, height: WORLD_HEIGHT - 120 },
+      { x: 50, y: WORLD_HEIGHT - 70, width: WORLD_WIDTH - 100, height: 20 },
+
+      // Interior Divider Walls (Horizontal)
+      { x: 70, y: 590, width: 680, height: 30, label: 'AIRLOCK CORRIDOR • BIO-HAZARD LEVEL 2' },
+      { x: 1050, y: 600, width: 680, height: 30, label: 'STERILE WING • PATIENT MONITORING' },
+      { x: 770, y: 300, width: 50, height: 20 },
+      { x: 980, y: 300, width: 50, height: 20 },
+
+      // Left Corridor Vertical Walls
+      { x: 750, y: 105, width: 20, height: 220 },
+      { x: 750, y: 460, width: 20, height: 140 },
+      { x: 750, y: 720, width: 20, height: 360 },
+
+      // Right Corridor Vertical Walls
+      { x: 1030, y: 105, width: 20, height: 220 },
+      { x: 1030, y: 460, width: 20, height: 140 },
+      { x: 1030, y: 720, width: 20, height: 360 }
+    ];
+
+    const clinicDoors = [
+      { id: 'labDoor', x: 750, y: 325, width: 20, height: 135, orientation: 'vertical', name: 'مختبر الروبوتات 🔬', openRatio: 0 },
+      { id: 'rehabDoor', x: 1030, y: 325, width: 20, height: 135, orientation: 'vertical', name: 'جناح التأهيل والسرير 🩺', openRatio: 0 },
+      { id: 'serverDoor', x: 750, y: 600, width: 20, height: 120, orientation: 'vertical', name: 'غرفة الخوادم ⚡', openRatio: 0 },
+      { id: 'podsDoor', x: 1030, y: 600, width: 20, height: 120, orientation: 'vertical', name: 'كبسولات الاستشفاء 🛏️', openRatio: 0 },
+      { id: 'uaeDoor', x: 820, y: 300, width: 160, height: 20, orientation: 'horizontal', name: 'مكتب التوسع الدولي 🇦🇪', openRatio: 0 }
+    ];
+
+    function updateDoors() {
+      for (const door of clinicDoors) {
+        const doorCenterX = door.x + door.width / 2;
+        const doorCenterY = door.y + door.height / 2;
+
+        const distPlayer = Math.hypot(player.x - doorCenterX, player.y - doorCenterY);
+        let distFatima = 999;
+        if (gameState.fatimaUnlocked) {
+          distFatima = Math.hypot(fatima.x - doorCenterX, fatima.y - doorCenterY);
+        }
+
+        const isNear = distPlayer < 95 || distFatima < 95;
+
+        if (isNear) {
+          if (door.openRatio === 0) {
+            playTone(520, 'sine', 0.08, 0.05);
+          }
+          door.openRatio = Math.min(1, door.openRatio + 0.12);
+        } else {
+          door.openRatio = Math.max(0, door.openRatio - 0.08);
+        }
+      }
+    }
+
+    function checkCollisionAndResolve(entity, radius = 14) {
+      // 1. Resolve X movement with solid walls
+      for (const wall of buildingWalls) {
+        if (
+          entity.x + entity.vx + radius > wall.x &&
+          entity.x + entity.vx - radius < wall.x + wall.width &&
+          entity.y + radius > wall.y &&
+          entity.y - radius < wall.y + wall.height
+        ) {
+          if (entity.vx > 0) {
+            entity.x = wall.x - radius - 0.1;
+          } else if (entity.vx < 0) {
+            entity.x = wall.x + wall.width + radius + 0.1;
+          }
+          entity.vx = 0;
+        }
+      }
+
+      // 2. Resolve Y movement with solid walls
+      for (const wall of buildingWalls) {
+        if (
+          entity.x + radius > wall.x &&
+          entity.x - radius < wall.x + wall.width &&
+          entity.y + entity.vy + radius > wall.y &&
+          entity.y + entity.vy - radius < wall.y + wall.height
+        ) {
+          if (entity.vy > 0) {
+            entity.y = wall.y - radius - 0.1;
+          } else if (entity.vy < 0) {
+            entity.y = wall.y + wall.height + radius + 0.1;
+          }
+          entity.vy = 0;
+        }
+      }
+
+      // 3. Resolve closed doors as barriers
+      for (const door of clinicDoors) {
+        if (door.openRatio < 0.7) {
+          // X
+          if (
+            entity.x + entity.vx + radius > door.x &&
+            entity.x + entity.vx - radius < door.x + door.width &&
+            entity.y + radius > door.y &&
+            entity.y - radius < door.y + door.height
+          ) {
+            if (entity.vx > 0) entity.x = door.x - radius - 0.1;
+            else if (entity.vx < 0) entity.x = door.x + door.width + radius + 0.1;
+            entity.vx = 0;
+          }
+          // Y
+          if (
+            entity.x + radius > door.x &&
+            entity.x - radius < door.x + door.width &&
+            entity.y + entity.vy + radius > door.y &&
+            entity.y + entity.vy - radius < door.y + door.height
+          ) {
+            if (entity.vy > 0) entity.y = door.y - radius - 0.1;
+            else if (entity.vy < 0) entity.y = door.y + door.height + radius + 0.1;
+            entity.vy = 0;
+          }
+        }
+      }
+    }
+
+    /* =========================================================================
+       5. ADVANCED PARTICLE SYSTEM
+       ========================================================================= */
+    const particles = [];
+
+    class Particle {
+      constructor(x, y, type = 'spark', customColor = null) {
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        this.life = 1.0;
+        this.decay = Math.random() * 0.02 + 0.015;
+
+        if (type === 'spark') {
+          this.vx = (Math.random() - 0.5) * 5;
+          this.vy = (Math.random() - 0.5) * 5 - 1.5;
+          this.size = Math.random() * 4 + 2;
+          this.color = customColor || (Math.random() > 0.5 ? '#38bdf8' : '#c084fc');
+          this.char = Math.random() > 0.5 ? '1' : '0';
+        } else if (type === 'heal') {
+          this.vx = (Math.random() - 0.5) * 2.5;
+          this.vy = -Math.random() * 3.5 - 1.5;
+          this.size = Math.random() * 8 + 6;
+          this.color = customColor || '#34d399';
+        } else if (type === 'trail') {
+          this.vx = 0;
+          this.vy = 0;
+          this.size = 14;
+          this.color = gameState.isSiNeuroUnlocked ? 'rgba(139, 92, 246, 0.4)' : 'rgba(56, 189, 248, 0.4)';
+          this.decay = 0.06;
+        } else if (type === 'ambient') {
+          this.vx = (Math.random() - 0.5) * 0.5;
+          this.vy = (Math.random() - 0.5) * 0.5 - 0.2;
+          this.size = Math.random() * 2 + 1;
+          this.color = gameState.isSiNeuroUnlocked ? 'rgba(168, 85, 247, 0.45)' : 'rgba(56, 189, 248, 0.35)';
+          this.decay = 0.006;
+        }
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= this.decay;
+      }
+
+      draw(c) {
+        c.save();
+        c.globalAlpha = Math.max(0, this.life);
+
+        if (this.type === 'spark') {
+          c.fillStyle = this.color;
+          c.font = `bold ${this.size + 6}px monospace`;
+          c.fillText(this.char, this.x, this.y);
+        } else if (this.type === 'heal') {
+          c.strokeStyle = this.color;
+          c.lineWidth = 3;
+          c.beginPath();
+          c.moveTo(this.x - this.size / 2, this.y);
+          c.lineTo(this.x + this.size / 2, this.y);
+          c.moveTo(this.x, this.y - this.size / 2);
+          c.lineTo(this.x, this.y + this.size / 2);
+          c.stroke();
+        } else if (this.type === 'trail') {
+          c.fillStyle = this.color;
+          c.beginPath();
+          c.arc(this.x, this.y, this.size * this.life, 0, Math.PI * 2);
+          c.fill();
+        } else {
+          c.fillStyle = this.color;
+          c.beginPath();
+          c.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          c.fill();
+        }
+
+        c.restore();
+      }
+    }
+
+    function spawnDataSparks(x, y, count = 14) {
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle(x, y, 'spark'));
+      }
+    }
+
+    function spawnHealingParticles(x, y, count = 20) {
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle(x + (Math.random() * 40 - 20), y + (Math.random() * 20 - 10), 'heal'));
+      }
+    }
+
+    /* =========================================================================
+       6. SMART NPC ASSISTANT (ENG. FATIMA - م. فاطمة)
+       ========================================================================= */
+    const fatima = {
+      x: 880,
+      y: 400,
+      vx: 0,
+      vy: 0,
+      targetX: 880,
+      targetY: 400,
+      speed: 2.4,
+      facing: 'down',
+      walkFrame: 0,
+      state: 'patrol',
+      timer: 0,
+      statusText: 'م. فاطمة: فحص مستشعرات المختبر 🔬'
+    };
+
+    const fatimaWaypoints = [
+      { x: 900, y: 390, text: 'م. فاطمة: المرور بالممر المركزي 🚪' },
+      { x: 450, y: 380, text: 'م. فاطمة: تركيب محركات الروبوت ⚙️' },
+      { x: 900, y: 390, text: 'م. فاطمة: فحص الأبواب المعقمة 🚪' },
+      { x: 1300, y: 420, text: 'م. فاطمة: فحص مؤشرات السرير السريري 🩺' },
+      { x: 900, y: 660, text: 'م. فاطمة: جولة تفقدية بالخوادم ⚡' },
+      { x: 450, y: 750, text: 'م. فاطمة: معايرة خادم الكودكس 💻' },
+      { x: 900, y: 220, text: 'م. فاطمة: مراجعة خطط التوسع الدولي 🇦🇪' }
+    ];
+
+    function updateFatimaAI() {
+      if (!gameState.fatimaUnlocked) return;
+
+      const dx = fatima.targetX - fatima.x;
+      const dy = fatima.targetY - fatima.y;
+      const dist = Math.hypot(dx, dy);
+
+      if (dist > 12) {
+        fatima.vx = (dx / dist) * fatima.speed;
+        fatima.vy = (dy / dist) * fatima.speed;
+        checkCollisionAndResolve(fatima, 13);
+        fatima.x += fatima.vx;
+        fatima.y += fatima.vy;
+        fatima.walkFrame += 0.15;
+        if (Math.abs(dx) > Math.abs(dy)) {
+          fatima.facing = dx > 0 ? 'right' : 'left';
+        } else {
+          fatima.facing = dy > 0 ? 'down' : 'up';
+        }
+      } else {
+        fatima.vx = 0;
+        fatima.vy = 0;
+        fatima.timer += 0.02;
+        if (fatima.timer > 4.5) {
+          fatima.timer = 0;
+          const nextWp = fatimaWaypoints[Math.floor(Math.random() * fatimaWaypoints.length)];
+          fatima.targetX = nextWp.x + (Math.random() * 30 - 15);
+          fatima.targetY = nextWp.y + (Math.random() * 30 - 15);
+          fatima.statusText = nextWp.text;
+
+          const rewardCredits = gameState.uaeBranchUnlocked ? 40 : 20;
+          gameState.cairoCredits += rewardCredits;
+          gameState.techParts += 1;
+          saveGame();
+          showFloatingText(fatima.x, fatima.y - 30, `+${rewardCredits} ج.م | +1 ⚙️`, '#34d399');
+        }
+      }
+    }
+
+    function buyFatima() {
+      if (gameState.cairoCredits >= 800 && !gameState.fatimaUnlocked) {
+        gameState.cairoCredits -= 800;
+        gameState.fatimaUnlocked = true;
+        saveGame();
+        triggerScreenShake(12);
+        playFanfareSound();
+        showFloatingText(player.x, player.y - 25, '🧕 انضمت المهندسة فاطمة للفريق!', '#34d399');
+        addEventLog('انضمت المهندسة فاطمة رسمياً إلى فريق si-neuro لبدء مهام الأتمتة والرعاية السريرية.', 'log-fatima');
+        updateShopUI();
+        updateHUD();
+      }
+    }
+
+    function openFatimaModal() {
+      const modal = document.getElementById('fatima-modal');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeFatimaModal() {
+      const modal = document.getElementById('fatima-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function claimFatimaBoost() {
+      gameState.cairoCredits += 50;
+      gameState.techParts += 2;
+      saveGame();
+      playCraftSound();
+      triggerHaptic(40);
+      showFloatingText(player.x, player.y - 25, '+50 ج.م | +2 ⚙️', '#34d399');
+      addEventLog('تم استلام تقرير الأبحاث السريرية من م. فاطمة (+50 ج.م، +2 قطع).', 'log-fatima');
+      closeFatimaModal();
+    }
+
+    /* =========================================================================
+       7. RESOURCE LOGISTICS & ROUTING (DATA STREAM ENGINE)
+       ========================================================================= */
+    let dataStreamTimer = null;
+
+    function toggleDataStreamUI() {
+      gameState.dataStreamActive = !gameState.dataStreamActive;
+      saveGame();
+      if (gameState.dataStreamActive) {
+        playTone(750, 'sawtooth', 0.2);
+        triggerScreenShake(6);
+        showFloatingText(player.x, player.y - 25, '⚡ تم تفعيل تدفق البيانات الآلي!', '#c084fc');
+        addEventLog('تم توصيل خط تدفق البيانات بين خادم الكودكس والمختبر لتوليد القطع آلياً.', 'log-sineuro');
+      } else {
+        playTone(320, 'sine', 0.15);
+        showFloatingText(player.x, player.y - 25, '🔴 تم فصل تدفق البيانات', '#f87171');
+        addEventLog('تم إيقاف تدفق البيانات مؤقتاً.', 'log-info');
+      }
+      updateHUD();
+    }
+
+    function startDataStreamEngine() {
+      if (dataStreamTimer) clearInterval(dataStreamTimer);
+      dataStreamTimer = setInterval(() => {
+        if (gameState.dataStreamActive) {
+          const partsToAdd = gameState.uaeBranchUnlocked ? 2 : 1;
+          gameState.techParts += partsToAdd;
+          saveGame();
+          spawnDataSparks(zones[0].x, zones[0].y, 6);
+          showFloatingText(zones[0].x, zones[0].y - 30, `⚡ +${partsToAdd} قطع بالتدفق`, '#c084fc');
+        }
+      }, 3000);
+    }
+
+    /* =========================================================================
+       8. ENDGAME: UAE BRANCH EXPANSION (GLOBAL EMIRATES BRANCH)
+       ========================================================================= */
+    function openUaeModal() {
+      document.getElementById('uae-modal').style.display = 'flex';
+      updateHUD();
+    }
+
+    function closeUaeModal() {
+      document.getElementById('uae-modal').style.display = 'none';
+    }
+
+    function unlockUaeBranch() {
+      if (gameState.cairoCredits >= 5000 && gameState.techParts >= 80 && gameState.curedPatients >= 50 && !gameState.uaeBranchUnlocked) {
+        gameState.cairoCredits -= 5000;
+        gameState.techParts -= 80;
+        gameState.uaeBranchUnlocked = true;
+        saveGame();
+        triggerScreenShake(20);
+        playFanfareSound();
+        checkSiNeuroStatus(false);
+        showFloatingText(player.x, player.y - 35, '🇦🇪 تم تدشين فرع دبي العالمي!', '#fbbf24');
+        addEventLog('🎉 مبروك! تم تدشين فرع الإمارات (دبي) رسمياً ومضاعفة جميع الأرباح والإنتاج +100%!', 'log-uae');
+        closeUaeModal();
+        updateHUD();
+      }
+    }
+
+    /* =========================================================================
+       9. PROCEDURAL WEB AUDIO SYNTHESIZER
+       ========================================================================= */
+    let audioCtx = null;
+    let soundEnabled = true;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playTone(freq, type = 'sine', duration = 0.1, vol = 0.12) {
+      if (!soundEnabled) return;
+      try {
+        initAudio();
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (_) {}
+    }
+
+    function playCraftSound() {
+      playTone(340, 'sawtooth', 0.08, 0.1);
+      setTimeout(() => playTone(520, 'triangle', 0.12, 0.1), 70);
+      setTimeout(() => playTone(680, 'sine', 0.16, 0.12), 140);
+    }
+
+    function playCureSound() {
+      const notes = [261.63, 329.63, 392.00, 523.25, 659.25];
+      notes.forEach((n, idx) => {
+        setTimeout(() => playTone(n, 'sine', 0.25, 0.15), idx * 75);
+      });
+    }
+
+    function playFanfareSound() {
+      const notes = [392.00, 523.25, 659.25, 783.99, 1046.50, 1318.51];
+      notes.forEach((n, idx) => {
+        setTimeout(() => playTone(n, 'triangle', 0.35, 0.18), idx * 90);
+      });
+    }
+
+    function playErrorSound() {
+      playTone(170, 'square', 0.15, 0.2);
+    }
+
+    function playBlockClickSound() {
+      playTone(440, 'sine', 0.08, 0.15);
+    }
+
+    function toggleAudio() {
+      soundEnabled = !soundEnabled;
+      const btn = document.getElementById('btn-sound');
+      if (btn) btn.innerText = soundEnabled ? '🔊 صوت' : '🔇 صامت';
+    }
+
+    /* =========================================================================
+       10. 2D CANVAS GAME ENGINE & REAL ARCHITECTURAL CLINIC-LAB PLAN
+       ========================================================================= */
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const minimapCanvas = document.getElementById('minimap-canvas');
+    const minimapCtx = minimapCanvas ? minimapCanvas.getContext('2d') : null;
+
+    function resizeCanvas() {
+      const wrapper = document.getElementById('canvas-wrapper');
+      if (wrapper && canvas) {
+        canvas.width = wrapper.clientWidth || 1024;
+        canvas.height = wrapper.clientHeight || 520;
+      }
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    const keys = {};
+
+    window.addEventListener('keydown', (e) => {
+      keys[e.key] = true;
+      keys[e.code] = true;
+      if (e.key === 'e' || e.key === 'E' || e.key === 'ث') {
+        triggerInteraction();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      keys[e.key] = false;
+      keys[e.code] = false;
+    });
+
+    const player = {
+      x: 880,
+      y: 420,
+      vx: 0,
+      vy: 0,
+      targetVx: 0,
+      targetVy: 0,
+      size: 30,
+      baseSpeed: 4.4,
+      speed: 4.4,
+      facing: 'down',
+      walkFrame: 0,
+      isMoving: false,
+      touchVx: 0,
+      touchVy: 0
+    };
+
+    function applyUpgrades() {
+      player.speed = player.baseSpeed + (gameState.speedLevel - 1) * 1.0;
+      updateShopUI();
+    }
+
+    const zones = [
+      {
+        id: 'workbench',
+        name: 'مختبر الإلكترونيات الحيوية وتجميع الروبوتات',
+        titleEn: 'Bio-Cybernetics & Robotics Lab',
+        x: 450,
+        y: 380,
+        width: 210,
+        height: 125,
+        color: '#06b6d4',
+        interactText: 'تجميع قطع الروبوت وبرمجة ريهاب-لوجيك',
+        action: () => {
+          const multiplier = gameState.uaeBranchUnlocked ? 2 : 1;
+          const partsGain = gameState.craftLevel * multiplier;
+          const creditsGain = 25 * gameState.craftLevel * multiplier;
+          gameState.techParts += partsGain;
+          gameState.cairoCredits += creditsGain;
+          saveGame();
+          playCraftSound();
+          triggerScreenShake(4);
+          spawnDataSparks(zones[0].x, zones[0].y, 14);
+          showFloatingText(player.x, player.y - 25, `+${partsGain} قطع ⚙️ | +${creditsGain} ج.م`, '#67e8f9');
+          addEventLog(`قام د. عبد الله بتجميع مكون روبوت في المختبر (+${partsGain} قطع، +${creditsGain} ج.م).`, 'log-tech');
+        }
+      },
+      {
+        id: 'bed',
+        name: 'جناح الفحص السريري والتأهيل الروبوتي',
+        titleEn: 'Clinical Examination & Robotic Rehab Bay',
+        x: 1300,
+        y: 420,
+        width: 260,
+        height: 190,
+        color: '#10b981',
+        costParts: 2,
+        interactText: 'بدء جلسة العلاج الآلي (لغز Code & Cure - يتطلب 2 قطع)',
+        action: () => {
+          if (gameState.techParts >= 2) {
+            openCureMiniGame();
+          } else {
+            playErrorSound();
+            showFloatingText(player.x, player.y - 25, 'تحتاج 2 قطع تكنولوجية! ⚠️', '#ef4444');
+            addEventLog('عفواً! لا توجد قطع تكنولوجية كافية لتشغيل الذراع الروبوتية (المطلوب: 2 قطع).', 'log-info');
+          }
+        }
+      },
+      {
+        id: 'server',
+        name: 'غرفة خوادم الكودكس والذكاء الاصطناعي',
+        titleEn: 'Codex AI Neural Core Suite',
+        x: 450,
+        y: 750,
+        width: 190,
+        height: 115,
+        color: '#a855f7',
+        interactText: 'تفعيل/إدارة خط تدفق البيانات الآلي',
+        action: () => {
+          toggleDataStreamUI();
+        }
+      },
+      {
+        id: 'uaeHub',
+        name: 'مكتب الاستشارات وإدارة التوسع الدولي',
+        titleEn: 'UAE Global Expansion & Executive Deck',
+        x: 900,
+        y: 200,
+        width: 230,
+        height: 115,
+        color: '#f59e0b',
+        interactText: 'مراجعة وتدشين فرع دبي الطبي',
+        action: () => {
+          openUaeModal();
+        }
+      }
+    ];
+
+    let currentActiveZone = null;
+
+    function triggerInteraction() {
+      if (isModalOpen()) return;
+      if (currentActiveZone) {
+        currentActiveZone.action();
+      } else if (gameState.fatimaUnlocked) {
+        const distFatima = Math.hypot(player.x - fatima.x, player.y - fatima.y);
+        if (distFatima < 55) {
+          openFatimaModal();
+        }
+      }
+    }
+
+    function isModalOpen() {
+      const isVisible = id => {
+        const el = document.getElementById(id);
+        return el && el.style.display === 'flex';
+      };
+      return isVisible('cure-modal') ||
+             isVisible('shop-modal') ||
+             isVisible('uae-modal') ||
+             isVisible('fatima-modal') ||
+             isVisible('pwa-modal') ||
+             isVisible('mode-modal');
+    }
+
+    function checkZoneProximity() {
+      currentActiveZone = null;
+      const promptEl = document.getElementById('interaction-prompt');
+      const promptTextEl = document.getElementById('prompt-text');
+
+      for (const zone of zones) {
+        const closestX = Math.max(zone.x - zone.width / 2, Math.min(player.x, zone.x + zone.width / 2));
+        const closestY = Math.max(zone.y - zone.height / 2, Math.min(player.y, zone.y + zone.height / 2));
+        const dist = Math.hypot(player.x - closestX, player.y - closestY);
+
+        if (dist < 72) {
+          currentActiveZone = zone;
+          if (promptTextEl) promptTextEl.innerText = `${zone.name}: ${zone.interactText}`;
+          if (promptEl) promptEl.style.display = 'flex';
+          return;
+        }
+      }
+
+      if (gameState.fatimaUnlocked) {
+        const distFatima = Math.hypot(player.x - fatima.x, player.y - fatima.y);
+        if (distFatima < 55) {
+          if (promptTextEl) promptTextEl.innerText = 'م. فاطمة: استشارة الأبحاث وتوليد الطاقة 🧕';
+          if (promptEl) promptEl.style.display = 'flex';
+          return;
+        }
+      }
+
+      if (promptEl) promptEl.style.display = 'none';
+    }
+
+    function showFloatingText(worldX, worldY, text, color = '#fff') {
+      const container = document.getElementById('canvas-wrapper');
+      if (!container) return;
+      const el = document.createElement('div');
+      el.className = 'floating-text';
+      el.innerText = text;
+      el.style.color = color;
+
+      const screenX = worldX - camera.x;
+      const screenY = worldY - camera.y;
+
+      el.style.left = `${screenX}px`;
+      el.style.top = `${screenY}px`;
+
+      container.appendChild(el);
+      setTimeout(() => {
+        if (el.parentNode) el.parentNode.removeChild(el);
+      }, 1200);
+    }
+
+    /* =========================================================================
+       11. TOUCH CONTROLS (VIRTUAL JOYSTICK & ACTION BUTTON ENGINE)
+       ========================================================================= */
+    const joystickZone = document.getElementById('joystick-zone');
+    const joystickKnob = document.getElementById('joystick-knob');
+    let isJoystickActive = false;
+    let joystickOrigin = { x: 0, y: 0 };
+    let joystickTouchId = null;
+    const maxJoystickRadius = 38;
+
+    function handleTouchStart(e) {
+      e.preventDefault();
+      initAudio();
+      const touch = e.changedTouches[0];
+      joystickTouchId = touch.identifier;
+      const rect = joystickZone.getBoundingClientRect();
+      joystickOrigin = {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2
+      };
+      isJoystickActive = true;
+      processJoystickMovement(touch.clientX, touch.clientY);
+    }
+
+    function handleTouchMove(e) {
+      if (!isJoystickActive) return;
+      e.preventDefault();
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === joystickTouchId) {
+          processJoystickMovement(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
+          break;
+        }
+      }
+    }
+
+    function handleTouchEnd(e) {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === joystickTouchId) {
+          isJoystickActive = false;
+          joystickTouchId = null;
+          if (joystickKnob) joystickKnob.style.transform = 'translate(0px, 0px)';
+          player.touchVx = 0;
+          player.touchVy = 0;
+          break;
+        }
+      }
+    }
+
+    function processJoystickMovement(clientX, clientY) {
+      const dx = clientX - joystickOrigin.x;
+      const dy = clientY - joystickOrigin.y;
+      const dist = Math.hypot(dx, dy);
+
+      const angle = Math.atan2(dy, dx);
+      const clampedDist = Math.min(dist, maxJoystickRadius);
+
+      const knobX = Math.cos(angle) * clampedDist;
+      const knobY = Math.sin(angle) * clampedDist;
+
+      if (joystickKnob) joystickKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+
+      player.touchVx = (knobX / maxJoystickRadius);
+      player.touchVy = (knobY / maxJoystickRadius);
+    }
+
+    let isMouseDownJoystick = false;
+    if (joystickZone) {
+      joystickZone.addEventListener('mousedown', (e) => {
+        initAudio();
+        isMouseDownJoystick = true;
+        const rect = joystickZone.getBoundingClientRect();
+        joystickOrigin = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        processJoystickMovement(e.clientX, e.clientY);
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (isMouseDownJoystick) {
+          processJoystickMovement(e.clientX, e.clientY);
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (isMouseDownJoystick) {
+          isMouseDownJoystick = false;
+          if (joystickKnob) joystickKnob.style.transform = 'translate(0px, 0px)';
+          player.touchVx = 0;
+          player.touchVy = 0;
+        }
+      });
+
+      joystickZone.addEventListener('touchstart', handleTouchStart, { passive: false });
+      joystickZone.addEventListener('touchmove', handleTouchMove, { passive: false });
+      joystickZone.addEventListener('touchend', handleTouchEnd, { passive: false });
+      joystickZone.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+    }
+
+    /* =========================================================================
+       12. "CODE & CURE" MINI-GAME SYSTEM
+       ========================================================================= */
+    const puzzleSequences = [
+      {
+        name: 'بروتوكول فحص المسار العصبي ومعايرة الذراع',
+        steps: [
+          { id: 'scan', code: 'ScanNeuralPath(patient_id)', label: '1. فحص الإشارة العصبية' },
+          { id: 'calibrate', code: 'CalibrateRobotics(torque_safe)', label: '2. معايرة عزم الروبوت' },
+          { id: 'execute', code: 'ExecuteHeal(pulse_bio)', label: '3. تنفيذ النبضة العلاجية' }
+        ]
+      },
+      {
+        name: 'بروتوكول استعادة المدى الحركي للمفصل',
+        steps: [
+          { id: 'joint', code: 'ReadJointAngle(EMG_Ch1)', label: '1. قراءة زاوية المفصل' },
+          { id: 'path', code: 'CalculateStretchPath(limit_35deg)', label: '2. حساب مسار التمدد الآمن' },
+          { id: 'servo', code: 'SmoothServoExtend(speed_gentle)', label: '3. تمديد السيرفو بنعومة' }
+        ]
+      },
+      {
+        name: 'بروتوكول شركة si-neuro للتزامن العصبي السحابي',
+        steps: [
+          { id: 'cloud', code: 'SyncSiNeuroCloud(Patient_DNA)', label: '1. مزامنة البيانات العصبية' },
+          { id: 'ai', code: 'RunNeuralOptimizationAI()', label: '2. معالجة الذكاء الاصطناعي' },
+          { id: 'quantum', code: 'DeliverPrecisionPulse(Quantum_Bio)', label: '3. ضخ النبضة الدقيقة' }
+        ]
+      }
+    ];
+
+    let activePuzzle = null;
+    let selectedStepIndex = 0;
+
+    function openCureMiniGame() {
+      activePuzzle = puzzleSequences[Math.floor(Math.random() * puzzleSequences.length)];
+      selectedStepIndex = 0;
+
+      const modal = document.getElementById('cure-modal');
+      if (modal) modal.style.display = 'flex';
+      renderCurePuzzle();
+      addEventLog('بدأت جلسة البرمجة الطبية Code & Cure على سرير الروبوت.', 'log-info');
+    }
+
+    function closeCureModal() {
+      const modal = document.getElementById('cure-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function renderCurePuzzle() {
+      const slotsContainer = document.getElementById('sequence-slots');
+      if (slotsContainer) {
+        slotsContainer.innerHTML = '';
+        for (let i = 0; i < activePuzzle.steps.length; i++) {
+          const slot = document.createElement('div');
+          slot.className = `slot ${i < selectedStepIndex ? 'filled' : ''}`;
+          slot.id = `slot-${i}`;
+          slot.innerText = i < selectedStepIndex ? `✅ ${activePuzzle.steps[i].code}` : `خطوة ${i + 1}`;
+          slotsContainer.appendChild(slot);
+        }
+      }
+
+      const blocksContainer = document.getElementById('code-blocks-list');
+      if (blocksContainer) {
+        blocksContainer.innerHTML = '';
+        const shuffled = [...activePuzzle.steps].sort(() => Math.random() - 0.5);
+
+        shuffled.forEach(step => {
+          const btn = document.createElement('button');
+          btn.className = 'code-block-btn';
+          btn.innerHTML = `<span>⚙️ ${step.code}</span> <span style="font-size: 11px; color: #94a3b8;">${step.label}</span>`;
+          btn.onclick = () => handleBlockClick(step, btn);
+          blocksContainer.appendChild(btn);
+        });
+      }
+
+      const statusEl = document.getElementById('puzzle-status-text');
+      if (statusEl) {
+        statusEl.innerText = `اختر الخطوة رقم (${selectedStepIndex + 1})...`;
+        statusEl.style.color = '#94a3b8';
+      }
+    }
+
+    function handleBlockClick(step, btn) {
+      playBlockClickSound();
+      const expectedStep = activePuzzle.steps[selectedStepIndex];
+
+      if (step.id === expectedStep.id) {
+        btn.disabled = true;
+        btn.style.background = '#065f46';
+        btn.style.borderColor = '#10b981';
+        selectedStepIndex++;
+
+        renderCurePuzzle();
+
+        if (selectedStepIndex === activePuzzle.steps.length) {
+          setTimeout(() => {
+            finishSuccessfulCure();
+          }, 300);
+        }
+      } else {
+        playErrorSound();
+        triggerScreenShake(8);
+        const statusEl = document.getElementById('puzzle-status-text');
+        if (statusEl) {
+          statusEl.innerText = '❌ تسلسل خاطئ! حاول مجدداً.';
+          statusEl.style.color = '#ef4444';
+        }
+        setTimeout(() => {
+          resetCurePuzzle();
+        }, 600);
+      }
+    }
+
+    function resetCurePuzzle() {
+      selectedStepIndex = 0;
+      renderCurePuzzle();
+    }
+
+    function finishSuccessfulCure() {
+      closeCureModal();
+
+      gameState.techParts -= 2;
+      gameState.curedPatients += 1;
+      const multiplier = gameState.uaeBranchUnlocked ? 2 : 1;
+      const earnedCredits = (150 + (gameState.rewardLevel - 1) * 75) * multiplier;
+      gameState.cairoCredits += earnedCredits;
+
+      const bed = zones[1];
+      spawnHealingParticles(bed.x, bed.y, 25);
+      triggerScreenShake(12);
+
+      checkSiNeuroStatus(true);
+      saveGame();
+      playCureSound();
+      showFloatingText(player.x, player.y - 30, `+1 متعافى! 🎉 (+${earnedCredits} ج.م)`, '#6ee7b7');
+      addEventLog(`تم علاج المريض بنجاح بالذراع الروبوتية (+1 مريض متعافى، +${earnedCredits} ج.م).`, 'log-cure');
+    }
+
+    /* =========================================================================
+       13. UPGRADES & ASSISTANTS SHOP SYSTEM
+       ========================================================================= */
+    const upgradeCosts = {
+      speed: [100, 200, 350, 550, 800],
+      craft: [150, 300, 500, 750, 1100],
+      reward: [200, 400, 650, 950, 1400],
+      nano: [250, 450, 700, 1000, 1500]
+    };
+
+    const assistantCosts = {
+      junior: [450, 750, 1200, 1800, 2600],
+      drones: [1800, 2900, 4200]
+    };
+
+    function openShopModal() {
+      const modal = document.getElementById('shop-modal');
+      if (modal) modal.style.display = 'flex';
+      updateShopUI();
+    }
+
+    function closeShopModal() {
+      const modal = document.getElementById('shop-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function switchShopTab(tab) {
+      const tabUpgradesBtn = document.getElementById('tab-btn-upgrades');
+      const tabAssistantsBtn = document.getElementById('tab-btn-assistants');
+      const contentUpgrades = document.getElementById('tab-content-upgrades');
+      const contentAssistants = document.getElementById('tab-content-assistants');
+
+      if (tab === 'upgrades') {
+        if (tabUpgradesBtn) tabUpgradesBtn.classList.add('active');
+        if (tabAssistantsBtn) tabAssistantsBtn.classList.remove('active');
+        if (contentUpgrades) contentUpgrades.classList.add('active');
+        if (contentAssistants) contentAssistants.classList.remove('active');
+      } else {
+        if (tabAssistantsBtn) tabAssistantsBtn.classList.add('active');
+        if (tabUpgradesBtn) tabUpgradesBtn.classList.remove('active');
+        if (contentAssistants) contentAssistants.classList.add('active');
+        if (contentUpgrades) contentUpgrades.classList.remove('active');
+      }
+      updateShopUI();
+    }
+
+    function updateShopUI() {
+      const setUpgradeUI = (levelId, btnId, level, costs) => {
+        const lvlEl = document.getElementById(levelId);
+        const btnEl = document.getElementById(btnId);
+        if (!lvlEl || !btnEl) return;
+        const isMax = level >= 5;
+        const cost = costs[level - 1] || 9999;
+        lvlEl.innerText = `المستوى ${level} / 5`;
+        btnEl.innerText = isMax ? 'أقصى مستوى ⭐' : `ترقية (${cost} ج.م)`;
+        btnEl.disabled = isMax || gameState.cairoCredits < cost;
+      };
+
+      setUpgradeUI('level-speed', 'btn-buy-speed', gameState.speedLevel, upgradeCosts.speed);
+      setUpgradeUI('level-craft', 'btn-buy-craft', gameState.craftLevel, upgradeCosts.craft);
+      setUpgradeUI('level-reward', 'btn-buy-reward', gameState.rewardLevel, upgradeCosts.reward);
+      setUpgradeUI('level-nano', 'btn-buy-nano', gameState.nanoLevel, upgradeCosts.nano);
+
+      // Fatima
+      const btnFatima = document.getElementById('btn-buy-fatima');
+      const lvlFatima = document.getElementById('level-fatima');
+      if (btnFatima && lvlFatima) {
+        if (gameState.fatimaUnlocked) {
+          lvlFatima.innerText = 'نشطة في المعمل 🧕🟢';
+          btnFatima.innerText = 'تم التوظيف ⭐';
+          btnFatima.disabled = true;
+        } else {
+          lvlFatima.innerText = 'غير مفعّلة 🔒';
+          btnFatima.innerText = 'توظيف (800 ج.م)';
+          btnFatima.disabled = gameState.cairoCredits < 800;
+        }
+      }
+
+      // Junior
+      const juniorCost = assistantCosts.junior[gameState.hiredAssistants] || 9999;
+      const isMaxJunior = gameState.hiredAssistants >= 5;
+      const lvlJr = document.getElementById('level-assistants');
+      const btnJr = document.getElementById('btn-buy-assistant');
+      if (lvlJr && btnJr) {
+        lvlJr.innerText = `المستوى ${gameState.hiredAssistants} / 5`;
+        btnJr.innerText = isMaxJunior ? 'أقصى توظيف ⭐' : `توظيف (${juniorCost} ج.م)`;
+        btnJr.disabled = isMaxJunior || gameState.cairoCredits < juniorCost;
+      }
+
+      // Bio Drones
+      const droneCost = assistantCosts.drones[gameState.droneLevel] || 9999;
+      const isMaxDrone = gameState.droneLevel >= 3;
+      const lvlDr = document.getElementById('level-drones');
+      const btnDr = document.getElementById('btn-buy-drones');
+      if (lvlDr && btnDr) {
+        lvlDr.innerText = `المستوى ${gameState.droneLevel} / 3`;
+        btnDr.innerText = isMaxDrone ? 'أقصى توظيف ⭐' : `توظيف (${droneCost} ج.م)`;
+        btnDr.disabled = isMaxDrone || gameState.cairoCredits < droneCost;
+      }
+    }
+
+    function buyUpgrade(type) {
+      if (type === 'speed') {
+        const cost = upgradeCosts.speed[gameState.speedLevel - 1];
+        if (gameState.cairoCredits >= cost && gameState.speedLevel < 5) {
+          gameState.cairoCredits -= cost;
+          gameState.speedLevel++;
+          applyUpgrades();
+          saveGame();
+          playTone(700, 'sine', 0.2);
+          showFloatingText(player.x, player.y - 25, '⚡ تم زيادة السرعة!', '#a78bfa');
+          addEventLog(`تم شراء ترقية حذاء التسريع للمستوى ${gameState.speedLevel}.`, 'log-shop');
+        }
+      } else if (type === 'craft') {
+        const cost = upgradeCosts.craft[gameState.craftLevel - 1];
+        if (gameState.cairoCredits >= cost && gameState.craftLevel < 5) {
+          gameState.cairoCredits -= cost;
+          gameState.craftLevel++;
+          applyUpgrades();
+          saveGame();
+          playTone(700, 'sine', 0.2);
+          showFloatingText(player.x, player.y - 25, '💻 تم مضاعفة البرمجة!', '#a78bfa');
+          addEventLog(`تم شراء ترقية البرمجة المضاعفة للمستوى ${gameState.craftLevel}.`, 'log-shop');
+        }
+      } else if (type === 'reward') {
+        const cost = upgradeCosts.reward[gameState.rewardLevel - 1];
+        if (gameState.cairoCredits >= cost && gameState.rewardLevel < 5) {
+          gameState.cairoCredits -= cost;
+          gameState.rewardLevel++;
+          applyUpgrades();
+          saveGame();
+          playTone(700, 'sine', 0.2);
+          showFloatingText(player.x, player.y - 25, '🦾 تم تعزيز السيرفو!', '#a78bfa');
+          addEventLog(`تم شراء ترقية محركات السيرفو للمستوى ${gameState.rewardLevel}.`, 'log-shop');
+        }
+      } else if (type === 'nano') {
+        const cost = upgradeCosts.nano[gameState.nanoLevel - 1];
+        if (gameState.cairoCredits >= cost && gameState.nanoLevel < 5) {
+          gameState.cairoCredits -= cost;
+          gameState.nanoLevel++;
+          applyUpgrades();
+          saveGame();
+          playTone(700, 'sine', 0.2);
+          showFloatingText(player.x, player.y - 25, '🧪 تم تفعيل حاقن النانو!', '#a78bfa');
+          addEventLog(`تم شراء ترقية حاقن النانو الذكي للمستوى ${gameState.nanoLevel}.`, 'log-shop');
+        }
+      }
+      updateShopUI();
+    }
+
+    function buyAssistant(type) {
+      if (type === 'junior') {
+        const cost = assistantCosts.junior[gameState.hiredAssistants];
+        if (gameState.cairoCredits >= cost && gameState.hiredAssistants < 5) {
+          gameState.cairoCredits -= cost;
+          gameState.hiredAssistants++;
+          saveGame();
+          playTone(850, 'triangle', 0.25);
+          showFloatingText(player.x, player.y - 25, '🤖 تم توظيف مساعد ريبوت!', '#c084fc');
+          addEventLog(`تم توظيف مساعد ريبوت آلي جديد (المستوى ${gameState.hiredAssistants}).`, 'log-shop');
+        }
+      } else if (type === 'drones') {
+        const cost = assistantCosts.drones[gameState.droneLevel];
+        if (gameState.cairoCredits >= cost && gameState.droneLevel < 3) {
+          gameState.cairoCredits -= cost;
+          gameState.droneLevel++;
+          saveGame();
+          playTone(850, 'triangle', 0.25);
+          showFloatingText(player.x, player.y - 25, '🛸 تم نشر طائرات النانو!', '#c084fc');
+          addEventLog(`تم تفعيل سرب طائرات النانو الحيوية (المستوى ${gameState.droneLevel}).`, 'log-shop');
+        }
+      }
+      updateShopUI();
+      updateHUD();
+    }
+
+    /* =========================================================================
+       14. PWA & STANDARDIZED MODES
+       ========================================================================= */
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const box = document.getElementById('pwa-native-install-box');
+      if (box) box.style.display = 'block';
+    });
+
+    function openPwaModal() {
+      const modal = document.getElementById('pwa-modal');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closePwaModal() {
+      const modal = document.getElementById('pwa-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function triggerNativePwaInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            addEventLog('تم تثبيت لعبة si-neuro على جهازك بنجاح!', 'log-sineuro');
+          }
+          deferredPrompt = null;
+          closePwaModal();
+        });
+      }
+    }
+
+    function openModeModal() {
+      const modal = document.getElementById('mode-modal');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeModeModal() {
+      const modal = document.getElementById('mode-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function selectGameMode(mode) {
+      if (mode === 'local') {
+        gameState.gameMode = 'local';
+        closeModeModal();
+        addEventLog('تم تفعيل نمط اللعب المحلي (Local Play).', 'log-info');
+        showFloatingText(player.x, player.y - 25, '🎮 نمط اللعب المحلي نشط', '#6ee7b7');
+      } else if (mode === 'room') {
+        gameState.gameMode = 'room';
+        closeModeModal();
+        const roomCode = 'SINEURO-' + Math.floor(1000 + Math.random() * 9000);
+        addEventLog(`تم إنشاء غرفة خاصة: ${roomCode}. يمكنك مشاركة الرمز مع زملائك.`, 'log-info');
+        showFloatingText(player.x, player.y - 25, `📡 ${roomCode}`, '#7dd3fc');
+      } else if (mode === 'online') {
+        playTone(300, 'sawtooth', 0.2);
+        showFloatingText(player.x, player.y - 25, '👑 النمط الأونلاين يتطلب اشتراك Pro', '#fde047');
+        addEventLog('لعب أونلاين (Online Matchmaking) متاح فقط لمشتركي باقة Pro.', 'log-info');
+      }
+    }
+
+    /* =========================================================================
+       15. GAME LOOP & REAL ARCHITECTURAL ROOM RENDERING
+       ========================================================================= */
+    let animTime = 0;
+
+    function update() {
+      if (isModalOpen()) return;
+
+      let dx = 0;
+      let dy = 0;
+
+      if (keys['ArrowUp'] || keys['KeyW'] || keys['w'] || keys['W']) dy -= 1;
+      if (keys['ArrowDown'] || keys['KeyS'] || keys['s'] || keys['S']) dy += 1;
+      if (keys['ArrowLeft'] || keys['KeyA'] || keys['a'] || keys['A']) dx -= 1;
+      if (keys['ArrowRight'] || keys['KeyD'] || keys['d'] || keys['D']) dx += 1;
+
+      if (player.touchVx !== 0 || player.touchVy !== 0) {
+        dx = player.touchVx;
+        dy = player.touchVy;
+      } else if (dx !== 0 && dy !== 0) {
+        dx *= 0.7071;
+        dy *= 0.7071;
+      }
+
+      player.targetVx = dx * player.speed;
+      player.targetVy = dy * player.speed;
+
+      player.vx += (player.targetVx - player.vx) * 0.3;
+      player.vy += (player.targetVy - player.vy) * 0.3;
+
+      // Update Doors Animation and State
+      updateDoors();
+
+      // Check collision and slide against solid walls and doors
+      checkCollisionAndResolve(player, 14);
+
+      player.x += player.vx;
+      player.y += player.vy;
+
+      player.isMoving = Math.hypot(player.vx, player.vy) > 0.2;
+
+      if (player.isMoving) {
+        player.walkFrame += 0.18;
+        if (Math.abs(player.vx) > Math.abs(player.vy)) {
+          player.facing = player.vx > 0 ? 'right' : 'left';
+        } else {
+          player.facing = player.vy > 0 ? 'down' : 'up';
+        }
+
+        if (Math.random() < 0.3) {
+          particles.push(new Particle(player.x, player.y + 14, 'trail'));
+        }
+      }
+
+      const targetCamX = player.x - canvas.width / 2;
+      const targetCamY = player.y - canvas.height / 2;
+
+      camera.x += (targetCamX - camera.x) * 0.08;
+      camera.y += (targetCamY - camera.y) * 0.08;
+
+      camera.x = Math.max(0, Math.min(WORLD_WIDTH - canvas.width, camera.x));
+      camera.y = Math.max(0, Math.min(WORLD_HEIGHT - canvas.height, camera.y));
+
+      checkZoneProximity();
+      updateFatimaAI();
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        if (particles[i].life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+
+      if (Math.random() < 0.15) {
+        particles.push(new Particle(zones[2].x + (Math.random() * 120 - 60), zones[2].y + (Math.random() * 60 - 30), 'spark'));
+      }
+    }
+
+    function renderMinimap() {
+      if (!minimapCtx || !minimapCanvas) return;
+      const mw = minimapCanvas.width;
+      const mh = minimapCanvas.height;
+
+      minimapCtx.clearRect(0, 0, mw, mh);
+      minimapCtx.fillStyle = 'rgba(6, 9, 19, 0.9)';
+      minimapCtx.fillRect(0, 0, mw, mh);
+
+      const scaleX = mw / WORLD_WIDTH;
+      const scaleY = mh / WORLD_HEIGHT;
+
+      // Draw Walls on Minimap
+      minimapCtx.fillStyle = '#475569';
+      for (const w of buildingWalls) {
+        minimapCtx.fillRect(w.x * scaleX, w.y * scaleY, Math.max(2, w.width * scaleX), Math.max(2, w.height * scaleY));
+      }
+
+      // Draw Doors on Minimap
+      minimapCtx.fillStyle = '#06b6d4';
+      for (const d of clinicDoors) {
+        minimapCtx.fillRect(d.x * scaleX, d.y * scaleY, Math.max(2, d.width * scaleX), Math.max(2, d.height * scaleY));
+      }
+
+      for (const z of zones) {
+        minimapCtx.fillStyle = z.color;
+        minimapCtx.fillRect((z.x - z.width / 2) * scaleX, (z.y - z.height / 2) * scaleY, z.width * scaleX, z.height * scaleY);
+      }
+
+      if (gameState.dataStreamActive) {
+        minimapCtx.strokeStyle = '#c084fc';
+        minimapCtx.lineWidth = 1.5;
+        minimapCtx.beginPath();
+        minimapCtx.moveTo(zones[2].x * scaleX, zones[2].y * scaleY);
+        minimapCtx.lineTo(zones[0].x * scaleX, zones[0].y * scaleY);
+        minimapCtx.stroke();
+      }
+
+      minimapCtx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+      minimapCtx.lineWidth = 1;
+      minimapCtx.strokeRect(camera.x * scaleX, camera.y * scaleY, canvas.width * scaleX, canvas.height * scaleY);
+
+      if (gameState.fatimaUnlocked) {
+        minimapCtx.fillStyle = '#34d399';
+        minimapCtx.beginPath();
+        minimapCtx.arc(fatima.x * scaleX, fatima.y * scaleY, 3, 0, Math.PI * 2);
+        minimapCtx.fill();
+      }
+
+      minimapCtx.fillStyle = '#38bdf8';
+      minimapCtx.beginPath();
+      minimapCtx.arc(player.x * scaleX, player.y * scaleY, 3.5, 0, Math.PI * 2);
+      minimapCtx.fill();
+    }
+
+    function roundRect(ctx, x, y, width, height, radius) {
+      if (typeof radius === 'undefined') radius = 5;
+      if (typeof radius === 'number') {
+        radius = Math.min(radius, width / 2, height / 2);
+      }
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(x, y, width, height, radius);
+        return;
+      }
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.arcTo(x + width, y, x + width, y + height, radius);
+      ctx.arcTo(x + width, y + height, x, y + height, radius);
+      ctx.arcTo(x, y + height, x, y, radius);
+      ctx.arcTo(x, y, x + width, y, radius);
+      ctx.closePath();
+    }
+
+    function drawHazardStripes(ctx, x, y, w, h) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, w, h);
+      ctx.clip();
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = '#eab308';
+      for (let i = -h; i < w + h; i += 24) {
+        ctx.beginPath();
+        ctx.moveTo(x + i, y);
+        ctx.lineTo(x + i + 12, y);
+        ctx.lineTo(x + i + 12 - h, y + h);
+        ctx.lineTo(x + i - h, y + h);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function render() {
+      animTime += 0.03;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+
+      if (camera.shake > 0) {
+        const shakeX = (Math.random() - 0.5) * camera.shake;
+        const shakeY = (Math.random() - 0.5) * camera.shake;
+        ctx.translate(shakeX, shakeY);
+        camera.shake *= 0.88;
+        if (camera.shake < 0.2) camera.shake = 0;
+      }
+
+      ctx.translate(-camera.x, -camera.y);
+
+      const isSiNeuro = gameState.isSiNeuroUnlocked;
+
+      // =========================================================================
+      // 1. FULL ARCHITECTURAL CLINIC & LABORATORY FLOORING
+      // =========================================================================
+
+      // Global Base Foundation
+      ctx.fillStyle = '#020617';
+      ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+
+      // ROOM 1: ROBOTICS & BIO-SYNTHESIS LAB (Left Wing: x: 70..750, y: 105..590)
+      ctx.save();
+      const labGrad = ctx.createLinearGradient(70, 105, 750, 590);
+      labGrad.addColorStop(0, '#0b1324');
+      labGrad.addColorStop(1, '#080e1a');
+      ctx.fillStyle = labGrad;
+      roundRect(ctx, 70, 105, 680, 485, 12);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.07)';
+      ctx.lineWidth = 1.5;
+      for (let tx = 70; tx <= 750; tx += 80) {
+        ctx.beginPath();
+        ctx.moveTo(tx, 105);
+        ctx.lineTo(tx, 590);
+        ctx.stroke();
+      }
+      for (let ty = 105; ty <= 590; ty += 60) {
+        ctx.beginPath();
+        ctx.moveTo(70, ty);
+        ctx.lineTo(750, ty);
+        ctx.stroke();
+      }
+      drawHazardStripes(ctx, 330, 290, 240, 8);
+      drawHazardStripes(ctx, 330, 470, 240, 8);
+      ctx.restore();
+
+      // ROOM 2: CODEX AI CRYO-SERVER VAULT (Bottom-Left: x: 70..750, y: 620..1080)
+      ctx.save();
+      const srvGrad = ctx.createLinearGradient(70, 620, 750, 1080);
+      srvGrad.addColorStop(0, '#100c24');
+      srvGrad.addColorStop(1, '#080514');
+      ctx.fillStyle = srvGrad;
+      roundRect(ctx, 70, 620, 680, 460, 12);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(168, 85, 247, 0.1)';
+      ctx.lineWidth = 2;
+      for (let sx = 70; sx <= 750; sx += 50) {
+        for (let sy = 620; sy <= 1080; sy += 50) {
+          ctx.strokeRect(sx + 3, sy + 3, 44, 44);
+        }
+      }
+      ctx.restore();
+
+      // ROOM 3: CLINICAL EXAMINATION & ROBOTIC REHAB SUITE (Right Wing: x: 1050..1730, y: 105..600)
+      ctx.save();
+      const clinicGrad = ctx.createLinearGradient(1050, 105, 1730, 600);
+      clinicGrad.addColorStop(0, '#0c1a2c');
+      clinicGrad.addColorStop(1, '#07101e');
+      ctx.fillStyle = clinicGrad;
+      roundRect(ctx, 1050, 105, 680, 495, 12);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(16, 185, 129, 0.09)';
+      ctx.lineWidth = 1.2;
+      for (let cx = 1050; cx <= 1730; cx += 70) {
+        ctx.beginPath();
+        ctx.moveTo(cx, 105);
+        ctx.lineTo(cx, 600);
+        ctx.stroke();
+      }
+      for (let cy = 105; cy <= 600; cy += 70) {
+        ctx.beginPath();
+        ctx.moveTo(1050, cy);
+        ctx.lineTo(1730, cy);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // ROOM 4: PATIENT RECOVERY PODS BAY (Bottom-Right: x: 1050..1730, y: 630..1080)
+      ctx.save();
+      ctx.fillStyle = '#081220';
+      roundRect(ctx, 1050, 630, 680, 450, 12);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
+      for (let px = 1050; px <= 1730; px += 60) {
+        ctx.beginPath();
+        ctx.moveTo(px, 630);
+        ctx.lineTo(px, 1080);
+        ctx.stroke();
+      }
+      for (let py = 630; py <= 1080; py += 60) {
+        ctx.beginPath();
+        ctx.moveTo(1050, py);
+        ctx.lineTo(1730, py);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // ROOM 5: EXECUTIVE & UAE EXPANSION DECK (Top-Center: x: 770..1030, y: 105..300)
+      ctx.save();
+      const execGrad = ctx.createLinearGradient(770, 105, 1030, 300);
+      execGrad.addColorStop(0, '#1c1307');
+      execGrad.addColorStop(1, '#0e0903');
+      ctx.fillStyle = execGrad;
+      roundRect(ctx, 770, 105, 260, 195, 10);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(245, 158, 11, 0.15)';
+      ctx.lineWidth = 1;
+      for (let wy = 105; wy <= 300; wy += 20) {
+        ctx.beginPath();
+        ctx.moveTo(770, wy);
+        ctx.lineTo(1030, wy);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // CENTRAL CORRIDOR
+      ctx.save();
+      ctx.fillStyle = '#070b16';
+      ctx.fillRect(770, 300, 260, 780);
+      ctx.strokeStyle = '#06b6d4';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([16, 12]);
+      ctx.beginPath();
+      ctx.moveTo(900, 320);
+      ctx.lineTo(900, 1070);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 10px var(--font-mono)';
+      ctx.textAlign = 'center';
+      ctx.fillText('▲ UAE EXECUTIVE DECK', 900, 335);
+      ctx.fillText('◀ BIO-ROBOTICS LAB', 850, 520);
+      ctx.fillText('CLINICAL REHAB ▶', 950, 520);
+      ctx.fillText('◀ AI CRYO-CORE', 850, 780);
+      ctx.fillText('RECOVERY PODS ▶', 950, 780);
+      ctx.restore();
+
+      // =========================================================================
+      // 2. 3D STRUCTURAL SOLID WALLS (Impassable with Depth & Shadows)
+      // =========================================================================
+
+      function draw3DWall(w) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+        ctx.fillRect(w.x + 4, w.y + w.height, w.width, 10);
+
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(w.x, w.y + 10, w.width, w.height - 10);
+
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(w.x, w.y, w.width, 10);
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(w.x, w.y, w.width, 10);
+
+        ctx.strokeStyle = isSiNeuro ? '#a855f7' : '#06b6d4';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(w.x, w.y + w.height);
+        ctx.lineTo(w.x + w.width, w.y + w.height);
+        ctx.stroke();
+
+        if (w.label) {
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = 'bold 9px var(--font-mono)';
+          ctx.textAlign = 'center';
+          ctx.fillText(w.label, w.x + w.width / 2, w.y + 8);
+        }
+        ctx.restore();
+      }
+
+      for (const w of buildingWalls) {
+        draw3DWall(w);
+      }
+
+      // =========================================================================
+      // 3. INTERACTIVE SLIDING GLASS DOORS (Automatic Air-Locks)
+      // =========================================================================
+      for (const door of clinicDoors) {
+        ctx.save();
+
+        ctx.fillStyle = '#1e293b';
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = 1.5;
+        roundRect(ctx, door.x - 2, door.y - 2, door.width + 4, door.height + 4, 3);
+        ctx.fill();
+        ctx.stroke();
+
+        if (door.orientation === 'vertical') {
+          const slideOffset = (door.height / 2 - 6) * door.openRatio;
+
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.45)';
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 2;
+          roundRect(ctx, door.x + 2, door.y + 2 - slideOffset, door.width - 4, door.height / 2 - 4, 3);
+          ctx.fill();
+          ctx.stroke();
+
+          roundRect(ctx, door.x + 2, door.y + door.height / 2 + 2 + slideOffset, door.width - 4, door.height / 2 - 4, 3);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = door.openRatio > 0.6 ? '#10b981' : '#06b6d4';
+          ctx.beginPath();
+          ctx.arc(door.x + door.width / 2, door.y - 6, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+
+        } else {
+          const slideOffset = (door.width / 2 - 6) * door.openRatio;
+
+          ctx.fillStyle = 'rgba(245, 158, 11, 0.45)';
+          ctx.strokeStyle = '#fde047';
+          ctx.lineWidth = 2;
+          roundRect(ctx, door.x + 2 - slideOffset, door.y + 2, door.width / 2 - 4, door.height - 4, 3);
+          ctx.fill();
+          ctx.stroke();
+
+          roundRect(ctx, door.x + door.width / 2 + 2 + slideOffset, door.y + 2, door.width / 2 - 4, door.height - 4, 3);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = door.openRatio > 0.6 ? '#10b981' : '#f59e0b';
+          ctx.beginPath();
+          ctx.arc(door.x - 6, door.y + door.height / 2, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = 'bold 8px var(--font-ui)';
+        ctx.textAlign = 'center';
+        if (door.orientation === 'vertical') {
+          ctx.fillText(door.openRatio > 0.6 ? 'مفتوح 🟢' : 'باب معقم 🔒', door.x + door.width / 2, door.y + door.height + 12);
+        } else {
+          ctx.fillText(door.openRatio > 0.6 ? 'مفتوح 🟢' : 'باب التوسع 🔒', door.x + door.width / 2, door.y + door.height + 12);
+        }
+
+        ctx.restore();
+      }
+
+      // =========================================================================
+      // 4. CLINIC & LAB SCENERY / PROPS AROUND THE ROOM
+      // =========================================================================
+
+      // A. Wall-Mounted Brain MRI & Spine X-Ray Lightbox
+      ctx.save();
+      const xrayX = 1250;
+      const xrayY = 68;
+      ctx.fillStyle = '#020617';
+      roundRect(ctx, xrayX, xrayY, 120, 46, 4);
+      ctx.fill();
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.3)';
+      ctx.fillRect(xrayX + 5, xrayY + 5, 110, 36);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let v = 0; v < 5; v++) {
+        ctx.strokeRect(xrayX + 35, xrayY + 8 + v * 6, 14, 4);
+      }
+      ctx.arc(xrayX + 85, xrayY + 23, 12, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 7px var(--font-mono)';
+      ctx.fillText('MRI / NEURO-SCAN', xrayX + 22, xrayY + 48);
+      ctx.restore();
+
+      // B. Anatomical Spine Model Stand
+      ctx.save();
+      const skelX = 1530;
+      const skelY = 320;
+      ctx.fillStyle = '#64748b';
+      ctx.beginPath();
+      ctx.ellipse(skelX, skelY + 30, 14, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(skelX, skelY + 30);
+      ctx.lineTo(skelX, skelY - 25);
+      ctx.stroke();
+      ctx.fillStyle = '#f1f5f9';
+      for (let s = 0; s < 7; s++) {
+        roundRect(ctx, skelX - 4, skelY - 18 + s * 6, 8, 4, 1);
+        ctx.fill();
+      }
+      ctx.beginPath();
+      ctx.arc(skelX, skelY - 26, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = 'bold 8px var(--font-ui)';
+      ctx.fillText('مجسم العمود الفقري', skelX - 28, skelY + 44);
+      ctx.restore();
+
+      // C. Medicine & Surgical Tools Glass Cabinet
+      ctx.save();
+      const cabX = 1580;
+      const cabY = 160;
+      ctx.fillStyle = '#1e293b';
+      roundRect(ctx, cabX, cabY, 60, 100, 6);
+      ctx.fill();
+      ctx.strokeStyle = '#06b6d4';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+      ctx.beginPath();
+      ctx.moveTo(cabX + 4, cabY + 34);
+      ctx.lineTo(cabX + 56, cabY + 34);
+      ctx.moveTo(cabX + 4, cabY + 66);
+      ctx.lineTo(cabX + 56, cabY + 66);
+      ctx.stroke();
+      ctx.fillStyle = '#10b981';
+      ctx.fillRect(cabX + 10, cabY + 18, 7, 12);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(cabX + 24, cabY + 16, 7, 14);
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillRect(cabX + 40, cabY + 20, 9, 10);
+      ctx.fillStyle = '#c084fc';
+      ctx.fillRect(cabX + 16, cabY + 50, 11, 11);
+      ctx.fillRect(cabX + 34, cabY + 50, 11, 11);
+      ctx.fillStyle = '#cbd5e1';
+      ctx.font = 'bold 8px var(--font-ui)';
+      ctx.fillText('خزانة الأدوية والقطع', cabX - 10, cabY + 114);
+      ctx.restore();
+
+      // D. Sterile Hand-Wash Sink & Sanitizer Dispenser
+      ctx.save();
+      const sinkX = 1100;
+      const sinkY = 180;
+      ctx.fillStyle = '#cbd5e1';
+      roundRect(ctx, sinkX, sinkY, 34, 30, 6);
+      ctx.fill();
+      ctx.fillStyle = '#94a3b8';
+      roundRect(ctx, sinkX + 4, sinkY + 4, 26, 22, 4);
+      ctx.fill();
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(sinkX + 17, sinkY + 2);
+      ctx.lineTo(sinkX + 17, sinkY + 11);
+      ctx.stroke();
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = 'bold 7px var(--font-ui)';
+      ctx.fillText('مغسلة معقمة', sinkX - 4, sinkY + 40);
+      ctx.restore();
+
+      // E. Bio-Synthesis Chemistry Table with Test Tubes & Flasks
+      ctx.save();
+      const chemX = 170;
+      const chemY = 380;
+      ctx.fillStyle = '#0f172a';
+      roundRect(ctx, chemX, chemY, 90, 55, 6);
+      ctx.fill();
+      ctx.strokeStyle = '#8b5cf6';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(chemX + 8, chemY + 14, 34, 16);
+      for (let t = 0; t < 3; t++) {
+        ctx.fillStyle = t === 0 ? '#10b981' : t === 1 ? '#38bdf8' : '#ec4899';
+        ctx.fillRect(chemX + 12 + t * 9, chemY + 9, 5, 18);
+      }
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.85)';
+      ctx.beginPath();
+      ctx.moveTo(chemX + 60, chemY + 15);
+      ctx.lineTo(chemX + 72, chemY + 15);
+      ctx.lineTo(chemX + 80, chemY + 32);
+      ctx.lineTo(chemX + 52, chemY + 32);
+      ctx.closePath();
+      ctx.fill();
+      const bY = (animTime * 10) % 8;
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(chemX + 66, chemY + 30 - bY, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#a78bfa';
+      ctx.font = 'bold 8px var(--font-ui)';
+      ctx.fillText('طاولة التخليق الحيوي', chemX + 4, chemY + 68);
+      ctx.restore();
+
+      // F. Floating 3D Holographic DNA Helix
+      ctx.save();
+      const dnaX = 450;
+      const dnaY = 250;
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
+      ctx.lineWidth = 1.5;
+      for (let d = -22; d <= 22; d += 6) {
+        const dnaWave1 = Math.sin(animTime * 3 + d * 0.2) * 14;
+        const dnaWave2 = -dnaWave1;
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.arc(dnaX + dnaWave1, dnaY + d, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ec4899';
+        ctx.beginPath();
+        ctx.arc(dnaX + dnaWave2, dnaY + d, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(dnaX + dnaWave1, dnaY + d);
+        ctx.lineTo(dnaX + dnaWave2, dnaY + d);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 8px var(--font-mono)';
+      ctx.textAlign = 'center';
+      ctx.fillText('HOLO-DNA SYNTHESIS', dnaX, dnaY + 38);
+      ctx.restore();
+
+      // =========================================================================
+      // 5. DATA STREAMS / ROUTING CONDUITS
+      // =========================================================================
+      const srv = zones[2];
+      const wb = zones[0];
+
+      ctx.save();
+      if (gameState.dataStreamActive) {
+        ctx.shadowColor = '#a855f7';
+        ctx.shadowBlur = 18;
+        ctx.strokeStyle = '#c084fc';
+        ctx.lineWidth = 6;
+      } else {
+        ctx.strokeStyle = 'rgba(75, 85, 99, 0.5)';
+        ctx.lineWidth = 3;
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(srv.x, srv.y - srv.height / 2);
+      ctx.lineTo(srv.x, 565);
+      ctx.lineTo(wb.x, 565);
+      ctx.lineTo(wb.x, wb.y + wb.height / 2);
+      ctx.stroke();
+
+      if (gameState.dataStreamActive) {
+        const streamProgress = (animTime * 3) % 1;
+        const packetY1 = (srv.y - srv.height / 2) - streamProgress * ((srv.y - srv.height / 2) - 565);
+        ctx.fillStyle = '#fde047';
+        ctx.shadowColor = '#fde047';
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.arc(srv.x, packetY1, 6, 0, Math.PI * 2);
+        ctx.arc(wb.x, 565 - streamProgress * (565 - (wb.y + wb.height / 2)), 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // Central Routing Terminal
+      ctx.save();
+      ctx.shadowColor = gameState.dataStreamActive ? '#a855f7' : '#06b6d4';
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = '#1e1b4b';
+      roundRect(ctx, 450 - 35, 565 - 22, 70, 44, 8);
+      ctx.fill();
+      ctx.strokeStyle = gameState.dataStreamActive ? '#c084fc' : '#38bdf8';
+      ctx.stroke();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 9px var(--font-mono)';
+      ctx.textAlign = 'center';
+      ctx.fillText(gameState.dataStreamActive ? 'DATA ON ⚡' : 'ROUTER 📡', 450, 565 + 4);
+      ctx.restore();
+
+      // =========================================================================
+      // 6. MAIN INTERACTIVE WORKSTATION ZONES
+      // =========================================================================
+
+      // ZONE 1: si-neuro Lab (Workbench)
+      ctx.save();
+      ctx.shadowColor = '#06b6d4';
+      ctx.shadowBlur = currentActiveZone === wb ? 25 : 12;
+      ctx.fillStyle = '#0f172a';
+      roundRect(ctx, wb.x - wb.width / 2, wb.y - wb.height / 2, wb.width, wb.height, 16);
+      ctx.fill();
+      ctx.strokeStyle = currentActiveZone === wb ? '#67e8f9' : '#06b6d4';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      const screenPulse = Math.sin(animTime * 4) * 0.2 + 0.8;
+      ctx.fillStyle = `rgba(56, 189, 248, ${screenPulse})`;
+      roundRect(ctx, wb.x - 85, wb.y - 44, 76, 40, 6);
+      ctx.fill();
+      roundRect(ctx, wb.x + 8, wb.y - 44, 76, 40, 6);
+      ctx.fill();
+
+      ctx.fillStyle = '#030712';
+      ctx.font = 'bold 8px var(--font-mono)';
+      ctx.textAlign = 'right';
+      ctx.fillText('> init_rehab()', wb.x - 14, wb.y - 30);
+      ctx.fillText('> motor_torque: 95%', wb.x - 14, wb.y - 16);
+      ctx.fillText('> neuro_mesh: OK', wb.x + 80, wb.y - 30);
+      ctx.fillText('> yield_ratio: x2.4', wb.x + 80, wb.y - 16);
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 12px var(--font-ui)';
+      ctx.textAlign = 'center';
+      ctx.fillText('🔬 مختبر si-neuro للأبحاث والتجميع', wb.x, wb.y + 30);
+      ctx.font = 'bold 10px var(--font-mono)';
+      ctx.fillText(`[ E ] صَنّع (+${gameState.craftLevel})`, wb.x, wb.y + 46);
+      ctx.restore();
+
+      // ZONE 2: CLINICAL REHABILITATION SUITE & REALISTIC BED
+      const bed = zones[1];
+      const bx = bed.x;
+      const by = bed.y;
+
+      ctx.save();
+
+      // Clinical Zone Floor Decal / Surgical Mat
+      ctx.fillStyle = 'rgba(16, 185, 129, 0.08)';
+      roundRect(ctx, bx - bed.width / 2, by - bed.height / 2, bed.width, bed.height, 22);
+      ctx.fill();
+      ctx.strokeStyle = currentActiveZone === bed ? '#34d399' : 'rgba(16, 185, 129, 0.4)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 6]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = 'rgba(52, 211, 153, 0.4)';
+      ctx.font = 'bold 9px var(--font-mono)';
+      ctx.textAlign = 'center';
+      ctx.fillText('NEURAL REHABILITATION SUITE • BAY-01', bx, by - bed.height / 2 + 14);
+
+      // Bed Drop Shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+      roundRect(ctx, bx - 62, by - 68, 124, 150, 18);
+      ctx.fill();
+
+      // Hospital Bed Base & Wheels
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(bx - 56, by - 62, 10, 16);
+      ctx.fillRect(bx + 46, by - 62, 10, 16);
+      ctx.fillRect(bx - 56, by + 60, 10, 16);
+      ctx.fillRect(bx + 46, by + 60, 10, 16);
+
+      // Metallic Lower Chassis
+      ctx.fillStyle = '#1e293b';
+      roundRect(ctx, bx - 54, by - 60, 108, 134, 14);
+      ctx.fill();
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Headboard with Blue Ambient LED Halo
+      ctx.fillStyle = '#f8fafc';
+      roundRect(ctx, bx - 50, by - 62, 100, 14, 6);
+      ctx.fill();
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(bx - 36, by - 60, 72, 3);
+
+      // Footboard with Integrated Telemetry Screen
+      ctx.fillStyle = '#0f172a';
+      roundRect(ctx, bx - 44, by + 64, 88, 12, 4);
+      ctx.fill();
+      ctx.fillStyle = '#10b981';
+      ctx.font = 'bold 7px var(--font-mono)';
+      ctx.fillText('STATUS: RECOVERING [OK]', bx, by + 73);
+
+      // Memory-Foam Hospital Mattress
+      const mattressGrad = ctx.createLinearGradient(bx - 46, by - 48, bx + 46, by + 60);
+      mattressGrad.addColorStop(0, '#f8fafc');
+      mattressGrad.addColorStop(0.5, '#e2e8f0');
+      mattressGrad.addColorStop(1, '#cbd5e1');
+      ctx.fillStyle = mattressGrad;
+      roundRect(ctx, bx - 46, by - 46, 92, 110, 10);
+      ctx.fill();
+
+      // Quilted Diamond Stitch Lines
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
+      ctx.lineWidth = 1;
+      for (let i = -35; i <= 35; i += 18) {
+        ctx.beginPath();
+        ctx.moveTo(bx + i, by - 40);
+        ctx.lineTo(bx + i + 10, by + 58);
+        ctx.stroke();
+      }
+
+      // Pillow
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+      ctx.shadowBlur = 6;
+      roundRect(ctx, bx - 30, by - 42, 60, 28, 9);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Side Rails
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1.5;
+      roundRect(ctx, bx - 51, by - 24, 6, 55, 3);
+      ctx.fill();
+      ctx.stroke();
+      roundRect(ctx, bx + 45, by - 24, 6, 55, 3);
+      ctx.fill();
+      ctx.stroke();
+
+      // ICU Tower
+      const cartX = bx - 95;
+      const cartY = by - 55;
+      ctx.fillStyle = '#0f172a';
+      roundRect(ctx, cartX, cartY, 38, 48, 6);
+      ctx.fill();
+      ctx.strokeStyle = '#06b6d4';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // ECG Screen
+      ctx.fillStyle = '#020617';
+      roundRect(ctx, cartX + 3, cartY + 3, 32, 20, 3);
+      ctx.fill();
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(cartX + 4, cartY + 13);
+      ctx.lineTo(cartX + 11, cartY + 13);
+      ctx.lineTo(cartX + 15, cartY + 6 + Math.sin(animTime * 8) * 3);
+      ctx.lineTo(cartX + 19, cartY + 20);
+      ctx.lineTo(cartX + 23, cartY + 13);
+      ctx.lineTo(cartX + 33, cartY + 13);
+      ctx.stroke();
+
+      // Brainwave Screen
+      ctx.fillStyle = '#020617';
+      roundRect(ctx, cartX + 3, cartY + 25, 32, 19, 3);
+      ctx.fill();
+      for (let b = 0; b < 4; b++) {
+        const barH = 5 + Math.sin(animTime * 4 + b) * 4;
+        ctx.fillStyle = b % 2 === 0 ? '#38bdf8' : '#a855f7';
+        ctx.fillRect(cartX + 6 + b * 7, cartY + 41 - barH, 5, barH);
+      }
+
+      // IV Drip Pole
+      const ivX = bx + 80;
+      const ivY = by - 55;
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(ivX, ivY + 50);
+      ctx.lineTo(ivX, ivY - 15);
+      ctx.lineTo(ivX - 12, ivY - 15);
+      ctx.lineTo(ivX + 12, ivY - 15);
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.85)';
+      roundRect(ctx, ivX - 18, ivY - 12, 11, 20, 3);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(16, 185, 129, 0.85)';
+      roundRect(ctx, ivX + 7, ivY - 12, 11, 20, 3);
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(ivX - 12, ivY + 8);
+      ctx.bezierCurveTo(ivX - 10, ivY + 30, bx + 28, by - 12, bx + 28, by - 4);
+      ctx.stroke();
+
+      // REALISTIC RECLINING PATIENT FIGURE
+      const breath = Math.sin(animTime * 2.2) * 1.8;
+
+      ctx.fillStyle = '#d4a373';
+      ctx.beginPath();
+      ctx.arc(bx, by - 32, 15, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#1c1917';
+      ctx.beginPath();
+      ctx.arc(bx, by - 36, 15, Math.PI * 0.85, Math.PI * 2.15);
+      ctx.fill();
+      ctx.fillRect(bx - 15, by - 36, 4, 10);
+      ctx.fillRect(bx + 11, by - 36, 4, 10);
+
+      ctx.strokeStyle = '#44403c';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(bx - 6, by - 30, 3.5, 0.2, Math.PI - 0.2);
+      ctx.arc(bx + 6, by - 30, 3.5, 0.2, Math.PI - 0.2);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#78716c';
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.moveTo(bx - 9, by - 36);
+      ctx.lineTo(bx - 3, by - 36);
+      ctx.moveTo(bx + 3, by - 36);
+      ctx.lineTo(bx + 9, by - 36);
+      ctx.moveTo(bx, by - 31);
+      ctx.lineTo(bx, by - 27);
+      ctx.lineTo(bx + 2, by - 26);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#0284c7';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(bx, by - 34, 16, Math.PI * 0.7, Math.PI * 1.3);
+      ctx.arc(bx, by - 34, 16, Math.PI * 1.7, Math.PI * 2.3);
+      ctx.stroke();
+
+      const diodeGlow = Math.sin(animTime * 6) > 0 ? '#38bdf8' : '#10b981';
+      ctx.fillStyle = diodeGlow;
+      ctx.beginPath();
+      ctx.arc(bx - 15, by - 38, 3, 0, Math.PI * 2);
+      ctx.arc(bx + 15, by - 38, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#93c5fd';
+      roundRect(ctx, bx - 26, by - 14 + breath, 52, 28, 8);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(bx - 8, by - 14 + breath);
+      ctx.lineTo(bx, by - 4 + breath);
+      ctx.lineTo(bx + 8, by - 14 + breath);
+      ctx.closePath();
+      ctx.fill();
+
+      const blanketGrad = ctx.createLinearGradient(bx, by + 4, bx, by + 58);
+      blanketGrad.addColorStop(0, '#f8fafc');
+      blanketGrad.addColorStop(0.15, '#e0f2fe');
+      blanketGrad.addColorStop(0.7, '#bae6fd');
+      blanketGrad.addColorStop(1, '#64748b');
+      ctx.fillStyle = blanketGrad;
+      roundRect(ctx, bx - 34, by + 2 + breath, 68, 58, 10);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      roundRect(ctx, bx - 34, by + 2 + breath, 68, 8, 4);
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(bx - 28, by + 22 + breath);
+      ctx.lineTo(bx + 28, by + 22 + breath);
+      ctx.moveTo(bx - 24, by + 38 + breath);
+      ctx.lineTo(bx + 24, by + 38 + breath);
+      ctx.stroke();
+
+      ctx.fillStyle = '#d4a373';
+      roundRect(ctx, bx - 38, by - 8, 8, 28, 4);
+      ctx.fill();
+
+      roundRect(ctx, bx + 30, by - 8, 8, 28, 4);
+      ctx.fill();
+      ctx.fillStyle = '#0284c7';
+      ctx.fillRect(bx + 29, by - 2, 10, 4);
+      ctx.fillRect(bx + 29, by + 8, 10, 4);
+
+      // ARTICULATED REHABILITATION ROBOTIC ARM & LASER SCANNER
+      const armBob = Math.sin(animTime * 2.8) * 6;
+      const baseTurretX = bx - 68;
+      const baseTurretY = by + 25;
+
+      ctx.fillStyle = '#0f172a';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2.5;
+      roundRect(ctx, baseTurretX - 14, baseTurretY - 14, 28, 28, 7);
+      ctx.fill();
+      ctx.stroke();
+
+      const j1X = baseTurretX + 26;
+      const j1Y = baseTurretY - 38 + armBob * 0.5;
+      const j2X = bx + 22;
+      const j2Y = by - 8 + armBob;
+
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.moveTo(baseTurretX, baseTurretY);
+      ctx.lineTo(j1X, j1Y);
+      ctx.stroke();
+      ctx.strokeStyle = '#0284c7';
+      ctx.lineWidth = 5;
+      ctx.stroke();
+
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(j1X, j1Y);
+      ctx.lineTo(j2X, j2Y);
+      ctx.stroke();
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      ctx.fillStyle = '#06b6d4';
+      ctx.beginPath();
+      ctx.arc(j1X, j1Y, 6, 0, Math.PI * 2);
+      ctx.arc(j2X, j2Y, 7, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.save();
+      const beamGrad = ctx.createLinearGradient(j2X, j2Y, j2X, j2Y + 28);
+      beamGrad.addColorStop(0, 'rgba(56, 189, 248, 0.85)');
+      beamGrad.addColorStop(0.5, 'rgba(16, 185, 129, 0.45)');
+      beamGrad.addColorStop(1, 'rgba(16, 185, 129, 0.05)');
+      ctx.fillStyle = beamGrad;
+      ctx.beginPath();
+      ctx.moveTo(j2X - 8, j2Y);
+      ctx.lineTo(j2X + 8, j2Y);
+      ctx.lineTo(j2X + 22, j2Y + 28);
+      ctx.lineTo(j2X - 22, j2Y + 28);
+      ctx.closePath();
+      ctx.fill();
+
+      const scanOffset = (animTime * 20) % 24;
+      ctx.strokeStyle = '#fde047';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(j2X - 12 - scanOffset * 0.4, j2Y + scanOffset);
+      ctx.lineTo(j2X + 12 + scanOffset * 0.4, j2Y + scanOffset);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 12px var(--font-ui)';
+      ctx.textAlign = 'center';
+      ctx.fillText('🩺 جناح الفحص والسرير الطبي', bx, by + 82);
+      ctx.font = 'bold 10px var(--font-mono)';
+      ctx.fillText('[ E ] لغز Code & Cure', bx, by + 96);
+      ctx.restore();
+
+      // ZONE 3: Codex AI Super-Server
+      ctx.save();
+      ctx.shadowColor = '#a855f7';
+      ctx.shadowBlur = currentActiveZone === srv ? 25 : 14;
+      ctx.fillStyle = '#1e1b4b';
+      roundRect(ctx, srv.x - srv.width / 2, srv.y - srv.height / 2, srv.width, srv.height, 16);
+      ctx.fill();
+      ctx.strokeStyle = currentActiveZone === srv ? '#c084fc' : '#a855f7';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      for (let i = 0; i < 4; i++) {
+        ctx.fillStyle = Math.sin(animTime * 5 + i) > 0 ? '#10b981' : '#a855f7';
+        roundRect(ctx, srv.x - 70 + i * 38, srv.y - 26, 26, 16, 4);
+        ctx.fill();
+      }
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 12px var(--font-ui)';
+      ctx.textAlign = 'center';
+      ctx.fillText('🖥️ خادم الكودكس الفائق', srv.x, srv.y + 28);
+      ctx.font = 'bold 10px var(--font-mono)';
+      ctx.fillText('[ E ] تدفق البيانات', srv.x, srv.y + 44);
+      ctx.restore();
+
+      // ZONE 4: UAE Global Expansion Platform (Executive Deck)
+      const uaeHub = zones[3];
+      ctx.save();
+      ctx.shadowColor = '#f59e0b';
+      ctx.shadowBlur = currentActiveZone === uaeHub ? 30 : 16;
+      ctx.fillStyle = '#1c1917';
+      roundRect(ctx, uaeHub.x - uaeHub.width / 2, uaeHub.y - uaeHub.height / 2, uaeHub.width, uaeHub.height, 16);
+      ctx.fill();
+      ctx.strokeStyle = gameState.uaeBranchUnlocked ? '#10b981' : '#f59e0b';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.fillStyle = '#fde047';
+      ctx.font = 'bold 12px var(--font-ui)';
+      ctx.textAlign = 'center';
+      ctx.fillText(gameState.uaeBranchUnlocked ? '🇦🇪 فرع الإمارات: نشط ومفعّل ✨' : '🇦🇪 فرع الإمارات (دبي)', uaeHub.x, uaeHub.y + 12);
+      ctx.font = 'bold 10px var(--font-mono)';
+      ctx.fillStyle = '#fff';
+      ctx.fillText(gameState.uaeBranchUnlocked ? 'مضاعفة الأرباح +100% 🏆' : '[ E ] تدشين التوسع العالمي', uaeHub.x, uaeHub.y + 30);
+      ctx.restore();
+
+      // =========================================================================
+      // 7. DOCTOR'S EXECUTIVE CONSULTATION DESK
+      // =========================================================================
+      ctx.save();
+      const deskX = 980;
+      const deskY = 380;
+      ctx.fillStyle = '#1e293b';
+      roundRect(ctx, deskX - 45, deskY - 25, 90, 50, 8);
+      ctx.fill();
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = '#0f172a';
+      roundRect(ctx, deskX - 25, deskY - 18, 26, 18, 3);
+      ctx.fill();
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(deskX - 23, deskY - 16, 22, 14);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(deskX + 10, deskY - 14, 16, 20);
+      ctx.strokeStyle = '#06b6d4';
+      ctx.beginPath();
+      ctx.arc(deskX + 18, deskY + 12, 6, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = '#334155';
+      ctx.beginPath();
+      ctx.arc(deskX, deskY - 36, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = 'bold 8px var(--font-ui)';
+      ctx.textAlign = 'center';
+      ctx.fillText('مكتب استشارات د. عبد الله', deskX, deskY + 38);
+      ctx.restore();
+
+      // =========================================================================
+      // 8. PARTICLES, NPCS & CHARACTERS
+      // =========================================================================
+      for (const p of particles) {
+        p.draw(ctx);
+      }
+
+      // Eng. Fatima NPC (Wearing Distinctive Hijab)
+      if (gameState.fatimaUnlocked) {
+        const fx = fatima.x;
+        const fy = fatima.y;
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.beginPath();
+        ctx.ellipse(fx, fy + 17, 16, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        const fLeg = Math.sin(fatima.walkFrame * 2) * 4.5;
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(fx - 8, fy + 8 + fLeg, 6, 9);
+        ctx.fillRect(fx + 2, fy + 8 - fLeg, 6, 9);
+
+        ctx.fillStyle = '#f8fafc';
+        roundRect(ctx, fx - 13, fy - 12, 26, 23, 5);
+        ctx.fill();
+
+        ctx.fillStyle = '#10b981';
+        ctx.fillRect(fx - 10, fy - 6, 4, 13);
+        ctx.fillRect(fx + 6, fy - 6, 4, 13);
+
+        ctx.fillStyle = '#c68642';
+        ctx.beginPath();
+        ctx.arc(fx, fy - 19, 11, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#0d9488';
+        ctx.beginPath();
+        ctx.arc(fx, fy - 21, 13.5, Math.PI * 0.75, Math.PI * 2.25);
+        ctx.lineTo(fx + 13, fy - 5);
+        ctx.lineTo(fx - 13, fy - 5);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#38bdf8';
+        roundRect(ctx, fx + 9, fy - 6, 7, 10, 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#34d399';
+        ctx.font = 'bold 11px var(--font-ui)';
+        ctx.textAlign = 'center';
+        ctx.fillText('م. فاطمة (Eng. Fatima)', fx, fy - 38);
+
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = 'bold 9px var(--font-ui)';
+        ctx.fillText(fatima.statusText, fx, fy - 50);
+      }
+
+      // Dr. Abdullah Character Sprite
+      const px = player.x;
+      const py = player.y;
+
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.beginPath();
+      ctx.ellipse(px, py + 17, 17, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      const legOffset = player.isMoving ? Math.sin(player.walkFrame * 2) * 5 : 0;
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(px - 9, py + 8 + legOffset, 7, 10);
+      ctx.fillRect(px + 2, py + 8 - legOffset, 7, 10);
+
+      ctx.fillStyle = '#f8fafc';
+      roundRect(ctx, px - 14, py - 13, 28, 24, 5);
+      ctx.fill();
+
+      ctx.fillStyle = isSiNeuro ? '#8b5cf6' : '#06b6d4';
+      ctx.fillRect(px - 11, py - 9, 4, 13);
+      ctx.fillRect(px + 7, py - 7, 4, 11);
+
+      ctx.fillStyle = '#475569';
+      ctx.beginPath();
+      ctx.arc(px, py + 2, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#8d5b4c';
+      ctx.beginPath();
+      ctx.arc(px, py - 20, 12, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(px, py - 22, 12, Math.PI, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = isSiNeuro ? '#ec4899' : '#06b6d4';
+      ctx.strokeStyle = '#fde047';
+      ctx.lineWidth = 1.2;
+      const gx = player.facing === 'right' ? px + 2 : player.facing === 'left' ? px - 11 : px - 7;
+      roundRect(ctx, gx, py - 22, 10, 6, 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 11px var(--font-ui)';
+      ctx.textAlign = 'center';
+      ctx.fillText(gameState.uaeBranchUnlocked ? 'د. عبد الله (si-neuro Global)' : isSiNeuro ? 'د. عبد الله (si-neuro)' : 'د. عبد الله', px, py - 36);
+
+      ctx.restore();
+
+      // Render Minimap / Radar
+      renderMinimap();
+    }
+
+    function gameLoop() {
+      update();
+      render();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function initGame() {
+      resizeCanvas();
+      loadGame();
+      startDataStreamEngine();
+      requestAnimationFrame(gameLoop);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initGame);
+    } else {
+      initGame();
+    }
+  </script>
+</body>
+</html>

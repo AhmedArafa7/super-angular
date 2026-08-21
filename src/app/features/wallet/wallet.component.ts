@@ -1,135 +1,123 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideDynamicIcon } from '@lucide/angular';
+import { LucideAngularModule } from 'lucide-angular';
 import { WalletService, CURRENCIES, CurrencyCode, Transaction, PendingTransaction } from '../../core/wallet.service';
 
 @Component({
   selector: 'app-wallet',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideDynamicIcon],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './wallet.component.html',
   styleUrls: ['./wallet.component.scss']
 })
 export class WalletComponent {
   walletService = inject(WalletService);
 
-  // Filter settings
-  showsave = false;
-  filterCurrency = 'all';
+  // States
+  showsave = signal<boolean>(false);
+  filterCurrency = signal<string>('all');
+  isRefreshing = signal<boolean>(false);
 
-  // Currency Converter state
-  isConvertOpen = false;
-  convertFrom: CurrencyCode = 'EGC_save';
-  convertTo: CurrencyCode = 'EGC';
-  convertAmount = '';
-  isConverting = false;
+  // Convert Modal State
+  isConvertOpen = signal<boolean>(false);
+  convertFrom = signal<CurrencyCode>('DLC');
+  convertTo = signal<CurrencyCode>('EGC');
+  convertAmount = signal<string>('');
+  isConverting = signal<boolean>(false);
 
-  // Custom alert/toast notifications
-  showToast = false;
-  toastTitle = '';
-  toastDesc = '';
+  // Deposit Modal State
+  isDepositOpen = signal<boolean>(false);
+  depositCurrency = signal<CurrencyCode>('EGC');
+  depositAmount = signal<number>(500);
 
-  // Get active currencies list dynamically based on toggle
-  get displayCurrencies() {
-    return CURRENCIES.filter(c => this.showsave ? true : !c.issave);
-  }
+  // Toast State
+  showToast = signal<boolean>(false);
+  toastTitle = signal<string>('');
+  toastDesc = signal<string>('');
 
-  // Get filtered transaction logs
-  get filteredTransactions(): Transaction[] {
+  // Primary 5 currencies (Matching screenshot exactly)
+  primaryCurrencies = [
+    { code: 'BKC' as CurrencyCode, nameAr: 'عملة تيك', color: 'text-amber-400', iconType: 'back', badge: 'BACK' },
+    { code: 'GMC' as CurrencyCode, nameAr: 'عملة الألعاب', color: 'text-indigo-400', iconType: 'gamepad', badge: '' },
+    { code: 'MDC' as CurrencyCode, nameAr: 'عملة الميديا', color: 'text-blue-400', iconType: 'clapperboard', badge: '' },
+    { code: 'DLC' as CurrencyCode, nameAr: 'عملة الدولار', color: 'text-emerald-400', iconType: 'dollar', badge: '' },
+    { code: 'EGC' as CurrencyCode, nameAr: 'العملة المصرية', color: 'text-emerald-400', iconType: 'eg', badge: 'EG' }
+  ];
+
+  // Internal currencies if toggled
+  internalCurrencies = [
+    { code: 'BKC_save' as CurrencyCode, nameAr: 'تيك (داخلي)', color: 'text-amber-400/70', iconType: 'back', badge: 'V-TIK' },
+    { code: 'GMC_save' as CurrencyCode, nameAr: 'ألعاب (داخلي)', color: 'text-indigo-400/70', iconType: 'gamepad', badge: 'V-GAME' },
+    { code: 'MDC_save' as CurrencyCode, nameAr: 'ميديا (داخلي)', color: 'text-blue-400/70', iconType: 'clapperboard', badge: 'V-MEDIA' },
+    { code: 'DLC_save' as CurrencyCode, nameAr: 'دولار (داخلي)', color: 'text-emerald-400/70', iconType: 'dollar', badge: 'V-USD' },
+    { code: 'EGC_save' as CurrencyCode, nameAr: 'مصرية (داخلي)', color: 'text-emerald-400/70', iconType: 'eg', badge: 'V-EGP' }
+  ];
+
+  // Filtered Transactions
+  filteredTransactions = computed(() => {
     const list = this.walletService.transactions();
-    if (this.filterCurrency === 'all') return list;
-    return list.filter(tx => tx.currency === this.filterCurrency || tx.toCurrency === this.filterCurrency);
+    const filter = this.filterCurrency();
+    if (filter === 'all') return list;
+    return list.filter(tx => tx.currency === filter || tx.toCurrency === filter);
+  });
+
+  // Convert Options
+  availableCurrencies = CURRENCIES;
+
+  // Refresh Trigger
+  handleRefresh(): void {
+    this.isRefreshing.set(true);
+    setTimeout(() => {
+      this.isRefreshing.set(false);
+      this.triggerToast('تمت المزامنة', 'تم تحديث أرصدة المحفظة العصبية بنجاح.');
+    }, 600);
   }
 
-  // Get dynamic conversion target currencies list
-  get convertToOptions() {
-    return CURRENCIES.filter(c => c.code !== this.convertFrom);
+  // Convert Action
+  async handleConvert(): Promise<void> {
+    const amt = Number(this.convertAmount());
+    if (!amt || amt <= 0) return;
+
+    this.isConverting.set(true);
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    const success = this.walletService.convertCurrency(this.convertFrom(), this.convertTo(), amt);
+    if (success) {
+      const fromDef = CURRENCIES.find(c => c.code === this.convertFrom());
+      const toDef = CURRENCIES.find(c => c.code === this.convertTo());
+      this.triggerToast('تم التحويل بنجاح ✅', `تم تحويل ${amt} من ${fromDef?.nameAr || this.convertFrom()} إلى ${toDef?.nameAr || this.convertTo()}.`);
+      this.isConvertOpen.set(false);
+      this.convertAmount.set('');
+    } else {
+      this.triggerToast('فشل التحويل', 'رصيد العملة المصدر غير كافٍ لإتمام عملية التحويل.');
+    }
+
+    this.isConverting.set(false);
   }
 
-  get isConvertDisabled(): boolean {
-    const amt = Number(this.convertAmount);
-    return this.isConverting || !this.convertAmount || amt <= 0;
+  // Deposit Action
+  handleDeposit(): void {
+    const amt = Number(this.depositAmount());
+    if (!amt || amt <= 0) return;
+
+    this.walletService.depositFunds(amt, this.depositCurrency(), `شحن رصيد تجريبي مباشر`);
+    const currDef = CURRENCIES.find(c => c.code === this.depositCurrency());
+    this.triggerToast('تم الشحن بنجاح 🚀', `تمت إضافة +${amt} إلى رصيد ${currDef?.nameAr || this.depositCurrency()}.`);
+    this.isDepositOpen.set(false);
   }
 
-  // Get display details for currency definitions
   getCurrencyName(code: CurrencyCode): string {
     const def = CURRENCIES.find(c => c.code === code);
     return def ? def.nameAr : code;
   }
 
-  getCurrencyIcon(code: CurrencyCode): string {
-    const def = CURRENCIES.find(c => c.code === code);
-    return def ? def.icon : '🪙';
-  }
-
-  getCurrencyColor(code: CurrencyCode): string {
-    const def = CURRENCIES.find(c => c.code === code);
-    return def ? def.color : 'indigo';
-  }
-
-  // Convert handler
-  async handleConvert(): Promise<void> {
-    const amt = Number(this.convertAmount);
-    if (!this.convertAmount || amt <= 0) return;
-
-    this.isConverting = true;
-
-    // Simulate standard crypto ledger delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // For internal save coins: simulate check rule
-    const fromDef = CURRENCIES.find(c => c.code === this.convertFrom);
-    if (fromDef?.issave) {
-      // Seed unfreeze constraint alert block
-      const rand = Math.random();
-      if (rand > 0.6) {
-        this.triggerToast("التحويل مجمّد", "تنبيه: يجب تصفية شروط الأدمن المحددة والتحقق من الهوية أولاً.");
-        this.isConverting = false;
-        return;
-      }
-    }
-
-    const success = this.walletService.convertCurrency(this.convertFrom, this.convertTo, amt);
-    if (success) {
-      const fromName = this.getCurrencyName(this.convertFrom);
-      const toName = this.getCurrencyName(this.convertTo);
-      this.triggerToast("تم التحويل بنجاح", `تم تحويل ${amt} من ${fromName} إلى ${toName}.`);
-      this.isConvertOpen = false;
-      this.convertAmount = '';
-    } else {
-      this.triggerToast("فشل التحويل", "رصيد المصدر غير كافٍ لإتمام العملية.");
-    }
-
-    this.isConverting = false;
-  }
-
-  // Pending acquisitions actions
-  handleRetry(id: string): void {
-    const success = this.walletService.retryTransaction(id);
-    if (success) {
-      this.triggerToast("اكتملت المزامنة", "تم استيفاء الرصيد ونقل المعاملة للشبكة الرئيسية.");
-    } else {
-      this.triggerToast("فشل التحويل", "بروتوكول التحقق: رصيدك الحالي لا يزال غير كافٍ.");
-    }
-  }
-
-  handlePayLater(tx: PendingTransaction): void {
-    this.walletService.removePendingTransaction(tx.id);
-    this.triggerToast("Negotiation Pivot", `تم نقل استحواذ "${tx.title}" لبروتوكول التفاوض.`);
-  }
-
-  handleRemove(id: string): void {
-    this.walletService.removePendingTransaction(id);
-    this.triggerToast("حذف المعاملة", "تم إلغاء طلب المعاملة المعلق.");
-  }
-
-  private triggerToast(title: string, desc: string): void {
-    this.toastTitle = title;
-    this.toastDesc = desc;
-    this.showToast = true;
+  triggerToast(title: string, desc: string): void {
+    this.toastTitle.set(title);
+    this.toastDesc.set(desc);
+    this.showToast.set(true);
     setTimeout(() => {
-      this.showToast = false;
-    }, 4000);
+      this.showToast.set(false);
+    }, 3500);
   }
 }

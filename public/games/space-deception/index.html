@@ -3,27 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>خيانة في الفضاء (Space Deception)</title>
+    <title>AstroTrick — خيانة في الفضاء</title>
     <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=2026_astrotrick_v2">
 </head>
 <body>
     
-    <!-- شاشة البداية / اللوبي -->
+    <!-- شاشة البداية / اللوبي الأولي -->
     <div id="start-screen" class="screen active">
-        <div class="card">
-            <h1>🚀 خيانة في الفضاء</h1>
-            <p>العب مع أصدقائك وابحث عن الخائن بينهم!</p>
+        <div class="card astro-card">
+            <div class="game-logo-badge">🚀 AstroTrick 🔪</div>
+            <h1>خيانة في الفضاء</h1>
+            <p>العب مع أصدقائك أو الروبوتات الذكية وابحث عن الخائن المتسلل بين أفراد الطاقم!</p>
             
             <div class="input-group">
-                <input type="text" id="player-name" placeholder="اسم اللاعب (أقصى 8 حروف)" maxlength="8">
+                <input type="text" id="player-name" placeholder="اسم رائد الفضاء (مثال: كابتن أحمد)" maxlength="12">
             </div>
             
             <div class="actions">
-                <button id="host-btn" class="btn primary">إنشاء غرفة (Host)</button>
+                <button id="host-btn" class="btn primary glow-btn">إنشاء سفينة جديدة (Host) 🚀</button>
                 <div class="join-group">
-                    <input type="text" id="join-id" placeholder="كود الغرفة">
-                    <button id="join-btn" class="btn success">انضمام</button>
+                    <input type="text" id="join-id" placeholder="كود السفينة / الغرفة">
+                    <button id="join-btn" class="btn success">انضمام 🛸</button>
                 </div>
             </div>
             
@@ -39,92 +40,125 @@
         </div>
     </div>
 
-    <!-- شاشة اللعب (الخريطة 2D وسفينة الانتظار Dropship) -->
+    <!-- شاشة اللعب (الخريطة وسفينة الانتظار Dropship) -->
     <div id="game-screen" class="screen">
         <canvas id="game-canvas"></canvas>
         
         <!-- Dropship Lobby Top HUD Overlay -->
-        <div id="dropship-hud" class="dropship-hud-panel hidden">
+        <div id="dropship-hud" class="dropship-hud-panel">
             <div class="hud-header-bar">
                 <div class="hud-room-code-badge">
-                    <span>🛸 سفينة الانتظار</span>
+                    <span>🛸 سفينة القيادة</span>
                     <span class="code-tag" id="dropship-room-code">...</span>
-                    <button id="copy-link-btn" class="mini-btn">📋 نسخ</button>
+                    <button id="copy-link-btn" class="mini-btn">📋 نسخ الرابط</button>
                 </div>
                 
                 <div class="color-picker-row">
-                    <span class="picker-label">🎨 البدلة:</span>
+                    <span class="picker-label">🎨 اختر بدلتك:</span>
                     <div id="color-dots-container" class="color-dots"></div>
                 </div>
             </div>
 
             <div class="lobby-action-row">
-                <button id="dropship-start-btn" class="btn success start-match-btn hidden">🚀 بدء اللعبة (1/10)</button>
-                <p id="dropship-waiting-msg" class="dropship-waiting hidden">⏳ في انتظار المضيف لبدء اللعبة...</p>
+                <button id="add-bots-btn" class="btn secondary mini-action-btn">🤖 إضافة روبوتات AI</button>
+                <button id="dropship-start-btn" class="btn success start-match-btn">🚀 بدء اللعبة الآن</button>
+                <p id="dropship-waiting-msg" class="dropship-waiting hidden">⏳ في انتظار القائد لبدء الانطلاق...</p>
             </div>
         </div>
         
-        <!-- واجهة المستخدم داخل اللعبة -->
-        <div class="hud-top-left">
-            المهام المنجزة: <span id="task-progress">0%</span>
+        <!-- واجهة المستخدم داخل اللعبة أثناء المهام -->
+        <div class="hud-top-left hidden" id="hud-task-box">
+            <div class="hud-title-line">
+                <span>المهام المنجزة:</span>
+                <span id="task-progress" class="hud-percent">0%</span>
+            </div>
             <div class="progress-bar-bg"><div class="progress-bar-fill" id="task-bar-fill"></div></div>
         </div>
-        <div class="hud-top-right">
-            الدور: <span id="my-role-display">طاقم</span>
+
+        <div class="hud-top-right hidden" id="hud-role-box">
+            <span>الدور:</span>
+            <span id="my-role-display" class="hud-role-tag">طاقم</span>
+        </div>
+
+        <!-- شريط التعليمات للتحرك السريع -->
+        <div id="controls-hint-bar" class="controls-hint-bar">
+            <span>🎮 للتحرك: استخدم مفاتيح <b>WASD</b> أو <b>الأسهم ⬆️⬇️⬅️➡️</b> أو <b>المس/انقر في أي مكان بالشاشة</b> للمشي</span>
         </div>
         
-        <!-- أزرار الإجراءات (للموبايل أو يمكن استخدام الماوس) -->
-        <div class="action-buttons">
-            <button id="action-use" class="action-btn" disabled>استخدام (E)</button>
-            <button id="action-report" class="action-btn" disabled>إبلاغ (R)</button>
-            <button id="action-kill" class="action-btn hidden" disabled>قتل (Q)</button>
-            <button id="action-sabotage" class="action-btn hidden">تخريب</button>
+        <!-- أزرار الإجراءات التفاعلية (استخدام، إبلاغ، قتل، تخريب) -->
+        <div class="action-buttons hidden" id="hud-action-buttons">
+            <button id="action-use" class="action-btn use-btn" disabled>
+                <span class="btn-icon">⚡</span>
+                <span class="btn-text">مهمة (E)</span>
+            </button>
+            <button id="action-report" class="action-btn report-btn" disabled>
+                <span class="btn-icon">📢</span>
+                <span class="btn-text">إبلاغ (R)</span>
+            </button>
+            <button id="action-kill" class="action-btn kill-btn hidden" disabled>
+                <span class="btn-icon">🔪</span>
+                <span class="btn-text">اغتيال (Q)</span>
+            </button>
+            <button id="action-sabotage" class="action-btn sabotage-btn hidden">
+                <span class="btn-icon">⚠️</span>
+                <span class="btn-text">تخريب</span>
+            </button>
+        </div>
+
+        <!-- لوحة التحكم الافتراضية باللمس (Virtual D-Pad) -->
+        <div id="virtual-dpad" class="virtual-dpad">
+            <button id="dpad-up" class="dpad-btn up">▲</button>
+            <div class="dpad-middle">
+                <button id="dpad-left" class="dpad-btn left">◀</button>
+                <div class="dpad-center">●</div>
+                <button id="dpad-right" class="dpad-btn right">▶</button>
+            </div>
+            <button id="dpad-down" class="dpad-btn down">▼</button>
         </div>
     </div>
 
-    <!-- شاشة الاجتماع (Voting) -->
+    <!-- شاشة الاجتماع الطارئ والتصويت (Voting) -->
     <div id="meeting-screen" class="screen">
         <div class="meeting-container">
             <div class="meeting-header">
-                <h2>اجتماع طارئ 🚨</h2>
-                <div class="timer">الوقت المتبقي: <span id="meeting-timer">120</span></div>
+                <h2>🚨 اجتماع طارئ في غرفة القيادة 🚨</h2>
+                <div class="timer">الوقت المتبقي: <span id="meeting-timer">120</span> ثانية</div>
             </div>
             <div class="meeting-content">
-                <div class="players-grid" id="voting-players-grid">
-                    <!-- سيتم إضافة اللاعبين هنا ديناميكياً -->
-                </div>
+                <div class="players-grid" id="voting-players-grid"></div>
                 <div class="chat-section">
                     <div class="chat-messages" id="chat-messages"></div>
                     <div class="chat-input-group">
-                        <input type="text" id="chat-input" placeholder="اكتب رسالة...">
+                        <input type="text" id="chat-input" placeholder="اكتب دليلك أو دافع عن نفسك...">
                         <button id="chat-send-btn" class="btn primary">إرسال</button>
                     </div>
                 </div>
             </div>
             <div class="meeting-footer">
-                <button id="skip-vote-btn" class="btn secondary">تخطي التصويت (Skip)</button>
+                <button id="skip-vote-btn" class="btn secondary">تخطي التصويت (Skip Vote)</button>
             </div>
         </div>
     </div>
     
-    <!-- شاشة عرض الدور قبل اللعب -->
+    <!-- شاشة إعلان الدور (Role Reveal Screen) -->
     <div id="role-screen" class="screen">
         <div class="role-card" id="role-card">
             <h1 id="role-title">أنت ضمن الطاقم</h1>
-            <h3 id="role-subtitle">أنجز المهام وابحث عن المخرب</h3>
+            <h3 id="role-subtitle">أنجز المهام وابحث عن المخرب المتسلل</h3>
             <p id="role-teammates" class="hidden"></p>
         </div>
     </div>
 
-    <!-- شاشة نهاية اللعبة -->
+    <!-- شاشة نهاية اللعبة وفوز الطاقم أو المخرب -->
     <div id="game-over-screen" class="screen">
-        <div class="card">
-            <h1 id="result-title">فاز الطاقم!</h1>
-            <button id="restart-btn" class="btn primary hidden">العودة للوبي (المضيف)</button>
-            <p id="game-over-waiting" class="hidden">في انتظار المضيف...</p>
+        <div class="card astro-card">
+            <h1 id="result-title">فاز الطاقم! 🏆</h1>
+            <p id="result-subtitle">تمت استعادة السيطرة على السفينة بنجاح.</p>
+            <button id="restart-btn" class="btn primary glow-btn hidden">العودة للوبي واللعب مجدداً 🔄</button>
+            <p id="game-over-waiting" class="hidden">في انتظار القائد لإعادة اللعبة...</p>
         </div>
     </div>
 
-    <script src="game.js?v=20260810_pseudo3d_v100"></script>
+    <script src="game.js?v=2026_astrotrick_v2"></script>
 </body>
 </html>

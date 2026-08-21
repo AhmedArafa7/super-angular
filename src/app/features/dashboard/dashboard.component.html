@@ -1,0 +1,989 @@
+<div class="min-h-screen bg-[#0b0f19] text-slate-100 p-4 md:p-8 font-['Tajawal'] select-none" dir="rtl">
+
+  <!-- ================= TOP TOAST NOTIFICATION ================= -->
+  @if (showSuccessToast()) {
+    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-[300] bg-indigo-600/95 backdrop-blur-xl border border-indigo-400/40 text-white px-6 py-3.5 rounded-2xl shadow-2xl shadow-indigo-600/40 flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
+      <lucide-icon name="check-circle-2" class="w-5 h-5 text-emerald-300 shrink-0"></lucide-icon>
+      <span class="font-bold text-sm">{{ showSuccessToast() }}</span>
+    </div>
+  }
+
+  <!-- ================= TOP HEADER BAR ================= -->
+  <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
+    
+    <!-- User Greeting & Neural Subtitle -->
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0 shadow-lg shadow-indigo-500/10">
+        <lucide-icon name="sparkles" class="w-6 h-6 animate-pulse"></lucide-icon>
+      </div>
+      <div>
+        <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight flex items-center gap-2">
+          <span>أهلاً بك، {{ activeDisplayName() }}</span>
+        </h1>
+        <p class="text-slate-400 text-xs md:text-sm mt-0.5 font-medium">نظام Si-NeuroAI جاهز لتنفيذ أوامرك.</p>
+      </div>
+    </div>
+
+    <!-- Status & Neural Console Buttons -->
+    <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+      <!-- Neural Console Trigger -->
+      <button 
+        (click)="showNeuralConsole.set(true)"
+        class="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 hover:text-white text-xs font-bold transition-all flex items-center gap-2 shadow-sm cursor-pointer group">
+        <lucide-icon name="terminal" class="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform"></lucide-icon>
+        <span>Neural Console</span>
+      </button>
+
+      <!-- Node Active Status Pill -->
+      <button 
+        (click)="showNodeDiagnosticsModal.set(true)"
+        class="px-4 py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold transition-all flex items-center gap-2 shadow-sm cursor-pointer">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        <span>Node Active</span>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ================= SUB-NAVIGATION TABS ================= -->
+  <div class="bg-[#111827]/80 backdrop-blur-xl border border-white/10 p-1.5 rounded-2xl flex items-center gap-1.5 mb-8 overflow-x-auto custom-scrollbar">
+    <button 
+      (click)="setTab('overview')"
+      [ngClass]="activeTab() === 'overview' ? 'bg-indigo-600 text-white font-black shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 font-bold'"
+      class="px-6 py-2.5 rounded-xl text-xs md:text-sm transition-all whitespace-nowrap cursor-pointer">
+      نظرة عامة
+    </button>
+
+    <button 
+      (click)="setTab('profile')"
+      [ngClass]="activeTab() === 'profile' ? 'bg-indigo-600 text-white font-black shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 font-bold'"
+      class="px-6 py-2.5 rounded-xl text-xs md:text-sm transition-all whitespace-nowrap cursor-pointer">
+      الملف الشخصي
+    </button>
+
+    <button 
+      (click)="setTab('workspace')"
+      [ngClass]="activeTab() === 'workspace' ? 'bg-indigo-600 text-white font-black shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 font-bold'"
+      class="px-6 py-2.5 rounded-xl text-xs md:text-sm transition-all whitespace-nowrap cursor-pointer">
+      مركز الأعمال
+    </button>
+
+    <button 
+      (click)="setTab('operations')"
+      [ngClass]="activeTab() === 'operations' ? 'bg-indigo-600 text-white font-black shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 font-bold'"
+      class="px-6 py-2.5 rounded-xl text-xs md:text-sm transition-all whitespace-nowrap cursor-pointer">
+      سجل العمليات
+    </button>
+
+    <button 
+      (click)="setTab('inbox')"
+      [ngClass]="activeTab() === 'inbox' ? 'bg-indigo-600 text-white font-black shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 font-bold'"
+      class="px-6 py-2.5 rounded-xl text-xs md:text-sm transition-all whitespace-nowrap cursor-pointer flex items-center gap-2">
+      <lucide-icon name="mail" class="w-4 h-4"></lucide-icon>
+      <span>صندوق الوارد</span>
+      @if (unreadNotificationsCount() > 0) {
+        <span class="px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-black rounded-full shadow-sm">{{ unreadNotificationsCount() }}</span>
+      }
+    </button>
+  </div>
+
+  <!-- ================= TAB 1: OVERVIEW (نظرة عامة) ================= -->
+  @if (activeTab() === 'overview') {
+    <div class="space-y-8 animate-in fade-in duration-300">
+      
+      <!-- 4 Quick Service Cards Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- 1. AI Smart Chat -->
+        <a [routerLink]="['/chat']" class="group bg-[#111827]/60 hover:bg-[#111827]/90 border border-white/10 hover:border-indigo-500/40 rounded-3xl p-6 transition-all duration-300 shadow-xl hover:shadow-indigo-500/10 flex flex-col justify-between min-h-[190px] cursor-pointer">
+          <div class="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+            <lucide-icon name="message-square" class="w-6 h-6"></lucide-icon>
+          </div>
+          <div>
+            <h3 class="text-lg font-black text-white group-hover:text-blue-300 transition-colors">الدردشة الذكية</h3>
+            <p class="text-xs text-slate-400 mt-1 leading-relaxed">تواصل مع المحرك العصبي لحل مشاكلك التقنية.</p>
+          </div>
+        </a>
+
+        <!-- 2. WeTube (Stream) -->
+        <a [routerLink]="['/stream']" class="group bg-[#111827]/60 hover:bg-[#111827]/90 border border-white/10 hover:border-purple-500/40 rounded-3xl p-6 transition-all duration-300 shadow-xl hover:shadow-purple-500/10 flex flex-col justify-between min-h-[190px] cursor-pointer">
+          <div class="w-12 h-12 rounded-2xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+            <lucide-icon name="video" class="w-6 h-6"></lucide-icon>
+          </div>
+          <div>
+            <h3 class="text-lg font-black text-white group-hover:text-purple-300 transition-colors">WeTube</h3>
+            <p class="text-xs text-slate-400 mt-1 leading-relaxed">اكتشف أحدث الفيديوهات وأدر اشتراكاتك الخاصة.</p>
+          </div>
+        </a>
+
+        <!-- 3. TechMarket -->
+        <a [routerLink]="['/market']" class="group bg-[#111827]/60 hover:bg-[#111827]/90 border border-white/10 hover:border-amber-500/40 rounded-3xl p-6 transition-all duration-300 shadow-xl hover:shadow-amber-500/10 flex flex-col justify-between min-h-[190px] cursor-pointer">
+          <div class="w-12 h-12 rounded-2xl bg-amber-600/20 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+            <lucide-icon name="shopping-bag" class="w-6 h-6"></lucide-icon>
+          </div>
+          <div>
+            <h3 class="text-lg font-black text-white group-hover:text-amber-300 transition-colors">TechMarket</h3>
+            <p class="text-xs text-slate-400 mt-1 leading-relaxed">استحوذ على أحدث الأدوات والحلول البرمجية.</p>
+          </div>
+        </a>
+
+        <!-- 4. Hisn Al-Muslim -->
+        <a [routerLink]="['/hisn']" class="group bg-[#111827]/60 hover:bg-[#111827]/90 border border-white/10 hover:border-emerald-500/40 rounded-3xl p-6 transition-all duration-300 shadow-xl hover:shadow-emerald-500/10 flex flex-col justify-between min-h-[190px] cursor-pointer">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+            <lucide-icon name="book-open" class="w-6 h-6"></lucide-icon>
+          </div>
+          <div>
+            <h3 class="text-lg font-black text-white group-hover:text-emerald-300 transition-colors">حصن المسلم</h3>
+            <p class="text-xs text-slate-400 mt-1 leading-relaxed">أذكار، تسبيح، ومعرفة روحية في مكان واحد.</p>
+          </div>
+        </a>
+
+      </div>
+
+      <!-- Row 2: Neural Wallet & Local Memory -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Left: Neural Wallet Status -->
+        <div class="bg-[#111827]/80 border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col justify-between space-y-6">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                <lucide-icon name="wallet" class="w-5 h-5"></lucide-icon>
+              </div>
+              <h2 class="text-lg font-black text-white">حالة المحفظة العصبية</h2>
+            </div>
+            <span class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">E2EE مشفر</span>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 py-2">
+            <div>
+              <span class="text-xs font-bold text-slate-400 block mb-1">الرصيد المتاح</span>
+              <div class="text-4xl md:text-5xl font-black text-white tracking-tight flex items-baseline gap-2">
+                <span>{{ realCredits() }}</span>
+                <span class="text-base md:text-lg font-bold text-indigo-400">Credits</span>
+              </div>
+            </div>
+
+            <button 
+              (click)="showWalletModal.set(true)"
+              class="w-full sm:w-auto px-7 py-3.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-black text-sm rounded-2xl shadow-xl shadow-indigo-600/30 transition-all cursor-pointer">
+              إدارة المحفظة
+            </button>
+          </div>
+
+          <div class="border-t border-white/5 pt-4 flex items-center justify-between text-xs text-slate-400 font-medium">
+            <span class="flex items-center gap-1.5">
+              <lucide-icon name="shield-check" class="w-4 h-4 text-emerald-400"></lucide-icon>
+              نشط لجميع الحركات E2EE تشفير
+            </span>
+            <span class="text-slate-500">Global Cluster v5</span>
+          </div>
+        </div>
+
+        <!-- Right: Local Memory & Storage -->
+        <div class="bg-[#111827]/80 border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col justify-between space-y-6">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                <lucide-icon name="hard-drive" class="w-5 h-5"></lucide-icon>
+              </div>
+              <h2 class="text-lg font-black text-white">الذاكرة المحلية</h2>
+            </div>
+            <span class="text-xs font-black px-3 py-1 rounded-full bg-indigo-600/20 text-indigo-300 border border-indigo-500/30">
+              {{ dataConsumption.storagePercentage() }}%
+            </span>
+          </div>
+
+          <div class="space-y-3">
+            <div class="flex items-center justify-between text-xs font-bold">
+              <span class="text-slate-400">المساحة المستخدمة</span>
+              <span class="text-white font-mono">{{ dataConsumption.storageUsedMB() }} MB / {{ dataConsumption.storageQuotaMB() }} MB</span>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-950/80 border border-white/5 h-2.5 rounded-full overflow-hidden p-0.5">
+              <div 
+                class="h-full bg-gradient-to-r from-indigo-500 to-indigo-400 rounded-full transition-all duration-500"
+                [style.width.%]="dataConsumption.storagePercentage()"></div>
+            </div>
+
+            <!-- Last Synced Asset Box -->
+            <div class="bg-black/40 border border-white/5 rounded-2xl p-3 flex items-center justify-between text-xs">
+              <span class="text-slate-400">آخر الأصول المزامنة:</span>
+              <span class="font-bold text-indigo-300 font-mono truncate max-w-[220px]">{{ dataConsumption.lastSyncedAsset() }}</span>
+            </div>
+          </div>
+
+          <div class="border-t border-white/5 pt-4 flex items-center justify-between">
+            <button 
+              (click)="showStorageModal.set(true)"
+              class="text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1.5 cursor-pointer">
+              <span>إدارة الذاكرة العصبية</span>
+              <lucide-icon name="arrow-left" class="w-3.5 h-3.5"></lucide-icon>
+            </button>
+            <span class="text-[11px] text-slate-500">تخزين آمن محلي</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Row 3: Data Consumption Center (مركز استهلاك البيانات) -->
+      <div class="bg-[#111827]/80 border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6">
+        
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/5 pb-5">
+          <div class="flex items-center gap-3">
+            <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+              <lucide-icon name="zap" class="w-5 h-5"></lucide-icon>
+            </div>
+            <h2 class="text-xl font-black text-white">مركز استهلاك البيانات</h2>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <span class="px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              نشط
+            </span>
+
+            <button 
+              (click)="refreshMetrics()"
+              class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer">
+              <lucide-icon name="refresh-cw" class="w-3.5 h-3.5"></lucide-icon>
+              <span>تحديث لحظي</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3 Stat Boxes Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <!-- Box 1: Current Session -->
+          <div class="bg-black/30 border border-white/5 rounded-2xl p-6 flex flex-col justify-between min-h-[160px]">
+            <span class="text-xs font-bold text-slate-400">الجلسة الحالية</span>
+            <div class="text-3xl md:text-4xl font-black text-white font-mono my-2">
+              {{ dataConsumption.formattedSession() }}
+            </div>
+            <span class="text-[11px] text-emerald-400 font-medium">يتم تصفيره عند إغلاق الموقع</span>
+          </div>
+
+          <!-- Box 2: Daily Consumption -->
+          <div class="bg-black/30 border border-white/5 rounded-2xl p-6 flex flex-col justify-between min-h-[160px]">
+            <span class="text-xs font-bold text-slate-400">الاستهلاك اليومي</span>
+            <div class="text-3xl md:text-4xl font-black text-white font-mono my-2">
+              {{ dataConsumption.formattedDaily() }}
+            </div>
+            <div class="space-y-1.5">
+              <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                <div class="h-full bg-indigo-500 rounded-full" style="width: 15%;"></div>
+              </div>
+              <span class="text-[10px] text-slate-500 font-mono block text-left">معدل الاستهلاك {{ dataConsumption.formattedDaily() }} / 5 GB</span>
+            </div>
+          </div>
+
+          <!-- Box 3: Video Consumption Estimate -->
+          <div class="bg-black/30 border border-white/5 rounded-2xl p-6 flex flex-col justify-between min-h-[160px]">
+            <span class="text-xs font-bold text-slate-400">تقدير استهلاك الفيديو</span>
+            <div class="text-3xl md:text-4xl font-black text-indigo-400 font-mono my-2">
+              {{ dataConsumption.videoConsumedMB() }} MB
+            </div>
+            <span class="text-[10px] text-slate-400 leading-tight">تقدير تقريبي بناء على جودة ومدة المشاهدة عبر المشغل المدمج</span>
+          </div>
+
+        </div>
+
+        <!-- Footer Bar -->
+        <div class="border-t border-white/5 pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 rounded-lg bg-white/5 border border-white/10 text-slate-400">
+              <lucide-icon name="hard-drive" class="w-4 h-4"></lucide-icon>
+            </div>
+            <span class="font-bold text-slate-300">إجمالي الاستهلاك على هذا الجهاز:</span>
+            <span class="font-mono text-white font-black">{{ dataConsumption.formattedTotalDevice() }}</span>
+          </div>
+
+          <p class="text-[11px] text-slate-500 text-center sm:text-left">* جميع البيانات يتم تخزينها محلياً ولا يتم مشاركتها مع أي جهة خارجية *</p>
+        </div>
+
+      </div>
+
+    </div>
+  }
+
+  <!-- ================= TAB 2: PROFILE (الملف الشخصي) ================= -->
+  @if (activeTab() === 'profile') {
+    <div class="space-y-8 animate-in fade-in duration-300">
+      
+      <!-- Top Identity Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left: Identity Preview Card (4 cols) -->
+        <div class="lg:col-span-4 bg-[#111827]/80 border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col items-center justify-center text-center space-y-4">
+          <div class="relative group">
+            <img 
+              [src]="selectedAvatar()" 
+              alt="Avatar" 
+              class="w-32 h-32 md:w-36 md:h-36 rounded-3xl object-cover border-4 border-indigo-500/40 shadow-2xl group-hover:scale-105 transition-transform duration-300"
+              (error)="$any($event.target).src = 'https://ui-avatars.com/api/?name=' + editDisplayName() + '&background=6366f1&color=fff'">
+            
+            <button 
+              (click)="showAvatarPickerModal.set(true)"
+              class="absolute inset-0 bg-black/60 rounded-3xl opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white transition-opacity duration-300 cursor-pointer gap-1">
+              <lucide-icon name="camera" class="w-6 h-6 text-indigo-300"></lucide-icon>
+              <span class="text-[11px] font-bold">تغيير الصورة</span>
+            </button>
+          </div>
+
+          <div>
+            <h2 class="text-xl font-black text-white">{{ editDisplayName() || 'أحمد عرفه' }}</h2>
+            <p class="text-xs text-indigo-400 font-mono mt-0.5 font-bold">&#64;{{ editUsername() || 'mo1999382' }}</p>
+          </div>
+
+          <button 
+            (click)="showAvatarPickerModal.set(true)"
+            class="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-slate-300 hover:text-white transition-all cursor-pointer">
+            تغيير أيقونة الهوية
+          </button>
+        </div>
+
+        <!-- Right: Identity Settings Form (8 cols) -->
+        <div class="lg:col-span-8 bg-[#111827]/80 border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6">
+          <div>
+            <h2 class="text-xl font-black text-white">إعدادات الهوية</h2>
+            <p class="text-xs text-slate-400 mt-1">تحديث معلومات العقدة العامة الخاصة بك في السجل العالمي.</p>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1.5">الاسم المعروض</label>
+              <input 
+                type="text" 
+                [(ngModel)]="editDisplayName"
+                placeholder="أحمد عرفه" 
+                class="w-full h-12 bg-black/40 border border-white/10 rounded-2xl px-4 text-white text-sm font-bold focus:outline-none focus:border-indigo-500 transition-colors" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1.5">(USERNAME) معرف نكسوس</label>
+              <input 
+                type="text" 
+                [(ngModel)]="editUsername"
+                placeholder="mo1999382" 
+                class="w-full h-12 bg-black/40 border border-white/10 rounded-2xl px-4 text-white text-sm font-mono focus:outline-none focus:border-indigo-500 transition-colors" />
+              <span class="text-[10px] text-slate-500 mt-1.5 block leading-normal font-medium">بمجرد نسبها لسمات وسلامة الروابط Si-Neuro لا يمكن تعديل معرفات</span>
+            </div>
+          </div>
+
+          <div class="pt-2">
+            <button 
+              (click)="syncNodeIdentity()"
+              [disabled]="isSyncingIdentity()"
+              class="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-black text-sm rounded-2xl shadow-xl shadow-indigo-600/30 transition-all flex items-center gap-2 cursor-pointer">
+              <lucide-icon name="check-circle-2" class="w-4 h-4"></lucide-icon>
+              <span>{{ isSyncingIdentity() ? 'جاري المزامنة...' : 'مزامنة بيانات العقدة' }}</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Cloud Security & Account Recovery Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Cloud Security -->
+        <div class="bg-[#111827]/80 border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl space-y-4">
+          <div>
+            <h3 class="text-base font-black text-white">تأمين الهوية السحابية</h3>
+            <p class="text-xs text-slate-400 mt-1 leading-relaxed">يفضل ربط حسابك المؤقت لتتمكن من الوصول لبياناتك من أي جهاز آخر في المستقبل</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            <button 
+              (click)="secureWithGithub()"
+              class="h-12 px-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer">
+              <lucide-icon name="github" class="w-4 h-4"></lucide-icon>
+              <span>تأمين باستخدام جيتهاب</span>
+            </button>
+
+            <button 
+              (click)="secureWithGoogle()"
+              class="h-12 px-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer">
+              <lucide-icon name="mail" class="w-4 h-4 text-red-400"></lucide-icon>
+              <span>تأمين باستخدام جوجل</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Restore Account -->
+        <div class="bg-[#111827]/80 border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl space-y-4">
+          <div>
+            <h3 class="text-base font-black text-white">استعادة حساب سابق</h3>
+            <p class="text-xs text-slate-400 mt-1 leading-relaxed">هل قمت بتأمين حسابك مسبقاً؟ سجل الدخول الآن لاستعادة بياناتك ومحفظتك</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            <button 
+              (click)="restoreWithGithub()"
+              class="h-12 px-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 hover:text-white text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer">
+              <span>استعادة باستخدام جيتهاب</span>
+              <lucide-icon name="arrow-left" class="w-3.5 h-3.5"></lucide-icon>
+            </button>
+
+            <button 
+              (click)="restoreWithGoogle()"
+              class="h-12 px-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 hover:text-white text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer">
+              <span>استعادة باستخدام جوجل</span>
+              <lucide-icon name="arrow-left" class="w-3.5 h-3.5"></lucide-icon>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Appearance & Theme Section -->
+      <div class="bg-[#111827]/80 border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6">
+        
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
+          <div class="flex items-center gap-3">
+            <div class="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
+              <lucide-icon name="palette" class="w-5 h-5"></lucide-icon>
+            </div>
+            <div>
+              <h2 class="text-xl font-black text-white">المظهر والتصميم</h2>
+              <p class="text-xs text-slate-400 mt-0.5">تخصيص الواجهة والتبديل بين التصميمات المشتراة أو الحصول على المزيد</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 bg-black/40 p-1 rounded-xl border border-white/5">
+            <button 
+              (click)="themeSubTab.set('your-themes')"
+              [ngClass]="themeSubTab() === 'your-themes' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'"
+              class="px-4 py-1.5 rounded-lg text-xs transition-all cursor-pointer">
+              تصميماتك
+            </button>
+            <button 
+              (click)="themeSubTab.set('store')"
+              [ngClass]="themeSubTab() === 'store' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'"
+              class="px-4 py-1.5 rounded-lg text-xs transition-all cursor-pointer">
+              المتجر
+            </button>
+          </div>
+        </div>
+
+        <!-- Dark Mode Toggle Box -->
+        <div class="bg-black/30 border border-white/5 rounded-2xl p-4 md:p-5 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-xl bg-white/5 text-slate-300">
+              <lucide-icon [name]="isDarkMode() ? 'moon' : 'sun'" class="w-5 h-5 text-amber-400"></lucide-icon>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white">(Dark Mode) الوضع الليلي</h3>
+              <p class="text-xs text-slate-500 mt-0.5">تطبق فقط على التنسيقات التي تدعم الوضعين...</p>
+            </div>
+          </div>
+
+          <!-- Switch Toggle Button -->
+          <button 
+            (click)="toggleDarkMode()"
+            [ngClass]="isDarkMode() ? 'bg-indigo-600' : 'bg-slate-700'"
+            class="w-12 h-7 rounded-full p-1 transition-colors relative flex items-center cursor-pointer">
+            <span 
+              [ngClass]="isDarkMode() ? 'translate-x-0' : '-translate-x-5'"
+              class="w-5 h-5 rounded-full bg-white transition-transform block shadow-md"></span>
+          </button>
+        </div>
+
+        <!-- (No-Code Builder) Visual Studio -->
+        <div class="bg-gradient-to-b from-[#161f38]/60 to-black/40 border border-indigo-500/20 rounded-3xl p-6 md:p-8 space-y-6 relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div class="relative z-10">
+            <div class="flex items-center gap-2">
+              <lucide-icon name="pen-tool" class="w-5 h-5 text-indigo-400"></lucide-icon>
+              <h3 class="text-lg font-black text-white">(No-Code Builder) الاستوديو البصري</h3>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">صمم تخطيطك الخاص وألوانك بدون الحاجة لكتابة أي كود برمجي، وسيطبق فوراً على كامل المنصة</p>
+          </div>
+
+          <!-- Custom Theme Name -->
+          <div class="relative z-10">
+            <label class="block text-xs font-bold text-slate-300 mb-1.5">اسم التصميم الجديد</label>
+            <input 
+              type="text" 
+              [(ngModel)]="customThemeName"
+              placeholder="تصميمي الخاص" 
+              class="w-full h-12 bg-black/50 border border-white/10 rounded-2xl px-4 text-white text-sm font-bold focus:outline-none focus:border-indigo-500 transition-colors" />
+          </div>
+
+          <!-- Platform Layout Structure Options -->
+          <div class="relative z-10 space-y-2">
+            <label class="block text-xs font-bold text-slate-300">هيكل المنصة الآلي</label>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              
+              <!-- Option 1: Standard Si-Neuro -->
+              <div 
+                (click)="setLayoutMode('standard')"
+                [ngClass]="selectedLayoutMode() === 'standard' ? 'border-indigo-500 bg-indigo-950/30 shadow-lg shadow-indigo-500/10' : 'border-white/10 bg-black/30 hover:border-white/20'"
+                class="border-2 rounded-2xl p-5 transition-all cursor-pointer flex items-start gap-3">
+                <div 
+                  [ngClass]="selectedLayoutMode() === 'standard' ? 'bg-indigo-600 text-white' : 'border border-white/20 text-transparent'"
+                  class="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-colors">
+                  <lucide-icon name="check" class="w-3.5 h-3.5"></lucide-icon>
+                </div>
+                <div>
+                  <h4 class="text-sm font-black text-white">(Si-Neuro) الهيكل القياسي</h4>
+                  <p class="text-xs text-slate-400 mt-1 leading-relaxed">شريط جانبي أيسر معلق مع ساحة زجاجية مركزية.</p>
+                </div>
+              </div>
+
+              <!-- Option 2: DULMS Academy -->
+              <div 
+                (click)="setLayoutMode('dulms')"
+                [ngClass]="selectedLayoutMode() === 'dulms' ? 'border-indigo-500 bg-indigo-950/30 shadow-lg shadow-indigo-500/10' : 'border-white/10 bg-black/30 hover:border-white/20'"
+                class="border-2 rounded-2xl p-5 transition-all cursor-pointer flex items-start gap-3">
+                <div 
+                  [ngClass]="selectedLayoutMode() === 'dulms' ? 'bg-indigo-600 text-white' : 'border border-white/20 text-transparent'"
+                  class="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-colors">
+                  <lucide-icon name="check" class="w-3.5 h-3.5"></lucide-icon>
+                </div>
+                <div>
+                  <h4 class="text-sm font-black text-white">(DULMS) هيكل المنصات الأكاديمية</h4>
+                  <p class="text-xs text-slate-400 mt-1 leading-relaxed">شريط علوي متقدم مع قائمة جانبية مرنة، مفصل للكورسات.</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Color Palette Accent -->
+          <div class="relative z-10 space-y-2">
+            <label class="block text-xs font-bold text-slate-300">البصمة اللونية للمنصة</label>
+            
+            <div class="flex items-center gap-3 flex-wrap">
+              @for (color of presetColors; track color.hex) {
+                <button 
+                  (click)="setAccentColor(color.hex)"
+                  [style.background-color]="color.hex"
+                  class="w-10 h-10 rounded-full flex items-center justify-center transition-transform hover:scale-110 shadow-lg cursor-pointer relative"
+                  [title]="color.name">
+                  @if (selectedAccentColor() === color.hex) {
+                    <div class="w-4 h-4 rounded-full bg-white flex items-center justify-center text-slate-900 shadow-sm">
+                      <lucide-icon name="check" class="w-3 h-3"></lucide-icon>
+                    </div>
+                  }
+                </button>
+              }
+
+              <!-- Custom Color Picker Input -->
+              <div class="flex items-center gap-2 bg-black/40 border border-white/10 rounded-2xl px-3 py-1.5 mr-2">
+                <input 
+                  type="color" 
+                  [ngModel]="selectedAccentColor()" 
+                  (ngModelChange)="setAccentColor($event)"
+                  class="w-7 h-7 rounded-lg border-0 bg-transparent cursor-pointer" />
+                <span class="text-xs font-mono font-bold text-white">{{ selectedAccentColor() }}</span>
+                <span class="text-[10px] text-slate-400">لون مخصص</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Apply & Save Button -->
+          <div class="relative z-10 pt-2 flex justify-end">
+            <button 
+              (click)="applyAndSaveTheme()"
+              class="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black text-sm rounded-2xl shadow-xl shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer">
+              <lucide-icon name="sparkles" class="w-4 h-4"></lucide-icon>
+              <span>تطبيق وحفظ التصميم فوراً</span>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  }
+
+  <!-- ================= TAB 3: WORKSPACE (مركز الأعمال) ================= -->
+  @if (activeTab() === 'workspace') {
+    <div class="space-y-6 animate-in fade-in duration-300">
+      
+      <!-- Search & Filters -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-[#111827]/80 border border-white/10 p-4 rounded-2xl shadow-xl">
+        <div class="relative flex-1">
+          <input 
+            type="text" 
+            [(ngModel)]="workspaceSearch"
+            placeholder="ابحث عن أداة أو تطبيق في مركز الأعمال..." 
+            class="w-full h-11 bg-black/40 border border-white/10 rounded-xl pr-10 pl-4 text-white text-xs font-bold focus:outline-none focus:border-indigo-500 transition-colors" />
+          <lucide-icon name="search" class="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2"></lucide-icon>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs font-bold text-slate-400">
+          <span>عدد الأدوات المتاحة:</span>
+          <span class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-mono">{{ filteredWorkspaceApps().length }}</span>
+        </div>
+      </div>
+
+      <!-- Apps Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        @for (app of filteredWorkspaceApps(); track app.id) {
+          <a [routerLink]="[app.route]" class="group bg-[#111827]/60 hover:bg-[#111827]/95 border border-white/10 hover:border-indigo-500/40 rounded-3xl p-5 transition-all duration-300 shadow-xl flex flex-col justify-between min-h-[170px] cursor-pointer">
+            <div class="flex items-center justify-between">
+              <div [ngClass]="app.color" class="w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
+                <lucide-icon [name]="app.icon" class="w-5 h-5"></lucide-icon>
+              </div>
+              <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/5">{{ app.category }}</span>
+            </div>
+
+            <div class="mt-4">
+              <h3 class="text-sm font-black text-white group-hover:text-indigo-300 transition-colors">{{ app.title }}</h3>
+              <p class="text-[11px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">{{ app.desc }}</p>
+            </div>
+          </a>
+        }
+      </div>
+
+    </div>
+  }
+
+  <!-- ================= TAB 4: OPERATIONS (سجل العمليات) ================= -->
+  @if (activeTab() === 'operations') {
+    <div class="space-y-6 animate-in fade-in duration-300">
+      
+      <!-- Filters -->
+      <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-2">
+        <button 
+          (click)="operationsFilter.set('all')"
+          [ngClass]="operationsFilter() === 'all' ? 'bg-indigo-600 text-white font-black' : 'bg-white/5 text-slate-400 hover:text-white'"
+          class="px-4 py-2 rounded-xl text-xs transition-all cursor-pointer whitespace-nowrap">
+          الكل ({{ filteredOperations().length }})
+        </button>
+
+        <button 
+          (click)="operationsFilter.set('wallet')"
+          [ngClass]="operationsFilter() === 'wallet' ? 'bg-indigo-600 text-white font-black' : 'bg-white/5 text-slate-400 hover:text-white'"
+          class="px-4 py-2 rounded-xl text-xs transition-all cursor-pointer whitespace-nowrap">
+          العمليات المالية
+        </button>
+
+        <button 
+          (click)="operationsFilter.set('data')"
+          [ngClass]="operationsFilter() === 'data' ? 'bg-indigo-600 text-white font-black' : 'bg-white/5 text-slate-400 hover:text-white'"
+          class="px-4 py-2 rounded-xl text-xs transition-all cursor-pointer whitespace-nowrap">
+          استهلاك البيانات
+        </button>
+
+        <button 
+          (click)="operationsFilter.set('security')"
+          [ngClass]="operationsFilter() === 'security' ? 'bg-indigo-600 text-white font-black' : 'bg-white/5 text-slate-400 hover:text-white'"
+          class="px-4 py-2 rounded-xl text-xs transition-all cursor-pointer whitespace-nowrap">
+          أحداث التشفير E2EE
+        </button>
+      </div>
+
+      <!-- List -->
+      <div class="bg-[#111827]/80 border border-white/10 rounded-3xl p-4 md:p-6 shadow-2xl space-y-3">
+        @if (filteredOperations().length === 0) {
+          <div class="text-center py-12 text-slate-500 text-xs">لا توجد عمليات مسجلة في هذا القسم حالياً.</div>
+        } @else {
+          @for (op of filteredOperations(); track op.id) {
+            <div class="bg-black/30 hover:bg-black/50 border border-white/5 rounded-2xl p-4 flex items-center justify-between transition-all gap-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-indigo-400 shrink-0">
+                  <lucide-icon [name]="op.type === 'wallet' ? 'wallet' : (op.type === 'data' ? 'zap' : 'shield-check')" class="w-5 h-5"></lucide-icon>
+                </div>
+                <div>
+                  <h4 class="text-sm font-bold text-white">{{ op.title }}</h4>
+                  <p class="text-xs text-slate-400 mt-0.5">{{ op.subtitle }}</p>
+                </div>
+              </div>
+
+              <div class="text-left shrink-0">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-indigo-300 font-mono">{{ op.badge }}</span>
+                <span class="text-[10px] text-slate-500 block mt-1 font-mono">{{ op.date | date:'short' }}</span>
+              </div>
+            </div>
+          }
+        }
+      </div>
+
+    </div>
+  }
+
+  <!-- ================= TAB 5: INBOX (صندوق الوارد) ================= -->
+  @if (activeTab() === 'inbox') {
+    <div class="space-y-6 animate-in fade-in duration-300">
+      
+      <div class="flex items-center justify-between bg-[#111827]/80 border border-white/10 p-4 rounded-2xl shadow-xl">
+        <div>
+          <h2 class="text-base font-black text-white">الإشعارات والرسائل المركزية</h2>
+          <p class="text-xs text-slate-400 mt-0.5">تحديثات الأمان، إشعارات halaltube، وإعلانات النظام</p>
+        </div>
+
+        <button 
+          (click)="clearAllNotifications()"
+          class="px-4 py-2 bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl text-xs font-bold transition-all cursor-pointer">
+          مسح الكل 🗑️
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        @if (notificationService.notifications().length === 0) {
+          <div class="bg-[#111827]/60 border border-white/10 rounded-3xl p-12 text-center text-slate-500 text-sm">
+            صندوق الوارد فارغ، لا توجد إشعارات جديدة.
+          </div>
+        } @else {
+          @for (notif of notificationService.notifications(); track notif.id) {
+            <div 
+              [ngClass]="notif.isRead ? 'bg-[#111827]/40 border-white/5' : 'bg-[#111827]/90 border-indigo-500/30 shadow-lg'"
+              class="border rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all">
+              
+              <div class="flex items-start gap-3.5 flex-1">
+                <div 
+                  [ngClass]="notif.priority === 'critical' ? 'bg-red-500/20 text-red-400' : (notif.priority === 'warning' ? 'bg-amber-500/20 text-amber-400' : 'bg-indigo-500/20 text-indigo-400')"
+                  class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5">
+                  <lucide-icon [name]="notif.priority === 'critical' ? 'alert-triangle' : 'bell'" class="w-5 h-5"></lucide-icon>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h4 class="text-sm font-bold text-white">{{ notif.title }}</h4>
+                    @if (!notif.isRead) {
+                      <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                    }
+                  </div>
+                  <p class="text-xs text-slate-300 mt-1 leading-relaxed">{{ notif.message }}</p>
+                  <span class="text-[10px] text-slate-500 font-mono mt-2 block">{{ notif.timestamp | date:'medium' }}</span>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 self-end md:self-center shrink-0">
+                @if (notif.routePath) {
+                  <a [routerLink]="[notif.routePath]" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all">
+                    عرض ➔
+                  </a>
+                }
+                @if (!notif.isRead) {
+                  <button (click)="markNotificationRead(notif)" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold transition-all cursor-pointer">
+                    تحديد كمقروء
+                  </button>
+                }
+                <button (click)="deleteNotification(notif)" class="p-2 rounded-xl bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-all cursor-pointer">
+                  <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
+                </button>
+              </div>
+
+            </div>
+          }
+        }
+      </div>
+
+    </div>
+  }
+
+</div>
+
+<!-- ================= MODAL 1: NEURAL CONSOLE TERMINAL ================= -->
+@if (showNeuralConsole()) {
+  <div class="fixed inset-0 z-[250] bg-black/80 backdrop-blur-md flex items-center justify-center p-4" dir="ltr">
+    <div class="bg-[#0b0f19] border border-indigo-500/30 rounded-3xl w-full max-w-3xl h-[550px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+      
+      <!-- Terminal Header -->
+      <div class="h-12 bg-slate-900/90 border-b border-white/10 px-4 flex items-center justify-between text-xs text-slate-400 font-mono">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-red-500 inline-block cursor-pointer" (click)="showNeuralConsole.set(false)"></span>
+          <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+          <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+          <span class="ml-2 text-white font-bold">Si-Neuro Neural Terminal v5.8</span>
+        </div>
+        <button (click)="showNeuralConsole.set(false)" class="text-slate-400 hover:text-white font-bold cursor-pointer">✕</button>
+      </div>
+
+      <!-- Terminal Output Log Screen -->
+      <div class="flex-1 p-4 font-mono text-xs overflow-y-auto space-y-1.5 custom-scrollbar text-slate-300">
+        @for (log of consoleLogs(); track $index) {
+          <div class="flex items-start gap-2">
+            <span class="text-slate-500 text-[10px]">[{{ log.time }}]</span>
+            <span [ngClass]="{
+              'text-indigo-300 font-bold': log.type === 'info',
+              'text-emerald-400': log.type === 'success',
+              'text-amber-400': log.type === 'warn',
+              'text-red-400': log.type === 'error',
+              'text-white font-bold': log.type === 'cmd'
+            }">{{ log.text }}</span>
+          </div>
+        }
+      </div>
+
+      <!-- Terminal Command Input Bar -->
+      <div class="p-3 bg-black/60 border-t border-white/10 flex items-center gap-2">
+        <span class="text-indigo-400 font-mono font-bold text-sm">$</span>
+        <input 
+          type="text" 
+          [(ngModel)]="consoleCommand"
+          (keydown.enter)="handleConsoleSubmit()"
+          placeholder="Type a command (e.g. help, status, ping, sysinfo)..."
+          class="flex-1 bg-transparent border-0 text-white font-mono text-xs focus:outline-none" 
+          autofocus />
+        <button 
+          (click)="handleConsoleSubmit()"
+          class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition-all cursor-pointer font-mono">
+          Run
+        </button>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ================= MODAL 2: NODE ACTIVE DIAGNOSTICS ================= -->
+@if (showNodeDiagnosticsModal()) {
+  <div class="fixed inset-0 z-[250] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 text-right" dir="rtl">
+    <div class="bg-[#111827] border border-white/10 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl space-y-6 animate-in zoom-in-95 duration-200">
+      
+      <div class="flex items-center justify-between border-b border-white/10 pb-4">
+        <div class="flex items-center gap-2.5">
+          <span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
+          <h3 class="text-lg font-black text-white">تشخيص العقدة العصبية</h3>
+        </div>
+        <button (click)="showNodeDiagnosticsModal.set(false)" class="text-slate-400 hover:text-white font-bold cursor-pointer">✕</button>
+      </div>
+
+      <div class="space-y-3 font-mono text-xs">
+        <div class="p-3 rounded-2xl bg-black/40 border border-white/5 flex items-center justify-between">
+          <span class="text-slate-400">معرف العقدة (Node ID):</span>
+          <span class="text-indigo-300 font-bold">{{ nodeId() }}</span>
+        </div>
+
+        <div class="p-3 rounded-2xl bg-black/40 border border-white/5 flex items-center justify-between">
+          <span class="text-slate-400">سرعة الاستجابة (Latency):</span>
+          <span class="text-emerald-400 font-bold">{{ pingLatency() }} ms</span>
+        </div>
+
+        <div class="p-3 rounded-2xl bg-black/40 border border-white/5 flex items-center justify-between">
+          <span class="text-slate-400">بروتوكول التشفير:</span>
+          <span class="text-white font-bold">{{ e2eeCipher() }}</span>
+        </div>
+
+        <div class="p-3 rounded-2xl bg-black/40 border border-white/5 flex items-center justify-between">
+          <span class="text-slate-400">حالة السجل السحابي:</span>
+          <span class="text-emerald-400 font-bold">متصل ومحمي ✅</span>
+        </div>
+      </div>
+
+      <button 
+        (click)="testPing()"
+        [disabled]="isTestingPing()"
+        class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-2xl transition-all shadow-lg shadow-indigo-600/30 cursor-pointer">
+        {{ isTestingPing() ? 'جاري فحص الاتصال...' : 'إعادة اختبار سرعة الاتصال 🔄' }}
+      </button>
+
+    </div>
+  </div>
+}
+
+<!-- ================= MODAL 3: AVATAR PICKER ================= -->
+@if (showAvatarPickerModal()) {
+  <div class="fixed inset-0 z-[250] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 text-right" dir="rtl">
+    <div class="bg-[#111827] border border-white/10 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl space-y-6 animate-in zoom-in-95 duration-200">
+      
+      <div class="flex items-center justify-between border-b border-white/10 pb-4">
+        <h3 class="text-lg font-black text-white">اختيار أيقونة الهوية العصبية</h3>
+        <button (click)="showAvatarPickerModal.set(false)" class="text-slate-400 hover:text-white font-bold cursor-pointer">✕</button>
+      </div>
+
+      <div class="space-y-4">
+        <label class="block text-xs font-bold text-slate-300">اختر من الأيقونات الجاهزة:</label>
+        
+        <div class="grid grid-cols-3 gap-3">
+          @for (avatar of presetAvatars; track avatar) {
+            <button 
+              (click)="selectAvatar(avatar)"
+              class="border-2 rounded-2xl overflow-hidden p-1 transition-all hover:scale-105 cursor-pointer"
+              [ngClass]="selectedAvatar() === avatar ? 'border-indigo-500 bg-indigo-950/40' : 'border-white/10 bg-black/40'">
+              <img [src]="avatar" alt="Avatar" class="w-full h-20 rounded-xl object-cover" />
+            </button>
+          }
+        </div>
+
+        <div class="pt-3 border-t border-white/10">
+          <label class="block text-xs font-bold text-slate-300 mb-2">أو ارفع صورة مخصصة من جهازك:</label>
+          <input 
+            type="file" 
+            accept="image/*"
+            (change)="onCustomAvatarUpload($event)"
+            class="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer" />
+        </div>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ================= MODAL 4: WALLET MANAGEMENT ================= -->
+@if (showWalletModal()) {
+  <div class="fixed inset-0 z-[250] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 text-right" dir="rtl">
+    <div class="bg-[#111827] border border-white/10 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl space-y-6 animate-in zoom-in-95 duration-200">
+      
+      <div class="flex items-center justify-between border-b border-white/10 pb-4">
+        <h3 class="text-lg font-black text-white flex items-center gap-2">
+          <span>💳</span> إدارة رصيد المحفظة
+        </h3>
+        <button (click)="showWalletModal.set(false)" class="text-slate-400 hover:text-white font-bold cursor-pointer">✕</button>
+      </div>
+
+      <div class="bg-black/40 border border-white/5 rounded-2xl p-5 text-center">
+        <span class="text-xs text-slate-400 font-bold">الرصيد الفعلي الحالي</span>
+        <div class="text-4xl font-black text-indigo-400 font-mono mt-1">{{ realCredits() }} Credits</div>
+      </div>
+
+      <div class="space-y-3">
+        <a [routerLink]="['/wallet']" (click)="showWalletModal.set(false)" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-sm rounded-2xl shadow-xl shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer">
+          الانتقال لمركز المحفظة الكامل ➔
+        </a>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ================= MODAL 5: LOCAL STORAGE MANAGER ================= -->
+@if (showStorageModal()) {
+  <div class="fixed inset-0 z-[250] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 text-right" dir="rtl">
+    <div class="bg-[#111827] border border-white/10 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl space-y-6 animate-in zoom-in-95 duration-200">
+      
+      <div class="flex items-center justify-between border-b border-white/10 pb-4">
+        <h3 class="text-lg font-black text-white flex items-center gap-2">
+          <span>💾</span> إدارة الذاكرة العصبية المؤقتة
+        </h3>
+        <button (click)="showStorageModal.set(false)" class="text-slate-400 hover:text-white font-bold cursor-pointer">✕</button>
+      </div>
+
+      <div class="space-y-3 font-mono text-xs">
+        <div class="p-3.5 rounded-2xl bg-black/40 border border-white/5 flex items-center justify-between">
+          <span class="text-slate-400">إجمالي الذاكرة المستخدمة:</span>
+          <span class="text-indigo-300 font-bold">{{ dataConsumption.storageUsedMB() }} MB</span>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-black/40 border border-white/5 flex items-center justify-between">
+          <span class="text-slate-400">سعة التخزين المتاحة:</span>
+          <span class="text-white font-bold">{{ dataConsumption.storageQuotaMB() }} MB</span>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-black/40 border border-white/5 flex items-center justify-between">
+          <span class="text-slate-400">آخر أصل تم مزامنته:</span>
+          <span class="text-emerald-400 font-bold truncate max-w-[180px]">{{ dataConsumption.lastSyncedAsset() }}</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button 
+          (click)="refreshMetrics(); showStorageModal.set(false)"
+          class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-2xl transition-all shadow-lg cursor-pointer">
+          تحسين وضغط الذاكرة ⚡
+        </button>
+      </div>
+
+    </div>
+  </div>
+}

@@ -1,313 +1,288 @@
-<div class="flex flex-col h-[calc(100vh-5rem)] sm:h-[calc(100vh-6rem)] max-w-5xl mx-auto pt-2 sm:pt-4 pb-3 sm:pb-6 px-2 sm:px-4 font-sans text-right relative" dir="rtl">
-  
-  <!-- Main Glass Container Card -->
-  <div class="flex-1 overflow-hidden flex flex-col glass rounded-2xl sm:rounded-[3.5rem] relative shadow-2xl border border-white/5 bg-slate-950/40 backdrop-blur-xl">
-    
-    <!-- 1. Header Toolbar Panel -->
-    <header class="p-3 sm:p-6 border-b border-white/5 flex flex-col md:flex-row items-center justify-between gap-2.5 sm:gap-4 relative z-10 bg-slate-950/20 backdrop-blur-md">
-      <div class="flex items-center gap-2 sm:gap-3 flex-row-reverse w-full md:w-auto justify-between md:justify-start">
-        <div class="flex items-center gap-2 flex-row-reverse">
-          <div class="size-8 sm:size-10 bg-indigo-500/10 border border-indigo-500/20 rounded-full flex items-center justify-center animate-pulse shrink-0">
-            <svg lucideIcon="sparkles" class="size-4 sm:size-5 text-indigo-400"></svg>
-          </div>
-          <div class="text-right">
-            <h2 class="text-sm sm:text-lg font-headline font-bold text-white tracking-tight flex items-center gap-1.5 justify-end">
-              نظام الحوار العصبي
-              <span class="text-[8px] sm:text-[9px] uppercase font-black px-1.5 sm:px-2 py-0.5 rounded-full border border-indigo-500/20 bg-indigo-500/5 text-indigo-400 tracking-wider">v5.5</span>
-            </h2>
-            <p class="text-[9px] sm:text-[10px] text-slate-400 hidden xs:block">مساعدك الذكي لتوليد المعرفة ودعم اتخاذ القرار.</p>
-          </div>
+<div class="h-[calc(100vh-5.5rem)] bg-[#0b0f19] text-slate-100 p-3 md:p-6 font-['Tajawal'] select-none flex items-center justify-center" dir="rtl">
+
+  <!-- ================= MAIN CENTERED CONTAINER CARD ================= -->
+  <div class="w-full max-w-5xl h-full bg-[#111827]/80 border border-white/10 rounded-[32px] md:rounded-[40px] shadow-2xl backdrop-blur-xl flex flex-col justify-between overflow-hidden relative">
+
+    <!-- ================= TOP HEADER (MINIMAL / INTEGRATED) ================= -->
+    <div class="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-black/20 shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+          <lucide-icon name="bot" class="w-5 h-5"></lucide-icon>
         </div>
-      </div>
-
-      <div class="flex items-center gap-2 sm:gap-3 w-full md:w-auto justify-between sm:justify-end">
-        <!-- Model Metadata display badge -->
-        <div *ngIf="selectedModelDetails" class="hidden sm:flex flex-col text-right px-3 py-1 bg-white/5 border border-white/5 rounded-xl">
-          <span class="text-[9px] text-indigo-400 font-bold">حدود الذاكرة والمدخلات</span>
-          <span class="text-[10px] text-slate-300 font-mono">المدخلات: {{ selectedModelDetails.inputLimit || '128k' }} | المخرجات: {{ selectedModelDetails.outputLimit || '4k' }}</span>
-        </div>
-
-        <!-- Model Selector dropdown -->
-        <select 
-          [ngModel]="chatService.selectedModel()"
-          (ngModelChange)="chatService.selectedModel.set($event)"
-          class="bg-slate-900 border border-white/10 h-8 sm:h-10 px-2 sm:px-4 rounded-xl text-white text-[11px] sm:text-xs font-bold focus:outline-none focus:border-indigo-500 cursor-pointer flex-1 sm:flex-none">
-          <option *ngFor="let m of chatService.activeModelsList" [value]="m.id" class="bg-slate-950 text-right">
-            {{ m.label }}
-          </option>
-        </select>
-
-        <!-- API Settings Trigger Button -->
-        <button 
-          (click)="showSettings.set(!showSettings())"
-          [class.bg-indigo-500]="showSettings()"
-          [class.text-white]="showSettings()"
-          class="h-8 sm:h-10 px-2.5 sm:px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 flex items-center gap-1.5 text-slate-300 hover:text-white transition-all text-[11px] sm:text-xs font-bold"
-          title="مفاتيح ومزودي API">
-          <svg lucideIcon="settings" class="size-3.5 sm:size-4"></svg>
-          <span class="hidden sm:inline">ربط API</span>
-        </button>
-
-        <button 
-          (click)="clearHistory()"
-          class="size-8 sm:size-10 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-red-400 transition-colors"
-          title="مسح السجل">
-          <svg lucideIcon="trash-2" class="size-3.5 sm:size-4"></svg>
-        </button>
-      </div>
-    </header>
-
-    <!-- 2. Settings Drawer overlay panel -->
-    <div 
-      *ngIf="showSettings()"
-      class="absolute inset-0 bg-slate-950/80 backdrop-blur-lg z-20 flex items-center justify-center p-6 animate-in fade-in duration-300">
-      
-      <div class="glass max-w-lg w-full rounded-[2.5rem] border border-white/10 bg-slate-900/90 shadow-2xl p-8 relative flex flex-col space-y-6">
-        
-        <!-- Header -->
-        <div class="flex items-center justify-between border-b border-white/5 pb-4">
-          <h3 class="text-base font-bold text-white flex items-center gap-2">
-            <svg lucideIcon="settings" class="size-5 text-indigo-400"></svg>
-            تعديل مزودات وربط مفاتيح الذكاء الاصطناعي
-          </h3>
-          <button 
-            (click)="showSettings.set(false)"
-            class="size-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-colors">
-            ✕
-          </button>
-        </div>
-
-        <!-- Connection Error Display -->
-        <div *ngIf="connectionError" class="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-xs text-right leading-relaxed animate-in slide-in-from-top-2">
-          <svg lucideIcon="alert-triangle" class="size-5 shrink-0"></svg>
-          <p class="flex-1">{{ connectionError }}</p>
-        </div>
-
-        <!-- Connection Success Display -->
-        <div *ngIf="connectionSuccess" class="p-4 bg-green-500/10 border border-green-500/20 rounded-2xl flex items-center gap-3 text-green-400 text-xs text-right leading-relaxed animate-in slide-in-from-top-2">
-          <svg lucideIcon="check-circle-2" class="size-5 shrink-0"></svg>
-          <p class="flex-1">تمت عملية الربط والتحقق من الموديلات والحدود المتاحة بنجاح! 🚀</p>
-        </div>
-
-        <div class="space-y-4">
-          <!-- Provider Selection -->
-          <div class="space-y-2">
-            <label class="text-xs font-bold text-slate-400 block">اختر مزود الخدمة (AI Provider)</label>
-            <div class="grid grid-cols-2 gap-2">
-              <button 
-                *ngFor="let prov of providersList"
-                (click)="selectedProvider = prov.id; connectionError = ''"
-                [class.border-indigo-500]="selectedProvider === prov.id"
-                [class.bg-indigo-500/10]="selectedProvider === prov.id"
-                [class.text-indigo-300]="selectedProvider === prov.id"
-                class="p-3 border border-white/5 hover:border-white/10 rounded-xl text-center text-xs font-bold text-slate-300 hover:text-white transition-all bg-white/5">
-                {{ prov.label }}
-              </button>
-            </div>
-          </div>
-
-          <!-- API Key Input -->
-          <div *ngIf="selectedProvider !== 'emulated'" class="space-y-2 animate-in slide-in-from-bottom-2">
-            <label class="text-xs font-bold text-slate-400 block">أدخل مفتاح الـ API Key الخاص بك</label>
-            <div class="relative">
-              <input 
-                [type]="showApiKey ? 'text' : 'password'"
-                [(ngModel)]="apiKeyInput"
-                placeholder="أدخل مفتاح الربط هنا (يتم حفظه محلياً بمتصفحك فقط)"
-                class="w-full bg-white/5 border border-white/10 h-11 rounded-xl text-white px-4 pl-12 text-right focus:outline-none focus:border-indigo-500 text-xs font-mono"
-              />
-              <button 
-                (click)="showApiKey = !showApiKey"
-                class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white flex items-center justify-center">
-                <svg [lucideIcon]="showApiKey ? 'eye-off' : 'eye'" class="size-4"></svg>
-              </button>
-            </div>
-            <!-- Gemini Help Guide -->
-            <p *ngIf="selectedProvider === 'google'" class="text-[10px] text-slate-500 leading-relaxed">
-              * للحصول على مفتاح مجاني لـ Gemini، تفضل بزيارة <a href="https://aistudio.google.com" target="_blank" class="text-indigo-400 hover:underline">Google AI Studio</a> واحصل على مفتاحك بلحظات.
-            </p>
-          </div>
-
-          <!-- Provider metadata helper information -->
-          <div class="p-4 bg-white/5 border border-white/5 rounded-2xl space-y-2 text-right">
-            <span class="text-xs font-bold text-slate-300 flex items-center gap-2 justify-end">
-              معلومات المزود النشط حالياً
-              <svg lucideIcon="cpu" class="size-4 text-indigo-400"></svg>
+        <div>
+          <h2 class="text-sm md:text-base font-black text-white flex items-center gap-2">
+            الدردشة الذكية
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 font-mono">
+              {{ chatService.selectedModel() }}
             </span>
-            <p class="text-[10px] text-slate-400 leading-relaxed">
-              عند ربط مفتاح API صالح، سيقوم النظام بالاتصال الفوري بمنافذ المزود المطور، وسوف يتم جرد النماذج وتعبئة قائمة الموديلات والحدود (Limits) تلقائياً لتتمكن من استخدامها في محادثاتك.
-            </p>
-          </div>
+          </h2>
         </div>
+      </div>
 
-        <!-- Footer Actions -->
-        <div class="flex items-center justify-end gap-2 border-t border-white/5 pt-4">
-          <button 
-            (click)="showSettings.set(false)"
-            class="h-10 px-6 rounded-xl border border-white/10 bg-transparent text-slate-400 hover:text-white text-xs font-bold transition-all">
-            إلغاء
-          </button>
-          <button 
-            (click)="handleConnect()"
-            [disabled]="isConnecting"
-            class="h-10 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
-            <svg *ngIf="isConnecting" lucideIcon="refresh-cw" class="size-4 animate-spin"></svg>
-            <span>{{ isConnecting ? 'جاري التحقق والاتصال...' : 'حفظ ومزامنة المفاتيح' }}</span>
-          </button>
-        </div>
+      <div class="flex items-center gap-2">
+        <!-- Clear Chat Button -->
+        <button 
+          (click)="clearHistory()" 
+          class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
+          title="مسح سجل المحادثة">
+          <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
+        </button>
 
+        <!-- Provider Settings Button -->
+        <button 
+          (click)="showSettings.set(!showSettings())" 
+          [ngClass]="showSettings() ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 hover:text-white'"
+          class="p-2 rounded-xl border border-white/10 transition-all cursor-pointer"
+          title="إعدادات مزودات الذكاء الاصطناعي">
+          <lucide-icon name="sliders" class="w-4 h-4"></lucide-icon>
+        </button>
       </div>
     </div>
 
-    <!-- 3. Scrollable Messages area -->
-    <main 
+    <!-- ================= MESSAGES SCROLLABLE AREA ================= -->
+    <div 
       #chatScrollContainer
-      class="flex-1 p-8 overflow-y-auto space-y-8 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
+      class="flex-1 p-4 md:p-8 overflow-y-auto space-y-6 custom-scrollbar relative">
       
-      <div class="space-y-8">
-        <div 
-          *ngFor="let msg of chatService.messages()"
-          class="flex gap-4 group"
-          [ngClass]="msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'">
-          
-          <!-- Avatar Icon -->
-          <div 
-            class="size-10 rounded-full flex items-center justify-center shrink-0 border"
-            [ngClass]="msg.role === 'user' ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' : 'bg-slate-800 border-white/5 text-slate-300'">
-            <svg [lucideIcon]="msg.role === 'user' ? 'user' : 'sparkles'" class="size-4"></svg>
-          </div>
-
-          <!-- Message details card -->
-          <div class="max-w-[75%] space-y-1">
-            <div class="flex items-center gap-2 flex-row-reverse">
-              <span class="text-[10px] text-slate-500 font-mono">{{ msg.timestamp | date:'shortTime' }}</span>
-              <span 
-                *ngIf="msg.role === 'assistant'" 
-                class="text-[8px] px-2 py-0.5 rounded bg-white/5 border border-white/5 text-slate-400 font-mono">
-                {{ msg.engine }}
-              </span>
-            </div>
-
-            <!-- Message bubble glass -->
-            <div 
-              class="rounded-[2rem] p-5 shadow-lg relative border text-right leading-relaxed text-sm"
-              [ngClass]="msg.role === 'user' ? 'bg-indigo-600/10 border-indigo-500/10 text-white rounded-tr-none' : 'bg-white/5 border-white/5 text-slate-200 rounded-tl-none'">
-              
-              <!-- Text content with pre-wrap rendering for formatted codes -->
-              <p class="whitespace-pre-wrap select-text selection:bg-indigo-500/30">{{ msg.text }}</p>
-
-              <!-- Image/attachment embeds -->
-              <div *ngIf="msg.attachment" class="mt-4 border border-white/5 rounded-2xl overflow-hidden shadow-inner max-w-sm">
-                <img [src]="msg.attachment.url" [alt]="msg.attachment.name" class="w-full object-cover max-h-56" />
-                <div class="p-3 bg-slate-900/60 text-xs font-mono text-slate-400 text-center truncate border-t border-white/5">
-                  {{ msg.attachment.name }}
-                </div>
+      @for (msg of chatService.messages(); track msg.id) {
+        
+        <!-- User Message Bubble -->
+        @if (msg.role === 'user') {
+          <div class="flex items-start justify-end gap-3 max-w-[90%] md:max-w-[75%] mr-auto">
+            
+            <div class="space-y-1 text-right">
+              <div class="bg-indigo-600 text-white rounded-2xl rounded-tr-sm p-4 md:p-5 shadow-lg shadow-indigo-600/20 text-xs md:text-sm font-bold leading-relaxed">
+                <p class="whitespace-pre-wrap select-text">{{ msg.text }}</p>
+                
+                @if (msg.attachment) {
+                  <div class="mt-3 rounded-xl overflow-hidden border border-white/20 max-w-xs">
+                    <img [src]="msg.attachment.url" [alt]="msg.attachment.name" class="w-full h-auto object-cover max-h-48" />
+                  </div>
+                }
               </div>
             </div>
 
-            <!-- Action Toolbar (Visible on hover) -->
-            <div 
-              class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-row-reverse pt-1 px-2">
-              <button 
-                (click)="toggleAudio(msg)"
-                class="size-7 rounded-lg hover:bg-white/5 flex items-center justify-center text-slate-500 hover:text-white transition-colors"
-                title="تلاوة الرسالة عصبياً">
-                <svg [lucideIcon]="playingMessageId() === msg.id ? 'volume2' : 'volumeX'" class="size-3.5" [ngClass]="playingMessageId() === msg.id ? 'text-indigo-400 animate-pulse' : ''"></svg>
-              </button>
-              <button 
-                *ngIf="msg.role === 'user'"
-                (click)="editMessage(msg)"
-                class="size-7 rounded-lg hover:bg-white/5 flex items-center justify-center text-slate-500 hover:text-white transition-colors"
-                title="تعديل الرسالة">
-                <svg lucideIcon="settings" class="size-3.5"></svg>
-              </button>
-              <button 
-                (click)="deleteMessage(msg.id)"
-                class="size-7 rounded-lg hover:bg-white/5 flex items-center justify-center text-slate-500 hover:text-red-400 transition-colors"
-                title="حذف الرسالة">
-                <svg lucideIcon="trash-2" class="size-3.5"></svg>
-              </button>
+            <!-- User Avatar -->
+            <div class="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white shrink-0 mt-1">
+              <lucide-icon name="user" class="w-4 h-4"></lucide-icon>
             </div>
+
+          </div>
+        }
+
+        <!-- AI Assistant Message Bubble -->
+        @if (msg.role === 'assistant') {
+          <div class="flex items-start justify-start gap-3 max-w-[95%] md:max-w-[80%] ml-auto">
+            
+            <!-- AI Bot Avatar -->
+            <div class="w-9 h-9 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0 mt-1 shadow-lg shadow-indigo-600/10">
+              <lucide-icon name="bot" class="w-4 h-4"></lucide-icon>
+            </div>
+
+            <div class="space-y-2 text-right flex-1">
+              <div class="bg-[#131b2e] border border-white/5 rounded-2xl rounded-tl-sm p-5 md:p-6 shadow-xl text-xs md:text-sm leading-relaxed space-y-4">
+                
+                <div class="text-slate-200 font-medium whitespace-pre-wrap select-text leading-relaxed">
+                  {{ msg.text }}
+                </div>
+
+                @if (msg.attachment) {
+                  <div class="mt-3 rounded-xl overflow-hidden border border-white/10 max-w-xs">
+                    <img [src]="msg.attachment.url" [alt]="msg.attachment.name" class="w-full h-auto object-cover max-h-48" />
+                  </div>
+                }
+
+                <!-- AI Message Footer: Model Badge & Text-To-Speech Button -->
+                <div class="flex items-center justify-between border-t border-white/5 pt-3 gap-2 flex-wrap">
+                  
+                  <!-- Model Engine Indicator -->
+                  <div class="flex items-center gap-1.5 text-[11px] text-slate-400 font-mono">
+                    <lucide-icon name="sparkles" class="w-3.5 h-3.5 text-indigo-400"></lucide-icon>
+                    <span>{{ msg.engine || 'googleai/gemini-2.5-flash' }}</span>
+                  </div>
+
+                  <!-- Real Speech Synthesis Button -->
+                  <button 
+                    (click)="toggleAudio(msg)"
+                    [ngClass]="playingMessageId() === msg.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 animate-pulse' : 'bg-black/30 hover:bg-white/10 text-slate-300 hover:text-white'"
+                    class="px-3.5 py-1.5 rounded-xl border border-white/10 text-[11px] font-bold transition-all flex items-center gap-1.5 cursor-pointer">
+                    <lucide-icon [name]="playingMessageId() === msg.id ? 'volume-x' : 'volume-2'" class="w-3.5 h-3.5 text-indigo-300"></lucide-icon>
+                    <span>{{ playingMessageId() === msg.id ? 'إيقاف النطق' : 'نطق الرد' }}</span>
+                  </button>
+
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        }
+
+      }
+
+      <!-- Thinking / Generating Animation Bubble -->
+      @if (isThinking) {
+        <div class="flex items-start justify-start gap-3 max-w-[80%] ml-auto animate-in fade-in duration-300">
+          <div class="w-9 h-9 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+            <lucide-icon name="bot" class="w-4 h-4 animate-bounce"></lucide-icon>
+          </div>
+          <div class="bg-[#131b2e] border border-white/5 rounded-2xl rounded-tl-sm p-4 flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-indigo-400 animate-ping"></div>
+            <span class="text-xs font-bold text-slate-300">جاري التفكير والتوليد العصبي...</span>
           </div>
         </div>
+      }
 
-        <!-- Simulated AI Thinking indicator -->
-        <div *ngIf="isThinking" class="flex items-center justify-start gap-3 px-14 text-[10px] text-indigo-400 animate-pulse font-black uppercase tracking-[0.2em]">
-          <svg lucideIcon="refresh-cw" class="size-4 animate-spin"></svg>
-          جاري التحليل واستدعاء الشبكات العصبية...
-        </div>
-      </div>
-
-      <!-- Presets suggest layout (Shown when there is only welcome message) -->
-      <div 
-        *ngIf="chatService.messages().length <= 1"
-        class="mt-16 max-w-2xl mx-auto space-y-6 animate-in fade-in duration-1000">
-        <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 text-center">أفكار مقترحة لبدء حوار تفاعلي</h3>
-        
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <button 
-            *ngFor="let p of presets"
-            (click)="usePreset(p.query)"
-            class="p-5 glass hover:bg-white/5 border border-white/5 hover:border-indigo-500/20 rounded-[2rem] text-right space-y-2 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between h-32 group">
-            <div class="size-8 rounded-xl bg-white/5 flex items-center justify-center border border-white/5 group-hover:border-indigo-500/20 text-slate-400 group-hover:text-indigo-400 transition-colors">
-              <svg [lucideIcon]="p.icon" class="size-4"></svg>
-            </div>
-            <p class="text-xs font-bold text-slate-300 group-hover:text-white transition-colors leading-relaxed">
-              {{ p.label }}
-            </p>
-          </button>
-        </div>
-      </div>
-    </main>
-
-    <!-- 4. Bottom Input panel -->
-    <footer class="p-3 sm:p-6 border-t border-white/5 relative z-10 bg-slate-950/20 backdrop-blur-md">
-      
-      <!-- Attachment preview bar -->
-      <div *ngIf="uploadedAttachment" class="mb-2 sm:mb-4 p-2 sm:p-3 bg-indigo-500/5 border border-indigo-500/10 rounded-xl sm:rounded-2xl flex items-center justify-between flex-row-reverse max-w-sm ml-auto animate-in slide-in-from-bottom-2">
-        <span class="text-[11px] sm:text-xs font-bold text-indigo-300 truncate pl-3">{{ uploadedAttachment.name }}</span>
+      <!-- Floating Quick Tools Button in Message Area -->
+      <div class="sticky bottom-2 flex justify-start">
         <button 
-          (click)="uploadedAttachment = null"
-          class="size-5 sm:size-6 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
-          ✕
+          (click)="showSettings.set(!showSettings())"
+          class="p-2.5 rounded-2xl bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/30 text-indigo-300 hover:text-white shadow-xl backdrop-blur-md transition-all cursor-pointer"
+          title="أدوات ونماذج الذكاء الاصطناعي">
+          <lucide-icon name="wand-2" class="w-4 h-4"></lucide-icon>
         </button>
       </div>
 
-      <!-- Edit message notification bar -->
-      <div *ngIf="editingMsgId" class="mb-2 sm:mb-3 px-2 sm:px-4 text-[11px] sm:text-xs font-bold text-indigo-400 flex items-center gap-1.5 justify-end">
-        <span>تعديل رسالة نشطة. اضغط Enter للتطبيق.</span>
-        <svg lucideIcon="settings" class="size-3 sm:size-3.5 animate-spin"></svg>
+    </div>
+
+    <!-- ================= ATTACHMENT PREVIEW (IF ATTACHED) ================= -->
+    @if (uploadedAttachment) {
+      <div class="px-6 py-2 bg-black/40 border-t border-white/5 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2">
+          <img [src]="uploadedAttachment.url" class="w-8 h-8 rounded-lg object-cover border border-white/10" />
+          <span class="text-xs text-slate-300 font-bold truncate max-w-xs">{{ uploadedAttachment.name }}</span>
+        </div>
+        <button (click)="removeAttachment()" class="text-slate-400 hover:text-red-400 text-xs font-bold cursor-pointer">✕ إلغاء</button>
       </div>
+    }
 
-      <div class="flex items-center gap-2 sm:gap-4 flex-row-reverse">
-        <!-- Mock attachment upload trigger button -->
-        <label 
-          class="size-10 sm:size-14 rounded-xl sm:rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0">
-          <svg lucideIcon="plus" class="size-4 sm:size-5"></svg>
-          <input type="file" class="hidden" (change)="triggerMockUpload($event)" accept="image/*" />
-        </label>
+    <!-- ================= BOTTOM INPUT BAR ================= -->
+    <div class="p-4 md:p-6 bg-black/30 border-t border-white/5 shrink-0">
+      <div class="flex items-center gap-3">
+        
+        <!-- Image Upload Button -->
+        <input 
+          #imageFileInput
+          type="file" 
+          accept="image/*" 
+          class="hidden" 
+          (change)="onImageSelected($event)" />
+        
+        <button 
+          (click)="imageFileInput.click()"
+          class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-[#131b2e] hover:bg-white/10 border border-white/10 flex items-center justify-center text-slate-400 hover:text-indigo-300 transition-all cursor-pointer shrink-0 shadow-md"
+          title="إرفاق صورة">
+          <lucide-icon name="image" class="w-5 h-5"></lucide-icon>
+        </button>
 
-        <!-- Message input bar -->
+        <!-- Main Input Field -->
         <div class="flex-1 relative">
           <input 
             type="text" 
             [(ngModel)]="inputText"
             (keydown.enter)="handleSend()"
-            placeholder="اسألني عن أي شيء، أو /imagine لرسم صورة..."
-            class="w-full bg-white/5 border border-white/10 h-10 sm:h-14 rounded-xl sm:rounded-2xl text-white px-3 sm:px-5 pl-12 sm:pl-16 text-right focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 text-xs sm:text-sm"
-          />
-
-          <!-- Send confirmation action button -->
-          <button 
-            (click)="handleSend()"
-            [disabled]="isThinking || (!inputText.trim() && !uploadedAttachment)"
-            class="absolute left-2 sm:left-3.5 top-1/2 -translate-y-1/2 size-7 sm:size-8 rounded-lg sm:rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-            <svg lucideIcon="send" class="size-3.5 sm:size-4 text-white"></svg>
-          </button>
+            placeholder="...Si-NeuroAI تحدث إلى" 
+            class="w-full h-12 md:h-14 bg-[#131b2e] border border-white/10 rounded-2xl px-5 text-white text-xs md:text-sm font-bold focus:outline-none focus:border-indigo-500 transition-colors shadow-inner" />
         </div>
+
+        <!-- Send / Magic Button -->
+        <button 
+          (click)="handleSend()"
+          [disabled]="isThinking || (!inputText.trim() && !uploadedAttachment)"
+          class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-xl shadow-indigo-600/30 active:scale-95">
+          <lucide-icon name="sparkles" class="w-5 h-5"></lucide-icon>
+        </button>
+
       </div>
-    </footer>
+    </div>
 
   </div>
+
+  <!-- ================= SETTINGS / API CONFIG MODAL ================= -->
+  @if (showSettings()) {
+    <div class="fixed inset-0 z-[250] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 text-right" dir="rtl">
+      <div class="bg-[#111827] border border-white/10 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl space-y-6 animate-in zoom-in-95 duration-200">
+        
+        <div class="flex items-center justify-between border-b border-white/10 pb-4">
+          <h3 class="text-lg font-black text-white flex items-center gap-2">
+            <lucide-icon name="sliders" class="w-5 h-5 text-indigo-400"></lucide-icon>
+            إعدادات ومزودات الذكاء الاصطناعي
+          </h3>
+          <button (click)="showSettings.set(false)" class="text-slate-400 hover:text-white font-bold cursor-pointer">✕</button>
+        </div>
+
+        @if (connectionError) {
+          <div class="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 text-xs font-bold">
+            {{ connectionError }}
+          </div>
+        }
+
+        @if (connectionSuccess) {
+          <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-300 text-xs font-bold">
+            تم تحديث ومزامنة المزود بنجاح! 🚀
+          </div>
+        }
+
+        <div class="space-y-4">
+          
+          <!-- Provider Selector -->
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-2">اختر مزود الخدمة (AI Provider):</label>
+            <div class="grid grid-cols-2 gap-2">
+              @for (prov of providersList; track prov.id) {
+                <button 
+                  (click)="selectedProvider = prov.id; connectionError = ''"
+                  [ngClass]="selectedProvider === prov.id ? 'bg-indigo-600 text-white font-black border-indigo-500' : 'bg-black/40 text-slate-400 border-white/10'"
+                  class="p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer">
+                  {{ prov.label }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- API Key Input -->
+          @if (selectedProvider !== 'emulated') {
+            <div class="space-y-2">
+              <label class="block text-xs font-bold text-slate-300">مفتاح الـ API الخاص بك:</label>
+              <div class="relative">
+                <input 
+                  [type]="showApiKey ? 'text' : 'password'"
+                  [(ngModel)]="apiKeyInput"
+                  placeholder="أدخل المفتاح هنا..." 
+                  class="w-full h-11 bg-black/40 border border-white/10 rounded-xl px-4 text-white text-xs font-mono focus:outline-none focus:border-indigo-500" />
+                <button 
+                  (click)="showApiKey = !showApiKey"
+                  class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs cursor-pointer">
+                  {{ showApiKey ? 'إخفاء' : 'عرض' }}
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- Model Selector -->
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1.5">النموذج النشط:</label>
+            <select 
+              [ngModel]="chatService.selectedModel()"
+              (ngModelChange)="chatService.selectedModel.set($event)"
+              class="w-full h-11 bg-black/40 border border-white/10 rounded-xl px-4 text-white text-xs font-bold focus:outline-none focus:border-indigo-500 cursor-pointer">
+              @for (m of chatService.activeModelsList; track m.id) {
+                <option [value]="m.id" class="bg-slate-900 text-white">{{ m.label }} ({{ m.id }})</option>
+              }
+            </select>
+          </div>
+
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <button (click)="showSettings.set(false)" class="px-5 py-2.5 rounded-xl bg-white/5 text-slate-300 text-xs font-bold cursor-pointer">إلغاء</button>
+          <button (click)="handleConnect()" [disabled]="isConnecting" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-black text-xs rounded-xl shadow-lg cursor-pointer">
+            {{ isConnecting ? 'جاري التحقق...' : 'حفظ الإعدادات ✅' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
 
 </div>

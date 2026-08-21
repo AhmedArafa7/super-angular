@@ -1,129 +1,83 @@
-import { Component, inject, signal, ElementRef, ViewChild, AfterViewChecked, OnInit } from '@angular/core';
+import { Component, inject, signal, ElementRef, ViewChild, AfterViewChecked, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Sparkles, Send, Trash2, Volume2, VolumeX, Settings, Plus, Eye, EyeOff, CheckCircle2, AlertTriangle, RefreshCw, Cpu, Layers } from 'lucide-angular';
-import { LucideDynamicIcon } from '@lucide/angular';
+import { LucideAngularModule } from 'lucide-angular';
 import { ChatService, ChatMessage, AIProviderModel } from '../../core/chat.service';
+import { SettingsService } from '../../core/settings.service';
+import { FirebaseService } from '../../core/services/firebase.service';
 
 @Component({
   selector: 'app-ai-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, LucideDynamicIcon],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.scss']
 })
-export class ChatComponent implements OnInit, AfterViewChecked {
+export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
   chatService = inject(ChatService);
+  settingsService = inject(SettingsService);
+  firebase = inject(FirebaseService);
 
   @ViewChild('chatScrollContainer') private scrollContainer!: ElementRef;
 
-  // Local state
+  // Local State
   inputText = '';
   isThinking = false;
   editingMsgId: string | null = null;
 
-  // Settings Panel state
+  // Settings & Quick Tools
   showSettings = signal<boolean>(false);
   selectedProvider: 'google' | 'openai' | 'groq' | 'emulated' = 'emulated';
   apiKeyInput = '';
   showApiKey = false;
 
   providersList: { id: 'google' | 'openai' | 'groq' | 'emulated'; label: string }[] = [
-    { id: 'emulated', label: 'المحاكي المجاني (Si-Neuro)' },
+    { id: 'emulated', label: 'المحاكي الذكي المجاني (Si-Neuro)' },
     { id: 'google', label: 'Google Gemini 🌐' },
     { id: 'openai', label: 'OpenAI GPT 🤖' },
     { id: 'groq', label: 'Groq Llama ⚡' }
   ];
-  
-  // Connection states
+
   isConnecting = false;
   connectionError = '';
   connectionSuccess = false;
 
-  // Attachment upload simulation state
+  // Attachment / Image upload state
   uploadedAttachment: { name: string; type: string; url: string } | null = null;
 
-  // Audio simulator playing state
+  // Real Web Speech Synthesis audio playing state
   playingMessageId = signal<string | null>(null);
-
-  // Preset ready prompts
-  presets = [
-    { label: 'بناء تطبيق Angular سريع', icon: 'zap', query: 'كيف يمكنني بناء تطبيق Angular سريع الاستجابة باستخدام Signals؟' },
-    { label: 'جدول بومودورو للتركيز', icon: 'clock', query: 'اكتب لي طريقة تنظيم جدول الدراسة الذكي بومودورو لتجنب التشتت.' },
-    { label: 'كود زر متوهج CSS', icon: 'terminal', query: 'اكتب لي كود CSS لتأثير زر متوهج زجاجي مذهل (Glassmorphism).' },
-    { label: 'توليد لوحة فنية عصبية', icon: 'sparkles', query: '/imagine مدينة مستقبلية نيون عائمة تحت المطر الكوني' }
-  ];
 
   ngOnInit(): void {
     this.selectedProvider = this.chatService.provider();
     this.apiKeyInput = this.chatService.apiKey();
   }
 
-  ngAfterViewChecked() {
+  ngAfterViewChecked(): void {
     this.scrollToBottom();
+  }
+
+  ngOnDestroy(): void {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
   }
 
   private scrollToBottom(): void {
     try {
-      this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
-    } catch (err) {}
+      if (this.scrollContainer?.nativeElement) {
+        this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
+      }
+    } catch {}
   }
 
-  // Get metadata details of selected model
+  // Get active model details
   get selectedModelDetails(): AIProviderModel | undefined {
     const activeId = this.chatService.selectedModel();
     return this.chatService.activeModelsList.find(m => m.id === activeId);
   }
 
-  // Connect to custom provider & fetch models
-  async handleConnect(): Promise<void> {
-    if (this.selectedProvider === 'emulated') {
-      this.chatService.saveConfig('emulated', '', []);
-      this.connectionSuccess = true;
-      this.connectionError = '';
-      setTimeout(() => {
-        this.showSettings.set(false);
-        this.connectionSuccess = false;
-      }, 1000);
-      return;
-    }
-
-    if (!this.apiKeyInput.trim()) {
-      this.connectionError = 'يرجى إدخال مفتاح API أولاً!';
-      return;
-    }
-
-    this.isConnecting = true;
-    this.connectionError = '';
-    this.connectionSuccess = false;
-
-    try {
-      const fetched = await this.chatService.fetchModels(this.selectedProvider, this.apiKeyInput.trim());
-      if (fetched.length === 0) {
-        throw new Error('لم يتم العثور على نماذج حوارية مدعومة لهذا الحساب.');
-      }
-      this.chatService.saveConfig(this.selectedProvider, this.apiKeyInput.trim(), fetched);
-      this.connectionSuccess = true;
-      setTimeout(() => {
-        this.showSettings.set(false);
-        this.connectionSuccess = false;
-      }, 1500);
-    } catch (e: any) {
-      console.error(e);
-      this.connectionError = e.message || 'فشل الاتصال بالمزود، تأكد من صحة المفتاح وجودة شبكة الإنترنت.';
-    } finally {
-      this.isConnecting = false;
-    }
-  }
-
-  // Trigger quick prompt preset
-  usePreset(query: string): void {
-    if (this.isThinking) return;
-    this.inputText = query;
-    this.handleSend();
-  }
-
-  // Send action
+  // Send message
   async handleSend(): Promise<void> {
     const text = this.inputText.trim();
     if (!text && !this.uploadedAttachment) return;
@@ -146,41 +100,112 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     this.scrollToBottom();
   }
 
-  // File select mock upload
-  triggerMockUpload(event: Event): void {
+  // File / Image selection handler
+  onImageSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      
       const reader = new FileReader();
       reader.onload = (e) => {
         this.uploadedAttachment = {
           name: file.name,
           type: file.type.startsWith('image/') ? 'image' : 'file',
-          url: e.target?.result as string || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop'
+          url: e.target?.result as string
         };
       };
       reader.readAsDataURL(file);
     }
   }
 
-  // Text-To-Speech audio simulation
+  removeAttachment(): void {
+    this.uploadedAttachment = null;
+  }
+
+  // Real Web Speech Synthesis Text-To-Speech
   toggleAudio(msg: ChatMessage): void {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      alert('متصفحك لا يدعم تحويل النصوص إلى كلام (Speech Synthesis)');
+      return;
+    }
+
     if (this.playingMessageId() === msg.id) {
+      window.speechSynthesis.cancel();
       this.playingMessageId.set(null);
       return;
     }
 
+    window.speechSynthesis.cancel();
     this.playingMessageId.set(msg.id);
 
-    const words = msg.text.split(' ').length;
-    const duration = Math.min(8000, Math.max(2000, words * 150));
+    // Clean markdown and code formatting for crystal-clear speech
+    const cleanText = msg.text
+      .replace(/```[\s\S]*?```/g, 'تم تضمين كود برمجي.')
+      .replace(/[#*_`~>-]/g, '')
+      .trim();
 
-    setTimeout(() => {
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = 'ar-SA';
+    utterance.rate = this.settingsService.speechRate() || 1.0;
+    utterance.pitch = this.settingsService.speechPitch() || 1.0;
+
+    const voices = window.speechSynthesis.getVoices();
+    const arVoice = voices.find(v => v.lang.startsWith('ar'));
+    if (arVoice) {
+      utterance.voice = arVoice;
+    }
+
+    utterance.onend = () => {
       if (this.playingMessageId() === msg.id) {
         this.playingMessageId.set(null);
       }
-    }, duration);
+    };
+
+    utterance.onerror = () => {
+      this.playingMessageId.set(null);
+    };
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  // Connect to custom AI Provider
+  async handleConnect(): Promise<void> {
+    if (this.selectedProvider === 'emulated') {
+      this.chatService.saveConfig('emulated', '', []);
+      this.connectionSuccess = true;
+      this.connectionError = '';
+      setTimeout(() => {
+        this.showSettings.set(false);
+        this.connectionSuccess = false;
+      }, 800);
+      return;
+    }
+
+    if (!this.apiKeyInput.trim()) {
+      this.connectionError = 'يرجى إدخال مفتاح API أولاً!';
+      return;
+    }
+
+    this.isConnecting = true;
+    this.connectionError = '';
+    this.connectionSuccess = false;
+
+    try {
+      const fetched = await this.chatService.fetchModels(this.selectedProvider, this.apiKeyInput.trim());
+      if (fetched.length === 0) {
+        throw new Error('لم يتم العثور على نماذج حوارية مدعومة لهذا الحساب.');
+      }
+      this.chatService.saveConfig(this.selectedProvider, this.apiKeyInput.trim(), fetched);
+      this.connectionSuccess = true;
+      setTimeout(() => {
+        this.showSettings.set(false);
+        this.connectionSuccess = false;
+      }, 1000);
+    } catch (e: any) {
+      console.error(e);
+      this.connectionError = e.message || 'فشل الاتصال بالمزود، تأكد من صحة المفتاح وجودة شبكة الإنترنت.';
+    } finally {
+      this.isConnecting = false;
+    }
   }
 
   // Edit / Delete actions
@@ -194,6 +219,8 @@ export class ChatComponent implements OnInit, AfterViewChecked {
   }
 
   clearHistory(): void {
-    this.chatService.clearHistory();
+    if (confirm('هل أنت متأكد من مسح سجل المحادثة؟')) {
+      this.chatService.clearHistory();
+    }
   }
 }

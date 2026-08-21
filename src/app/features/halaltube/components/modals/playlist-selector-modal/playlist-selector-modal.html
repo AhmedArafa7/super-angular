@@ -1,42 +1,103 @@
-<div class="modal-overlay" *ngIf="isOpen" (click)="onClose()">
+<div class="modal-overlay" *ngIf="isOpen" (click)="onClose()" dir="rtl">
   <div class="modal-content" (click)="$event.stopPropagation()">
+    
+    <!-- Modal Header -->
     <div class="modal-header">
-      <h2>حفظ في قائمة التشغيل</h2>
+      <div class="flex items-center gap-2">
+        <lucide-icon [img]="ListVideo" class="text-indigo-400"></lucide-icon>
+        <h2>حفظ في قائمة التشغيل</h2>
+      </div>
       <button class="close-btn" (click)="onClose()">
         <lucide-icon [img]="X"></lucide-icon>
       </button>
     </div>
     
     <div class="modal-body">
-      <div class="create-section">
-        <h3>إنشاء قائمة جديدة</h3>
-        <div class="create-form">
-          <input type="text" [(ngModel)]="newPlaylistName" placeholder="اسم القائمة">
-          <label class="checkbox">
-            <input type="checkbox" [(ngModel)]="isPrivate">
-            <lucide-icon [img]="isPrivate ? Lock : Globe"></lucide-icon>
-            <span>{{ isPrivate ? 'خاصة' : 'عامة' }}</span>
-          </label>
-          <button class="create-btn" (click)="onCreate()" [disabled]="!newPlaylistName.trim()">
-            <lucide-icon [img]="Plus"></lucide-icon>
-            <span>إنشاء</span>
-          </button>
+      
+      <!-- Video Target Banner (if provided) -->
+      <div *ngIf="videoToSave" class="video-target-preview">
+        <img [src]="videoToSave.thumbnail || 'assets/placeholder.jpg'" [alt]="videoToSave.title" class="preview-thumb" />
+        <div class="preview-info">
+          <span class="preview-tag">الفيديو المحدد:</span>
+          <h4 class="preview-title">{{ videoToSave.title }}</h4>
         </div>
       </div>
-      
+
+      <!-- Existing Playlists List -->
       <div class="playlists-section">
-        <h3>قوائمك</h3>
-        <div class="playlists-list">
-          <div *ngFor="let playlist of playlists" class="playlist-item" (click)="select.emit(playlist.id)">
-            <lucide-icon [img]="ListVideo" class="playlist-icon"></lucide-icon>
-            <div class="playlist-info">
-              <h4>{{ playlist.name }}</h4>
-              <p>{{ playlist.count }} فيديو</p>
+        <h3>اختر القوائم للحفظ:</h3>
+        
+        <div *ngIf="playlists.length === 0" class="empty-playlists">
+          <p>لا توجد قوائم تشغيل حتى الآن. أنشئ قائمتك الأولى بالأسفل!</p>
+        </div>
+
+        <div class="playlists-list" *ngIf="playlists.length > 0">
+          <div 
+            *ngFor="let playlist of playlists" 
+            class="playlist-item" 
+            [class.selected]="isVideoInPlaylist(playlist)"
+            (click)="togglePlaylist(playlist)">
+            
+            <div class="checkbox-box" [class.checked]="isVideoInPlaylist(playlist)">
+              <lucide-icon *ngIf="isVideoInPlaylist(playlist)" [img]="Check" size="14"></lucide-icon>
             </div>
+
+            <div class="playlist-info">
+              <h4>{{ playlist.title }}</h4>
+              <p>
+                {{ playlist.videos.length }} فيديو 
+                <span *ngIf="playlist.studyPlan.enabled" class="study-badge">
+                  • تذكير نشط ⏰
+                </span>
+              </p>
+            </div>
+
             <lucide-icon [img]="playlist.isPrivate ? Lock : Globe" class="privacy-icon"></lucide-icon>
           </div>
         </div>
       </div>
+
+      <!-- Create New Playlist Section -->
+      <div class="create-section">
+        <h3>إنشاء قائمة جديدة</h3>
+        
+        <div class="create-form">
+          <input type="text" [(ngModel)]="newPlaylistName" placeholder="اسم القائمة الجديدة (مثلاً: دورة البرمجة)">
+          
+          <textarea 
+            rows="2" 
+            [(ngModel)]="newPlaylistDesc" 
+            placeholder="وصف مختصر لمحتوى القائمة (اختياري)" 
+            class="desc-input">
+          </textarea>
+
+          <div class="options-row">
+            <label class="checkbox">
+              <input type="checkbox" [(ngModel)]="isPrivate">
+              <lucide-icon [img]="isPrivate ? Lock : Globe"></lucide-icon>
+              <span>{{ isPrivate ? 'خاصة' : 'عامة' }}</span>
+            </label>
+
+            <label class="checkbox study-toggle">
+              <input type="checkbox" [(ngModel)]="enableStudyPlan">
+              <lucide-icon [img]="Bell" class="text-indigo-400"></lucide-icon>
+              <span>تفعيل خطة المتابعة والتذكير</span>
+            </label>
+          </div>
+
+          <div *ngIf="enableStudyPlan" class="daily-target-row">
+            <span>الهدف اليومي:</span>
+            <input type="number" min="1" max="10" [(ngModel)]="dailyTarget" class="target-input" />
+            <span>فيديو يومياً</span>
+          </div>
+
+          <button class="create-btn" (click)="onCreate()" [disabled]="!newPlaylistName.trim()">
+            <lucide-icon [img]="Plus"></lucide-icon>
+            <span>إنشاء وحفظ الفيديو</span>
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>

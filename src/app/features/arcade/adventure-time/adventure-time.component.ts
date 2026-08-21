@@ -42,45 +42,45 @@ interface Particle {
         <button (click)="goBack()" class="flex items-center gap-2 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl text-sm font-bold transition-all">
           <lucide-icon [img]="ArrowRight" class="w-4 h-4"></lucide-icon> العودة
         </button>
-        <h1 class="text-xl font-black flex items-center gap-2 text-emerald-400">
-          <lucide-icon [img]="Sword" class="w-6 h-6"></lucide-icon> Adventure Time: Ooo
+        <h1 class="text-xl font-black flex items-center gap-2 text-amber-400">
+          <lucide-icon [img]="Sword" class="w-6 h-6 text-fuchsia-400"></lucide-icon> Loot & Scoot 🗡️💎
         </h1>
       </div>
 
       <!-- Menu Screen -->
       <div *ngIf="mode() === 'menu'" class="max-w-5xl mx-auto">
-        <div class="relative rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl mb-10">
-          <div class="h-[340px] bg-gradient-to-b from-sky-500/70 via-emerald-400/40 to-slate-950 flex items-center justify-center relative overflow-hidden">
-            <div class="absolute inset-0 opacity-30" style="background: radial-gradient(circle at 80% 20%, #fbbf24 0 60px, transparent 60px), radial-gradient(circle at 15% 85%, #4ade80 0 200px, transparent 200px), radial-gradient(circle at 85% 70%, #4ade80 0 260px, transparent 260px);"></div>
+        <div class="relative rounded-[2rem] overflow-hidden border border-fuchsia-500/30 shadow-2xl mb-10">
+          <div class="h-[340px] bg-gradient-to-b from-purple-900/90 via-fuchsia-950/70 to-slate-950 flex items-center justify-center relative overflow-hidden">
+            <div class="absolute inset-0 opacity-40" style="background: radial-gradient(circle at 75% 25%, #f59e0b 0 70px, transparent 70px), radial-gradient(circle at 20% 80%, #a855f7 0 200px, transparent 200px), radial-gradient(circle at 85% 70%, #ec4899 0 260px, transparent 260px);"></div>
             <div class="text-center z-10 px-6">
-              <div class="text-6xl mb-3">🗡️👑🐕</div>
-              <h2 class="text-3xl md:text-5xl font-black text-white drop-shadow-lg">مغامرة فين وجيك</h2>
-              <p class="mt-3 text-slate-100 font-medium drop-shadow">في أرض أوو السحرية... القرى، الأشرار، والأساطير تنتظرك!</p>
+              <div class="text-6xl mb-3 animate-bounce">🗡️💰🏃‍♂️</div>
+              <h2 class="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-fuchsia-300 to-emerald-300 drop-shadow-lg">Loot & Scoot</h2>
+              <p class="mt-3 text-slate-200 font-bold drop-shadow">اجمع الغنائم الساحرة، اضرب الوحوش بالسيف، واهرب بالكنوز قبل فوات الأوان!</p>
             </div>
           </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div class="bg-slate-900 rounded-3xl p-6 border border-white/5">
-            <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mb-4">
+          <div class="bg-slate-900/90 rounded-3xl p-6 border border-fuchsia-500/20 hover:border-fuchsia-500/50 transition-all">
+            <div class="w-12 h-12 rounded-2xl bg-fuchsia-500/20 border border-fuchsia-500/40 flex items-center justify-center text-fuchsia-400 mb-4">
               <lucide-icon [img]="Sword" class="w-6 h-6"></lucide-icon>
             </div>
-            <h3 class="text-lg font-black mb-2">القتال</h3>
-            <p class="text-sm text-slate-400 leading-relaxed">اضرب الوحوش بسيفك، اقضِ على الغوغاء واربح النقاط. كل قتيل يقرّبك من لقب بطل أوو!</p>
+            <h3 class="text-lg font-black mb-2 text-white">القتال والدفاع</h3>
+            <p class="text-sm text-slate-400 leading-relaxed">اضرب الوحوش بسيفك السحري، اقضِ على الأعداء ودافع عن نفسك للنجاة داخل الحصن.</p>
           </div>
-          <div class="bg-slate-900 rounded-3xl p-6 border border-white/5">
-            <div class="w-12 h-12 rounded-2xl bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-400 mb-4">
+          <div class="bg-slate-900/90 rounded-3xl p-6 border border-amber-500/20 hover:border-amber-500/50 transition-all">
+            <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 mb-4">
               <lucide-icon [img]="Map" class="w-6 h-6"></lucide-icon>
             </div>
-            <h3 class="text-lg font-black mb-2">الاستكشاف</h3>
-            <p class="text-sm text-slate-400 leading-relaxed">تجوّل في أرض أوو الواسعة، اجمع القلوب لاستعادة الصحة واكتشف كنوزاً مخبأة بين الأشجار.</p>
+            <h3 class="text-lg font-black mb-2 text-white">جمع الغنائم والكنوز</h3>
+            <p class="text-sm text-slate-400 leading-relaxed">استكشف الدهاليز المظلمة، اجمع الجواهر والذهب والقلوب لاستعادة طاقتك والصمود لأطول وقت.</p>
           </div>
-          <div class="bg-slate-900 rounded-3xl p-6 border border-white/5">
-            <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 mb-4">
+          <div class="bg-slate-900/90 rounded-3xl p-6 border border-emerald-500/20 hover:border-emerald-500/50 transition-all">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mb-4">
               <lucide-icon [img]="Users" class="w-6 h-6"></lucide-icon>
             </div>
-            <h3 class="text-lg font-black mb-2">الشخصيات</h3>
-            <p class="text-sm text-slate-400 leading-relaxed">العب بفين، رفيقه جيك، وشخصيات أخرى من عالم أوو. نسخة تجريبية كاملة قادمة قريباً!</p>
+            <h3 class="text-lg font-black mb-2 text-white">الهروب السريع</h3>
+            <p class="text-sm text-slate-400 leading-relaxed">اجمع كل ما تستطيع من الـ Loot واهرب بسرعة (Scoot) محققاً أعلى رقم قياسي بين أصدقائك!</p>
           </div>
         </div>
 

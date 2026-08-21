@@ -5,13 +5,17 @@ import { FormsModule } from '@angular/forms';
 import { 
   LucideAngularModule, Play, Clock, History, Bookmark, User, ChevronLeft, 
   Download, Trash2, WifiOff, Search, X, Sparkles, Film, CheckCircle2,
-  PauseCircle, LayoutGrid, List, Filter
+  PauseCircle, LayoutGrid, List, Filter, ListVideo, Plus, Flame, Bell,
+  BookOpen, Share2, Repeat, Check, ArrowRight
 } from 'lucide-angular';
 import { halaltubeService } from '../../halaltube.service';
+import { HalaltubePlaylistService } from '../../services/halaltube-playlist.service';
 import { IndexedDBService } from '../../../../core/services/indexed-db.service';
 import { VideoDownloadService } from '../../../../core/services/video-download.service';
 import { FirebaseService } from '../../../../core/services/firebase.service';
+import { ToastService } from '../../../../core/services/toast.service';
 import { checkIsShorts } from '../../halaltube.model';
+import { HalalPlaylist } from '../../models/halaltube-playlist.model';
 
 export interface HistoryGroup {
   period: string;
@@ -23,11 +27,152 @@ export interface HistoryGroup {
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule, LucideAngularModule],
   template: `
-    <div class="library-page w-full min-h-screen bg-[#0f0f0f] text-white p-4 sm:p-6 lg:p-8 overflow-y-auto pb-24" dir="rtl">
+    <div class="library-page w-full min-h-screen bg-[#0f0f0f] text-white p-4 sm:p-6 lg:p-8 overflow-y-auto pb-28" dir="rtl">
       <div class="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8">
         
-        <!-- Main Content (History & Saved) -->
-        <div class="flex-1 space-y-10">
+        <!-- Main Content -->
+        <div class="flex-1 space-y-12">
+
+          <!-- ========================================================= -->
+          <!-- PLAYLISTS & SMART STUDY PLANS SECTION                     -->
+          <!-- ========================================================= -->
+          @if (pageMode() === 'library' || pageMode() === 'playlists') {
+            <section class="space-y-6">
+              
+              <!-- Header Bar -->
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                    <lucide-icon [img]="ListVideo" size="22"></lucide-icon>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h2 class="text-xl font-black text-white">قوائم التشغيل وخطط المتابعة الذكية</h2>
+                      <span class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2.5 py-0.5 rounded-full text-xs font-bold">
+                        {{ playlistSvc.playlists().length }} قائمة
+                      </span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-0.5">مساراتك التعليمية، أهدافك اليومية، وإشعارات المتابعة المجدولة</p>
+                  </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-2.5 w-full sm:w-auto overflow-x-auto hide-scrollbar">
+                  <button 
+                    (click)="showImportModal.set(true)"
+                    class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-500/50 rounded-xl text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                    <lucide-icon [img]="Sparkles" size="14" class="text-indigo-400"></lucide-icon>
+                    <span>استيراد قائمة يوتيوب</span>
+                  </button>
+
+                  <button 
+                    (click)="showCreateModal.set(true)"
+                    class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black transition flex items-center gap-1.5 whitespace-nowrap shrink-0 shadow-lg shadow-indigo-600/30">
+                    <lucide-icon [img]="Plus" size="15"></lucide-icon>
+                    <span>إنشاء قائمة جديدة</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Playlists Grid -->
+              @if (playlistSvc.playlists().length === 0) {
+                <div class="text-slate-400 py-12 text-center bg-slate-900/40 border border-white/5 rounded-3xl flex flex-col items-center justify-center gap-3">
+                  <lucide-icon [img]="ListVideo" size="36" class="text-slate-600"></lucide-icon>
+                  <h4 class="text-sm font-bold text-slate-300">لا توجد قوائم تشغيل حتى الآن</h4>
+                  <p class="text-xs text-slate-500 max-w-xs">أنشئ قائمتك الخاصة أو استورد قائمة دروس من يوتيوب برابط واحد لمتابعتها بتذكيرات ذكية</p>
+                </div>
+              } @else {
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  @for (pl of playlistSvc.playlists(); track pl.id) {
+                    @let st = playlistSvc.calculateStats(pl);
+                    <div 
+                      class="group bg-slate-900/70 hover:bg-slate-900 border border-white/5 hover:border-indigo-500/40 rounded-3xl p-4 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 shadow-lg relative overflow-hidden">
+                      
+                      <!-- Ambient background glow on card -->
+                      <div class="absolute -top-10 -right-10 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl pointer-events-none"></div>
+
+                      <div class="space-y-3">
+                        <!-- Thumbnail Container -->
+                        <div class="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-950 border border-white/10 cursor-pointer"
+                             [routerLink]="['/stream/playlist', pl.id]">
+                          <img 
+                            [src]="pl.thumbnail || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800'" 
+                            [alt]="pl.title"
+                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            loading="lazy"
+                          />
+                          <!-- Video Count Badge -->
+                          <div class="absolute bottom-2 right-2 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-lg text-[10px] font-black text-white flex items-center gap-1 border border-white/10">
+                            <lucide-icon [img]="BookOpen" size="12" class="text-indigo-400"></lucide-icon>
+                            <span>{{ pl.videos.length }} فيديو</span>
+                          </div>
+
+                          <!-- Study Plan Active Tag -->
+                          @if (pl.studyPlan.enabled) {
+                            <div class="absolute top-2 right-2 bg-indigo-600 text-white text-[9px] font-black px-2 py-0.5 rounded-md shadow flex items-center gap-1">
+                              <lucide-icon [img]="Bell" size="10"></lucide-icon>
+                              <span>تذكير نشط</span>
+                            </div>
+                          }
+                        </div>
+
+                        <!-- Info -->
+                        <div>
+                          <h3 
+                            [routerLink]="['/stream/playlist', pl.id]"
+                            class="text-sm font-black text-white leading-snug group-hover:text-indigo-400 transition-colors line-clamp-2 cursor-pointer" 
+                            [title]="pl.title">
+                            {{ pl.title }}
+                          </h3>
+                          @if (pl.description) {
+                            <p class="text-[11px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">{{ pl.description }}</p>
+                          }
+                        </div>
+
+                        <!-- Progress Bar & Stats -->
+                        <div class="space-y-1.5 bg-slate-950/50 rounded-xl p-2.5 border border-white/5 text-[11px]">
+                          <div class="flex items-center justify-between font-bold">
+                            <span class="text-slate-400">الإنجاز: {{ st.watchedVideos }}/{{ st.totalVideos }}</span>
+                            <span class="text-indigo-400 font-black">{{ st.percentWatched }}%</span>
+                          </div>
+                          <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-indigo-500 to-emerald-400 transition-all duration-500" [style.width.%]="st.percentWatched"></div>
+                          </div>
+                          
+                          @if (pl.studyPlan.enabled && pl.studyPlan.streak && pl.studyPlan.streak > 0) {
+                            <div class="flex items-center gap-1 text-[10px] text-amber-400 font-bold pt-0.5">
+                              <lucide-icon [img]="Flame" size="12"></lucide-icon>
+                              <span>سلسلة الالتزام: {{ pl.studyPlan.streak }} أيام متتالية 🔥</span>
+                            </div>
+                          }
+                        </div>
+                      </div>
+
+                      <!-- Action Buttons -->
+                      <div class="flex items-center gap-2 pt-4 border-t border-white/5 mt-3">
+                        <button 
+                          (click)="openPlaylist(pl)"
+                          [disabled]="pl.videos.length === 0"
+                          class="flex-1 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-40 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition shadow-md shadow-indigo-600/20">
+                          <lucide-icon [img]="Play" size="13"></lucide-icon>
+                          <span>مشاهدة</span>
+                        </button>
+
+                        <button 
+                          [routerLink]="['/stream/playlist', pl.id]"
+                          class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-1">
+                          <span>التفاصيل</span>
+                          <lucide-icon [img]="ChevronLeft" size="14"></lucide-icon>
+                        </button>
+                      </div>
+
+                    </div>
+                  }
+                </div>
+              }
+
+            </section>
+          }
           
           <!-- ========================================================= -->
           <!-- HISTORY SECTION                                          -->
@@ -167,12 +312,11 @@ export interface HistoryGroup {
                 </div>
               } @else {
                 
-                <!-- Full History Mode: Grouped by Date Periods (اليوم، أمس، هذا الأسبوع، أقدم) -->
+                <!-- Full History Mode -->
                 @if (pageMode() === 'history') {
                   <div class="space-y-8">
                     @for (group of groupedHistory(); track group.period) {
                       <div class="space-y-4">
-                        <!-- Date Section Header -->
                         <div class="flex items-center gap-3 border-b border-white/5 pb-2">
                           <h3 class="text-sm font-black text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-xl">
                             {{ group.period }}
@@ -188,10 +332,8 @@ export interface HistoryGroup {
                                 class="w-full group cursor-pointer relative flex flex-col gap-2 bg-slate-900/50 p-2.5 rounded-2xl border border-white/5 hover:border-indigo-500/30 transition-all duration-300 hover:-translate-y-1"
                                 (click)="playVideo(item.videoId)">
                                 
-                                <!-- Thumbnail Container -->
                                 <div class="relative w-full rounded-xl overflow-hidden bg-slate-950 border border-white/5"
                                      [ngClass]="isShortsVideo(item) ? 'aspect-[9/16]' : 'aspect-video'">
-                                  
                                   <img 
                                     crossorigin="anonymous" 
                                     [src]="getSafeThumbnail(item)" 
@@ -200,32 +342,23 @@ export interface HistoryGroup {
                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                                     loading="lazy" 
                                   />
-
-                                  <!-- Delete Button Overlay -->
                                   <button 
                                     (click)="deleteHistoryItem(item.videoId, $event)"
                                     title="حذف من السجل"
                                     class="absolute top-2 left-2 w-7 h-7 rounded-lg bg-black/70 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center backdrop-blur-sm z-10">
                                     <lucide-icon [img]="X" size="14"></lucide-icon>
                                   </button>
-
-                                  <!-- Shorts Badge -->
                                   @if (isShortsVideo(item)) {
                                     <span class="absolute top-2 right-2 bg-gradient-to-br from-red-600 to-red-800 text-white px-2 py-0.5 rounded text-[8px] font-black uppercase shadow-lg">SHORTS</span>
                                   }
-
-                                  <!-- Duration Badge -->
                                   @if (item.duration) {
                                     <span class="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-[10px] font-bold">{{ item.duration }}</span>
                                   }
-
-                                  <!-- Real Progress Bar Overlay -->
                                   <div class="absolute bottom-0 inset-x-0 h-1 bg-slate-800/80">
                                     <div class="h-full bg-red-600 transition-all duration-500" [style.width.%]="item.progress || 5"></div>
                                   </div>
                                 </div>
 
-                                <!-- Info -->
                                 <div class="flex flex-col min-w-0 pt-0.5">
                                   <h3 class="text-xs font-bold text-white line-clamp-2 leading-snug group-hover:text-indigo-400 transition-colors">{{ item.title }}</h3>
                                   <div class="flex items-center justify-between text-[10px] text-slate-400 mt-1">
@@ -237,7 +370,7 @@ export interface HistoryGroup {
                             }
                           </div>
                         } @else {
-                          <!-- Detailed Horizontal List View Mode -->
+                          <!-- List View -->
                           <div class="space-y-3">
                             @for (item of group.items; track item.videoId) {
                               <div 
@@ -287,7 +420,7 @@ export interface HistoryGroup {
                     }
                   </div>
                 } @else {
-                  <!-- Library Home Overview Mode (Compact Horizontal Scroll) -->
+                  <!-- Overview Mode -->
                   <div class="flex gap-4 overflow-x-auto hide-scrollbar pb-4 snap-x">
                     @for (item of filteredHistory().slice(0, 8); track item.videoId) {
                       <div 
@@ -352,7 +485,7 @@ export interface HistoryGroup {
                           [src]="item.thumbnail || 'assets/placeholder.jpg'" 
                           [alt]="item.title" 
                           class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                          loading="lazy"
+                          loading="lazy" 
                         />
                         <button 
                           (click)="deleteDownload(item.videoId, $event)"
@@ -376,6 +509,10 @@ export interface HistoryGroup {
               }
             </section>
           }
+
+          <!-- ========================================================= -->
+          <!-- LIKED & SAVED SECTION                                     -->
+          <!-- ========================================================= -->
           @if (pageMode() === 'library' || pageMode() === 'liked') {
             <section class="space-y-6">
               <div class="flex items-center justify-between border-b border-white/10 pb-4">
@@ -416,7 +553,7 @@ export interface HistoryGroup {
                           (error)="onThumbnailError($event, item)"
                           [alt]="item.title" 
                           class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                          loading="lazy"
+                          loading="lazy" 
                         />
                       </div>
                       <div class="flex flex-col min-w-0 pt-0.5">
@@ -447,6 +584,10 @@ export interface HistoryGroup {
 
               <div class="space-y-3.5">
                 <div class="flex justify-between items-center text-xs font-bold">
+                  <span class="text-slate-400">قوائم التشغيل</span>
+                  <span class="text-white font-black bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 px-2.5 py-1 rounded-lg">{{ playlistSvc.playlists().length }}</span>
+                </div>
+                <div class="flex justify-between items-center text-xs font-bold">
                   <span class="text-slate-400">الاشتراكات</span>
                   <span class="text-white font-black bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">{{ halaltube.subscriptions().length }}</span>
                 </div>
@@ -465,6 +606,102 @@ export interface HistoryGroup {
 
       </div>
     </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL: CREATE NEW PLAYLIST                                -->
+    <!-- ========================================================= -->
+    @if (showCreateModal()) {
+      <div class="fixed inset-0 bg-black/80 backdrop-blur-md z-[99999] flex items-center justify-center p-4" dir="rtl">
+        <div class="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-md p-6 space-y-5 shadow-2xl animate-in zoom-in-95">
+          <div class="flex items-center justify-between border-b border-white/10 pb-4">
+            <h3 class="text-base font-black text-white">إنشاء قائمة تشغيل جديدة</h3>
+            <button (click)="showCreateModal.set(false)" class="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center">
+              <lucide-icon [img]="X" size="16"></lucide-icon>
+            </button>
+          </div>
+
+          <div class="space-y-4 text-xs font-bold">
+            <div class="space-y-1.5">
+              <label class="text-slate-400 block">عنوان القائمة:</label>
+              <input type="text" [(ngModel)]="newPlaylistTitle" placeholder="مثلاً: دورة البرمجة والتطوير" class="w-full bg-slate-950 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500" />
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="text-slate-400 block">الوصف (اختياري):</label>
+              <textarea rows="2" [(ngModel)]="newPlaylistDesc" placeholder="نبذة عن محتوى هذه القائمة" class="w-full bg-slate-950 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500"></textarea>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 border-t border-white/10 pt-4">
+            <button (click)="showCreateModal.set(false)" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition">
+              إلغاء
+            </button>
+            <button (click)="createNewPlaylist()" [disabled]="!newPlaylistTitle().trim()" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-black transition">
+              إنشاء القائمة
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ========================================================= -->
+    <!-- MODAL: IMPORT YOUTUBE PLAYLIST                            -->
+    <!-- ========================================================= -->
+    @if (showImportModal()) {
+      <div class="fixed inset-0 bg-black/80 backdrop-blur-md z-[99999] flex items-center justify-center p-4" dir="rtl">
+        <div class="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-md p-6 space-y-5 shadow-2xl animate-in zoom-in-95">
+          <div class="flex items-center justify-between border-b border-white/10 pb-4">
+            <div class="flex items-center gap-2">
+              <lucide-icon [img]="Sparkles" class="text-indigo-400" size="18"></lucide-icon>
+              <h3 class="text-base font-black text-white">استيراد قائمة تشغيل من يوتيوب</h3>
+            </div>
+            <button (click)="showImportModal.set(false)" class="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center">
+              <lucide-icon [img]="X" size="16"></lucide-icon>
+            </button>
+          </div>
+
+          <div class="space-y-4 text-xs font-bold">
+            <div class="space-y-1.5">
+              <label class="text-slate-400 block">رابط أو معرف قائمة يوتيوب (URL / Playlist ID):</label>
+              <input 
+                type="text" 
+                [(ngModel)]="importPlaylistUrl" 
+                placeholder="https://www.youtube.com/playlist?list=PL... أو PL..." 
+                class="w-full bg-slate-950 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500 font-mono" 
+                dir="ltr"
+              />
+            </div>
+
+            <div class="p-3 bg-slate-950 rounded-xl border border-white/5 space-y-3">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" [(ngModel)]="importEnableStudy" class="rounded text-indigo-600">
+                <span class="text-slate-300">تفعيل خطة المتابعة والتذكير التلقائية</span>
+              </label>
+
+              @if (importEnableStudy()) {
+                <div class="flex items-center gap-2 pt-1">
+                  <span class="text-slate-400">الهدف المخطط:</span>
+                  <input type="number" min="1" max="10" [(ngModel)]="importDailyTarget" class="w-16 bg-slate-900 border border-white/10 rounded-lg p-1.5 text-center text-white font-bold" />
+                  <span class="text-slate-400">فيديو يومياً</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 border-t border-white/10 pt-4">
+            <button (click)="showImportModal.set(false)" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition">
+              إلغاء
+            </button>
+            <button 
+              (click)="importYoutubePlaylist()" 
+              [disabled]="!importPlaylistUrl().trim() || isImporting()" 
+              class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-black transition">
+              {{ isImporting() ? 'جاري الاستيراد والفهرسة...' : 'استيراد وفهرسة' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: [`
     .hide-scrollbar {
@@ -478,10 +715,12 @@ export interface HistoryGroup {
 })
 export class halaltubeLibraryComponent implements OnInit {
   halaltube = inject(halaltubeService);
+  playlistSvc = inject(HalaltubePlaylistService);
   firebase = inject(FirebaseService);
   private idb = inject(IndexedDBService);
   private router = inject(Router);
   private downloadSvc = inject(VideoDownloadService);
+  private toast = inject(ToastService);
 
   get userName(): string {
     const user = this.firebase.currentUser();
@@ -519,6 +758,15 @@ export class halaltubeLibraryComponent implements OnInit {
   LayoutGrid = LayoutGrid;
   List = List;
   Filter = Filter;
+  ListVideo = ListVideo;
+  Plus = Plus;
+  Flame = Flame;
+  Bell = Bell;
+  BookOpen = BookOpen;
+  Share2 = Share2;
+  Repeat = Repeat;
+  Check = Check;
+  ArrowRight = ArrowRight;
 
   history = signal<any[]>([]);
   savedVideos = signal<any[]>([]);
@@ -528,11 +776,22 @@ export class halaltubeLibraryComponent implements OnInit {
   viewMode = signal<'grid' | 'list'>('grid');
   isHistoryPaused = signal<boolean>(localStorage.getItem('halaltube_history_paused') === 'true');
 
-  pageMode = computed<'library' | 'history' | 'liked' | 'downloads'>(() => {
+  // Modals state
+  showCreateModal = signal<boolean>(false);
+  showImportModal = signal<boolean>(false);
+  newPlaylistTitle = signal<string>('');
+  newPlaylistDesc = signal<string>('');
+  importPlaylistUrl = signal<string>('');
+  isImporting = signal<boolean>(false);
+  importEnableStudy = signal<boolean>(true);
+  importDailyTarget = signal<number>(2);
+
+  pageMode = computed<'library' | 'history' | 'liked' | 'downloads' | 'playlists'>(() => {
     const url = this.router.url;
     if (url.includes('/history')) return 'history';
     if (url.includes('/liked')) return 'liked';
     if (url.includes('/downloads')) return 'downloads';
+    if (url.includes('/playlists')) return 'playlists';
     return 'library';
   });
 
@@ -633,7 +892,7 @@ export class halaltubeLibraryComponent implements OnInit {
       const sortedHistory = (historyData || []).sort((a: any, b: any) => (b.watchedAt || 0) - (a.watchedAt || 0));
       this.history.set(sortedHistory);
 
-      // Async Legacy Record Resolver: Fix default titles "فيديو halaltube المميز"
+      // Async Legacy Record Resolver
       this.resolveLegacyHistoryRecords(sortedHistory);
 
       // Load Saved Videos
@@ -761,6 +1020,49 @@ export class halaltubeLibraryComponent implements OnInit {
 
   playVideo(id: string) {
     this.router.navigate(['/stream/watch', id]);
+  }
+
+  openPlaylist(playlist: HalalPlaylist) {
+    const stats = this.playlistSvc.calculateStats(playlist);
+    const startVideo = stats.nextVideo || playlist.videos[0];
+    if (startVideo) {
+      this.playlistSvc.initQueue(playlist.id, startVideo.id);
+      this.router.navigate(['/stream/watch', startVideo.id], {
+        queryParams: { list: playlist.id }
+      });
+    } else {
+      this.router.navigate(['/stream/playlist', playlist.id]);
+    }
+  }
+
+  async createNewPlaylist() {
+    const title = this.newPlaylistTitle().trim();
+    if (!title) return;
+
+    await this.playlistSvc.createPlaylist(title, this.newPlaylistDesc().trim());
+    this.newPlaylistTitle.set('');
+    this.newPlaylistDesc.set('');
+    this.showCreateModal.set(false);
+  }
+
+  async importYoutubePlaylist() {
+    const url = this.importPlaylistUrl().trim();
+    if (!url) return;
+
+    this.isImporting.set(true);
+    try {
+      const pl = await this.playlistSvc.importYoutubePlaylist(
+        url,
+        this.importEnableStudy(),
+        this.importDailyTarget()
+      );
+      if (pl) {
+        this.importPlaylistUrl.set('');
+        this.showImportModal.set(false);
+      }
+    } finally {
+      this.isImporting.set(false);
+    }
   }
 
   async deleteHistoryItem(videoId: string, event?: Event) {

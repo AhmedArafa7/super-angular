@@ -1,30 +1,27 @@
-.glass {
-  background: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+:host {
+  display: block;
+  width: 100%;
 }
 
-.glass:hover {
-  background: rgba(15, 23, 42, 0.6);
-  border-color: rgba(99, 102, 241, 0.2);
-  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.8),
-              0 0 50px -10px rgba(99, 102, 241, 0.1);
-}
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.3) transparent;
 
-.bg-indigo-650 {
-  background-color: rgb(67, 56, 202);
-}
+  &::-webkit-scrollbar {
+    height: 5px;
+    width: 5px;
+  }
 
-.text-slate-550 {
-  color: rgb(100, 116, 139);
-}
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
-.text-slate-650 {
-  color: rgb(71, 85, 105);
-}
+  &::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.3);
+    border-radius: 9999px;
+  }
 
-.bg-red-650 {
-  background-color: rgb(185, 28, 28);
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.6);
+  }
 }

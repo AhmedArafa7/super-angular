@@ -2,7 +2,7 @@ import { Component, inject, signal, computed, ChangeDetectionStrategy, OnInit } 
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
-import { LucideAngularModule, Home, Library, Users, Bell, Video, Film, History, Tv, TrendingUp, Music, Gamepad2, Newspaper, GraduationCap, Menu, PlusCircle, MoreVertical, Settings, Sparkles, ExternalLink } from 'lucide-angular';
+import { LucideAngularModule, Home, Library, Users, Bell, Video, Film, History, Tv, TrendingUp, Music, Gamepad2, Newspaper, GraduationCap, Menu, PlusCircle, MoreVertical, Settings, Sparkles, ExternalLink, ListVideo } from 'lucide-angular';
 import { halaltubeService } from '../../halaltube.service';
 import { IndexedDBService } from '../../../../core/services/indexed-db.service';
 import { ContextMenuService } from '../../../../shared/components/context-menu/context-menu.service';
@@ -66,6 +66,7 @@ export class halaltubeSidebarComponent implements OnInit {
     {
       title: 'أنت',
       items: [
+        { label: 'قوائم التشغيل والمتابعة', icon: ListVideo, route: '/stream/playlists', active: () => this.router.url.includes('/stream/playlist'), section: 'you' },
         { label: 'المكتبة', icon: Library, route: '/stream/library', active: () => this.halaltube.activeTab() === 'library', section: 'you' },
         { label: 'سجل المشاهدة', icon: History, route: '/stream/history', active: () => this.halaltube.activeTab() === 'history', section: 'you' },
         { label: 'فيديوهات أعجبتني', icon: Tv, route: '/stream/liked', active: () => this.halaltube.activeTab() === 'liked', section: 'you' }

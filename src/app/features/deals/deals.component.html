@@ -1,190 +1,248 @@
-<div class="h-[calc(100vh-6rem)] flex flex-col text-white overflow-hidden animate-in fade-in duration-700 font-sans text-right" dir="rtl">
+<div class="min-h-screen bg-[#07090e] text-white p-4 md:p-8 lg:p-10 font-sans text-right" dir="rtl">
   
-  <!-- 1. HERO HEADER BAR -->
-  <header class="p-8 border-b border-white/5 bg-slate-900/10 shrink-0 space-y-6">
-    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 flex-row-reverse">
+  <div class="max-w-6xl mx-auto space-y-6">
+    
+    <!-- 1. HEADER SECTION (عروض المحلات) -->
+    <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       
-      <!-- Titles & Navigation back -->
-      <div class="space-y-1.5 flex-1">
-        <div class="flex items-center gap-3 flex-row-reverse justify-start">
-          <button 
-            *ngIf="activeView() === 'store-view'"
-            (click)="goBack()"
-            class="text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold gap-1 flex items-center justify-center">
-            ✕ العودة للمقارنات
-          </button>
-          <h2 class="text-3xl font-black text-white tracking-tighter">
-            {{ activeView() === 'store-view' ? selectedStore()?.name : 'مقارنة أسعار المحلات القريبة' }}
-          </h2>
-        </div>
-        <p class="text-xs text-slate-500 font-bold uppercase tracking-widest leading-none">
-          {{ activeView() === 'store-view' ? (selectedStore()?.type + ' · ' + selectedStore()?.address) : 'ابحث عن أي سلعة غذائية أو منزلية واعرف مين بيبيعها بأرخص سعر 💰' }}
+      <!-- Right: Main Title & Subtitle -->
+      <div class="space-y-1">
+        <h1 class="text-3xl md:text-4xl font-black text-white tracking-tight">
+          عروض المحلات
+        </h1>
+        <p class="text-xs md:text-sm text-slate-400 font-medium flex items-center gap-1.5">
+          <span>👌</span>
+          <span>ابحث عن أي منتج — واعرف مين ببيعه أرخص</span>
         </p>
       </div>
 
-      <!-- Action buttons -->
-      <div class="flex items-center gap-3 shrink-0">
+      <!-- Left: Add Deal Action Button -->
+      <div class="flex items-center gap-3">
         <button 
-          (click)="showAddDeal = true"
-          class="h-12 px-6 rounded-2xl bg-indigo-650 hover:bg-indigo-600 text-white font-black text-xs gap-2 flex items-center justify-center shadow-lg shadow-indigo-650/20 active:scale-95 transition-all">
+          (click)="openAddDealModal()"
+          class="h-12 px-6 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-650 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black text-xs sm:text-sm flex items-center gap-2 shadow-xl shadow-indigo-600/30 hover:scale-[1.02] active:scale-95 transition-all">
           <svg lucideIcon="plus" class="size-4.5"></svg>
-          إضافة عرض سعر جديد
+          <span>أضف عرض +</span>
+        </button>
+      </div>
+
+    </header>
+
+    <!-- 2. FULL-WIDTH SEARCH BAR -->
+    <div class="relative w-full">
+      <div class="relative flex items-center bg-[#101422]/90 border border-white/10 hover:border-indigo-500/40 rounded-2xl overflow-hidden shadow-xl transition-all">
+        <svg lucideIcon="search" class="absolute right-4 size-5 text-slate-500"></svg>
+        <input 
+          type="text" 
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          placeholder="ابحث عن أي منتج... أرز، زيت، سكر، فراخ" 
+          class="w-full h-14 pr-12 pl-24 bg-transparent text-sm text-white placeholder:text-slate-500 focus:outline-none text-right"
+        />
+        <button 
+          class="absolute left-2 h-10 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs transition-colors flex items-center gap-1.5 shadow-md">
+          <span>بحث</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 3. CATEGORIES FILTER CHIPS BAR -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+      
+      <!-- All Categories Chip -->
+      <button 
+        (click)="setCategory('all')"
+        [ngClass]="dealsService.activeCategory() === 'all' 
+          ? 'bg-indigo-600 text-white font-black shadow-lg shadow-indigo-600/30' 
+          : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white font-medium'"
+        class="h-10 px-5 rounded-full text-xs whitespace-nowrap transition-all border border-white/5 shrink-0">
+        الكل
+      </button>
+
+      <!-- Dynamic Category Chips -->
+      <button 
+        *ngFor="let cat of categoriesList"
+        (click)="setCategory(cat.id)"
+        [ngClass]="dealsService.activeCategory() === cat.id 
+          ? 'bg-indigo-600 text-white font-black shadow-lg shadow-indigo-600/30' 
+          : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white font-medium'"
+        class="h-10 px-4 rounded-full text-xs whitespace-nowrap transition-all border border-white/5 shrink-0 flex items-center gap-1.5">
+        <span>{{ cat.emoji }}</span>
+        <span>{{ cat.label }}</span>
+      </button>
+
+    </div>
+
+    <!-- 4. SORTING OPTIONS BAR -->
+    <div class="flex items-center justify-between border-b border-white/5 pb-3">
+      
+      <div class="flex items-center gap-1 text-xs text-slate-500 font-bold">
+        <span *ngIf="selectedStoreId()" class="flex items-center gap-2 bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full text-xs">
+          <span>تصفية حسب المحل</span>
+          <button (click)="selectedStoreId.set(null)" class="text-white hover:text-red-400">✕</button>
+        </span>
+        <span class="text-slate-400">عدد العروض: <strong class="text-white font-mono">{{ filteredDeals().length }}</strong></span>
+      </div>
+
+      <!-- Sorting Switcher -->
+      <div class="flex items-center gap-4 text-xs font-bold text-slate-400">
+        <button 
+          (click)="setSort('price')"
+          [ngClass]="dealsService.activeSort() === 'price' ? 'text-indigo-400 font-black' : 'hover:text-white'"
+          class="transition-colors flex items-center gap-1">
+          <span>الأرخص</span>
+          <svg lucideIcon="arrow-up-down" class="size-3.5"></svg>
+        </button>
+
+        <button 
+          (click)="setSort('discount')"
+          [ngClass]="dealsService.activeSort() === 'discount' ? 'text-indigo-400 font-black' : 'hover:text-white'"
+          class="transition-colors">
+          أكبر خصم
+        </button>
+
+        <button 
+          (click)="setSort('confirmations')"
+          [ngClass]="dealsService.activeSort() === 'confirmations' ? 'text-indigo-400 font-black' : 'hover:text-white'"
+          class="transition-colors">
+          الأكثر تأكيداً
+        </button>
+
+        <button 
+          (click)="setSort('newest')"
+          [ngClass]="dealsService.activeSort() === 'newest' ? 'text-indigo-400 font-black' : 'hover:text-white'"
+          class="transition-colors">
+          الأحدث
         </button>
       </div>
 
     </div>
 
-    <!-- Search box -->
-    <div class="relative w-full" *ngIf="activeView() !== 'store-view'">
-      <svg lucideIcon="search" class="absolute right-4 top-1/2 -translate-y-1/2 size-4.5 text-slate-550"></svg>
-      <input 
-        type="text" 
-        [ngModel]="searchQuery()"
-        (ngModelChange)="searchQuery.set($event)"
-        placeholder="ابحث عن أي سلعة... أرز، زيت، سكر، دجاج..." 
-        class="w-full h-14 pr-12 bg-white/5 border border-white/10 rounded-2xl text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 text-right"
-      />
-    </div>
-  </header>
-
-  <!-- 2. CATEGORIES & SORT FILTERS BAR -->
-  <div class="px-8 py-4 border-b border-white/5 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-    
-    <!-- Horizontal category tags scrollable -->
-    <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-none flex-row-reverse">
-      <button 
-        (click)="setCategory('all')"
-        [ngClass]="dealsService.activeCategory() === 'all' ? 'bg-indigo-600 text-white font-bold' : 'bg-white/5 text-slate-400 hover:text-white'"
-        class="h-9 px-5 rounded-xl text-[11px] whitespace-nowrap transition-all border border-white/5">
-        الكل
-      </button>
-
-      <button 
-        *ngFor="let cat of categoriesList"
-        (click)="setCategory(cat.id)"
-        [ngClass]="dealsService.activeCategory() === cat.id ? 'bg-indigo-600 text-white font-bold' : 'bg-white/5 text-slate-400 hover:text-white'"
-        class="h-9 px-5 rounded-xl text-[11px] whitespace-nowrap transition-all border border-white/5">
-        {{ cat.emoji }} {{ cat.label }}
-      </button>
-    </div>
-
-    <!-- Sort indicators selection -->
-    <div class="flex items-center gap-1.5 flex-row-reverse text-[10px] text-slate-500 font-bold shrink-0">
-      <svg lucideIcon="arrow-up-down" class="size-3.5"></svg>
-      <button 
-        (click)="setSort('price')"
-        [ngClass]="dealsService.activeSort() === 'price' ? 'text-white' : 'text-slate-650 hover:text-slate-300'"
-        class="px-2 py-1 rounded-md transition-colors">
-        الأرخص
-      </button>
-      <button 
-        (click)="setSort('discount')"
-        [ngClass]="dealsService.activeSort() === 'discount' ? 'text-white' : 'text-slate-650 hover:text-slate-300'"
-        class="px-2 py-1 rounded-md transition-colors">
-        أعلى خصم
-      </button>
-      <button 
-        (click)="setSort('confirmations')"
-        [ngClass]="dealsService.activeSort() === 'confirmations' ? 'text-white' : 'text-slate-650 hover:text-slate-300'"
-        class="px-2 py-1 rounded-md transition-colors">
-        الأكثر تأكيداً
-      </button>
-      <button 
-        (click)="setSort('newest')"
-        [ngClass]="dealsService.activeSort() === 'newest' ? 'text-white' : 'text-slate-650 hover:text-slate-300'"
-        class="px-2 py-1 rounded-md transition-colors">
-        الأحدث
-      </button>
-    </div>
-
-  </div>
-
-  <!-- 3. SCROLL AREA DATA RESULTS -->
-  <div class="flex-1 p-8 overflow-y-auto bg-slate-950/20">
-    
-    <!-- Custom card display lists -->
-    <div 
-      *ngIf="filteredDeals.length > 0; else emptyState"
-      class="max-w-4xl mx-auto space-y-4 pb-24">
+    <!-- 5. DEALS CARDS LIST (مطابقة دقيقة للصورة) -->
+    <div *ngIf="filteredDeals().length > 0; else emptyStateTmpl" class="space-y-4">
       
       <div 
-        *ngFor="let deal of filteredDeals; let i = index"
-        class="glass border border-white/5 rounded-3xl p-5 flex flex-col sm:flex-row items-center justify-between gap-6 hover:border-indigo-500/20 transition-all duration-300">
+        *ngFor="let deal of filteredDeals(); let i = index"
+        class="bg-[#0e131f]/95 hover:bg-[#121827] border border-white/10 hover:border-indigo-500/40 rounded-3xl p-5 md:p-6 transition-all duration-300 shadow-xl space-y-4">
         
-        <!-- Left Side: Price tags, discount details, and user votes actions -->
-        <div class="flex items-center gap-6 flex-row-reverse shrink-0">
+        <!-- Main Info Row -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           
-          <!-- Prices column -->
-          <div class="text-center min-w-[90px]">
-            <div class="flex items-baseline gap-0.5 justify-center">
-              <span class="text-3xl font-black text-white font-mono tracking-tight">{{ deal.price }}</span>
-              <span class="text-[10px] text-slate-500 font-bold">ج.م</span>
+          <!-- Right Side (in RTL): Rank Badge + Product Title + Store Info + Unit + Date -->
+          <div class="flex items-start gap-4">
+            
+            <!-- Rank Badge (e.g. #2, #4, #6) -->
+            <div class="size-11 sm:size-12 rounded-2xl bg-indigo-950/80 border border-indigo-500/30 text-indigo-300 font-black text-sm sm:text-base font-mono flex items-center justify-center shrink-0 shadow-inner">
+              {{ deal.rank || '#' + (i + 1) }}
             </div>
-            <span 
-              *ngIf="deal.originalPrice" 
-              class="text-xs text-slate-600 line-through block mt-1">
-              {{ deal.originalPrice }} ج.م
-            </span>
+
+            <!-- Product Details -->
+            <div class="space-y-1.5">
+              
+              <!-- Product Title -->
+              <h2 class="text-xl sm:text-2xl font-black text-white leading-tight">
+                {{ deal.productName }}
+              </h2>
+
+              <!-- Metadata Chips Row -->
+              <div class="flex items-center gap-2.5 flex-wrap text-xs text-slate-400">
+                
+                <!-- Store Name Button -->
+                <button 
+                  (click)="selectedStoreId.set(deal.storeId)"
+                  class="font-bold text-slate-300 hover:text-indigo-300 flex items-center gap-1 transition-colors">
+                  <span>🏪</span>
+                  <span>{{ deal.storeName }}</span>
+                </button>
+
+                <span>•</span>
+
+                <!-- Category Tag -->
+                <span class="text-slate-400 flex items-center gap-1">
+                  <span>{{ deal.categoryLabel || deal.category }}</span>
+                </span>
+
+                <span>•</span>
+
+                <!-- Unit Badge -->
+                <span class="bg-white/5 border border-white/10 text-slate-300 px-2 py-0.5 rounded-md text-[11px] font-bold">
+                  {{ deal.unit }}
+                </span>
+
+                <span>•</span>
+
+                <!-- Added By & Date -->
+                <span class="text-[11px] text-slate-500">
+                  أضاف {{ deal.addedByName }} • {{ (deal.createdAt | date:'yyyy/M/d') || '2026/3/10' }}
+                </span>
+
+              </div>
+
+            </div>
+
           </div>
 
-          <!-- Badges (discount percentage) -->
-          <div class="flex flex-col gap-1 items-end shrink-0">
-            <span 
-              *ngIf="getDiscountPercentage(deal) > 0"
-              class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-orange-500/10 text-orange-400 text-[10px] font-black border border-orange-500/20">
-              🏷️ خصم {{ getDiscountPercentage(deal) }}%−
-            </span>
-            <span 
-              *ngIf="dealsService.activeSort() === 'price' && i === 0"
-              class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-500/10 text-emerald-400 text-[10px] font-black border border-emerald-500/20">
-              🏆 الأرخص
-            </span>
+          <!-- Left Side (in RTL): Price and Discount Badge -->
+          <div class="flex sm:flex-col items-baseline sm:items-end justify-between sm:justify-center shrink-0">
+            
+            <div class="flex items-baseline gap-1">
+              <span class="text-3xl sm:text-4xl font-black text-white font-mono tracking-tight">
+                {{ deal.price }}
+              </span>
+              <span class="text-xs text-slate-400 font-bold">ج.م</span>
+            </div>
+
+            <div *ngIf="deal.originalPrice && deal.originalPrice > deal.price" class="flex items-center gap-2 mt-0.5">
+              <span class="text-xs text-slate-600 line-through font-mono">
+                {{ deal.originalPrice }} ج.م
+              </span>
+              <span class="text-[10px] font-black bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded">
+                خصم {{ getDiscountPercentage(deal) }}%−
+              </span>
+            </div>
+
           </div>
 
         </div>
 
-        <!-- Center Side: Product detail titles -->
-        <div class="flex-1 space-y-2 text-right">
-          <h3 class="text-lg font-black text-white leading-tight">
-            {{ deal.productName }}
-          </h3>
+        <!-- Branch / Store Note (if available) -->
+        <p *ngIf="deal.branchNote" class="text-xs text-slate-400 bg-white/[0.02] border border-white/5 p-2.5 rounded-xl">
+          ℹ️ {{ deal.branchNote }}
+        </p>
+
+        <!-- Bottom Action Row (Confirm / Report / Share) -->
+        <div class="pt-3 border-t border-white/5 flex items-center justify-between">
           
-          <div class="flex items-center gap-3 flex-row-reverse justify-start flex-wrap text-xs font-bold">
-            <!-- Link to see all store deals -->
+          <div class="flex items-center gap-2">
+            
+            <!-- Confirm Button (👍 تأكيد) -->
             <button 
-              (click)="viewStore({ id: deal.storeId, name: deal.storeName, type: '', address: '' })"
-              class="text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-              🏪 {{ deal.storeName }}
+              (click)="handleConfirm(deal)"
+              class="h-9 px-4 rounded-xl bg-white/5 hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-500/30 text-xs font-bold text-slate-300 hover:text-emerald-300 flex items-center gap-1.5 transition-all active:scale-95">
+              <span>👍</span>
+              <span>تأكيد</span>
+              <span *ngIf="deal.confirmations > 0" class="text-emerald-400 font-mono font-bold mr-1">({{ deal.confirmations }})</span>
             </button>
-            <span class="text-slate-500">·</span>
-            <span class="text-slate-500">📦 {{ deal.unit || 'سلعة عامة' }}</span>
-            <span class="text-slate-500">·</span>
-            <span class="text-slate-600 font-normal">أضيف بواسطة: {{ deal.addedByName }}</span>
-            <span class="text-slate-500">·</span>
-            <span class="text-slate-600 font-normal">{{ deal.createdAt | date:'shortDate' }}</span>
+
+            <!-- Report Button (🚩 إبلاغ) -->
+            <button 
+              (click)="handleReport(deal)"
+              class="h-9 px-3.5 rounded-xl bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/30 text-xs font-bold text-slate-400 hover:text-red-300 flex items-center gap-1.5 transition-all">
+              <svg lucideIcon="flag" class="size-3.5"></svg>
+              <span>إبلاغ</span>
+            </button>
+
           </div>
-        </div>
 
-        <!-- Right Side: Interactive confirmations and reports -->
-        <div class="flex items-center gap-3 shrink-0 flex-row-reverse">
-          
-          <!-- Confirm accuracy buttons -->
-          <button 
-            (click)="handleConfirm(deal)"
-            [ngClass]="deal.confirmedBy.includes('me') ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-white/5 text-slate-400 hover:bg-emerald-500/5 hover:text-emerald-400 border-transparent'"
-            class="h-10 px-4 rounded-xl text-[10px] font-black gap-1.5 flex items-center justify-center border transition-colors">
-            👍 
-            <span *ngIf="deal.confirmations > 0">{{ deal.confirmations }}</span>
-            تأكيد السعر
-          </button>
-
-          <!-- Report inaccurate prices -->
-          <button 
-            (click)="handleReport(deal)"
-            [ngClass]="deal.reportedBy.includes('me') ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-white/5 text-slate-450 hover:bg-red-500/5 hover:text-red-400 border-transparent'"
-            class="h-10 px-3 rounded-xl text-[10px] font-black gap-1 flex items-center justify-center border transition-colors">
-            🚩 إبلاغ
-          </button>
+          <!-- Share Button -->
+          <div class="flex items-center gap-2">
+            <button 
+              (click)="shareDeal(deal)"
+              class="h-9 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/10 text-xs transition-colors flex items-center gap-1"
+              title="مشاركة العرض">
+              <svg lucideIcon="share-2" class="size-3.5"></svg>
+            </button>
+          </div>
 
         </div>
 
@@ -192,177 +250,204 @@
 
     </div>
 
-    <!-- Empty listings stats -->
-    <ng-template #emptyState>
-      <div class="text-center py-20 space-y-6">
-        <div class="size-20 bg-white/5 rounded-full flex items-center justify-center mx-auto border border-white/5">
-          <svg lucideIcon="tag" class="size-8 text-slate-550"></svg>
+    <!-- Empty State -->
+    <ng-template #emptyStateTmpl>
+      <div class="py-24 flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-[3rem] text-center space-y-4">
+        <div class="size-20 rounded-full bg-white/5 flex items-center justify-center text-slate-500 border border-white/5">
+          <svg lucideIcon="tag" class="size-10"></svg>
         </div>
         <div>
-          <h4 class="font-bold text-slate-400 text-sm">مقارنات الأسعار فارغة حالياً</h4>
-          <p class="text-[10px] text-slate-500 mt-2 leading-relaxed">لم نجد عروض سلع تطابق معايير الفلترة المحددة.</p>
+          <h3 class="text-xl font-black text-slate-300">لا توجد عروض أسعار مطابقة حالياً</h3>
+          <p class="text-xs text-slate-500 mt-1 max-w-sm">جرب اختيار قسم آخر أو تغيير عبارة البحث، أو كن أول من يضيف عرض سعر لهذا المنتج!</p>
         </div>
+        <button 
+          (click)="openAddDealModal()"
+          class="h-11 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-all flex items-center gap-2">
+          <svg lucideIcon="plus" class="size-4"></svg>
+          <span>أضف أول عرض سعر</span>
+        </button>
       </div>
     </ng-template>
 
   </div>
 
-  <!-- 4. DIALOG MODAL: Add New Price Deal -->
-  <div *ngIf="showAddDeal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-slate-950 border border-white/10 rounded-[3rem] p-10 max-w-sm w-full space-y-6 relative overflow-hidden animate-in zoom-in-95 duration-250 text-right">
+  <!-- 6. ADD DEAL MODAL (+ أضف عرض) -->
+  <div *ngIf="showAddDeal()" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-[#101422] border border-white/10 rounded-[2.5rem] max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 md:p-8 space-y-6 text-right shadow-2xl relative animate-in zoom-in-95 duration-200">
       
+      <!-- Close Button -->
       <button 
-        (click)="showAddDeal = false"
-        class="absolute left-6 top-6 size-9 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+        (click)="showAddDeal.set(false)"
+        class="absolute left-6 top-6 size-10 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/10 flex items-center justify-center transition-colors">
         ✕
       </button>
 
+      <!-- Modal Title -->
       <div>
-        <h3 class="text-xl font-black text-white">إضافة عرض سعر جديد</h3>
-        <p class="text-xs text-slate-500 mt-2 leading-relaxed">أدخل السعر الذي شاهدته لتنبيه المستهلكين فوراً.</p>
+        <h2 class="text-2xl font-black text-white">إضافة عرض سعر جديد</h2>
+        <p class="text-xs text-slate-400 mt-1">شارك أسعار السلع والمحلات لمساعدة الجميع في معرفة أرخص مكان للشراء.</p>
       </div>
 
-      <div class="space-y-4 overflow-y-auto max-h-[60vh] px-1">
+      <!-- Form Fields -->
+      <div class="space-y-4">
         
-        <!-- Store Selector with add store shortcuts -->
-        <div class="space-y-2">
-          <div class="flex items-center justify-between flex-row-reverse">
-            <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">اختر المحل</label>
-            <button 
-              (click)="showAddStore = true"
-              class="text-[9px] text-indigo-400 hover:text-indigo-300 font-bold">
-              + تسجيل محل جديد
-            </button>
-          </div>
-          <select 
-            [(ngModel)]="newStoreId"
-            class="w-full bg-white/5 border border-white/10 h-12 px-4 rounded-xl text-xs text-white">
-            <option *ngFor="let st of stores" [value]="st.id" class="bg-slate-900">
-              {{ st.name }} ({{ st.type }})
-            </option>
-          </select>
-        </div>
-
-        <div class="space-y-2">
-          <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">اسم السلعة / المنتج</label>
-          <input 
-            type="text" 
-            [(ngModel)]="newProductName"
-            placeholder="مثال: أرز مصري الفيروز 5 كجم..."
-            class="w-full bg-white/5 border border-white/10 h-12 rounded-xl text-white px-4 text-right focus:outline-none focus:border-indigo-500 text-xs"
-          />
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div class="space-y-2">
-            <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">السعر الحالي (ج.م)</label>
+        <!-- Product Name & Unit -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="sm:col-span-2 space-y-1.5">
+            <label class="text-xs font-bold text-slate-300">اسم السلعة أو المنتج *</label>
             <input 
-              type="number" 
-              [(ngModel)]="newPrice"
-              class="w-full bg-white/5 border border-white/10 h-12 rounded-xl text-white px-4 text-right focus:outline-none focus:border-indigo-500 text-xs"
+              type="text" 
+              [(ngModel)]="newProductName"
+              placeholder="مثال: بيبسي 1 لتر، سكر الأسرة 1 كجم..."
+              class="w-full h-11 px-4 bg-white/5 border border-white/10 rounded-xl text-white text-xs focus:outline-none focus:border-indigo-500 text-right"
             />
           </div>
-          <div class="space-y-2">
-            <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">قبل الخصم (اختياري)</label>
-            <input 
-              type="number" 
-              [(ngModel)]="newOriginalPrice"
-              class="w-full bg-white/5 border border-white/10 h-12 rounded-xl text-white px-4 text-right focus:outline-none focus:border-indigo-500 text-xs"
-            />
-          </div>
-        </div>
 
-        <div class="grid grid-cols-2 gap-4">
-          <div class="space-y-2">
-            <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">فئة السلعة</label>
-            <select 
-              [(ngModel)]="newCategory"
-              class="w-full bg-white/5 border border-white/10 h-12 px-4 rounded-xl text-xs text-white">
-              <option value="groceries" class="bg-slate-900">البقالة والأغذية</option>
-              <option value="meat" class="bg-slate-900">اللحوم والأسماك</option>
-              <option value="bakery" class="bg-slate-900">المخبوزات</option>
-              <option value="electronics" class="bg-slate-900">الأجهزة المنزلية</option>
-              <option value="pharmacy" class="bg-slate-900">الصيدلية</option>
-              <option value="other" class="bg-slate-900">فئات أخرى</option>
-            </select>
-          </div>
-          <div class="space-y-2">
-            <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">الوحدة / الحجم</label>
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-300">الوحدة / الحجم *</label>
             <input 
               type="text" 
               [(ngModel)]="newUnit"
-              placeholder="مثال: 1 كجم، 500 جم..."
-              class="w-full bg-white/5 border border-white/10 h-12 rounded-xl text-white px-4 text-right focus:outline-none focus:border-indigo-500 text-xs"
+              placeholder="مثال: 1 لتر، 1 كجم، 500 جم..."
+              class="w-full h-11 px-4 bg-white/5 border border-white/10 rounded-xl text-white text-xs focus:outline-none focus:border-indigo-500 text-right"
             />
           </div>
         </div>
 
+        <!-- Store Selection + Add Store Button -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-slate-300">المحل أو السوبرماركت *</label>
+            <button 
+              (click)="showAddStore.set(true)"
+              class="text-indigo-400 hover:text-indigo-300 text-xs font-bold flex items-center gap-1">
+              <span>+ إضافة محل جديد</span>
+            </button>
+          </div>
+
+          <select 
+            [(ngModel)]="newStoreId"
+            class="w-full h-11 px-4 bg-[#141a29] border border-white/10 rounded-xl text-white text-xs focus:outline-none focus:border-indigo-500 text-right">
+            <option *ngFor="let s of stores()" [value]="s.id">{{ s.name }} ({{ s.type }} - {{ s.address }})</option>
+          </select>
+        </div>
+
+        <!-- Category & Prices -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-300">القسم / التصنيف *</label>
+            <select 
+              [(ngModel)]="newCategory"
+              class="w-full h-11 px-4 bg-[#141a29] border border-white/10 rounded-xl text-white text-xs focus:outline-none focus:border-indigo-500 text-right">
+              <option *ngFor="let cat of categoriesList" [value]="cat.id">{{ cat.emoji }} {{ cat.label }}</option>
+            </select>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-300">سعر العرض (ج.م) *</label>
+            <input 
+              type="number" 
+              [(ngModel)]="newPrice"
+              placeholder="مثال: 20"
+              min="0"
+              class="w-full h-11 px-4 bg-white/5 border border-white/10 rounded-xl text-white text-xs focus:outline-none focus:border-indigo-500 text-right font-mono"
+            />
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-300">السعر الأصلي (اختياري)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="newOriginalPrice"
+              placeholder="مثال: 25"
+              min="0"
+              class="w-full h-11 px-4 bg-white/5 border border-white/10 rounded-xl text-white text-xs focus:outline-none focus:border-indigo-500 text-right font-mono"
+            />
+          </div>
+        </div>
+
+        <!-- Branch / Notes -->
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-slate-300">الفرع أو ملاحظات العرض (اختياري)</label>
+          <input 
+            type="text" 
+            [(ngModel)]="newBranchNote"
+            placeholder="مثال: متوفر بفرع الميرغني، العرض ساري حتى نهاية الأسبوع..."
+            class="w-full h-11 px-4 bg-white/5 border border-white/10 rounded-xl text-white text-xs focus:outline-none focus:border-indigo-500 text-right"
+          />
+        </div>
+
       </div>
 
-      <button 
-        (click)="handlePublishDeal()"
-        [disabled]="!newProductName.trim() || !newStoreId"
-        class="w-full h-14 bg-indigo-650 hover:bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-650/20 transition-all flex items-center justify-center">
-        نشر العرض وتنبيه الجميع
-      </button>
+      <!-- Submit Button -->
+      <div class="pt-2">
+        <button 
+          (click)="handleSaveDeal()"
+          [disabled]="!newProductName.trim() || !newPrice"
+          class="w-full h-12 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 text-white font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/30 transition-all">
+          <svg lucideIcon="check" class="size-4"></svg>
+          <span>تأكيد ونشر عرض السعر</span>
+        </button>
+      </div>
+
     </div>
   </div>
 
-  <!-- 5. DIALOG MODAL: Create New Store -->
-  <div *ngIf="showAddStore" class="fixed inset-0 z-[60] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="bg-slate-950 border border-white/10 rounded-[3rem] p-10 max-w-sm w-full space-y-6 relative overflow-hidden animate-in zoom-in-95 duration-250 text-right">
+  <!-- 7. ADD STORE MODAL -->
+  <div *ngIf="showAddStore()" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-[#101422] border border-white/10 rounded-[2.5rem] max-w-md w-full p-6 md:p-8 space-y-6 text-right shadow-2xl relative animate-in zoom-in-95 duration-200">
       
+      <!-- Close Button -->
       <button 
-        (click)="showAddStore = false"
-        class="absolute left-6 top-6 size-9 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+        (click)="showAddStore.set(false)"
+        class="absolute left-6 top-6 size-10 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/10 flex items-center justify-center transition-colors">
         ✕
       </button>
 
       <div>
-        <h3 class="text-xl font-black text-white">تسجيل محل تجاري جديد</h3>
-        <p class="text-xs text-slate-500 mt-2 leading-relaxed">سجل المحل لتمكين إضافة مقارنات الأسعار بداخله.</p>
+        <h2 class="text-xl font-black text-white">إضافة متجر جديد</h2>
+        <p class="text-xs text-slate-400 mt-1">أضف بيانات المحل أو السوبرماركت لإدراج عروضه.</p>
       </div>
 
       <div class="space-y-4">
-        
-        <div class="space-y-2">
-          <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">اسم المحل</label>
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-slate-300">اسم المتجر / السوبرماركت *</label>
           <input 
             type="text" 
             [(ngModel)]="newStoreName"
-            placeholder="مثال: فتح الله ماركت..."
-            class="w-full bg-white/5 border border-white/10 h-12 rounded-xl text-white px-4 text-right focus:outline-none focus:border-indigo-500 text-xs"
+            placeholder="مثال: خير زمان، كازيون، كارفور..."
+            class="w-full h-11 px-4 bg-white/5 border border-white/10 rounded-xl text-white text-xs focus:outline-none focus:border-indigo-500 text-right"
           />
         </div>
 
-        <div class="space-y-2">
-          <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">نوع المنشأة</label>
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-slate-300">نوع النشاط</label>
           <input 
             type="text" 
             [(ngModel)]="newStoreType"
-            placeholder="مثال: سوبر ماركت، هايبر ماركت..."
-            class="w-full bg-white/5 border border-white/10 h-12 rounded-xl text-white px-4 text-right focus:outline-none focus:border-indigo-500 text-xs"
+            placeholder="مثال: سوبرماركت، هايبرماركت، عطارة..."
+            class="w-full h-11 px-4 bg-white/5 border border-white/10 rounded-xl text-white text-xs focus:outline-none focus:border-indigo-500 text-right"
           />
         </div>
 
-        <div class="space-y-2">
-          <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">العنوان التفصيلي</label>
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-slate-300">العنوان / الفرع</label>
           <input 
             type="text" 
             [(ngModel)]="newStoreAddress"
-            placeholder="مثال: سموحة، خلف النادي..."
-            class="w-full bg-white/5 border border-white/10 h-12 rounded-xl text-white px-4 text-right focus:outline-none focus:border-indigo-500 text-xs"
+            placeholder="مثال: فرع الدقي، شارع التحرير..."
+            class="w-full h-11 px-4 bg-white/5 border border-white/10 rounded-xl text-white text-xs focus:outline-none focus:border-indigo-500 text-right"
           />
         </div>
 
+        <button 
+          (click)="handleSaveStore()"
+          [disabled]="!newStoreName.trim()"
+          class="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-black text-xs transition-all flex items-center justify-center gap-2">
+          <span>حفظ المتجر</span>
+        </button>
       </div>
 
-      <button 
-        (click)="handleCreateStore()"
-        [disabled]="!newStoreName.trim() || !newStoreAddress.trim()"
-        class="w-full h-14 bg-indigo-650 hover:bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-650/20 transition-all flex items-center justify-center">
-        تأكيد تسجيل المحل
-      </button>
     </div>
   </div>
 

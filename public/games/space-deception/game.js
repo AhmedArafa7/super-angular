@@ -1,7 +1,8 @@
 const $ = id => document.getElementById(id);
 const showScreen = id => {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    $(id).classList.add('active');
+    const target = $(id);
+    if (target) target.classList.add('active');
 };
 
 // --- NETWORKING (PEER JS) ---
@@ -10,31 +11,32 @@ let conn = null; // Client connection to host
 let isHost = false;
 let hostConns = {}; // Host connections to clients
 
-let myId = null;
-let myName = '';
+let myId = 'local_player_' + Math.floor(Math.random() * 10000);
+let myName = 'كابتن أحمد';
 let roomId = '';
 
 // --- GAME STATE ---
 let gameState = 'LOBBY'; // LOBBY, PLAYING, MEETING, ENDED
-let players = {}; // id -> { name, color, x, y, role, isDead, isHost }
+let players = {}; // id -> { id, name, color, x, y, role, isDead, isHost, isBot, walkAnim }
 let bodies = []; // { x, y, color }
 let tasks = []; // Map tasks
 let totalTasksCompleted = 0;
-let totalTasksRequired = 10;
-let meetingData = { caller: '', timer: 120, votes: {}, chat: [] }; // votes: voterId -> votedId ('skip' or playerId)
+let totalTasksRequired = 8;
+let meetingData = { caller: '', timer: 60, votes: {}, chat: [] };
 let myRole = 'CREWMATE'; // CREWMATE, IMPOSTOR
 
-// Settings
-const MAP_WIDTH = 1200;
-const MAP_HEIGHT = 800;
-const SPEED = 4;
-const COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6'];
+// Settings & Colors
+const MAP_WIDTH = 1400;
+const MAP_HEIGHT = 900;
+const SPEED = 4.5;
+const COLORS = ['#ef4444', '#0284c7', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6'];
 let myColor = COLORS[0];
 
-// Input
+// Input keys state
 let keys = { w: false, a: false, s: false, d: false };
+let targetClickPos = null;
 
-// Canvas
+// Canvas & Camera
 const canvas = $('game-canvas');
 const ctx = canvas.getContext('2d');
 let camera = { x: 0, y: 0 };
@@ -46,40 +48,46 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
-// --- MAP & TASKS DEFINITION ---
+// --- MAP & ROOMS DEFINITIONS ---
 const rooms = [
-    { name: 'Cafeteria', x: 400, y: 100, w: 400, h: 300, color: '#1e293b' },
-    { name: 'Engine', x: 50, y: 400, w: 300, h: 300, color: '#334155' },
-    { name: 'Lab', x: 850, y: 400, w: 300, h: 300, color: '#0f172a' },
-    { name: 'Control', x: 450, y: 500, w: 300, h: 200, color: '#475569' }
+    { name: 'غرفة القيادة والاجتماعات (Cafeteria)', x: 450, y: 120, w: 500, h: 320, color: '#1e293b', icon: '☕' },
+    { name: 'غرفة المحركات البلازمية (Engines)', x: 60, y: 440, w: 340, h: 340, color: '#0f172a', icon: '⚡' },
+    { name: 'المختبر البيولوجي (MedBay & Lab)', x: 1000, y: 440, w: 340, h: 340, color: '#0f172a', icon: '🧪' },
+    { name: 'مركز الملاحة والأسلحة (Nav & Weapons)', x: 520, y: 560, w: 360, h: 260, color: '#1e293b', icon: '🎯' }
 ];
 
-// Corridors connecting rooms
 const corridors = [
-    { x: 200, y: 250, w: 200, h: 150 }, // Cafe to Engine
-    { x: 800, y: 250, w: 200, h: 150 }, // Cafe to Lab
-    { x: 550, y: 400, w: 100, h: 100 }  // Cafe to Control
+    { x: 220, y: 280, w: 230, h: 180 }, // Cafe to Engines
+    { x: 950, y: 280, w: 230, h: 180 }, // Cafe to Lab
+    { x: 630, y: 440, w: 140, h: 120 }  // Cafe to Nav
+];
+
+const vents = [
+    { id: 'v1', x: 480, y: 150 },
+    { id: 'v2', x: 350, y: 480 },
+    { id: 'v3', x: 1050, y: 480 }
 ];
 
 const taskLocations = [
-    { id: 1, x: 500, y: 150, name: 'تفريغ القمامة', doneBy: [] },
-    { id: 2, x: 100, y: 650, name: 'إصلاح الأسلاك', doneBy: [] },
-    { id: 3, x: 1000, y: 650, name: 'تحليل العينات', doneBy: [] },
-    { id: 4, x: 600, y: 650, name: 'تنزيل البيانات', doneBy: [] }
+    { id: 1, x: 560, y: 180, name: 'تفريغ القمامة الفضائية 🗑️', room: 'Cafeteria', doneBy: [] },
+    { id: 2, x: 840, y: 180, name: 'تحميل البيانات المشفرة 💾', room: 'Cafeteria', doneBy: [] },
+    { id: 3, x: 150, y: 680, name: 'معايرة طاقة المحرك ⚡', room: 'Engines', doneBy: [] },
+    { id: 4, x: 280, y: 520, name: 'إعادة توصيل الأسلاك 🔌', room: 'Engines', doneBy: [] },
+    { id: 5, x: 1240, y: 680, name: 'فحص العينات المجهرية 🔬', room: 'Lab', doneBy: [] },
+    { id: 6, x: 1100, y: 520, name: 'المسح الحيوي الشامل 🧬', room: 'Lab', doneBy: [] },
+    { id: 7, x: 600, y: 720, name: 'توجيه رادار الملاحة 📡', room: 'Nav', doneBy: [] },
+    { id: 8, x: 800, y: 720, name: 'شحن طوربيدات الدفاع 🚀', room: 'Nav', doneBy: [] }
 ];
-
-const dropshipImg = new Image();
-dropshipImg.src = 'dropship.png';
 
 // --- INITIALIZATION ---
 $('host-btn').onclick = () => {
-    myName = $('player-name').value.trim() || 'لاعب';
+    myName = $('player-name').value.trim() || 'كابتن أحمد';
     isHost = true;
     initPeer();
 };
 
 $('join-btn').onclick = () => {
-    myName = $('player-name').value.trim() || 'لاعب';
+    myName = $('player-name').value.trim() || 'مستكشف الفضاء';
     roomId = $('join-id').value.trim();
     if (!roomId) return alert('أدخل كود الغرفة');
     isHost = false;
@@ -93,7 +101,18 @@ function initPeer() {
         myId = id;
         if (isHost) {
             roomId = id;
-            players[myId] = { id: myId, name: myName, color: COLORS[0], x: 600, y: 250, role: 'CREWMATE', isDead: false, isHost: true };
+            players[myId] = {
+                id: myId,
+                name: myName,
+                color: myColor,
+                x: 600,
+                y: 250,
+                role: 'CREWMATE',
+                isDead: false,
+                isHost: true,
+                isBot: false,
+                walkAnim: 0
+            };
             gameState = 'LOBBY';
             showScreen('game-screen');
             updateLobbyUI();
@@ -104,11 +123,46 @@ function initPeer() {
         }
     });
 
+    peer.on('error', err => {
+        console.log('Peer fallback: Local solo play active', err);
+        // Fallback local host
+        if (!players[myId]) {
+            players[myId] = {
+                id: myId,
+                name: myName,
+                color: myColor,
+                x: 600,
+                y: 250,
+                role: 'CREWMATE',
+                isDead: false,
+                isHost: true,
+                isBot: false,
+                walkAnim: 0
+            };
+            isHost = true;
+            gameState = 'LOBBY';
+            showScreen('game-screen');
+            updateLobbyUI();
+            requestAnimationFrame(gameLoopClient);
+        }
+    });
+
     if (isHost) {
         peer.on('connection', connection => {
             connection.on('open', () => {
                 const newPlayerColor = COLORS[Object.keys(players).length % COLORS.length];
-                players[connection.peer] = { id: connection.peer, name: 'ضيف', color: newPlayerColor, x: 600 + Math.random()*40 - 20, y: 250 + Math.random()*40 - 20, role: 'CREWMATE', isDead: false, isHost: false };
+                players[connection.peer] = {
+                    id: connection.peer,
+                    name: 'ضيف فضائي',
+                    color: newPlayerColor,
+                    x: 600 + Math.random() * 40 - 20,
+                    y: 250 + Math.random() * 40 - 20,
+                    role: 'CREWMATE',
+                    isDead: false,
+                    isHost: false,
+                    isBot: false,
+                    walkAnim: 0
+                };
                 hostConns[connection.peer] = connection;
                 
                 connection.on('data', data => handleHostData(connection.peer, data));
@@ -126,27 +180,30 @@ function initPeer() {
     }
 }
 
-// Auto join or host from URL
+// Auto join or host from URL parameter or direct launch
 window.onload = () => {
     initColorPicker();
+    setupTouchAndDpadControls();
+    
     const params = new URLSearchParams(window.location.search);
     if (params.has('room')) {
         $('join-id').value = params.get('room');
     }
-    // Auto-host if mode=private or mode=local in arena
-    const mode = params.get('mode');
-    if (mode && !peer) {
-        myName = 'لاعب 1';
-        isHost = true;
-        initPeer();
-    }
+    
+    // Auto-host immediately for instant play
+    setTimeout(() => {
+        if (!peer && gameState === 'LOBBY') {
+            myName = 'كابتن أحمد';
+            isHost = true;
+            initPeer();
+        }
+    }, 500);
 };
 
 // --- NETWORKING LOGIC ---
-
 function setupClientConnection(connection) {
     connection.on('open', () => {
-        connection.send({ type: 'JOIN', name: myName });
+        connection.send({ type: 'JOIN', name: myName, color: myColor });
         gameState = 'LOBBY';
         showScreen('game-screen');
         updateLobbyUI();
@@ -183,7 +240,10 @@ function setupClientConnection(connection) {
 function handleHostData(peerId, data) {
     if (gameState === 'LOBBY') {
         if (data.type === 'JOIN') {
-            players[peerId].name = data.name;
+            if (players[peerId]) {
+                players[peerId].name = data.name;
+                if (data.color) players[peerId].color = data.color;
+            }
             broadcast({ type: 'UPDATE_STATE', players, gameState });
             updateLobbyUI();
         } else if (data.type === 'CHANGE_COLOR') {
@@ -201,20 +261,20 @@ function handleHostData(peerId, data) {
         }
     } else if (gameState === 'PLAYING') {
         if (data.type === 'MOVE') {
-            if (!players[peerId].isDead) {
+            if (players[peerId] && !players[peerId].isDead) {
                 players[peerId].x = data.x;
                 players[peerId].y = data.y;
             }
         } else if (data.type === 'KILL') {
-            if (players[peerId].role === 'IMPOSTOR' && !players[data.targetId].isDead) {
+            if (players[peerId] && players[peerId].role === 'IMPOSTOR' && players[data.targetId] && !players[data.targetId].isDead) {
                 players[data.targetId].isDead = true;
                 bodies.push({ x: players[data.targetId].x, y: players[data.targetId].y, color: players[data.targetId].color });
                 checkWinCondition();
             }
         } else if (data.type === 'REPORT') {
-            startMeeting(players[peerId].name);
+            startMeeting(players[peerId] ? players[peerId].name : 'أحد أفراد الطاقم');
         } else if (data.type === 'TASK') {
-            if (players[peerId].role === 'CREWMATE') {
+            if (players[peerId] && players[peerId].role === 'CREWMATE') {
                 let t = tasks.find(t => t.id === data.taskId);
                 if (t && !t.doneBy.includes(peerId)) {
                     t.doneBy.push(peerId);
@@ -228,18 +288,18 @@ function handleHostData(peerId, data) {
             meetingData.votes[peerId] = data.voteTarget;
             checkMeetingEnd();
         } else if (data.type === 'CHAT') {
-            meetingData.chat.push({ sender: players[peerId].name, text: data.text });
+            meetingData.chat.push({ sender: players[peerId] ? players[peerId].name : 'لاعب', text: data.text });
         }
     }
-    
-    // Broadcast state frequently handled in host game loop
 }
 
 function broadcast(data) {
-    Object.values(hostConns).forEach(conn => conn.send(data));
+    Object.values(hostConns).forEach(c => {
+        try { c.send(data); } catch (e) {}
+    });
 }
 
-// --- LOBBY UI & DROPSHIP SPACESHIP ---
+// --- COLOR PICKER & LOBBY UI ---
 function initColorPicker() {
     const container = $('color-dots-container');
     if (!container) return;
@@ -270,18 +330,46 @@ $('copy-link-btn').onclick = () => {
     if (roomId) url.searchParams.set('room', roomId);
     navigator.clipboard.writeText(url.href).then(() => {
         $('copy-link-btn').innerText = '✅ تم النسخ!';
-        setTimeout(() => $('copy-link-btn').innerText = '📋 نسخ', 2000);
+        setTimeout(() => $('copy-link-btn').innerText = '📋 نسخ الرابط', 2000);
     });
+};
+
+// Add Bots button
+const botNames = ['روبوت أزرق 🤖', 'روبوت أخضر 🤖', 'روبوت أصفر 🤖', 'روبوت بنفسجي 🤖', 'روبوت برتقالي 🤖'];
+$('add-bots-btn').onclick = () => {
+    if (!isHost) return;
+    const currentCount = Object.keys(players).length;
+    if (currentCount >= 8) return alert('وصلت السفينة إلى الحد الأقصى للطاقم (8 لاعبين)');
+    
+    const botId = 'bot_' + Math.random().toString(36).substr(2, 5);
+    const botColor = COLORS[currentCount % COLORS.length];
+    const botName = botNames[(currentCount - 1) % botNames.length] || `روبوت ${currentCount}`;
+    
+    players[botId] = {
+        id: botId,
+        name: botName,
+        color: botColor,
+        x: 600 + (Math.random() - 0.5) * 120,
+        y: 250 + (Math.random() - 0.5) * 80,
+        role: 'CREWMATE',
+        isDead: false,
+        isHost: false,
+        isBot: true,
+        walkAnim: 0,
+        targetTask: null
+    };
+    
+    broadcast({ type: 'UPDATE_STATE', players, gameState });
+    updateLobbyUI();
 };
 
 function updateLobbyUI() {
     if (gameState !== 'LOBBY') return;
     
-    // Update dropship HUD
     const dropshipHud = $('dropship-hud');
     if (dropshipHud) dropshipHud.classList.remove('hidden');
     
-    $('dropship-room-code').innerText = roomId || '...';
+    $('dropship-room-code').innerText = roomId ? roomId.substring(0, 10) + '...' : 'محلي (Solo)';
     
     const count = Object.keys(players).length;
     const startBtn = $('dropship-start-btn');
@@ -296,50 +384,56 @@ function updateLobbyUI() {
         waitingMsg.classList.remove('hidden');
     }
 
-    // Highlight active color dot
     const dots = document.querySelectorAll('.color-dot');
     dots.forEach(d => {
-        if (d.style.backgroundColor === myColor || d.style.backgroundColor === (players[myId] && players[myId].color)) {
+        if (d.style.backgroundColor === myColor || (players[myId] && d.style.backgroundColor === players[myId].color)) {
             d.classList.add('active');
         } else {
             d.classList.remove('active');
         }
     });
-
-    // Also update classic list if visible
-    const ul = $('players-ul');
-    if (ul) {
-        ul.innerHTML = '';
-        Object.values(players).forEach(p => {
-            const li = document.createElement('li');
-            li.innerHTML = `<span style="color:${p.color}">●</span> ${p.name} ${p.isHost ? '(مضيف)' : ''}`;
-            ul.appendChild(li);
-        });
-    }
 }
 
-// --- GAME START ---
-$('dropship-start-btn').onclick = () => $('start-game-btn').click();
-
-$('start-game-btn').onclick = () => {
+// --- GAME START & ROLES ---
+$('dropship-start-btn').onclick = () => {
     if (!isHost) return;
     
-    // Assign roles
+    // If playing solo with no other humans and no bots, auto add 3 smart bots
     const playerIds = Object.keys(players);
-    if (playerIds.length < 1) return alert('نحتاج لاعب واحد على الأقل للتجربة (في الواقع يفضل 4+)');
+    if (playerIds.length === 1) {
+        for (let i = 0; i < 3; i++) {
+            const botId = 'bot_' + Math.random().toString(36).substr(2, 5);
+            const botColor = COLORS[(i + 1) % COLORS.length];
+            players[botId] = {
+                id: botId,
+                name: botNames[i],
+                color: botColor,
+                x: 600 + (Math.random() - 0.5) * 80,
+                y: 250 + (Math.random() - 0.5) * 60,
+                role: 'CREWMATE',
+                isDead: false,
+                isHost: false,
+                isBot: true,
+                walkAnim: 0
+            };
+        }
+    }
     
-    // Randomly pick 1 impostor
-    const impostorId = playerIds[Math.floor(Math.random() * playerIds.length)];
-    playerIds.forEach(id => {
+    const allIds = Object.keys(players);
+    
+    // Pick 1 Impostor
+    const impostorId = allIds[Math.floor(Math.random() * allIds.length)];
+    allIds.forEach(id => {
         players[id].role = (id === impostorId) ? 'IMPOSTOR' : 'CREWMATE';
         players[id].isDead = false;
-        players[id].x = 600 + Math.random()*50;
-        players[id].y = 250 + Math.random()*50;
+        // Place in Cafeteria at spawn
+        players[id].x = 650 + (Math.random() - 0.5) * 120;
+        players[id].y = 250 + (Math.random() - 0.5) * 100;
     });
     
-    tasks = JSON.parse(JSON.stringify(taskLocations)); // Reset tasks
+    tasks = JSON.parse(JSON.stringify(taskLocations));
     totalTasksCompleted = 0;
-    totalTasksRequired = playerIds.length * tasks.length; // Max tasks
+    totalTasksRequired = allIds.length * 2;
     bodies = [];
     gameState = 'PLAYING';
     
@@ -348,12 +442,13 @@ $('start-game-btn').onclick = () => {
 };
 
 function startGameClient(data) {
+    if (!players[myId]) return;
     myRole = players[myId].role;
     myColor = players[myId].color;
     
-    $('role-title').innerText = myRole === 'IMPOSTOR' ? 'أنت المخرب 🔪' : 'أنت ضمن الطاقم 👨‍🚀';
+    $('role-title').innerText = myRole === 'IMPOSTOR' ? 'أنت المخرب الخائن 🔪' : 'أنت ضمن طاقم السفينة 👨‍🚀';
     $('role-title').className = myRole === 'IMPOSTOR' ? 'danger' : '';
-    $('role-subtitle').innerText = myRole === 'IMPOSTOR' ? 'اقتل الطاقم ولا تدعهم يكتشفوك' : 'أنجز المهام وابحث عن المخرب';
+    $('role-subtitle').innerText = myRole === 'IMPOSTOR' ? 'تسلل واغتال الطاقم أو قم بتخريب أنظمة السفينة دون كشف هويتك!' : 'أنجز مهام صيانة السفينة وابحث عن الخائن بينكم!';
     
     showScreen('role-screen');
     
@@ -362,14 +457,66 @@ function startGameClient(data) {
     setTimeout(() => {
         showScreen('game-screen');
         requestAnimationFrame(gameLoopClient);
-    }, 3000);
+    }, 2800);
     
     if (isHost) {
-        setInterval(hostGameLoop, 50); // 20 tick rate
+        setInterval(hostGameLoop, 50);
+        setInterval(updateAIBots, 250);
     }
 }
 
-// --- HOST GAME LOOP ---
+// --- AI BOTS CONTROLLER ---
+function updateAIBots() {
+    if (gameState !== 'PLAYING') return;
+    
+    Object.values(players).forEach(p => {
+        if (!p.isBot || p.isDead) return;
+        
+        // Impostor bot AI: stalk near player or kill if close
+        if (p.role === 'IMPOSTOR') {
+            const targets = Object.values(players).filter(other => other.id !== p.id && !other.isDead);
+            if (targets.length > 0) {
+                const target = targets[0];
+                const dist = Math.hypot(target.x - p.x, target.y - p.y);
+                if (dist > 50) {
+                    p.x += ((target.x - p.x) / dist) * (SPEED * 0.8);
+                    p.y += ((target.y - p.y) / dist) * (SPEED * 0.8);
+                } else if (dist < 45 && Math.random() < 0.2) {
+                    target.isDead = true;
+                    bodies.push({ x: target.x, y: target.y, color: target.color });
+                    checkWinCondition();
+                }
+            }
+        } else {
+            // Crewmate bot AI: wander towards tasks
+            if (!p.targetTask || Math.random() < 0.05) {
+                p.targetTask = tasks[Math.floor(Math.random() * tasks.length)];
+            }
+            if (p.targetTask) {
+                const dist = Math.hypot(p.targetTask.x - p.x, p.targetTask.y - p.y);
+                if (dist > 30) {
+                    p.x += ((p.targetTask.x - p.x) / dist) * (SPEED * 0.7);
+                    p.y += ((p.targetTask.y - p.y) / dist) * (SPEED * 0.7);
+                } else {
+                    if (!p.targetTask.doneBy.includes(p.id) && Math.random() < 0.1) {
+                        p.targetTask.doneBy.push(p.id);
+                        totalTasksCompleted++;
+                        checkWinCondition();
+                        p.targetTask = null;
+                    }
+                }
+            }
+        }
+        
+        // Report body if bot sees one
+        bodies.forEach(b => {
+            if (Math.hypot(p.x - b.x, p.y - b.y) < 70 && Math.random() < 0.2) {
+                startMeeting(p.name);
+            }
+        });
+    });
+}
+
 function hostGameLoop() {
     if (gameState !== 'PLAYING' && gameState !== 'MEETING') return;
     broadcast({ type: 'UPDATE_STATE', players, gameState, meetingData, totalTasksCompleted, bodies });
@@ -406,9 +553,11 @@ function endGameClient(winner) {
     if (winner === 'CREW') {
         $('result-title').innerText = 'فاز الطاقم! 🏆';
         $('result-title').style.color = '#10b981';
+        $('result-subtitle').innerText = 'تم القضاء على الخائن أو إنجاز جميع مهام السفينة بنجاح!';
     } else {
-        $('result-title').innerText = 'فاز المخربون! 🔪';
+        $('result-title').innerText = 'فاز المخرب الخائن! 🔪';
         $('result-title').style.color = '#ef4444';
+        $('result-subtitle').innerText = 'تمت تصفية الطاقم بالكامل والسيطرة على المركبة!';
     }
     
     if (isHost) {
@@ -423,33 +572,58 @@ function endGameClient(winner) {
 $('restart-btn').onclick = () => {
     if (!isHost) return;
     gameState = 'LOBBY';
+    Object.values(players).forEach(p => {
+        p.isDead = false;
+        p.x = 600 + (Math.random() - 0.5) * 60;
+        p.y = 250 + (Math.random() - 0.5) * 60;
+    });
     broadcast({ type: 'UPDATE_STATE', gameState, players });
-    showScreen('start-screen');
+    showScreen('game-screen');
+    updateLobbyUI();
 };
 
-// --- CLIENT GAME LOOP (INPUT & RENDERING) ---
-let targetClickPos = null;
+// --- CONTROLS (KEYBOARD + TOUCH + VIRTUAL DPAD + CLICK-TO-MOVE) ---
+function setupTouchAndDpadControls() {
+    // Canvas click & drag to move in BOTH LOBBY & PLAYING
+    canvas.addEventListener('mousedown', handlePointerMove);
+    canvas.addEventListener('mousemove', e => { if (e.buttons === 1) handlePointerMove(e); });
+    canvas.addEventListener('touchstart', handlePointerMove, { passive: false });
+    canvas.addEventListener('touchmove', handlePointerMove, { passive: false });
 
-canvas.addEventListener('mousedown', handlePointerStart);
-canvas.addEventListener('touchstart', handlePointerStart, { passive: false });
+    function handlePointerMove(e) {
+        if (e.cancelable) e.preventDefault();
+        window.focus();
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        const worldX = clientX - rect.left + camera.x;
+        const worldY = clientY - rect.top + camera.y;
+        targetClickPos = { x: worldX, y: worldY };
+    }
 
-function handlePointerStart(e) {
-    if (e.cancelable) e.preventDefault();
-    window.focus();
-    if (gameState !== 'PLAYING') return;
-    const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    
-    // Convert screen coordinates to world coordinates
-    const worldX = clientX - rect.left + camera.x;
-    const worldY = clientY - rect.top + camera.y;
-    targetClickPos = { x: worldX, y: worldY };
+    // Virtual D-Pad buttons
+    const bindDpad = (btnId, keyName) => {
+        const btn = $(btnId);
+        if (!btn) return;
+        const start = e => { e.preventDefault(); keys[keyName] = true; targetClickPos = null; };
+        const end = e => { e.preventDefault(); keys[keyName] = false; };
+        btn.addEventListener('mousedown', start);
+        btn.addEventListener('mouseup', end);
+        btn.addEventListener('mouseleave', end);
+        btn.addEventListener('touchstart', start, { passive: false });
+        btn.addEventListener('touchend', end, { passive: false });
+    };
+
+    bindDpad('dpad-up', 'w');
+    bindDpad('dpad-down', 's');
+    bindDpad('dpad-left', 'a');
+    bindDpad('dpad-right', 'd');
 }
 
+// Global Keyboard Listeners (ENABLED IN BOTH LOBBY & PLAYING!)
 window.addEventListener('keydown', e => {
     window.focus();
-    if (gameState !== 'PLAYING') return;
     targetClickPos = null;
     const k = (e.key || '').toLowerCase();
     if (k === 'w' || k === 'arrowup' || k === 'ص') keys.w = true;
@@ -469,55 +643,57 @@ window.addEventListener('keyup', e => {
     if (k === 'd' || k === 'arrowright' || k === 'ي') keys.d = false;
 });
 
-// Also listen to postMessage from parent iframe (arcade-arena)
-window.addEventListener('message', e => {
-    if (e.data) {
-        const k = (e.data.key || e.data.code || '').toLowerCase();
-        const isDown = e.data.type === 'keydown' || e.data.isDown === true;
-        if (k === 'w' || k === 'arrowup' || k === 'ص') keys.w = isDown;
-        if (k === 'a' || k === 'arrowleft' || k === 'ش') keys.a = isDown;
-        if (k === 's' || k === 'arrowdown' || k === 'س') keys.s = isDown;
-        if (k === 'd' || k === 'arrowright' || k === 'ي') keys.d = isDown;
-    }
-});
-
+// Map Boundary Collision
 function isInsideMap(px, py, radius) {
     if (gameState === 'LOBBY') {
-        // Dropship Spaceship Interior Bounds (Full Walkable Deck Area)
-        return (px >= 380 && px <= 820 && py >= 40 && py <= 450);
+        // Dropship Walkable Deck Bounds
+        return (px >= 380 && px <= 820 && py >= 50 && py <= 450);
     }
+    
     let points = [
-        {x: px - radius + 2, y: py},
-        {x: px + radius - 2, y: py},
-        {x: px, y: py - radius + 2},
-        {x: px, y: py + radius - 2}
+        { x: px - radius + 2, y: py },
+        { x: px + radius - 2, y: py },
+        { x: px, y: py - radius + 2 },
+        { x: px, y: py + radius - 2 }
     ];
     for (let p of points) {
         let inside = false;
-        for (let r of rooms) if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h) { inside = true; break; }
-        if (!inside) for (let c of corridors) if (p.x >= c.x && p.x <= c.x + c.w && p.y >= c.y && p.y <= c.y + c.h) { inside = true; break; }
+        for (let r of rooms) {
+            if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h) {
+                inside = true; break;
+            }
+        }
+        if (!inside) {
+            for (let c of corridors) {
+                if (p.x >= c.x && p.x <= c.x + c.w && p.y >= c.y && p.y <= c.y + c.h) {
+                    inside = true; break;
+                }
+            }
+        }
         if (!inside) return false;
     }
     return true;
 }
 
+// --- CLIENT GAME LOOP ---
 function gameLoopClient() {
     if (gameState !== 'PLAYING' && gameState !== 'LOBBY') return;
     
     let me = players[myId];
     if (!me) return;
     
-    // Movement
+    // Player Movement (Active in LOBBY and PLAYING)
     if (!me.isDead) {
         let newX = me.x;
         let newY = me.y;
+        let isMoving = false;
         
-        if (keys.w) newY -= SPEED;
-        if (keys.s) newY += SPEED;
-        if (keys.a) newX -= SPEED;
-        if (keys.d) newX += SPEED;
+        if (keys.w) { newY -= SPEED; isMoving = true; }
+        if (keys.s) { newY += SPEED; isMoving = true; }
+        if (keys.a) { newX -= SPEED; isMoving = true; }
+        if (keys.d) { newX += SPEED; isMoving = true; }
         
-        // Touch or Click Destination Movement
+        // Touch/Click to Move
         if (targetClickPos && !keys.w && !keys.a && !keys.s && !keys.d) {
             const dx = targetClickPos.x - me.x;
             const dy = targetClickPos.y - me.y;
@@ -525,13 +701,19 @@ function gameLoopClient() {
             if (dist > 6) {
                 newX += (dx / dist) * SPEED;
                 newY += (dy / dist) * SPEED;
+                isMoving = true;
             } else {
                 targetClickPos = null;
             }
         }
         
+        if (isMoving) {
+            me.walkAnim = (me.walkAnim || 0) + 0.3;
+        } else {
+            me.walkAnim = 0;
+        }
+        
         let moved = false;
-        // Check X and Y independently to allow sliding against walls
         if (newX !== me.x && isInsideMap(newX, me.y, 16)) { me.x = newX; moved = true; }
         if (newY !== me.y && isInsideMap(me.x, newY, 16)) { me.y = newY; moved = true; }
         
@@ -544,44 +726,37 @@ function gameLoopClient() {
         }
     }
     
-    // Camera follow
+    // Camera follow smoothly
     camera.x = me.x - canvas.width / 2;
     camera.y = me.y - canvas.height / 2;
     
+    // HUD visibility toggles
     if (gameState === 'PLAYING') {
         checkInteractables();
-        const hudLeft = document.querySelector('.hud-top-left');
-        const hudRight = document.querySelector('.hud-top-right');
-        const actionBtns = document.querySelector('.action-buttons');
-        const dropshipHud = $('dropship-hud');
-        if (hudLeft) hudLeft.classList.remove('hidden');
-        if (hudRight) hudRight.classList.remove('hidden');
-        if (actionBtns) actionBtns.classList.remove('hidden');
-        if (dropshipHud) dropshipHud.classList.add('hidden');
+        $('hud-task-box').classList.remove('hidden');
+        $('hud-role-box').classList.remove('hidden');
+        $('hud-action-buttons').classList.remove('hidden');
+        $('dropship-hud').classList.add('hidden');
     } else {
-        const hudLeft = document.querySelector('.hud-top-left');
-        const hudRight = document.querySelector('.hud-top-right');
-        const actionBtns = document.querySelector('.action-buttons');
-        const dropshipHud = $('dropship-hud');
-        if (hudLeft) hudLeft.classList.add('hidden');
-        if (hudRight) hudRight.classList.add('hidden');
-        if (actionBtns) actionBtns.classList.add('hidden');
-        if (dropshipHud) dropshipHud.classList.remove('hidden');
+        $('hud-task-box').classList.add('hidden');
+        $('hud-role-box').classList.add('hidden');
+        $('hud-action-buttons').classList.add('hidden');
+        $('dropship-hud').classList.remove('hidden');
     }
 
     drawMap();
     
-    // Update HUD
+    // HUD stats
     let pct = totalTasksRequired > 0 ? (totalTasksCompleted / totalTasksRequired) * 100 : 0;
     $('task-progress').innerText = Math.floor(pct) + '%';
-    $('task-bar-fill').style.width = pct + '%';
-    $('my-role-display').innerText = myRole === 'IMPOSTOR' ? 'مخرب' : 'طاقم';
+    $('task-bar-fill').style.width = Math.min(100, pct) + '%';
+    $('my-role-display').innerText = myRole === 'IMPOSTOR' ? 'مخرب 🔪' : 'طاقم 👨‍🚀';
     $('my-role-display').style.color = myRole === 'IMPOSTOR' ? '#ef4444' : '#38bdf8';
     
     requestAnimationFrame(gameLoopClient);
 }
 
-// --- INTERACTIONS ---
+// --- INTERACTIONS (Tasks, Kill, Report) ---
 let targetTask = null;
 let targetPlayer = null;
 let targetBody = null;
@@ -599,7 +774,7 @@ function checkInteractables() {
     targetTask = null;
     if (me.role === 'CREWMATE') {
         for (let t of tasks) {
-            if (!t.doneBy.includes(myId) && Math.hypot(me.x - t.x, me.y - t.y) < 60) {
+            if (!t.doneBy.includes(myId) && Math.hypot(me.x - t.x, me.y - t.y) < 65) {
                 targetTask = t;
                 break;
             }
@@ -614,7 +789,7 @@ function checkInteractables() {
         
         targetPlayer = null;
         for (let id in players) {
-            if (id !== myId && !players[id].isDead && Math.hypot(me.x - players[id].x, me.y - players[id].y) < 80) {
+            if (id !== myId && !players[id].isDead && Math.hypot(me.x - players[id].x, me.y - players[id].y) < 75) {
                 targetPlayer = players[id];
                 break;
             }
@@ -622,10 +797,10 @@ function checkInteractables() {
         $('action-kill').disabled = !targetPlayer;
     }
     
-    // Report
+    // Report Body
     targetBody = null;
     for (let b of bodies) {
-        if (Math.hypot(me.x - b.x, me.y - b.y) < 80) {
+        if (Math.hypot(me.x - b.x, me.y - b.y) < 85) {
             targetBody = b;
             break;
         }
@@ -635,7 +810,6 @@ function checkInteractables() {
 
 $('action-use').onclick = () => {
     if (targetTask && !$('action-use').disabled) {
-        // Send task complete
         if (isHost) {
             targetTask.doneBy.push(myId);
             totalTasksCompleted++;
@@ -669,370 +843,359 @@ $('action-report').onclick = () => {
     }
 };
 
-// --- ANIMATED DEEP SPACE STARFIELD ---
-const STAR_COUNT = 180;
+// --- DRAWING GRAPHICS & SCI-FI ENVIRONMENT ---
 const spaceStars = [];
-for (let i = 0; i < STAR_COUNT; i++) {
+for (let i = 0; i < 200; i++) {
     spaceStars.push({
-        x: Math.random() * 3200 - 1000,
-        y: Math.random() * 2400 - 800,
-        speed: 0.5 + Math.random() * 2.0,
-        size: Math.random() < 0.2 ? 3.5 : Math.random() < 0.5 ? 2.5 : 1.5,
-        color: Math.random() < 0.15 ? '#38bdf8' : Math.random() < 0.15 ? '#a855f7' : '#ffffff',
-        alpha: 0.4 + Math.random() * 0.6
+        x: Math.random() * 3200 - 800,
+        y: Math.random() * 2400 - 600,
+        speed: 0.5 + Math.random() * 1.5,
+        size: Math.random() < 0.2 ? 3 : Math.random() < 0.5 ? 2 : 1.2,
+        color: Math.random() < 0.2 ? '#38bdf8' : Math.random() < 0.2 ? '#c084fc' : '#ffffff'
     });
 }
 
-function updateAndDrawSpaceStars(ctx) {
-    // Deep Cosmic Dark Space Void
-    ctx.fillStyle = '#010309';
+function drawSpaceStarfield(ctx) {
+    ctx.fillStyle = '#020617';
     ctx.fillRect(-2000, -2000, 5000, 5000);
 
-    // Glowing Purple & Cyan Space Nebulae
-    const time = Date.now() * 0.002;
-    const neb1 = ctx.createRadialGradient(400, 200, 50, 400, 200, 900);
-    neb1.addColorStop(0, 'rgba(168, 85, 247, 0.22)');
-    neb1.addColorStop(0.5, 'rgba(56, 189, 248, 0.14)');
-    neb1.addColorStop(1, 'transparent');
-    ctx.fillStyle = neb1;
+    // Glowing Galactic Nebulae
+    const time = Date.now() * 0.0015;
+    const neb = ctx.createRadialGradient(600, 350, 80, 600, 350, 900);
+    neb.addColorStop(0, 'rgba(99, 102, 241, 0.25)');
+    neb.addColorStop(0.5, 'rgba(56, 189, 248, 0.12)');
+    neb.addColorStop(1, 'transparent');
+    ctx.fillStyle = neb;
     ctx.fillRect(-2000, -2000, 5000, 5000);
 
-    const neb2 = ctx.createRadialGradient(800, 350, 50, 800, 350, 800);
-    neb2.addColorStop(0, 'rgba(239, 68, 68, 0.18)');
-    neb2.addColorStop(0.6, 'rgba(79, 70, 229, 0.1)');
-    neb2.addColorStop(1, 'transparent');
-    ctx.fillStyle = neb2;
-    ctx.fillRect(-2000, -2000, 5000, 5000);
-
-    // Animated Moving Parallax Stars
-    for (let s of spaceStars) {
-        s.y += s.speed;
-        if (s.y > 1600) s.y = -800; // Loop seamlessly
-
-        const pulseAlpha = s.alpha + Math.sin(time * 3 + s.x) * 0.25;
-        ctx.globalAlpha = Math.max(0.2, Math.min(1, pulseAlpha));
+    // Drifting Twinkling Stars
+    spaceStars.forEach(s => {
+        s.y += s.speed * 0.2;
+        if (s.y > 2000) s.y = -600;
         ctx.fillStyle = s.color;
-        ctx.fillRect(s.x, s.y, s.size, s.size);
-    }
-    ctx.globalAlpha = 1.0;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fill();
+    });
 }
 
-// --- RENDERING ---
 function drawMap() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
     ctx.save();
     ctx.translate(-camera.x, -camera.y);
 
+    drawSpaceStarfield(ctx);
+
+    const time = Date.now() * 0.003;
+
+    // --- LOBBY DROPSHIP DRAWING ---
     if (gameState === 'LOBBY') {
-        const time = Date.now() * 0.005;
-        const nebGrad1 = ctx.createRadialGradient(300, 100, 50, 300, 100, 800);
-        nebGrad1.addColorStop(0, 'rgba(168, 85, 247, 0.25)');
-        nebGrad1.addColorStop(0.5, 'rgba(56, 189, 248, 0.15)');
-        nebGrad1.addColorStop(1, 'transparent');
-        ctx.fillStyle = nebGrad1;
-        ctx.fillRect(-2000, -2000, 5000, 5000);
-
-        const nebGrad2 = ctx.createRadialGradient(900, 400, 50, 900, 400, 900);
-        nebGrad2.addColorStop(0, 'rgba(239, 68, 68, 0.2)');
-        nebGrad2.addColorStop(0.6, 'rgba(79, 70, 229, 0.12)');
-        nebGrad2.addColorStop(1, 'transparent');
-        ctx.fillStyle = nebGrad2;
-        ctx.fillRect(-2000, -2000, 5000, 5000);
-
-        // 150 Twinkling Multicolored Stars in Deep Space
-        for (let i = 0; i < 150; i++) {
-            const sx = ((i * 197) % 3200) - 1000;
-            const sy = ((i * 313) % 2200) - 800;
-            const starBrightness = 0.5 + Math.sin(time + i) * 0.5;
-            const size = (i % 5 === 0) ? 3.5 : (i % 3 === 0) ? 2.5 : 1.5;
-            ctx.fillStyle = i % 7 === 0 ? `rgba(168, 85, 247, ${starBrightness})` : i % 4 === 0 ? `rgba(56, 189, 248, ${starBrightness})` : `rgba(255, 255, 255, ${starBrightness})`;
-            ctx.fillRect(sx, sy, size, size);
-        }
-
-        // 2. REALISTIC SCI-FI FANTASY STARSHIP (Centered at cx: 600, cy: 250)
         const cx = 600;
         const cy = 250;
-        const flamePulse = 18 + Math.sin(time * 3) * 8;
+        const flamePulse = 18 + Math.sin(time * 4) * 8;
 
-        // Quadruple Plasma Thruster Engine Flames (Glowing Blue & Violet Exhausts)
-        ctx.shadowBlur = flamePulse + 16;
+        // Plasma Thrusters
+        for (const off of [-180, -90, 90, 180]) {
+            const flame = ctx.createLinearGradient(cx + off, cy + 220, cx + off, cy + 220 + flamePulse * 2.2);
+            flame.addColorStop(0, '#38bdf8');
+            flame.addColorStop(0.5, '#a855f7');
+            flame.addColorStop(1, 'transparent');
+            ctx.fillStyle = flame;
+            ctx.beginPath();
+            ctx.ellipse(cx + off, cy + 220 + flamePulse * 1.1, 18, flamePulse * 1.1, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
-        // Left Outer Engine Jet Flame
-        const flame1 = ctx.createLinearGradient(cx - 210, cy + 220, cx - 210, cy + 220 + flamePulse * 2.2);
-        flame1.addColorStop(0, '#38bdf8');
-        flame1.addColorStop(0.4, '#a855f7');
-        flame1.addColorStop(1, 'transparent');
-        ctx.fillStyle = flame1;
-        ctx.shadowColor = '#38bdf8';
-        ctx.beginPath();
-        ctx.ellipse(cx - 210, cy + 220 + flamePulse * 1.1, 20, flamePulse * 1.1, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Left Inner Engine Jet Flame
-        const flame2 = ctx.createLinearGradient(cx - 110, cy + 240, cx - 110, cy + 240 + flamePulse * 2.8);
-        flame2.addColorStop(0, '#60a5fa');
-        flame2.addColorStop(0.5, '#ec4899');
-        flame2.addColorStop(1, 'transparent');
-        ctx.fillStyle = flame2;
-        ctx.shadowColor = '#ec4899';
-        ctx.beginPath();
-        ctx.ellipse(cx - 110, cy + 240 + flamePulse * 1.4, 24, flamePulse * 1.4, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Right Inner Engine Jet Flame
-        ctx.fillStyle = flame2;
-        ctx.beginPath();
-        ctx.ellipse(cx + 110, cy + 240 + flamePulse * 1.4, 24, flamePulse * 1.4, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Right Outer Engine Jet Flame
-        ctx.fillStyle = flame1;
-        ctx.shadowColor = '#38bdf8';
-        ctx.beginPath();
-        ctx.ellipse(cx + 210, cy + 220 + flamePulse, 20, flamePulse * 1.1, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-
-        // Realistic Heavy Armor Wings with Metallic Bevels & Red LED Warning Lights
+        // Heavy Armor Hull
         ctx.fillStyle = '#0f172a';
         ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 3.5;
-        ctx.shadowColor = 'rgba(56, 189, 248, 0.7)';
-        ctx.shadowBlur = 15;
+        ctx.lineWidth = 4;
+        ctx.shadowColor = 'rgba(56, 189, 248, 0.6)';
+        ctx.shadowBlur = 18;
 
-        // Left Wing
         ctx.beginPath();
-        ctx.moveTo(cx - 220, cy - 80);
-        ctx.lineTo(cx - 330, cy + 100);
-        ctx.lineTo(cx - 290, cy + 220);
-        ctx.lineTo(cx - 195, cy + 180);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Right Wing
-        ctx.beginPath();
-        ctx.moveTo(cx + 220, cy - 80);
-        ctx.lineTo(cx + 330, cy + 100);
-        ctx.lineTo(cx + 290, cy + 220);
-        ctx.lineTo(cx + 195, cy + 180);
-        ctx.closePath();
+        ctx.roundRect(cx - 230, cy - 210, 460, 430, 32);
         ctx.fill();
         ctx.stroke();
         ctx.shadowBlur = 0;
 
-        // Realistic Main Spaceship Hull Body
-        const hullGrad = ctx.createLinearGradient(cx - 230, cy - 250, cx + 230, cy + 250);
-        hullGrad.addColorStop(0, '#1e293b'); // Dark Steel Top Highlight
-        hullGrad.addColorStop(0.4, '#0f172a'); // Heavy Obsidian Armor
-        hullGrad.addColorStop(1, '#020617');   // Deep Space Base Body
-
-        ctx.fillStyle = hullGrad;
-        ctx.strokeStyle = '#38bdf8'; // Glowing Cyan Wall Border
-        ctx.lineWidth = 5;
-        ctx.shadowColor = 'rgba(56, 189, 248, 0.7)';
-        ctx.shadowBlur = 22;
-
-        ctx.beginPath();
-        ctx.moveTo(cx - 140, cy - 250); // Nose Top Left
-        ctx.lineTo(cx + 140, cy - 250); // Nose Top Right
-        ctx.lineTo(cx + 240, cy - 100); // Right Shoulder
-        ctx.lineTo(cx + 240, cy + 170); // Right Base
-        ctx.lineTo(cx + 160, cy + 240); // Engine Right
-        ctx.lineTo(cx - 160, cy + 240); // Engine Left
-        ctx.lineTo(cx - 240, cy + 170); // Left Base
-        ctx.lineTo(cx - 240, cy - 100); // Left Shoulder
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-
-        // Pulsing Red Alarm LED Strips on Hull (Matching bg.png)
-        const ledGlow = 8 + Math.sin(time * 4) * 6;
-        ctx.strokeStyle = '#ef4444';
-        ctx.lineWidth = 3.5;
-        ctx.shadowColor = '#ef4444';
-        ctx.shadowBlur = ledGlow;
-
-        // Left Red Strip
-        ctx.beginPath();
-        ctx.moveTo(cx - 225, cy - 80);
-        ctx.lineTo(cx - 225, cy + 150);
-        ctx.stroke();
-
-        // Right Red Strip
-        ctx.beginPath();
-        ctx.moveTo(cx + 225, cy - 80);
-        ctx.lineTo(cx + 225, cy + 150);
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-
-        // Walkable Steel Diamond Plate Deck Floor
-        const deckGrad = ctx.createLinearGradient(cx - 195, cy - 185, cx + 195, cy + 185);
-        deckGrad.addColorStop(0, '#0f172a');
-        deckGrad.addColorStop(0.5, '#1e293b');
+        // Metallic Steel Deck Floor
+        const deckGrad = ctx.createLinearGradient(cx - 200, cy - 180, cx + 200, cy + 180);
+        deckGrad.addColorStop(0, '#1e293b');
         deckGrad.addColorStop(1, '#090d16');
-
         ctx.fillStyle = deckGrad;
         ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        ctx.roundRect(cx - 195, cy - 185, 390, 390, 24);
-        ctx.fill();
-        ctx.stroke();
-
-        // High-Tech Blue LED Floor Grid & Laser Runway Line
-        ctx.fillStyle = 'rgba(56, 189, 248, 0.12)';
-        ctx.fillRect(cx - 60, cy - 185, 120, 390);
-
-        ctx.strokeStyle = 'rgba(56, 189, 248, 0.2)';
-        ctx.lineWidth = 1.5;
-        for (let gx = cx - 175; gx <= cx + 175; gx += 40) {
-            ctx.beginPath();
-            ctx.moveTo(gx, cy - 180);
-            ctx.lineTo(gx, cy + 200);
-            ctx.stroke();
-        }
-        for (let gy = cy - 180; gy <= cy + 200; gy += 40) {
-            ctx.beginPath();
-            ctx.moveTo(cx - 190, gy);
-            ctx.lineTo(cx + 190, gy);
-            ctx.stroke();
-        }
-
-        // Realistic Panoramic Glass Skylight Dome (Top Roof Viewport Window)
-        const windowGrad = ctx.createRadialGradient(cx, cy - 210, 10, cx, cy - 210, 110);
-        windowGrad.addColorStop(0, 'rgba(224, 242, 254, 0.5)');
-        windowGrad.addColorStop(0.5, 'rgba(56, 189, 248, 0.25)');
-        windowGrad.addColorStop(1, 'rgba(15, 23, 42, 0.85)');
-
-        ctx.fillStyle = windowGrad;
-        ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 3;
-        ctx.shadowColor = '#38bdf8';
-        ctx.shadowBlur = 14;
-        ctx.beginPath();
-        ctx.ellipse(cx, cy - 210, 115, 32, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-
-        // 3D Spinning Holographic Customization Computer Console (Center Station)
-        ctx.fillStyle = '#38bdf8';
-        ctx.shadowColor = '#38bdf8';
-        ctx.shadowBlur = 18;
-        ctx.fillRect(cx - 30, cy - 75, 60, 30);
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = '#020617';
-        ctx.fillRect(cx - 25, cy - 71, 50, 22);
-
-        // 3D Hologram Projection Globe
-        ctx.strokeStyle = '#a855f7';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.ellipse(cx, cy - 60, 22, 9, time * 3, 0, Math.PI * 2);
+        ctx.roundRect(cx - 200, cy - 180, 400, 380, 20);
+        ctx.fill();
+        ctx.stroke();
+
+        // Glowing Blue Floor Grid
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.18)';
+        ctx.lineWidth = 1.5;
+        for (let gx = cx - 180; gx <= cx + 180; gx += 40) {
+            ctx.beginPath(); ctx.moveTo(gx, cy - 170); ctx.lineTo(gx, cy + 190); ctx.stroke();
+        }
+        for (let gy = cy - 170; gy <= cy + 190; gy += 40) {
+            ctx.beginPath(); ctx.moveTo(cx - 190, gy); ctx.lineTo(cx + 190, gy); ctx.stroke();
+        }
+
+        // Customization Hologram Station
+        ctx.fillStyle = '#020617';
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(cx - 35, cy - 85, 70, 35, 8);
+        ctx.fill();
         ctx.stroke();
 
         ctx.fillStyle = '#38bdf8';
-        ctx.font = '900 12px Tajawal, sans-serif';
+        ctx.font = 'bold 12px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('💻 تخصيص', cx, cy - 55);
+        ctx.fillText('💻 تخصيص', cx, cy - 63);
 
-        // 3. Draw 3D Astronaut Players Walking Inside the Realistic Starship Floor
+        // Draw players in lobby
         Object.values(players).forEach(p => {
-            drawAstronaut(ctx, p.x, p.y, p.color, false, p.name, false, p.role);
+            drawCrewmate(ctx, p.x, p.y, p.color, false, p.name, false, p.role, p.walkAnim);
         });
 
         ctx.restore();
         return;
     }
-    
-    // Draw Floor Base (Space)
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
-    
-    // Draw Walls (Rendered slightly larger behind rooms/corridors)
-    const wallThickness = 12;
-    ctx.fillStyle = '#38bdf8'; // Glowing blue walls
-    rooms.forEach(r => ctx.fillRect(r.x - wallThickness, r.y - wallThickness, r.w + wallThickness*2, r.h + wallThickness*2));
-    corridors.forEach(c => ctx.fillRect(c.x - wallThickness, c.y - wallThickness, c.w + wallThickness*2, c.h + wallThickness*2));
-    
-    // Draw Rooms (Floors)
+
+    // --- IN-GAME SPACESHIP (THE SKELD ARENA) ---
+    const wallThick = 14;
+
+    // Glowing Walls
+    ctx.fillStyle = '#0284c7';
+    rooms.forEach(r => ctx.fillRect(r.x - wallThick, r.y - wallThick, r.w + wallThick * 2, r.h + wallThick * 2));
+    corridors.forEach(c => ctx.fillRect(c.x - wallThick, c.y - wallThick, c.w + wallThick * 2, c.h + wallThick * 2));
+
+    // Room Floors
     rooms.forEach(r => {
-        ctx.fillStyle = r.color;
+        const floorGrad = ctx.createLinearGradient(r.x, r.y, r.x + r.w, r.y + r.h);
+        floorGrad.addColorStop(0, '#1e293b');
+        floorGrad.addColorStop(1, '#0f172a');
+        ctx.fillStyle = floorGrad;
         ctx.fillRect(r.x, r.y, r.w, r.h);
-        ctx.fillStyle = 'rgba(255,255,255,0.15)';
-        ctx.font = 'bold 30px system-ui';
+
+        // Room Name Header & Icon
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
+        ctx.font = 'bold 18px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(r.name, r.x + r.w/2, r.y + r.h/2);
+        ctx.fillText(`${r.icon} ${r.name}`, r.x + r.w / 2, r.y + 40);
     });
-    
-    // Draw Corridors (Floors)
+
+    // Corridors Floors
     corridors.forEach(c => {
-        ctx.fillStyle = '#1e293b';
+        ctx.fillStyle = '#090d16';
         ctx.fillRect(c.x, c.y, c.w, c.h);
     });
-    
-    // Draw Tasks
-    tasks.forEach(t => {
-        let isDone = t.doneBy.includes(myId);
-        ctx.fillStyle = isDone ? '#10b981' : '#facc15';
-        ctx.beginPath();
-        ctx.arc(t.x, t.y, 15, 0, Math.PI*2);
-        ctx.fill();
-        if (targetTask === t) {
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 3;
+
+    // Cafeteria Central Emergency Table & Button
+    ctx.fillStyle = '#334155';
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(700, 280, 55, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Red Emergency Button
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath();
+    ctx.arc(700, 280, 18, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Vents
+    vents.forEach(v => {
+        ctx.fillStyle = '#1e293b';
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = 2;
+        ctx.fillRect(v.x - 20, v.y - 15, 40, 30);
+        ctx.strokeRect(v.x - 20, v.y - 15, 40, 30);
+        for (let l = -12; l <= 12; l += 6) {
+            ctx.beginPath();
+            ctx.moveTo(v.x + l, v.y - 10);
+            ctx.lineTo(v.x + l, v.y + 10);
             ctx.stroke();
         }
     });
-    
+
+    // Draw Tasks
+    tasks.forEach(t => {
+        const isDone = t.doneBy.includes(myId);
+        ctx.fillStyle = isDone ? '#10b981' : '#f59e0b';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, 16, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(t.name.split(' ')[0], t.x, t.y + 26);
+    });
+
     // Draw Bodies
     bodies.forEach(b => {
-        ctx.fillStyle = b.color;
-        ctx.beginPath();
-        ctx.arc(b.x, b.y + 10, 20, Math.PI, 0); // Half circle body (lying down)
-        ctx.fill();
-        // Bone
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(b.x, b.y - 5, 8, 0, Math.PI*2);
-        ctx.fill();
+        drawDeadBody(ctx, b.x, b.y, b.color);
     });
-    
-    // Draw Players (3D Stylized Astronauts matching Start Screen)
-    let me = players[myId];
-    
+
+    // Draw Players
+    const me = players[myId];
     Object.values(players).forEach(p => {
-        if (p.isDead && (!me.isDead)) return;
+        if (p.isDead && me && !me.isDead) return;
         const isTargeted = targetPlayer && targetPlayer.id === p.id;
-        drawAstronaut(ctx, p.x, p.y, p.color, p.isDead, p.name, isTargeted, p.role);
+        drawCrewmate(ctx, p.x, p.y, p.color, p.isDead, p.name, isTargeted, p.role, p.walkAnim);
     });
-    
+
     ctx.restore();
-    
-    // Vision Fog (Simple Circle)
-    if (!me.isDead) {
-        const cx = canvas.width/2;
-        const cy = canvas.height/2;
-        const visionRadius = myRole === 'IMPOSTOR' ? 400 : 250;
-        
-        ctx.globalCompositeOperation = 'destination-in';
-        let grad = ctx.createRadialGradient(cx, cy, visionRadius*0.5, cx, cy, visionRadius);
-        grad.addColorStop(0, 'rgba(0,0,0,1)');
-        grad.addColorStop(1, 'rgba(0,0,0,0)');
-        
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(cx, cy, visionRadius, 0, Math.PI*2);
-        ctx.fill();
-        
-        ctx.globalCompositeOperation = 'source-over';
-    }
 }
 
-// --- MEETING LOGIC ---
+// --- BEAUTIFUL 3D/2.5D CREWMATE ASTRONAUT SPRITE ---
+function drawCrewmate(ctx, x, y, color, isDead, name, isTargeted, role, walkAnim = 0) {
+    ctx.save();
+    ctx.translate(x, y);
+
+    const bobY = Math.sin(walkAnim || 0) * 3;
+
+    if (isDead) {
+        ctx.globalAlpha = 0.55;
+    }
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    ctx.beginPath();
+    ctx.ellipse(0, 22, 18, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Red Impostor Target Ring
+    if (isTargeted) {
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 3.5;
+        ctx.beginPath();
+        ctx.arc(0, 0, 32, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+
+    // Oxygen Backpack
+    ctx.fillStyle = adjustColor(color, -30);
+    ctx.strokeStyle = '#090d16';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.roundRect(-22, -12 + bobY, 10, 24, 5);
+    ctx.fill();
+    ctx.stroke();
+
+    // Main Body
+    const bodyGrad = ctx.createLinearGradient(-16, -24, 16, 20);
+    bodyGrad.addColorStop(0, color);
+    bodyGrad.addColorStop(1, adjustColor(color, -40));
+    ctx.fillStyle = bodyGrad;
+    ctx.strokeStyle = '#090d16';
+    ctx.lineWidth = 3;
+
+    ctx.beginPath();
+    ctx.roundRect(-16, -24 + bobY, 32, 36, [16, 16, 6, 6]);
+    ctx.fill();
+    ctx.stroke();
+
+    // Legs
+    const legL_X = -12;
+    const legR_X = 2;
+    const legOffset = Math.sin(walkAnim || 0) * 4;
+
+    ctx.fillStyle = adjustColor(color, -25);
+    // Left Leg
+    ctx.beginPath();
+    ctx.roundRect(legL_X, 10 + bobY + legOffset, 10, 14, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    // Right Leg
+    ctx.beginPath();
+    ctx.roundRect(legR_X, 10 + bobY - legOffset, 10, 14, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    // Large Curved Glass Visor with Cyan Sheen & Reflection
+    const visorGrad = ctx.createLinearGradient(-2, -18, 14, -2);
+    visorGrad.addColorStop(0, '#e0f2fe');
+    visorGrad.addColorStop(0.4, '#38bdf8');
+    visorGrad.addColorStop(1, '#0369a1');
+
+    ctx.fillStyle = visorGrad;
+    ctx.strokeStyle = '#090d16';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.roundRect(-4, -18 + bobY, 22, 14, 7);
+    ctx.fill();
+    ctx.stroke();
+
+    // White Specular Glint Reflection on Visor
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.beginPath();
+    ctx.ellipse(3, -15 + bobY, 5, 2, -0.3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Player Name Tag
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = '#000000';
+    ctx.shadowBlur = 4;
+    ctx.fillText(name, 0, -32 + bobY);
+    ctx.shadowBlur = 0;
+
+    ctx.restore();
+}
+
+function drawDeadBody(ctx, x, y, color) {
+    ctx.save();
+    ctx.translate(x, y);
+
+    // Lying down half crewmate body
+    ctx.fillStyle = adjustColor(color, -25);
+    ctx.strokeStyle = '#090d16';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(0, 10, 20, 12, 0, 0, Math.PI);
+    ctx.fill();
+    ctx.stroke();
+
+    // White Bone
+    ctx.fillStyle = '#f8fafc';
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(-4, -6, 8, 16, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(-4, -6, 4, 0, Math.PI * 2);
+    ctx.arc(4, -6, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+}
+
+function adjustColor(hex, amount) {
+    let num = parseInt(hex.replace('#', ''), 16);
+    let r = (num >> 16) + amount;
+    let g = ((num >> 8) & 0x00FF) + amount;
+    let b = (num & 0x0000FF) + amount;
+    r = Math.min(255, Math.max(0, r));
+    g = Math.min(255, Math.max(0, g));
+    b = Math.min(255, Math.max(0, b));
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+
+// --- MEETING SCREEN & VOTING ---
 let meetingInterval = null;
 
 function startMeeting(callerName) {
@@ -1042,8 +1205,8 @@ function startMeeting(callerName) {
     // Teleport alive players to Cafeteria
     Object.values(players).forEach(p => {
         if (!p.isDead) {
-            p.x = 600 + Math.random()*50;
-            p.y = 200 + Math.random()*50;
+            p.x = 700 + (Math.random() - 0.5) * 80;
+            p.y = 280 + (Math.random() - 0.5) * 60;
         }
     });
     
@@ -1062,16 +1225,14 @@ function startMeeting(callerName) {
 
 function startMeetingClient(data) {
     showScreen('meeting-screen');
-    $('chat-messages').innerHTML = `<div class="chat-msg" style="color:var(--danger); text-align:center;">تم طلب اجتماع طارئ بواسطة: ${data.caller}</div>`;
+    $('chat-messages').innerHTML = `<div class="chat-msg" style="color:#ef4444; text-align:center;">🚨 تم طلب اجتماع طارئ بواسطة: <b>${data.caller}</b></div>`;
     renderMeetingUI();
 }
 
 function renderMeetingUI() {
     if (gameState !== 'MEETING') return;
-    
     $('meeting-timer').innerText = meetingData.timer;
     
-    // Render Players
     const grid = $('voting-players-grid');
     grid.innerHTML = '';
     
@@ -1079,87 +1240,52 @@ function renderMeetingUI() {
         const card = document.createElement('div');
         card.className = `player-vote-card ${p.isDead ? 'dead' : ''}`;
         
-        // Count votes for this player
         let votesForMe = Object.values(meetingData.votes).filter(v => v === p.id).length;
-        let dotsHTML = '<div class="vote-count">' + '<div class="vote-dot"></div>'.repeat(votesForMe) + '</div>';
+        let dotsHTML = '<div class="vote-count" style="display:flex; gap:4px; margin-top:6px;">' + '<span style="color:#ef4444; font-size:1.1rem;">●</span>'.repeat(votesForMe) + '</div>';
         
         card.innerHTML = `
             <div style="display:flex; align-items:center; gap:10px;">
                 <div class="p-color" style="background:${p.color}"></div>
-                <span>${p.name}</span>
+                <span style="font-weight:bold;">${p.name} ${p.isDead ? '(مستبعد)' : ''}</span>
             </div>
             ${dotsHTML}
         `;
         
-        if (!p.isDead && !players[myId].isDead) {
+        if (!p.isDead && players[myId] && !players[myId].isDead) {
             card.onclick = () => castVote(p.id);
         }
-        
         if (meetingData.votes[myId] === p.id) {
             card.classList.add('selected');
         }
-        
         grid.appendChild(card);
     });
-    
-    // Update skip vote button
-    let skipVotes = Object.values(meetingData.votes).filter(v => v === 'skip').length;
-    $('skip-vote-btn').innerText = `تخطي التصويت (${skipVotes})`;
-    if (meetingData.votes[myId] === 'skip') {
-        $('skip-vote-btn').style.borderColor = 'var(--primary)';
-        $('skip-vote-btn').style.borderWidth = '2px';
-        $('skip-vote-btn').style.borderStyle = 'solid';
-    }
-    
-    // Render Chat (only append new to avoid scroll reset, but for simplicity re-render is okay if array is small)
-    // To prevent input loss, only update chat
-    const chatContainer = $('chat-messages');
-    while (chatContainer.children.length - 1 < meetingData.chat.length) {
-        let msg = meetingData.chat[chatContainer.children.length - 1];
-        if(!msg) break;
-        let el = document.createElement('div');
-        el.className = 'chat-msg';
-        el.innerHTML = `<span>${msg.sender}:</span> ${msg.text}`;
-        chatContainer.appendChild(el);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-    }
 }
 
-// Ensure the UI updates when new data comes in
-setInterval(() => {
-    if (gameState === 'MEETING') renderMeetingUI();
-}, 500);
-
-$('skip-vote-btn').onclick = () => {
-    if (!players[myId].isDead) castVote('skip');
-};
-
 function castVote(targetId) {
-    if (meetingData.votes[myId]) return; // Already voted
-    
+    if (meetingData.votes[myId]) return;
     if (isHost) {
         meetingData.votes[myId] = targetId;
         checkMeetingEnd();
-    } else {
+    } else if (conn) {
         conn.send({ type: 'VOTE', voteTarget: targetId });
-        meetingData.votes[myId] = targetId; // Local optimistic update
+        meetingData.votes[myId] = targetId;
     }
 }
 
+$('skip-vote-btn').onclick = () => {
+    if (players[myId] && !players[myId].isDead) castVote('skip');
+};
+
 function checkMeetingEnd() {
     if (!isHost) return;
-    
     let aliveCount = Object.values(players).filter(p => !p.isDead).length;
     let totalVotes = Object.keys(meetingData.votes).length;
     
     if (totalVotes >= aliveCount || meetingData.timer <= 0) {
         clearInterval(meetingInterval);
         
-        // Tally votes
         let counts = { 'skip': 0 };
-        Object.values(meetingData.votes).forEach(v => {
-            counts[v] = (counts[v] || 0) + 1;
-        });
+        Object.values(meetingData.votes).forEach(v => { counts[v] = (counts[v] || 0) + 1; });
         
         let highestId = null;
         let highestVotes = 0;
@@ -1175,159 +1301,33 @@ function checkMeetingEnd() {
             }
         }
         
-        if (highestId && highestId !== 'skip' && !tie) {
-            // Eject player
+        if (highestId && highestId !== 'skip' && !tie && players[highestId]) {
             players[highestId].isDead = true;
         }
         
-        // Clean bodies after meeting
         bodies = [];
-        
-        // Reset state back to playing
         gameState = 'PLAYING';
         broadcast({ type: 'UPDATE_STATE', gameState, players, bodies });
         
         setTimeout(() => {
-            checkWinCondition(); // Check if ejected player was the last impostor
-        }, 500);
+            endMeetingClient();
+            checkWinCondition();
+        }, 1500);
     }
 }
 
 function endMeetingClient() {
     showScreen('game-screen');
-    requestAnimationFrame(gameLoopClient); // Resume loop
+    requestAnimationFrame(gameLoopClient);
 }
 
 $('chat-send-btn').onclick = () => {
     let text = $('chat-input').value.trim();
     if (!text) return;
-    
     if (isHost) {
         meetingData.chat.push({ sender: players[myId].name, text });
-    } else {
+    } else if (conn) {
         conn.send({ type: 'CHAT', text });
     }
     $('chat-input').value = '';
 };
-$('chat-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') $('chat-send-btn').click();
-});
-
-// --- ADVANCED 3D ASTRONAUT RENDERER (Matching Start Screen Wallpaper) ---
-function drawAstronaut(ctx, x, y, color, isDead, name, isTargeted, role) {
-    ctx.save();
-    ctx.translate(x, y);
-
-    if (isDead) {
-        ctx.globalAlpha = 0.5;
-    }
-
-    // Shadow underneath astronaut
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
-    ctx.beginPath();
-    ctx.ellipse(0, 22, 18, 8, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Targeted outline glow (if impostor target)
-    if (isTargeted) {
-        ctx.strokeStyle = '#ef4444';
-        ctx.lineWidth = 4;
-        ctx.shadowColor = '#ef4444';
-        ctx.shadowBlur = 15;
-        ctx.beginPath();
-        ctx.roundRect(-24, -32, 48, 58, 20);
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-    }
-
-    // Backpack (Oxygen Tank) - Back layer with shadow
-    ctx.fillStyle = adjustColor(color, -30);
-    ctx.strokeStyle = '#0f172a';
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.roundRect(-22, -14, 10, 28, 6);
-    ctx.fill();
-    ctx.stroke();
-
-    // Legs / Boots
-    ctx.fillStyle = adjustColor(color, -15);
-    // Left Leg
-    ctx.beginPath();
-    ctx.roundRect(-14, 8, 11, 16, 5);
-    ctx.fill();
-    ctx.stroke();
-    // Right Leg
-    ctx.beginPath();
-    ctx.roundRect(3, 8, 11, 16, 5);
-    ctx.fill();
-    ctx.stroke();
-
-    // Body (Main Suit Capsule) with 3D Gradient Shading
-    const bodyGrad = ctx.createLinearGradient(-15, -25, 15, 20);
-    bodyGrad.addColorStop(0, adjustColor(color, 25)); // Top highlight
-    bodyGrad.addColorStop(0.6, color);                 // Base color
-    bodyGrad.addColorStop(1, adjustColor(color, -35)); // Bottom shadow
-
-    ctx.fillStyle = bodyGrad;
-    ctx.strokeStyle = '#0f172a';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.roundRect(-16, -26, 32, 42, 16);
-    ctx.fill();
-    ctx.stroke();
-
-    // Visor (Shiny Glass Helmet) with Cyan/Sky Gradient
-    const visorGrad = ctx.createLinearGradient(-2, -18, 18, -2);
-    visorGrad.addColorStop(0, '#e0f2fe');  // White glass reflection
-    visorGrad.addColorStop(0.3, '#38bdf8'); // Cyan glow
-    visorGrad.addColorStop(1, '#0284c7');   // Deep cyan shadow
-
-    ctx.fillStyle = visorGrad;
-    ctx.strokeStyle = '#0f172a';
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.roundRect(-4, -18, 22, 16, 8);
-    ctx.fill();
-    ctx.stroke();
-
-    // Visor Glare Arc
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-    ctx.beginPath();
-    ctx.ellipse(3, -13, 6, 3, -Math.PI / 6, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Impostor Badge for Teammates
-    if (role === 'IMPOSTOR' && (myRole === 'IMPOSTOR' || isDead)) {
-        ctx.fillStyle = '#ef4444';
-        ctx.font = 'bold 12px system-ui';
-        ctx.textAlign = 'center';
-        ctx.fillText('😈', 0, -32);
-    }
-
-    // Player Name Tag
-    if (name) {
-        ctx.font = '900 13px Tajawal, system-ui, sans-serif';
-        ctx.textAlign = 'center';
-
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 3;
-        ctx.strokeText(name, 0, -35);
-
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(name, 0, -35);
-    }
-
-    ctx.restore();
-}
-
-function adjustColor(hex, percent) {
-    let num = parseInt(hex.replace('#', ''), 16);
-    if (isNaN(num)) return hex;
-    let r = (num >> 16) + Math.round(255 * (percent / 100));
-    let g = ((num >> 8) & 0x00FF) + Math.round(255 * (percent / 100));
-    let b = (num & 0x0000FF) + Math.round(255 * (percent / 100));
-    r = Math.min(255, Math.max(0, r));
-    g = Math.min(255, Math.max(0, g));
-    b = Math.min(255, Math.max(0, b));
-    return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-}

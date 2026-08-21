@@ -1,0 +1,571 @@
+<div class="playlist-page w-full min-h-screen bg-[#0B0F19] text-white p-4 sm:p-6 lg:p-8 overflow-y-auto pb-28" dir="rtl">
+  
+  @if (!playlist()) {
+    <!-- Empty / Not Found State -->
+    <div class="max-w-xl mx-auto text-center py-20 bg-slate-900/60 border border-white/10 rounded-3xl p-8 space-y-4 my-10">
+      <div class="w-16 h-16 rounded-2xl bg-indigo-500/20 text-indigo-400 mx-auto flex items-center justify-center">
+        <lucide-icon [img]="BookOpen" size="32"></lucide-icon>
+      </div>
+      <h2 class="text-xl font-black text-white">قائمة التشغيل غير موجودة</h2>
+      <p class="text-xs text-slate-400">ربما تم حذف هذه القائمة أو أن الرابط غير صحيح.</p>
+      <button [routerLink]="['/stream/library']" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-black text-white transition">
+        العودة إلى المكتبة
+      </button>
+    </div>
+  } @else {
+    
+    <div class="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
+      
+      <!-- ========================================================= -->
+      <!-- LEFT / TOP: PLAYLIST HERO & STUDY PLAN CARD               -->
+      <!-- ========================================================= -->
+      <div class="w-full lg:w-96 shrink-0 space-y-6">
+        
+        <!-- Playlist Hero Info Card -->
+        <div class="bg-slate-900/80 border border-white/10 rounded-3xl p-6 relative overflow-hidden backdrop-blur-xl shadow-2xl space-y-6">
+          <div class="absolute -top-16 -right-16 w-40 h-40 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+          <!-- Thumbnail Poster -->
+          <div class="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-950 border border-white/10 shadow-lg group">
+            <img 
+              [src]="playlist()?.thumbnail || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800'" 
+              [alt]="playlist()?.title"
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4">
+              <span class="text-xs font-black text-white bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10 flex items-center gap-1.5">
+                <lucide-icon [img]="BookOpen" size="14" class="text-indigo-400"></lucide-icon>
+                <span>{{ playlist()?.videos?.length || 0 }} فيديو</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Title & Badges -->
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <span class="text-[10px] font-black text-indigo-400 bg-indigo-500/15 border border-indigo-500/30 px-2.5 py-0.5 rounded-full uppercase">
+                {{ playlist()?.source === 'youtube' ? 'قائمة يوتيوب' : 'قائمة مخصصة' }}
+              </span>
+              <button (click)="showEditInfoModal.set(true)" class="p-1 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition" title="تعديل اسم ووصف القائمة">
+                <lucide-icon [img]="Edit3" size="14"></lucide-icon>
+              </button>
+            </div>
+            <h1 class="text-xl font-black text-white leading-snug">{{ playlist()?.title }}</h1>
+            @if (playlist()?.description) {
+              <p class="text-xs text-slate-400 mt-2 leading-relaxed line-clamp-3">{{ playlist()?.description }}</p>
+            }
+          </div>
+
+          <!-- Progress Ring & Numbers -->
+          @if (stats(); as st) {
+            <div class="bg-slate-950/60 border border-white/5 rounded-2xl p-4 space-y-3">
+              <div class="flex items-center justify-between text-xs font-bold">
+                <span class="text-slate-400">نسبة الإنجاز الإجمالية:</span>
+                <span class="text-indigo-400 font-black">{{ st.percentWatched }}%</span>
+              </div>
+              <!-- Progress Bar -->
+              <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-400 transition-all duration-700" [style.width.%]="st.percentWatched"></div>
+              </div>
+              <div class="flex items-center justify-between text-[11px] text-slate-400 font-semibold pt-1">
+                <span>تمت مشاهدة {{ st.watchedVideos }} من {{ st.totalVideos }}</span>
+                <span>المتبقي: {{ st.formattedRemainingDuration }}</span>
+              </div>
+            </div>
+          }
+
+          <!-- Play & Action Buttons -->
+          <div class="space-y-2.5 pt-2">
+            <button 
+              (click)="resumeNext()" 
+              [disabled]="(playlist()?.videos?.length || 0) === 0"
+              class="w-full py-3.5 px-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black text-xs rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer">
+              <lucide-icon [img]="Play" size="16"></lucide-icon>
+              <span>{{ stats()?.watchedVideos === 0 ? 'بدء تشغيل القائمة' : 'متابعة من حيث توقفت' }}</span>
+            </button>
+
+            <div class="grid grid-cols-3 gap-2">
+              <button 
+                (click)="playAll(false)"
+                [disabled]="(playlist()?.videos?.length || 0) === 0"
+                class="py-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 hover:text-white rounded-xl text-[11px] font-bold border border-white/5 flex items-center justify-center gap-1 transition">
+                <lucide-icon [img]="RefreshCw" size="13"></lucide-icon>
+                <span>من البداية</span>
+              </button>
+
+              <button 
+                (click)="playAll(true)"
+                [disabled]="(playlist()?.videos?.length || 0) === 0"
+                class="py-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 hover:text-white rounded-xl text-[11px] font-bold border border-white/5 flex items-center justify-center gap-1 transition">
+                <lucide-icon [img]="Shuffle" size="13"></lucide-icon>
+                <span>خلط</span>
+              </button>
+
+              <button 
+                (click)="sharePlaylist()"
+                class="py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-[11px] font-bold border border-white/5 flex items-center justify-center gap-1 transition">
+                <lucide-icon [img]="Share2" size="13"></lucide-icon>
+                <span>مشاركة</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Smart Study Follow-Up & Reminder Card -->
+        <div class="bg-gradient-to-br from-indigo-950/60 via-slate-900/90 to-purple-950/40 border border-indigo-500/30 rounded-3xl p-6 backdrop-blur-xl space-y-5 shadow-xl">
+          
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+                <lucide-icon [img]="Bell" size="16"></lucide-icon>
+              </div>
+              <div>
+                <h3 class="text-sm font-black text-white">خطة المتابعة والتذكير</h3>
+                <p class="text-[10px] text-indigo-300">إشعارات ذكية تقترح مشاهدة الدرس التالي</p>
+              </div>
+            </div>
+            
+            <button 
+              (click)="showStudyPlanModal.set(true)"
+              class="px-3 py-1 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs font-bold transition">
+              تخصيص الخطة
+            </button>
+          </div>
+
+          <!-- Status & Details -->
+          @if (playlist()?.studyPlan?.enabled) {
+            <div class="space-y-3 bg-slate-950/60 border border-indigo-500/20 rounded-2xl p-3.5 text-xs">
+              <div class="flex items-center justify-between font-bold">
+                <span class="text-slate-400">التكرار الزمني:</span>
+                <span class="text-indigo-300 font-black">
+                  {{ playlist()?.studyPlan?.targetType === 'interval' ? 'كل ' + playlist()?.studyPlan?.reminderIntervalMinutes + ' دقيقة' : 'يومياً عند الساعة ' + playlist()?.studyPlan?.scheduledTime }}
+                </span>
+              </div>
+
+              <div class="flex items-center justify-between font-bold">
+                <span class="text-slate-400">الهدف المخطط:</span>
+                <span class="text-emerald-400 font-black">{{ playlist()?.studyPlan?.dailyTarget }} فيديوهات يومياً</span>
+              </div>
+
+              @if (playlist()?.studyPlan?.streak && playlist()?.studyPlan!.streak > 0) {
+                <div class="flex items-center justify-between font-bold border-t border-white/5 pt-2">
+                  <span class="text-slate-400">سلسلة الالتزام:</span>
+                  <span class="text-amber-400 font-black flex items-center gap-1">
+                    <lucide-icon [img]="Flame" size="14" class="text-amber-400"></lucide-icon>
+                    <span>{{ playlist()?.studyPlan?.streak }} أيام متتالية 🔥</span>
+                  </span>
+                </div>
+              }
+
+              @if (stats()?.estimatedCompletionDate) {
+                <div class="flex items-center justify-between font-bold border-t border-white/5 pt-2 text-[11px]">
+                  <span class="text-slate-400">الختام المتوقع:</span>
+                  <span class="text-indigo-400 font-bold">{{ stats()?.estimatedCompletionDate }}</span>
+                </div>
+              }
+            </div>
+
+            <!-- Test Reminder Button -->
+            <button 
+              (click)="testReminder()"
+              class="w-full py-2 bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 rounded-xl text-xs font-bold text-indigo-300 flex items-center justify-center gap-1.5 transition">
+              <lucide-icon [img]="Sparkles" size="13" class="text-indigo-400"></lucide-icon>
+              <span>اختبار التنبيه والإشعار الآن</span>
+            </button>
+          } @else {
+            <div class="text-center py-4 bg-slate-950/40 rounded-2xl border border-white/5 space-y-2">
+              <p class="text-xs text-slate-400">لم تقم بتفعيل خطة التذكير لهذه القائمة بعد</p>
+              <button 
+                (click)="showStudyPlanModal.set(true)" 
+                class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-black text-white transition">
+                تفعيل التذكيرات الآن ⏰
+              </button>
+            </div>
+          }
+
+        </div>
+
+      </div>
+
+      <!-- ========================================================= -->
+      <!-- RIGHT: VIDEO LIST & CONTROLS                              -->
+      <!-- ========================================================= -->
+      <div class="flex-1 space-y-6">
+        
+        <!-- Controls Bar (Filter, Search, Add Video) -->
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-slate-900/60 border border-white/10 rounded-2xl p-3 backdrop-blur-md">
+          
+          <!-- Search Bar -->
+          <div class="relative flex-1 max-w-sm">
+            <input 
+              type="text" 
+              [(ngModel)]="searchQuery"
+              placeholder="ابحث في فيديوهات القائمة..."
+              class="w-full bg-slate-950 border border-white/10 focus:border-indigo-500 rounded-xl py-2 pr-4 pl-8 text-xs text-white placeholder-slate-500 focus:outline-none transition"
+            />
+            @if (searchQuery()) {
+              <button (click)="searchQuery.set('')" class="absolute left-2.5 top-2.5 text-slate-400 hover:text-white">
+                <lucide-icon [img]="X" size="14"></lucide-icon>
+              </button>
+            }
+          </div>
+
+          <!-- Filter & Add Button -->
+          <div class="flex items-center gap-2 overflow-x-auto">
+            <!-- Filter Pills -->
+            <div class="flex bg-slate-950 rounded-xl p-1 border border-white/10 shrink-0">
+              <button 
+                (click)="filterMode.set('all')"
+                [class.bg-indigo-600]="filterMode() === 'all'"
+                [class.text-white]="filterMode() === 'all'"
+                [class.text-slate-400]="filterMode() !== 'all'"
+                class="px-3 py-1 rounded-lg text-xs font-bold transition">
+                الكل ({{ playlist()?.videos?.length || 0 }})
+              </button>
+              <button 
+                (click)="filterMode.set('unwatched')"
+                [class.bg-indigo-600]="filterMode() === 'unwatched'"
+                [class.text-white]="filterMode() === 'unwatched'"
+                [class.text-slate-400]="filterMode() !== 'unwatched'"
+                class="px-3 py-1 rounded-lg text-xs font-bold transition">
+                المتبقية ({{ stats()?.remainingVideos || 0 }})
+              </button>
+              <button 
+                (click)="filterMode.set('watched')"
+                [class.bg-indigo-600]="filterMode() === 'watched'"
+                [class.text-white]="filterMode() === 'watched'"
+                [class.text-slate-400]="filterMode() !== 'watched'"
+                class="px-3 py-1 rounded-lg text-xs font-bold transition">
+                المشاهدة ({{ stats()?.watchedVideos || 0 }})
+              </button>
+            </div>
+
+            <!-- Add Video Button -->
+            <button 
+              (click)="showAddVideoModal.set(true)"
+              class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black flex items-center gap-1 shrink-0 transition shadow-lg shadow-indigo-600/20">
+              <lucide-icon [img]="Plus" size="15"></lucide-icon>
+              <span class="hidden sm:inline">إضافة فيديو</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Video Rows List -->
+        @if (filteredVideos().length === 0) {
+          <div class="text-center py-16 bg-slate-900/40 border border-white/5 rounded-3xl space-y-3">
+            <lucide-icon [img]="BookOpen" size="36" class="text-slate-600 mx-auto"></lucide-icon>
+            <h4 class="text-sm font-bold text-slate-300">
+              {{ searchQuery() ? 'لم يتم العثور على فيديوهات مطابقة للبحث' : 'لا توجد فيديوهات في هذا القسم' }}
+            </h4>
+            <p class="text-xs text-slate-500">يمكنك إضافة فيديوهات جديدة باستخدام زر "إضافة فيديو"</p>
+          </div>
+        } @else {
+          
+          <div class="space-y-3">
+            @for (v of filteredVideos(); track v.id; let idx = $index) {
+              
+              <div 
+                (click)="playVideo(v)"
+                class="group cursor-pointer bg-slate-900/60 hover:bg-slate-900/90 border border-white/5 hover:border-indigo-500/30 rounded-2xl p-3 flex flex-col sm:flex-row gap-4 items-start sm:items-center transition-all duration-200 relative"
+                [class.border-indigo-500/50]="stats()?.nextVideo?.id === v.id"
+                [class.bg-indigo-950/20]="stats()?.nextVideo?.id === v.id">
+
+                <!-- Next Up Tag -->
+                @if (stats()?.nextVideo?.id === v.id) {
+                  <span class="absolute -top-2.5 right-6 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full shadow-md">
+                    الفيديو التالي في الخطة ✨
+                  </span>
+                }
+
+                <!-- Index & Watched Toggle Checkbox -->
+                <div class="flex items-center gap-3 shrink-0">
+                  <span class="text-xs font-black text-slate-500 w-5 text-center">{{ idx + 1 }}</span>
+                  
+                  <button 
+                    (click)="toggleWatched(v, $event)"
+                    class="w-8 h-8 rounded-xl flex items-center justify-center transition"
+                    [ngClass]="v.watched ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-500 border border-white/10 hover:text-white hover:border-white/30'"
+                    [title]="v.watched ? 'تمت المشاهدة (اضغط للإلغاء)' : 'تعليم كـ تمت المشاهدة'">
+                    <lucide-icon [img]="CheckCircle2" size="18" [class.text-emerald-400]="v.watched"></lucide-icon>
+                  </button>
+                </div>
+
+                <!-- Thumbnail -->
+                <div class="relative w-full sm:w-44 aspect-video rounded-xl overflow-hidden bg-slate-950 border border-white/10 shrink-0">
+                  <img [src]="v.thumbnail" [alt]="v.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  
+                  @if (v.duration) {
+                    <span class="absolute bottom-1.5 left-1.5 bg-black/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm">
+                      {{ v.duration }}
+                    </span>
+                  }
+
+                  @if (v.watched) {
+                    <div class="absolute inset-0 bg-emerald-950/60 backdrop-blur-[1px] flex items-center justify-center">
+                      <span class="bg-emerald-500 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <lucide-icon [img]="Check" size="12"></lucide-icon>
+                        <span>تمت المشاهدة</span>
+                      </span>
+                    </div>
+                  }
+                </div>
+
+                <!-- Title & Channel -->
+                <div class="flex-1 min-w-0 space-y-1">
+                  <h4 class="text-sm font-bold text-white leading-snug group-hover:text-indigo-400 transition-colors line-clamp-2" [title]="v.title">
+                    {{ v.title }}
+                  </h4>
+                  <p class="text-xs text-slate-400 font-medium truncate">{{ v.author }}</p>
+                  @if (v.watched && v.watchedAt) {
+                    <span class="text-[10px] text-slate-500 block">شوهد مؤخراً</span>
+                  }
+                </div>
+
+                <!-- Row Actions -->
+                <div class="flex items-center gap-1 shrink-0 self-end sm:self-center opacity-80 group-hover:opacity-100 transition-opacity">
+                  <!-- Move Up -->
+                  <button 
+                    (click)="moveUp(idx, $event)"
+                    [disabled]="idx === 0"
+                    class="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white disabled:opacity-20 flex items-center justify-center transition" title="تحريك لأعلى">
+                    ▲
+                  </button>
+
+                  <!-- Move Down -->
+                  <button 
+                    (click)="moveDown(idx, $event)"
+                    [disabled]="idx === (playlist()?.videos?.length || 0) - 1"
+                    class="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white disabled:opacity-20 flex items-center justify-center transition" title="تحريك لأسفل">
+                    ▼
+                  </button>
+
+                  <!-- Delete -->
+                  <button 
+                    (click)="removeVideo(v, $event)"
+                    class="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 flex items-center justify-center transition" title="حذف من القائمة">
+                    <lucide-icon [img]="Trash2" size="14"></lucide-icon>
+                  </button>
+                </div>
+
+              </div>
+
+            }
+          </div>
+
+        }
+
+      </div>
+
+    </div>
+
+  }
+
+  <!-- ========================================================= -->
+  <!-- MODAL: STUDY PLAN & REMINDER CUSTOMIZATION                 -->
+  <!-- ========================================================= -->
+  @if (showStudyPlanModal()) {
+    <div class="fixed inset-0 bg-black/80 backdrop-blur-md z-[99999] flex items-center justify-center p-4" dir="rtl">
+      <div class="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-lg p-6 space-y-6 shadow-2xl animate-in zoom-in-95">
+        
+        <div class="flex items-center justify-between border-b border-white/10 pb-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+              <lucide-icon [img]="Bell" size="18"></lucide-icon>
+            </div>
+            <div>
+              <h3 class="text-base font-black text-white">تخصيص خطة المتابعة والتذكير</h3>
+              <p class="text-xs text-slate-400">حدد وتيرة المشاهدة ومواعيد التنبيهات المقترحة</p>
+            </div>
+          </div>
+          <button (click)="showStudyPlanModal.set(false)" class="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center">
+            <lucide-icon [img]="X" size="16"></lucide-icon>
+          </button>
+        </div>
+
+        <div class="space-y-4 text-xs font-bold">
+          
+          <!-- Enable Toggle -->
+          <div class="flex items-center justify-between p-3.5 bg-slate-950 rounded-2xl border border-white/5">
+            <div>
+              <span class="text-white block">تفعيل التذكير الذكي لهذه القائمة</span>
+              <span class="text-[11px] text-slate-400 block font-normal">سيظهر إشعار تفاعلي يقترح الفيديو التالي عند حلول الوقت</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" [(ngModel)]="planEnabled" class="sr-only peer">
+              <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+            </label>
+          </div>
+
+          <!-- Target Type -->
+          <div class="space-y-1.5">
+            <label class="text-slate-400 block">نوع وتيرة التذكير:</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button 
+                type="button"
+                (click)="planTargetType.set('daily')"
+                [ngClass]="planTargetType() === 'daily' ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'"
+                class="py-2.5 rounded-xl border text-xs font-bold transition">
+                📅 يومي محدد بوقت
+              </button>
+              <button 
+                type="button"
+                (click)="planTargetType.set('interval')"
+                [ngClass]="planTargetType() === 'interval' ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'"
+                class="py-2.5 rounded-xl border text-xs font-bold transition">
+                ⏳ فترات زمنية دورية
+              </button>
+            </div>
+          </div>
+
+          <!-- Interval Presets (if interval mode) -->
+          @if (planTargetType() === 'interval') {
+            <div class="space-y-1.5">
+              <label class="text-slate-400 block">الفاصل الزمني بين التذكيرات:</label>
+              <select [(ngModel)]="planIntervalMinutes" class="w-full bg-slate-950 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
+                <option *ngFor="let p of intervalPresets" [value]="p.minutes">{{ p.label }} ({{ p.description }})</option>
+              </select>
+            </div>
+          } @else {
+            <!-- Daily Scheduled Time -->
+            <div class="space-y-1.5">
+              <label class="text-slate-400 block">وقت التذكير اليومي المفضل:</label>
+              <input type="time" [(ngModel)]="planScheduledTime" class="w-full bg-slate-950 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500 font-mono" />
+            </div>
+          }
+
+          <!-- Daily Goal Target -->
+          <div class="space-y-1.5">
+            <label class="text-slate-400 block">الهدف اليومي (كم فيديو تود مشاهدته يومياً؟):</label>
+            <div class="flex items-center gap-3">
+              <input type="number" min="1" max="20" [(ngModel)]="planDailyTarget" class="w-24 bg-slate-950 border border-white/10 rounded-xl p-3 text-center text-white font-black text-sm" />
+              <span class="text-slate-400">فيديو / مقطع يومياً</span>
+            </div>
+          </div>
+
+          <!-- Sound & Browser Options -->
+          <div class="grid grid-cols-2 gap-3 pt-2">
+            <label class="flex items-center gap-2 p-3 bg-slate-950 rounded-xl border border-white/5 cursor-pointer">
+              <input type="checkbox" [(ngModel)]="planSoundAlert" class="rounded text-indigo-600">
+              <span class="text-slate-300">تنبيه صوتي هادئ 🔔</span>
+            </label>
+            <label class="flex items-center gap-2 p-3 bg-slate-950 rounded-xl border border-white/5 cursor-pointer">
+              <input type="checkbox" [(ngModel)]="planBrowserNotification" class="rounded text-indigo-600">
+              <span class="text-slate-300">إشعارات المتصفح 🌐</span>
+            </label>
+          </div>
+
+        </div>
+
+        <div class="flex items-center justify-end gap-3 border-t border-white/10 pt-4">
+          <button (click)="showStudyPlanModal.set(false)" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition">
+            إلغاء
+          </button>
+          <button (click)="saveStudyPlan()" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black transition shadow-lg shadow-indigo-600/30">
+            حفظ إعدادات المتابعة ✨
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- ========================================================= -->
+  <!-- MODAL: ADD VIDEO TO PLAYLIST                              -->
+  <!-- ========================================================= -->
+  @if (showAddVideoModal()) {
+    <div class="fixed inset-0 bg-black/80 backdrop-blur-md z-[99999] flex items-center justify-center p-4" dir="rtl">
+      <div class="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-md p-6 space-y-5 shadow-2xl animate-in zoom-in-95">
+        
+        <div class="flex items-center justify-between border-b border-white/10 pb-4">
+          <h3 class="text-base font-black text-white">إضافة فيديو جديد للقائمة</h3>
+          <button (click)="showAddVideoModal.set(false)" class="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center">
+            <lucide-icon [img]="X" size="16"></lucide-icon>
+          </button>
+        </div>
+
+        <div class="space-y-4 text-xs font-bold">
+          <div class="space-y-1.5">
+            <label class="text-slate-400 block">رابط أو معرف الفيديو (YouTube URL / ID):</label>
+            <input 
+              type="text" 
+              [(ngModel)]="newVideoUrl" 
+              placeholder="https://www.youtube.com/watch?v=... أو dQw4w9WgXcQ" 
+              class="w-full bg-slate-950 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500" 
+              dir="ltr"
+            />
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-slate-400 block">عنوان الفيديو (اختياري):</label>
+            <input 
+              type="text" 
+              [(ngModel)]="newVideoTitle" 
+              placeholder="اتركه فارغاً لجلب العنوان تلقائياً" 
+              class="w-full bg-slate-950 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500" 
+            />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 border-t border-white/10 pt-4">
+          <button (click)="showAddVideoModal.set(false)" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition">
+            إلغاء
+          </button>
+          <button 
+            (click)="addNewVideo()" 
+            [disabled]="!newVideoUrl().trim() || isAddingVideo()"
+            class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-black transition">
+            {{ isAddingVideo() ? 'جاري الإضافة...' : 'إضافة للقائمة' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- ========================================================= -->
+  <!-- MODAL: EDIT PLAYLIST INFO                                 -->
+  <!-- ========================================================= -->
+  @if (showEditInfoModal()) {
+    <div class="fixed inset-0 bg-black/80 backdrop-blur-md z-[99999] flex items-center justify-center p-4" dir="rtl">
+      <div class="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-md p-6 space-y-5 shadow-2xl animate-in zoom-in-95">
+        
+        <div class="flex items-center justify-between border-b border-white/10 pb-4">
+          <h3 class="text-base font-black text-white">تعديل بيانات القائمة</h3>
+          <button (click)="showEditInfoModal.set(false)" class="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center">
+            <lucide-icon [img]="X" size="16"></lucide-icon>
+          </button>
+        </div>
+
+        <div class="space-y-4 text-xs font-bold">
+          <div class="space-y-1.5">
+            <label class="text-slate-400 block">عنوان القائمة:</label>
+            <input type="text" [(ngModel)]="editTitle" class="w-full bg-slate-950 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500" />
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-slate-400 block">الوصف:</label>
+            <textarea rows="3" [(ngModel)]="editDescription" class="w-full bg-slate-950 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500"></textarea>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between border-t border-white/10 pt-4">
+          <button (click)="deletePlaylist()" class="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl text-xs font-bold transition flex items-center gap-1">
+            <lucide-icon [img]="Trash2" size="14"></lucide-icon>
+            <span>حذف القائمة</span>
+          </button>
+          <div class="flex items-center gap-2">
+            <button (click)="showEditInfoModal.set(false)" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition">
+              إلغاء
+            </button>
+            <button (click)="savePlaylistInfo()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black transition">
+              حفظ التعديلات
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  }
+
+</div>

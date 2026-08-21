@@ -1,190 +1,217 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideDynamicIcon } from '@lucide/angular';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
+import { LucideAngularModule } from 'lucide-angular';
 import { QAService, QAPost, QACategory } from '../../core/qa.service';
+import { FirebaseService } from '../../core/services/firebase.service';
 
 @Component({
   selector: 'app-qa',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideDynamicIcon],
+  imports: [CommonModule, FormsModule, RouterModule, LucideAngularModule],
   templateUrl: './qa.component.html',
   styleUrls: ['./qa.component.scss']
 })
-export class QAComponent {
+export class QAComponent implements OnInit {
   qaService = inject(QAService);
+  firebase = inject(FirebaseService);
+  route = inject(ActivatedRoute);
+  router = inject(Router);
 
-  // States
+  // Filters & Search
   searchQuery = signal<string>('');
   activeCategoryFilter = signal<'all' | 'question' | 'request'>('all');
-  activeStatusFilter = signal<'all' | 'answered' | 'pending'>('all');
 
-  // Input bindings
-  authorName = signal<string>('أحمد عرفة');
+  // Add Modal State
+  isAddOpen = signal<boolean>(false);
   newPostText = signal<string>('');
   newPostCategory = signal<QACategory>('question');
-  newPostAnonymous = signal<boolean>(false);
+  newPostAnonymous = signal<boolean>(true);
+  authorNameInput = signal<string>('');
 
-  // Modal open states
-  isAddOpen = signal<boolean>(false);
-  
-  // Edit dialog state
+  // Edit Post Modal State
   editingPost = signal<QAPost | null>(null);
   editText = signal<string>('');
   editAnonymous = signal<boolean>(false);
 
-  // Admin answer dialog state
+  // Admin Answer Modal State
   answeringPost = signal<QAPost | null>(null);
   answerText = signal<string>('');
   answerAlert = signal<string>('');
-  adminResponderName = signal<string>('مطور النظام');
+  adminResponderName = signal<string>('أحمد عرفه');
 
-  // Follow-up dialog state
+  // Follow-up Inquiry Modal State
   followUpPost = signal<QAPost | null>(null);
   followUpText = signal<string>('');
 
-  // Follow-up answer dialog state
+  // Follow-up Answer Modal State
   followUpAnsweringPost = signal<QAPost | null>(null);
   followUpAnswerText = signal<string>('');
 
-  // Computed filtered list
+  // Success Toast
+  showToastMsg = signal<string | null>(null);
+
+  // Current User Display Name
+  currentUserDisplayName = computed(() => {
+    const u = this.firebase.userData();
+    return u?.displayName || u?.name || 'أحمد عرفه';
+  });
+
+  // Filtered Posts
   filteredPosts = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
     const cat = this.activeCategoryFilter();
-    const stat = this.activeStatusFilter();
     let list = this.qaService.posts();
 
-    // 1. Text filter
+    // Search filter
     if (query) {
       list = list.filter(p => 
         p.text.toLowerCase().includes(query) ||
         p.authorName.toLowerCase().includes(query) ||
-        (p.answer && p.answer.toLowerCase().includes(query))
+        (p.answer && p.answer.toLowerCase().includes(query)) ||
+        (p.followUpText && p.followUpText.toLowerCase().includes(query)) ||
+        (p.followUpAnswer && p.followUpAnswer.toLowerCase().includes(query))
       );
     }
 
-    // 2. Category filter
+    // Category filter
     if (cat !== 'all') {
       list = list.filter(p => p.category === cat);
     }
 
-    // 3. Status filter
-    if (stat === 'answered') {
-      list = list.filter(p => !!p.answer);
-    } else if (stat === 'pending') {
-      list = list.filter(p => !p.answer);
-    }
-
-    // Sort by likes, then by createdAt desc
-    return [...list].sort((a, b) => b.likes - a.likes || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    // Sort by createdAt desc
+    return [...list].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   });
 
-  // Action handlers
-  submitNewPost(): void {
-    if (!this.newPostText().trim()) return;
-    
-    this.qaService.addPost(
+  ngOnInit(): void {
+    this.authorNameInput.set(this.currentUserDisplayName());
+    this.adminResponderName.set(this.currentUserDisplayName());
+
+    // Listen to query params (e.g. ?filter=question or ?tab=qa)
+    this.route.queryParams.subscribe(params => {
+      if (params['filter'] === 'question' || params['filter'] === 'questions') {
+        this.activeCategoryFilter.set('question');
+      } else if (params['filter'] === 'request' || params['filter'] === 'requests') {
+        this.activeCategoryFilter.set('request');
+      }
+    });
+  }
+
+  // --- Add New Post ---
+  async submitNewPost(): Promise<void> {
+    const text = this.newPostText().trim();
+    if (!text) return;
+
+    const author = this.authorNameInput().trim() || this.currentUserDisplayName();
+    await this.qaService.addPost(
       this.newPostCategory(),
-      this.newPostText().trim(),
-      this.authorName().trim(),
+      text,
+      author,
       this.newPostAnonymous()
     );
 
-    // Reset fields & close
     this.newPostText.set('');
-    this.newPostAnonymous.set(false);
     this.isAddOpen.set(false);
+    this.triggerToast('تم نشر السؤال / الطلب بنجاح ✅');
   }
 
-  // Like/Upvote post
-  upvotePost(post: QAPost): void {
-    this.qaService.likePost(post.id);
-  }
-
-  // Edit triggers
+  // --- Edit Post ---
   openEditDialog(post: QAPost): void {
     this.editingPost.set(post);
     this.editText.set(post.text);
     this.editAnonymous.set(post.isAnonymous || false);
   }
 
-  submitEdit(): void {
+  async submitEdit(): Promise<void> {
     const post = this.editingPost();
-    if (!post || !this.editText().trim()) return;
+    const text = this.editText().trim();
+    if (!post || !text) return;
 
-    this.qaService.updatePost(post.id, this.editText().trim(), this.editAnonymous());
+    await this.qaService.updatePost(post.id, text, this.editAnonymous());
     this.editingPost.set(null);
+    this.triggerToast('تم تعديل المنشور بنجاح');
   }
 
-  deletePost(post: QAPost): void {
-    if (confirm("هل أنت متأكد من حذف هذه المشاركة؟")) {
-      this.qaService.deletePost(post.id);
+  // --- Delete Post ---
+  async deletePost(post: QAPost): Promise<void> {
+    if (confirm('هل أنت متأكد من حذف هذه المشاركة؟')) {
+      await this.qaService.deletePost(post.id);
+      this.triggerToast('تم حذف المشاركة');
     }
   }
 
-  // Answer triggers (Admin Mode)
+  // --- Admin Answer ---
   openAnswerDialog(post: QAPost): void {
     this.answeringPost.set(post);
     this.answerText.set(post.answer || '');
     this.answerAlert.set(post.answerAlert || '');
+    this.adminResponderName.set(this.currentUserDisplayName());
   }
 
-  submitAnswer(): void {
+  async submitAnswer(): Promise<void> {
     const post = this.answeringPost();
-    if (!post || !this.answerText().trim()) return;
+    const answer = this.answerText().trim();
+    if (!post || !answer) return;
 
-    this.qaService.answerPost(
+    await this.qaService.answerPost(
       post.id,
-      this.answerText().trim(),
-      this.adminResponderName().trim(),
+      answer,
+      this.adminResponderName().trim() || 'أحمد عرفه',
       this.answerAlert().trim()
     );
     this.answeringPost.set(null);
+    this.triggerToast('تم حفظ الرد الإداري بنجاح ✅');
   }
 
-  // User Follow-up triggers
+  // --- User Follow-up Inquiry ---
   openFollowUpDialog(post: QAPost): void {
     this.followUpPost.set(post);
-    this.followUpText.set('');
+    this.followUpText.set(post.followUpText || '');
   }
 
-  submitFollowUp(): void {
+  async submitFollowUp(): Promise<void> {
     const post = this.followUpPost();
-    if (!post || !this.followUpText().trim()) return;
+    const text = this.followUpText().trim();
+    if (!post || !text) return;
 
-    this.qaService.addFollowUp(post.id, this.followUpText().trim());
+    await this.qaService.addFollowUp(post.id, text);
     this.followUpPost.set(null);
+    this.triggerToast('تم إرسال الاستفسار التكميلي بنجاح ✅');
   }
 
-  // Admin Answer Follow-up triggers
+  // --- Admin Follow-up Answer ---
   openFollowUpAnswerDialog(post: QAPost): void {
     this.followUpAnsweringPost.set(post);
-    this.followUpAnswerText.set('');
+    this.followUpAnswerText.set(post.followUpAnswer || '');
   }
 
-  submitFollowUpAnswer(): void {
+  async submitFollowUpAnswer(): Promise<void> {
     const post = this.followUpAnsweringPost();
-    if (!post || !this.followUpAnswerText().trim()) return;
+    const text = this.followUpAnswerText().trim();
+    if (!post || !text) return;
 
-    this.qaService.answerFollowUp(
+    await this.qaService.answerFollowUp(
       post.id,
-      this.followUpAnswerText().trim(),
-      this.adminResponderName().trim()
+      text,
+      this.adminResponderName().trim() || 'أحمد عرفه'
     );
     this.followUpAnsweringPost.set(null);
+    this.triggerToast('تم الرد على الاستفسار التكميلي ✅');
   }
 
-  // Helper date parsing
-  getRelativeTime(dateStr: string): string {
-    const date = new Date(dateStr);
-    const diffMs = Date.now() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
+  // --- Upvote / Like ---
+  async upvotePost(post: QAPost): Promise<void> {
+    await this.qaService.likePost(post.id);
+  }
 
-    if (diffMins < 1) return 'الآن';
-    if (diffMins < 60) return `منذ ${diffMins} دقيقة`;
-    if (diffHours < 24) return `منذ ${diffHours} ساعة`;
-    return `منذ ${diffDays} يوم`;
+  // --- Toast ---
+  triggerToast(msg: string): void {
+    this.showToastMsg.set(msg);
+    setTimeout(() => {
+      if (this.showToastMsg() === msg) {
+        this.showToastMsg.set(null);
+      }
+    }, 3000);
   }
 }

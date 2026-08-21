@@ -3,35 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>تقطيع الفواكه (Fruit Slicer)</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Fruit Frenzy 🍉🍍⚔️</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&family=Shojumaru&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=2026_frenzy_v2">
 </head>
 <body>
     
+    <!-- Start Screen -->
     <div id="start-screen" class="screen active">
-        <div class="card">
-            <h1>🍉 تقطيع الفواكه</h1>
-            <p>مرر إصبعك أو الماوس لتقطيع الفواكه وتجنب القنابل!</p>
-            <button id="start-btn" class="btn primary">ابدأ اللعب</button>
+        <div class="card dojo-card">
+            <div class="game-badge">⚔️ NINJA DOJO 🍉</div>
+            <h1 class="game-title">Fruit Frenzy</h1>
+            <p class="subtitle">مرر إصبعك أو الماوس كالسيف القاطع لتقطيع الفواكه الطائرة بدقة وتجنب القنابل الموقوتة!</p>
+            <button id="start-btn" class="btn primary glow-btn">ابدأ تقطيع الفواكه 🗡️</button>
         </div>
     </div>
 
+    <!-- Play Screen -->
     <div id="game-screen" class="screen">
         <div class="hud">
-            <div class="score-display">النقاط: <span id="score">0</span></div>
+            <div class="score-display">
+                <span>النقاط:</span>
+                <span id="score" class="score-val">0</span>
+            </div>
             <div class="lives-display" id="lives">❤️❤️❤️</div>
         </div>
         <canvas id="game-canvas"></canvas>
     </div>
 
+    <!-- Game Over Screen -->
     <div id="game-over-screen" class="screen">
-        <div class="card">
-            <h1 class="danger">انتهت اللعبة! 💥</h1>
-            <h2>نقاطك: <span id="final-score">0</span></h2>
-            <button id="restart-btn" class="btn primary">العب مرة أخرى</button>
+        <div class="card dojo-card">
+            <h1 class="danger">انتهت الجولة! 💥</h1>
+            <h2>مجموع نقاطك: <span id="final-score" class="score-val">0</span></h2>
+            <p id="gameover-quote" style="color: #94a3b8; margin-bottom: 20px;">ضربات نينجا سريعة ورائعة!</p>
+            <button id="restart-btn" class="btn primary glow-btn">محاولة جديدة 🔄</button>
         </div>
     </div>
 
-    <script src="game.js"></script>
+    <script src="game.js?v=2026_frenzy_v2"></script>
 </body>
 </html>

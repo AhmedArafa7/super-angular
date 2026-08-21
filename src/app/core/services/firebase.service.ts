@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { getAuth, Auth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, User, GoogleAuthProvider, GithubAuthProvider, signInWithPopup, linkWithPopup } from 'firebase/auth';
 import { getFirestore, Firestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, orderBy, limit, startAfter, QueryDocumentSnapshot, documentId, runTransaction, arrayUnion, addDoc, onSnapshot, serverTimestamp, enableIndexedDbPersistence, writeBatch } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL, FirebaseStorage } from 'firebase/storage';
 import { environment } from '../../../environments/environment';
@@ -27,6 +27,9 @@ export interface UserData {
   onboardingComplete?: boolean;
   onboardingCompletedAt?: number;
   role?: 'admin' | 'reviewer' | 'user' | 'founder' | 'cofounder' | 'management' | 'free';
+  themePreferences?: any;
+  layoutMode?: string;
+  accentColor?: string;
 }
 
 /**
@@ -246,24 +249,77 @@ export class FirebaseService {
     }
   }
 
-  async refreshGoogleToken(): Promise<string | null> {
-    // Attempt silent refresh via a background popup
+  async signInWithGithub(): Promise<boolean> {
     try {
-      const provider = new GoogleAuthProvider();
-      provider.addScope('https://www.googleapis.com/auth/youtube.readonly');
+      const provider = new GithubAuthProvider();
+      provider.addScope('read:user');
       const result = await signInWithPopup(this.auth, provider);
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      if (credential?.accessToken) {
-        const expiresAt = Date.now() + (55 * 60 * 1000); 
-        localStorage.setItem('yt_access_token', credential.accessToken);
-        localStorage.setItem('yt_token_expiry', expiresAt.toString());
-        await this.saveYouTubeAuth({ accessToken: credential.accessToken, expiresAt });
-        return credential.accessToken;
+      if (result.user) {
+        const uid = result.user.uid;
+        const userRef = doc(this.firestore, 'users', uid);
+        const updates: Partial<UserData> = {
+          displayName: result.user.displayName || result.user.email?.split('@')[0] || 'GitHub Node',
+          photoURL: result.user.photoURL || undefined,
+          email: result.user.email || undefined,
+          username: result.user.email?.split('@')[0] || `gh_${uid.substring(0, 5)}`
+        };
+        await setDoc(userRef, updates, { merge: true });
+        this.userData.update(u => u ? { ...u, ...updates } : { uid, ...updates });
+        return true;
       }
+      return false;
     } catch (err) {
-      console.error('[FirebaseService] Token refresh failed', err);
+      console.error('[FirebaseService] GitHub sign-in failed:', err);
+      return false;
     }
-    return null;
+  }
+
+  async updateNodeIdentity(name: string, username: string, avatarUrl?: string): Promise<boolean> {
+    try {
+      const currentUid = this.currentUser()?.uid || this.userData()?.uid;
+      const cleanName = name.trim();
+      const cleanUsername = username.trim().replace(/^@/, '');
+
+      const updates: Partial<UserData> = {
+        name: cleanName,
+        displayName: cleanName,
+        username: cleanUsername,
+        avatar_url: avatarUrl || this.userData()?.avatar_url || this.userData()?.photoURL
+      };
+
+      if (currentUid && this.firestore) {
+        const userRef = doc(this.firestore, 'users', currentUid);
+        await setDoc(userRef, updates, { merge: true });
+      }
+
+      // Update in-memory reactive state
+      this.userData.update(u => u ? { ...u, ...updates } : { uid: currentUid || 'local_user', ...updates });
+
+      // Save to localStorage for instant offline access
+      localStorage.setItem('Si-Neuro-user-identity', JSON.stringify({
+        name: cleanName,
+        username: cleanUsername,
+        avatar_url: updates.avatar_url
+      }));
+
+      return true;
+    } catch (err) {
+      console.error('[FirebaseService] updateNodeIdentity error:', err);
+      return false;
+    }
+  }
+
+  async saveThemePreferences(themeData: { themeName?: string; layoutMode?: string; accentColor?: string; isDarkMode?: boolean }): Promise<void> {
+    try {
+      const currentUid = this.currentUser()?.uid || this.userData()?.uid;
+      if (currentUid && this.firestore) {
+        const userRef = doc(this.firestore, 'users', currentUid);
+        await setDoc(userRef, { themePreferences: themeData }, { merge: true });
+      }
+      localStorage.setItem('Si-Neuro-theme-builder-config', JSON.stringify(themeData));
+    } catch (err) {
+      console.warn('[FirebaseService] saveThemePreferences error:', err);
+    }
   }
 
   private async loadUserData(uid: string): Promise<void> {

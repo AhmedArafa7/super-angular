@@ -6,7 +6,7 @@ import { EncryptionService } from './encryption.service';
 })
 export class IndexedDBService {
   private readonly DB_NAME = 'halaltubeDB';
-  private readonly DB_VERSION = 7; // Incremented for created studio books store
+  private readonly DB_VERSION = 9; // Incremented for playlists store
   private db: IDBDatabase | null = null;
   private encryption = inject(EncryptionService);
 
@@ -16,7 +16,7 @@ export class IndexedDBService {
 
   private getKeyPathForStore(storeName: string): string {
     if (storeName === 'subscriptions') return 'channelId';
-    if (storeName === 'personal_pdf_books' || storeName === 'created_books') return 'id';
+    if (storeName === 'personal_pdf_books' || storeName === 'created_books' || storeName === 'book_video_blobs' || storeName === 'playlists') return 'id';
     return 'videoId';
   }
 
@@ -84,6 +84,16 @@ export class IndexedDBService {
         // Created Studio Books Store
         if (!db.objectStoreNames.contains('created_books')) {
           db.createObjectStore('created_books', { keyPath: 'id' });
+        }
+
+        // Dedicated Video Blobs Store for Video Books (Zero RAM Overhead)
+        if (!db.objectStoreNames.contains('book_video_blobs')) {
+          db.createObjectStore('book_video_blobs', { keyPath: 'id' });
+        }
+
+        // HalalTube Playlists & Smart Study Plans Store
+        if (!db.objectStoreNames.contains('playlists')) {
+          db.createObjectStore('playlists', { keyPath: 'id' });
         }
       };
     });
@@ -285,4 +295,52 @@ export class IndexedDBService {
       }
     }
   }
+
+  // =========================================================================
+  // --- Dedicated Raw Blob Storage (Ultra-efficient for Video Books, 0 RAM) ---
+  // =========================================================================
+
+  async putVideoBlob(id: string, blob: Blob, meta?: { name?: string; mimeType?: string; size?: number; duration?: number }): Promise<void> {
+    await this.initDB();
+    const item = {
+      id,
+      blob,
+      name: meta?.name || '',
+      mimeType: meta?.mimeType || blob.type || 'video/mp4',
+      size: meta?.size ?? blob.size,
+      duration: meta?.duration || 0,
+      savedAt: Date.now()
+    };
+    return this.put('book_video_blobs', item);
+  }
+
+  async getVideoBlob(id: string): Promise<Blob | null> {
+    await this.initDB();
+    try {
+      const item = await this.get('book_video_blobs', id);
+      if (!item) return null;
+      return item.blob || null;
+    } catch (e) {
+      console.warn(`[IndexedDBService] Could not retrieve video blob "${id}":`, e);
+      return null;
+    }
+  }
+
+  async deleteVideoBlob(id: string): Promise<void> {
+    await this.initDB();
+    return this.delete('book_video_blobs', id);
+  }
+
+  async getVideoBlobsBatch(ids: string[]): Promise<Map<string, Blob>> {
+    await this.initDB();
+    const map = new Map<string, Blob>();
+    for (const id of ids) {
+      const blob = await this.getVideoBlob(id);
+      if (blob) {
+        map.set(id, blob);
+      }
+    }
+    return map;
+  }
 }
+

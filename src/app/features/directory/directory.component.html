@@ -1,0 +1,251 @@
+<div class="min-h-screen bg-[#070a13] text-slate-100 p-4 md:p-8 font-['Tajawal'] select-none text-right" dir="rtl">
+
+  <!-- ================= FLOATING TOAST ================= -->
+  @if (toastMsg()) {
+    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-[300] bg-indigo-600/95 backdrop-blur-xl border border-indigo-400/40 text-white px-6 py-3 rounded-2xl shadow-2xl shadow-indigo-600/40 flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
+      <lucide-icon name="check-circle-2" class="w-5 h-5 text-emerald-300 shrink-0"></lucide-icon>
+      <span class="font-bold text-xs md:text-sm">{{ toastMsg() }}</span>
+    </div>
+  }
+
+  <div class="max-w-7xl mx-auto space-y-8">
+
+    <!-- ================= 1. TOP HEADER MATCHING SCREENSHOT ================= -->
+    <header class="flex flex-col items-center justify-center text-center space-y-3 pt-2">
+      
+      <!-- Top Center Verified Network Badge -->
+      <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-mono uppercase tracking-widest font-black">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+        <span>VERIFIED NETWORK</span>
+      </div>
+
+      <!-- Main Title -->
+      <h1 class="text-3xl md:text-5xl font-black text-white tracking-tight flex items-center justify-center gap-3">
+        <span>سجل العقد الحية</span>
+        <div class="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-500/10">
+          <lucide-icon name="users" class="w-6 h-6 md:w-7 md:h-7"></lucide-icon>
+        </div>
+      </h1>
+
+      <!-- Subtitle -->
+      <p class="text-xs md:text-sm text-slate-400 font-medium max-w-xl leading-relaxed">
+        دليل العقد البشرية والآلية النشطة في النخاع - بيانات حقيقية وموثقة.
+      </p>
+
+    </header>
+
+    <!-- ================= 2. SEARCH & ACTIVE NODES BAR ================= -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 max-w-5xl mx-auto">
+      
+      <!-- Active Nodes Count Badge (Right in RTL) -->
+      <div class="h-14 px-6 bg-[#0e1424] border border-white/10 rounded-2xl flex items-center gap-2.5 text-xs font-mono text-emerald-400 font-bold shrink-0 shadow-xl">
+        <lucide-icon name="database" class="w-4 h-4 text-emerald-400"></lucide-icon>
+        <span>{{ activeNodesCount() }} Active Nodes</span>
+      </div>
+
+      <!-- Wide Search Input (Center / Left) -->
+      <div class="relative w-full flex-1">
+        <input 
+          type="text" 
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          placeholder="...ابحث عن اسم العقدة، المعرف، أو الرتبة" 
+          class="w-full h-14 bg-[#0e1424] border border-indigo-500/30 rounded-2xl pr-12 pl-4 text-white text-xs md:text-sm font-bold focus:outline-none focus:border-indigo-500 transition-colors shadow-xl" />
+        <lucide-icon name="search" class="w-4 h-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2"></lucide-icon>
+      </div>
+
+    </div>
+
+    <!-- ================= 3. FILTER PILLS ================= -->
+    <div class="flex items-center justify-center gap-2 flex-wrap">
+      <button 
+        (click)="filterType.set('all')"
+        [ngClass]="filterType() === 'all' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/30' : 'bg-black/30 text-slate-400 hover:text-white border border-white/5'"
+        class="px-4 py-2 rounded-xl text-xs transition-all cursor-pointer">
+        جميع العقد
+      </button>
+      <button 
+        (click)="filterType.set('human')"
+        [ngClass]="filterType() === 'human' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/30' : 'bg-black/30 text-slate-400 hover:text-white border border-white/5'"
+        class="px-4 py-2 rounded-xl text-xs transition-all cursor-pointer">
+        عقد بشرية 👤
+      </button>
+      <button 
+        (click)="filterType.set('ai_agent')"
+        [ngClass]="filterType() === 'ai_agent' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/30' : 'bg-black/30 text-slate-400 hover:text-white border border-white/5'"
+        class="px-4 py-2 rounded-xl text-xs transition-all cursor-pointer">
+        عقد ذكية (AI) 🤖
+      </button>
+      <button 
+        (click)="filterType.set('online')"
+        [ngClass]="filterType() === 'online' ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/30' : 'bg-black/30 text-slate-400 hover:text-white border border-white/5'"
+        class="px-4 py-2 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span>نشط الآن</span>
+      </button>
+    </div>
+
+    <!-- ================= 4. NODE CARDS GRID ================= -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      
+      @for (node of filteredNodes(); track node.id) {
+        
+        <div class="bg-[#0e1424] hover:bg-[#11182c] border border-white/10 hover:border-indigo-500/30 rounded-3xl p-6 flex flex-col justify-between space-y-5 shadow-2xl transition-all duration-300 relative group">
+          
+          <!-- Card Top: Avatar, Status, Verified Badge -->
+          <div class="flex items-start justify-between">
+            
+            <!-- Node ID Badge -->
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-black/40 border border-white/10 text-slate-400">
+              #{{ node.nodeId }}
+            </span>
+
+            <!-- Avatar with Online Ring -->
+            <div class="relative">
+              <img [src]="node.avatar" [alt]="node.name" class="w-14 h-14 rounded-2xl object-cover border border-white/10 shadow-md" />
+              
+              @if (node.status === 'online') {
+                <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[#0e1424] shadow-md"></span>
+              } @else {
+                <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-amber-500 border-2 border-[#0e1424]"></span>
+              }
+            </div>
+
+          </div>
+
+          <!-- Name & Username & Rank -->
+          <div class="space-y-1 text-right">
+            
+            <div class="flex items-center gap-1.5 justify-start">
+              <h3 class="text-base font-black text-white tracking-tight">{{ node.name }}</h3>
+              @if (node.isVerified) {
+                <lucide-icon name="badge-check" class="w-4 h-4 text-emerald-400 shrink-0"></lucide-icon>
+              }
+            </div>
+
+            <p class="text-xs font-mono text-indigo-400 font-bold">{{ node.username }}</p>
+
+            <div class="pt-1">
+              <span class="text-[10px] font-bold px-2.5 py-1 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 block truncate">
+                {{ node.rankLabel }}
+              </span>
+            </div>
+
+          </div>
+
+          <!-- Bio & Telemetry -->
+          <div class="space-y-3">
+            <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed font-medium">
+              {{ node.bio }}
+            </p>
+
+            <!-- Metrics Row -->
+            <div class="flex items-center justify-between text-[10px] font-mono text-slate-500 bg-black/30 border border-white/5 rounded-xl p-2">
+              <span class="flex items-center gap-1">
+                <lucide-icon name="wifi" class="w-3 h-3 text-emerald-400"></lucide-icon>
+                {{ node.pingMs }} ms
+              </span>
+              <span>•</span>
+              <span class="flex items-center gap-1">
+                <lucide-icon name="lock" class="w-3 h-3 text-indigo-400"></lucide-icon>
+                {{ node.e2eeProtocol.split(' ')[0] }}
+              </span>
+              <span>•</span>
+              <span class="text-slate-400">{{ node.location.split(' ')[0] }}</span>
+            </div>
+          </div>
+
+          <!-- Bottom Action Buttons -->
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-white/5">
+            
+            <!-- Direct Message Button -->
+            <button 
+              (click)="openPeerChat(node)"
+              class="py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-600/20 cursor-pointer">
+              <lucide-icon name="message-square" class="w-3.5 h-3.5"></lucide-icon>
+              <span>مراسلة</span>
+            </button>
+
+            <!-- Coin Transfer Button -->
+            <button 
+              (click)="openTransferModal(node)"
+              class="py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 hover:text-white border border-white/10 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+              <lucide-icon name="send" class="w-3.5 h-3.5 text-indigo-400"></lucide-icon>
+              <span>تحويل</span>
+            </button>
+
+          </div>
+
+        </div>
+
+      }
+
+    </div>
+
+  </div>
+
+  <!-- ================= MODAL: COIN TRANSFER TO NODE ================= -->
+  @if (transferModalNode()) {
+    <div class="fixed inset-0 z-[250] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div class="bg-[#111827] border border-white/10 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl space-y-6 animate-in zoom-in-95 duration-200">
+        
+        <div class="flex items-center justify-between border-b border-white/10 pb-4">
+          <h3 class="text-base font-black text-white flex items-center gap-2">
+            <span>💸</span> تحويل رصيد إلى العقدة
+          </h3>
+          <button (click)="transferModalNode.set(null)" class="text-slate-400 hover:text-white font-bold cursor-pointer">✕</button>
+        </div>
+
+        <!-- Target Node Summary -->
+        <div class="bg-black/30 border border-white/5 rounded-2xl p-4 flex items-center gap-3">
+          <img [src]="transferModalNode()?.avatar" class="w-12 h-12 rounded-xl object-cover" />
+          <div class="space-y-0.5">
+            <h4 class="text-sm font-bold text-white">{{ transferModalNode()?.name }}</h4>
+            <span class="text-xs font-mono text-indigo-400">{{ transferModalNode()?.username }}</span>
+          </div>
+        </div>
+
+        @if (transferError()) {
+          <div class="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs font-bold">
+            {{ transferError() }}
+          </div>
+        }
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1.5">اختر العملة المراد تحويلها:</label>
+            <select 
+              [ngModel]="transferCurrency()"
+              (ngModelChange)="transferCurrency.set($event)"
+              class="w-full h-12 bg-black/40 border border-white/10 rounded-2xl px-4 text-white text-xs font-bold focus:outline-none focus:border-indigo-500 cursor-pointer">
+              @for (c of availableCurrencies; track c.code) {
+                <option [value]="c.code" class="bg-slate-900 text-white">{{ c.nameAr }} ({{ c.code }}) - رصيدك: {{ (walletService.balances()[c.code] || 0).toLocaleString() }}</option>
+              }
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1.5">المبلغ المراد تحويله:</label>
+            <input 
+              type="number" 
+              [ngModel]="transferAmount()"
+              (ngModelChange)="transferAmount.set($event)"
+              class="w-full h-12 bg-black/40 border border-white/10 rounded-2xl px-4 text-white text-base font-mono font-bold focus:outline-none focus:border-indigo-500" />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <button (click)="transferModalNode.set(null)" class="px-5 py-2.5 rounded-xl bg-white/5 text-slate-300 text-xs font-bold cursor-pointer">إلغاء</button>
+          <button 
+            (click)="executeTransfer()" 
+            [disabled]="!transferAmount() || transferAmount() <= 0"
+            class="px-7 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 text-white font-black text-xs md:text-sm rounded-2xl shadow-lg cursor-pointer transition-all">
+            تأكيد التحويل فوراً 🚀
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+</div>
