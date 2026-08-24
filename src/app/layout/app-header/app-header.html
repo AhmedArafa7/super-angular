@@ -24,6 +24,13 @@
       <svg lucideIcon="chevron-up" class="w-4 h-4 sm:w-5 sm:h-5"></svg>
     </button>
     
+    @if (pwaInstall.canInstall() || (pwaInstall.isIOS() && !pwaInstall.isInstalled())) {
+      <button (click)="pwaInstall.promptInstall()" class="h-8 sm:h-9 px-2.5 sm:px-3 rounded-lg sm:rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-black text-[11px] sm:text-xs flex items-center gap-1.5 shadow-lg shadow-indigo-500/20 active:scale-95 transition-all flex-row-reverse animate-pulse cursor-pointer" title="تثبيت التطبيق على جهازك">
+        <svg lucideIcon="download-cloud" class="w-3.5 h-3.5"></svg>
+        <span class="hidden md:inline">تثبيت التطبيق</span>
+      </button>
+    }
+
     <div class="h-5 sm:h-6 w-px bg-white/10 mx-0.5 sm:mx-1 hidden sm:block"></div>
     
     <!-- Global Friends Hub Button -->

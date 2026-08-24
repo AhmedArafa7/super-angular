@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { SidebarService } from '../../core/sidebar.service';
 import { GlobalStateService } from '../../core/services/global-state.service';
+import { PwaInstallService } from '../../core/services/pwa-install.service';
 import { LucideDynamicIcon } from '@lucide/angular';
 
 @Component({
@@ -16,6 +17,7 @@ import { LucideDynamicIcon } from '@lucide/angular';
 export class AppHeaderComponent {
   sidebar = inject(SidebarService);
   globalState = inject(GlobalStateService);
+  pwaInstall = inject(PwaInstallService);
 
   showGlobalFriendsModal = false;
   friendQuery = '';

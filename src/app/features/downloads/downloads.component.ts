@@ -1,13 +1,9 @@
-import { Component, signal, computed, inject, OnInit } from '@angular/core';
+import { Component, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { StorageService, CachedAsset, AssetType } from '../../core/storage.service';
-
-type BeforeInstallPromptEvent = Event & {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-};
+import { PwaInstallService } from '../../core/services/pwa-install.service';
 
 @Component({
   selector: 'app-downloads',
@@ -16,12 +12,12 @@ type BeforeInstallPromptEvent = Event & {
   templateUrl: './downloads.component.html',
   styleUrls: ['./downloads.component.scss']
 })
-export class DownloadsComponent implements OnInit {
+export class DownloadsComponent {
   storageService = inject(StorageService);
+  pwaInstall = inject(PwaInstallService);
 
   // Active section view
   activeView = signal<'deployment' | 'storage'>('deployment');
-  deferredPrompt = signal<BeforeInstallPromptEvent | null>(null);
 
   // Constants
   APK_DOWNLOAD_URL = "https://github.com/AhmedArafa7/Super/releases/download/mobile-latest/Si-Neuroai-latest.apk";
@@ -34,85 +30,89 @@ export class DownloadsComponent implements OnInit {
     { id: 'ai_model_data' as AssetType, label: 'النبضات العصبية (AI)', icon: 'cpu', color: 'text-rose-400' },
   ];
 
-  deploymentOptions = computed(() => [
-    {
-      id: 'pwa',
-      title: 'تطبيق نكسوس (PWA)',
-      desc: 'ثبت نسخة الويب المتقدمة للوصول السريع من شاشتك الرئيسية مع دعم العمل أوفلاين.',
-      icon: 'layers',
-      status: 'active',
-      badge: 'موصى به',
-      badgeColor: 'border-indigo-500/30 text-indigo-400 bg-indigo-500/5',
-      glowColor: 'hover:shadow-indigo-500/20',
-      iconBg: 'bg-gradient-to-br from-indigo-550 to-violet-650',
-      actionLabel: this.deferredPrompt() ? 'تثبيت على الجهاز' : 'تم التثبيت / غير مدعوم',
-      isDownload: false
-    },
-    {
-      id: 'android',
-      title: 'تطبيق أندرويد (Native)',
-      desc: 'نسخة APK مخصصة للهواتف الذكية مع دعم كامل للتنبيهات العميقة والوصول للمستشعرات الإضافية.',
-      icon: 'laptop',
-      status: 'active',
-      badge: 'آخر إصدار تلقائي',
-      badgeColor: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5',
-      glowColor: 'hover:shadow-emerald-500/20',
-      iconBg: 'bg-gradient-to-br from-emerald-500 to-teal-650',
-      actionLabel: 'تحميل التطبيق (APK)',
-      isDownload: true,
-      href: this.APK_DOWNLOAD_URL
-    },
-    {
-      id: 'desktop',
-      title: 'نسخة الحاسوب (Desktop)',
-      desc: 'تطبيق EXE متكامل للحواسب الشخصية (ويندوز/ماك) يوفر أداء فائقاً ومعالجة محلية.',
-      icon: 'settings',
-      status: 'building',
-      badge: 'تحت البناء',
-      badgeColor: 'border-amber-500/30 text-amber-400 bg-amber-500/5',
-      glowColor: '',
-      iconBg: 'bg-gradient-to-br from-slate-700 to-slate-800',
-      actionLabel: 'قيد الإعداد...',
-      isDownload: false
-    },
-    {
-      id: 'browser',
-      title: 'متصفح نكسوس (Sovereign Browser)',
-      desc: 'متصفح مبني على نواة نكسوس يوفر تشفيراً عصبياً وتكاملاً مباشراً مع أدوات النظام.',
-      icon: 'globe',
-      status: 'locked',
-      badge: 'قيد التطوير',
-      badgeColor: 'border-white/10 text-slate-500',
-      glowColor: '',
-      iconBg: 'bg-gradient-to-br from-slate-700 to-slate-800',
-      actionLabel: 'قيد المزامنة',
-      isDownload: false
-    }
-  ]);
+  deploymentOptions = computed(() => {
+    const isInstalled = this.pwaInstall.isInstalled();
+    const canInstall = this.pwaInstall.canInstall();
+    const isIos = this.pwaInstall.isIOS();
 
-  ngOnInit(): void {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      this.deferredPrompt.set(e as BeforeInstallPromptEvent);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-  }
+    let pwaLabel = 'تثبيت كـ تطبيق (PWA)';
+    if (isInstalled) {
+      pwaLabel = 'تم التثبيت على جهازك ✓';
+    } else if (canInstall) {
+      pwaLabel = 'تثبيت فوري على الجهاز ⚡';
+    } else if (isIos) {
+      pwaLabel = 'تعليمات التثبيت (iOS) 📱';
+    }
+
+    return [
+      {
+        id: 'pwa',
+        title: 'تطبيق نكسوس (PWA)',
+        desc: 'ثبت نسخة الويب المتقدمة للوصول السريع من شاشتك الرئيسية مع دعم العمل أوفلاين وسرعة فائقة.',
+        icon: 'layers',
+        status: 'active',
+        badge: isInstalled ? 'مثبت حالياً' : 'موصى به',
+        badgeColor: isInstalled 
+          ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5' 
+          : 'border-indigo-500/30 text-indigo-400 bg-indigo-500/5',
+        glowColor: 'hover:shadow-indigo-500/20',
+        iconBg: 'bg-gradient-to-br from-indigo-550 to-violet-650',
+        actionLabel: pwaLabel,
+        isDownload: false
+      },
+      {
+        id: 'android',
+        title: 'تطبيق أندرويد (Native APK)',
+        desc: 'نسخة APK مخصصة للهواتف الذكية مع دعم كامل للتنبيهات العميقة والوصول للمستشعرات الإضافية.',
+        icon: 'smartphone',
+        status: 'active',
+        badge: 'آخر إصدار تلقائي',
+        badgeColor: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5',
+        glowColor: 'hover:shadow-emerald-500/20',
+        iconBg: 'bg-gradient-to-br from-emerald-500 to-teal-650',
+        actionLabel: 'تحميل التطبيق (APK)',
+        isDownload: true,
+        href: this.APK_DOWNLOAD_URL
+      },
+      {
+        id: 'desktop',
+        title: 'نسخة الحاسوب (Desktop)',
+        desc: 'تطبيق EXE متكامل للحواسب الشخصية (ويندوز/ماك) يوفر أداء فائقاً ومعالجة محلية.',
+        icon: 'laptop',
+        status: 'building',
+        badge: 'تحت البناء',
+        badgeColor: 'border-amber-500/30 text-amber-400 bg-amber-500/5',
+        glowColor: '',
+        iconBg: 'bg-gradient-to-br from-slate-700 to-slate-800',
+        actionLabel: 'قيد الإعداد...',
+        isDownload: false
+      },
+      {
+        id: 'browser',
+        title: 'متصفح نكسوس (Sovereign Browser)',
+        desc: 'متصفح مبني على نواة نكسوس يوفر تشفيراً عصبياً وتكاملاً مباشراً مع أدوات النظام.',
+        icon: 'globe',
+        status: 'locked',
+        badge: 'قيد التطوير',
+        badgeColor: 'border-white/10 text-slate-500',
+        glowColor: '',
+        iconBg: 'bg-gradient-to-br from-slate-700 to-slate-800',
+        actionLabel: 'قيد المزامنة',
+        isDownload: false
+      }
+    ];
+  });
 
   // Handle PWA installation
-  installPWA(): void {
-    const prompt = this.deferredPrompt();
-    if (!prompt) {
-      alert("التطبيق مثبت بالفعل على جهازك أو أن متصفحك الحالي لا يدعم تثبيت تطبيقات PWA.");
-      return;
+  async installPWA(): Promise<void> {
+    const result = await this.pwaInstall.promptInstall();
+    if (result === 'accepted') {
+      alert("✅ تم بدء تثبيت التطبيق على جهازك بنجاح!");
+    } else if (result === 'already_installed') {
+      alert("✨ التطبيق مثبت بالفعل على جهازك وتعمل الآن من خلاله.");
+    } else if (result === 'unsupported') {
+      alert("📌 لتثبيت التطبيق على جهازك:\n- تأكد من فتح الموقع عبر متصفح Chrome أو Safari أو Edge.\n- تأكد من فتح الرابط عبر اتصال مشفر آمن HTTPS.");
     }
-
-    prompt.prompt();
-    prompt.userChoice.then(({ outcome }) => {
-      if (outcome === 'accepted') {
-        this.deferredPrompt.set(null);
-        alert("تم بدء تثبيت نكسوس على جهازك بنجاح!");
-      }
-    });
   }
 
   // Get percentage helper for progress-bar

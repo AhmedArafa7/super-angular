@@ -5,7 +5,11 @@ import { FormsModule } from '@angular/forms';
 import { ArcadeService, ArcadeGame, GameCategory } from './arcade.service';
 import { GlobalStateService } from '../../core/services/global-state.service';
 import { FirebaseService } from '../../core/services/firebase.service';
-import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3, Gamepad2, Trophy, Flame, Zap, Play, Users, Cpu, Shield, ArrowRight } from 'lucide-angular';
+import { 
+  LucideAngularModule, UserPlus, Plus, Sparkles, Edit3, Gamepad2, 
+  Trophy, Flame, Zap, Play, Users, Cpu, Shield, ArrowRight, Tag, 
+  Settings, Sliders, Check, RotateCcw, Trash2, Layers, Filter, CheckCircle2, X
+} from 'lucide-angular';
 
 @Component({
   selector: 'app-arcade-hub',
@@ -79,8 +83,17 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3, Gamepad2, Trophy,
             </div>
           </div>
           
-          <!-- Actions: Add Friend + Submit Game -->
-          <div class="flex items-center gap-2 shrink-0 border-t sm:border-t-0 sm:border-r border-white/10 pt-2 sm:pt-0 sm:pr-4 sm:ml-2 justify-end">
+          <!-- Actions: Add Friend + Submit Game + Manage Categories -->
+          <div class="flex items-center gap-2 shrink-0 border-t sm:border-t-0 sm:border-r border-white/10 pt-2 sm:pt-0 sm:pr-4 sm:ml-2 justify-end flex-wrap">
+             
+             <!-- Manage Categories Button in Header -->
+             <button (click)="openManageCategoriesModal()" class="bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/40 text-indigo-200 hover:text-white rounded-xl px-3 h-9 text-xs font-bold transition-all flex items-center gap-1.5 shadow cursor-pointer">
+               <lucide-icon [img]="Tag" class="w-3.5 h-3.5 text-indigo-400"></lucide-icon>
+               <span>إدارة التصنيفات</span>
+               <span *ngIf="customCategoriesCount > 0" class="bg-indigo-500 text-white text-[9px] px-1.5 py-0.2 rounded-full font-mono">{{ customCategoriesCount }}</span>
+             </button>
+
+             <!-- Submit Game Button -->
              <button (click)="showSubmitGameModal = true" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl px-3 sm:px-4 h-9 text-xs font-black transition-all flex items-center gap-1.5 shadow-lg shadow-indigo-600/20 cursor-pointer">
                <span>+</span>
                أضف لعبتك
@@ -239,18 +252,18 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3, Gamepad2, Trophy,
               🎮
             </div>
             <div>
-              <span class="text-base sm:text-xl font-black text-white font-mono">{{ games.length + 3 }}+</span>
+              <span class="text-base sm:text-xl font-black text-white font-mono">{{ games.length }}+</span>
               <p class="text-[11px] text-slate-400 font-bold">ألعاب سيادية نشطة</p>
             </div>
           </div>
 
           <div class="bg-[#0e1426]/90 border border-white/10 rounded-2xl p-4 flex items-center gap-3 shadow-xl">
             <div class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-lg shrink-0">
-              ⚡
+              🏷️
             </div>
             <div>
-              <span class="text-base sm:text-xl font-black text-cyan-300 font-mono">0 Latency</span>
-              <p class="text-[11px] text-slate-400 font-bold">محركات 3D مدمجة</p>
+              <span class="text-base sm:text-xl font-black text-cyan-300 font-mono">{{ categories.length }}</span>
+              <p class="text-[11px] text-slate-400 font-bold">تصنيفات متجددة ومفتوحة</p>
             </div>
           </div>
 
@@ -344,7 +357,7 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3, Gamepad2, Trophy,
 
         </div>
 
-        <!-- ================= 5. MAIN GAMES LIBRARY HEADER & CATEGORY FILTER ================= -->
+        <!-- ================= 5. MAIN GAMES LIBRARY HEADER & DYNAMIC CATEGORY FILTER ================= -->
         <div class="space-y-4 pt-4 border-t border-white/10">
           
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -356,50 +369,74 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3, Gamepad2, Trophy,
                 مكتبة الألعاب السيادية
               </h2>
               <p class="text-xs sm:text-sm text-slate-400 mt-1">
-                جميع الألعاب تعمل محلياً وفورياً داخل بيئة نكسوس، بدون إعلانات وبسيادة كاملة.
+                جميع الألعاب تدعم التصنيفات المتعددة والتخصيص الحر، تعمل محلياً وفورياً بدون إعلانات.
               </p>
             </div>
 
-            <!-- Search input -->
-            <div class="relative w-full md:w-72">
-              <input 
-                type="text" 
-                [(ngModel)]="searchQuery" 
-                placeholder="ابحث عن لعبة أو تصنيف..." 
-                class="w-full h-11 bg-black/40 border border-white/10 rounded-2xl pr-10 pl-4 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors" />
-              <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+            <!-- Search input + Quick Manage Button -->
+            <div class="flex items-center gap-2 w-full md:w-auto">
+              <div class="relative flex-1 md:w-72">
+                <input 
+                  type="text" 
+                  [(ngModel)]="searchQuery" 
+                  placeholder="ابحث عن لعبة، تصنيف أو مهارة..." 
+                  class="w-full h-11 bg-black/40 border border-white/10 rounded-2xl pr-10 pl-4 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors" />
+                <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+                <button *ngIf="searchQuery" (click)="searchQuery = ''" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs">✕</button>
+              </div>
+
+              <button 
+                (click)="openManageCategoriesModal()"
+                title="تخصيص وإدارة تصنيفات الألعاب"
+                class="h-11 px-3.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-slate-300 hover:text-white transition-all flex items-center gap-2 text-xs font-bold shrink-0 cursor-pointer shadow">
+                <lucide-icon [img]="Sliders" class="w-4 h-4 text-indigo-400"></lucide-icon>
+                <span class="hidden sm:inline">تخصيص التصنيفات</span>
+              </button>
             </div>
           </div>
 
-          <!-- Category Filter Pills -->
-          <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <!-- Dynamic Category Filter Pills with Badges -->
+          <div class="flex items-center gap-2 pb-3 pt-1 select-none flex-wrap">
+            
+            <!-- All Games Filter Chip -->
             <button 
               (click)="selectedCategory = 'all'"
-              [ngClass]="selectedCategory === 'all' ? 'bg-indigo-600 text-white font-black shadow-lg shadow-indigo-600/30' : 'bg-black/30 text-slate-400 hover:text-white border border-white/5'"
-              class="px-4 py-2 rounded-xl text-xs whitespace-nowrap transition-all cursor-pointer">
-              🔥 جميع الألعاب ({{ games.length }})
+              [ngClass]="selectedCategory === 'all' 
+                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black shadow-lg shadow-indigo-600/30 scale-105 border-indigo-400/50' 
+                : 'bg-black/40 text-slate-400 hover:text-slate-200 border-white/10 hover:border-white/20'"
+              class="px-4 py-2 rounded-2xl text-xs whitespace-nowrap transition-all duration-300 flex items-center gap-2 border cursor-pointer">
+              <span>🔥 جميع الألعاب</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold"
+                    [ngClass]="selectedCategory === 'all' ? 'bg-white/20 text-white' : 'bg-white/5 text-slate-400'">
+                {{ games.length }}
+              </span>
             </button>
 
+            <!-- Dynamic Category Filter Chips -->
             <button 
-              (click)="selectedCategory = '3d'"
-              [ngClass]="selectedCategory === '3d' ? 'bg-indigo-600 text-white font-black shadow-lg shadow-indigo-600/30' : 'bg-black/30 text-slate-400 hover:text-white border border-white/5'"
-              class="px-4 py-2 rounded-xl text-xs whitespace-nowrap transition-all cursor-pointer">
-              🚀 ألعاب 3D وأكشن
+              *ngFor="let cat of categories"
+              (click)="selectedCategory = cat.id"
+              [ngClass]="selectedCategory === cat.id 
+                ? 'bg-gradient-to-r from-indigo-600 to-fuchsia-600 text-white font-black shadow-lg shadow-indigo-600/30 scale-105 border-indigo-400/50' 
+                : 'bg-black/40 text-slate-400 hover:text-slate-200 border-white/10 hover:border-white/20'"
+              class="px-3.5 py-2 rounded-2xl text-xs whitespace-nowrap transition-all duration-300 flex items-center gap-1.5 border cursor-pointer group">
+              <span>{{ cat.icon }}</span>
+              <span>{{ cat.label }}</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold"
+                    [ngClass]="selectedCategory === cat.id ? 'bg-white/20 text-white' : 'bg-white/5 text-slate-400 group-hover:text-slate-200'">
+                {{ getCategoryCount(cat.id) }}
+              </span>
             </button>
 
+            <!-- Plus Button to Add New Category directly -->
             <button 
-              (click)="selectedCategory = 'mental'"
-              [ngClass]="selectedCategory === 'mental' ? 'bg-indigo-600 text-white font-black shadow-lg shadow-indigo-600/30' : 'bg-black/30 text-slate-400 hover:text-white border border-white/5'"
-              class="px-4 py-2 rounded-xl text-xs whitespace-nowrap transition-all cursor-pointer">
-              🧠 ألعاب ذهنية وتركيز
+              (click)="openManageCategoriesModal('custom_categories')"
+              title="إضافة تصنيف جديد"
+              class="px-3 py-2 rounded-2xl text-xs whitespace-nowrap bg-indigo-950/40 hover:bg-indigo-900/60 border border-dashed border-indigo-500/40 text-indigo-300 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer">
+              <span>+</span>
+              <span>تصنيف جديد</span>
             </button>
 
-            <button 
-              (click)="selectedCategory = 'multiplayer'"
-              [ngClass]="selectedCategory === 'multiplayer' ? 'bg-indigo-600 text-white font-black shadow-lg shadow-indigo-600/30' : 'bg-black/30 text-slate-400 hover:text-white border border-white/5'"
-              class="px-4 py-2 rounded-xl text-xs whitespace-nowrap transition-all cursor-pointer">
-              👥 جماعية و 1v1
-            </button>
           </div>
 
         </div>
@@ -428,7 +465,7 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3, Gamepad2, Trophy,
                 </div>
 
                 <!-- Top Badges -->
-                <div class="absolute top-3 right-3 flex items-center gap-1.5 z-20">
+                <div class="absolute top-3 right-3 flex items-center gap-1.5 z-20 flex-wrap max-w-[85%]">
                   <span *ngIf="game.id === 'riddle-master'" class="bg-gradient-to-r from-purple-500 via-pink-500 to-amber-300 text-slate-950 text-[9px] font-black px-2.5 py-0.5 rounded-full shadow-lg animate-pulse">
                     🧩 100 LEVELS
                   </span>
@@ -461,6 +498,14 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3, Gamepad2, Trophy,
                   </span>
                 </div>
 
+                <!-- Top Left Quick Edit Tag Button -->
+                <button 
+                  (click)="openGameCategoryEditor(game, $event)"
+                  title="تعديل تصنيفات اللعبة"
+                  class="absolute top-3 left-3 w-7 h-7 rounded-full bg-black/60 hover:bg-indigo-600 border border-white/10 text-white/80 hover:text-white flex items-center justify-center text-xs backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all z-20 cursor-pointer shadow-lg">
+                  🏷️
+                </button>
+
                 <div class="absolute inset-0 bg-gradient-to-t from-[#0b0f1e] via-[#0b0f1e]/60 to-transparent"></div>
               </div>
 
@@ -471,15 +516,37 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3, Gamepad2, Trophy,
                   {{ game.title }}
                 </h3>
 
+                <!-- Category Tags Badges for this game -->
+                <div class="flex items-center gap-1.5 flex-wrap mb-2">
+                  <ng-container *ngFor="let catId of (game.categories || [game.category]).slice(0, 3)">
+                    <span 
+                      (click)="filterByCategory(catId, $event)"
+                      [title]="'فلترة حسب ' + getCategoryLabel(catId)"
+                      class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-500/30 text-[10px] text-indigo-200 font-medium cursor-pointer transition-colors">
+                      <span>{{ getCategoryIcon(catId) }}</span>
+                      <span>{{ getCategoryLabel(catId) }}</span>
+                    </span>
+                  </ng-container>
+                  <span *ngIf="(game.categories || []).length > 3" 
+                        (click)="openGameCategoryEditor(game, $event)"
+                        class="px-1.5 py-0.5 rounded-md bg-white/5 border border-white/10 text-[9px] text-slate-400 font-mono cursor-pointer hover:bg-white/10">
+                    +{{ (game.categories || []).length - 3 }}
+                  </span>
+                </div>
+
                 <p class="text-[10px] text-slate-400 mb-3 line-clamp-2 leading-relaxed font-medium">
                   {{ game.description }}
                 </p>
 
-                <!-- Action Buttons: Play + Invite -->
+                <!-- Action Buttons: Play + Invite + Edit Categories -->
                 <div class="flex items-center gap-2 justify-end">
                   
                   <button *ngIf="game.id.startsWith('custom_game_')" (click)="editGame(game.id)" class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold h-9 px-3 text-xs flex items-center gap-1 shadow cursor-pointer">
                     <span>✏️</span>
+                  </button>
+
+                  <button (click)="openGameCategoryEditor(game, $event)" title="تعديل تصنيف اللعبة" class="bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white rounded-xl font-bold h-9 px-2.5 text-xs flex items-center justify-center border border-white/10 transition-all cursor-pointer">
+                    <span>🏷️</span>
                   </button>
 
                   <button *ngIf="game.status === 'available'" (click)="openInviteModalForGame(game)" class="bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white rounded-xl font-bold h-9 px-3 text-xs flex items-center gap-1.5 border border-white/10 transition-all cursor-pointer">
@@ -508,11 +575,288 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3, Gamepad2, Trophy,
 
         </div>
 
+        <!-- Empty Results Message -->
+        <div *ngIf="displayedGames.length === 0" class="bg-[#0b0f1e]/80 border border-white/10 rounded-3xl p-10 text-center space-y-4">
+          <span class="text-5xl block">🔍</span>
+          <h3 class="text-xl font-bold text-white">لم يتم العثور على ألعاب مطابقة</h3>
+          <p class="text-sm text-slate-400 max-w-md mx-auto">
+            لا توجد ألعاب حالياً ضمن التصنيف المختار أو نص البحث. يمكنك تغيير الفلتر أو إضافة تصنيفات لهذه الألعاب!
+          </p>
+          <div class="flex items-center justify-center gap-3 pt-2">
+            <button (click)="selectedCategory = 'all'; searchQuery = ''" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition-colors">
+              عرض كل الألعاب 🔥
+            </button>
+            <button (click)="openManageCategoriesModal()" class="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-xs transition-colors border border-white/10">
+              تخصيص التصنيفات 🏷️
+            </button>
+          </div>
+        </div>
+
       </div>
 
       <!-- ================= MODALS ================= -->
 
-      <!-- OpenTTD Selection Modal -->
+      <!-- ================= 1. MANAGE CATEGORIES MODAL (Comprehensive & Open) ================= -->
+      <div *ngIf="showManageCategoriesModal" class="fixed inset-0 z-[110] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 text-right" dir="rtl">
+        <div class="bg-slate-900 border border-indigo-500/30 rounded-3xl p-6 sm:p-8 w-full max-w-3xl shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
+          
+          <!-- Header -->
+          <div class="flex items-center justify-between pb-4 border-b border-white/10">
+            <div>
+              <h3 class="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
+                <span>🏷️</span>
+                <span>إدارة وتخصيص تصنيفات الألعاب</span>
+              </h3>
+              <p class="text-xs text-slate-400 mt-1">
+                صنف ألعابك حسب رغبتك، أضف تصنيفات جديدة مفتوحة، وعيّن أكثر من تصنيف لكل لعبة.
+              </p>
+            </div>
+            <button (click)="showManageCategoriesModal = false" class="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/15 text-slate-400 hover:text-white flex items-center justify-center transition-colors">
+              ✕
+            </button>
+          </div>
+
+          <!-- Navigation Tabs -->
+          <div class="flex items-center gap-2 pt-4 pb-2">
+            <button 
+              (click)="manageActiveTab = 'game_categories'"
+              [ngClass]="manageActiveTab === 'game_categories' ? 'bg-indigo-600 text-white font-black shadow-lg shadow-indigo-600/30' : 'bg-black/40 text-slate-400 hover:text-white border border-white/5'"
+              class="flex-1 py-2.5 px-4 rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer">
+              <span>🎮</span>
+              <span>تخصيص تصنيفات لعبة معينة</span>
+            </button>
+
+            <button 
+              (click)="manageActiveTab = 'custom_categories'"
+              [ngClass]="manageActiveTab === 'custom_categories' ? 'bg-indigo-600 text-white font-black shadow-lg shadow-indigo-600/30' : 'bg-black/40 text-slate-400 hover:text-white border border-white/5'"
+              class="flex-1 py-2.5 px-4 rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer">
+              <span>✨</span>
+              <span>إضافة وتعديل التصنيفات العامة</span>
+            </button>
+          </div>
+
+          <!-- Modal Body Content -->
+          <div class="flex-1 overflow-y-auto custom-scrollbar py-4 space-y-6">
+
+            <!-- TAB 1: ASSIGN CATEGORIES TO A SPECIFIC GAME -->
+            <div *ngIf="manageActiveTab === 'game_categories'" class="space-y-5">
+              
+              <!-- Game Selector Dropdown -->
+              <div class="space-y-2">
+                <label class="text-xs font-bold text-slate-300">اختر اللعبة المراد تعديل تصنيفاتها:</label>
+                <select 
+                  [(ngModel)]="selectedGameIdForManage" 
+                  (ngModelChange)="onGameSelectedForManage()"
+                  class="w-full h-11 bg-black/60 border border-white/10 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-indigo-500">
+                  <option *ngFor="let g of games" [value]="g.id">
+                    {{ g.title }} ({{ (g.categories || [g.category]).length }} تصنيفات)
+                  </option>
+                </select>
+              </div>
+
+              <!-- Selected Game Summary Preview Card -->
+              <div *ngIf="currentGameForManage" class="bg-black/40 border border-white/10 rounded-2xl p-4 flex items-center gap-4">
+                <img [src]="currentGameForManage.thumbnail" class="w-14 h-14 rounded-xl object-cover border border-white/10 shrink-0" (error)="onImageFallback($event)" />
+                <div class="flex-1 min-w-0">
+                  <h4 class="text-sm font-black text-white truncate">{{ currentGameForManage.title }}</h4>
+                  <p class="text-[11px] text-slate-400 truncate mt-0.5">{{ currentGameForManage.description }}</p>
+                  
+                  <div class="flex items-center gap-1.5 flex-wrap mt-2">
+                    <span class="text-[10px] text-indigo-300 font-bold">التصنيفات المحددة:</span>
+                    <span *ngFor="let catId of editingGameCategoryIds" class="px-2 py-0.5 rounded-md bg-indigo-600/30 border border-indigo-500/40 text-[10px] text-indigo-200">
+                      {{ getCategoryIcon(catId) }} {{ getCategoryLabel(catId) }}
+                    </span>
+                    <span *ngIf="editingGameCategoryIds.length === 0" class="text-[10px] text-amber-400">
+                      لم يتم اختيار أي تصنيف بعد!
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Categories Checkbox Grid -->
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-bold text-slate-300">حدد التصنيفات المناسبة للعبة (يمكنك اختيار أكثر من تصنيف):</label>
+                  <span class="text-[11px] text-indigo-400 font-mono">{{ editingGameCategoryIds.length }} مختارة</span>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  <div 
+                    *ngFor="let cat of categories" 
+                    (click)="toggleCategoryForEditingGame(cat.id)"
+                    [ngClass]="editingGameCategoryIds.includes(cat.id) 
+                      ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-[0_0_12px_rgba(99,102,241,0.2)]' 
+                      : 'bg-black/30 border-white/5 text-slate-400 hover:border-white/20 hover:text-slate-200'"
+                    class="p-3 rounded-2xl border flex items-center justify-between cursor-pointer transition-all duration-200 select-none">
+                    
+                    <div class="flex items-center gap-2 truncate">
+                      <span class="text-base">{{ cat.icon }}</span>
+                      <span class="text-xs font-bold truncate">{{ cat.label }}</span>
+                    </div>
+
+                    <div class="w-5 h-5 rounded-lg border flex items-center justify-center transition-colors shrink-0"
+                         [ngClass]="editingGameCategoryIds.includes(cat.id) ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-white/20 bg-black/20'">
+                      <span *ngIf="editingGameCategoryIds.includes(cat.id)" class="text-xs font-bold">✓</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Actions for Game Categories -->
+              <div class="flex items-center justify-between gap-3 pt-3 border-t border-white/10">
+                <button 
+                  (click)="resetSelectedGameCategories()"
+                  class="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-bold transition-colors border border-white/10 flex items-center gap-1.5 cursor-pointer">
+                  <span>🔄</span>
+                  <span>استعادة التصنيف الافتراضي</span>
+                </button>
+
+                <div class="flex items-center gap-2">
+                  <button 
+                    (click)="showManageCategoriesModal = false"
+                    class="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white text-xs font-bold transition-colors">
+                    إلغاء
+                  </button>
+
+                  <button 
+                    (click)="saveGameCategoryChanges()"
+                    class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black shadow-lg shadow-emerald-600/30 transition-all flex items-center gap-2 cursor-pointer">
+                    <span>💾</span>
+                    <span>حفظ التعديلات</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- TAB 2: MANAGE GLOBAL CATEGORIES LIST -->
+            <div *ngIf="manageActiveTab === 'custom_categories'" class="space-y-6">
+              
+              <!-- Add New Category Box -->
+              <div class="bg-black/40 border border-indigo-500/30 rounded-2xl p-4 sm:p-5 space-y-4">
+                <h4 class="text-sm font-black text-white flex items-center gap-2">
+                  <span>✨</span>
+                  <span>إضافة تصنيف ألعاب جديد للقائمة المفتوحة</span>
+                </h4>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-slate-300">اسم التصنيف (Label):</label>
+                    <input 
+                      type="text" 
+                      [(ngModel)]="newCategoryLabel" 
+                      placeholder="مثال: ألعاب أطفال، استرخاء، مغامرات سحرية..." 
+                      class="w-full h-10 bg-black/60 border border-white/10 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-indigo-500" />
+                  </div>
+
+                  <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-slate-300">الأيقونة / الإيموجي:</label>
+                    <div class="flex items-center gap-2">
+                      <input 
+                        type="text" 
+                        [(ngModel)]="newCategoryIcon" 
+                        placeholder="🧸" 
+                        maxlength="4"
+                        class="w-14 h-10 bg-black/60 border border-white/10 rounded-xl text-center text-base text-white focus:outline-none focus:border-indigo-500" />
+                      
+                      <!-- Quick Emoji Presets -->
+                      <div class="flex items-center gap-1 overflow-x-auto scrollbar-hide py-1">
+                        <button *ngFor="let emoji of suggestedEmojis" (click)="newCategoryIcon = emoji" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-sm flex items-center justify-center transition-colors">
+                          {{ emoji }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="space-y-1">
+                  <label class="text-[11px] font-bold text-slate-300">الوصف (اختياري):</label>
+                  <input 
+                    type="text" 
+                    [(ngModel)]="newCategoryDescription" 
+                    placeholder="وصف مختصر لطبيعة هذه الألعاب..." 
+                    class="w-full h-10 bg-black/60 border border-white/10 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-indigo-500" />
+                </div>
+
+                <div class="flex justify-end pt-1">
+                  <button 
+                    (click)="addNewCategory()"
+                    class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black rounded-xl shadow-lg shadow-indigo-600/30 transition-all flex items-center gap-1.5 cursor-pointer">
+                    <span>+</span>
+                    <span>إضافة التصنيف للقائمة</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Existing Categories List with Counts & Delete -->
+              <div class="space-y-3">
+                <h4 class="text-xs font-black text-slate-300">التصنيفات الحالية ({{ categories.length }}):</h4>
+                
+                <div class="space-y-2">
+                  <div 
+                    *ngFor="let cat of categories" 
+                    class="bg-black/30 border border-white/5 rounded-2xl p-3 flex items-center justify-between gap-3">
+                    
+                    <div class="flex items-center gap-3">
+                      <span class="text-2xl">{{ cat.icon }}</span>
+                      <div>
+                        <div class="flex items-center gap-2">
+                          <h5 class="text-xs font-black text-white">{{ cat.label }}</h5>
+                          <span *ngIf="cat.isCustom" class="bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 text-[9px] px-1.5 py-0.2 rounded-full font-bold">مخصص ✨</span>
+                          <span *ngIf="!cat.isCustom" class="bg-slate-800 text-slate-400 text-[9px] px-1.5 py-0.2 rounded-full">افتراضي 🔒</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-0.5">{{ cat.description || 'لا يوجد وصف' }}</p>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                      <span class="px-2.5 py-1 rounded-xl bg-white/5 text-[10px] font-mono text-indigo-300 font-bold border border-white/5">
+                        {{ getCategoryCount(cat.id) }} ألعاب
+                      </span>
+
+                      <button 
+                        *ngIf="cat.isCustom" 
+                        (click)="deleteCategory(cat.id)"
+                        title="حذف هذا التصنيف المخصص"
+                        class="w-8 h-8 rounded-xl bg-rose-500/10 hover:bg-rose-500/30 border border-rose-500/30 text-rose-400 hover:text-rose-200 flex items-center justify-center transition-colors cursor-pointer text-xs">
+                        🗑️
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+
+              <!-- Reset All Overrides Zone -->
+              <div class="pt-4 border-t border-white/10 flex items-center justify-between">
+                <div>
+                  <h5 class="text-xs font-bold text-slate-300">استعادة الإعدادات الأصلية</h5>
+                  <p class="text-[10px] text-slate-500">إلغاء جميع التعديلات والعودة للتصنيفات الافتراضية لكل الألعاب</p>
+                </div>
+                <button 
+                  (click)="resetAllOverrides()"
+                  class="px-4 py-2 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-600/40 text-rose-300 hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer">
+                  استعادة الكل ⚠️
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="pt-3 border-t border-white/10 flex justify-end">
+            <button 
+              (click)="showManageCategoriesModal = false"
+              class="px-6 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-colors">
+              إغلاق
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ================= 2. OPENTTD SELECTION MODAL ================= -->
       <div *ngIf="showOpenTTDModal" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6 text-right" dir="rtl">
         <div class="bg-slate-900 border border-white/10 rounded-3xl p-8 w-full max-w-2xl shadow-2xl relative overflow-hidden">
            <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent pointer-events-none"></div>
@@ -552,7 +896,7 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3, Gamepad2, Trophy,
         </div>
       </div>
 
-      <!-- Add Game Modal -->
+      <!-- ================= 3. ADD GAME MODAL ================= -->
       <div *ngIf="showSubmitGameModal" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 text-right" dir="rtl">
         <div class="bg-slate-900 border border-white/10 rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl">
            <h3 class="text-xl sm:text-2xl font-black text-white mb-4 sm:mb-6">أضف لعبتك الخاصة</h3>
@@ -565,7 +909,7 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3, Gamepad2, Trophy,
         </div>
       </div>
 
-      <!-- Hub Invite Friend Modal -->
+      <!-- ================= 4. HUB INVITE FRIEND MODAL ================= -->
       <div *ngIf="showHubInviteModal && selectedGameForInvite" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6 text-right" dir="rtl">
         <div class="bg-slate-900 border border-white/10 rounded-3xl p-8 w-full max-w-md shadow-2xl animate-in zoom-in-95">
            <h3 class="text-2xl font-black text-white mb-1">دعوة صديق للعب {{ selectedGameForInvite.title }}</h3>
@@ -606,6 +950,7 @@ import { LucideAngularModule, UserPlus, Plus, Sparkles, Edit3, Gamepad2, Trophy,
 })
 export class ArcadeHubComponent implements OnInit {
   games: ArcadeGame[] = [];
+  categories: GameCategory[] = [];
   selectedCategory: string = 'all';
   searchQuery: string = '';
 
@@ -628,11 +973,25 @@ export class ArcadeHubComponent implements OnInit {
   Cpu = Cpu;
   Shield = Shield;
   ArrowRight = ArrowRight;
+  Tag = Tag;
+  Settings = Settings;
+  Sliders = Sliders;
+  Check = Check;
+  RotateCcw = RotateCcw;
+  Trash2 = Trash2;
+  Layers = Layers;
+  Filter = Filter;
+  CheckCircle2 = CheckCircle2;
+  X = X;
 
+  // Modals & States
   showAddFriend = false;
   showSubmitGameModal = false;
   showOpenTTDModal = false;
   showHubInviteModal = false;
+  showManageCategoriesModal = false;
+  manageActiveTab: 'game_categories' | 'custom_categories' = 'game_categories';
+
   selectedGameForInvite: ArcadeGame | null = null;
   sentInviteFriendIds: string[] = [];
   newFriendName = '';
@@ -640,29 +999,190 @@ export class ArcadeHubComponent implements OnInit {
   newGameTitle = '';
   isAdding = false;
 
+  // Manage Category Modal specific fields
+  selectedGameIdForManage: string = '';
+  editingGameCategoryIds: string[] = [];
+  newCategoryLabel: string = '';
+  newCategoryIcon: string = '🏷️';
+  newCategoryDescription: string = '';
+  suggestedEmojis = ['🧠', '⚡', '📚', '♟️', '🚀', '👥', '💻', '🔤', '🎴', '🎯', '🧸', '🧘', '🎨', '🏎️', '⚔️', '🏆', '💎', '💡'];
+
+  ngOnInit() {
+    const dbName = this.globalState.userProfile().name;
+    if (dbName) {
+      localStorage.setItem('arcade_player_name', dbName);
+    }
+
+    this.refreshCategoriesAndGames();
+  }
+
+  refreshCategoriesAndGames() {
+    this.categories = this.arcadeService.getCategories();
+    this.arcadeService.getGames().subscribe(data => {
+      this.games = data;
+      if (!this.selectedGameIdForManage && this.games.length > 0) {
+        this.selectedGameIdForManage = this.games[0].id;
+        this.onGameSelectedForManage();
+      }
+    });
+  }
+
+  get customCategoriesCount(): number {
+    return this.categories.filter(c => c.isCustom).length;
+  }
+
+  get currentGameForManage(): ArcadeGame | undefined {
+    return this.games.find(g => g.id === this.selectedGameIdForManage);
+  }
+
   get displayedGames(): ArcadeGame[] {
     let list = this.games.filter(g => g.status !== 'coming_soon');
     
     // Category filter
-    if (this.selectedCategory === '3d') {
-      list = list.filter(g => g.id.includes('subway') || g.id.includes('metro') || g.id.includes('sonic') || g.genre.toLowerCase().includes('action') || g.genre.toLowerCase().includes('3d'));
-    } else if (this.selectedCategory === 'mental') {
-      list = list.filter(g => g.category === 'mental');
-    } else if (this.selectedCategory === 'multiplayer') {
-      list = list.filter(g => (g.maxPlayers && g.maxPlayers > 1) || g.id === 'schulte-table' || g.id === 'echoes-of-time');
+    if (this.selectedCategory !== 'all') {
+      const targetCat = this.selectedCategory;
+      list = list.filter(g => {
+        const cats = g.categories && g.categories.length > 0 ? g.categories : [g.category];
+        return cats.includes(targetCat);
+      });
     }
 
-    // Search query filter
+    // Search query filter (matches title, description, genre, or category labels)
     if (this.searchQuery.trim()) {
       const q = this.searchQuery.toLowerCase().trim();
-      list = list.filter(g => 
-        g.title.toLowerCase().includes(q) || 
-        g.description.toLowerCase().includes(q) || 
-        g.genre.toLowerCase().includes(q)
-      );
+      list = list.filter(g => {
+        const titleMatch = g.title.toLowerCase().includes(q);
+        const descMatch = g.description.toLowerCase().includes(q);
+        const genreMatch = g.genre.toLowerCase().includes(q);
+        
+        // Also match category names
+        const cats = g.categories && g.categories.length > 0 ? g.categories : [g.category];
+        const categoryMatch = cats.some(catId => {
+          const cat = this.categories.find(c => c.id === catId);
+          return cat && cat.label.toLowerCase().includes(q);
+        });
+
+        return titleMatch || descMatch || genreMatch || categoryMatch;
+      });
     }
 
     return list;
+  }
+
+  getCategoryCount(catId: string): number {
+    return this.games.filter(g => {
+      const cats = g.categories && g.categories.length > 0 ? g.categories : [g.category];
+      return cats.includes(catId);
+    }).length;
+  }
+
+  getCategoryLabel(catId: string): string {
+    const cat = this.categories.find(c => c.id === catId);
+    return cat ? cat.label : catId;
+  }
+
+  getCategoryIcon(catId: string): string {
+    const cat = this.categories.find(c => c.id === catId);
+    return cat ? cat.icon : '🏷️';
+  }
+
+  filterByCategory(catId: string, event?: Event) {
+    if (event) event.stopPropagation();
+    this.selectedCategory = catId;
+  }
+
+  openManageCategoriesModal(tab: 'game_categories' | 'custom_categories' = 'game_categories') {
+    this.manageActiveTab = tab;
+    this.refreshCategoriesAndGames();
+    if (!this.selectedGameIdForManage && this.games.length > 0) {
+      this.selectedGameIdForManage = this.games[0].id;
+    }
+    this.onGameSelectedForManage();
+    this.showManageCategoriesModal = true;
+  }
+
+  openGameCategoryEditor(game: ArcadeGame, event?: Event) {
+    if (event) event.stopPropagation();
+    this.selectedGameIdForManage = game.id;
+    this.onGameSelectedForManage();
+    this.openManageCategoriesModal('game_categories');
+  }
+
+  onGameSelectedForManage() {
+    const game = this.currentGameForManage;
+    if (game) {
+      const cats = game.categories && game.categories.length > 0 ? game.categories : [game.category];
+      this.editingGameCategoryIds = [...cats];
+    } else {
+      this.editingGameCategoryIds = [];
+    }
+  }
+
+  toggleCategoryForEditingGame(catId: string) {
+    if (this.editingGameCategoryIds.includes(catId)) {
+      this.editingGameCategoryIds = this.editingGameCategoryIds.filter(id => id !== catId);
+    } else {
+      this.editingGameCategoryIds.push(catId);
+    }
+  }
+
+  saveGameCategoryChanges() {
+    if (!this.selectedGameIdForManage) return;
+    if (this.editingGameCategoryIds.length === 0) {
+      alert('يرجى اختيار تصنيف واحد على الأقل للعبة!');
+      return;
+    }
+
+    this.arcadeService.updateGameCategories(this.selectedGameIdForManage, this.editingGameCategoryIds);
+    this.refreshCategoriesAndGames();
+    alert('تم حفظ وتحديث تصنيفات اللعبة بنجاح! 🏷️✨');
+  }
+
+  resetSelectedGameCategories() {
+    if (!this.selectedGameIdForManage) return;
+    this.arcadeService.resetGameCategories(this.selectedGameIdForManage);
+    this.refreshCategoriesAndGames();
+    this.onGameSelectedForManage();
+    alert('تمت استعادة التصنيفات الافتراضية للعبة 🔄');
+  }
+
+  addNewCategory() {
+    const label = this.newCategoryLabel.trim();
+    if (!label) {
+      alert('يرجى كتابة اسم التصنيف الجديد!');
+      return;
+    }
+
+    this.arcadeService.addCategory({
+      label: label,
+      icon: this.newCategoryIcon.trim() || '🏷️',
+      description: this.newCategoryDescription.trim()
+    });
+
+    this.newCategoryLabel = '';
+    this.newCategoryIcon = '🏷️';
+    this.newCategoryDescription = '';
+    this.refreshCategoriesAndGames();
+    alert(`تمت إضافة التصنيف الجديد (${label}) بنجاح! 🚀`);
+  }
+
+  deleteCategory(catId: string) {
+    if (confirm('هل أنت متأكد من حذف هذا التصنيف المخصص؟')) {
+      this.arcadeService.deleteCategory(catId);
+      if (this.selectedCategory === catId) {
+        this.selectedCategory = 'all';
+      }
+      this.refreshCategoriesAndGames();
+    }
+  }
+
+  resetAllOverrides() {
+    if (confirm('هل أنت متأكد من استعادة كافة التصنيفات الافتراضية لجميع الألعاب؟')) {
+      this.arcadeService.resetAllCategoryOverrides();
+      this.refreshCategoriesAndGames();
+      this.onGameSelectedForManage();
+      alert('تمت استعادة كافة التصنيفات الافتراضية بنجاح 🔄');
+    }
   }
 
   getGameCardGlow(id: string): string {
@@ -715,17 +1235,6 @@ export class ArcadeHubComponent implements OnInit {
     }
   }
 
-  ngOnInit() {
-    const dbName = this.globalState.userProfile().name;
-    if (dbName) {
-      localStorage.setItem('arcade_player_name', dbName);
-    }
-
-    this.arcadeService.getGames().subscribe(data => {
-      this.games = data;
-    });
-  }
-
   editGame(id: string) {
     this.router.navigate(['/arcade/ai-builder'], { queryParams: { gameId: id } });
   }
@@ -748,6 +1257,7 @@ export class ArcadeHubComponent implements OnInit {
         description: game.description,
         thumbnail: game.thumbnail,
         category: game.category,
+        categories: game.categories,
         genre: game.genre,
         htmlContent: htmlContent,
         updatedAt: Date.now()
@@ -847,6 +1357,7 @@ export class ArcadeHubComponent implements OnInit {
             description: customData.description,
             thumbnail: customData.thumbnail,
             category: customData.category,
+            categories: customData.categories,
             genre: customData.genre
           },
           htmlContent

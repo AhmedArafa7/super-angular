@@ -17,15 +17,22 @@ export class HisnComponent implements OnDestroy {
   private hisnService = inject(HisnService);
   private prayerQuranService = inject(PrayerQuranService);
 
+  activePrayerAlert: { title: string; body: string; prayerName: string; minutesBefore: number } | null = null;
+
   private toastListener = ((event: any) => {
     this.toastMessage = event.detail;
     this.showToast = true;
     setTimeout(() => this.showToast = false, 4000);
   }) as EventListener;
 
+  private prayerAlertListener = ((event: any) => {
+    this.activePrayerAlert = event.detail;
+  }) as EventListener;
+
   ngOnDestroy() {
     if (typeof window !== 'undefined') {
       window.removeEventListener('hisn-toast', this.toastListener);
+      window.removeEventListener('prayer-alert-event', this.prayerAlertListener);
     }
   }
 
@@ -43,12 +50,19 @@ export class HisnComponent implements OnDestroy {
   timings = this.prayerQuranService.timings;
   nextPrayer = this.prayerQuranService.nextPrayer;
   isLoadingPrayer = this.prayerQuranService.isLoadingPrayer;
+  isRefreshingInBackground = this.prayerQuranService.isRefreshingInBackground;
   city = this.prayerQuranService.city;
   calculationMethod = this.prayerQuranService.calculationMethod;
   asrMethod = this.prayerQuranService.asrMethod;
   timeFormat = this.prayerQuranService.timeFormat;
   notificationMinutes = this.prayerQuranService.notificationMinutes;
+  autoRefreshDays = this.prayerQuranService.autoRefreshDays;
+  notificationPermission = this.prayerQuranService.notificationPermission;
   formattedDate = this.prayerQuranService.formattedDate;
+  lastUpdated = this.prayerQuranService.lastUpdated;
+  daysSinceLastUpdate = this.prayerQuranService.daysSinceLastUpdate;
+  isStalePrayer = this.prayerQuranService.isStalePrayer;
+  prayerStatusMessage = this.prayerQuranService.prayerStatusMessage;
 
   surahs = this.prayerQuranService.surahs;
   currentSurah = this.prayerQuranService.currentSurah;
@@ -193,6 +207,15 @@ export class HisnComponent implements OnDestroy {
     { id: 13, label: 'مجلس الإفتاء الأوروبي' }
   ];
 
+  AUTO_REFRESH_OPTIONS = [
+    { days: 1, label: 'تجديد يومي تلقائياً (موصى به)' },
+    { days: 2, label: 'كل يومين' },
+    { days: 3, label: 'كل 3 أيام' },
+    { days: 7, label: 'أسبوعياً (كل 7 أيام)' },
+    { days: 30, label: 'شهرياً (كل 30 يوم)' },
+    { days: 0, label: 'يدوي فقط (عند الطلب)' }
+  ];
+
   // Computed for filtered surahs
   get filteredSurahs() {
     if (!this.surahSearchTerm.trim()) return this.surahs();
@@ -208,7 +231,20 @@ export class HisnComponent implements OnDestroy {
   constructor() {
     if (typeof window !== 'undefined') {
       window.addEventListener('hisn-toast', this.toastListener);
+      window.addEventListener('prayer-alert-event', this.prayerAlertListener);
     }
+  }
+
+  requestNotificationPermission() {
+    this.prayerQuranService.requestNotificationPermission();
+  }
+
+  testPrayerNotification() {
+    this.prayerQuranService.testNotification();
+  }
+
+  dismissPrayerAlert() {
+    this.activePrayerAlert = null;
   }
 
   // Wird methods
@@ -343,6 +379,17 @@ export class HisnComponent implements OnDestroy {
     const lLat = lat ?? this.latitude() ?? 31.0379;
     const lLng = lng ?? this.longitude() ?? 31.3815;
     this.prayerQuranService.fetchPrayerTimes(lLat, lLng);
+  }
+
+  refreshPrayerTimesManually(forceLocation = false) {
+    this.prayerQuranService.refreshPrayerTimesManually(forceLocation);
+    this.showAppToast('جاري تحديث مواقيت الصلاة...');
+  }
+
+  setAutoRefreshDays(days: number) {
+    this.prayerQuranService.setAutoRefreshDays(days);
+    const selected = this.AUTO_REFRESH_OPTIONS.find(o => o.days === days);
+    this.showAppToast(`تم تعيين التجديد التلقائي: ${selected?.label || days + ' يوم'}`);
   }
 
   setCalculationMethod(method: number) {

@@ -60,6 +60,8 @@ export const RECITERS: Reciter[] = [
   { id: 'shaatree', name: 'أبوبكر الشاطري', url: 'https://server16.mp3quran.net/shaatree/' }
 ];
 
+import { ALL_SURAHS } from '../constants/quran-surahs.data';
+
 @Injectable({ providedIn: 'root' })
 export class PrayerQuranService {
   private http = inject(HttpClient);
@@ -68,19 +70,48 @@ export class PrayerQuranService {
   timings = signal<PrayerTimings | null>(null);
   nextPrayer = signal<{ name: string; remaining: string } | null>(null);
   isLoadingPrayer = signal(false);
+  isRefreshingInBackground = signal(false);
   calculationMethod = signal(3);
   asrMethod = signal(0);
   timeFormat = signal<'12h' | '24h'>('12h');
   notificationMinutes = signal(10);
+  autoRefreshDays = signal<number>(1); // 1 = daily, 2, 3, 7, 30, 0 = manual only
   lastUpdated = signal<number | null>(null);
+  lastFetchedDate = signal<string>('');
 
   // Location
   latitude = signal<number | null>(null);
   longitude = signal<number | null>(null);
   city = signal<string>('جاري التحديد...');
 
-  // Quran state
-  surahs = signal<Surah[]>([]);
+  // Computed prayer freshness
+  daysSinceLastUpdate = computed(() => {
+    const ts = this.lastUpdated();
+    if (!ts) return 0;
+    const diffMs = Date.now() - ts;
+    return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+  });
+
+  isStalePrayer = computed(() => {
+    const ts = this.lastUpdated();
+    if (!ts) return false;
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const fetchedDate = this.lastFetchedDate();
+    if (fetchedDate && fetchedDate !== todayStr) return true;
+    return this.daysSinceLastUpdate() >= 1;
+  });
+
+  prayerStatusMessage = computed(() => {
+    if (!this.timings()) return 'لم يتم تحديد المواقيت بعد';
+    const days = this.daysSinceLastUpdate();
+    if (days === 0 && !this.isStalePrayer()) return 'مواقيت اليوم محدثة ✓';
+    if (days === 1 || this.isStalePrayer()) return 'مواقيت محفوظة من الأمس (يُنصح بإعادة الطلب)';
+    return `مواقيت محفوظة منذ ${days} أيام (يُنصح بإعادة الطلب)`;
+  });
+
+  // Quran state - initialized with offline complete 114 Surahs dataset
+  surahs = signal<Surah[]>(ALL_SURAHS);
   currentSurah = signal<Surah | null>(null);
   ayahs = signal<Ayah[]>([]);
   isLoadingQuran = signal(false);
@@ -122,8 +153,30 @@ export class PrayerQuranService {
     }).format(new Date(ts));
   });
 
+  constructor() {
+    this.initDB();
+    this.loadPersistedData();
+    this.initPrayerChecker();
+    this.loadSurahs();
+    this.checkAndAutoRefreshPrayerTimes();
+  }
+
+  notificationPermission = signal<'granted' | 'denied' | 'default'>(
+    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default'
+  );
+
   private checkPrayerNotificationsInterval: any = null;
   private notifiedPrayersToday: string = '';
+
+  private parseMinutes(timeStr: string): number {
+    if (!timeStr) return -1;
+    const match = timeStr.match(/(\d{1,2}):(\d{1,2})/);
+    if (!match) return -1;
+    const hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    if (isNaN(hours) || isNaN(minutes)) return -1;
+    return hours * 60 + minutes;
+  }
 
   private initPrayerChecker() {
     if (this.checkPrayerNotificationsInterval) clearInterval(this.checkPrayerNotificationsInterval);
@@ -133,7 +186,7 @@ export class PrayerQuranService {
       if (!timings) return;
 
       const now = new Date();
-      const todayStr = now.toDateString();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       if (this.notifiedPrayersToday !== todayStr) {
         this.notifiedPrayersToday = todayStr;
         localStorage.setItem('notified_prayers_date', todayStr);
@@ -142,9 +195,7 @@ export class PrayerQuranService {
 
       const currentHours = now.getHours();
       const currentMinutes = now.getMinutes();
-      const currentSeconds = now.getSeconds();
-
-      if (currentSeconds > 5) return;
+      const currentTotalMinutes = currentHours * 60 + currentMinutes;
 
       const prayers = [
         { key: 'Fajr', name: 'الفجر' },
@@ -162,28 +213,126 @@ export class PrayerQuranService {
         const timeStr = (timings as any)[p.key];
         if (!timeStr) continue;
 
-        const [pHours, pMinutes] = timeStr.split(':').map(Number);
-        const prayerTotalMinutes = pHours * 60 + pMinutes;
-        const currentTotalMinutes = currentHours * 60 + currentMinutes;
+        const prayerTotalMinutes = this.parseMinutes(timeStr);
+        if (prayerTotalMinutes < 0) continue;
 
         const offsetMin = this.notificationMinutes();
         const targetTotalMinutes = prayerTotalMinutes - offsetMin;
 
-        const notificationKey = `${todayStr}_${p.key}_${offsetMin}`;
-
-        if (currentTotalMinutes === targetTotalMinutes && !notifiedList.includes(notificationKey)) {
+        // Notification for configured offset (e.g. 10 mins before)
+        const notificationKey = `${todayStr}_${p.key}_offset_${offsetMin}`;
+        if (
+          currentTotalMinutes >= targetTotalMinutes &&
+          currentTotalMinutes <= targetTotalMinutes + 1 &&
+          !notifiedList.includes(notificationKey)
+        ) {
           this.triggerNotification(p.name, offsetMin);
           notifiedList.push(notificationKey);
           localStorage.setItem('notified_prayers_list', JSON.stringify(notifiedList));
+        }
+
+        // Also notify at the exact Adhan moment if offset is > 0
+        if (offsetMin > 0) {
+          const adhanKey = `${todayStr}_${p.key}_exact_0`;
+          if (
+            currentTotalMinutes >= prayerTotalMinutes &&
+            currentTotalMinutes <= prayerTotalMinutes + 1 &&
+            !notifiedList.includes(adhanKey)
+          ) {
+            this.triggerNotification(p.name, 0);
+            notifiedList.push(adhanKey);
+            localStorage.setItem('notified_prayers_list', JSON.stringify(notifiedList));
+          }
         }
       }
     }, 10000);
   }
 
-  private triggerNotification(prayerName: string, minutesBefore: number) {
-    const title = minutesBefore === 0 ? `حَانَ الآن موعد أذان ${prayerName} 🕌` : `تنبيه: اقترب موعد أذان ${prayerName} (${minutesBefore} دقائق) ⏰`;
-    const body = minutesBefore === 0 ? `حان وقت الصلاة في مدينة ${this.city()}. تقبل الله منا ومنكم.` : `استعد لصلاة ${prayerName} في مدينة ${this.city()}.`;
+  playNotificationSound() {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      
+      const now = ctx.currentTime;
+      const notes = [
+        { freq: 523.25, time: 0.0, dur: 0.4 },  // C5
+        { freq: 659.25, time: 0.25, dur: 0.4 }, // E5
+        { freq: 783.99, time: 0.5, dur: 0.5 },  // G5
+        { freq: 1046.50, time: 0.8, dur: 1.2 }  // C6
+      ];
 
+      notes.forEach(({ freq, time, dur }) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + time);
+        
+        gain.gain.setValueAtTime(0.0001, now + time);
+        gain.gain.exponentialRampToValueAtTime(0.3, now + time + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + time + dur);
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + time);
+        osc.stop(now + time + dur);
+      });
+    } catch (e) {
+      console.warn('Audio chime fallback error:', e);
+    }
+  }
+
+  async requestNotificationPermission(): Promise<boolean> {
+    if (typeof window === 'undefined' || !('Notification' in window)) return false;
+    try {
+      const perm = await Notification.requestPermission();
+      this.notificationPermission.set(perm);
+      if (perm === 'granted') {
+        this.testNotification();
+        return true;
+      }
+    } catch (e) {
+      console.error('Error requesting permission', e);
+    }
+    return false;
+  }
+
+  testNotification() {
+    this.playNotificationSound();
+    const title = 'اختبار تنبيه مواقيت الصلاة 🕌';
+    const body = `يعمل التنبيه بنجاح لمدينة ${this.city()}. تقبل الله منا ومنكم.`;
+
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification(title, { body, icon: '/favicon.ico' });
+      } catch {}
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('hisn-toast', {
+        detail: 'تم تشغيل التنبيه التجريبي وتحديث الأذونات بنجاح 🔔'
+      }));
+      window.dispatchEvent(new CustomEvent('prayer-alert-event', {
+        detail: { title, body, prayerName: 'تجربة التنبيه', minutesBefore: 10 }
+      }));
+    }
+  }
+
+  private triggerNotification(prayerName: string, minutesBefore: number) {
+    const title = minutesBefore === 0 
+      ? `حَانَ الآن موعد أذان ${prayerName} 🕌` 
+      : `تنبيه: اقترب موعد أذان ${prayerName} (بقي ${minutesBefore} دقائق) ⏰`;
+    const body = minutesBefore === 0 
+      ? `حان وقت الصلاة في مدينة ${this.city()}. تقبل الله منا ومنكم صالح الأعمال.` 
+      : `استعد لصلاة ${prayerName} في مدينة ${this.city()}.`;
+
+    // 1. Play synthesized tone
+    this.playNotificationSound();
+
+    // 2. Browser Desktop Notification
     if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
       try {
         new Notification(title, { body, icon: '/favicon.ico' });
@@ -192,12 +341,12 @@ export class PrayerQuranService {
       }
     }
 
-    try {
-      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-      audio.volume = 0.8;
-      audio.play().catch(err => console.log('Audio playback prevented by browser policy:', err));
-    } catch (e) {
-      console.error('Audio alert error', e);
+    // 3. In-App Notification events
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('hisn-toast', { detail: title }));
+      window.dispatchEvent(new CustomEvent('prayer-alert-event', {
+        detail: { title, body, prayerName, minutesBefore }
+      }));
     }
   }
 
@@ -243,6 +392,27 @@ export class PrayerQuranService {
         this.asrMethod.set(s.asr ?? 0);
         this.timeFormat.set(s.format ?? '12h');
         this.notificationMinutes.set(s.notifications ?? 10);
+        if (s.autoRefreshDays !== undefined) {
+          this.autoRefreshDays.set(s.autoRefreshDays);
+        }
+      } catch {}
+    }
+
+    const cachedPrayer = localStorage.getItem('prayer_cached_data');
+    if (cachedPrayer) {
+      try {
+        const c = JSON.parse(cachedPrayer);
+        if (c.timings) this.timings.set(c.timings);
+        if (c.city) this.city.set(c.city);
+        if (c.latitude) this.latitude.set(c.latitude);
+        if (c.longitude) this.longitude.set(c.longitude);
+        if (c.lastUpdated) this.lastUpdated.set(c.lastUpdated);
+        if (c.lastFetchedDate) this.lastFetchedDate.set(c.lastFetchedDate);
+        if (c.autoRefreshDays !== undefined) this.autoRefreshDays.set(c.autoRefreshDays);
+
+        if (this.timings()) {
+          this.calculateNextPrayer();
+        }
       } catch {}
     }
 
@@ -277,6 +447,60 @@ export class PrayerQuranService {
 
   // ==================== PRAYER TIMES ====================
 
+  async checkAndAutoRefreshPrayerTimes() {
+    const hasTimings = !!this.timings();
+    const lastUp = this.lastUpdated();
+    const autoDays = this.autoRefreshDays();
+
+    // If no data cached at all, fetch initial data
+    if (!hasTimings) {
+      await this.initLocationAndPrayer();
+      return;
+    }
+
+    // If manual only mode (0), don't auto-refresh
+    if (autoDays === 0) {
+      return;
+    }
+
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const isDifferentDay = this.lastFetchedDate() !== todayStr;
+    const daysPassed = lastUp ? Math.floor((Date.now() - lastUp) / (1000 * 60 * 60 * 24)) : 999;
+
+    // Check if renewal threshold reached
+    if ((autoDays === 1 && isDifferentDay) || daysPassed >= autoDays) {
+      this.refreshPrayerTimesInBackground();
+    }
+  }
+
+  async refreshPrayerTimesInBackground() {
+    if (this.isRefreshingInBackground()) return;
+    this.isRefreshingInBackground.set(true);
+    try {
+      const lat = this.latitude() ?? 21.3891;
+      const lng = this.longitude() ?? 39.8579;
+      await this.fetchPrayerTimes(lat, lng, true);
+    } catch (e) {
+      console.warn('Background prayer refresh skipped/failed', e);
+    } finally {
+      this.isRefreshingInBackground.set(false);
+    }
+  }
+
+  async refreshPrayerTimesManually(forceLocation = false) {
+    this.isLoadingPrayer.set(true);
+    try {
+      if (forceLocation || !this.latitude() || !this.longitude()) {
+        await this.initLocationAndPrayer();
+      } else {
+        await this.fetchPrayerTimes(this.latitude()!, this.longitude()!);
+      }
+    } finally {
+      this.isLoadingPrayer.set(false);
+    }
+  }
+
   private async initLocationAndPrayer() {
     this.isLoadingPrayer.set(true);
     try {
@@ -309,7 +533,7 @@ export class PrayerQuranService {
   private async fetchByIP() {
     try {
       const res = await this.http.get<any>('https://ipapi.co/json/').pipe(
-        catchError(() => of({ latitude: 21.3891, longitude: 39.8579, city: 'Makkah' }))
+        catchError(() => of({ latitude: 21.3891, longitude: 39.8579, city: 'مكة المكرمة' }))
       ).toPromise();
 
       if (res) {
@@ -326,13 +550,16 @@ export class PrayerQuranService {
     }
   }
 
-  async fetchPrayerTimes(lat: number, lng: number) {
-    this.isLoadingPrayer.set(true);
+  async fetchPrayerTimes(lat: number, lng: number, silent = false) {
+    if (!silent) {
+      this.isLoadingPrayer.set(true);
+    }
     try {
       const date = new Date();
       const day = String(date.getDate()).padStart(2, '0');
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const year = date.getFullYear();
+      const dateKey = `${year}-${month}-${day}`;
 
       const url = `https://api.aladhan.com/v1/timings/${day}-${month}-${year}`;
       const params = {
@@ -349,13 +576,16 @@ export class PrayerQuranService {
       if (res?.data?.timings) {
         this.timings.set(res.data.timings);
         this.lastUpdated.set(Date.now());
+        this.lastFetchedDate.set(dateKey);
         this.calculateNextPrayer();
         this.savePrayerSettings();
       }
     } catch (e) {
       console.error('Failed to fetch prayer times', e);
     } finally {
-      this.isLoadingPrayer.set(false);
+      if (!silent) {
+        this.isLoadingPrayer.set(false);
+      }
     }
   }
 
@@ -376,8 +606,7 @@ export class PrayerQuranService {
     ];
 
     for (const prayer of prayers) {
-      const [h, m] = prayer.time.split(':').map(Number);
-      const prayerMinutes = h * 60 + m;
+      const prayerMinutes = this.parseMinutes(prayer.time);
       if (prayerMinutes > currentMinutes) {
         const diff = prayerMinutes - currentMinutes;
         const hours = Math.floor(diff / 60);
@@ -390,8 +619,8 @@ export class PrayerQuranService {
       }
     }
 
-    const [h, m] = timings.Fajr.split(':').map(Number);
-    const fajrMinutes = h * 60 + m + 1440;
+    const fajrBaseMinutes = this.parseMinutes(timings.Fajr);
+    const fajrMinutes = fajrBaseMinutes + 1440;
     const diff = fajrMinutes - currentMinutes;
     const hours = Math.floor(diff / 60);
     const minutes = diff % 60;
@@ -409,6 +638,7 @@ export class PrayerQuranService {
 
       if (res) {
         this.city.set(res.city || res.locality || res.principalSubdivision || 'موقع غير معروف');
+        this.savePrayerCache();
       }
     } catch {}
   }
@@ -434,6 +664,14 @@ export class PrayerQuranService {
     this.savePrayerSettings();
   }
 
+  setAutoRefreshDays(days: number) {
+    this.autoRefreshDays.set(days);
+    this.savePrayerSettings();
+    if (days > 0 && this.isStalePrayer()) {
+      this.refreshPrayerTimesInBackground();
+    }
+  }
+
   setNotificationMinutes(min: number) {
     this.notificationMinutes.set(min);
     this.savePrayerSettings();
@@ -442,13 +680,29 @@ export class PrayerQuranService {
     }
   }
 
+  private savePrayerCache() {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('prayer_cached_data', JSON.stringify({
+      timings: this.timings(),
+      city: this.city(),
+      latitude: this.latitude(),
+      longitude: this.longitude(),
+      lastUpdated: this.lastUpdated(),
+      lastFetchedDate: this.lastFetchedDate(),
+      autoRefreshDays: this.autoRefreshDays()
+    }));
+  }
+
   private savePrayerSettings() {
+    if (typeof window === 'undefined') return;
     localStorage.setItem('prayer_settings', JSON.stringify({
       method: this.calculationMethod(),
       asr: this.asrMethod(),
       format: this.timeFormat(),
-      notifications: this.notificationMinutes()
+      notifications: this.notificationMinutes(),
+      autoRefreshDays: this.autoRefreshDays()
     }));
+    this.savePrayerCache();
   }
 
   formatTime(time: string): string {
@@ -464,12 +718,15 @@ export class PrayerQuranService {
   // ==================== QURAN ====================
 
   private async loadSurahs() {
+    if (this.surahs().length === 0) {
+      this.surahs.set(ALL_SURAHS);
+    }
     try {
       const res = await this.http.get<any>('https://api.alquran.cloud/v1/surah').pipe(
-        catchError(() => of({ data: [] }))
+        catchError(() => of(null))
       ).toPromise();
 
-      if (res?.data) {
+      if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
         this.surahs.set(res.data.map((s: any) => ({
           number: s.number,
           name: s.name,
@@ -480,7 +737,7 @@ export class PrayerQuranService {
         })));
       }
     } catch (e) {
-      console.error('Failed to load surahs', e);
+      // Fallback already active with ALL_SURAHS
     }
   }
 
@@ -492,37 +749,68 @@ export class PrayerQuranService {
     this.showTafsir.set(false);
 
     try {
-      const surah = this.surahs().find(s => s.number === surahNumber);
+      const surah = this.surahs().find(s => s.number === surahNumber) || ALL_SURAHS.find(s => s.number === surahNumber);
       if (surah) this.currentSurah.set(surah);
 
       // 1. Try IndexedDB
       const cached = await this.getFromDB(surahNumber);
-      if (cached) {
+      if (cached && cached.length > 0) {
         this.ayahs.set(cached);
         this.isLoadingQuran.set(false);
         return;
       }
 
-      // 2. Load from API
-      const arabicRes = await this.http.get<any>(`https://api.alquran.cloud/v1/surah/${surahNumber}/ar.alafasy`).pipe(
-        catchError(() => of(null))
-      ).toPromise();
+      // 2. Load from Primary API (alquran.cloud)
+      let ayahsLoaded = false;
+      try {
+        const arabicRes = await this.http.get<any>(`https://api.alquran.cloud/v1/surah/${surahNumber}/ar.alafasy`).pipe(
+          catchError(() => of(null))
+        ).toPromise();
 
-      if (arabicRes?.data?.ayahs) {
-        const ayahs = arabicRes.data.ayahs.map((a: any) => ({
-          number: a.number,
-          text: a.text,
-          numberInSurah: a.numberInSurah,
-          juz: a.juz,
-          manzil: a.manzil,
-          page: a.page,
-          ruku: a.ruku,
-          hizbQuarter: a.hizbQuarter,
-          sajda: a.sajda
-        }));
-        
-        this.ayahs.set(ayahs);
-        this.saveToDB(surahNumber, ayahs); // Cache offline
+        if (arabicRes?.data?.ayahs && Array.isArray(arabicRes.data.ayahs) && arabicRes.data.ayahs.length > 0) {
+          const ayahs = arabicRes.data.ayahs.map((a: any) => ({
+            number: a.number,
+            text: a.text,
+            numberInSurah: a.numberInSurah,
+            juz: a.juz,
+            manzil: a.manzil,
+            page: a.page,
+            ruku: a.ruku,
+            hizbQuarter: a.hizbQuarter,
+            sajda: a.sajda
+          }));
+          
+          this.ayahs.set(ayahs);
+          this.saveToDB(surahNumber, ayahs);
+          ayahsLoaded = true;
+        }
+      } catch (e) {}
+
+      // 3. Fallback to secondary API if primary failed (e.g. adblocker or downtime)
+      if (!ayahsLoaded) {
+        try {
+          const fallbackRes = await this.http.get<any>(`https://api.quran.com/api/v4/verses/by_chapter/${surahNumber}?language=ar&words=false&per_page=300&fields=text_uthmani,chapter_id,verse_number,juz_number,page_number`).pipe(
+            catchError(() => of(null))
+          ).toPromise();
+
+          if (fallbackRes?.verses && Array.isArray(fallbackRes.verses) && fallbackRes.verses.length > 0) {
+            const ayahs: Ayah[] = fallbackRes.verses.map((v: any) => ({
+              number: v.id || v.verse_number,
+              text: v.text_uthmani || v.text_imlaei || '',
+              numberInSurah: v.verse_number,
+              juz: v.juz_number || 1,
+              manzil: 1,
+              page: v.page_number || 1,
+              ruku: 1,
+              hizbQuarter: 1,
+              sajda: false
+            }));
+
+            this.ayahs.set(ayahs);
+            this.saveToDB(surahNumber, ayahs);
+            ayahsLoaded = true;
+          }
+        } catch (e) {}
       }
 
       // Load translation if needed
@@ -782,7 +1070,8 @@ export class PrayerQuranService {
         method: this.calculationMethod(),
         asr: this.asrMethod(),
         format: this.timeFormat(),
-        notifications: this.notificationMinutes()
+        notifications: this.notificationMinutes(),
+        autoRefreshDays: this.autoRefreshDays()
       },
       settings: {
         reciter: this.selectedReciter(),
@@ -810,6 +1099,9 @@ export class PrayerQuranService {
         this.asrMethod.set(data.prayer.asr ?? 0);
         this.timeFormat.set(data.prayer.format ?? '12h');
         this.notificationMinutes.set(data.prayer.notifications ?? 10);
+        if (data.prayer.autoRefreshDays !== undefined) {
+          this.autoRefreshDays.set(data.prayer.autoRefreshDays);
+        }
         this.savePrayerSettings();
       }
       if (data.settings) {

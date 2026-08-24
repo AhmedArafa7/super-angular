@@ -8,12 +8,13 @@ import { GlobalVideoPlayerComponent } from './features/halaltube/components/glob
 import { ToastComponent } from './shared/components/toast/toast.component';
 import { LightboxComponent } from './shared/components/lightbox/lightbox.component';
 import { DevAuditPanelComponent } from './shared/components/dev-audit-panel/dev-audit-panel.component';
+import { PwaInstallPromptComponent } from './shared/components/pwa-install-prompt/pwa-install-prompt.component';
 import { ButtonInspectorService } from './core/services/button-inspector.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, GlobalVideoPlayerComponent, ToastComponent, LightboxComponent, DevAuditPanelComponent],
+  imports: [RouterOutlet, GlobalVideoPlayerComponent, ToastComponent, LightboxComponent, DevAuditPanelComponent, PwaInstallPromptComponent],
   templateUrl: './app.html',
   styleUrls: ['./app.scss']
 })

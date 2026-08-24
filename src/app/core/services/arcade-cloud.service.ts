@@ -37,14 +37,20 @@ export class ArcadeCloudService {
     title: string;
     description: string;
     category: string;
+    categories?: string[];
     genre: string;
     htmlContent: string;
     thumbnail?: string;
   }): Promise<ArcadeGame> {
     const id = 'custom_game_' + Date.now();
+    const cats = gameData.categories && gameData.categories.length > 0 
+      ? gameData.categories 
+      : [gameData.category || 'general'];
+
     const newGame: ArcadeGame = {
       id: id,
-      category: gameData.category || 'general',
+      category: cats[0] || 'general',
+      categories: cats,
       title: gameData.title,
       description: gameData.description || 'لعبة مخصصة تم إنشاؤها ونشرها في السحابة بنجاح.',
       thumbnail: gameData.thumbnail || this.generateDefaultThumbnail(gameData.title),

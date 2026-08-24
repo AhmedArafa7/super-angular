@@ -464,10 +464,11 @@ export interface SavedGameItem {
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="text-xs font-bold text-slate-300 block mb-1">التصنيف:</label>
+                  <label class="text-xs font-bold text-slate-300 block mb-1">التصنيف الأساسي:</label>
                   <select [(ngModel)]="publishData.category" class="w-full bg-slate-950 border border-white/10 rounded-2xl p-3 text-xs text-white focus:outline-none focus:border-indigo-500">
-                    <option value="general">🎮 ألعاب عامة (General)</option>
-                    <option value="mental">🧠 ألعاب ذهنية وألغاز (Mental)</option>
+                    <option *ngFor="let cat of availableCategories" [value]="cat.id">
+                      {{ cat.icon }} {{ cat.label }}
+                    </option>
                   </select>
                 </div>
 
@@ -518,10 +519,11 @@ export class AiGameBuilderComponent implements OnInit {
   viewportMode = signal<'desktop' | 'tablet' | 'mobile'>('desktop');
 
   showPublishModal = signal<boolean>(false);
+  availableCategories = this.arcadeService.getCategories();
   publishData = {
     title: '',
     description: '',
-    category: 'general',
+    category: 'mental',
     genre: 'Arcade AI'
   };
 
@@ -701,6 +703,7 @@ export class AiGameBuilderComponent implements OnInit {
       title: this.publishData.title,
       description: this.publishData.description,
       category: this.publishData.category,
+      categories: [this.publishData.category],
       genre: this.publishData.genre,
       htmlContent: code
     });
@@ -709,6 +712,7 @@ export class AiGameBuilderComponent implements OnInit {
       title: this.publishData.title,
       description: this.publishData.description,
       category: this.publishData.category,
+      categories: [this.publishData.category],
       genre: this.publishData.genre,
       htmlContent: code
     });
