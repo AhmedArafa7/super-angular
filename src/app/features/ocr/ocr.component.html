@@ -1,0 +1,736 @@
+<div class="min-h-screen bg-[#07090e] text-slate-100 p-4 md:p-8 flex flex-col font-sans selection:bg-indigo-500 selection:text-white" dir="rtl">
+
+  <!-- Header & Toolbar -->
+  <header class="max-w-7xl mx-auto w-full flex flex-wrap items-center justify-between gap-4 mb-6 border-b border-white/10 pb-5">
+    <div>
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-black border border-indigo-500/20 mb-2 shadow-sm">
+        <lucide-icon [img]="ScanTextIcon" class="w-3.5 h-3.5"></lucide-icon>
+        <span>محلي 100% • خصوصية مطلقة • بدون سيرفرات</span>
+      </div>
+      <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white flex items-center gap-2.5">
+        <span>مستخرج النصوص الذكي من الصور (OCR)</span>
+        <span class="text-sm font-semibold px-2.5 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Local WebAssembly</span>
+      </h1>
+      <p class="text-xs md:text-sm text-slate-400 mt-1">
+        استخرج وانسخ أي كلمة أو سطر أو نص كامل من أي صورة ومستند فورياً داخل جهازك.
+      </p>
+    </div>
+
+    <!-- Quick Global Actions -->
+    <div class="flex flex-wrap items-center gap-2.5">
+      <!-- Language Picker -->
+      <div class="relative flex items-center bg-slate-900 border border-white/10 rounded-2xl px-3 py-1.5 text-xs text-slate-200 shadow-inner">
+        <lucide-icon [img]="LanguagesIcon" class="w-4 h-4 text-indigo-400 ml-2"></lucide-icon>
+        <select 
+          [ngModel]="selectedLanguage()" 
+          (ngModelChange)="selectedLanguage.set($event)"
+          class="bg-transparent text-xs font-bold text-white outline-none cursor-pointer pr-1">
+          @for (lang of languages; track lang.code) {
+            <option [value]="lang.code" class="bg-slate-900 text-white">{{ lang.flag }} {{ lang.name }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- History Archive Button -->
+      <button 
+        (click)="showHistoryDrawer.set(true)"
+        class="px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 border border-white/10 rounded-2xl text-xs font-bold text-slate-300 hover:text-white transition-all flex items-center gap-2 shadow-lg cursor-pointer">
+        <lucide-icon [img]="LayersIcon" class="w-4 h-4 text-amber-400"></lucide-icon>
+        <span>السجل السابق</span>
+        @if (ocrService.history().length > 0) {
+          <span class="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] flex items-center justify-center font-mono font-bold">
+            {{ ocrService.history().length }}
+          </span>
+        }
+      </button>
+
+      <!-- Upload New Image Button -->
+      <label class="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-black text-xs md:text-sm rounded-2xl shadow-xl shadow-indigo-500/20 transition-all cursor-pointer flex items-center gap-2">
+        <lucide-icon [img]="UploadCloudIcon" class="w-4 h-4"></lucide-icon>
+        <span>اختر صورة</span>
+        <input #fileInput type="file" (change)="onFileSelected($event)" accept="image/*" class="hidden" />
+      </label>
+
+      <!-- Camera Capture Button -->
+      <button 
+        (click)="openCamera()"
+        class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-white/10 rounded-2xl text-xs font-bold text-slate-200 transition-all flex items-center gap-2 cursor-pointer"
+        title="التقاط صورة عبر الكاميرا">
+        <lucide-icon [img]="CameraIcon" class="w-4 h-4 text-emerald-400"></lucide-icon>
+        <span class="hidden sm:inline">الكاميرا</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto w-full flex-1 flex flex-col gap-6">
+
+    <!-- Progress Notification Bar (Visible during OCR processing) -->
+    @if (ocrService.isProcessing()) {
+      <div class="bg-slate-900/90 backdrop-blur-md border border-indigo-500/30 rounded-2xl p-4 shadow-2xl relative overflow-hidden animate-pulse">
+        <div class="flex items-center justify-between gap-4 mb-2">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-xl bg-indigo-600/30 text-indigo-400 flex items-center justify-center animate-spin">
+              <lucide-icon [img]="RefreshCwIcon" class="w-4 h-4"></lucide-icon>
+            </div>
+            <div>
+              <p class="text-sm font-bold text-white">{{ ocrService.progress().arabicMessage }}</p>
+              <p class="text-[11px] text-slate-400 font-mono">حالة المعالج الداخلي: {{ ocrService.progress().status }}</p>
+            </div>
+          </div>
+          <span class="text-sm font-mono font-bold text-indigo-300">
+            {{ (ocrService.progress().progress * 100) | number:'1.0-0' }}%
+          </span>
+        </div>
+        <!-- Progress track -->
+        <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden">
+          <div 
+            class="h-full bg-gradient-to-r from-indigo-500 via-cyan-400 to-emerald-400 transition-all duration-300 ease-out"
+            [style.width.%]="ocrService.progress().progress * 100">
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Empty State: No image selected yet -->
+    @if (!selectedImageUrl()) {
+      <div 
+        (dragover)="onDragOver($event)"
+        (drop)="onDrop($event)"
+        class="border-2 border-dashed border-indigo-500/30 hover:border-indigo-500/60 bg-slate-900/40 hover:bg-slate-900/60 transition-all rounded-3xl p-8 md:p-14 flex flex-col items-center justify-center text-center gap-6 shadow-2xl backdrop-blur-sm group">
+        
+        <div class="w-20 h-20 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center group-hover:scale-110 group-hover:bg-indigo-500/20 transition-all shadow-inner">
+          <lucide-icon [img]="ScanTextIcon" class="w-10 h-10"></lucide-icon>
+        </div>
+
+        <div class="max-w-md">
+          <h2 class="text-xl md:text-2xl font-black text-white mb-2">اسحب وأفلت أي صورة هنا لاستخراج نصوصها</h2>
+          <p class="text-xs md:text-sm text-slate-400 leading-relaxed">
+            يدعم صور الفواتير، المستندات، الكتب، لقطات الشاشة، الإيصالات، والأكواد.
+            يمكنك أيضاً الضغط على <kbd class="px-2 py-0.5 bg-slate-800 border border-white/10 rounded-md font-mono text-indigo-300 text-xs">Ctrl + V</kbd> للصق الصورة مباشرة من الحافظة!
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-center gap-3">
+          <button 
+            (click)="fileInputRef.nativeElement.click()"
+            class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold text-xs rounded-2xl shadow-lg transition-all flex items-center gap-2 cursor-pointer">
+            <lucide-icon [img]="UploadCloudIcon" class="w-4 h-4"></lucide-icon>
+            <span>استعراض ملف من الجهاز</span>
+          </button>
+          
+          <button 
+            (click)="openCamera()"
+            class="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-2xl border border-white/10 transition-all flex items-center gap-2 cursor-pointer">
+            <lucide-icon [img]="CameraIcon" class="w-4 h-4 text-emerald-400"></lucide-icon>
+            <span>التقاط بالكاميرا</span>
+          </button>
+        </div>
+
+        <!-- Built-in Interactive Samples -->
+        <div class="pt-6 border-t border-white/10 w-full max-w-xl">
+          <p class="text-xs font-bold text-slate-400 mb-3 flex items-center justify-center gap-1.5">
+            <lucide-icon [img]="SparklesIcon" class="w-3.5 h-3.5 text-amber-400"></lucide-icon>
+            <span>أو جرب أحد النماذج التوضيحية بنقرة واحدة:</span>
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <button 
+              (click)="loadSample('arabic-invoice')"
+              class="px-3 py-2.5 bg-slate-950/60 hover:bg-indigo-950/40 border border-white/10 hover:border-indigo-500/40 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer">
+              <span>🧾 فاتورة عربية</span>
+            </button>
+            <button 
+              (click)="loadSample('arabic-doc')"
+              class="px-3 py-2.5 bg-slate-950/60 hover:bg-indigo-950/40 border border-white/10 hover:border-indigo-500/40 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer">
+              <span>📄 تقرير ومستند رسمي</span>
+            </button>
+            <button 
+              (click)="loadSample('code-snippet')"
+              class="px-3 py-2.5 bg-slate-950/60 hover:bg-indigo-950/40 border border-white/10 hover:border-indigo-500/40 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer">
+              <span>💻 كود برمجي إنجليزي</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    }
+
+    <!-- Active Workspace: Image Loaded -->
+    @if (selectedImageUrl()) {
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Left Column: Visual Image Studio & Interactive Overlay (col-span-6) -->
+        <div class="lg:col-span-6 bg-slate-900/70 border border-white/10 rounded-3xl p-5 shadow-2xl flex flex-col gap-4">
+          
+          <!-- Image Control Bar -->
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
+            <div class="flex items-center gap-2 overflow-hidden">
+              <span class="text-lg">🖼️</span>
+              <div class="overflow-hidden">
+                <p class="text-xs font-black text-white truncate max-w-[200px]" [title]="selectedImageName()">{{ selectedImageName() }}</p>
+                <p class="text-[10px] text-slate-400 font-mono">{{ imageNaturalWidth() }} × {{ imageNaturalHeight() }} px</p>
+              </div>
+            </div>
+
+            <!-- Image Actions & Tools -->
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <!-- Rotation -->
+              <button 
+                (click)="rotateImage('ccw')"
+                class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 hover:text-white transition-all cursor-pointer"
+                title="تدوير 90° لليسار">
+                <lucide-icon [img]="RotateCcwIcon" class="w-4 h-4"></lucide-icon>
+              </button>
+              <button 
+                (click)="rotateImage('cw')"
+                class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 hover:text-white transition-all cursor-pointer"
+                title="تدوير 90° لليمين">
+                <lucide-icon [img]="RotateCwIcon" class="w-4 h-4"></lucide-icon>
+              </button>
+
+              <!-- Crop / ROI Toggle -->
+              <button 
+                (click)="isCropMode.set(!isCropMode())"
+                [class.bg-indigo-600]="isCropMode()"
+                [class.text-white]="isCropMode()"
+                [class.bg-slate-800]="!isCropMode()"
+                class="px-2.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                title="تحديد وقص منطقة معينة للاستخراج">
+                <lucide-icon [img]="CropIcon" class="w-4 h-4"></lucide-icon>
+                <span class="hidden sm:inline">{{ isCropMode() ? 'إلغاء التحديد' : 'تحديد منطقة' }}</span>
+              </button>
+
+              <!-- Image Filters Toggle -->
+              <button 
+                (click)="showFiltersPanel.set(!showFiltersPanel())"
+                [class.bg-cyan-600]="showFiltersPanel()"
+                [class.bg-slate-800]="!showFiltersPanel()"
+                class="p-2 rounded-xl text-slate-300 hover:text-white transition-all cursor-pointer"
+                title="فلاتر تحسين التباين والقراءة">
+                <lucide-icon [img]="SlidersIcon" class="w-4 h-4"></lucide-icon>
+              </button>
+
+              <!-- Toggle Bounding Boxes Overlay -->
+              @if (currentResult()) {
+                <button 
+                  (click)="showBoundingBoxes.set(!showBoundingBoxes())"
+                  [class.bg-violet-600]="showBoundingBoxes()"
+                  [class.bg-slate-800]="!showBoundingBoxes()"
+                  class="p-2 rounded-xl text-slate-300 hover:text-white transition-all cursor-pointer"
+                  title="إظهار/إخفاء المربعات التفاعلية للكلمات">
+                  <lucide-icon [img]="EyeIcon" class="w-4 h-4"></lucide-icon>
+                </button>
+              }
+
+              <!-- Reset / Clear -->
+              <button 
+                (click)="selectedImageUrl.set(null); currentResult.set(null); editableText.set('')"
+                class="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all cursor-pointer"
+                title="إزالة الصورة والبدء من جديد">
+                <lucide-icon [img]="Trash2Icon" class="w-4 h-4"></lucide-icon>
+              </button>
+            </div>
+          </div>
+
+          <!-- Optional Filters Drawer / Panel -->
+          @if (showFiltersPanel()) {
+            <div class="bg-slate-950/80 border border-white/10 rounded-2xl p-3.5 flex flex-col gap-3 text-xs">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-cyan-300">⚙️ فلاتر تحسين الصورة قبل المسح:</span>
+                <button (click)="resetAdjustments()" class="text-[11px] text-slate-400 hover:text-white underline cursor-pointer">إعادة تعيين</button>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <!-- Grayscale -->
+                <label class="flex items-center gap-2 cursor-pointer bg-slate-900 p-2 rounded-xl border border-white/5">
+                  <input type="checkbox" [ngModel]="adjustments().grayscale" (ngModelChange)="updateAdjustment('grayscale', $event)" class="rounded text-indigo-500" />
+                  <span>تدرج رمادي (Grayscale)</span>
+                </label>
+
+                <!-- Binarize / High Contrast -->
+                <label class="flex items-center gap-2 cursor-pointer bg-slate-900 p-2 rounded-xl border border-white/5">
+                  <input type="checkbox" [ngModel]="adjustments().binarize" (ngModelChange)="updateAdjustment('binarize', $event)" class="rounded text-cyan-500" />
+                  <span>أبيض وأسود حاد (Threshold)</span>
+                </label>
+
+                <!-- Invert -->
+                <label class="flex items-center gap-2 cursor-pointer bg-slate-900 p-2 rounded-xl border border-white/5">
+                  <input type="checkbox" [ngModel]="adjustments().invert" (ngModelChange)="updateAdjustment('invert', $event)" class="rounded text-violet-500" />
+                  <span>عكس الألوان (Invert)</span>
+                </label>
+
+                <!-- Contrast Slider -->
+                <div class="flex flex-col gap-1 bg-slate-900 p-2 rounded-xl border border-white/5">
+                  <div class="flex justify-between text-[11px] text-slate-400">
+                    <span>التباين (Contrast):</span>
+                    <span>{{ adjustments().contrast }}</span>
+                  </div>
+                  <input 
+                    type="range" min="-100" max="100" step="5" 
+                    [ngModel]="adjustments().contrast" 
+                    (ngModelChange)="updateAdjustment('contrast', $event)"
+                    class="w-full accent-cyan-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg" />
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Image Viewer Container with Canvas & Interactive Overlays -->
+          <div 
+            class="relative w-full min-h-[350px] max-h-[550px] bg-[#030712] border border-white/5 rounded-2xl overflow-auto flex items-center justify-center p-2 select-none group"
+            [class.cursor-crosshair]="isCropMode()">
+            
+            <div 
+              class="relative inline-block"
+              (mousedown)="startCropDrag($event)"
+              (mousemove)="onCropDragMove($event)"
+              (mouseup)="endCropDrag()">
+
+              <!-- Hidden processed canvas reference -->
+              <canvas #previewCanvas class="max-w-full max-h-[500px] h-auto object-contain rounded-xl shadow-2xl block"></canvas>
+
+              <!-- Interactive Bounding Boxes Overlay (Words & Lines) -->
+              @if (currentResult() && showBoundingBoxes() && !isCropMode()) {
+                <div class="absolute inset-0 pointer-events-none">
+                  @for (word of currentResult()!.words; track $index) {
+                    <div 
+                      class="absolute border border-indigo-400/40 hover:border-cyan-400 hover:bg-cyan-500/25 pointer-events-auto cursor-pointer rounded-sm transition-all duration-150 group/box"
+                      [ngStyle]="getScaledBboxStyle(word.bbox)"
+                      (mouseenter)="hoveredWord.set(word)"
+                      (mouseleave)="hoveredWord.set(null)"
+                      (click)="copyWord(word, $event)"
+                      [title]="'انقر لنسخ: ' + word.text + ' (دقة: ' + word.confidence + '%)'">
+                      
+                      <!-- Hover Tooltip -->
+                      <div class="opacity-0 group-hover/box:opacity-100 pointer-events-none absolute bottom-full mb-1 right-0 bg-slate-950/95 text-white text-[11px] font-bold px-2 py-1 rounded-lg border border-cyan-500/50 shadow-2xl whitespace-nowrap z-30 transition-opacity flex items-center gap-1.5">
+                        <span class="text-cyan-300 font-mono">{{ word.text }}</span>
+                        <span class="text-[9px] px-1 rounded bg-indigo-500/20 text-indigo-300 font-mono">{{ word.confidence }}%</span>
+                        <span class="text-[9px] text-slate-400">انقر للنسخ 📋</span>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- Visual Crop Selection Rectangle Overlay -->
+              @if (cropRect()) {
+                <div 
+                  class="absolute border-2 border-dashed border-emerald-400 bg-emerald-500/20 pointer-events-none rounded"
+                  [style.left.px]="cropRect()!.x"
+                  [style.top.px]="cropRect()!.y"
+                  [style.width.px]="cropRect()!.width"
+                  [style.height.px]="cropRect()!.height">
+                  <div class="absolute top-1 right-1 bg-emerald-700 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow">
+                    منطقة محددة (ROI)
+                  </div>
+                </div>
+              }
+            </div>
+
+          </div>
+
+          <!-- Bottom Action: Trigger OCR Button -->
+          <div class="flex items-center gap-3">
+            <button 
+              (click)="runOcr()"
+              [disabled]="ocrService.isProcessing()"
+              class="flex-1 py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 disabled:opacity-50 text-white font-black text-sm rounded-2xl shadow-xl shadow-emerald-500/20 transition-all flex items-center justify-center gap-2.5 cursor-pointer">
+              @if (ocrService.isProcessing()) {
+                <lucide-icon [img]="RefreshCwIcon" class="w-5 h-5 animate-spin"></lucide-icon>
+                <span>جاري المعالجة محلياً...</span>
+              } @else {
+                <lucide-icon [img]="SparklesIcon" class="w-5 h-5 text-amber-300"></lucide-icon>
+                <span>{{ currentResult() ? 'إعادة استخراج النصوص ⚡' : 'بدء استخراج النصوص الآن ⚡' }}</span>
+              }
+            </button>
+
+            @if (cropRect()) {
+              <button 
+                (click)="clearCrop()"
+                class="px-4 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-2xl border border-white/10 transition-all cursor-pointer">
+                إلغاء التحديد
+              </button>
+            }
+          </div>
+
+          <!-- Tip note -->
+          <p class="text-[11px] text-slate-400 flex items-center gap-1.5 bg-slate-950/50 p-2.5 rounded-xl border border-white/5">
+            <span class="text-amber-400 font-bold">💡 نصيحة:</span>
+            <span>يمكنك النقر مباشرة على أي كلمة تظهر داخل الصورة لنسخها في الحافظة بنقرة واحدة!</span>
+          </p>
+
+        </div>
+
+        <!-- Right Column: Extracted Text & Advanced Workspace (col-span-6) -->
+        <div class="lg:col-span-6 bg-slate-900/70 border border-white/10 rounded-3xl p-5 shadow-2xl flex flex-col gap-4">
+          
+          <!-- Workspace Header & Tabs -->
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
+            
+            <!-- Tabs -->
+            <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-2xl border border-white/5">
+              <button 
+                (click)="activeTab.set('editor')"
+                [class.bg-indigo-600]="activeTab() === 'editor'"
+                [class.text-white]="activeTab() === 'editor'"
+                [class.text-slate-400]="activeTab() !== 'editor'"
+                class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer">
+                <lucide-icon [img]="FileTextIcon" class="w-3.5 h-3.5"></lucide-icon>
+                <span>محرر النص</span>
+              </button>
+
+              <button 
+                (click)="activeTab.set('blocks')"
+                [class.bg-indigo-600]="activeTab() === 'blocks'"
+                [class.text-white]="activeTab() === 'blocks'"
+                [class.text-slate-400]="activeTab() !== 'blocks'"
+                class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer">
+                <lucide-icon [img]="LayersIcon" class="w-3.5 h-3.5"></lucide-icon>
+                <span>مستكشف السطور ({{ currentResult()?.lines?.length || 0 }})</span>
+              </button>
+
+              <button 
+                (click)="activeTab.set('json')"
+                [class.bg-indigo-600]="activeTab() === 'json'"
+                [class.text-white]="activeTab() === 'json'"
+                [class.text-slate-400]="activeTab() !== 'json'"
+                class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer">
+                <span>JSON</span>
+              </button>
+            </div>
+
+            <!-- Stats badges -->
+            <div class="flex items-center gap-2">
+              @if (currentResult()) {
+                <span class="px-2.5 py-1 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-bold font-mono">
+                  الدقة: {{ currentResult()!.averageConfidence }}%
+                </span>
+              }
+              <span class="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-300 text-[11px] font-mono">
+                {{ wordCount() }} كلمة • {{ charCount() }} حرف
+              </span>
+            </div>
+          </div>
+
+          <!-- Quick Copy Action Bar -->
+          <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-950/60 p-2.5 rounded-2xl border border-white/5">
+            <div class="flex items-center gap-2">
+              <!-- Primary Copy All Button -->
+              <button 
+                (click)="copyAllText()"
+                [disabled]="!editableText()"
+                class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 disabled:opacity-50 text-white font-black text-xs rounded-xl shadow-lg transition-all flex items-center gap-1.5 cursor-pointer">
+                <lucide-icon [img]="CopyIcon" class="w-3.5 h-3.5"></lucide-icon>
+                <span>نسخ النص كاملاً</span>
+              </button>
+
+              <!-- Copy as Markdown -->
+              <button 
+                (click)="copyAsMarkdown()"
+                [disabled]="!editableText()"
+                class="px-3 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-300 hover:text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
+                title="نسخ بتنسيق Markdown">
+                <span>نسخ MD</span>
+              </button>
+
+              <!-- Copy as JSON -->
+              <button 
+                (click)="copyAsJson()"
+                [disabled]="!editableText()"
+                class="px-3 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-300 hover:text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
+                title="نسخ كـ JSON منظم">
+                <span>نسخ JSON</span>
+              </button>
+            </div>
+
+            <!-- Direction & Cleaners -->
+            <div class="flex items-center gap-1.5">
+              <!-- Text-to-Speech Button -->
+              <button 
+                (click)="toggleSpeech()"
+                [disabled]="!editableText()"
+                [class.bg-emerald-600]="ocrService.isSpeaking()"
+                [class.bg-slate-800]="!ocrService.isSpeaking()"
+                class="p-2 rounded-xl text-slate-200 hover:text-white transition-all cursor-pointer"
+                title="قراءة النص صوتياً (Text-to-Speech)">
+                <lucide-icon [img]="ocrService.isSpeaking() ? VolumeXIcon : Volume2Icon" class="w-4 h-4"></lucide-icon>
+              </button>
+
+              <!-- Direction RTL / LTR -->
+              <button 
+                (click)="textDirection.set(textDirection() === 'rtl' ? 'ltr' : 'rtl')"
+                class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs rounded-xl transition-all cursor-pointer"
+                title="تبديل اتجاه النص">
+                {{ textDirection() === 'rtl' ? 'RTL' : 'LTR' }}
+              </button>
+
+              <!-- Clean Whitespace -->
+              <button 
+                (click)="cleanExcessiveWhitespace()"
+                [disabled]="!editableText()"
+                class="p-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-300 hover:text-white rounded-xl transition-all cursor-pointer"
+                title="إزالة الفراغات والأسطر الزائدة">
+                🧹
+              </button>
+            </div>
+          </div>
+
+          <!-- Tab Content 1: Full Text Editor -->
+          @if (activeTab() === 'editor') {
+            <div class="flex-1 flex flex-col gap-2">
+              <textarea 
+                #textEditor
+                [ngModel]="editableText()"
+                (ngModelChange)="editableText.set($event)"
+                [dir]="textDirection()"
+                [style.fontSize.px]="editorFontSize()"
+                placeholder="سيظهر النص المستخرج هنا تلقائياً بعد الفحص... يمكنك تعديله أو نسخه أو تحديد أي جزء منه بحرية."
+                class="w-full h-[380px] bg-[#030712] border border-white/10 focus:border-indigo-500 rounded-2xl p-4 text-slate-200 font-sans leading-relaxed resize-none outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all font-medium">
+              </textarea>
+            </div>
+          }
+
+          <!-- Tab Content 2: Lines & Blocks Explorer -->
+          @if (activeTab() === 'blocks') {
+            <div class="flex-1 flex flex-col gap-3">
+              <!-- Search inside lines -->
+              <div class="relative">
+                <input 
+                  type="text" 
+                  [ngModel]="searchQuery()" 
+                  (ngModelChange)="searchQuery.set($event)"
+                  placeholder="ابحث في السطور المستخرجة..." 
+                  class="w-full bg-slate-950 border border-white/10 rounded-xl px-9 py-2 text-xs text-white outline-none focus:border-indigo-500" />
+                <lucide-icon [img]="SearchIcon" class="w-4 h-4 text-slate-500 absolute right-3 top-2.5"></lucide-icon>
+              </div>
+
+              <!-- Lines List -->
+              <div class="space-y-2 overflow-y-auto max-h-[340px] pr-1">
+                @if (filteredLines().length === 0) {
+                  <div class="p-8 text-center text-slate-500 text-xs">
+                    لا توجد سطور مستخرجة مطابقة للبحث
+                  </div>
+                }
+
+                @for (line of filteredLines(); track $index) {
+                  <div 
+                    (click)="copyLine(line, $index)"
+                    class="p-3 bg-slate-950/80 hover:bg-slate-900 border border-white/5 hover:border-indigo-500/30 rounded-xl transition-all cursor-pointer flex items-start justify-between gap-3 group/line">
+                    
+                    <div class="flex-1 overflow-hidden" [dir]="textDirection()">
+                      <div class="flex items-center gap-2 mb-1">
+                        <span class="text-[10px] font-mono text-indigo-400 font-bold">#{{ $index + 1 }}</span>
+                        <span 
+                          [class.bg-emerald-500/20]="line.confidence >= 80"
+                          [class.text-emerald-300]="line.confidence >= 80"
+                          [class.bg-amber-500/20]="line.confidence < 80 && line.confidence >= 50"
+                          [class.text-amber-300]="line.confidence < 80 && line.confidence >= 50"
+                          [class.bg-red-500/20]="line.confidence < 50"
+                          [class.text-red-300]="line.confidence < 50"
+                          class="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold">
+                          {{ line.confidence }}% دقة
+                        </span>
+                      </div>
+                      <p class="text-xs font-semibold text-slate-200 group-hover/line:text-white leading-relaxed">{{ line.text }}</p>
+                      
+                      <!-- Word chips clickable -->
+                      <div class="flex flex-wrap gap-1 mt-2">
+                        @for (word of line.words; track $index) {
+                          <span 
+                            (click)="copyWord(word, $event)"
+                            class="px-2 py-0.5 rounded bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white text-[10px] font-mono cursor-pointer transition-all"
+                            title="انقر لنسخ هذه الكلمة">
+                            {{ word.text }}
+                          </span>
+                        }
+                      </div>
+                    </div>
+
+                    <button 
+                      (click)="copyLine(line, $index, $event)"
+                      class="p-1.5 bg-slate-800 hover:bg-indigo-600 text-slate-400 hover:text-white rounded-lg transition-all opacity-80 group-hover/line:opacity-100"
+                      title="نسخ هذا السطر">
+                      <lucide-icon [img]="CopyIcon" class="w-3.5 h-3.5"></lucide-icon>
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Tab Content 3: JSON View -->
+          @if (activeTab() === 'json') {
+            <div class="flex-1">
+              <pre class="w-full h-[380px] bg-[#030712] border border-white/10 rounded-2xl p-4 text-emerald-400 font-mono text-xs overflow-auto select-all leading-relaxed" dir="ltr">{{ currentResult() | json }}</pre>
+            </div>
+          }
+
+          <!-- Export & Integration Tools Bar -->
+          <div class="border-t border-white/10 pt-3 flex flex-wrap items-center justify-between gap-2.5">
+            
+            <!-- Download Options -->
+            <div class="flex items-center gap-2">
+              <button 
+                (click)="downloadTxtFile()"
+                [disabled]="!editableText()"
+                class="px-3 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer">
+                <lucide-icon [img]="DownloadIcon" class="w-3.5 h-3.5"></lucide-icon>
+                <span>تحميل .TXT</span>
+              </button>
+
+              <button 
+                (click)="downloadMdFile()"
+                [disabled]="!editableText()"
+                class="px-3 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer">
+                <lucide-icon [img]="DownloadIcon" class="w-3.5 h-3.5"></lucide-icon>
+                <span>تحميل .MD</span>
+              </button>
+            </div>
+
+            <!-- Platform Integrations -->
+            <div class="flex items-center gap-2">
+              <!-- Send to Text Fixer -->
+              <button 
+                (click)="sendToTextFixer()"
+                [disabled]="!editableText()"
+                class="px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 disabled:opacity-50 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                title="فتح في أداة تصحيح اتجاه النصوص">
+                <span>مصحح النصوص</span>
+                <lucide-icon [img]="ExternalLinkIcon" class="w-3.5 h-3.5"></lucide-icon>
+              </button>
+
+              <!-- Send to SuperDoc -->
+              <button 
+                (click)="sendToSuperDoc()"
+                [disabled]="!editableText()"
+                class="px-3 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 disabled:opacity-50 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                title="فتح في محرر المستندات SuperDoc">
+                <span>SuperDoc</span>
+                <lucide-icon [img]="ExternalLinkIcon" class="w-3.5 h-3.5"></lucide-icon>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    }
+
+  </main>
+
+  <!-- Live Camera Capture Modal -->
+  @if (showCameraModal()) {
+    <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div class="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-xl p-5 shadow-2xl flex flex-col gap-4">
+        
+        <div class="flex items-center justify-between border-b border-white/10 pb-3">
+          <div class="flex items-center gap-2">
+            <lucide-icon [img]="CameraIcon" class="w-5 h-5 text-emerald-400"></lucide-icon>
+            <h3 class="text-sm font-black text-white">التقاط صورة مباشرة عبر الكاميرا</h3>
+          </div>
+          <button (click)="stopCamera(); showCameraModal.set(false)" class="p-1.5 text-slate-400 hover:text-white rounded-lg">
+            <lucide-icon [img]="XIcon" class="w-4 h-4"></lucide-icon>
+          </button>
+        </div>
+
+        <div class="relative bg-black rounded-2xl overflow-hidden aspect-video flex items-center justify-center">
+          <video #cameraVideo autoplay playsinline class="w-full h-full object-cover"></video>
+        </div>
+
+        <div class="flex items-center justify-between gap-3 pt-2">
+          <button 
+            (click)="toggleCameraFacing()"
+            class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl flex items-center gap-2 cursor-pointer">
+            <lucide-icon [img]="RefreshCwIcon" class="w-4 h-4"></lucide-icon>
+            <span>تبديل الكاميرا</span>
+          </button>
+
+          <button 
+            (click)="captureCameraSnapshot()"
+            class="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm rounded-2xl shadow-xl flex items-center gap-2 cursor-pointer">
+            <lucide-icon [img]="CameraIcon" class="w-5 h-5"></lucide-icon>
+            <span>التقاط ومسح الآن 📸</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- History Drawer Modal -->
+  @if (showHistoryDrawer()) {
+    <div class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex justify-end">
+      <div class="bg-slate-900 border-r border-white/10 w-full max-w-md h-full p-6 shadow-2xl flex flex-col gap-4 overflow-hidden">
+        
+        <div class="flex items-center justify-between border-b border-white/10 pb-4">
+          <div class="flex items-center gap-2.5">
+            <lucide-icon [img]="LayersIcon" class="w-5 h-5 text-amber-400"></lucide-icon>
+            <h2 class="text-base font-black text-white">سجل العمليات السابقة ({{ ocrService.history().length }})</h2>
+          </div>
+          <button (click)="showHistoryDrawer.set(false)" class="p-1.5 text-slate-400 hover:text-white rounded-lg">
+            <lucide-icon [img]="XIcon" class="w-4 h-4"></lucide-icon>
+          </button>
+        </div>
+
+        <!-- History List -->
+        <div class="flex-1 overflow-y-auto space-y-3 pr-1">
+          @if (ocrService.history().length === 0) {
+            <div class="h-64 flex flex-col items-center justify-center text-center text-slate-500 p-6">
+              <lucide-icon [img]="LayersIcon" class="w-12 h-12 mb-3 opacity-40"></lucide-icon>
+              <p class="text-sm font-bold">لا يوجد سجل سابق</p>
+              <p class="text-xs text-slate-600 mt-1">الصور والنصوص التي تستخرجها ستُحفظ هنا محلياً في جهازك.</p>
+            </div>
+          }
+
+          @for (item of ocrService.history(); track item.id) {
+            <div 
+              (click)="restoreHistoryItem(item)"
+              class="p-3.5 bg-slate-950/80 hover:bg-indigo-950/30 border border-white/5 hover:border-indigo-500/40 rounded-2xl transition-all cursor-pointer flex flex-col gap-2 group/item">
+              
+              <div class="flex items-center justify-between text-[11px] text-slate-400">
+                <span class="font-bold text-white truncate max-w-[200px]">{{ item.imageName }}</span>
+                <span class="font-mono text-slate-500">{{ item.timestamp | date:'shortTime' }}</span>
+              </div>
+
+              <p class="text-xs text-slate-300 line-clamp-2 leading-relaxed" dir="auto">
+                {{ item.fullText || '(نص فارغ)' }}
+              </p>
+
+              <div class="flex items-center justify-between pt-2 border-t border-white/5 text-[10px]">
+                <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono font-bold">
+                  {{ item.averageConfidence }}% دقة
+                </span>
+                <button 
+                  (click)="deleteHistory(item.id, $event)"
+                  class="text-red-400 hover:text-red-300 opacity-60 group-hover/item:opacity-100 transition-opacity p-1">
+                  <lucide-icon [img]="Trash2Icon" class="w-3.5 h-3.5"></lucide-icon>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (ocrService.history().length > 0) {
+          <div class="border-t border-white/10 pt-3">
+            <button 
+              (click)="clearAllHistory()"
+              class="w-full py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer">
+              <lucide-icon [img]="Trash2Icon" class="w-4 h-4"></lucide-icon>
+              <span>مسح السجل بالكامل</span>
+            </button>
+          </div>
+        }
+
+      </div>
+    </div>
+  }
+
+  <!-- Floating Toast Notification -->
+  @if (copyToastMessage()) {
+    <div class="fixed bottom-6 left-6 z-50 bg-slate-900/95 text-white border border-indigo-500/40 px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-md flex items-center gap-2.5 text-xs font-bold animate-bounce">
+      <span>{{ copyToastMessage() }}</span>
+    </div>
+  }
+
+</div>

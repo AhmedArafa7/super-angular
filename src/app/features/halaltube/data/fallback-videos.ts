@@ -35,10 +35,10 @@ export const FALLBACK_VIDEOS: FeedVideo[] = [
     isShorts: false
   },
   {
-    id: 'kJQP7kiw5Fk',
+    id: 'Xg3dnwXfsBc',
     title: 'سورة الملك تلاوة تفيض خشوعاً وطمأنينة - الشيخ ياسر الدوسري',
-    url: 'https://www.youtube.com/watch?v=kJQP7kiw5Fk',
-    thumbnail: 'https://img.youtube.com/vi/kJQP7kiw5Fk/hqdefault.jpg',
+    url: 'https://youtu.be/Xg3dnwXfsBc',
+    thumbnail: 'https://img.youtube.com/vi/Xg3dnwXfsBc/hqdefault.jpg',
     author: 'الشيخ ياسر الدوسري',
     authorId: 'dossari_channel',
     channelAvatar: 'https://ui-avatars.com/api/?name=Yasser+Dossari&background=047857&color=fff&bold=true',

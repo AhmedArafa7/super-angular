@@ -17,7 +17,8 @@ import {
   UserCheck, BellRing, Tags, Edit3, Ban, User, Phone, Package, CheckCircle, BellOff,
   PackagePlus, Camera, PenTool, Grid, Maximize2, Pause, VolumeX, Volume2, LoaderCircle,
   Maximize, Star, Timer, Sun, Moon, Chrome, CloudCog, CloudUpload, CloudRain, Flag, Lock, BarChart3,
-  Type, Code, Bookmark, Building2, Smartphone, Workflow, Database
+  Type, Code, Bookmark, Building2, Smartphone, Workflow, Database,
+  ScanText, Crop, RotateCw, RotateCcw, ZoomIn, ZoomOut, FileSearch, Sliders, Languages, Share2
 } from 'lucide-angular';
 
 import { 
@@ -26,6 +27,16 @@ import {
   LucideSmartphone,
   LucideWorkflow,
   LucideDatabase,
+  LucideScanText,
+  LucideCrop,
+  LucideRotateCw,
+  LucideRotateCcw,
+  LucideZoomIn,
+  LucideZoomOut,
+  LucideFileSearch,
+  LucideSliders,
+  LucideLanguages,
+  LucideShare2,
   LucideLayoutDashboard, LucideMessageCircleQuestion, LucideGamepad2, LucideClock, LucideHeartPulse, 
   LucideMessageSquare, LucideCpu, LucideHardDrive, LucideTable, LucideTag, LucideMessageCircle, LucideVideo, LucideShoppingCart, 
   LucideGraduationCap, LucideLibraryBig, LucideMegaphone, LucideDownloadCloud, LucideRocket, LucideWallet, LucideRepeat, 
@@ -206,7 +217,17 @@ export const provideLucideIcons = () => {
         Building2,
         Smartphone,
         Workflow,
-        Database
+        Database,
+        ScanText,
+        Crop,
+        RotateCw,
+        RotateCcw,
+        ZoomIn,
+        ZoomOut,
+        FileSearch,
+        Sliders,
+        Languages,
+        Share2
       })
     ),
     provideNewLucideIcons(
@@ -362,7 +383,17 @@ export const provideLucideIcons = () => {
       LucideBarChart3,
       LucideSmartphone,
       LucideWorkflow,
-      LucideDatabase
+      LucideDatabase,
+      LucideScanText,
+      LucideCrop,
+      LucideRotateCw,
+      LucideRotateCcw,
+      LucideZoomIn,
+      LucideZoomOut,
+      LucideFileSearch,
+      LucideSliders,
+      LucideLanguages,
+      LucideShare2
     )
   ];
 };

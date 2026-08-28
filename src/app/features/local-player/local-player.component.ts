@@ -5,25 +5,30 @@ import { RouterModule } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { 
   LucideAngularModule, Play, Pause, Volume2, VolumeX, Maximize2, Minimize2, 
-  RotateCcw, SkipForward, SkipBack, FolderOpen, Upload, Film, Music, Trash2, 
-  ListMusic, Sparkles, Sliders, Camera, Subtitles, Repeat, Eye, HardDrive, Clock
+  RotateCcw, RotateCw, SkipForward, SkipBack, FolderOpen, FolderPlus, Upload, Film, Music, Trash2, 
+  ListMusic, Sparkles, Sliders, Camera, Subtitles, Repeat, Eye, HardDrive, Clock,
+  Search, ArrowUpDown, Plus, X, Loader2, Check, Settings, HelpCircle, CheckCircle2, Tv
 } from 'lucide-angular';
 import { IndexedDBService } from '../../core/services/indexed-db.service';
 
 export interface LocalMediaItem {
   id: string;
   name: string;
+  relativePath?: string;
+  folderName?: string;
   size: number;
   type: 'video' | 'audio';
   mimeType: string;
   blobUrl: string;
-  file?: File;
+  fileBlob?: Blob | File;
   duration?: number;
   lastPosition?: number;
   thumbnail?: string;
   subtitlesUrl?: string;
+  subtitlesBlob?: Blob | File;
   subtitlesName?: string;
   createdAt: number;
+  lastWatchedAt?: number;
 }
 
 @Component({
@@ -34,7 +39,7 @@ export interface LocalMediaItem {
     <div class="min-h-screen bg-slate-950 text-white flex flex-col font-sans select-none" dir="rtl">
       
       <!-- Top Navigation Header -->
-      <header class="h-16 bg-slate-900/80 border-b border-white/10 px-6 flex items-center justify-between shrink-0 backdrop-blur-md z-20">
+      <header class="h-16 bg-slate-900/80 border-b border-white/10 px-4 sm:px-6 flex items-center justify-between shrink-0 backdrop-blur-md z-20">
         <div class="flex items-center gap-3">
           <div class="p-2.5 bg-gradient-to-tr from-indigo-600 to-teal-500 rounded-2xl text-white shadow-lg shadow-indigo-500/20">
             <lucide-icon [img]="Film" class="size-6"></lucide-icon>
@@ -42,21 +47,36 @@ export interface LocalMediaItem {
           <div>
             <h1 class="text-base font-black tracking-tight text-white flex items-center gap-2">
               <span>مشغل الوسائط والفيديوهات المحلي</span>
-              <span class="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20 font-mono">Offline Cinema ⚡</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20 font-mono">Offline Storage 💾</span>
             </h1>
-            <p class="text-[11px] text-slate-400">شغّل الفيديوهات والصوتيات من جهازك بجودة فائقة وبدون استهلاك للإنترنت.</p>
+            <p class="text-[11px] text-slate-400 hidden sm:block">شغّل الفيديوهات والمجلدات من جهازك بدون إنترنت — مع حفظ دائم حتى بعد تحديث الصفحة.</p>
           </div>
         </div>
 
         <div class="flex items-center gap-2">
-          <!-- File Picker Buttons -->
-          <label class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-lg shadow-indigo-600/20">
-            <lucide-icon [img]="FolderOpen" class="size-4"></lucide-icon>
-            <span>فتح ملفات من الجهاز</span>
-            <input type="file" multiple accept="video/*,audio/*" (change)="onFilesSelected($event)" class="hidden" />
+          <!-- Folder Picker Button -->
+          <label class="px-3.5 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-lg shadow-teal-600/20" title="رفع مجلد كامل بجميع فيديوهاته وحفظه محلياً">
+            <lucide-icon [img]="FolderPlus" class="size-4"></lucide-icon>
+            <span class="hidden md:inline">فتح مجلد كامل</span>
+            <span class="md:hidden">+ مجلد</span>
+            <input type="file" #folderInput webkitdirectory directory multiple (change)="onFolderSelected($event)" class="hidden" />
           </label>
 
-          <button *ngIf="playlist().length > 0" (click)="clearPlaylist()" class="p-2 text-slate-400 hover:text-red-400 hover:bg-white/5 rounded-xl transition" title="تفريغ القائمة">
+          <!-- Files Picker Button -->
+          <label class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-lg shadow-indigo-600/20" title="اختيار ملفات محددة">
+            <lucide-icon [img]="FolderOpen" class="size-4"></lucide-icon>
+            <span class="hidden md:inline">إضافة ملفات</span>
+            <span class="md:hidden">+ ملفات</span>
+            <input type="file" #filesInput multiple accept="video/*,audio/*,.mkv,.avi,.wmv,.flv,.m4v,.ts,.mp3,.wav,.aac,.ogg,.flac,.m4a" (change)="onFilesSelected($event)" class="hidden" />
+          </label>
+
+          <!-- Shortcuts Help Button -->
+          <button (click)="showShortcutsModal.set(true)" class="p-2 text-slate-400 hover:text-teal-300 hover:bg-white/5 rounded-xl transition" title="اختصارات لوحة المفاتيح">
+            <lucide-icon [img]="HelpCircle" class="size-4.5"></lucide-icon>
+          </button>
+
+          <!-- Clear Playlist Button -->
+          <button *ngIf="playlist().length > 0" (click)="showClearConfirm.set(true)" class="p-2 text-slate-400 hover:text-red-400 hover:bg-white/5 rounded-xl transition" title="تفريغ القائمة والذاكرة">
             <lucide-icon [img]="Trash2" class="size-4"></lucide-icon>
           </button>
         </div>
@@ -66,7 +86,9 @@ export interface LocalMediaItem {
       <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
         
         <!-- Left / Center: Video Stage & Player -->
-        <main class="flex-1 flex flex-col bg-black relative justify-center items-center overflow-hidden min-h-[50vh] lg:min-h-0">
+        <main 
+          class="flex-1 flex flex-col bg-black relative justify-center items-center overflow-hidden min-h-[50vh] lg:min-h-0" 
+          (wheel)="onVideoWheel($event)">
           
           <!-- Ambient Glow Light behind active video -->
           <div *ngIf="activeItem() && isPlaying()" class="absolute inset-0 bg-indigo-500/10 blur-[120px] pointer-events-none transition-all duration-1000"></div>
@@ -77,88 +99,128 @@ export interface LocalMediaItem {
             <video 
               #videoPlayer
               [src]="activeItem()?.blobUrl"
-              class="w-full h-full max-h-[85vh] object-contain cursor-pointer"
+              class="w-full h-full max-h-[85vh] cursor-pointer transition-all duration-200"
+              [ngClass]="{
+                'object-contain': videoFit() === 'contain',
+                'object-cover': videoFit() === 'cover',
+                'object-fill': videoFit() === 'fill'
+              }"
               (timeupdate)="onTimeUpdate()"
               (loadedmetadata)="onLoadedMetadata()"
               (ended)="onMediaEnded()"
               (play)="isPlaying.set(true)"
               (pause)="isPlaying.set(false)"
-              (click)="togglePlay()"
+              (click)="onVideoClick($event)"
               playsinline>
               <!-- Subtitles Track if provided -->
               <track *ngIf="activeItem()?.subtitlesUrl" [src]="activeItem()?.subtitlesUrl" kind="subtitles" srclang="ar" label="العربية" default>
             </video>
 
-            <!-- Custom Center Play/Pause Pulsing Icon -->
+            <!-- Center Pulse Play/Pause Icon when Paused -->
             <div *ngIf="!isPlaying()" class="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div class="size-20 rounded-full bg-indigo-600/80 backdrop-blur-md flex items-center justify-center text-white shadow-2xl animate-pulse">
                 <lucide-icon [img]="Play" class="size-10 fill-white translate-x-0.5"></lucide-icon>
               </div>
             </div>
 
-            <!-- Top Overlay Info Bar (visible on hover) -->
-            <div class="absolute top-0 inset-x-0 p-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent flex items-center justify-between z-10 transition-opacity duration-300"
+            <!-- On-Screen Skip Indicator Animation (⏩ +10s / ⏪ -10s) -->
+            <div *ngIf="skipFeedback().visible" class="absolute inset-0 flex items-center justify-center pointer-events-none z-30 transition-all">
+              <div class="px-6 py-3.5 rounded-3xl bg-slate-900/90 border border-white/20 text-white backdrop-blur-xl shadow-2xl flex items-center gap-3 animate-bounce">
+                <lucide-icon [img]="skipFeedback().direction === 'fwd' ? RotateCw : RotateCcw" class="size-7 text-teal-400"></lucide-icon>
+                <span class="text-lg font-black font-mono tracking-wider">{{ skipFeedback().text }}</span>
+              </div>
+            </div>
+
+            <!-- Top Overlay Info Bar (visible on hover or pause) -->
+            <div class="absolute top-0 inset-x-0 p-4 bg-gradient-to-b from-black/85 via-black/40 to-transparent flex items-center justify-between z-10 transition-opacity duration-300"
                  [class.opacity-0]="!showControls() && isPlaying()"
                  [class.opacity-100]="showControls() || !isPlaying()">
               <div class="flex items-center gap-3">
                 <span class="px-2.5 py-1 rounded-lg bg-white/10 text-[11px] font-mono font-bold text-teal-300">
                   {{ activeItem()?.type === 'video' ? '🎬 فيديو' : '🎵 صوت' }}
                 </span>
-                <h2 class="text-sm font-bold text-white truncate max-w-md">{{ activeItem()?.name }}</h2>
+                <div>
+                  <h2 class="text-sm font-bold text-white truncate max-w-md">{{ activeItem()?.name }}</h2>
+                  <p *ngIf="activeItem()?.folderName" class="text-[10px] text-slate-400 truncate max-w-xs font-mono">📁 {{ activeItem()?.folderName }}</p>
+                </div>
               </div>
 
-              <!-- Quick Top Actions: Snapshot & Subtitles -->
+              <!-- Quick Top Actions: Snapshot, Subtitles, PiP, Settings -->
               <div class="flex items-center gap-2">
+                
+                <!-- Subtitle Picker -->
                 <label class="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white cursor-pointer transition text-xs flex items-center gap-1.5" title="إضافة ملف ترجمة (.srt / .vtt)">
                   <lucide-icon [img]="Subtitles" class="size-4 text-amber-400"></lucide-icon>
-                  <span class="hidden sm:inline">ترجمة</span>
-                  <input type="file" accept=".srt,.vtt" (change)="onSubtitlesSelected($event)" class="hidden" />
+                  <span class="hidden sm:inline text-[11px]">ترجمة</span>
+                  <input type="file" accept=".srt,.vtt,.ass" (change)="onSubtitlesSelected($event)" class="hidden" />
                 </label>
 
+                <!-- Snapshot Button -->
                 <button (click)="takeSnapshot()" class="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition" title="التقاط صورة من الفيديو">
                   <lucide-icon [img]="Camera" class="size-4 text-emerald-400"></lucide-icon>
+                </button>
+
+                <!-- Picture in Picture (PiP) -->
+                <button (click)="togglePiP()" class="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition" title="صورة داخل صورة (Picture in Picture)">
+                  <lucide-icon [img]="Tv" class="size-4 text-indigo-400"></lucide-icon>
                 </button>
               </div>
             </div>
 
             <!-- Bottom Custom Control Bar -->
-            <div class="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/90 via-black/60 to-transparent flex flex-col gap-2.5 z-10 transition-opacity duration-300"
+            <div class="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/95 via-black/70 to-transparent flex flex-col gap-2.5 z-10 transition-opacity duration-300"
                  [class.opacity-0]="!showControls() && isPlaying()"
                  [class.opacity-100]="showControls() || !isPlaying()">
               
               <!-- Progress Timeline Slider -->
               <div class="flex items-center gap-3">
-                <span class="text-xs font-mono text-slate-300 min-w-12 text-left">{{ formatTime(currentTime()) }}</span>
+                <span class="text-xs font-mono text-slate-300 min-w-14 text-left font-bold">{{ formatTime(currentTime()) }}</span>
                 <input 
                   type="range" 
                   min="0" 
                   [max]="duration() || 100" 
                   [value]="currentTime()" 
                   (input)="seek($event)"
-                  class="flex-1 h-1.5 bg-white/20 rounded-lg accent-indigo-500 cursor-pointer hover:h-2 transition-all" />
-                <span class="text-xs font-mono text-slate-400 min-w-12">{{ formatTime(duration()) }}</span>
+                  class="flex-1 h-2 bg-white/20 rounded-lg accent-teal-400 cursor-pointer hover:h-2.5 transition-all" />
+                <span class="text-xs font-mono text-slate-400 min-w-14 font-bold">{{ formatTime(duration()) }}</span>
               </div>
 
               <!-- Bottom Control Buttons -->
-              <div class="flex items-center justify-between">
+              <div class="flex items-center justify-between flex-wrap gap-2">
                 
-                <!-- Play / Pause / Skip -->
-                <div class="flex items-center gap-2">
-                  <button (click)="playPrevious()" class="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition" title="السابق">
+                <!-- Play / Pause / Skip / Seek Buttons -->
+                <div class="flex items-center gap-1.5 sm:gap-2">
+                  
+                  <!-- Previous Video -->
+                  <button (click)="playPrevious()" class="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition" title="الفيديو السابق (B)">
                     <lucide-icon [img]="SkipBack" class="size-5"></lucide-icon>
                   </button>
 
-                  <button (click)="togglePlay()" class="p-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl shadow-lg transition" [title]="isPlaying() ? 'إيقاف مؤقت' : 'تشغيل'">
+                  <!-- Quick Skip Backward (-10s / custom) -->
+                  <button (click)="skipTime(-skipStep())" class="p-2 text-slate-300 hover:text-teal-300 hover:bg-white/10 rounded-xl transition flex items-center gap-0.5 relative group" [title]="'تأخير ' + skipStep() + ' ثوانٍ (← أو J)'">
+                    <lucide-icon [img]="RotateCcw" class="size-4.5"></lucide-icon>
+                    <span class="text-[10px] font-bold font-mono">{{ skipStep() }}</span>
+                  </button>
+
+                  <!-- Main Play/Pause Button -->
+                  <button (click)="togglePlay()" class="p-3 bg-gradient-to-tr from-indigo-600 to-teal-600 hover:from-indigo-500 hover:to-teal-500 text-white rounded-2xl shadow-xl transition transform active:scale-95" [title]="isPlaying() ? 'إيقاف مؤقت (Space / K)' : 'تشغيل (Space / K)'">
                     <lucide-icon [img]="isPlaying() ? Pause : Play" class="size-5" [class.fill-white]="isPlaying()"></lucide-icon>
                   </button>
 
-                  <button (click)="playNext()" class="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition" title="التالي">
+                  <!-- Quick Skip Forward (+10s / custom) -->
+                  <button (click)="skipTime(skipStep())" class="p-2 text-slate-300 hover:text-teal-300 hover:bg-white/10 rounded-xl transition flex items-center gap-0.5 relative group" [title]="'تقديم ' + skipStep() + ' ثوانٍ (→ أو L)'">
+                    <lucide-icon [img]="RotateCw" class="size-4.5"></lucide-icon>
+                    <span class="text-[10px] font-bold font-mono">{{ skipStep() }}</span>
+                  </button>
+
+                  <!-- Next Video -->
+                  <button (click)="playNext()" class="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition" title="الفيديو التالي (N)">
                     <lucide-icon [img]="SkipForward" class="size-5"></lucide-icon>
                   </button>
 
                   <!-- Volume Controls -->
                   <div class="flex items-center gap-1.5 mr-2">
-                    <button (click)="toggleMute()" class="p-2 text-slate-300 hover:text-white rounded-xl">
+                    <button (click)="toggleMute()" class="p-2 text-slate-300 hover:text-white rounded-xl" title="كتم/تشغيل الصوت (M)">
                       <lucide-icon [img]="isMuted() || volume() === 0 ? VolumeX : Volume2" class="size-5"></lucide-icon>
                     </button>
                     <input 
@@ -168,19 +230,62 @@ export interface LocalMediaItem {
                       step="0.05" 
                       [value]="isMuted() ? 0 : volume()" 
                       (input)="setVolume($event)" 
-                      class="w-20 h-1.5 bg-white/20 rounded-lg accent-indigo-500 cursor-pointer" />
+                      class="w-16 sm:w-20 h-1.5 bg-white/20 rounded-lg accent-teal-400 cursor-pointer" />
                   </div>
                 </div>
 
                 <!-- Right Side Control Options -->
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1.5 sm:gap-2">
                   
-                  <!-- Speed Selector -->
+                  <!-- Skip Step Selector (5s, 10s, 15s, 30s) -->
+                  <div class="relative">
+                    <button 
+                      (click)="toggleSettingsMenu()" 
+                      class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-mono font-bold text-teal-300 flex items-center gap-1"
+                      title="تحديد مدة القفز/التقديم">
+                      <lucide-icon [img]="Sliders" class="size-3"></lucide-icon>
+                      <span>±{{ skipStep() }}s</span>
+                    </button>
+
+                    <!-- Settings Dropdown -->
+                    <div *ngIf="showSettingsMenu()" class="absolute bottom-full mb-2 left-0 bg-slate-900 border border-white/15 rounded-2xl p-3 shadow-2xl flex flex-col gap-2.5 z-30 min-w-44">
+                      <div>
+                        <p class="text-[10px] text-slate-400 font-bold mb-1.5">مدة التقديم والتأخير:</p>
+                        <div class="grid grid-cols-4 gap-1">
+                          @for (step of [5, 10, 15, 30]; track step) {
+                            <button 
+                              (click)="setSkipStep(step)" 
+                              [class.bg-teal-600]="skipStep() === step"
+                              [class.text-white]="skipStep() === step"
+                              class="py-1 text-xs rounded-lg font-mono bg-white/5 hover:bg-white/15 text-center font-bold">
+                              {{ step }}s
+                            </button>
+                          }
+                        </div>
+                      </div>
+
+                      <div class="border-t border-white/10 pt-2">
+                        <p class="text-[10px] text-slate-400 font-bold mb-1.5">تناسق الشاشة:</p>
+                        <div class="flex gap-1">
+                          <button (click)="setVideoFit('contain')" [class.bg-teal-600]="videoFit() === 'contain'" class="flex-1 py-1 text-[11px] rounded-lg bg-white/5 hover:bg-white/15 text-center">أصلي</button>
+                          <button (click)="setVideoFit('cover')" [class.bg-teal-600]="videoFit() === 'cover'" class="flex-1 py-1 text-[11px] rounded-lg bg-white/5 hover:bg-white/15 text-center">ملء</button>
+                          <button (click)="setVideoFit('fill')" [class.bg-teal-600]="videoFit() === 'fill'" class="flex-1 py-1 text-[11px] rounded-lg bg-white/5 hover:bg-white/15 text-center">تمديد</button>
+                        </div>
+                      </div>
+
+                      <div class="border-t border-white/10 pt-2 flex items-center justify-between">
+                        <span class="text-[11px] text-slate-300">تشغيل تلقائي للتالي:</span>
+                        <input type="checkbox" [checked]="autoplayNext()" (change)="autoplayNext.set(!autoplayNext())" class="accent-teal-500 size-4 cursor-pointer" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Playback Speed Selector -->
                   <div class="relative">
                     <button (click)="toggleSpeedMenu()" class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-mono font-bold text-teal-300">
                       {{ playbackRate() }}x
                     </button>
-                    <div *ngIf="showSpeedMenu()" class="absolute bottom-full mb-2 left-0 bg-slate-900 border border-white/10 rounded-2xl p-2 shadow-2xl flex flex-col gap-1 z-30">
+                    <div *ngIf="showSpeedMenu()" class="absolute bottom-full mb-2 left-0 bg-slate-900 border border-white/15 rounded-2xl p-2 shadow-2xl flex flex-col gap-1 z-30 min-w-24">
                       @for (rate of speedRates; track rate) {
                         <button (click)="setSpeed(rate)" [class.bg-indigo-600]="playbackRate() === rate" class="px-3 py-1 text-xs rounded-lg font-mono hover:bg-white/10 text-right">
                           {{ rate }}x
@@ -195,7 +300,7 @@ export interface LocalMediaItem {
                   </button>
 
                   <!-- Fullscreen -->
-                  <button (click)="toggleFullscreen()" class="p-2 text-slate-300 hover:text-white rounded-xl transition" title="ملء الشاشة">
+                  <button (click)="toggleFullscreen()" class="p-2 text-slate-300 hover:text-white rounded-xl transition" title="ملء الشاشة (F)">
                     <lucide-icon [img]="isFullscreen() ? Minimize2 : Maximize2" class="size-5"></lucide-icon>
                   </button>
                 </div>
@@ -212,23 +317,58 @@ export interface LocalMediaItem {
               (dragover)="onDragOver($event)" 
               (dragleave)="onDragLeave($event)" 
               (drop)="onDrop($event)"
-              class="w-full max-w-xl m-6 p-12 border-2 border-dashed rounded-[2.5rem] flex flex-col items-center justify-center text-center transition-all duration-300 cursor-pointer"
-              [ngClass]="isDragging() ? 'border-indigo-500 bg-indigo-500/10 scale-105' : 'border-white/10 bg-slate-900/50 hover:border-indigo-500/30'">
+              class="w-full max-w-2xl m-6 p-8 sm:p-12 border-2 border-dashed rounded-[2.5rem] flex flex-col items-center justify-center text-center transition-all duration-300"
+              [ngClass]="isDragging() ? 'border-teal-400 bg-teal-500/10 scale-[1.02]' : 'border-white/10 bg-slate-900/50 hover:border-indigo-500/30'">
               
-              <div class="size-20 rounded-3xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 mb-6 shadow-xl">
-                <lucide-icon [img]="Film" class="size-10"></lucide-icon>
+              <!-- Animated Loading Spinner when scanning directories -->
+              <div *ngIf="isScanning() || isLoadingStored()" class="flex flex-col items-center py-6">
+                <lucide-icon [img]="Loader2" class="size-12 text-teal-400 animate-spin mb-4"></lucide-icon>
+                <p class="text-sm font-bold text-white">
+                  {{ isLoadingStored() ? 'جاري استرجاع الفيديوهات من الذاكرة الدائمة...' : 'جاري فحص المجلد وحفظ الفيديوهات محلياً...' }}
+                </p>
+                <p class="text-xs text-slate-400 mt-1">يتم الترتيب التسلسلي وحفظ المقاطع تلقائياً</p>
               </div>
 
-              <h3 class="text-xl font-black text-white mb-2">اسحب وأفلت الفيديوهات هنا</h3>
-              <p class="text-xs text-slate-400 max-w-sm mb-6 leading-relaxed">
-                يدعم تشغيل ملفات الفيديو والصوت المحلية (.mp4, .mkv, .webm, .mov, .mp3, .wav) مباشرة وبدون استهلاك للإنترنت أو الذاكرة.
-              </p>
+              <div *ngIf="!isScanning() && !isLoadingStored()" class="flex flex-col items-center">
+                <div class="size-20 rounded-3xl bg-gradient-to-tr from-teal-500/20 to-indigo-500/20 border border-teal-500/30 flex items-center justify-center text-teal-400 mb-5 shadow-xl">
+                  <lucide-icon [img]="FolderPlus" class="size-10"></lucide-icon>
+                </div>
 
-              <label class="px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-500 hover:to-teal-500 text-white font-bold rounded-2xl text-xs shadow-xl shadow-indigo-600/20 transition cursor-pointer flex items-center gap-2">
-                <lucide-icon [img]="HardDrive" class="size-4"></lucide-icon>
-                <span>اختر ملفات من جهازك</span>
-                <input type="file" multiple accept="video/*,audio/*" (change)="onFilesSelected($event)" class="hidden" />
-              </label>
+                <h3 class="text-xl sm:text-2xl font-black text-white mb-2">اسحب وأفلت مجلداً كاملاً أو فيديوهات هنا</h3>
+                <p class="text-xs text-slate-400 max-w-md mb-8 leading-relaxed">
+                  يمكنك رفع مجلد كامل (Folder) مع حفظه دائماً على جهازك، ولن تختفي فيديوهاتك عند تحديث الصفحة أو إغلاق المتصفح.
+                </p>
+
+                <!-- Dual Action Buttons -->
+                <div class="flex flex-wrap items-center justify-center gap-3 w-full max-w-md">
+                  
+                  <!-- Option 1: Select Full Folder -->
+                  <label class="flex-1 min-w-[180px] px-5 py-3.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold rounded-2xl text-xs shadow-xl shadow-teal-600/25 transition cursor-pointer flex items-center justify-center gap-2 group">
+                    <lucide-icon [img]="FolderPlus" class="size-5 group-hover:scale-110 transition-transform"></lucide-icon>
+                    <span>📁 فتح مجلد كامل (Folder)</span>
+                    <input type="file" webkitdirectory directory multiple (change)="onFolderSelected($event)" class="hidden" />
+                  </label>
+
+                  <!-- Option 2: Select Files -->
+                  <label class="flex-1 min-w-[180px] px-5 py-3.5 bg-slate-800 hover:bg-slate-750 text-slate-200 hover:text-white border border-white/10 hover:border-white/20 font-bold rounded-2xl text-xs shadow-lg transition cursor-pointer flex items-center justify-center gap-2 group">
+                    <lucide-icon [img]="Film" class="size-5 text-indigo-400 group-hover:scale-110 transition-transform"></lucide-icon>
+                    <span>🎬 اختيار ملفات (Files)</span>
+                    <input type="file" multiple accept="video/*,audio/*,.mkv,.avi,.wmv,.flv,.m4v,.ts,.mp3,.wav,.aac,.ogg,.flac,.m4a" (change)="onFilesSelected($event)" class="hidden" />
+                  </label>
+                </div>
+
+                <!-- Formats badges -->
+                <div class="flex flex-wrap items-center justify-center gap-2 mt-8 opacity-60">
+                  <span class="text-[10px] text-slate-400 font-mono">الصيغ المدعومة:</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-md bg-white/5 font-mono text-slate-300">MP4</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-md bg-white/5 font-mono text-slate-300">MKV</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-md bg-white/5 font-mono text-slate-300">WEBM</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-md bg-white/5 font-mono text-slate-300">MOV</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-md bg-white/5 font-mono text-slate-300">TS</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-md bg-white/5 font-mono text-slate-300">MP3 / WAV</span>
+                </div>
+              </div>
+
             </div>
           </ng-template>
 
@@ -237,56 +377,192 @@ export interface LocalMediaItem {
         <!-- Right Side: Playlist & Local Files Queue -->
         <aside class="w-full lg:w-96 bg-slate-900 border-r border-white/10 flex flex-col shrink-0 h-80 lg:h-auto overflow-hidden">
           
-          <div class="p-4 border-b border-white/10 flex items-center justify-between bg-slate-900/90">
-            <div class="flex items-center gap-2">
-              <lucide-icon [img]="ListMusic" class="size-4 text-indigo-400"></lucide-icon>
-              <h3 class="text-xs font-black text-white">قائمة التشغيل المحلية ({{ playlist().length }})</h3>
+          <!-- Playlist Header -->
+          <div class="p-3.5 border-b border-white/10 bg-slate-900/90 flex flex-col gap-2.5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <lucide-icon [img]="ListMusic" class="size-4 text-indigo-400"></lucide-icon>
+                <h3 class="text-xs font-black text-white">قائمة التشغيل ({{ playlist().length }})</h3>
+                <span *ngIf="playlist().length > 0" class="text-[10px] px-1.5 py-0.5 bg-teal-500/20 text-teal-300 rounded font-mono font-bold" title="محفوظ دائماً محلياً">
+                  💾 دائم
+                </span>
+              </div>
+
+              <!-- Quick action links -->
+              <div class="flex items-center gap-2">
+                <label class="text-[11px] text-teal-400 hover:text-teal-300 cursor-pointer font-bold flex items-center gap-1 hover:underline">
+                  <lucide-icon [img]="FolderPlus" class="size-3.5"></lucide-icon>
+                  <span>+ مجلد</span>
+                  <input type="file" webkitdirectory directory multiple (change)="onFolderSelected($event)" class="hidden" />
+                </label>
+                <span class="text-slate-600">|</span>
+                <label class="text-[11px] text-indigo-400 hover:text-indigo-300 cursor-pointer font-bold flex items-center gap-1 hover:underline">
+                  <lucide-icon [img]="Plus" class="size-3.5"></lucide-icon>
+                  <span>+ ملف</span>
+                  <input type="file" multiple accept="video/*,audio/*,.mkv,.avi,.wmv,.flv,.m4v,.ts,.mp3,.wav,.aac,.ogg,.flac,.m4a" (change)="onFilesSelected($event)" class="hidden" />
+                </label>
+              </div>
             </div>
 
-            <label class="text-[11px] text-indigo-400 hover:underline cursor-pointer font-bold">
-              + إضافة ملف
-              <input type="file" multiple accept="video/*,audio/*" (change)="onFilesSelected($event)" class="hidden" />
-            </label>
+            <!-- Search & Sort Bar in Playlist -->
+            <div *ngIf="playlist().length > 0" class="flex items-center gap-1.5">
+              <div class="relative flex-1">
+                <input 
+                  type="text" 
+                  [(ngModel)]="searchQuery" 
+                  placeholder="ابحث في الدروس أو الفيديوهات..." 
+                  class="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 pr-8" />
+                <lucide-icon [img]="Search" class="size-3.5 text-slate-500 absolute right-2.5 top-2.5"></lucide-icon>
+                <button *ngIf="searchQuery" (click)="searchQuery = ''" class="absolute left-2.5 top-2 text-slate-500 hover:text-white">
+                  <lucide-icon [img]="X" class="size-3"></lucide-icon>
+                </button>
+              </div>
+
+              <button 
+                (click)="toggleSortOrder()" 
+                class="p-1.5 bg-black/40 hover:bg-white/10 border border-white/10 rounded-xl text-slate-400 hover:text-white transition" 
+                [title]="sortOrder() === 'asc' ? 'الترتيب: تصاعدي (1-9)' : 'الترتيب: تنازلي (9-1)'">
+                <lucide-icon [img]="ArrowUpDown" class="size-3.5"></lucide-icon>
+              </button>
+            </div>
           </div>
 
           <!-- Playlist Items List -->
           <div class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
-            @if (playlist().length > 0) {
-              @for (item of playlist(); track item.id; let idx = $index) {
+            @if (displayedPlaylist().length > 0) {
+              @for (item of displayedPlaylist(); track item.id; let idx = $index) {
                 <div 
                   (click)="playItem(item)" 
-                  class="p-3 rounded-2xl border transition-all cursor-pointer flex items-center gap-3 group relative"
-                  [ngClass]="activeItem()?.id === item.id ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-lg' : 'bg-black/30 border-white/5 hover:border-white/20 text-slate-300'">
+                  class="p-2.5 rounded-2xl border transition-all cursor-pointer flex items-center gap-3 group relative"
+                  [ngClass]="activeItem()?.id === item.id ? 'bg-gradient-to-r from-teal-500/20 to-indigo-500/20 border-teal-500/60 text-white shadow-lg shadow-teal-500/10' : 'bg-black/30 border-white/5 hover:border-white/20 text-slate-300'">
                   
                   <!-- Index / Play indicator -->
                   <div class="size-8 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
                     <span *ngIf="activeItem()?.id !== item.id" class="text-xs font-mono text-slate-400">{{ idx + 1 }}</span>
-                    <lucide-icon *ngIf="activeItem()?.id === item.id" [img]="isPlaying() ? Pause : Play" class="size-4 text-indigo-400"></lucide-icon>
+                    <lucide-icon *ngIf="activeItem()?.id === item.id" [img]="isPlaying() ? Pause : Play" class="size-4 text-teal-400"></lucide-icon>
                   </div>
 
                   <!-- Details -->
                   <div class="min-w-0 flex-1">
-                    <p class="text-xs font-bold truncate group-hover:text-indigo-300 transition-colors">{{ item.name }}</p>
-                    <p class="text-[10px] text-slate-500 font-mono">{{ formatFileSize(item.size) }} • {{ item.type }}</p>
+                    <p class="text-xs font-bold truncate group-hover:text-teal-300 transition-colors" [title]="item.name">{{ item.name }}</p>
+                    <div class="flex items-center gap-1.5 mt-0.5">
+                      <span *ngIf="item.folderName" class="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-teal-300 font-mono truncate max-w-[120px]" [title]="item.folderName">
+                        📁 {{ item.folderName }}
+                      </span>
+                      <span class="text-[10px] text-slate-500 font-mono">{{ formatFileSize(item.size) }} • {{ item.type }}</span>
+                      <span *ngIf="item.lastPosition && item.lastPosition > 10" class="text-[9px] px-1 bg-indigo-500/20 text-indigo-300 rounded font-mono">
+                        {{ formatTime(item.lastPosition) }}
+                      </span>
+                      <span *ngIf="item.subtitlesUrl" class="text-[9px] px-1 bg-amber-500/20 text-amber-300 rounded font-mono">CC</span>
+                    </div>
                   </div>
 
-                  <!-- Remove Item from Queue -->
-                  <button (click)="$event.stopPropagation(); removeItem(item.id)" class="text-slate-500 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition-opacity" title="حذف من القائمة">
+                  <!-- Remove Item from Queue & Local Storage -->
+                  <button (click)="$event.stopPropagation(); removeItem(item.id)" class="text-slate-500 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition-opacity" title="حذف من القائمة والذاكرة">
                     <lucide-icon [img]="Trash2" class="size-3.5"></lucide-icon>
                   </button>
                 </div>
               }
+            } @else if (playlist().length > 0 && searchQuery) {
+              <div class="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-500">
+                <lucide-icon [img]="Search" class="size-8 mb-2 opacity-30"></lucide-icon>
+                <p class="text-xs font-bold text-slate-400">لا توجد نتائج مطابقة</p>
+                <p class="text-[10px] text-slate-500 mt-1">جرب البحث بكلمة أخرى.</p>
+              </div>
             } @else {
               <div class="flex-1 flex flex-col items-center justify-center text-center p-8 text-slate-500">
                 <lucide-icon [img]="Film" class="size-10 mb-2 opacity-30"></lucide-icon>
                 <p class="text-xs font-bold text-slate-400">القائمة فارغة</p>
-                <p class="text-[10px] text-slate-500 mt-1">افتح ملفات فيديو من جهازك لبدء التشغيل التلقائي.</p>
+                <p class="text-[10px] text-slate-500 mt-1">افتح مجلداً كاملاً أو ملفات فيديو من جهازك لبدء التشغيل والحفظ التلقائي.</p>
               </div>
             }
           </div>
 
+          <!-- Bottom Summary Bar if playlist is loaded -->
+          <div *ngIf="playlist().length > 0" class="p-2.5 bg-slate-950/60 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400 px-4">
+            <span>إجمالي الفيديوهات: <b class="text-white font-mono">{{ playlist().length }}</b></span>
+            <span class="text-slate-500 font-mono">{{ formatFileSize(totalPlaylistSize()) }}</span>
+          </div>
+
         </aside>
 
+      </div>
+
+      <!-- Floating Toast Notification -->
+      <div *ngIf="toast().visible" class="fixed bottom-6 right-6 z-50 transition-all transform animate-slide-in">
+        <div class="px-4 py-3 rounded-2xl bg-slate-900/95 border border-teal-500/40 text-white shadow-2xl backdrop-blur-md flex items-center gap-3">
+          <lucide-icon [img]="CheckCircle2" class="size-5 text-teal-400 shrink-0"></lucide-icon>
+          <span class="text-xs font-bold">{{ toast().message }}</span>
+        </div>
+      </div>
+
+      <!-- Clear Playlist Confirmation Modal -->
+      <div *ngIf="showClearConfirm()" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-white/15 rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center">
+          <div class="size-12 rounded-2xl bg-red-500/20 text-red-400 flex items-center justify-center mx-auto mb-4">
+            <lucide-icon [img]="Trash2" class="size-6"></lucide-icon>
+          </div>
+          <h3 class="text-base font-bold text-white mb-2">تفريغ قائمة التشغيل والذاكرة؟</h3>
+          <p class="text-xs text-slate-400 mb-6">سيتم إزالة جميع الفيديوهات المحفوظة محلياً من المتصفح.</p>
+          <div class="flex gap-3">
+            <button (click)="confirmClearPlaylist()" class="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl transition">
+              نعم، تفريغ الكل
+            </button>
+            <button (click)="showClearConfirm.set(false)" class="flex-1 py-2.5 bg-white/10 hover:bg-white/15 text-slate-300 text-xs font-bold rounded-xl transition">
+              إلغاء
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Keyboard Shortcuts Modal -->
+      <div *ngIf="showShortcutsModal()" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" (click)="showShortcutsModal.set(false)">
+        <div class="bg-slate-900 border border-white/15 rounded-3xl p-6 max-w-md w-full shadow-2xl" (click)="$event.stopPropagation()">
+          <div class="flex items-center justify-between mb-4 border-b border-white/10 pb-3">
+            <div class="flex items-center gap-2">
+              <lucide-icon [img]="HelpCircle" class="size-5 text-teal-400"></lucide-icon>
+              <h3 class="text-sm font-black text-white">اختصارات لوحة المفاتيح والإيماءات</h3>
+            </div>
+            <button (click)="showShortcutsModal.set(false)" class="text-slate-400 hover:text-white">
+              <lucide-icon [img]="X" class="size-4"></lucide-icon>
+            </button>
+          </div>
+
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
+              <span class="text-slate-300">تشغيل / إيقاف مؤقت</span>
+              <kbd class="px-2 py-1 bg-black/50 border border-white/10 rounded-md font-mono text-teal-300">Space / K</kbd>
+            </div>
+            <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
+              <span class="text-slate-300">تقديم بمقدار ({{ skipStep() }} ثوانٍ)</span>
+              <kbd class="px-2 py-1 bg-black/50 border border-white/10 rounded-md font-mono text-teal-300">→ أو L (أو نقر مزدوج يمين)</kbd>
+            </div>
+            <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
+              <span class="text-slate-300">تأخير بمقدار ({{ skipStep() }} ثوانٍ)</span>
+              <kbd class="px-2 py-1 bg-black/50 border border-white/10 rounded-md font-mono text-teal-300">← أو J (أو نقر مزدوج يسار)</kbd>
+            </div>
+            <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
+              <span class="text-slate-300">رفع / خفض الصوت</span>
+              <kbd class="px-2 py-1 bg-black/50 border border-white/10 rounded-md font-mono text-teal-300">↑ / ↓ (أو عجلة الماوس)</kbd>
+            </div>
+            <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
+              <span class="text-slate-300">ملء الشاشة</span>
+              <kbd class="px-2 py-1 bg-black/50 border border-white/10 rounded-md font-mono text-teal-300">F (أو نقر مزدوج بالوسط)</kbd>
+            </div>
+            <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
+              <span class="text-slate-300">كتم الصوت</span>
+              <kbd class="px-2 py-1 bg-black/50 border border-white/10 rounded-md font-mono text-teal-300">M</kbd>
+            </div>
+            <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
+              <span class="text-slate-300">صورة داخل صورة (PiP)</span>
+              <kbd class="px-2 py-1 bg-black/50 border border-white/10 rounded-md font-mono text-teal-300">P</kbd>
+            </div>
+            <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
+              <span class="text-slate-300">الفيديو التالي / السابق</span>
+              <kbd class="px-2 py-1 bg-black/50 border border-white/10 rounded-md font-mono text-teal-300">N / B</kbd>
+            </div>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -297,6 +573,8 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   indexedDb = inject(IndexedDBService);
 
   @ViewChild('videoPlayer') videoPlayer?: ElementRef<HTMLVideoElement>;
+  @ViewChild('folderInput') folderInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('filesInput') filesInput?: ElementRef<HTMLInputElement>;
 
   playlist = signal<LocalMediaItem[]>([]);
   activeItem = signal<LocalMediaItem | null>(null);
@@ -308,12 +586,41 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   isMuted = signal<boolean>(false);
   playbackRate = signal<number>(1.0);
   isLooping = signal<boolean>(false);
+  autoplayNext = signal<boolean>(true);
+  skipStep = signal<number>(10);
+  videoFit = signal<'contain' | 'cover' | 'fill'>('contain');
   isFullscreen = signal<boolean>(false);
   isDragging = signal<boolean>(false);
+  isScanning = signal<boolean>(false);
+  isLoadingStored = signal<boolean>(true);
+
+  searchQuery = '';
+  sortOrder = signal<'asc' | 'desc'>('asc');
 
   showControls = signal<boolean>(true);
   showSpeedMenu = signal<boolean>(false);
+  showSettingsMenu = signal<boolean>(false);
+  showShortcutsModal = signal<boolean>(false);
+  showClearConfirm = signal<boolean>(false);
+
+  skipFeedback = signal<{ text: string; direction: 'fwd' | 'bwd'; visible: boolean }>({
+    text: '',
+    direction: 'fwd',
+    visible: false
+  });
+
+  toast = signal<{ message: string; type: 'info' | 'success' | 'warning'; visible: boolean }>({
+    message: '',
+    type: 'info',
+    visible: false
+  });
+
   private controlsTimeout: any = null;
+  private skipTimeout: any = null;
+  private toastTimeout: any = null;
+  private saveProgressTimer: any = null;
+  private clickTimer: any = null;
+  private clickCount = 0;
 
   speedRates = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
 
@@ -325,9 +632,11 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   Maximize2 = Maximize2;
   Minimize2 = Minimize2;
   RotateCcw = RotateCcw;
+  RotateCw = RotateCw;
   SkipForward = SkipForward;
   SkipBack = SkipBack;
   FolderOpen = FolderOpen;
+  FolderPlus = FolderPlus;
   Upload = Upload;
   Film = Film;
   Music = Music;
@@ -341,25 +650,143 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   Eye = Eye;
   HardDrive = HardDrive;
   Clock = Clock;
+  Search = Search;
+  ArrowUpDown = ArrowUpDown;
+  Plus = Plus;
+  X = X;
+  Loader2 = Loader2;
+  Check = Check;
+  Settings = Settings;
+  HelpCircle = HelpCircle;
+  CheckCircle2 = CheckCircle2;
+  Tv = Tv;
 
-  ngOnInit() {
+  // Filtered & Sorted playlist
+  displayedPlaylist = computed(() => {
+    let list = [...this.playlist()];
+    const q = this.searchQuery?.trim().toLowerCase();
+    if (q) {
+      list = list.filter(i => 
+        i.name.toLowerCase().includes(q) || 
+        (i.folderName && i.folderName.toLowerCase().includes(q))
+      );
+    }
+    return list;
+  });
+
+  totalPlaylistSize = computed(() => {
+    return this.playlist().reduce((acc, item) => acc + (item.size || 0), 0);
+  });
+
+  async ngOnInit() {
     this.resetControlsTimer();
+    this.loadUserPreferences();
+    await this.restoreStoredPlaylist();
   }
 
   ngOnDestroy() {
     if (this.controlsTimeout) clearTimeout(this.controlsTimeout);
-    // Cleanup any created object URLs
+    if (this.skipTimeout) clearTimeout(this.skipTimeout);
+    if (this.toastTimeout) clearTimeout(this.toastTimeout);
+    if (this.saveProgressTimer) clearInterval(this.saveProgressTimer);
+    
+    // Save current progress before unload
+    this.saveCurrentPosition();
+
+    // Revoke object URLs
     for (const item of this.playlist()) {
       if (item.blobUrl && item.blobUrl.startsWith('blob:')) {
         URL.revokeObjectURL(item.blobUrl);
       }
+      if (item.subtitlesUrl && item.subtitlesUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(item.subtitlesUrl);
+      }
     }
+  }
+
+  private loadUserPreferences() {
+    try {
+      const savedSkip = localStorage.getItem('local_player_skip_step');
+      if (savedSkip) this.skipStep.set(parseInt(savedSkip, 10) || 10);
+
+      const savedFit = localStorage.getItem('local_player_fit') as any;
+      if (savedFit) this.videoFit.set(savedFit);
+
+      const savedVol = localStorage.getItem('local_player_volume');
+      if (savedVol !== null) this.volume.set(parseFloat(savedVol) || 1.0);
+
+      const savedAutoplay = localStorage.getItem('local_player_autoplay');
+      if (savedAutoplay !== null) this.autoplayNext.set(savedAutoplay === 'true');
+    } catch (e) {
+      console.warn('Could not load user preferences:', e);
+    }
+  }
+
+  /**
+   * Restores previously uploaded playlist and media files from IndexedDB
+   */
+  private async restoreStoredPlaylist() {
+    this.isLoadingStored.set(true);
+    try {
+      const storedItems: any[] = await this.indexedDb.getAll('local_player_media');
+      if (storedItems && storedItems.length > 0) {
+        const restored: LocalMediaItem[] = [];
+        for (const item of storedItems) {
+          if (item.fileBlob) {
+            const blobUrl = URL.createObjectURL(item.fileBlob);
+            let subtitlesUrl: string | undefined;
+            if (item.subtitlesBlob) {
+              subtitlesUrl = URL.createObjectURL(item.subtitlesBlob);
+            }
+            restored.push({
+              ...item,
+              blobUrl,
+              subtitlesUrl
+            });
+          }
+        }
+
+        if (restored.length > 0) {
+          const sorted = this.sortMediaItems(restored, this.sortOrder());
+          this.playlist.set(sorted);
+
+          // Restore last active item
+          const lastActiveId = localStorage.getItem('local_player_active_id');
+          const target = sorted.find(i => i.id === lastActiveId) || sorted[0];
+          if (target) {
+            this.playItem(target, false); // load but don't auto-start unprompted
+          }
+
+          this.showToast(`تم استعادة ${sorted.length} فيديو محفوظ من الذاكرة المحلية 💾`);
+        }
+      }
+    } catch (err) {
+      console.warn('[LocalPlayer] Could not restore stored playlist:', err);
+    } finally {
+      this.isLoadingStored.set(false);
+    }
+  }
+
+  showToast(message: string, type: 'info' | 'success' | 'warning' = 'info') {
+    if (this.toastTimeout) clearTimeout(this.toastTimeout);
+    this.toast.set({ message, type, visible: true });
+    this.toastTimeout = setTimeout(() => {
+      this.toast.set({ message: '', type: 'info', visible: false });
+    }, 4000);
   }
 
   onFilesSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      this.addFilesToPlaylist(Array.from(input.files));
+      this.processFiles(Array.from(input.files));
+      input.value = '';
+    }
+  }
+
+  onFolderSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.processFiles(Array.from(input.files));
       input.value = '';
     }
   }
@@ -374,48 +801,243 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     this.isDragging.set(false);
   }
 
-  onDrop(event: DragEvent) {
+  async onDrop(event: DragEvent) {
     event.preventDefault();
     this.isDragging.set(false);
-    if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
-      this.addFilesToPlaylist(Array.from(event.dataTransfer.files));
+    
+    if (event.dataTransfer?.items && event.dataTransfer.items.length > 0) {
+      this.isScanning.set(true);
+      try {
+        const extractedFiles = await this.extractFilesFromDataTransfer(event.dataTransfer.items);
+        if (extractedFiles.length > 0) {
+          await this.processFiles(extractedFiles);
+        }
+      } catch (err) {
+        console.warn('Error reading dropped folder:', err);
+      } finally {
+        this.isScanning.set(false);
+      }
+    } else if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
+      await this.processFiles(Array.from(event.dataTransfer.files));
     }
   }
 
-  addFilesToPlaylist(files: File[]) {
-    const validMediaFiles = files.filter(f => f.type.startsWith('video/') || f.type.startsWith('audio/'));
-    if (validMediaFiles.length === 0) return;
+  private async extractFilesFromDataTransfer(items: DataTransferItemList): Promise<File[]> {
+    const files: File[] = [];
 
-    const newItems: LocalMediaItem[] = validMediaFiles.map(file => ({
-      id: 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
-      name: file.name,
-      size: file.size,
-      type: file.type.startsWith('audio/') ? 'audio' : 'video',
-      mimeType: file.type,
-      blobUrl: URL.createObjectURL(file),
-      file: file,
-      createdAt: Date.now()
-    }));
+    const readEntry = async (entry: any, currentPath = ''): Promise<void> => {
+      if (!entry) return;
+      if (entry.isFile) {
+        await new Promise<void>((resolve) => {
+          entry.file((file: File) => {
+            if (currentPath) {
+              Object.defineProperty(file, 'webkitRelativePath', {
+                value: `${currentPath}/${file.name}`,
+                writable: false
+              });
+            }
+            files.push(file);
+            resolve();
+          }, () => resolve());
+        });
+      } else if (entry.isDirectory) {
+        const dirReader = entry.createReader();
+        const nextPath = currentPath ? `${currentPath}/${entry.name}` : entry.name;
+        
+        const readBatch = (): Promise<any[]> => {
+          return new Promise((resolve) => {
+            dirReader.readEntries((entries: any[]) => resolve(entries), () => resolve([]));
+          });
+        };
 
+        let readMore = true;
+        while (readMore) {
+          const batch = await readBatch();
+          if (batch && batch.length > 0) {
+            for (const childEntry of batch) {
+              await readEntry(childEntry, nextPath);
+            }
+          } else {
+            readMore = false;
+          }
+        }
+      }
+    };
+
+    const promises: Promise<void>[] = [];
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.webkitGetAsEntry) {
+        const entry = item.webkitGetAsEntry();
+        if (entry) {
+          promises.push(readEntry(entry));
+          continue;
+        }
+      }
+      const file = item.getAsFile();
+      if (file) {
+        files.push(file);
+      }
+    }
+
+    await Promise.all(promises);
+    return files;
+  }
+
+  private checkMediaFileType(file: File): { isMedia: boolean; isSub: boolean; type: 'video' | 'audio' } {
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    const videoExts = ['mp4', 'mkv', 'webm', 'mov', 'avi', 'wmv', 'flv', 'm4v', 'ts', '3gp', 'ogv', 'mts', 'm2ts'];
+    const audioExts = ['mp3', 'wav', 'aac', 'ogg', 'flac', 'm4a', 'opus', 'wma', 'mka', 'mid'];
+    const subExts = ['srt', 'vtt', 'ass', 'ssa'];
+
+    if (subExts.includes(ext)) {
+      return { isMedia: false, isSub: true, type: 'video' };
+    }
+
+    if (file.type) {
+      if (file.type.startsWith('video/')) return { isMedia: true, isSub: false, type: 'video' };
+      if (file.type.startsWith('audio/')) return { isMedia: true, isSub: false, type: 'audio' };
+    }
+
+    if (videoExts.includes(ext)) return { isMedia: true, isSub: false, type: 'video' };
+    if (audioExts.includes(ext)) return { isMedia: true, isSub: false, type: 'audio' };
+
+    return { isMedia: false, isSub: false, type: 'video' };
+  }
+
+  private sortMediaItems(items: LocalMediaItem[], order: 'asc' | 'desc' = 'asc'): LocalMediaItem[] {
+    const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+    return items.sort((a, b) => {
+      const cmp = collator.compare(a.name, b.name);
+      return order === 'asc' ? cmp : -cmp;
+    });
+  }
+
+  async processFiles(files: File[]) {
+    if (!files || files.length === 0) return;
+
+    this.isScanning.set(true);
+    const mediaFiles: File[] = [];
+    const subtitleFiles: Map<string, File> = new Map();
+
+    for (const file of files) {
+      const check = this.checkMediaFileType(file);
+      if (check.isMedia) {
+        mediaFiles.push(file);
+      } else if (check.isSub) {
+        const baseName = file.name.substring(0, file.name.lastIndexOf('.')).toLowerCase();
+        subtitleFiles.set(baseName, file);
+      }
+    }
+
+    if (mediaFiles.length === 0) {
+      this.isScanning.set(false);
+      return;
+    }
+
+    const newItems: LocalMediaItem[] = [];
+    for (const file of mediaFiles) {
+      const check = this.checkMediaFileType(file);
+      const relativePath = file.webkitRelativePath || '';
+      let folderName = '';
+      if (relativePath) {
+        const parts = relativePath.split('/');
+        if (parts.length > 1) {
+          folderName = parts.slice(0, -1).join(' / ');
+        }
+      }
+
+      let subtitlesUrl: string | undefined;
+      let subtitlesBlob: File | undefined;
+      let subtitlesName: string | undefined;
+      const baseName = file.name.substring(0, file.name.lastIndexOf('.')).toLowerCase();
+      if (subtitleFiles.has(baseName)) {
+        subtitlesBlob = subtitleFiles.get(baseName)!;
+        subtitlesUrl = URL.createObjectURL(subtitlesBlob);
+        subtitlesName = subtitlesBlob.name;
+      }
+
+      const item: LocalMediaItem = {
+        id: 'local_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8),
+        name: file.name,
+        relativePath: relativePath || undefined,
+        folderName: folderName || undefined,
+        size: file.size,
+        type: check.type,
+        mimeType: file.type || (check.type === 'video' ? 'video/mp4' : 'audio/mp3'),
+        blobUrl: URL.createObjectURL(file),
+        fileBlob: file,
+        subtitlesUrl,
+        subtitlesBlob,
+        subtitlesName,
+        lastPosition: 0,
+        createdAt: Date.now()
+      };
+
+      newItems.push(item);
+
+      // Persist in IndexedDB
+      this.indexedDb.put('local_player_media', {
+        id: item.id,
+        name: item.name,
+        relativePath: item.relativePath,
+        folderName: item.folderName,
+        size: item.size,
+        type: item.type,
+        mimeType: item.mimeType,
+        fileBlob: item.fileBlob,
+        subtitlesBlob: item.subtitlesBlob,
+        subtitlesName: item.subtitlesName,
+        lastPosition: 0,
+        createdAt: item.createdAt
+      }).catch(e => console.warn('Could not store in IndexedDB:', e));
+    }
+
+    const sortedNew = this.sortMediaItems(newItems, this.sortOrder());
     const current = this.playlist();
-    this.playlist.set([...current, ...newItems]);
+    const combined = [...current, ...sortedNew];
+    this.playlist.set(combined);
 
-    // If no active video, auto-start first one
-    if (!this.activeItem() && newItems.length > 0) {
-      this.playItem(newItems[0]);
+    this.isScanning.set(false);
+    this.showToast(`تمت إضافة ${newItems.length} فيديو وحفظها محلياً 💾`);
+
+    // Auto start first item if none is currently active
+    if (!this.activeItem() && sortedNew.length > 0) {
+      this.playItem(sortedNew[0]);
     }
   }
 
-  playItem(item: LocalMediaItem) {
+  toggleSortOrder() {
+    const newOrder = this.sortOrder() === 'asc' ? 'desc' : 'asc';
+    this.sortOrder.set(newOrder);
+    const sorted = this.sortMediaItems([...this.playlist()], newOrder);
+    this.playlist.set(sorted);
+  }
+
+  playItem(item: LocalMediaItem, autoPlay = true) {
+    this.saveCurrentPosition();
     this.activeItem.set(item);
+    localStorage.setItem('local_player_active_id', item.id);
+
     setTimeout(() => {
       if (this.videoPlayer?.nativeElement) {
         this.videoPlayer.nativeElement.playbackRate = this.playbackRate();
-        this.videoPlayer.nativeElement.play().then(() => {
-          this.isPlaying.set(true);
-        }).catch(() => {});
+        this.videoPlayer.nativeElement.volume = this.volume();
+        this.videoPlayer.nativeElement.muted = this.isMuted();
+
+        // Resume from last position if saved
+        if (item.lastPosition && item.lastPosition > 5) {
+          this.videoPlayer.nativeElement.currentTime = item.lastPosition;
+          this.currentTime.set(item.lastPosition);
+        }
+
+        if (autoPlay) {
+          this.videoPlayer.nativeElement.play().then(() => {
+            this.isPlaying.set(true);
+          }).catch(() => {});
+        }
       }
-    }, 50);
+    }, 60);
   }
 
   togglePlay() {
@@ -428,10 +1050,104 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Jump forward or backward by a specific number of seconds
+   */
+  skipTime(seconds: number) {
+    const vid = this.videoPlayer?.nativeElement;
+    if (!vid) return;
+
+    const newTime = Math.max(0, Math.min(vid.duration || 0, vid.currentTime + seconds));
+    vid.currentTime = newTime;
+    this.currentTime.set(newTime);
+
+    // Show visual feedback on screen
+    if (this.skipTimeout) clearTimeout(this.skipTimeout);
+    this.skipFeedback.set({
+      text: (seconds > 0 ? `+${seconds}` : `${seconds}`) + 's',
+      direction: seconds > 0 ? 'fwd' : 'bwd',
+      visible: true
+    });
+
+    this.skipTimeout = setTimeout(() => {
+      this.skipFeedback.set({ text: '', direction: 'fwd', visible: false });
+    }, 650);
+  }
+
+  setSkipStep(step: number) {
+    this.skipStep.set(step);
+    localStorage.setItem('local_player_skip_step', step.toString());
+    this.showSettingsMenu.set(false);
+    this.showToast(`تم تعيين مدة القفز إلى ${step} ثوانٍ ⚡`);
+  }
+
+  setVideoFit(fit: 'contain' | 'cover' | 'fill') {
+    this.videoFit.set(fit);
+    localStorage.setItem('local_player_fit', fit);
+    this.showSettingsMenu.set(false);
+  }
+
+  onVideoClick(event: MouseEvent) {
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const width = rect.width;
+
+    this.clickCount++;
+    if (this.clickCount === 1) {
+      this.clickTimer = setTimeout(() => {
+        // Single click: toggle play/pause
+        this.clickCount = 0;
+        this.togglePlay();
+      }, 250);
+    } else if (this.clickCount === 2) {
+      // Double click
+      clearTimeout(this.clickTimer);
+      this.clickCount = 0;
+
+      // In RTL: Left side (0 to 35%) is backward (-), Right side (65% to 100%) is forward (+)
+      if (clickX < width * 0.35) {
+        this.skipTime(-this.skipStep());
+      } else if (clickX > width * 0.65) {
+        this.skipTime(this.skipStep());
+      } else {
+        this.toggleFullscreen();
+      }
+    }
+  }
+
+  onVideoWheel(event: WheelEvent) {
+    if (!this.activeItem()) return;
+    event.preventDefault();
+    const delta = event.deltaY < 0 ? 0.05 : -0.05;
+    const newVol = Math.max(0, Math.min(1, this.volume() + delta));
+    this.setVolumeNumber(newVol);
+  }
+
   onTimeUpdate() {
     const vid = this.videoPlayer?.nativeElement;
     if (vid) {
       this.currentTime.set(vid.currentTime);
+      
+      // Periodically update active item's position
+      const cur = this.activeItem();
+      if (cur && Math.abs((cur.lastPosition || 0) - vid.currentTime) > 4) {
+        cur.lastPosition = vid.currentTime;
+      }
+    }
+  }
+
+  private saveCurrentPosition() {
+    const cur = this.activeItem();
+    const vid = this.videoPlayer?.nativeElement;
+    if (cur && vid) {
+      cur.lastPosition = vid.currentTime;
+      this.indexedDb.get('local_player_media', cur.id).then(stored => {
+        if (stored) {
+          stored.lastPosition = vid.currentTime;
+          stored.lastWatchedAt = Date.now();
+          this.indexedDb.put('local_player_media', stored);
+        }
+      }).catch(() => {});
     }
   }
 
@@ -440,6 +1156,14 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     if (vid) {
       this.duration.set(vid.duration);
       vid.volume = this.volume();
+      vid.muted = this.isMuted();
+      vid.playbackRate = this.playbackRate();
+
+      const cur = this.activeItem();
+      if (cur && cur.lastPosition && cur.lastPosition > 3) {
+        vid.currentTime = cur.lastPosition;
+        this.currentTime.set(cur.lastPosition);
+      }
     }
   }
 
@@ -450,13 +1174,15 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
         vid.currentTime = 0;
         vid.play();
       }
-    } else {
+    } else if (this.autoplayNext()) {
       this.playNext();
+    } else {
+      this.isPlaying.set(false);
     }
   }
 
   playNext() {
-    const list = this.playlist();
+    const list = this.displayedPlaylist();
     const cur = this.activeItem();
     if (!cur || list.length <= 1) return;
     const curIdx = list.findIndex(i => i.id === cur.id);
@@ -465,7 +1191,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   }
 
   playPrevious() {
-    const list = this.playlist();
+    const list = this.displayedPlaylist();
     const cur = this.activeItem();
     if (!cur || list.length <= 1) return;
     const curIdx = list.findIndex(i => i.id === cur.id);
@@ -484,7 +1210,12 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
 
   setVolume(event: Event) {
     const val = +(event.target as HTMLInputElement).value;
+    this.setVolumeNumber(val);
+  }
+
+  private setVolumeNumber(val: number) {
     this.volume.set(val);
+    localStorage.setItem('local_player_volume', val.toString());
     const vid = this.videoPlayer?.nativeElement;
     if (vid) {
       vid.volume = val;
@@ -502,6 +1233,12 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
 
   toggleSpeedMenu() {
     this.showSpeedMenu.update(v => !v);
+    this.showSettingsMenu.set(false);
+  }
+
+  toggleSettingsMenu() {
+    this.showSettingsMenu.update(v => !v);
+    this.showSpeedMenu.set(false);
   }
 
   setSpeed(rate: number) {
@@ -523,6 +1260,20 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     }
   }
 
+  async togglePiP() {
+    const vid = this.videoPlayer?.nativeElement;
+    if (!vid) return;
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else if (document.pictureInPictureEnabled) {
+        await vid.requestPictureInPicture();
+      }
+    } catch (e) {
+      console.warn('Picture in Picture failed:', e);
+    }
+  }
+
   onSubtitlesSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
@@ -531,8 +1282,20 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
       if (cur) {
         const subUrl = URL.createObjectURL(subFile);
         cur.subtitlesUrl = subUrl;
+        cur.subtitlesBlob = subFile;
         cur.subtitlesName = subFile.name;
         this.activeItem.set({ ...cur });
+
+        // Update IndexedDB entry
+        this.indexedDb.get('local_player_media', cur.id).then(stored => {
+          if (stored) {
+            stored.subtitlesBlob = subFile;
+            stored.subtitlesName = subFile.name;
+            this.indexedDb.put('local_player_media', stored);
+          }
+        }).catch(() => {});
+
+        this.showToast(`تم تحميل ملف الترجمة: ${subFile.name} 💬`);
       }
     }
   }
@@ -552,6 +1315,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
         a.href = dataUrl;
         a.download = `snapshot_${this.activeItem()?.name || 'video'}_${Math.floor(this.currentTime())}s.png`;
         a.click();
+        this.showToast('تم التقاط الصورة وحفظها بنجاح 📸');
       }
     } catch (e) {
       console.warn('Snapshot failed:', e);
@@ -559,23 +1323,43 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   }
 
   removeItem(id: string) {
-    const current = this.playlist();
-    const updated = current.filter(i => i.id !== id);
+    const item = this.playlist().find(i => i.id === id);
+    if (item && item.blobUrl && item.blobUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(item.blobUrl);
+    }
+
+    const updated = this.playlist().filter(i => i.id !== id);
     this.playlist.set(updated);
+
+    // Delete from IndexedDB
+    this.indexedDb.delete('local_player_media', id).catch(() => {});
+
     if (this.activeItem()?.id === id) {
       if (updated.length > 0) {
         this.playItem(updated[0]);
       } else {
         this.activeItem.set(null);
         this.isPlaying.set(false);
+        localStorage.removeItem('local_player_active_id');
       }
     }
   }
 
-  clearPlaylist() {
+  confirmClearPlaylist() {
+    this.showClearConfirm.set(false);
+    for (const item of this.playlist()) {
+      if (item.blobUrl && item.blobUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(item.blobUrl);
+      }
+    }
+
     this.playlist.set([]);
     this.activeItem.set(null);
     this.isPlaying.set(false);
+    localStorage.removeItem('local_player_active_id');
+
+    this.indexedDb.clearStore('local_player_media').catch(() => {});
+    this.showToast('تم تفريغ قائمة التشغيل والذاكرة المحلية بنجاح 🧹');
   }
 
   onMouseMove() {
@@ -589,8 +1373,9 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
       if (this.isPlaying()) {
         this.showControls.set(false);
         this.showSpeedMenu.set(false);
+        this.showSettingsMenu.set(false);
       }
-    }, 3000);
+    }, 3500);
   }
 
   formatTime(seconds: number): string {
@@ -612,34 +1397,51 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     return mb.toFixed(1) + ' MB';
   }
 
-  // Keyboard Shortcuts: Space (Play/Pause), Left/Right (Seek), Up/Down (Volume), F (Fullscreen)
+  // Keyboard Shortcuts: Space/K, Left/Right/J/L, Up/Down, F, M, P, N, B, 0-9
   @HostListener('window:keydown', ['$event'])
   handleKeyboard(event: KeyboardEvent) {
     const tag = (event.target as HTMLElement)?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 
-    if (event.key === ' ' || event.code === 'Space') {
+    const key = event.key.toLowerCase();
+
+    if (event.key === ' ' || event.code === 'Space' || key === 'k') {
       event.preventDefault();
       this.togglePlay();
-    } else if (event.key === 'ArrowRight') {
+    } else if (event.key === 'ArrowRight' || key === 'l') {
       event.preventDefault();
-      const vid = this.videoPlayer?.nativeElement;
-      if (vid) vid.currentTime = Math.min(vid.duration, vid.currentTime + 5);
-    } else if (event.key === 'ArrowLeft') {
+      this.skipTime(this.skipStep());
+    } else if (event.key === 'ArrowLeft' || key === 'j') {
       event.preventDefault();
-      const vid = this.videoPlayer?.nativeElement;
-      if (vid) vid.currentTime = Math.max(0, vid.currentTime - 5);
+      this.skipTime(-this.skipStep());
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
-      this.volume.update(v => Math.min(1, v + 0.1));
-      if (this.videoPlayer?.nativeElement) this.videoPlayer.nativeElement.volume = this.volume();
+      this.setVolumeNumber(Math.min(1, this.volume() + 0.05));
     } else if (event.key === 'ArrowDown') {
       event.preventDefault();
-      this.volume.update(v => Math.max(0, v - 0.1));
-      if (this.videoPlayer?.nativeElement) this.videoPlayer.nativeElement.volume = this.volume();
-    } else if (event.key === 'f' || event.key === 'F') {
+      this.setVolumeNumber(Math.max(0, this.volume() - 0.05));
+    } else if (key === 'f') {
       event.preventDefault();
       this.toggleFullscreen();
+    } else if (key === 'm') {
+      event.preventDefault();
+      this.toggleMute();
+    } else if (key === 'p') {
+      event.preventDefault();
+      this.togglePiP();
+    } else if (key === 'n') {
+      event.preventDefault();
+      this.playNext();
+    } else if (key === 'b') {
+      event.preventDefault();
+      this.playPrevious();
+    } else if (key >= '0' && key <= '9') {
+      const vid = this.videoPlayer?.nativeElement;
+      if (vid && vid.duration) {
+        event.preventDefault();
+        const fraction = parseInt(key, 10) / 10;
+        vid.currentTime = vid.duration * fraction;
+      }
     }
   }
 }

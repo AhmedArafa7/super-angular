@@ -67,6 +67,27 @@ export class DocsComponent implements OnInit, OnDestroy {
   async loadDocs() {
     try {
       this.documents = await this.docsService.getDocuments();
+
+      const preloaded = sessionStorage.getItem('super_doc_preload');
+      if (preloaded) {
+        sessionStorage.removeItem('super_doc_preload');
+        const paragraphs = preloaded.split('\n').filter(p => p.trim()).map(p => `<p>${p}</p>`).join('');
+        const newDoc: SuperDocument = {
+          id: 'doc_' + Math.random().toString(36).substring(2, 9),
+          title: 'مستند مستخرج من صورة (OCR)',
+          content: paragraphs || `<p>${preloaded}</p>`,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          wordCount: 0,
+          characterCount: 0,
+          isSynced: false
+        };
+        this.documents.unshift(newDoc);
+        this.selectDoc(newDoc);
+        await this.docsService.saveDocument(newDoc);
+        return;
+      }
+
       if (this.documents.length > 0 && !this.selectedDoc) {
         this.selectDoc(this.documents[0]);
       }

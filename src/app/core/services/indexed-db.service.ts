@@ -6,7 +6,7 @@ import { EncryptionService } from './encryption.service';
 })
 export class IndexedDBService {
   private readonly DB_NAME = 'halaltubeDB';
-  private readonly DB_VERSION = 9; // Incremented for playlists store
+  private readonly DB_VERSION = 10; // Incremented for local_player_media store
   private db: IDBDatabase | null = null;
   private encryption = inject(EncryptionService);
 
@@ -16,7 +16,7 @@ export class IndexedDBService {
 
   private getKeyPathForStore(storeName: string): string {
     if (storeName === 'subscriptions') return 'channelId';
-    if (storeName === 'personal_pdf_books' || storeName === 'created_books' || storeName === 'book_video_blobs' || storeName === 'playlists') return 'id';
+    if (storeName === 'personal_pdf_books' || storeName === 'created_books' || storeName === 'book_video_blobs' || storeName === 'playlists' || storeName === 'local_player_media') return 'id';
     return 'videoId';
   }
 
@@ -94,6 +94,11 @@ export class IndexedDBService {
         // HalalTube Playlists & Smart Study Plans Store
         if (!db.objectStoreNames.contains('playlists')) {
           db.createObjectStore('playlists', { keyPath: 'id' });
+        }
+
+        // Local Player Media Store (Persistent Offline Library & Courses)
+        if (!db.objectStoreNames.contains('local_player_media')) {
+          db.createObjectStore('local_player_media', { keyPath: 'id' });
         }
       };
     });

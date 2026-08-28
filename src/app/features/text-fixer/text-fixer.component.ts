@@ -158,6 +158,16 @@ export class TextFixerComponent implements OnInit {
   private storageKey = 'rtlTextFixerData';
 
   ngOnInit() {
+    const preloaded = sessionStorage.getItem('super_text_fixer_preload');
+    if (preloaded) {
+      sessionStorage.removeItem('super_text_fixer_preload');
+      this.inputText = preloaded;
+      localStorage.setItem(this.storageKey, preloaded);
+      this.processText(preloaded);
+      this.historyManager.push(preloaded);
+      return;
+    }
+
     const savedText = localStorage.getItem(this.storageKey) || '';
     this.inputText = savedText;
     this.processText(savedText);
