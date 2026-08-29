@@ -109,7 +109,8 @@ export interface LocalMediaItem {
               (loadedmetadata)="onLoadedMetadata()"
               (ended)="onMediaEnded()"
               (play)="isPlaying.set(true)"
-              (pause)="isPlaying.set(false)"
+              (pause)="onVideoPause()"
+              (error)="onVideoError($event)"
               (click)="onVideoClick($event)"
               playsinline>
               <!-- Subtitles Track if provided -->
@@ -123,10 +124,10 @@ export interface LocalMediaItem {
               </div>
             </div>
 
-            <!-- On-Screen Skip Indicator Animation (⏩ +10s / ⏪ -10s) -->
+            <!-- On-Screen OSD Indicator Animation -->
             <div *ngIf="skipFeedback().visible" class="absolute inset-0 flex items-center justify-center pointer-events-none z-30 transition-all">
               <div class="px-6 py-3.5 rounded-3xl bg-slate-900/90 border border-white/20 text-white backdrop-blur-xl shadow-2xl flex items-center gap-3 animate-bounce">
-                <lucide-icon [img]="skipFeedback().direction === 'fwd' ? RotateCw : RotateCcw" class="size-7 text-teal-400"></lucide-icon>
+                <lucide-icon [img]="skipFeedback().direction === 'vol' ? (isMuted() || volume() === 0 ? VolumeX : Volume2) : (skipFeedback().direction === 'speed' ? Sliders : (skipFeedback().direction === 'fwd' ? RotateCw : RotateCcw))" class="size-7 text-teal-400"></lucide-icon>
                 <span class="text-lg font-black font-mono tracking-wider">{{ skipFeedback().text }}</span>
               </div>
             </div>
@@ -276,6 +277,18 @@ export interface LocalMediaItem {
                       <div class="border-t border-white/10 pt-2 flex items-center justify-between">
                         <span class="text-[11px] text-slate-300">تشغيل تلقائي للتالي:</span>
                         <input type="checkbox" [checked]="autoplayNext()" (change)="autoplayNext.set(!autoplayNext())" class="accent-teal-500 size-4 cursor-pointer" />
+                      </div>
+
+                      <div class="border-t border-white/10 pt-2 space-y-1.5">
+                        <p class="text-[10px] text-slate-400 font-bold">طرق التحكم في الصوت:</p>
+                        <div class="flex items-center justify-between">
+                          <span class="text-[11px] text-slate-300">عجلة الماوس (Wheel):</span>
+                          <input type="checkbox" [checked]="wheelVolumeEnabled()" (change)="toggleWheelVolume()" class="accent-teal-500 size-4 cursor-pointer" />
+                        </div>
+                        <div class="flex items-center justify-between">
+                          <span class="text-[11px] text-slate-300">أزرار الكيبورد (↑ / ↓):</span>
+                          <input type="checkbox" [checked]="keyboardVolumeEnabled()" (change)="toggleKeyboardVolume()" class="accent-teal-500 size-4 cursor-pointer" />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -432,7 +445,7 @@ export interface LocalMediaItem {
             @if (displayedPlaylist().length > 0) {
               @for (item of displayedPlaylist(); track item.id; let idx = $index) {
                 <div 
-                  (click)="playItem(item)" 
+                  (click)="onPlaylistItemClick(item)" 
                   class="p-2.5 rounded-2xl border transition-all cursor-pointer flex items-center gap-3 group relative"
                   [ngClass]="activeItem()?.id === item.id ? 'bg-gradient-to-r from-teal-500/20 to-indigo-500/20 border-teal-500/60 text-white shadow-lg shadow-teal-500/10' : 'bg-black/30 border-white/5 hover:border-white/20 text-slate-300'">
                   
@@ -546,8 +559,8 @@ export interface LocalMediaItem {
               <kbd class="px-2 py-1 bg-black/50 border border-white/10 rounded-md font-mono text-teal-300">↑ / ↓ (أو عجلة الماوس)</kbd>
             </div>
             <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
-              <span class="text-slate-300">ملء الشاشة</span>
-              <kbd class="px-2 py-1 bg-black/50 border border-white/10 rounded-md font-mono text-teal-300">F (أو نقر مزدوج بالوسط)</kbd>
+              <span class="text-slate-300">زيادة / تقليل سرعة التشغيل</span>
+              <kbd class="px-2 py-1 bg-black/50 border border-white/10 rounded-md font-mono text-teal-300">> / < (أو Shift + . / ,)</kbd>
             </div>
             <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
               <span class="text-slate-300">كتم الصوت</span>
@@ -587,6 +600,8 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   playbackRate = signal<number>(1.0);
   isLooping = signal<boolean>(false);
   autoplayNext = signal<boolean>(true);
+  wheelVolumeEnabled = signal<boolean>(true);
+  keyboardVolumeEnabled = signal<boolean>(true);
   skipStep = signal<number>(10);
   videoFit = signal<'contain' | 'cover' | 'fill'>('contain');
   isFullscreen = signal<boolean>(false);
@@ -603,7 +618,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   showShortcutsModal = signal<boolean>(false);
   showClearConfirm = signal<boolean>(false);
 
-  skipFeedback = signal<{ text: string; direction: 'fwd' | 'bwd'; visible: boolean }>({
+  skipFeedback = signal<{ text: string; direction: 'fwd' | 'bwd' | 'vol' | 'speed'; visible: boolean }>({
     text: '',
     direction: 'fwd',
     visible: false
@@ -717,9 +732,33 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
 
       const savedAutoplay = localStorage.getItem('local_player_autoplay');
       if (savedAutoplay !== null) this.autoplayNext.set(savedAutoplay === 'true');
+
+      const savedWheelVol = localStorage.getItem('local_player_wheel_volume');
+      if (savedWheelVol !== null) this.wheelVolumeEnabled.set(savedWheelVol === 'true');
+
+      const savedKeyVol = localStorage.getItem('local_player_keyboard_volume');
+      if (savedKeyVol !== null) this.keyboardVolumeEnabled.set(savedKeyVol === 'true');
+
+      const savedSpeed = localStorage.getItem('local_player_speed');
+      if (savedSpeed) {
+        const rate = parseFloat(savedSpeed);
+        if (!isNaN(rate)) this.playbackRate.set(rate);
+      }
     } catch (e) {
       console.warn('Could not load user preferences:', e);
     }
+  }
+
+  toggleWheelVolume() {
+    const val = !this.wheelVolumeEnabled();
+    this.wheelVolumeEnabled.set(val);
+    localStorage.setItem('local_player_wheel_volume', val.toString());
+  }
+
+  toggleKeyboardVolume() {
+    const val = !this.keyboardVolumeEnabled();
+    this.keyboardVolumeEnabled.set(val);
+    localStorage.setItem('local_player_keyboard_volume', val.toString());
   }
 
   /**
@@ -990,7 +1029,12 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
         subtitlesName: item.subtitlesName,
         lastPosition: 0,
         createdAt: item.createdAt
-      }).catch(e => console.warn('Could not store in IndexedDB:', e));
+      }).catch(e => {
+        console.warn('Could not store in IndexedDB:', e);
+        if (e?.name === 'QuotaExceededError' || e?.code === 22) {
+          this.showToast('تحذير: تم امتلاء المساحة المخصصة للتخزين المؤقت في المتصفح!', 'warning');
+        }
+      });
     }
 
     const sortedNew = this.sortMediaItems(newItems, this.sortOrder());
@@ -1012,6 +1056,14 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     this.sortOrder.set(newOrder);
     const sorted = this.sortMediaItems([...this.playlist()], newOrder);
     this.playlist.set(sorted);
+  }
+
+  onPlaylistItemClick(item: LocalMediaItem) {
+    if (this.activeItem()?.id === item.id) {
+      this.togglePlay();
+    } else {
+      this.playItem(item);
+    }
   }
 
   playItem(item: LocalMediaItem, autoPlay = true) {
@@ -1061,11 +1113,15 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     vid.currentTime = newTime;
     this.currentTime.set(newTime);
 
-    // Show visual feedback on screen
+    const text = (seconds > 0 ? `+${seconds}` : `${seconds}`) + 's';
+    this.showOsFeedback(text, seconds > 0 ? 'fwd' : 'bwd');
+  }
+
+  private showOsFeedback(text: string, direction: 'fwd' | 'bwd' | 'vol' | 'speed') {
     if (this.skipTimeout) clearTimeout(this.skipTimeout);
     this.skipFeedback.set({
-      text: (seconds > 0 ? `+${seconds}` : `${seconds}`) + 's',
-      direction: seconds > 0 ? 'fwd' : 'bwd',
+      text,
+      direction,
       visible: true
     });
 
@@ -1116,11 +1172,23 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   }
 
   onVideoWheel(event: WheelEvent) {
-    if (!this.activeItem()) return;
+    if (!this.activeItem() || !this.wheelVolumeEnabled()) return;
     event.preventDefault();
     const delta = event.deltaY < 0 ? 0.05 : -0.05;
     const newVol = Math.max(0, Math.min(1, this.volume() + delta));
     this.setVolumeNumber(newVol);
+  }
+
+  private lastSavedTime = 0;
+
+  onVideoPause() {
+    this.isPlaying.set(false);
+    this.saveCurrentPosition();
+  }
+
+  @HostListener('window:beforeunload')
+  onBeforeUnload() {
+    this.saveCurrentPosition();
   }
 
   onTimeUpdate() {
@@ -1128,10 +1196,17 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     if (vid) {
       this.currentTime.set(vid.currentTime);
       
-      // Periodically update active item's position
       const cur = this.activeItem();
-      if (cur && Math.abs((cur.lastPosition || 0) - vid.currentTime) > 4) {
-        cur.lastPosition = vid.currentTime;
+      if (cur) {
+        if (Math.abs((cur.lastPosition || 0) - vid.currentTime) > 4) {
+          cur.lastPosition = vid.currentTime;
+          this.playlist.update(list => list.map(i => i.id === cur.id ? { ...i, lastPosition: vid.currentTime } : i));
+        }
+
+        if (Math.abs(vid.currentTime - this.lastSavedTime) > 5) {
+          this.lastSavedTime = vid.currentTime;
+          this.saveCurrentPosition();
+        }
       }
     }
   }
@@ -1140,12 +1215,13 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     const cur = this.activeItem();
     const vid = this.videoPlayer?.nativeElement;
     if (cur && vid) {
-      cur.lastPosition = vid.currentTime;
+      const pos = vid.currentTime;
+      cur.lastPosition = pos;
       this.indexedDb.get('local_player_media', cur.id).then(stored => {
         if (stored) {
-          stored.lastPosition = vid.currentTime;
+          stored.lastPosition = pos;
           stored.lastWatchedAt = Date.now();
-          this.indexedDb.put('local_player_media', stored);
+          this.indexedDb.put('local_player_media', stored).catch(() => {});
         }
       }).catch(() => {});
     }
@@ -1221,6 +1297,8 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
       vid.volume = val;
       this.isMuted.set(val === 0);
     }
+    const percent = Math.round(val * 100);
+    this.showOsFeedback(`${percent}%`, 'vol');
   }
 
   toggleMute() {
@@ -1243,11 +1321,41 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
 
   setSpeed(rate: number) {
     this.playbackRate.set(rate);
+    localStorage.setItem('local_player_speed', rate.toString());
     const vid = this.videoPlayer?.nativeElement;
     if (vid) {
       vid.playbackRate = rate;
     }
     this.showSpeedMenu.set(false);
+    this.showOsFeedback(`${rate}x`, 'speed');
+  }
+
+  speedUp() {
+    const cur = this.playbackRate();
+    const idx = this.speedRates.indexOf(cur);
+    if (idx >= 0 && idx < this.speedRates.length - 1) {
+      this.setSpeed(this.speedRates[idx + 1]);
+    } else {
+      const next = Math.min(3.0, Number((cur + 0.25).toFixed(2)));
+      this.setSpeed(next);
+    }
+  }
+
+  speedDown() {
+    const cur = this.playbackRate();
+    const idx = this.speedRates.indexOf(cur);
+    if (idx > 0) {
+      this.setSpeed(this.speedRates[idx - 1]);
+    } else {
+      const next = Math.max(0.25, Number((cur - 0.25).toFixed(2)));
+      this.setSpeed(next);
+    }
+  }
+
+  onVideoError(event: Event) {
+    console.warn('Video playback error:', event);
+    this.showToast('تعذر تشغيل هذا الملف (قد يكون التنسيق أو الترميز غير مدعوم في المتصفح)', 'warning');
+    this.isPlaying.set(false);
   }
 
   toggleFullscreen() {
@@ -1400,6 +1508,9 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   // Keyboard Shortcuts: Space/K, Left/Right/J/L, Up/Down, F, M, P, N, B, 0-9
   @HostListener('window:keydown', ['$event'])
   handleKeyboard(event: KeyboardEvent) {
+    if (this.showShortcutsModal() || this.showClearConfirm() || this.showSpeedMenu() || this.showSettingsMenu()) {
+      return;
+    }
     const tag = (event.target as HTMLElement)?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 
@@ -1415,11 +1526,15 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
       event.preventDefault();
       this.skipTime(-this.skipStep());
     } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      this.setVolumeNumber(Math.min(1, this.volume() + 0.05));
+      if (this.keyboardVolumeEnabled()) {
+        event.preventDefault();
+        this.setVolumeNumber(Math.min(1, this.volume() + 0.05));
+      }
     } else if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      this.setVolumeNumber(Math.max(0, this.volume() - 0.05));
+      if (this.keyboardVolumeEnabled()) {
+        event.preventDefault();
+        this.setVolumeNumber(Math.max(0, this.volume() - 0.05));
+      }
     } else if (key === 'f') {
       event.preventDefault();
       this.toggleFullscreen();
@@ -1435,6 +1550,12 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     } else if (key === 'b') {
       event.preventDefault();
       this.playPrevious();
+    } else if (event.key === '>' || event.key === '.' || event.key === '}') {
+      event.preventDefault();
+      this.speedUp();
+    } else if (event.key === '<' || event.key === ',' || event.key === '{') {
+      event.preventDefault();
+      this.speedDown();
     } else if (key >= '0' && key <= '9') {
       const vid = this.videoPlayer?.nativeElement;
       if (vid && vid.duration) {
