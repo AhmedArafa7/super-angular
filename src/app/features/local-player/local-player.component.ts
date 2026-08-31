@@ -36,7 +36,7 @@ export interface LocalMediaItem {
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule, LucideAngularModule],
   template: `
-    <div class="min-h-screen bg-slate-950 text-white flex flex-col font-sans select-none" dir="rtl">
+    <div class="h-screen w-screen bg-slate-950 text-white flex flex-col font-sans select-none overflow-hidden" dir="rtl">
       
       <!-- Top Navigation Header -->
       <header class="h-16 bg-slate-900/80 border-b border-white/10 px-4 sm:px-6 flex items-center justify-between shrink-0 backdrop-blur-md z-20">
@@ -83,7 +83,7 @@ export interface LocalMediaItem {
       </header>
 
       <!-- Main Layout -->
-      <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+      <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative h-[calc(100vh-4rem)]">
         
         <!-- Left / Center: Video Stage & Player -->
         <main 
@@ -118,7 +118,7 @@ export interface LocalMediaItem {
             </video>
 
             <!-- Center Pulse Play/Pause Icon when Paused -->
-            <div *ngIf="!isPlaying()" class="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div *ngIf="!isPlaying() && showCenterPlayIcon()" class="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div class="size-20 rounded-full bg-indigo-600/80 backdrop-blur-md flex items-center justify-center text-white shadow-2xl animate-pulse">
                 <lucide-icon [img]="Play" class="size-10 fill-white translate-x-0.5"></lucide-icon>
               </div>
@@ -170,8 +170,8 @@ export interface LocalMediaItem {
 
             <!-- Bottom Custom Control Bar -->
             <div class="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/95 via-black/70 to-transparent flex flex-col gap-2.5 z-10 transition-opacity duration-300"
-                 [class.opacity-0]="!showControls() && isPlaying()"
-                 [class.opacity-100]="showControls() || !isPlaying()">
+                 [class.opacity-0]="!showControls() && isPlaying() && !keepControlsVisible()"
+                 [class.opacity-100]="showControls() || !isPlaying() || keepControlsVisible()">
               
               <!-- Progress Timeline Slider -->
               <div class="flex items-center gap-3">
@@ -290,6 +290,18 @@ export interface LocalMediaItem {
                           <input type="checkbox" [checked]="keyboardVolumeEnabled()" (change)="toggleKeyboardVolume()" class="accent-teal-500 size-4 cursor-pointer" />
                         </div>
                       </div>
+
+                      <div class="border-t border-white/10 pt-2 space-y-1.5">
+                        <p class="text-[10px] text-slate-400 font-bold">تخصيص الواجهة والعرض:</p>
+                        <div class="flex items-center justify-between">
+                          <span class="text-[11px] text-slate-300">أيقونة التشغيل بالمنتصف:</span>
+                          <input type="checkbox" [checked]="showCenterPlayIcon()" (change)="toggleCenterPlayIcon()" class="accent-teal-500 size-4 cursor-pointer" />
+                        </div>
+                        <div class="flex items-center justify-between">
+                          <span class="text-[11px] text-slate-300">إبقاء شريط التحكم ظاهراً:</span>
+                          <input type="checkbox" [checked]="keepControlsVisible()" (change)="toggleKeepControls()" class="accent-teal-500 size-4 cursor-pointer" />
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -388,7 +400,7 @@ export interface LocalMediaItem {
         </main>
 
         <!-- Right Side: Playlist & Local Files Queue -->
-        <aside class="w-full lg:w-96 bg-slate-900 border-r border-white/10 flex flex-col shrink-0 h-80 lg:h-auto overflow-hidden">
+        <aside class="w-full lg:w-96 bg-slate-900 border-r border-white/10 flex flex-col shrink-0 h-80 lg:h-full overflow-hidden">
           
           <!-- Playlist Header -->
           <div class="p-3.5 border-b border-white/10 bg-slate-900/90 flex flex-col gap-2.5">
@@ -462,7 +474,7 @@ export interface LocalMediaItem {
                       <span *ngIf="item.folderName" class="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-teal-300 font-mono truncate max-w-[120px]" [title]="item.folderName">
                         📁 {{ item.folderName }}
                       </span>
-                      <span class="text-[10px] text-slate-500 font-mono">{{ formatFileSize(item.size) }} • {{ item.type }}</span>
+                      <span class="text-[10px] text-slate-500 font-mono">{{ item.duration ? formatTime(item.duration) + ' • ' : '' }}{{ formatFileSize(item.size) }} • {{ item.type }}</span>
                       <span *ngIf="item.lastPosition && item.lastPosition > 10" class="text-[9px] px-1 bg-indigo-500/20 text-indigo-300 rounded font-mono">
                         {{ formatTime(item.lastPosition) }}
                       </span>
@@ -530,8 +542,8 @@ export interface LocalMediaItem {
 
       <!-- Keyboard Shortcuts Modal -->
       <div *ngIf="showShortcutsModal()" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" (click)="showShortcutsModal.set(false)">
-        <div class="bg-slate-900 border border-white/15 rounded-3xl p-6 max-w-md w-full shadow-2xl" (click)="$event.stopPropagation()">
-          <div class="flex items-center justify-between mb-4 border-b border-white/10 pb-3">
+        <div class="bg-slate-900 border border-white/15 rounded-3xl p-6 max-w-lg w-full shadow-2xl flex flex-col max-h-[85vh]" (click)="$event.stopPropagation()">
+          <div class="flex items-center justify-between mb-4 border-b border-white/10 pb-3 shrink-0">
             <div class="flex items-center gap-2">
               <lucide-icon [img]="HelpCircle" class="size-5 text-teal-400"></lucide-icon>
               <h3 class="text-sm font-black text-white">اختصارات لوحة المفاتيح والإيماءات</h3>
@@ -541,39 +553,29 @@ export interface LocalMediaItem {
             </button>
           </div>
 
-          <div class="space-y-2 text-xs">
-            <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
-              <span class="text-slate-300">تشغيل / إيقاف مؤقت</span>
-              <kbd class="px-2 py-1 bg-black/50 border border-white/10 rounded-md font-mono text-teal-300">Space / K</kbd>
-            </div>
-            <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
-              <span class="text-slate-300">تقديم بمقدار ({{ skipStep() }} ثوانٍ)</span>
-              <kbd class="px-2 py-1 bg-black/50 border border-white/10 rounded-md font-mono text-teal-300">→ أو L (أو نقر مزدوج يمين)</kbd>
-            </div>
-            <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
-              <span class="text-slate-300">تأخير بمقدار ({{ skipStep() }} ثوانٍ)</span>
-              <kbd class="px-2 py-1 bg-black/50 border border-white/10 rounded-md font-mono text-teal-300">← أو J (أو نقر مزدوج يسار)</kbd>
-            </div>
-            <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
-              <span class="text-slate-300">رفع / خفض الصوت</span>
-              <kbd class="px-2 py-1 bg-black/50 border border-white/10 rounded-md font-mono text-teal-300">↑ / ↓ (أو عجلة الماوس)</kbd>
-            </div>
-            <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
-              <span class="text-slate-300">زيادة / تقليل سرعة التشغيل</span>
-              <kbd class="px-2 py-1 bg-black/50 border border-white/10 rounded-md font-mono text-teal-300">> / < (أو Shift + . / ,)</kbd>
-            </div>
-            <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
-              <span class="text-slate-300">كتم الصوت</span>
-              <kbd class="px-2 py-1 bg-black/50 border border-white/10 rounded-md font-mono text-teal-300">M</kbd>
-            </div>
-            <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
-              <span class="text-slate-300">صورة داخل صورة (PiP)</span>
-              <kbd class="px-2 py-1 bg-black/50 border border-white/10 rounded-md font-mono text-teal-300">P</kbd>
-            </div>
-            <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
-              <span class="text-slate-300">الفيديو التالي / السابق</span>
-              <kbd class="px-2 py-1 bg-black/50 border border-white/10 rounded-md font-mono text-teal-300">N / B</kbd>
-            </div>
+          <div class="space-y-2 text-xs flex-1 overflow-y-auto custom-scrollbar pr-1">
+            <p class="text-[11px] text-teal-300 mb-2">اضغط على زر "تغيير" بجانب أي اختصار ثم اضغط الزر المطلوب في لوحة المفاتيح لتخصيصه:</p>
+            @for (key of Object.keys(shortcutLabels); track key) {
+              <div class="flex justify-between items-center p-2.5 rounded-xl bg-white/5">
+                <span class="text-slate-300 font-bold">{{ shortcutLabels[key] }}</span>
+                <div class="flex items-center gap-2">
+                  <kbd class="px-2.5 py-1 bg-black/50 border border-white/10 rounded-md font-mono text-teal-300 uppercase">
+                    {{ editingAction === key ? 'اضغط الزر الجديد...' : (customShortcuts()[key] || []).join(' / ') }}
+                  </kbd>
+                  <button 
+                    (click)="startEditingShortcut(key)" 
+                    class="px-2.5 py-1 bg-teal-600/80 hover:bg-teal-600 text-white rounded-lg text-[10px] font-bold transition">
+                    {{ editingAction === key ? 'جاري...' : 'تغيير' }}
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="pt-3 mt-3 border-t border-white/10 shrink-0">
+            <button (click)="resetShortcuts()" class="w-full py-2 bg-white/10 hover:bg-white/15 text-slate-300 text-xs font-bold rounded-xl transition">
+              استعادة الاختصارات الافتراضية ↺
+            </button>
           </div>
         </div>
       </div>
@@ -590,7 +592,13 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   @ViewChild('filesInput') filesInput?: ElementRef<HTMLInputElement>;
 
   playlist = signal<LocalMediaItem[]>([]);
-  activeItem = signal<LocalMediaItem | null>(null);
+  activeItemId = signal<string | null>(null);
+
+  activeItem = computed(() => {
+    const id = this.activeItemId();
+    if (!id) return null;
+    return this.playlist().find(i => i.id === id) || null;
+  });
   
   isPlaying = signal<boolean>(false);
   currentTime = signal<number>(0);
@@ -604,6 +612,8 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   keyboardVolumeEnabled = signal<boolean>(true);
   skipStep = signal<number>(10);
   videoFit = signal<'contain' | 'cover' | 'fill'>('contain');
+  showCenterPlayIcon = signal<boolean>(true);
+  keepControlsVisible = signal<boolean>(false);
   isFullscreen = signal<boolean>(false);
   isDragging = signal<boolean>(false);
   isScanning = signal<boolean>(false);
@@ -638,6 +648,70 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   private clickCount = 0;
 
   speedRates = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
+
+  Object = Object;
+  shortcutLabels: Record<string, string> = {
+    playPause: 'تشغيل / إيقاف مؤقت (Play / Pause)',
+    skipFwd: 'تقديم الفيديو للأمام (Skip Forward)',
+    skipBwd: 'تأخير الفيديو للخلف (Skip Backward)',
+    volUp: 'رفع مستوى الصوت',
+    volDown: 'خفض مستوى الصوت',
+    speedUp: 'زيادة سرعة التشغيل',
+    speedDown: 'تقليل سرعة التشغيل',
+    mute: 'كتم / إلغاء كتم الصوت',
+    pip: 'وضع صورة داخل صورة (PiP)',
+    nextVideo: 'الانتقال للفيديو التالي',
+    prevVideo: 'الانتقال للفيديو السابق'
+  };
+
+  defaultShortcuts = {
+    playPause: ['Space', 'k'],
+    skipFwd: ['ArrowRight', 'l'],
+    skipBwd: ['ArrowLeft', 'j'],
+    volUp: ['ArrowUp'],
+    volDown: ['ArrowDown'],
+    speedUp: ['.', '>'],
+    speedDown: [',', '<'],
+    mute: ['m'],
+    pip: ['p'],
+    nextVideo: ['n'],
+    prevVideo: ['b']
+  };
+
+  customShortcuts = signal<Record<string, string[]>>(this.loadShortcuts());
+  editingAction: string | null = null;
+
+  private loadShortcuts(): Record<string, string[]> {
+    try {
+      const saved = localStorage.getItem('local_player_shortcuts');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return this.defaultShortcuts;
+  }
+
+  startEditingShortcut(actionKey: string) {
+    this.editingAction = actionKey;
+  }
+
+  resetShortcuts() {
+    this.customShortcuts.set(this.defaultShortcuts);
+    localStorage.removeItem('local_player_shortcuts');
+    this.showToast('تمت استعادة الاختصارات الافتراضية ↺');
+  }
+
+  private matchesAction(event: KeyboardEvent, allowedKeys: string[]): boolean {
+    const key = event.key.toLowerCase();
+    const code = event.code.toLowerCase();
+    return allowedKeys.some(k => {
+      const target = k.toLowerCase();
+      if (target === 'space' || target === ' ') return event.key === ' ' || event.code === 'Space';
+      if (target === 'arrowright') return event.key === 'ArrowRight' || event.code === 'ArrowRight';
+      if (target === 'arrowleft') return event.key === 'ArrowLeft' || event.code === 'ArrowLeft';
+      if (target === 'arrowup') return event.key === 'ArrowUp' || event.code === 'ArrowUp';
+      if (target === 'arrowdown') return event.key === 'ArrowDown' || event.code === 'ArrowDown';
+      return target === key || target === code;
+    });
+  }
 
   // Icons
   Play = Play;
@@ -744,6 +818,12 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
         const rate = parseFloat(savedSpeed);
         if (!isNaN(rate)) this.playbackRate.set(rate);
       }
+
+      const savedCenterPlay = localStorage.getItem('local_player_center_play');
+      if (savedCenterPlay !== null) this.showCenterPlayIcon.set(savedCenterPlay === 'true');
+
+      const savedKeepControls = localStorage.getItem('local_player_keep_controls');
+      if (savedKeepControls !== null) this.keepControlsVisible.set(savedKeepControls === 'true');
     } catch (e) {
       console.warn('Could not load user preferences:', e);
     }
@@ -759,6 +839,18 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     const val = !this.keyboardVolumeEnabled();
     this.keyboardVolumeEnabled.set(val);
     localStorage.setItem('local_player_keyboard_volume', val.toString());
+  }
+
+  toggleCenterPlayIcon() {
+    const val = !this.showCenterPlayIcon();
+    this.showCenterPlayIcon.set(val);
+    localStorage.setItem('local_player_center_play', val.toString());
+  }
+
+  toggleKeepControls() {
+    const val = !this.keepControlsVisible();
+    this.keepControlsVisible.set(val);
+    localStorage.setItem('local_player_keep_controls', val.toString());
   }
 
   /**
@@ -947,8 +1039,30 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   private sortMediaItems(items: LocalMediaItem[], order: 'asc' | 'desc' = 'asc'): LocalMediaItem[] {
     const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
     return items.sort((a, b) => {
+      const folderA = (a.folderName || '').trim();
+      const folderB = (b.folderName || '').trim();
+      if (folderA !== folderB) {
+        return collator.compare(folderA, folderB);
+      }
       const cmp = collator.compare(a.name, b.name);
       return order === 'asc' ? cmp : -cmp;
+    });
+  }
+
+  private async extractDuration(file: File): Promise<number> {
+    return new Promise((resolve) => {
+      const vid = document.createElement('video');
+      vid.preload = 'metadata';
+      const url = URL.createObjectURL(file);
+      vid.src = url;
+      vid.onloadedmetadata = () => {
+        URL.revokeObjectURL(url);
+        resolve(vid.duration || 0);
+      };
+      vid.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(0);
+      };
     });
   }
 
@@ -996,6 +1110,8 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
         subtitlesName = subtitlesBlob.name;
       }
 
+      const duration = await this.extractDuration(file).catch(() => 0);
+
       const item: LocalMediaItem = {
         id: 'local_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8),
         name: file.name,
@@ -1009,6 +1125,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
         subtitlesUrl,
         subtitlesBlob,
         subtitlesName,
+        duration: duration || undefined,
         lastPosition: 0,
         createdAt: Date.now()
       };
@@ -1027,6 +1144,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
         fileBlob: item.fileBlob,
         subtitlesBlob: item.subtitlesBlob,
         subtitlesName: item.subtitlesName,
+        duration: item.duration,
         lastPosition: 0,
         createdAt: item.createdAt
       }).catch(e => {
@@ -1068,7 +1186,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
 
   playItem(item: LocalMediaItem, autoPlay = true) {
     this.saveCurrentPosition();
-    this.activeItem.set(item);
+    this.activeItemId.set(item.id);
     localStorage.setItem('local_player_active_id', item.id);
 
     setTimeout(() => {
@@ -1230,15 +1348,29 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   onLoadedMetadata() {
     const vid = this.videoPlayer?.nativeElement;
     if (vid) {
-      this.duration.set(vid.duration);
+      const dur = vid.duration;
+      this.duration.set(dur);
       vid.volume = this.volume();
       vid.muted = this.isMuted();
       vid.playbackRate = this.playbackRate();
 
       const cur = this.activeItem();
-      if (cur && cur.lastPosition && cur.lastPosition > 3) {
-        vid.currentTime = cur.lastPosition;
-        this.currentTime.set(cur.lastPosition);
+      if (cur) {
+        if (dur && !cur.duration) {
+          cur.duration = dur;
+          this.playlist.update(list => list.map(i => i.id === cur.id ? { ...i, duration: dur } : i));
+          this.indexedDb.get('local_player_media', cur.id).then(stored => {
+            if (stored) {
+              stored.duration = dur;
+              this.indexedDb.put('local_player_media', stored).catch(() => {});
+            }
+          }).catch(() => {});
+        }
+
+        if (cur.lastPosition && cur.lastPosition > 3) {
+          vid.currentTime = cur.lastPosition;
+          this.currentTime.set(cur.lastPosition);
+        }
       }
     }
   }
@@ -1261,18 +1393,28 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     const list = this.displayedPlaylist();
     const cur = this.activeItem();
     if (!cur || list.length <= 1) return;
-    const curIdx = list.findIndex(i => i.id === cur.id);
-    const nextIdx = (curIdx + 1) % list.length;
-    this.playItem(list[nextIdx]);
+
+    // Filter to items in the same folder
+    const sameFolderList = list.filter(i => (i.folderName || '') === (cur.folderName || ''));
+    const targetList = sameFolderList.length > 0 ? sameFolderList : list;
+
+    const curIdx = targetList.findIndex(i => i.id === cur.id);
+    const nextIdx = (curIdx + 1) % targetList.length;
+    this.playItem(targetList[nextIdx]);
   }
 
   playPrevious() {
     const list = this.displayedPlaylist();
     const cur = this.activeItem();
     if (!cur || list.length <= 1) return;
-    const curIdx = list.findIndex(i => i.id === cur.id);
-    const prevIdx = (curIdx - 1 + list.length) % list.length;
-    this.playItem(list[prevIdx]);
+
+    // Filter to items in the same folder
+    const sameFolderList = list.filter(i => (i.folderName || '') === (cur.folderName || ''));
+    const targetList = sameFolderList.length > 0 ? sameFolderList : list;
+
+    const curIdx = targetList.findIndex(i => i.id === cur.id);
+    const prevIdx = (curIdx - 1 + targetList.length) % targetList.length;
+    this.playItem(targetList[prevIdx]);
   }
 
   seek(event: Event) {
@@ -1389,10 +1531,13 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
       const cur = this.activeItem();
       if (cur) {
         const subUrl = URL.createObjectURL(subFile);
-        cur.subtitlesUrl = subUrl;
-        cur.subtitlesBlob = subFile;
-        cur.subtitlesName = subFile.name;
-        this.activeItem.set({ ...cur });
+        const updatedItem = {
+          ...cur,
+          subtitlesUrl: subUrl,
+          subtitlesBlob: subFile,
+          subtitlesName: subFile.name
+        };
+        this.playlist.update(list => list.map(i => i.id === cur.id ? updatedItem : i));
 
         // Update IndexedDB entry
         this.indexedDb.get('local_player_media', cur.id).then(stored => {
@@ -1446,7 +1591,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
       if (updated.length > 0) {
         this.playItem(updated[0]);
       } else {
-        this.activeItem.set(null);
+        this.activeItemId.set(null);
         this.isPlaying.set(false);
         localStorage.removeItem('local_player_active_id');
       }
@@ -1462,7 +1607,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     }
 
     this.playlist.set([]);
-    this.activeItem.set(null);
+    this.activeItemId.set(null);
     this.isPlaying.set(false);
     localStorage.removeItem('local_player_active_id');
 
@@ -1508,60 +1653,74 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   // Keyboard Shortcuts: Space/K, Left/Right/J/L, Up/Down, F, M, P, N, B, 0-9
   @HostListener('window:keydown', ['$event'])
   handleKeyboard(event: KeyboardEvent) {
+    if (this.editingAction) {
+      event.preventDefault();
+      const newKey = event.key;
+      const action = this.editingAction;
+      this.customShortcuts.update(sc => ({
+        ...sc,
+        [action]: [newKey]
+      }));
+      localStorage.setItem('local_player_shortcuts', JSON.stringify(this.customShortcuts()));
+      this.editingAction = null;
+      this.showToast(`تم تعيين الاختصار الجديد بنجاح ⌨️`);
+      return;
+    }
+
     if (this.showShortcutsModal() || this.showClearConfirm() || this.showSpeedMenu() || this.showSettingsMenu()) {
       return;
     }
     const tag = (event.target as HTMLElement)?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 
-    const key = event.key.toLowerCase();
+    const shortcuts = this.customShortcuts();
 
-    if (event.key === ' ' || event.code === 'Space' || key === 'k') {
+    if (this.matchesAction(event, shortcuts['playPause'])) {
       event.preventDefault();
       this.togglePlay();
-    } else if (event.key === 'ArrowRight' || key === 'l') {
+    } else if (this.matchesAction(event, shortcuts['skipFwd'])) {
       event.preventDefault();
       this.skipTime(this.skipStep());
-    } else if (event.key === 'ArrowLeft' || key === 'j') {
+    } else if (this.matchesAction(event, shortcuts['skipBwd'])) {
       event.preventDefault();
       this.skipTime(-this.skipStep());
-    } else if (event.key === 'ArrowUp') {
+    } else if (this.matchesAction(event, shortcuts['volUp'])) {
       if (this.keyboardVolumeEnabled()) {
         event.preventDefault();
         this.setVolumeNumber(Math.min(1, this.volume() + 0.05));
       }
-    } else if (event.key === 'ArrowDown') {
+    } else if (this.matchesAction(event, shortcuts['volDown'])) {
       if (this.keyboardVolumeEnabled()) {
         event.preventDefault();
         this.setVolumeNumber(Math.max(0, this.volume() - 0.05));
       }
-    } else if (key === 'f') {
-      event.preventDefault();
-      this.toggleFullscreen();
-    } else if (key === 'm') {
+    } else if (this.matchesAction(event, shortcuts['mute'])) {
       event.preventDefault();
       this.toggleMute();
-    } else if (key === 'p') {
+    } else if (this.matchesAction(event, shortcuts['pip'])) {
       event.preventDefault();
       this.togglePiP();
-    } else if (key === 'n') {
+    } else if (this.matchesAction(event, shortcuts['nextVideo'])) {
       event.preventDefault();
       this.playNext();
-    } else if (key === 'b') {
+    } else if (this.matchesAction(event, shortcuts['prevVideo'])) {
       event.preventDefault();
       this.playPrevious();
-    } else if (event.key === '>' || event.key === '.' || event.key === '}') {
+    } else if (this.matchesAction(event, shortcuts['speedUp'])) {
       event.preventDefault();
       this.speedUp();
-    } else if (event.key === '<' || event.key === ',' || event.key === '{') {
+    } else if (this.matchesAction(event, shortcuts['speedDown'])) {
       event.preventDefault();
       this.speedDown();
-    } else if (key >= '0' && key <= '9') {
-      const vid = this.videoPlayer?.nativeElement;
-      if (vid && vid.duration) {
-        event.preventDefault();
-        const fraction = parseInt(key, 10) / 10;
-        vid.currentTime = vid.duration * fraction;
+    } else {
+      const key = event.key.toLowerCase();
+      if (key >= '0' && key <= '9') {
+        const vid = this.videoPlayer?.nativeElement;
+        if (vid && vid.duration) {
+          event.preventDefault();
+          const fraction = parseInt(key, 10) / 10;
+          vid.currentTime = vid.duration * fraction;
+        }
       }
     }
   }

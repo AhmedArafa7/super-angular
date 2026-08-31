@@ -280,12 +280,16 @@ export class halaltubeHomeComponent implements OnInit {
   }
 
   getSafeThumbnail(video: any): string {
+    const id = video.id || '';
+    if (id.length === 11 && /^[a-zA-Z0-9_-]{11}$/.test(id)) {
+      return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+    }
     const isYoutube = video.source === 'youtube' || (video.externalUrl && video.externalUrl.includes('youtube')) || (video.url && video.url.includes('youtube'));
     if (isYoutube) {
        const ytId = this.extractYoutubeId(video.externalUrl || video.url || video.id);
        if (ytId) return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
     }
-    return video.thumbnail || 'assets/placeholder.jpg';
+    return video.thumbnail || `https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg`;
   }
 
   openVaultItem(item: any) {
