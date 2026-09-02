@@ -369,6 +369,45 @@ ipcMain.handle('dialog:open-file', async (_, options) => {
   return result.canceled ? null : result.filePaths[0];
 });
 
+ipcMain.handle('dialog:open-directory', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'فتح مجلد وسائط محلي',
+    properties: ['openDirectory']
+  });
+  if (result.canceled || !result.filePaths.length) return [];
+
+  const files = [];
+  const walkDir = (dir, baseDir) => {
+    try {
+      const list = fs.readdirSync(dir);
+      for (const fileName of list) {
+        const fullPath = path.join(dir, fileName);
+        const stat = fs.statSync(fullPath);
+        if (stat.isDirectory()) {
+          walkDir(fullPath, baseDir);
+        } else {
+          const ext = path.extname(fileName).toLowerCase();
+          const mediaExts = ['.mp4', '.mkv', '.webm', '.mov', '.avi', '.wmv', '.flv', '.m4v', '.ts', '.mp3', '.wav', '.aac', '.ogg', '.flac', '.m4a'];
+          if (mediaExts.includes(ext)) {
+            const relFolder = path.relative(baseDir, path.dirname(fullPath));
+            files.push({
+              name: fileName,
+              path: fullPath,
+              size: stat.size,
+              folderName: relFolder ? `${path.basename(baseDir)} / ${relFolder}` : path.basename(baseDir)
+            });
+          }
+        }
+      }
+    } catch (e) {}
+  };
+
+  for (const dir of result.filePaths) {
+    walkDir(dir, dir);
+  }
+  return files;
+});
+
 ipcMain.handle('dialog:save-file', async (_, options) => {
   const result = await dialog.showSaveDialog(mainWindow, {
     title: 'حفظ ملف',
@@ -392,6 +431,30 @@ ipcMain.handle('app:info', () => ({
 
 ipcMain.handle('app:open-external', (_, url) => {
   shell.openExternal(url);
+});
+
+// ── Local Player Native Disk Persistence ──
+ipcMain.handle('local-player:save-state', (_, stateData) => {
+  try {
+    const statePath = path.join(app.getPath('userData'), 'local_player_native_state.json');
+    fs.writeFileSync(statePath, JSON.stringify(stateData, null, 2), 'utf-8');
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
+ipcMain.handle('local-player:load-state', () => {
+  try {
+    const statePath = path.join(app.getPath('userData'), 'local_player_native_state.json');
+    if (fs.existsSync(statePath)) {
+      const content = fs.readFileSync(statePath, 'utf-8');
+      return { ok: true, data: JSON.parse(content) };
+    }
+    return { ok: true, data: null };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
 });
 
 // ── Window Controls ──

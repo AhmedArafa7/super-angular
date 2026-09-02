@@ -91,10 +91,99 @@ export class HisnComponent implements OnDestroy {
   surahSearchTerm = '';
 
   // View tabs state
-  activeTab: 'quran' | 'prayers' | 'azkar' | 'wird' | 'names' | 'tasbih' | 'storage' | 'qibla' | 'khatma' = 'quran';
+  activeTab: 'quran' | 'prayers' | 'azkar' | 'wird' | 'names' | 'tasbih' | 'storage' | 'qibla' | 'khatma' | 'verifier' = 'quran';
   azkarSearchTerm = '';
   qiblaDirection = 135;
   isLocatingQibla = false;
+
+  // Quran Verifier & Voice Recorder State
+  verifierText = '';
+  verifierResult: { matched: boolean; message: string; similarity: number } | null = null;
+  isCheckingText = false;
+
+  isRecording = false;
+  mediaRecorder: MediaRecorder | null = null;
+  audioChunks: Blob[] = [];
+  recordedAudioUrl: string | null = null;
+  recordingTime = 0;
+  recordingTimer: any = null;
+
+  async checkQuranTyping() {
+    if (!this.verifierText.trim()) {
+      this.showAppToast('الرجاء كتابة النص للتدقيق');
+      return;
+    }
+    this.isCheckingText = true;
+    try {
+      const query = this.verifierText.trim();
+      const res = await fetch(`https://api.alquran.cloud/v1/search/${encodeURIComponent(query)}/all/ar`).then(r => r.json());
+      if (res?.data?.matches && res.data.matches.length > 0) {
+        const match = res.data.matches[0];
+        this.verifierResult = {
+          matched: true,
+          message: `✅ مطابق للآية: "${match.text}" في سورة ${match.surah.name} (آية ${match.numberInSurah})`,
+          similarity: 100
+        };
+        this.showAppToast('تم العثور على مطابقة صحيحة في القرآن الكريم! 🌟');
+      } else {
+        this.verifierResult = {
+          matched: false,
+          message: '⚠️ تنبيه: النص المدخل قد يحتوي على خطأ إملائي أو لم يتم العثور على تطابق تام في المصحف الشريف. راجع الرسم العثماني.',
+          similarity: 0
+        };
+        this.showAppToast('تنبيه: النص غير مطابق تماماً للرسم العثماني');
+      }
+    } catch (e) {
+      this.verifierResult = {
+        matched: false,
+        message: '❌ تعذر الاتصال بخادم التدقيق القرآني.',
+        similarity: 0
+      };
+    } finally {
+      this.isCheckingText = false;
+    }
+  }
+
+  async startAudioRecording() {
+    this.audioChunks = [];
+    this.recordedAudioUrl = null;
+    this.recordingTime = 0;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.mediaRecorder = new MediaRecorder(stream);
+      this.mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) this.audioChunks.push(e.data);
+      };
+      this.mediaRecorder.onstop = () => {
+        const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
+        this.recordedAudioUrl = URL.createObjectURL(blob);
+      };
+      this.mediaRecorder.start();
+      this.isRecording = true;
+      this.recordingTimer = setInterval(() => {
+        this.recordingTime++;
+      }, 1000);
+      this.showAppToast('جاري تسجيل التلاوة 🎙️...');
+    } catch (e) {
+      this.showAppToast('تعذر الوصول إلى الميكروفون');
+    }
+  }
+
+  stopAudioRecording() {
+    if (this.mediaRecorder && this.isRecording) {
+      this.mediaRecorder.stop();
+      this.mediaRecorder.stream.getTracks().forEach(t => t.stop());
+      this.isRecording = false;
+      if (this.recordingTimer) clearInterval(this.recordingTimer);
+      this.showAppToast('تم إيقاف التسجيل وجاهز للاستماع والمقارنة 🎧');
+    }
+  }
+
+  formatRecordingTime(secs: number): string {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  }
 
   // Khatma state
   khatmaDays = 30;

@@ -11,6 +11,25 @@ import {
 } from 'lucide-angular';
 import { IndexedDBService } from '../../core/services/indexed-db.service';
 
+export interface VideoBookmark {
+  id: string;
+  time: number;
+  note: string;
+  formattedTime: string;
+}
+
+export interface RecycleBinItem {
+  id: string;
+  name: string;
+  size: number;
+  type: 'video' | 'audio';
+  duration?: number;
+  lastPosition?: number;
+  folderName?: string;
+  deletedAt: number;
+  watchStatus: 'watched' | 'partial' | 'unwatched';
+}
+
 export interface LocalMediaItem {
   id: string;
   name: string;
@@ -55,7 +74,7 @@ export interface LocalMediaItem {
 
         <div class="flex items-center gap-2">
           <!-- Folder Picker Button -->
-          <label class="px-3.5 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-lg shadow-teal-600/20" title="رفع مجلد كامل بجميع فيديوهاته وحفظه محلياً">
+          <label (click)="onFolderLabelClick($event)" class="px-3.5 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-lg shadow-teal-600/20" title="رفع مجلد كامل بجميع فيديوهاته وحفظه محلياً">
             <lucide-icon [img]="FolderPlus" class="size-4"></lucide-icon>
             <span class="hidden md:inline">فتح مجلد كامل</span>
             <span class="md:hidden">+ مجلد</span>
@@ -87,8 +106,17 @@ export interface LocalMediaItem {
         
         <!-- Left / Center: Video Stage & Player -->
         <main 
-          class="flex-1 flex flex-col bg-black relative justify-center items-center overflow-hidden min-h-[50vh] lg:min-h-0" 
+          class="flex flex-col bg-black relative justify-center items-center overflow-hidden transition-all duration-300" 
+          [ngClass]="{
+            'flex-1 min-h-[50vh] lg:min-h-0': !isFloatingMini(),
+            'fixed bottom-6 left-6 w-[440px] h-[260px] z-50 shadow-2xl rounded-3xl border-2 border-teal-500 overflow-hidden bg-slate-950': isFloatingMini()
+          }"
           (wheel)="onVideoWheel($event)">
+          
+          <!-- Floating Mini Exit Button -->
+          <button *ngIf="isFloatingMini()" (click)="toggleFloatingMini()" class="absolute top-2 left-2 z-40 p-1.5 bg-slate-900/90 hover:bg-red-600 text-white rounded-full shadow-lg transition" title="إغلاق النافذة المصغرة">
+            <lucide-icon [img]="X" class="size-4"></lucide-icon>
+          </button>
           
           <!-- Ambient Glow Light behind active video -->
           <div *ngIf="activeItem() && isPlaying()" class="absolute inset-0 bg-indigo-500/10 blur-[120px] pointer-events-none transition-all duration-1000"></div>
@@ -100,6 +128,7 @@ export interface LocalMediaItem {
               #videoPlayer
               [src]="activeItem()?.blobUrl"
               class="w-full h-full max-h-[85vh] cursor-pointer transition-all duration-200"
+              [style.filter]="'brightness(' + brightness() + '%)'"
               [ngClass]="{
                 'object-contain': videoFit() === 'contain',
                 'object-cover': videoFit() === 'cover',
@@ -164,6 +193,16 @@ export interface LocalMediaItem {
                 <!-- Picture in Picture (PiP) -->
                 <button (click)="togglePiP()" class="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition" title="صورة داخل صورة (Picture in Picture)">
                   <lucide-icon [img]="Tv" class="size-4 text-indigo-400"></lucide-icon>
+                </button>
+
+                <!-- Theater Mode -->
+                <button (click)="toggleTheaterMode()" [class.bg-amber-500/30]="isTheaterMode()" [class.text-amber-400]="isTheaterMode()" class="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition" title="وضع السينما والتركيز">
+                  <lucide-icon [img]="Maximize2" class="size-4 text-amber-400"></lucide-icon>
+                </button>
+
+                <!-- Mini Floating Player -->
+                <button (click)="toggleFloatingMini()" [class.bg-emerald-500/30]="isFloatingMini()" [class.text-emerald-400]="isFloatingMini()" class="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition" title="نافذة مصغرة عائمة">
+                  <lucide-icon [img]="Tv" class="size-4 text-emerald-400"></lucide-icon>
                 </button>
               </div>
             </div>
@@ -302,6 +341,16 @@ export interface LocalMediaItem {
                           <input type="checkbox" [checked]="keepControlsVisible()" (change)="toggleKeepControls()" class="accent-teal-500 size-4 cursor-pointer" />
                         </div>
                       </div>
+
+                      <div class="border-t border-white/10 pt-2 space-y-1.5">
+                        <p class="text-[10px] text-slate-400 font-bold">تكرار مقطع (A-B Loop):</p>
+                        <div class="flex items-center gap-1">
+                          <button (click)="setPointA()" class="flex-1 py-1 text-[10px] rounded-lg bg-teal-600/30 hover:bg-teal-600 text-teal-300 hover:text-white font-mono font-bold" title="تحديد النقطة أ">A: {{ loopAB().a !== null ? formatTime(loopAB().a!) : '--' }}</button>
+                          <button (click)="setPointB()" class="flex-1 py-1 text-[10px] rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white font-mono font-bold" title="تحديد النقطة ب">B: {{ loopAB().b !== null ? formatTime(loopAB().b!) : '--' }}</button>
+                          <button (click)="toggleABLoop()" [class.bg-teal-600]="loopAB().active" class="px-2 py-1 text-[10px] rounded-lg bg-white/5 hover:bg-white/15 text-center font-bold" title="تشغيل/إيقاف التكرار">🔁</button>
+                          <button (click)="clearABLoop()" class="px-2 py-1 text-[10px] rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-300 text-center" title="مسح">🗑️</button>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -367,8 +416,8 @@ export interface LocalMediaItem {
                 <!-- Dual Action Buttons -->
                 <div class="flex flex-wrap items-center justify-center gap-3 w-full max-w-md">
                   
-                  <!-- Option 1: Select Full Folder -->
-                  <label class="flex-1 min-w-[180px] px-5 py-3.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold rounded-2xl text-xs shadow-xl shadow-teal-600/25 transition cursor-pointer flex items-center justify-center gap-2 group">
+                   <!-- Option 1: Select Full Folder -->
+                   <label (click)="onFolderLabelClick($event)" class="flex-1 min-w-[180px] px-5 py-3.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold rounded-2xl text-xs shadow-xl shadow-teal-600/25 transition cursor-pointer flex items-center justify-center gap-2 group">
                     <lucide-icon [img]="FolderPlus" class="size-5 group-hover:scale-110 transition-transform"></lucide-icon>
                     <span>📁 فتح مجلد كامل (Folder)</span>
                     <input type="file" webkitdirectory directory multiple (change)="onFolderSelected($event)" class="hidden" />
@@ -399,115 +448,272 @@ export interface LocalMediaItem {
 
         </main>
 
-        <!-- Right Side: Playlist & Local Files Queue -->
-        <aside class="w-full lg:w-96 bg-slate-900 border-r border-white/10 flex flex-col shrink-0 h-80 lg:h-full overflow-hidden">
+        <!-- Right Side: Sidebar Tabs (Playlist, Bookmarks, Storage) -->
+        <aside [class.hidden]="isTheaterMode() || isFloatingMini()" class="w-full lg:w-96 bg-slate-900 border-r border-white/10 flex flex-col shrink-0 h-80 lg:h-full overflow-hidden">
           
-          <!-- Playlist Header -->
-          <div class="p-3.5 border-b border-white/10 bg-slate-900/90 flex flex-col gap-2.5">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <lucide-icon [img]="ListMusic" class="size-4 text-indigo-400"></lucide-icon>
-                <h3 class="text-xs font-black text-white">قائمة التشغيل ({{ playlist().length }})</h3>
-                <span *ngIf="playlist().length > 0" class="text-[10px] px-1.5 py-0.5 bg-teal-500/20 text-teal-300 rounded font-mono font-bold" title="محفوظ دائماً محلياً">
-                  💾 دائم
-                </span>
+          <!-- Sidebar Navigation Tabs -->
+          <div class="flex items-center bg-slate-950 border-b border-white/10 px-1 py-1.5 gap-0.5 shrink-0">
+            <button (click)="sidebarTab.set('playlist')" [class.bg-teal-600]="sidebarTab() === 'playlist'" [class.text-white]="sidebarTab() === 'playlist'" class="flex-1 py-1 px-1 rounded-lg text-[10px] font-bold text-slate-300 hover:bg-white/5 transition flex items-center justify-center gap-0.5">
+              <lucide-icon [img]="ListMusic" class="size-3"></lucide-icon>
+              <span>القائمة</span>
+            </button>
+            <button (click)="sidebarTab.set('bookmarks'); loadBookmarksForVideo(activeItem()?.id || '')" [class.bg-indigo-600]="sidebarTab() === 'bookmarks'" [class.text-white]="sidebarTab() === 'bookmarks'" class="flex-1 py-1 px-1 rounded-lg text-[10px] font-bold text-slate-300 hover:bg-white/5 transition flex items-center justify-center gap-0.5" title="الملاحظات">
+              <lucide-icon [img]="Clock" class="size-3"></lucide-icon>
+              <span>ملاحظات</span>
+            </button>
+            <button (click)="sidebarTab.set('storage'); checkStorageQuota()" [class.bg-emerald-600]="sidebarTab() === 'storage'" [class.text-white]="sidebarTab() === 'storage'" class="flex-1 py-1 px-1 rounded-lg text-[10px] font-bold text-slate-300 hover:bg-white/5 transition flex items-center justify-center gap-0.5" title="التخزين">
+              <lucide-icon [img]="HardDrive" class="size-3"></lucide-icon>
+              <span>التخزين</span>
+            </button>
+            <button (click)="sidebarTab.set('recycle')" [class.bg-amber-600]="sidebarTab() === 'recycle'" [class.text-white]="sidebarTab() === 'recycle'" class="flex-1 py-1 px-1 rounded-lg text-[10px] font-bold text-slate-300 hover:bg-white/5 transition flex items-center justify-center gap-0.5" title="سلة المحذوفات والسجل">
+              <lucide-icon [img]="Trash2" class="size-3"></lucide-icon>
+              <span>السجل ({{ recycleBin().length }})</span>
+            </button>
+            <button (click)="exportPlaylistJson()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition" title="تصدير القائمة والتقدم JSON">
+              <lucide-icon [img]="Upload" class="size-3.5"></lucide-icon>
+            </button>
+          </div>
+
+          <!-- TAB 1: PLAYLIST -->
+          <ng-container *ngIf="sidebarTab() === 'playlist'">
+            <!-- Playlist Header -->
+            <div class="p-3.5 border-b border-white/10 bg-slate-900/90 flex flex-col gap-2.5">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span *ngIf="playlist().length > 0" class="text-[10px] px-1.5 py-0.5 bg-teal-500/20 text-teal-300 rounded font-mono font-bold" title="محفوظ دائماً محلياً">
+                    💾 دائم محلياً
+                  </span>
+                </div>
+
+                <!-- Quick action links -->
+                <div class="flex items-center gap-2">
+                  <label (click)="onFolderLabelClick($event)" class="text-[11px] text-teal-400 hover:text-teal-300 cursor-pointer font-bold flex items-center gap-1 hover:underline">
+                    <lucide-icon [img]="FolderPlus" class="size-3.5"></lucide-icon>
+                    <span>+ مجلد</span>
+                    <input type="file" webkitdirectory directory multiple (change)="onFolderSelected($event)" class="hidden" />
+                  </label>
+                  <span class="text-slate-600">|</span>
+                  <label class="text-[11px] text-indigo-400 hover:text-indigo-300 cursor-pointer font-bold flex items-center gap-1 hover:underline">
+                    <lucide-icon [img]="Plus" class="size-3.5"></lucide-icon>
+                    <span>+ ملف</span>
+                    <input type="file" multiple accept="video/*,audio/*,.mkv,.avi,.wmv,.flv,.m4v,.ts,.mp3,.wav,.aac,.ogg,.flac,.m4a" (change)="onFilesSelected($event)" class="hidden" />
+                  </label>
+                </div>
               </div>
 
-              <!-- Quick action links -->
-              <div class="flex items-center gap-2">
-                <label class="text-[11px] text-teal-400 hover:text-teal-300 cursor-pointer font-bold flex items-center gap-1 hover:underline">
-                  <lucide-icon [img]="FolderPlus" class="size-3.5"></lucide-icon>
-                  <span>+ مجلد</span>
-                  <input type="file" webkitdirectory directory multiple (change)="onFolderSelected($event)" class="hidden" />
-                </label>
-                <span class="text-slate-600">|</span>
-                <label class="text-[11px] text-indigo-400 hover:text-indigo-300 cursor-pointer font-bold flex items-center gap-1 hover:underline">
-                  <lucide-icon [img]="Plus" class="size-3.5"></lucide-icon>
-                  <span>+ ملف</span>
-                  <input type="file" multiple accept="video/*,audio/*,.mkv,.avi,.wmv,.flv,.m4v,.ts,.mp3,.wav,.aac,.ogg,.flac,.m4a" (change)="onFilesSelected($event)" class="hidden" />
-                </label>
+              <!-- Search & Sort Bar in Playlist -->
+              <div *ngIf="playlist().length > 0" class="flex items-center gap-1.5">
+                <div class="relative flex-1">
+                  <input 
+                    type="text" 
+                    [(ngModel)]="searchQuery" 
+                    placeholder="ابحث في الدروس أو الفيديوهات..." 
+                    class="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 pr-8" />
+                  <lucide-icon [img]="Search" class="size-3.5 text-slate-500 absolute right-2.5 top-2.5"></lucide-icon>
+                  <button *ngIf="searchQuery" (click)="searchQuery = ''" class="absolute left-2.5 top-2 text-slate-500 hover:text-white">
+                    <lucide-icon [img]="X" class="size-3"></lucide-icon>
+                  </button>
+                </div>
+
+                <button 
+                  (click)="toggleSortOrder()" 
+                  class="p-1.5 bg-black/40 hover:bg-white/10 border border-white/10 rounded-xl text-slate-400 hover:text-white transition" 
+                  [title]="sortOrder() === 'asc' ? 'الترتيب: تصاعدي (1-9)' : 'الترتيب: تنازلي (9-1)'">
+                  <lucide-icon [img]="ArrowUpDown" class="size-3.5"></lucide-icon>
+                </button>
               </div>
             </div>
 
-            <!-- Search & Sort Bar in Playlist -->
-            <div *ngIf="playlist().length > 0" class="flex items-center gap-1.5">
-              <div class="relative flex-1">
-                <input 
-                  type="text" 
-                  [(ngModel)]="searchQuery" 
-                  placeholder="ابحث في الدروس أو الفيديوهات..." 
-                  class="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 pr-8" />
-                <lucide-icon [img]="Search" class="size-3.5 text-slate-500 absolute right-2.5 top-2.5"></lucide-icon>
-                <button *ngIf="searchQuery" (click)="searchQuery = ''" class="absolute left-2.5 top-2 text-slate-500 hover:text-white">
-                  <lucide-icon [img]="X" class="size-3"></lucide-icon>
+            <!-- Playlist Items List -->
+            <div class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+              @if (displayedPlaylist().length > 0) {
+                @for (item of displayedPlaylist(); track item.id; let idx = $index) {
+                  <div 
+                    (click)="onPlaylistItemClick(item)" 
+                    class="p-2.5 rounded-2xl border transition-all cursor-pointer flex items-center gap-3 group relative"
+                    [ngClass]="activeItem()?.id === item.id ? 'bg-gradient-to-r from-teal-500/20 to-indigo-500/20 border-teal-500/60 text-white shadow-lg shadow-teal-500/10' : 'bg-black/30 border-white/5 hover:border-white/20 text-slate-300'">
+                    
+                    <!-- Index / Play indicator -->
+                    <div class="size-8 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
+                      <span *ngIf="activeItem()?.id !== item.id" class="text-xs font-mono text-slate-400">{{ idx + 1 }}</span>
+                      <lucide-icon *ngIf="activeItem()?.id === item.id" [img]="isPlaying() ? Pause : Play" class="size-4 text-teal-400"></lucide-icon>
+                    </div>
+
+                    <!-- Details -->
+                    <div class="min-w-0 flex-1">
+                      <p class="text-xs font-bold truncate group-hover:text-teal-300 transition-colors" [title]="item.name">{{ item.name }}</p>
+                      <div class="flex items-center gap-1.5 mt-0.5">
+                        <span *ngIf="item.folderName" class="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-teal-300 font-mono truncate max-w-[120px]" [title]="item.folderName">
+                          📁 {{ item.folderName }}
+                        </span>
+                        <span class="text-[10px] text-slate-500 font-mono">{{ item.duration ? formatTime(item.duration) + ' • ' : '' }}{{ formatFileSize(item.size) }}</span>
+                        <span *ngIf="item.lastPosition && item.lastPosition > 10" class="text-[9px] px-1 bg-indigo-500/20 text-indigo-300 rounded font-mono">
+                          {{ formatTime(item.lastPosition) }}
+                        </span>
+                        <span *ngIf="item.subtitlesUrl" class="text-[9px] px-1 bg-amber-500/20 text-amber-300 rounded font-mono">CC</span>
+                      </div>
+                    </div>
+
+                    <!-- Remove Item from Queue & Local Storage -->
+                    <button (click)="$event.stopPropagation(); removeItem(item.id)" class="text-slate-500 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition-opacity" title="حذف من القائمة والذاكرة">
+                      <lucide-icon [img]="Trash2" class="size-3.5"></lucide-icon>
+                    </button>
+                  </div>
+                }
+              } @else if (playlist().length > 0 && searchQuery) {
+                <div class="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-500">
+                  <lucide-icon [img]="Search" class="size-8 mb-2 opacity-30"></lucide-icon>
+                  <p class="text-xs font-bold text-slate-400">لا توجد نتائج مطابقة</p>
+                  <p class="text-[10px] text-slate-500 mt-1">جرب البحث بكلمة أخرى.</p>
+                </div>
+              } @else {
+                <div class="flex-1 flex flex-col items-center justify-center text-center p-8 text-slate-500">
+                  <lucide-icon [img]="Film" class="size-10 mb-2 opacity-30"></lucide-icon>
+                  <p class="text-xs font-bold text-slate-400">القائمة فارغة</p>
+                  <p class="text-[10px] text-slate-500 mt-1">افتح مجلداً كاملاً أو ملفات فيديو من جهازك لبدء التشغيل والحفظ التلقائي.</p>
+                </div>
+              }
+            </div>
+
+            <!-- Bottom Summary Bar if playlist is loaded -->
+            <div *ngIf="playlist().length > 0" class="p-2.5 bg-slate-950/60 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400 px-4">
+              <span>الإجمالي: <b class="text-white font-mono">{{ playlist().length }} فيديو</b></span>
+              <span class="text-slate-500 font-mono">{{ formatFileSize(totalPlaylistSize()) }}</span>
+            </div>
+          </ng-container>
+
+          <!-- TAB 2: BOOKMARKS & NOTES -->
+          <ng-container *ngIf="sidebarTab() === 'bookmarks'">
+            <div class="flex-1 flex flex-col overflow-hidden p-3 space-y-3">
+              <div class="p-3 rounded-2xl bg-black/40 border border-white/10 flex flex-col gap-2">
+                <p class="text-xs font-bold text-teal-300 flex items-center gap-1.5">
+                  <span>🔖 إضافة ملاحظة عند الدقيقة الحالية</span>
+                  <span class="text-[10px] font-mono text-slate-400">({{ formatTime(currentTime()) }})</span>
+                </p>
+                <div class="flex gap-1.5">
+                  <input type="text" [(ngModel)]="newBookmarkNote" placeholder="اكتب ملاحظة (مثل: نقطة مهمة)..." class="flex-1 bg-black/60 border border-white/15 rounded-xl px-3 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500" />
+                  <button (click)="addBookmark()" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-bold transition">إضافة</button>
+                </div>
+              </div>
+
+              <!-- Bookmarks List -->
+              <div class="flex-1 overflow-y-auto space-y-2 custom-scrollbar">
+                @if (bookmarks().length > 0) {
+                  @for (bm of bookmarks(); track bm.id) {
+                    <div (click)="jumpToBookmark(bm.time)" class="p-2.5 rounded-2xl bg-black/30 border border-white/5 hover:border-teal-500/40 cursor-pointer flex items-center justify-between group transition">
+                      <div class="flex items-center gap-2 min-w-0">
+                        <span class="px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 font-mono text-[10px] font-bold shrink-0">{{ bm.formattedTime }}</span>
+                        <p class="text-xs text-slate-200 truncate group-hover:text-teal-300">{{ bm.note }}</p>
+                      </div>
+                      <button (click)="$event.stopPropagation(); removeBookmark(bm.id)" class="text-slate-500 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition">
+                        <lucide-icon [img]="Trash2" class="size-3.5"></lucide-icon>
+                      </button>
+                    </div>
+                  }
+                } @else {
+                  <div class="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-500">
+                    <lucide-icon [img]="Clock" class="size-8 mb-2 opacity-30"></lucide-icon>
+                    <p class="text-xs font-bold text-slate-400">لا توجد ملاحظات لهذا الفيديو</p>
+                    <p class="text-[10px] text-slate-500 mt-1">أضف ملاحظات أثناء المشاهدة للرجوع إليها فوراً.</p>
+                  </div>
+                }
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- TAB 3: STORAGE MANAGER -->
+          <ng-container *ngIf="sidebarTab() === 'storage'">
+            <div class="flex-1 flex flex-col overflow-hidden p-3 space-y-3">
+              <div class="p-3.5 rounded-2xl bg-black/40 border border-white/10 flex flex-col gap-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                    <lucide-icon [img]="HardDrive" class="size-4 text-emerald-400"></lucide-icon>
+                    <span>حجم فيديوهات القائمة الحالية</span>
+                  </span>
+                  <span class="text-[11px] font-mono font-bold text-teal-300">{{ formatFileSize(totalPlaylistSize()) }}</span>
+                </div>
+                <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+                  <span>عدد الفيديوهات: {{ playlist().length }}</span>
+                  <span>التخزين المحلي النشط ✓</span>
+                </div>
+              </div>
+
+              <p class="text-[11px] text-slate-400 font-bold px-1">إدارة الفيديوهات وحذف ملف محدد لتفريغ المساحة:</p>
+              <div class="flex-1 overflow-y-auto space-y-2 custom-scrollbar">
+                @if (playlist().length > 0) {
+                  @for (item of playlist(); track item.id) {
+                    <div class="p-2.5 rounded-xl bg-black/30 border border-white/5 flex items-center justify-between gap-2">
+                      <div class="min-w-0 flex-1">
+                        <p class="text-xs font-bold text-slate-200 truncate" [title]="item.name">{{ item.name }}</p>
+                        <p class="text-[10px] text-slate-500 font-mono">{{ formatFileSize(item.size) }}</p>
+                      </div>
+                      <button (click)="removeItem(item.id)" class="px-2.5 py-1 bg-red-500/20 hover:bg-red-500/40 text-red-300 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0" title="تفريغ هذا الملف فقط">
+                        <lucide-icon [img]="Trash2" class="size-3"></lucide-icon>
+                        <span>حذف</span>
+                      </button>
+                    </div>
+                  }
+                } @else {
+                  <div class="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-500">
+                    <lucide-icon [img]="HardDrive" class="size-8 mb-2 opacity-30"></lucide-icon>
+                    <p class="text-xs font-bold text-slate-400">لا توجد فيديوهات مضافة حالياً</p>
+                    <p class="text-[10px] text-slate-500 mt-1">أضف مجلداً أو ملفات لعرض حجمها هنا.</p>
+                  </div>
+                }
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- TAB 4: RECYCLE BIN & HISTORY ARCHIVE -->
+          <ng-container *ngIf="sidebarTab() === 'recycle'">
+            <div class="flex-1 flex flex-col overflow-hidden p-3 space-y-3">
+              <div class="flex items-center justify-between p-3 rounded-2xl bg-black/40 border border-white/10">
+                <div>
+                  <p class="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span>🗑️ سلة المحذوفات وسجل المشاهدة</span>
+                  </p>
+                  <p class="text-[10px] text-slate-400 mt-0.5">الاحتفاظ بمعلومات المشاهدة تلقائياً لمدة 30 يوماً</p>
+                </div>
+                <button *ngIf="recycleBin().length > 0" (click)="clearRecycleBin()" class="px-2.5 py-1 bg-red-500/20 hover:bg-red-500/40 text-red-300 rounded-lg text-[10px] font-bold transition">
+                  تفريغ السجل
                 </button>
               </div>
 
-              <button 
-                (click)="toggleSortOrder()" 
-                class="p-1.5 bg-black/40 hover:bg-white/10 border border-white/10 rounded-xl text-slate-400 hover:text-white transition" 
-                [title]="sortOrder() === 'asc' ? 'الترتيب: تصاعدي (1-9)' : 'الترتيب: تنازلي (9-1)'">
-                <lucide-icon [img]="ArrowUpDown" class="size-3.5"></lucide-icon>
-              </button>
-            </div>
-          </div>
+              <!-- Recycle Bin Items List -->
+              <div class="flex-1 overflow-y-auto space-y-2 custom-scrollbar">
+                @if (recycleBin().length > 0) {
+                  @for (item of recycleBin(); track item.id) {
+                    <div class="p-2.5 rounded-2xl bg-black/30 border border-white/5 flex flex-col gap-1.5 group">
+                      <div class="flex items-center justify-between gap-2">
+                        <p class="text-xs font-bold text-slate-200 truncate" [title]="item.name">{{ item.name }}</p>
+                        <button (click)="removeRecycleBinItem(item.id)" class="text-slate-500 hover:text-red-400 p-1 transition" title="حذف نهائي من السجل">
+                          <lucide-icon [img]="Trash2" class="size-3"></lucide-icon>
+                        </button>
+                      </div>
 
-          <!-- Playlist Items List -->
-          <div class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
-            @if (displayedPlaylist().length > 0) {
-              @for (item of displayedPlaylist(); track item.id; let idx = $index) {
-                <div 
-                  (click)="onPlaylistItemClick(item)" 
-                  class="p-2.5 rounded-2xl border transition-all cursor-pointer flex items-center gap-3 group relative"
-                  [ngClass]="activeItem()?.id === item.id ? 'bg-gradient-to-r from-teal-500/20 to-indigo-500/20 border-teal-500/60 text-white shadow-lg shadow-teal-500/10' : 'bg-black/30 border-white/5 hover:border-white/20 text-slate-300'">
-                  
-                  <!-- Index / Play indicator -->
-                  <div class="size-8 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
-                    <span *ngIf="activeItem()?.id !== item.id" class="text-xs font-mono text-slate-400">{{ idx + 1 }}</span>
-                    <lucide-icon *ngIf="activeItem()?.id === item.id" [img]="isPlaying() ? Pause : Play" class="size-4 text-teal-400"></lucide-icon>
-                  </div>
-
-                  <!-- Details -->
-                  <div class="min-w-0 flex-1">
-                    <p class="text-xs font-bold truncate group-hover:text-teal-300 transition-colors" [title]="item.name">{{ item.name }}</p>
-                    <div class="flex items-center gap-1.5 mt-0.5">
-                      <span *ngIf="item.folderName" class="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-teal-300 font-mono truncate max-w-[120px]" [title]="item.folderName">
-                        📁 {{ item.folderName }}
-                      </span>
-                      <span class="text-[10px] text-slate-500 font-mono">{{ item.duration ? formatTime(item.duration) + ' • ' : '' }}{{ formatFileSize(item.size) }} • {{ item.type }}</span>
-                      <span *ngIf="item.lastPosition && item.lastPosition > 10" class="text-[9px] px-1 bg-indigo-500/20 text-indigo-300 rounded font-mono">
-                        {{ formatTime(item.lastPosition) }}
-                      </span>
-                      <span *ngIf="item.subtitlesUrl" class="text-[9px] px-1 bg-amber-500/20 text-amber-300 rounded font-mono">CC</span>
+                      <div class="flex items-center justify-between text-[10px] font-mono">
+                        <span class="px-2 py-0.5 rounded font-bold"
+                              [ngClass]="{
+                                'bg-emerald-500/20 text-emerald-300': item.watchStatus === 'watched',
+                                'bg-amber-500/20 text-amber-300': item.watchStatus === 'partial',
+                                'bg-slate-500/20 text-slate-400': item.watchStatus === 'unwatched'
+                              }">
+                          {{ item.watchStatus === 'watched' ? '✅ مشاهدة بالكامل' : (item.watchStatus === 'partial' ? '⏳ مشاهدة جزئية' : '⭕ لم تبدأ') }}
+                        </span>
+                        <span class="text-slate-500">حُذف منذ {{ formatDaysAgo(item.deletedAt) }}</span>
+                      </div>
                     </div>
+                  }
+                } @else {
+                  <div class="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-500">
+                    <lucide-icon [img]="Trash2" class="size-8 mb-2 opacity-30"></lucide-icon>
+                    <p class="text-xs font-bold text-slate-400">سلة المحذوفات فارغة</p>
+                    <p class="text-[10px] text-slate-500 mt-1">الفيديوهات المحذوفة تظهر هنا مع حفظ حالة المشاهدة لـ 30 يوماً.</p>
                   </div>
-
-                  <!-- Remove Item from Queue & Local Storage -->
-                  <button (click)="$event.stopPropagation(); removeItem(item.id)" class="text-slate-500 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition-opacity" title="حذف من القائمة والذاكرة">
-                    <lucide-icon [img]="Trash2" class="size-3.5"></lucide-icon>
-                  </button>
-                </div>
-              }
-            } @else if (playlist().length > 0 && searchQuery) {
-              <div class="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-500">
-                <lucide-icon [img]="Search" class="size-8 mb-2 opacity-30"></lucide-icon>
-                <p class="text-xs font-bold text-slate-400">لا توجد نتائج مطابقة</p>
-                <p class="text-[10px] text-slate-500 mt-1">جرب البحث بكلمة أخرى.</p>
+                }
               </div>
-            } @else {
-              <div class="flex-1 flex flex-col items-center justify-center text-center p-8 text-slate-500">
-                <lucide-icon [img]="Film" class="size-10 mb-2 opacity-30"></lucide-icon>
-                <p class="text-xs font-bold text-slate-400">القائمة فارغة</p>
-                <p class="text-[10px] text-slate-500 mt-1">افتح مجلداً كاملاً أو ملفات فيديو من جهازك لبدء التشغيل والحفظ التلقائي.</p>
-              </div>
-            }
-          </div>
-
-          <!-- Bottom Summary Bar if playlist is loaded -->
-          <div *ngIf="playlist().length > 0" class="p-2.5 bg-slate-950/60 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400 px-4">
-            <span>إجمالي الفيديوهات: <b class="text-white font-mono">{{ playlist().length }}</b></span>
-            <span class="text-slate-500 font-mono">{{ formatFileSize(totalPlaylistSize()) }}</span>
-          </div>
+            </div>
+          </ng-container>
 
         </aside>
 
@@ -618,6 +824,71 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   isDragging = signal<boolean>(false);
   isScanning = signal<boolean>(false);
   isLoadingStored = signal<boolean>(true);
+  isElectron = !!(window as any).electronAPI?.isElectron;
+
+  onFolderLabelClick(event: MouseEvent) {
+    if (this.isElectron) {
+      event.preventDefault();
+      this.openNativeFolder();
+    }
+  }
+
+  async openNativeFolder() {
+    const api = (window as any).electronAPI;
+    if (api?.dialog?.openDirectory) {
+      this.isScanning.set(true);
+      try {
+        const nativeFiles = await api.dialog.openDirectory();
+        if (nativeFiles && nativeFiles.length > 0) {
+          const newItems: LocalMediaItem[] = [];
+          for (const f of nativeFiles) {
+            const fileUrl = `file://${f.path.replace(/\\/g, '/')}`;
+            const check = this.checkMediaFileType({ name: f.name, type: '' } as any);
+
+            const item: LocalMediaItem = {
+              id: 'native_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8),
+              name: f.name,
+              relativePath: f.path,
+              folderName: f.folderName,
+              size: f.size,
+              type: check.type,
+              mimeType: check.type === 'video' ? 'video/mp4' : 'audio/mp3',
+              blobUrl: fileUrl,
+              lastPosition: 0,
+              createdAt: Date.now()
+            };
+            newItems.push(item);
+
+            this.indexedDb.put('local_player_media', {
+              id: item.id,
+              name: item.name,
+              relativePath: item.relativePath,
+              folderName: item.folderName,
+              size: item.size,
+              type: item.type,
+              mimeType: item.mimeType,
+              duration: item.duration,
+              lastPosition: 0,
+              createdAt: item.createdAt
+            }).catch(() => {});
+          }
+
+          const sortedNew = this.sortMediaItems(newItems, this.sortOrder());
+          const combined = [...this.playlist(), ...sortedNew];
+          this.playlist.set(combined);
+          this.showToast(`تم فتح ${newItems.length} فيديو مباشرة من القرص الصلب (دائم ولا يُمحى) 💾`);
+
+          if (!this.activeItem() && sortedNew.length > 0) {
+            this.playItem(sortedNew[0]);
+          }
+        }
+      } catch (e) {
+        console.warn('Native folder open error:', e);
+      } finally {
+        this.isScanning.set(false);
+      }
+    }
+  }
 
   searchQuery = '';
   sortOrder = signal<'asc' | 'desc'>('asc');
@@ -713,6 +984,211 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     });
   }
 
+  sidebarTab = signal<'playlist' | 'bookmarks' | 'storage' | 'recycle'>('playlist');
+  recycleBin = signal<RecycleBinItem[]>([]);
+  bookmarks = signal<VideoBookmark[]>([]);
+  newBookmarkNote = '';
+
+  async loadRecycleBinAndState() {
+    try {
+      if ((window as any).electronAPI?.localPlayer) {
+        const res = await (window as any).electronAPI.localPlayer.loadState();
+        if (res?.ok && res.data) {
+          if (res.data.recycleBin) {
+            const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+            const valid = res.data.recycleBin.filter((i: RecycleBinItem) => (Date.now() - i.deletedAt) <= thirtyDays);
+            this.recycleBin.set(valid);
+          }
+        }
+      } else {
+        const saved = localStorage.getItem('local_player_recycle_bin');
+        if (saved) {
+          const parsed: RecycleBinItem[] = JSON.parse(saved);
+          const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+          const valid = parsed.filter(i => (Date.now() - i.deletedAt) <= thirtyDays);
+          this.recycleBin.set(valid);
+        }
+      }
+    } catch (e) {}
+  }
+
+  saveRecycleBinAndState() {
+    try {
+      const data = { recycleBin: this.recycleBin() };
+      if ((window as any).electronAPI?.localPlayer) {
+        (window as any).electronAPI.localPlayer.saveState(data);
+      } else {
+        localStorage.setItem('local_player_recycle_bin', JSON.stringify(this.recycleBin()));
+      }
+    } catch (e) {}
+  }
+
+  clearRecycleBin() {
+    this.recycleBin.set([]);
+    this.saveRecycleBinAndState();
+    this.showToast('تم تفريغ سلة المحذوفات نهائياً 🧹');
+  }
+
+  removeRecycleBinItem(id: string) {
+    const updated = this.recycleBin().filter(i => i.id !== id);
+    this.recycleBin.set(updated);
+    this.saveRecycleBinAndState();
+  }
+
+  formatDaysAgo(timestamp: number): string {
+    const days = Math.floor((Date.now() - timestamp) / (1000 * 60 * 60 * 24));
+    if (days === 0) return 'اليوم';
+    if (days === 1) return 'أمس';
+    return `منذ ${days} أيام`;
+  }
+
+  loopAB = signal<{ a: number | null; b: number | null; active: boolean }>({ a: null, b: null, active: false });
+  brightness = signal<number>(100);
+  isTheaterMode = signal<boolean>(false);
+  isFloatingMini = signal<boolean>(false);
+  storageQuota = signal<{ used: number; total: number; percent: number } | null>(null);
+
+  async checkStorageQuota() {
+    if (navigator.storage && navigator.storage.estimate) {
+      try {
+        const estimate = await navigator.storage.estimate();
+        const used = estimate.usage || 0;
+        const total = estimate.quota || 1;
+        const percent = Math.round((used / total) * 100);
+        this.storageQuota.set({ used, total, percent });
+      } catch (e) {}
+    }
+  }
+
+  addBookmark() {
+    const vid = this.videoPlayer?.nativeElement;
+    const cur = this.activeItem();
+    if (!vid || !cur) return;
+    const time = vid.currentTime;
+    const note = this.newBookmarkNote.trim() || `ملاحظة عند الدقيقة ${this.formatTime(time)}`;
+    const newBm: VideoBookmark = {
+      id: 'bm_' + Date.now(),
+      time,
+      note,
+      formattedTime: this.formatTime(time)
+    };
+    const updated = [...this.bookmarks(), newBm].sort((a, b) => a.time - b.time);
+    this.bookmarks.set(updated);
+    this.newBookmarkNote = '';
+    this.saveBookmarksForVideo(cur.id, updated);
+    this.showToast('تم إضافة العلامة الزمنية والملاحظة 🔖');
+  }
+
+  jumpToBookmark(time: number) {
+    const vid = this.videoPlayer?.nativeElement;
+    if (vid) {
+      vid.currentTime = time;
+      this.currentTime.set(time);
+    }
+  }
+
+  removeBookmark(id: string) {
+    const cur = this.activeItem();
+    const updated = this.bookmarks().filter(b => b.id !== id);
+    this.bookmarks.set(updated);
+    if (cur) {
+      this.saveBookmarksForVideo(cur.id, updated);
+    }
+  }
+
+  loadBookmarksForVideo(videoId: string) {
+    try {
+      const saved = localStorage.getItem('local_player_bm_' + videoId);
+      if (saved) {
+        this.bookmarks.set(JSON.parse(saved));
+      } else {
+        this.bookmarks.set([]);
+      }
+    } catch (e) {
+      this.bookmarks.set([]);
+    }
+  }
+
+  private saveBookmarksForVideo(videoId: string, list: VideoBookmark[]) {
+    try {
+      localStorage.setItem('local_player_bm_' + videoId, JSON.stringify(list));
+    } catch (e) {}
+  }
+
+  setPointA() {
+    const vid = this.videoPlayer?.nativeElement;
+    if (!vid) return;
+    const a = vid.currentTime;
+    this.loopAB.update(l => ({ ...l, a }));
+    this.showToast(`تم تحديد النقطة A عند ${this.formatTime(a)} 🎯`);
+  }
+
+  setPointB() {
+    const vid = this.videoPlayer?.nativeElement;
+    if (!vid) return;
+    const b = vid.currentTime;
+    this.loopAB.update(l => ({ ...l, b }));
+    this.showToast(`تم تحديد النقطة B عند ${this.formatTime(b)} 🎯`);
+  }
+
+  toggleABLoop() {
+    const state = this.loopAB();
+    if (state.a !== null && state.b !== null && state.a < state.b) {
+      const active = !state.active;
+      this.loopAB.update(l => ({ ...l, active }));
+      this.showToast(active ? 'تم تفعيل التكرار المستمر بين A و B 🔁' : 'تم إيقاف التكرار ⏹️');
+    } else {
+      this.showToast('يرجى تحديد نقطتي A و B بشكل صحيح أولاً (A < B)', 'warning');
+    }
+  }
+
+  clearABLoop() {
+    this.loopAB.set({ a: null, b: null, active: false });
+    this.showToast('تم إلغاء تكرار المقطع 🗑️');
+  }
+
+  toggleTheaterMode() {
+    this.isTheaterMode.update(v => {
+      const next = !v;
+      this.showToast(next ? 'تم تفعيل وضع السينما والتركيز 🎬' : 'تم إيقاف وضع السينما 🖥️');
+      return next;
+    });
+  }
+
+  toggleFloatingMini() {
+    this.isFloatingMini.update(v => {
+      const next = !v;
+      this.showToast(next ? 'تم تفعيل النافذة المصغرة العائمة 📺' : 'تم إغلاق النافذة المصغرة 🪟');
+      return next;
+    });
+  }
+
+  exportPlaylistJson() {
+    try {
+      const data = {
+        playlist: this.playlist().map(item => ({
+          id: item.id,
+          name: item.name,
+          size: item.size,
+          type: item.type,
+          duration: item.duration,
+          folderName: item.folderName
+        })),
+        exportedAt: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `playlist_backup_${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      this.showToast('تم تصدير قائمة التشغيل بنجاح 💾');
+    } catch (e) {
+      this.showToast('فشل تصدير القائمة', 'warning');
+    }
+  }
+
   // Icons
   Play = Play;
   Pause = Pause;
@@ -770,7 +1246,9 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   async ngOnInit() {
     this.resetControlsTimer();
     this.loadUserPreferences();
+    this.checkStorageQuota();
     await this.restoreStoredPlaylist();
+    await this.loadRecycleBinAndState();
   }
 
   ngOnDestroy() {
@@ -1188,6 +1666,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     this.saveCurrentPosition();
     this.activeItemId.set(item.id);
     localStorage.setItem('local_player_active_id', item.id);
+    this.loadBookmarksForVideo(item.id);
 
     setTimeout(() => {
       if (this.videoPlayer?.nativeElement) {

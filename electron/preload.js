@@ -42,7 +42,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // ── Dialogs ──
   dialog: {
     openFile: (options) => ipcRenderer.invoke('dialog:open-file', options),
-    saveFile: (options) => ipcRenderer.invoke('dialog:save-file', options)
+    saveFile: (options) => ipcRenderer.invoke('dialog:save-file', options),
+    openDirectory: () => ipcRenderer.invoke('dialog:open-directory')
   },
 
   // ── App Info ──
@@ -56,5 +57,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     minimize: () => ipcRenderer.send('window:minimize'),
     maximize: () => ipcRenderer.send('window:maximize'),
     close: () => ipcRenderer.send('window:close')
+  },
+
+  // ── Local Player Native Disk Persistence ──
+  localPlayer: {
+    saveState: (state) => ipcRenderer.invoke('local-player:save-state', state),
+    loadState: () => ipcRenderer.invoke('local-player:load-state')
   }
 });
