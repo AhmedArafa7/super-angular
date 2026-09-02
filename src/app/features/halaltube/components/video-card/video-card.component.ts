@@ -1,10 +1,11 @@
-import { Component, input, inject, signal, HostListener, ElementRef } from '@angular/core';
+import { Component, input, inject, signal, computed, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, MoreVertical, ListPlus, Clock, FolderPlus, Download, Share2, Ban, UserX, Flag } from 'lucide-angular';
+import { LucideAngularModule, MoreVertical, ListPlus, Clock, FolderPlus, Download, Share2, Ban, UserX, Flag, ShieldCheck, ShieldAlert, EyeOff } from 'lucide-angular';
 import { VideoStateService } from '../../../../core/services/video-state.service';
 import { IndexedDBService } from '../../../../core/services/indexed-db.service';
 import { FirebaseService } from '../../../../core/services/firebase.service';
 import { VideoDownloadService } from '../../../../core/services/video-download.service';
+import { HalalModerationService } from '../../../../core/services/halal-moderation.service';
 import { getInitialAvatarSvg } from '../../../../core/services/button-inspector.service';
 
 import { PlaylistSelectorModalComponent } from '../modals/playlist-selector-modal/playlist-selector-modal';
@@ -18,8 +19,38 @@ import { PlaylistSelectorModalComponent } from '../modals/playlist-selector-moda
       <div class="video-card group cursor-pointer relative flex flex-col gap-3">
         <!-- Thumbnail Wrapper -->
         <div class="thumbnail-wrapper relative w-full rounded-xl overflow-hidden bg-slate-900 border border-white/5 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-indigo-500/10 group-hover:-translate-y-1 aspect-video">
-          <img crossorigin="anonymous" [src]="video().thumbnail || 'assets/placeholder.jpg'" [alt]="video().title" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy">
+          <img crossorigin="anonymous" 
+               [src]="video().thumbnail || 'assets/placeholder.jpg'" 
+               [alt]="video().title" 
+               class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+               [class.blur-md]="isBlurred()"
+               loading="lazy">
           
+          <!-- Halal Badges Overlay -->
+          <div class="absolute top-2 right-2 flex flex-col gap-1 z-20 pointer-events-none">
+            @if (video().isWhitelisted || halalEval().isWhitelisted) {
+              <span class="bg-emerald-600/90 backdrop-blur-md text-white px-2 py-0.5 rounded-lg text-[9px] font-black flex items-center gap-1 shadow-md border border-emerald-400/30">
+                <lucide-icon [img]="ShieldCheck" class="w-3 h-3 text-emerald-200"></lucide-icon>
+                <span>موثق شرعياً</span>
+              </span>
+            } @else if (halalEval().hasMusicWarning) {
+              <span class="bg-amber-600/90 backdrop-blur-md text-white px-1.5 py-0.5 rounded-lg text-[9px] font-black flex items-center gap-1 shadow-md border border-amber-400/30">
+                <lucide-icon [img]="ShieldAlert" class="w-3 h-3 text-amber-200"></lucide-icon>
+                <span>تنبيه معازف</span>
+              </span>
+            }
+          </div>
+
+          <!-- Smart Thumbnail Shield Overlay -->
+          @if (isBlurred()) {
+            <div class="absolute inset-0 bg-slate-950/75 backdrop-blur-sm z-15 flex flex-col items-center justify-center p-3 text-center transition-all cursor-pointer" 
+                 (click)="$event.stopPropagation(); forceUnblur.set(true)">
+              <lucide-icon [img]="EyeOff" class="w-5 h-5 text-slate-300 mb-1"></lucide-icon>
+              <span class="text-[10px] font-black text-slate-200">طمس وقائي ذكي</span>
+              <span class="text-[9px] text-indigo-300 font-bold underline mt-0.5">انقر لكشف الصورة 👁️</span>
+            </div>
+          }
+
           @if (video().duration) {
             <span class="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-[10px] font-bold z-10">{{ video().duration }}</span>
           }
@@ -120,11 +151,17 @@ export class VideoCardComponent {
   private idb = inject(IndexedDBService);
   private firebase = inject(FirebaseService);
   private downloadService = inject(VideoDownloadService);
+  readonly moderation = inject(HalalModerationService);
   private el = inject(ElementRef);
 
   showMenu = signal<boolean>(false);
   showPlaylistModal = signal<boolean>(false);
   isHidden = signal<boolean>(false);
+  forceUnblur = signal<boolean>(false);
+
+  // Halal Evaluation & Blur State
+  halalEval = computed(() => this.moderation.evaluateVideo(this.video()));
+  isBlurred = computed(() => this.moderation.smartThumbnailBlur() && this.halalEval().status !== 'safe' && !this.forceUnblur());
 
   MoreVertical = MoreVertical;
   ListPlus = ListPlus;
@@ -135,6 +172,9 @@ export class VideoCardComponent {
   Ban = Ban;
   UserX = UserX;
   Flag = Flag;
+  ShieldCheck = ShieldCheck;
+  ShieldAlert = ShieldAlert;
+  EyeOff = EyeOff;
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent) {

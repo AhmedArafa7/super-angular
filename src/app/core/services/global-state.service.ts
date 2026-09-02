@@ -24,9 +24,17 @@ export class GlobalStateService {
 
   readonly userProfile = computed(() => {
     const userData = this.firebaseService.userData();
+    const localAvatar = localStorage.getItem('profile_avatar');
+    const realAvatar = userData?.avatar_url || userData?.photoURL;
+    
+    let chosenAvatar = realAvatar || (localAvatar && !localAvatar.includes('ui-avatars.com') && !localAvatar.includes('picsum.photos') ? localAvatar : null) || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userData?.name || userData?.displayName || localStorage.getItem('profile_name') || 'User') + '&background=4f46e5&color=fff';
+    if (localAvatar && localAvatar.startsWith('data:image/')) {
+      chosenAvatar = localAvatar;
+    }
+
     return {
-      name: userData?.name || userData?.displayName || 'مستخدم جديد',
-      avatarUrl: userData?.avatar_url || userData?.photoURL || 'https://i.pravatar.cc/150?u=a042581f4e29026704d',
+      name: userData?.name || userData?.displayName || localStorage.getItem('profile_name') || 'أحمد عرفه',
+      avatarUrl: chosenAvatar,
       firstLetter: (userData?.name || userData?.displayName || 'م').charAt(0).toUpperCase(),
       isPro: localStorage.getItem('isPro') === 'true' // Local check for Pro status
     };

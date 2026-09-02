@@ -231,6 +231,18 @@ export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
     }
 
     this.isLoading.set(false);
+
+    // Sync watch history locally and to Firebase
+    const vMeta = this.video();
+    if (vMeta && rawId) {
+      this.firebase.syncWatchHistory({
+        videoId: rawId,
+        title: vMeta.title || '',
+        thumbnail: vMeta.thumbnail || '',
+        author: vMeta.author || '',
+        watchedAt: Date.now()
+      });
+    }
   }
 
   playFallbackVideo() {
@@ -266,11 +278,28 @@ export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
     this.isLiked.update(v => !v);
     this.likes.update(v => v + (this.isLiked() ? 1 : -1));
     if (this.isLiked()) this.isDisliked.set(false);
+
+    const vid = this.video();
+    const vidId = this.id() || vid?.id;
+    if (vidId) {
+      this.firebase.syncVideoLike(vidId, this.isLiked(), {
+        title: vid?.title || '',
+        thumbnail: vid?.thumbnail || '',
+        author: vid?.author || ''
+      });
+    }
   }
 
   onDislike() {
     this.isDisliked.update(v => !v);
-    if (this.isDisliked()) this.isLiked.set(false);
+    if (this.isDisliked()) {
+      this.isLiked.set(false);
+      const vid = this.video();
+      const vidId = this.id() || vid?.id;
+      if (vidId) {
+        this.firebase.syncVideoLike(vidId, false);
+      }
+    }
   }
 
   constructor() {

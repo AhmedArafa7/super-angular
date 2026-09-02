@@ -35,7 +35,7 @@
   }
 
   <!-- Video Engine Selection -->
-  @if (sourceType === 'youtube' && !proSettings) {
+  @if (playerEngine() === 'iframe' && sourceType === 'youtube' && !proSettings) {
     <div class="relative w-full h-full">
       <iframe [src]="youtubeIframeUrl | safe:'resourceUrl'"
               class="w-full h-full border-none"
@@ -44,82 +44,59 @@
               allowfullscreen>
       </iframe>
 
-      <!-- Direct YouTube Watch Badge -->
+      <!-- Direct YouTube Watch & Clean Player Switcher -->
       <div class="absolute top-3 right-3 z-30 flex items-center gap-2 pointer-events-auto">
+        <button (click)="$event.stopPropagation(); togglePlayerEngine()"
+                class="bg-indigo-600/90 hover:bg-indigo-500 text-white backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-xl text-[11px] font-black flex items-center gap-1.5 transition-all shadow-lg hover:scale-105"
+                title="التبديل إلى المشغل النظيف بدون إعلانات مع تفعيل عازل المعازف الصوتي">
+          <span>المشغل النظيف ⚡</span>
+        </button>
+
         <a [href]="directYoutubeUrl"
            target="_blank"
            rel="noopener"
            (click)="$event.stopPropagation()"
            class="bg-slate-950/85 hover:bg-red-600 backdrop-blur-md border border-white/15 text-white px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-all shadow-lg hover:scale-105"
            title="مشاهدة الفيديو مباشرة على YouTube إذا كان التضمين محظوراً">
-          <span>مشاهدة على YouTube ↗</span>
+          <span>يوتيوب ↗</span>
         </a>
       </div>
     </div>
   } @else {
-    <video #videoPlayer
-           [src]="resolvedVideoSrc"
-           [poster]="poster"
-           class="w-full h-full object-contain"
-           (timeupdate)="handleTimeUpdate()"
-           (loadedmetadata)="handleLoadedMetadata()"
-           (play)="isPlaying.set(true)"
-           (pause)="isPlaying.set(false)"
-           (click)="$event.stopPropagation(); togglePlay()"
-           playsinline>
-    </video>
-  }
-
-  <!-- Neural Upscaler Data Saver Overlay -->
-  @if (isUpscaling()) {
-    <div class="absolute inset-0 bg-slate-950/90 z-40 flex flex-col items-center justify-center p-6 text-center space-y-4 transition-all duration-300 animate-in fade-in" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(2, 6, 23, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 40; pointer-events: none;" dir="rtl">
-      
-      <!-- Status Icon -->
-      <div class="w-12 h-12 rounded-full flex items-center justify-center border transition"
-           [ngClass]="upscaleStep() === 'completed' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'">
-        @if (upscaleStep() === 'completed') {
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        } @else {
-          <svg class="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.247 8H18" />
-          </svg>
-        }
-      </div>
-
-      <!-- Messages -->
-      <div class="space-y-1">
-        <h3 class="text-white font-black text-sm md:text-base">
-          @if (upscaleStep() === 'loading_144') {
-            توفير الباقة نشط: جاري تحميل البث الاقتصادي (144p)...
-          } @else if (upscaleStep() === 'processing') {
-            جاري ترقية جودة الفيديو عصبياً إلى [{{ upscaleQuality() }}]...
-          } @else if (upscaleStep() === 'completed') {
-            تمت ترقية جودة الفيديو بنجاح إلى [{{ upscaleQuality() }}] ⚡
-          }
-        </h3>
-        <p class="text-[10px] text-slate-400 font-bold">
-          @if (upscaleStep() === 'loading_144') {
-            نقوم ببدء الفيديو بأقل جودة ممكنة لتقليل استهلاك الإنترنت بنسبة 85%.
-          } @else if (upscaleStep() === 'processing') {
-            تم بدء عرض الفيديو لتوفير وقت الانتظار بينما تستمر المعالجة في الخلفية.
-          } @else if (upscaleStep() === 'completed') {
-            تمت مضاعفة بكسلات الفيديو محلياً وتحسين حدة التفاصيل.
-          }
-        </p>
-      </div>
-
-      <!-- Progress Bar -->
-      <div class="flex items-center gap-3" style="display: flex; align-items: center; gap: 12px;">
-        <span class="text-xs font-black text-indigo-400 min-w-[32px]">{{ upscaleProgress() }}%</span>
-        <div class="w-48 h-2 bg-white/10 rounded-full overflow-hidden" style="width: 192px; height: 8px; border-radius: 9999px; background: rgba(255, 255, 255, 0.1); overflow: hidden;">
-          <div class="h-full bg-indigo-500 transition-all duration-150" 
-               [style.width.%]="upscaleProgress()"
-               style="height: 100%; background: #4f46e5; border-radius: 9999px;">
-          </div>
+    <div class="relative w-full h-full">
+      @if (isStreamResolving()) {
+        <div class="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-md gap-3">
+          <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          <span class="text-xs font-bold text-slate-300">جاري الاتصال بالبث النظيف الخالي من الإعلانات...</span>
         </div>
-      </div>
+      }
+
+      <video #videoPlayer
+             [src]="resolvedVideoSrc"
+             [poster]="poster"
+             [style.filter]="videoFilterStyle"
+             class="w-full h-full object-contain transition-all duration-300"
+             (timeupdate)="handleTimeUpdate()"
+             (loadedmetadata)="handleLoadedMetadata()"
+             (play)="isPlaying.set(true)"
+             (pause)="isPlaying.set(false)"
+             (error)="onVideoError($event)"
+             (click)="$event.stopPropagation(); togglePlay()"
+             playsinline>
+      </video>
+
+      <!-- Engine Switcher Badge in Native Mode -->
+      @if (sourceType === 'youtube') {
+        <div class="absolute top-3 right-3 z-30 flex items-center gap-2 pointer-events-auto">
+          <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 backdrop-blur-md px-2.5 py-1 rounded-xl text-[10px] font-black flex items-center gap-1 shadow-sm">
+            <span>بث نظيف خالي من الإعلانات ⚡</span>
+          </span>
+          <button (click)="$event.stopPropagation(); togglePlayerEngine()"
+                  class="bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/10 px-2.5 py-1 rounded-xl text-[10px] font-bold transition">
+            مشغل يوتيوب 🌐
+          </button>
+        </div>
+      }
     </div>
   }
 
@@ -154,7 +131,27 @@
         </div>
       </div>
 
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2.5 sm:gap-3">
+        <!-- Video Clarity & Edge Enhancer -->
+        <button
+          (click)="toggleClarityEnhancer($event)"
+          class="px-2 py-1 rounded-xl text-xs font-black transition-all flex items-center gap-1 backdrop-blur-md border shadow-sm"
+          [ngClass]="clarityEnhancer() !== 'off' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 shadow-indigo-500/20' : 'bg-white/10 text-slate-400 border-white/10 hover:text-white'"
+          title="معالج تحسين حدة وتباين وبكسلات الفيديو الفعلي">
+          <svg lucideIcon="sparkles" class="w-3.5 h-3.5" [class.text-indigo-400]="clarityEnhancer() !== 'off'"></svg>
+          <span class="text-[10px] hidden md:inline">{{ clarityEnhancer() === 'vivid' ? 'وضوح فائق 🌟' : clarityEnhancer() === 'crisp' ? 'محسن الوضوح ⚡' : 'الوضوح العادي' }}</span>
+        </button>
+
+        <!-- Halal Audio DSP Filter Toggle Button -->
+        <button
+          (click)="toggleAudioFilter($event)"
+          class="px-2.5 py-1 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 backdrop-blur-md border shadow-sm"
+          [ngClass]="audioFilter.isFilterActive() ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-emerald-500/20' : 'bg-white/10 text-slate-400 border-white/10 hover:text-white'"
+          [title]="audioFilter.getModeLabel()">
+          <svg lucideIcon="volume-x" class="w-4 h-4" [class.text-emerald-400]="audioFilter.isFilterActive()"></svg>
+          <span class="text-[10px] hidden sm:inline">{{ audioFilter.isFilterActive() ? (audioFilter.filterMode() === 'strict_no_music' ? 'عازل فائق 🎙️' : 'عازل معازف 🎧') : 'عازل المعازف' }}</span>
+        </button>
+
         <!-- Download / Offline Cache Button -->
         @if (videoId) {
           <button

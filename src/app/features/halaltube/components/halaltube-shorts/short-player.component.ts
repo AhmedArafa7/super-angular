@@ -9,6 +9,7 @@ import { ShortVideo } from '../../../../core/services/shorts-queue.service';
 import { IndexedDBService } from '../../../../core/services/indexed-db.service';
 import { halaltubeService } from '../../halaltube.service';
 import { FirebaseService } from '../../../../core/services/firebase.service';
+import { HalalAudioFilterService } from '../../../../core/services/halal-audio-filter.service';
 
 @Component({
   selector: 'app-short-player',
@@ -65,8 +66,19 @@ import { FirebaseService } from '../../../../core/services/firebase.service';
 
       <!-- UI Overlay -->
       <div class="absolute inset-0 z-30 pointer-events-none flex flex-col justify-between p-4">
-        <!-- Top Bar (Mute Toggle) -->
-        <div class="flex justify-end pointer-events-auto mt-16">
+        <!-- Top Bar (Audio Filter & Mute Toggle) -->
+        <div class="flex items-center justify-between pointer-events-auto mt-16 px-2">
+          <!-- Audio Filter DSP Button -->
+          <button 
+            class="px-3 py-1.5 rounded-full backdrop-blur-md flex items-center gap-1.5 transition-all text-xs font-bold border shadow-lg"
+            [ngClass]="audioFilter.isFilterActive() ? 'bg-emerald-500/30 text-emerald-300 border-emerald-500/50' : 'bg-black/40 text-white/70 border-white/10 hover:text-white'"
+            (click)="audioFilter.toggleFilter(); $event.stopPropagation()"
+            [title]="audioFilter.getModeLabel()">
+            <span class="text-sm">🎧</span>
+            <span class="text-[10px] font-black">{{ audioFilter.isFilterActive() ? 'عازل معازف نشط' : 'عازل المعازف' }}</span>
+          </button>
+
+          <!-- Mute Toggle -->
           <button 
             class="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 transition"
             (click)="toggleMute($event)"
@@ -181,6 +193,7 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
   isActive = input.required<boolean>();
   
   videoState = inject(VideoStateService);
+  readonly audioFilter = inject(HalalAudioFilterService);
   private piped = inject(PipedApiService);
   private idb = inject(IndexedDBService);
   private halaltube = inject(halaltubeService);
@@ -399,6 +412,9 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
       if (ct > 0 && Math.abs(vid.currentTime - ct) > 0.5) {
         vid.currentTime = ct;
       }
+      try {
+        this.audioFilter.attachMediaElement(vid);
+      } catch (e) {}
       vid.play().then(() => {
         this.isPlaying.set(true);
       }).catch(err => {
@@ -517,6 +533,12 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
         await this.idb.delete('saved_videos', this.video().id);
         this.displayToast('تمت إزالة الإعجاب');
       }
+
+      this.firebase.syncVideoLike(this.video().id, newState, {
+        title: this.video().title,
+        thumbnail: this.video().thumbnail,
+        author: this.video().author
+      });
     } catch (e) {
       console.error('Failed to sync like locally', e);
       this.isLiked.set(currentState);

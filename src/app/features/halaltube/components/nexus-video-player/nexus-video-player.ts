@@ -4,6 +4,9 @@ import { LucideDynamicIcon } from '@lucide/angular';
 import { SafePipe } from '../../../../shared/pipes/safe.pipe';
 import { halaltubeService } from '../../halaltube.service';
 import { VideoDownloadService } from '../../../../core/services/video-download.service';
+import { HalalAudioFilterService } from '../../../../core/services/halal-audio-filter.service';
+import { HalalModerationService } from '../../../../core/services/halal-moderation.service';
+import { PipedApiService } from '../../../../core/services/piped-api.service';
 
 export interface NeuralMetadata {
   introStart?: number;
@@ -42,6 +45,14 @@ export class SiNeuroVideoPlayerComponent implements AfterViewInit, OnDestroy {
 
   private halaltube = inject(halaltubeService);
   private downloadSvc = inject(VideoDownloadService);
+  private pipedApi = inject(PipedApiService);
+  readonly audioFilter = inject(HalalAudioFilterService);
+  readonly moderation = inject(HalalModerationService);
+
+  /** Dual Engine Stream & Player Mode */
+  directStreamUrl = signal<string>('');
+  isStreamResolving = signal<boolean>(false);
+  playerEngine = signal<'native' | 'iframe'>('native');
 
   /** Current download status for this video */
   dlStatus = computed(() => this.downloadSvc.downloadStatuses()[this.videoId]);
@@ -75,11 +86,76 @@ export class SiNeuroVideoPlayerComponent implements AfterViewInit, OnDestroy {
 
   constructor() {
     effect(() => {
-      // Trigger upscale whenever videoId or src changes
+      // Trigger upscale & stream resolution whenever videoId or src changes
       const id = this.videoId;
       const source = this.src;
+      this.resolveDirectStream();
       this.startUpscaleEngine();
     });
+  }
+
+  async resolveDirectStream() {
+    const ytId = this.extractYoutubeId(this.src) || this.extractYoutubeId(this.videoId) || this.videoId;
+    if (!ytId || this.sourceType === 'local' || this.sourceType === 'archive') {
+      this.playerEngine.set('native');
+      return;
+    }
+
+    // 1. Check local IndexedDB cache first
+    try {
+      const cached = await this.downloadSvc.getCachedBlobUrl(ytId);
+      if (cached) {
+        this.directStreamUrl.set(cached);
+        this.playerEngine.set('native');
+        return;
+      }
+    } catch (e) {}
+
+    // 2. Fetch direct video stream from Piped / Invidious
+    this.isStreamResolving.set(true);
+    try {
+      const details = await this.pipedApi.getVideoDetails(ytId);
+      if (details?.videoStreams && details.videoStreams.length > 0) {
+        const stream = details.videoStreams.find(s => !s.videoOnly && (s.quality?.includes('720') || s.quality?.includes('480') || s.quality?.includes('360'))) 
+                      || details.videoStreams.find(s => !s.videoOnly)
+                      || details.videoStreams[0];
+        
+        if (stream?.url) {
+          this.directStreamUrl.set(stream.url);
+          this.playerEngine.set('native');
+          this.isStreamResolving.set(false);
+          return;
+        }
+      }
+
+      if (details?.hls) {
+        this.directStreamUrl.set(details.hls);
+        this.playerEngine.set('native');
+        this.isStreamResolving.set(false);
+        return;
+      }
+    } catch (e) {
+      console.warn('[SiNeuroVideoPlayer] Direct stream resolution error:', e);
+    } finally {
+      this.isStreamResolving.set(false);
+    }
+
+    // Fallback: If direct stream not resolved, switch engine to YouTube iframe
+    if (!this.directStreamUrl()) {
+      this.playerEngine.set('iframe');
+    }
+  }
+
+  togglePlayerEngine() {
+    this.playerEngine.update(current => current === 'native' ? 'iframe' : 'native');
+    if (this.playerEngine() === 'native' && !this.directStreamUrl()) {
+      this.resolveDirectStream();
+    }
+  }
+
+  onVideoError(event: Event) {
+    console.warn('[SiNeuroVideoPlayer] Native video error, falling back to YouTube iframe:', event);
+    this.playerEngine.set('iframe');
   }
 
   ngAfterViewInit() {
@@ -120,6 +196,9 @@ export class SiNeuroVideoPlayerComponent implements AfterViewInit, OnDestroy {
   }
 
   get resolvedVideoSrc(): string {
+    if (this.directStreamUrl()) {
+      return this.directStreamUrl();
+    }
     if (this.src && (this.src.includes('archive.org') || this.sourceType === 'archive')) {
       if (this.src.includes('/details/')) {
         return this.src.replace('/details/', '/download/');
@@ -128,58 +207,35 @@ export class SiNeuroVideoPlayerComponent implements AfterViewInit, OnDestroy {
     return this.src;
   }
 
+  // Real Hardware-Accelerated Video Clarity & Sharpening State
+  clarityEnhancer = signal<'off' | 'crisp' | 'vivid'>('crisp');
+
+  get videoFilterStyle(): string {
+    const mode = this.clarityEnhancer();
+    if (mode === 'crisp') {
+      return 'contrast(1.08) brightness(1.02) saturate(1.04)';
+    } else if (mode === 'vivid') {
+      return 'contrast(1.14) brightness(1.03) saturate(1.14)';
+    }
+    return 'none';
+  }
+
+  toggleClarityEnhancer(event?: Event) {
+    if (event) event.stopPropagation();
+    const modes: ('off' | 'crisp' | 'vivid')[] = ['crisp', 'vivid', 'off'];
+    const next = modes[(modes.indexOf(this.clarityEnhancer()) + 1) % modes.length];
+    this.clarityEnhancer.set(next);
+  }
+
   startUpscaleEngine() {
-    if (this.upscaleInterval) {
-      clearInterval(this.upscaleInterval);
-      this.upscaleInterval = null;
-    }
-
-    const config = this.halaltube.algoConfig();
-    if (!config.dataSaverEnabled) {
-      this.isUpscaling.set(false);
-      this.upscaleStep.set('idle');
-      this.upscaleQuality.set(this.defaultQuality);
-      
-      setTimeout(() => {
-        if (this.videoRef?.nativeElement) {
-          this.videoRef.nativeElement.play().catch(() => {});
-          this.isPlaying.set(true);
-        }
-      }, 200);
-      return;
-    }
-
-    // Initialize Real Data Saver Download Progress Monitor
-    this.isUpscaling.set(true);
-    this.upscaleStep.set('loading_144');
-    this.upscaleQuality.set('144p');
-
-    if (this.videoRef?.nativeElement) {
-      this.videoRef.nativeElement.pause();
-      this.isPlaying.set(false);
-    }
-
-    this.upscaleInterval = setInterval(() => {
-      const status = this.dlStatus();
-      const realProgress = status ? Math.min(100, Math.max(0, status.progress)) : 0;
-      this.upscaleProgress.set(realProgress);
-
-      if (realProgress >= 100 || status?.status === 'cached') {
-        clearInterval(this.upscaleInterval);
-        this.upscaleInterval = null;
-        this.upscaleProgress.set(100);
-        this.upscaleStep.set('completed');
-        this.upscaleQuality.set('144p (مخزّن محلياً ⚡)');
-
-        setTimeout(() => {
-          this.isUpscaling.set(false);
-          if (this.videoRef?.nativeElement) {
-            this.videoRef.nativeElement.play().catch(() => {});
-            this.isPlaying.set(true);
-          }
-        }, 800);
+    this.isUpscaling.set(false);
+    this.upscaleStep.set('completed');
+    setTimeout(() => {
+      if (this.videoRef?.nativeElement && this.autoPlay) {
+        this.videoRef.nativeElement.play().catch(() => {});
+        this.isPlaying.set(true);
       }
-    }, 100);
+    }, 150);
   }
 
   handleMouseMove() {
@@ -235,6 +291,17 @@ export class SiNeuroVideoPlayerComponent implements AfterViewInit, OnDestroy {
   handleLoadedMetadata() {
     if (!this.videoRef?.nativeElement) return;
     this.duration.set(this.formatTime(this.videoRef.nativeElement.duration));
+    try {
+      this.audioFilter.attachMediaElement(this.videoRef.nativeElement);
+    } catch (e) {}
+  }
+
+  toggleAudioFilter(event?: Event) {
+    if (event) event.stopPropagation();
+    if (this.videoRef?.nativeElement) {
+      this.audioFilter.attachMediaElement(this.videoRef.nativeElement);
+    }
+    this.audioFilter.toggleFilter();
   }
 
   handleSeek(event: Event) {

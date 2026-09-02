@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { LucideAngularModule, ThumbsUp, ThumbsDown, Share2, Download, Plus, Scissors, Flag, VolumeX, CheckCircle } from 'lucide-angular';
 import { halaltubeService } from '../../../halaltube.service';
 import { getInitialAvatarSvg } from '../../../../../core/services/button-inspector.service';
+import { HalalAudioFilterService } from '../../../../../core/services/halal-audio-filter.service';
 
 @Component({
   selector: 'app-watch-actions',
@@ -13,6 +14,12 @@ import { getInitialAvatarSvg } from '../../../../../core/services/button-inspect
 })
 export class WatchActionsComponent {
   private halaltube = inject(halaltubeService);
+  readonly audioFilter = inject(HalalAudioFilterService);
+
+  onRecommendNoMusicClick() {
+    this.audioFilter.toggleFilter();
+    this.recommendNoMusic.emit();
+  }
 
   @Input() likes: number = 0;
   @Input() isLiked: boolean = false;

@@ -2,10 +2,12 @@ import { Component, inject, ChangeDetectionStrategy, signal } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
-import { LucideAngularModule, Bell, Plus, Search, Mic, Menu, MicOff, Sparkles, Play } from 'lucide-angular';
+import { LucideAngularModule, Bell, Plus, Search, Mic, Menu, MicOff, Sparkles, Play, ShieldCheck, Shield, Check, VolumeX, Eye, EyeOff } from 'lucide-angular';
 import { halaltubeService } from '../../halaltube.service';
 import { FirebaseService } from '../../../../core/services/firebase.service';
 import { AlgoliaSearchService, AlgoliaSearchResult } from '../../../../core/services/algolia-search.service';
+import { HalalModerationService } from '../../../../core/services/halal-moderation.service';
+import { HalalAudioFilterService } from '../../../../core/services/halal-audio-filter.service';
 
 @Component({
   selector: 'app-halaltube-topbar',
@@ -18,10 +20,13 @@ export class halaltubeTopbarComponent {
   searchQuery = signal('');
   isListening = signal(false);
   showSuggestions = signal(false);
+  showModerationMenu = signal(false);
   
   halaltube = inject(halaltubeService);
   firebase = inject(FirebaseService);
   algolia = inject(AlgoliaSearchService);
+  readonly moderation = inject(HalalModerationService);
+  readonly audioFilter = inject(HalalAudioFilterService);
   router = inject(Router);
 
   // Icons
@@ -33,6 +38,12 @@ export class halaltubeTopbarComponent {
   Menu = Menu;
   Sparkles = Sparkles;
   Play = Play;
+  ShieldCheck = ShieldCheck;
+  Shield = Shield;
+  Check = Check;
+  VolumeX = VolumeX;
+  Eye = Eye;
+  EyeOff = EyeOff;
 
   get userPhoto(): string {
     const user = this.firebase.currentUser();

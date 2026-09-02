@@ -34,15 +34,27 @@ export interface PipedVideoDetails {
 export class PipedApiService {
   private http = inject(HttpClient);
   private proxyBase = environment.apiBaseUrl !== undefined && environment.apiBaseUrl !== null ? environment.apiBaseUrl : 'https://super-axd.pages.dev';
-  private instances = environment.pipedInstances || [
+  
+  // Healthy curated public instances pool (2026 active nodes)
+  private instances = [
     'https://pipedapi.adminforge.de',
     'https://pipedapi.rhea.pub',
     'https://api.piped.privacydev.net',
+    'https://pipedapi.drgns.space',
+    'https://piped-api.garudalinux.org',
     'https://pipedapi.leptons.xyz',
-    'https://pipedapi.smnz.de',
     'https://pipedapi.astral.autistici.org',
-    'https://pipedapi.drgns.space'
+    'https://pipedapi.smnz.de'
   ];
+
+  private activeInstanceIndex = 0;
+
+  private getRotatedInstances(): string[] {
+    const list = [...this.instances];
+    // Rotate so last successful instance stays first
+    const shifted = list.slice(this.activeInstanceIndex).concat(list.slice(0, this.activeInstanceIndex));
+    return shifted;
+  }
 
   private async smartFetch<T>(targetUrl: string, timeoutMs = 3500): Promise<T> {
     if (targetUrl.includes('/piped-proxy')) {
@@ -97,20 +109,28 @@ export class PipedApiService {
 
   async getVideoDetails(videoId: string): Promise<PipedVideoDetails> {
     // 1. Try Piped instances (fast 3.5s timeout per instance)
-    for (const instance of this.instances.slice(0, 4)) {
+    const instancesToTry = this.getRotatedInstances();
+    for (let i = 0; i < Math.min(instancesToTry.length, 5); i++) {
+      const instance = instancesToTry[i];
       try {
         const url = `${instance}/streams/${videoId}`;
-        return await this.smartFetch<PipedVideoDetails>(url, 3500);
+        const res = await this.smartFetch<PipedVideoDetails>(url, 3500);
+        if (res && (res.videoStreams?.length > 0 || res.hls || res.title)) {
+          this.activeInstanceIndex = this.instances.indexOf(instance);
+          return res;
+        }
       } catch (error) {
         // Continue to next instance
       }
     }
 
-    // 2. Try Invidious instances as secondary fallback
+    // 2. Try Invidious instances as secondary fallback with full formatStreams mapping
     const invidiousInstances = [
-      'https://invidious.projectsegfau.lt',
-      'https://inv.nadeko.net',
+      'https://inv.tux.pizza',
+      'https://invidious.nerdvpn.de',
       'https://invidious.drgns.space',
+      'https://inv.nadeko.net',
+      'https://invidious.projectsegfau.lt',
       'https://yewtu.be'
     ];
 
@@ -119,6 +139,13 @@ export class PipedApiService {
         const invRes = await fetch(`${inv}/api/v1/videos/${videoId}`, { signal: AbortSignal.timeout(3000) });
         if (invRes.ok) {
           const data = await invRes.json();
+          const streams: PipedVideoStream[] = (data.formatStreams || []).map((f: any) => ({
+            url: f.url,
+            quality: f.qualityLabel || f.quality || '360p',
+            mimeType: f.type || 'video/mp4',
+            videoOnly: false
+          }));
+
           return {
             title: data.title || 'فيديو',
             description: data.description || '',
@@ -126,7 +153,7 @@ export class PipedApiService {
             uploaderAvatar: data.authorThumbnails?.[0]?.url || '',
             thumbnailUrl: data.videoThumbnails?.[0]?.url || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
             hls: data.hlsUrl || null,
-            videoStreams: [],
+            videoStreams: streams,
             audioStreams: [],
             relatedStreams: []
           };

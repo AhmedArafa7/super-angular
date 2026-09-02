@@ -12,6 +12,7 @@ import { PipedApiService } from '../../core/services/piped-api.service';
 import { InvidiousProviderService } from '../../core/services/providers/invidious-provider.service';
 import { environment } from '../../../environments/environment';
 import { EncryptionService } from '../../core/services/encryption.service';
+import { HalalModerationService } from '../../core/services/halal-moderation.service';
 
 export interface AlgorithmConfig {
   subscriptionWeight: number;
@@ -31,6 +32,7 @@ export class halaltubeService {
   private cacheService = inject(YoutubeCacheService);
   private idb = inject(IndexedDBService);
   private encryption = inject(EncryptionService);
+  readonly moderation = inject(HalalModerationService);
 
   // Core State
   readonly videos = signal<Video[]>([]);
@@ -228,8 +230,9 @@ export class halaltubeService {
       return orderA - orderB;
     });
 
-    // Enforce channel diversity so videos from the same channel are never clustered together
-    return this.enforceChannelDiversity(sorted);
+    // Enforce channel diversity so videos from the same channel are never clustered together, then apply Halal moderation filter
+    const diverse = this.enforceChannelDiversity(sorted);
+    return this.moderation.filterVideos(diverse);
   });
 
   private enforceChannelDiversity<T extends { author?: string }>(videos: T[]): T[] {
@@ -363,8 +366,10 @@ export class halaltubeService {
         }));
       } catch (e) {}
 
-      // Parallel multi-topic harvesting across 6 core topics
-      const topicPromises = this.CORE_TOPICS.map(topic => 
+      // Smart Incremental Topic Ingestion (2 topics initially to save 65% bandwidth)
+      const initialTopics = this.CORE_TOPICS.slice(0, 2);
+      this.currentTopicIndex = 2;
+      const topicPromises = initialTopics.map(topic => 
         firstValueFrom(this.discoveryService.searchYouTube(topic))
           .catch(() => this.pipedApiService.search(topic))
           .catch(() => [] as FeedVideo[])
@@ -421,7 +426,7 @@ export class halaltubeService {
         [uniqueCombined[i], uniqueCombined[j]] = [uniqueCombined[j], uniqueCombined[i]];
       }
 
-      const indexedCombined = uniqueCombined.map((v, idx) => ({ ...v, _shuffleOrder: idx }));
+      const indexedCombined = this.moderation.filterVideos(uniqueCombined.map((v, idx) => ({ ...v, _shuffleOrder: idx })));
 
       this.trendingVideos.set(indexedCombined);
       this.feedVideos.set(indexedCombined);
@@ -539,6 +544,15 @@ export class halaltubeService {
       return;
     }
 
+    // 1. Halal Safe Search Query Check
+    const queryCheck = this.moderation.isQuerySafe(query);
+    if (!queryCheck.isAllowed) {
+      console.warn('[halaltubeService] Query blocked by Halal Moderation:', queryCheck.reason);
+      this.searchResults.set([]);
+      this.isSearching.set(false);
+      return;
+    }
+
     this.discoveryService.searchYouTube(query, sp).pipe(
       catchError(err => {
         console.warn('[halaltubeService] Discovery search failed, trying Piped...', err);
@@ -569,7 +583,10 @@ export class halaltubeService {
           } catch (e) {}
         }
 
-        // If still 0 results (all network providers down), fallback to matching local & curated fallback videos or Gemini AI generated search results
+        // Filter through Halal moderation engine
+        finalVideos = this.moderation.filterVideos(finalVideos);
+
+        // If still 0 results (all network providers down or filtered), fallback to matching local & curated fallback videos
         if (!finalVideos || finalVideos.length === 0) {
           const cleanQ = query.trim().toLowerCase();
           const allLocal = [...FALLBACK_VIDEOS, ...this.feedVideos()];
@@ -579,41 +596,7 @@ export class halaltubeService {
             v.category?.toLowerCase().includes(cleanQ)
           );
           
-          if (matched.length > 0) {
-            finalVideos = matched;
-          } else {
-            try {
-              const apiKey = localStorage.getItem('Si-Neuro-chat-apiKey') || 'AIzaSyAdHKCp9X3rCTdyyZ0XeiRvxWOp2qVaQws';
-              const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  contents: [{
-                    role: 'user',
-                    parts: [{ text: `أنت محرك بحث فيديو ذكي. المستخدم يبحث عن: "${query}". اقترح 8 فيديوهات وثائقية أو تعليمية أو ثقافية ذات صلة تامة بهذا الموضوع. أضف الرد بصيغة JSON array فقط بالشكل التالي بدون أي نص إضافي:
-[{"id": "dQw4w9WgXcQ", "title": "...", "author": "...", "duration": "15:00", "thumbnail": "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg", "category": "ثقافة"}]` }]
-                  }]
-                })
-              });
-              const data = await res.json();
-              const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-              const jsonMatch = text.match(/\[[\s\S]*\]/);
-              if (jsonMatch) {
-                const parsed = JSON.parse(jsonMatch[0]);
-                finalVideos = parsed.map((v: any) => ({
-                  ...v,
-                  source: 'youtube',
-                  thumbnail: `https://img.youtube.com/vi/${v.id || 'dQw4w9WgXcQ'}/hqdefault.jpg`
-                }));
-              }
-            } catch (e) {
-              console.warn('Gemini Search generation error:', e);
-            }
-
-            if (!finalVideos || finalVideos.length === 0) {
-              finalVideos = FALLBACK_VIDEOS.slice(0, 4);
-            }
-          }
+          finalVideos = this.moderation.filterVideos(matched.length > 0 ? matched : FALLBACK_VIDEOS.slice(0, 6));
         }
 
         // Check which videos are already whitelisted
@@ -624,10 +607,10 @@ export class halaltubeService {
         // Add isWhitelisted flag
         const videosWithFlag = finalVideos.map((v: any) => ({
           ...v,
-          isWhitelisted: whitelistedSet.has(v.id)
+          isWhitelisted: whitelistedSet.has(v.id) || v.isWhitelisted === true
         }));
         
-        this.searchResults.set(videosWithFlag);
+        this.searchResults.set(this.moderation.filterVideos(videosWithFlag));
         this.isSearching.set(false);
       },
       error: (err) => {
@@ -639,7 +622,8 @@ export class halaltubeService {
           v.author?.toLowerCase().includes(cleanQ) ||
           v.category?.toLowerCase().includes(cleanQ)
         );
-        this.searchResults.set(matched.length > 0 ? matched : FALLBACK_VIDEOS);
+        const safeResults = this.moderation.filterVideos(matched.length > 0 ? matched : FALLBACK_VIDEOS);
+        this.searchResults.set(safeResults);
         this.isSearching.set(false);
       }
     });
@@ -703,16 +687,8 @@ export class halaltubeService {
       if (cleanSubs.length > 0) {
         this.subscriptions.set(cleanSubs);
       } else {
-        const defaultStarterSubs = [
-          { id: 'UC-9-kyTW8ZkZNDHQJ6FgpwQ', channelId: 'UC-9-kyTW8ZkZNDHQJ6FgpwQ', channelTitle: 'القرآن الكريم - تلاوات خاشعة', avatarUrl: '', subscribedAt: Date.now(), isFavorite: true },
-          { id: 'UC0x87297389279', channelId: 'UC0x87297389279', channelTitle: 'محاضرات إسلامية ودروس علمية', avatarUrl: '', subscribedAt: Date.now(), isFavorite: false },
-          { id: 'UC_x5XG1OV2P6uZZ5FSM9Ttw', channelId: 'UC_x5XG1OV2P6uZZ5FSM9Ttw', channelTitle: 'تطوير الذات والعلوم الإنسانية', avatarUrl: '', subscribedAt: Date.now(), isFavorite: false }
-        ];
-        for (const sub of defaultStarterSubs) {
-          await this.idb.put('subscriptions', sub).catch(() => {});
-        }
-        this.subscriptions.set(defaultStarterSubs);
-        cleanSubs = defaultStarterSubs;
+        this.subscriptions.set([]);
+        cleanSubs = [];
       }
       if (localSubs.length !== cleanSubs.length) {
         force = true;
@@ -970,7 +946,8 @@ export class halaltubeService {
         }
       }
       
-      this.subscriptionsFeed.set(uniqueVideos.slice(0, 80));
+      const filteredSubs = this.moderation.filterVideos(uniqueVideos);
+      this.subscriptionsFeed.set(filteredSubs.slice(0, 80));
     } catch (err) {
       console.error('[halaltubeService] loadSubscriptionsFeed failed:', err);
     } finally {
@@ -1026,10 +1003,11 @@ export class halaltubeService {
         }
       }
 
-      if (uniqueShorts.length > 0) {
-        this.shortsFeed.set(uniqueShorts);
+      const filteredShorts = this.moderation.filterVideos(uniqueShorts);
+      if (filteredShorts.length > 0) {
+        this.shortsFeed.set(filteredShorts);
         // Cache the result
-        await this.idb.setWithTTL('shorts_feed', { id: 'main', videos: uniqueShorts });
+        await this.idb.setWithTTL('shorts_feed', { id: 'main', videos: filteredShorts });
       }
     } catch (err) {
       console.error('[halaltubeService] loadShorts failed:', err);

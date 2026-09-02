@@ -225,9 +225,19 @@ export class ProfileComponent {
 
   loadCurrentData() {
     const user = this.firebase.userData();
-    this.name = localStorage.getItem('profile_name') || user?.name || user?.displayName || 'أحمد عرفه';
+    const authUser = this.firebase.currentUser();
+    const googlePhoto = user?.photoURL || user?.avatar_url || authUser?.photoURL;
+
+    this.name = localStorage.getItem('profile_name') || user?.name || user?.displayName || authUser?.displayName || 'أحمد عرفه';
     this.bio = localStorage.getItem('profile_bio') || '';
-    this.avatarUrl = localStorage.getItem('profile_avatar') || user?.avatar_url || user?.photoURL || 'https://ui-avatars.com/api/?name=User&background=4f46e5&color=fff';
+
+    const localAvatar = localStorage.getItem('profile_avatar');
+    if (localAvatar && localAvatar.startsWith('data:image/')) {
+      this.avatarUrl = localAvatar;
+    } else {
+      this.avatarUrl = googlePhoto || localAvatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(this.name) + '&background=4f46e5&color=fff';
+    }
+
     this.phone = localStorage.getItem('profile_phone') || '';
     this.location = localStorage.getItem('profile_location') || '';
   }

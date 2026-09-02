@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, User, GoogleAuthProvider, GithubAuthProvider, signInWithPopup, linkWithPopup } from 'firebase/auth';
-import { getFirestore, Firestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, orderBy, limit, startAfter, QueryDocumentSnapshot, documentId, runTransaction, arrayUnion, addDoc, onSnapshot, serverTimestamp, enableIndexedDbPersistence, writeBatch } from 'firebase/firestore';
+import { getFirestore, Firestore, doc, getDoc, setDoc, deleteDoc, updateDoc, collection, query, where, getDocs, orderBy, limit, startAfter, QueryDocumentSnapshot, documentId, runTransaction, arrayUnion, addDoc, onSnapshot, serverTimestamp, enableIndexedDbPersistence, writeBatch } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL, FirebaseStorage } from 'firebase/storage';
 import { environment } from '../../../environments/environment';
 
@@ -227,17 +227,23 @@ export class FirebaseService {
         if (result.user) {
           const uid = result.user.uid;
           const userRef = doc(this.firestore, 'users', uid);
-          await updateDoc(userRef, {
+          const photoURL = result.user.photoURL || '';
+          await setDoc(userRef, {
             displayName: result.user.displayName,
-            photoURL: result.user.photoURL,
+            photoURL: photoURL,
+            avatar_url: photoURL,
             email: result.user.email
-          });
+          }, { merge: true });
           this.userData.update(u => u ? { 
             ...u, 
             displayName: result.user.displayName || u.displayName,
-            photoURL: result.user.photoURL || u.photoURL,
+            photoURL: photoURL || u.photoURL,
+            avatar_url: photoURL || u.avatar_url,
             email: result.user.email || u.email
           } : u);
+          if (photoURL) {
+            localStorage.setItem('profile_avatar', photoURL);
+          }
         }
 
         return true;
@@ -1229,6 +1235,39 @@ export class FirebaseService {
       }
     } catch (err) {
       console.error('[FirebaseService] notifyChannelOwner failed:', err);
+    }
+  }
+
+  async syncWatchHistory(item: WatchHistoryItem): Promise<void> {
+    const user = this.currentUser();
+    if (!user) return;
+    try {
+      const historyRef = doc(this.firestore, `users/${user.uid}/history/${item.videoId}`);
+      await setDoc(historyRef, {
+        ...item,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    } catch (e) {
+      console.warn('[FirebaseService] Failed to sync history:', e);
+    }
+  }
+
+  async syncVideoLike(videoId: string, isLiked: boolean, videoMeta?: any): Promise<void> {
+    const user = this.currentUser();
+    if (!user) return;
+    try {
+      const likeRef = doc(this.firestore, `users/${user.uid}/likes/${videoId}`);
+      if (isLiked) {
+        await setDoc(likeRef, {
+          videoId,
+          ...(videoMeta || {}),
+          likedAt: serverTimestamp()
+        }, { merge: true });
+      } else {
+        await deleteDoc(likeRef);
+      }
+    } catch (e) {
+      console.warn('[FirebaseService] Failed to sync like:', e);
     }
   }
 }

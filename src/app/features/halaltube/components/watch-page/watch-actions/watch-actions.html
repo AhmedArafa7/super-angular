@@ -49,9 +49,14 @@
       <span>حفظ</span>
     </button>
 
-    <button class="action-btn text-amber-400 hover:text-amber-300 border border-amber-500/20 bg-amber-500/10" (click)="recommendNoMusic.emit()" title="أنصح بهذا الفيديو لكن بعد نزع المعازف والموسيقى منه">
-      <lucide-icon [img]="VolumeX" class="text-amber-400"></lucide-icon>
-      <span class="text-amber-400 font-bold text-xs whitespace-nowrap">أنصح به (بدون معازف)</span>
+    <button class="action-btn transition-all duration-300 border" 
+            [ngClass]="audioFilter.isFilterActive() ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-emerald-500/20' : 'text-amber-400 hover:text-amber-300 border-amber-500/20 bg-amber-500/10'"
+            (click)="onRecommendNoMusicClick()" 
+            [title]="audioFilter.isFilterActive() ? 'عازل المعازف نشط حالياً - انقر للتبديل أو إلغاء التفعيل' : 'تفعيل عازل المعازف الصوتي واقتراح نزع المعازف شرعياً'">
+      <lucide-icon [img]="VolumeX" [class.text-emerald-400]="audioFilter.isFilterActive()" [class.text-amber-400]="!audioFilter.isFilterActive()"></lucide-icon>
+      <span class="font-bold text-xs whitespace-nowrap">
+        {{ audioFilter.isFilterActive() ? (audioFilter.filterMode() === 'strict_no_music' ? 'عازل فائق 🎙️' : 'عازل المعازف نشط 🎧') : 'أنصح به (بدون معازف)' }}
+      </span>
     </button>
     
     <button *ngIf="isYoutube && !isWhitelisted" class="action-btn text-emerald-500 hover:text-emerald-400 border border-emerald-500/20 bg-emerald-500/10" (click)="addToWhitelist.emit()" title="إضافة الفيديو للقائمة البيضاء ليراه الآخرون">

@@ -272,4 +272,27 @@ export class VideoDownloadService {
       req.onerror = () => resolve();
     });
   }
+
+  async getStorageUsage(): Promise<{ usageBytes: number; quotaBytes: number; percentUsed: number; cachedCount: number }> {
+    await this.initDB();
+    const metaList = await this.getAllCachedMeta();
+    let usageBytes = metaList.reduce((sum, item) => sum + (item.sizeBytes || 0), 0);
+    let quotaBytes = MAX_CACHE_BYTES;
+
+    if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.estimate) {
+      try {
+        const estimate = await navigator.storage.estimate();
+        if (estimate.quota) quotaBytes = Math.min(estimate.quota, MAX_CACHE_BYTES);
+        if (estimate.usage) usageBytes = estimate.usage;
+      } catch (e) {}
+    }
+
+    const percentUsed = quotaBytes > 0 ? Math.min(100, Math.round((usageBytes / quotaBytes) * 100)) : 0;
+    return {
+      usageBytes,
+      quotaBytes,
+      percentUsed,
+      cachedCount: metaList.length
+    };
+  }
 }
