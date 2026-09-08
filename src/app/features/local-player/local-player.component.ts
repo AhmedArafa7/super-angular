@@ -10,7 +10,7 @@ import {
   Search, ArrowUpDown, Plus, X, Loader2, Check, Settings, HelpCircle, CheckCircle2, Tv
 } from 'lucide-angular';
 import { IndexedDBService } from '../../core/services/indexed-db.service';
-import { OcrService } from '../../core/services/ocr.service';
+import { SnapshotService } from './services/snapshot.service';
 
 export interface VideoBookmark {
   id: string;
@@ -1115,7 +1115,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     return `منذ ${days} أيام`;
   }
 
-  ocrService = inject(OcrService);
+  snapshotService = inject(SnapshotService);
 
   showSnapshotModal = signal<boolean>(false);
   snapshotDataUrl = signal<string | null>(null);
@@ -2122,28 +2122,19 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   takeSnapshot() {
     const vid = this.videoPlayer?.nativeElement;
     if (!vid) return;
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = vid.videoWidth || 1280;
-      canvas.height = vid.videoHeight || 720;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/png');
-        this.snapshotDataUrl.set(dataUrl);
-        this.snapshotImageName.set(`snapshot_${this.activeItem()?.name || 'video'}_${Math.floor(this.currentTime())}s.png`);
-        this.extractedOcrText.set('');
-        this.snapshotRotations.set(0);
-        this.snapshotHistory.set([]);
-        this.snapshotRedoStack.set([]);
-        this.showSnapshotModal.set(true);
-        this.showToast('تم التقاط الصورة! عاينها، عدل عليها، واستخرج النص 📸');
+    const dataUrl = this.snapshotService.takeSnapshot(vid);
+    if (!dataUrl) return;
 
-        this.extractTextFromSnapshot(dataUrl);
-      }
-    } catch (e) {
-      console.warn('Snapshot failed:', e);
-    }
+    this.snapshotDataUrl.set(dataUrl);
+    this.snapshotImageName.set(`snapshot_${this.activeItem()?.name || 'video'}_${Math.floor(this.currentTime())}s.png`);
+    this.extractedOcrText.set('');
+    this.snapshotRotations.set(0);
+    this.snapshotHistory.set([]);
+    this.snapshotRedoStack.set([]);
+    this.showSnapshotModal.set(true);
+    this.showToast('تم التقاط الصورة! عاينها، عدل عليها، واستخرج النص 📸');
+
+    this.extractTextFromSnapshot(dataUrl);
   }
 
   async extractTextFromSnapshot(urlToScan?: string) {
@@ -2151,8 +2142,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     if (!url) return;
     this.isExtractingOcr.set(true);
     try {
-      const res = await this.ocrService.recognize(url, this.snapshotImageName(), 'ara+eng');
-      const text = res.fullText || '';
+      const text = await this.snapshotService.extractText(url, this.snapshotImageName());
       this.extractedOcrText.set(text);
       if (text) {
         await navigator.clipboard.writeText(text);
@@ -2168,16 +2158,13 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   }
 
   rotateSnapshot() {
-    this.snapshotRotations.update(r => (r + 90) % 360);
+    this.snapshotRotations.update(r => this.snapshotService.rotate(r));
   }
 
   downloadEditedSnapshot() {
     const url = this.snapshotDataUrl();
     if (!url) return;
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = this.snapshotImageName();
-    a.click();
+    this.snapshotService.downloadEditedSnapshot(url, this.snapshotRotations(), this.snapshotImageName());
     this.showToast('تم حفظ وتنزيل الصورة النهائية بنجاح 💾');
     this.showSnapshotModal.set(false);
   }
