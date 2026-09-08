@@ -67,9 +67,33 @@ service cloud.firestore {
     // ==============================
     // System Metadata
     // ==============================
-    match /system/{docId} {
-      allow read: if true;
-      allow write: if isReviewer();
+    // ==============================
+    // Meeting Rooms & Participants
+    // ==============================
+    match /meeting_rooms/{roomId} {
+      allow read, create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated() && resource.data.hostId == request.auth.uid;
+
+      match /participants/{participantId} {
+        allow read, write: if isAuthenticated();
+      }
+
+      match /signaling/{signalId} {
+        allow read, write: if isAuthenticated();
+      }
+
+      match /signaling_host_candidates/{candId} {
+        allow read, write: if isAuthenticated();
+      }
+
+      match /signaling_guest_candidates/{candId} {
+        allow read, write: if isAuthenticated();
+      }
+
+      match /messages/{messageId} {
+        allow read, create: if isAuthenticated();
+      }
     }
   }
 }

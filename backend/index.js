@@ -1,12 +1,19 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const NodeCache = require('node-cache');
+const githubAgentRoutes = require('./routes/github-agent.routes');
+const meetingRoutes = require('./routes/meeting.routes');
 
 const app = express();
 const cache = new NodeCache({ stdTTL: 3600 }); // Cache responses for 1 hour by default
 
 app.use(cors());
 app.use(express.json());
+
+// Mount GitHub Agent & Tools routes
+app.use('/api/agent/github', githubAgentRoutes);
+app.use('/api/meeting', meetingRoutes);
 
 const PORT = process.env.PORT || 3000;
 

@@ -457,6 +457,122 @@ ipcMain.handle('local-player:load-state', () => {
   }
 });
 
+// ── Device File Manager (Explicit Folder Access) ──
+ipcMain.handle('device-fs:select-directory', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'اختر مجلداً لإدارته بأمان',
+    properties: ['openDirectory', 'dontAddToRecent']
+  });
+  if (result.canceled || !result.filePaths.length) return null;
+  return result.filePaths[0];
+});
+
+ipcMain.handle('device-fs:list', async (_, dirPath) => {
+  try {
+    if (!fs.existsSync(dirPath)) {
+      return { ok: false, error: 'المسار المحدد غير موجود' };
+    }
+    const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
+    const items = [];
+    for (const entry of entries) {
+      const fullPath = path.join(dirPath, entry.name);
+      try {
+        const stats = await fs.promises.stat(fullPath);
+        const isDir = entry.isDirectory();
+        const ext = isDir ? '' : path.extname(entry.name).toLowerCase().replace('.', '');
+        items.push({
+          name: entry.name,
+          path: fullPath,
+          isDirectory: isDir,
+          size: stats.size,
+          modifiedAt: stats.mtimeMs,
+          createdAt: stats.birthtimeMs,
+          extension: ext
+        });
+      } catch (e) {
+        items.push({
+          name: entry.name,
+          path: fullPath,
+          isDirectory: entry.isDirectory(),
+          size: 0,
+          modifiedAt: Date.now(),
+          extension: entry.isDirectory() ? '' : path.extname(entry.name).toLowerCase().replace('.', ''),
+          inaccessible: true
+        });
+      }
+    }
+    return { ok: true, items };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
+ipcMain.handle('device-fs:open-path', async (_, targetPath) => {
+  try {
+    const error = await shell.openPath(targetPath);
+    if (error) {
+      return { ok: false, error };
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
+ipcMain.handle('device-fs:show-in-folder', async (_, targetPath) => {
+  try {
+    shell.showItemInFolder(targetPath);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
+ipcMain.handle('device-fs:trash', async (_, targetPath) => {
+  try {
+    await shell.trashItem(targetPath);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
+ipcMain.handle('device-fs:delete', async (_, targetPath) => {
+  try {
+    await fs.promises.rm(targetPath, { recursive: true, force: true });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
+ipcMain.handle('device-fs:rename', async (_, { oldPath, newPath }) => {
+  try {
+    await fs.promises.rename(oldPath, newPath);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
+ipcMain.handle('device-fs:copy', async (_, { srcPath, destPath }) => {
+  try {
+    await fs.promises.cp(srcPath, destPath, { recursive: true });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
+ipcMain.handle('device-fs:create-folder', async (_, folderPath) => {
+  try {
+    await fs.promises.mkdir(folderPath, { recursive: true });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
 // ── Window Controls ──
 ipcMain.on('window:minimize', () => mainWindow?.minimize());
 ipcMain.on('window:maximize', () => {

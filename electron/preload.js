@@ -63,5 +63,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
   localPlayer: {
     saveState: (state) => ipcRenderer.invoke('local-player:save-state', state),
     loadState: () => ipcRenderer.invoke('local-player:load-state')
+  },
+
+  // ── Device File Manager (Explicit Folder Access) ──
+  deviceFS: {
+    selectDirectory: () => ipcRenderer.invoke('device-fs:select-directory'),
+    list: (dirPath) => ipcRenderer.invoke('device-fs:list', dirPath),
+    openPath: (targetPath) => ipcRenderer.invoke('device-fs:open-path', targetPath),
+    showInFolder: (targetPath) => ipcRenderer.invoke('device-fs:show-in-folder', targetPath),
+    trash: (targetPath) => ipcRenderer.invoke('device-fs:trash', targetPath),
+    delete: (targetPath) => ipcRenderer.invoke('device-fs:delete', targetPath),
+    rename: (oldPath, newPath) => ipcRenderer.invoke('device-fs:rename', { oldPath, newPath }),
+    copy: (srcPath, destPath) => ipcRenderer.invoke('device-fs:copy', { srcPath, destPath }),
+    createFolder: (folderPath) => ipcRenderer.invoke('device-fs:create-folder', folderPath)
   }
 });

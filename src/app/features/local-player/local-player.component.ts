@@ -10,6 +10,7 @@ import {
   Search, ArrowUpDown, Plus, X, Loader2, Check, Settings, HelpCircle, CheckCircle2, Tv
 } from 'lucide-angular';
 import { IndexedDBService } from '../../core/services/indexed-db.service';
+import { OcrService } from '../../core/services/ocr.service';
 
 export interface VideoBookmark {
   id: string;
@@ -1042,6 +1043,20 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     return `منذ ${days} أيام`;
   }
 
+  ocrService = inject(OcrService);
+
+  showSnapshotModal = signal<boolean>(false);
+  snapshotDataUrl = signal<string | null>(null);
+  snapshotImageName = signal<string>('video_snapshot.png');
+  snapshotDrawMode = signal<'none' | 'text' | 'rect' | 'crop'>('none');
+  snapshotRotations = signal<number>(0);
+  extractedOcrText = signal<string>('');
+  isExtractingOcr = signal<boolean>(false);
+  snapshotHistory = signal<string[]>([]);
+  snapshotRedoStack = signal<string[]>([]);
+  snapshotTextToAdd = '';
+  cropBox = signal<{ x: number; y: number; w: number; h: number }>({ x: 15, y: 15, w: 70, h: 70 });
+
   loopAB = signal<{ a: number | null; b: number | null; active: boolean }>({ a: null, b: null, active: false });
   brightness = signal<number>(100);
   isTheaterMode = signal<boolean>(false);
@@ -2043,14 +2058,40 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
       if (ctx) {
         ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
         const dataUrl = canvas.toDataURL('image/png');
-        const a = document.createElement('a');
-        a.href = dataUrl;
-        a.download = `snapshot_${this.activeItem()?.name || 'video'}_${Math.floor(this.currentTime())}s.png`;
-        a.click();
-        this.showToast('تم التقاط الصورة وحفظها بنجاح 📸');
+        this.snapshotDataUrl.set(dataUrl);
+        this.snapshotImageName.set(`snapshot_${this.activeItem()?.name || 'video'}_${Math.floor(this.currentTime())}s.png`);
+        this.extractedOcrText.set('');
+        this.snapshotRotations.set(0);
+        this.snapshotHistory.set([]);
+        this.snapshotRedoStack.set([]);
+        this.showSnapshotModal.set(true);
+        this.showToast('تم التقاط الصورة! عاينها، عدل عليها، واستخرج النص 📸');
+
+        this.extractTextFromSnapshot(dataUrl);
       }
     } catch (e) {
       console.warn('Snapshot failed:', e);
+    }
+  }
+
+  async extractTextFromSnapshot(urlToScan?: string) {
+    const url = urlToScan || this.snapshotDataUrl();
+    if (!url) return;
+    this.isExtractingOcr.set(true);
+    try {
+      const res = await this.ocrService.recognize(url, this.snapshotImageName(), 'ara+eng');
+      const text = res.fullText || '';
+      this.extractedOcrText.set(text);
+      if (text) {
+        await navigator.clipboard.writeText(text);
+        this.showToast('تم استخراج النص ونسخه إلى الحافظة تلقائياً! 📋✨');
+      } else {
+        this.showToast('لم يتم العثور على نص واضح في الصورة', 'warning');
+      }
+    } catch (e) {
+      this.showToast('فشل استخراج النص من الصورة', 'warning');
+    } finally {
+      this.isExtractingOcr.set(false);
     }
   }
 

@@ -1,0 +1,568 @@
+<div class="h-[calc(100vh-6rem)] flex flex-col text-white overflow-hidden animate-in fade-in duration-500 font-sans text-right select-none" dir="rtl">
+
+  <!-- ======================================================== -->
+  <!-- 1. HUB STATE: CREATE OR JOIN MEETING (/meeting)          -->
+  <!-- ======================================================== -->
+  @if (activeTab() === 'hub' && !meeting.currentRoom()) {
+    <div class="flex-1 overflow-y-auto p-6 md:p-12 flex flex-col items-center justify-center">
+      <div class="max-w-4xl w-full space-y-10 py-6">
+        
+        <!-- Header Banner -->
+        <div class="text-center space-y-4">
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-500/10 border border-indigo-500/25 rounded-full text-indigo-400 text-xs font-black uppercase tracking-wider">
+            <svg lucideIcon="sparkles" class="size-4 animate-spin"></svg>
+            <span>Super Meet — Adaptive Architecture</span>
+          </div>
+          <h1 class="text-3xl md:text-5xl font-black tracking-tight text-white">
+            استوديو الاجتماعات الذكية
+          </h1>
+          <p class="text-sm md:text-base text-slate-400 max-w-2xl mx-auto font-bold leading-relaxed">
+            اتصال مباشر P2P بين شخصين لأقل تأخير، وتوزيع مركزي ذكي SFU للأعداد الكبيرة مع رفع واحد فقط (1 Upstream) للحفاظ على باقة وسرعة الإنترنت.
+          </p>
+        </div>
+
+        <!-- Action Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <!-- Card 1: Start Instant Meeting -->
+          <div class="p-8 rounded-[2.5rem] bg-slate-900/60 border border-white/10 backdrop-blur-2xl hover:border-indigo-500/50 transition-all flex flex-col justify-between group shadow-xl relative overflow-hidden">
+            <div class="absolute -top-12 -left-12 size-36 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all"></div>
+
+            <div class="space-y-4 relative z-10">
+              <div class="size-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <svg lucideIcon="video" class="size-8"></svg>
+              </div>
+              <div>
+                <h3 class="text-xl font-black text-white">بدء اجتماع جديد فوري</h3>
+                <p class="text-xs text-slate-400 font-bold mt-2 leading-relaxed">
+                  أنشئ غرفة آمنة الآن، واحصل على كود ورابط مباشر لإرساله لصحابك للانضمام فوراً من المتصفح.
+                </p>
+              </div>
+            </div>
+
+            <button 
+              (click)="startInstantMeeting()"
+              [disabled]="meeting.isConnecting()"
+              class="mt-8 w-full h-14 rounded-2xl bg-indigo-650 hover:bg-indigo-600 disabled:opacity-50 text-white font-black text-sm flex items-center justify-center gap-3 transition-all shadow-lg shadow-indigo-650/25 active:scale-95">
+              @if (meeting.isConnecting()) {
+                <svg lucideIcon="refresh-cw" class="size-5 animate-spin"></svg>
+                <span>جاري إنشاء الغرفة...</span>
+              } @else {
+                <svg lucideIcon="video" class="size-5"></svg>
+                <span>إنشاء الغرفة والدخول للمعاينة</span>
+              }
+            </button>
+          </div>
+
+          <!-- Card 2: Join by Code / Link -->
+          <div class="p-8 rounded-[2.5rem] bg-slate-900/60 border border-white/10 backdrop-blur-2xl hover:border-emerald-500/50 transition-all flex flex-col justify-between group shadow-xl relative overflow-hidden">
+            <div class="absolute -top-12 -left-12 size-36 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all"></div>
+
+            <div class="space-y-4 relative z-10">
+              <div class="size-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <svg lucideIcon="users" class="size-8"></svg>
+              </div>
+              <div>
+                <h3 class="text-xl font-black text-white">الانضمام إلى اجتماع قائم</h3>
+                <p class="text-xs text-slate-400 font-bold mt-2 leading-relaxed">
+                  اكتب رمز الغرفة (مثل NEURO-7492) أو الصق الرابط الكامل للانضمام لغرفة أصدقائك.
+                </p>
+              </div>
+
+              <!-- Input field -->
+              <div class="relative pt-2">
+                <input 
+                  type="text" 
+                  [ngModel]="joinCodeInput()"
+                  (ngModelChange)="joinCodeInput.set($event)"
+                  (keydown.enter)="navigateToRoom()"
+                  placeholder="رمز الغرفة أو الرابط (e.g. NEURO-8821)"
+                  class="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-xs text-white font-mono text-center tracking-widest focus:outline-none focus:border-emerald-500 uppercase font-bold"
+                />
+              </div>
+            </div>
+
+            <button 
+              (click)="navigateToRoom()"
+              [disabled]="!joinCodeInput().trim() || meeting.isConnecting()"
+              class="mt-8 w-full h-14 rounded-2xl bg-emerald-650 hover:bg-emerald-600 disabled:opacity-50 text-white font-black text-sm flex items-center justify-center gap-3 transition-all shadow-lg shadow-emerald-650/25 active:scale-95">
+              <svg lucideIcon="arrow-right" class="size-5"></svg>
+              <span>الانتقال لغرفة الانتظار</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Architecture Pillars -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+          <div class="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-3 text-right">
+            <div class="size-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
+              <svg lucideIcon="shield-check" class="size-5"></svg>
+            </div>
+            <div>
+              <p class="text-xs font-black text-white">WebRTC P2P مباشر</p>
+              <p class="text-[10px] text-slate-400 font-bold">بين شخصين بدون وسيط</p>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-3 text-right">
+            <div class="size-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0">
+              <svg lucideIcon="wifi" class="size-5"></svg>
+            </div>
+            <div>
+              <p class="text-xs font-black text-white">LiveKit SFU مركزي</p>
+              <p class="text-[10px] text-slate-400 font-bold">توزيع ذكي لـ 3+ مشاركين</p>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-3 text-right">
+            <div class="size-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+              <svg lucideIcon="sparkles" class="size-5"></svg>
+            </div>
+            <div>
+              <p class="text-xs font-black text-white">One Upstream Rule</p>
+              <p class="text-[10px] text-slate-400 font-bold">رفع تدفق واحد فقط لكل مستخدم</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- ======================================================== -->
+  <!-- 2. LOBBY STATE: CAMERA & MIC PREVIEW (/meeting/:roomId) -->
+  <!-- ======================================================== -->
+  @if (activeTab() === 'lobby' && meeting.currentRoom() && meeting.isLobby()) {
+    <div class="flex-1 overflow-y-auto p-4 md:p-10 flex flex-col justify-center">
+      <div class="max-w-5xl w-full mx-auto space-y-6">
+        
+        <!-- Top Nav back & room code -->
+        <div class="flex items-center justify-between">
+          <button 
+            [routerLink]="['/meeting']"
+            class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white text-xs font-bold transition-all">
+            <svg lucideIcon="arrow-right" class="size-4"></svg>
+            <span>العودة للمركز</span>
+          </button>
+
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-400 font-bold">رمز الغرفة:</span>
+            <span class="px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-lg font-mono font-black text-sm tracking-wider">
+              {{ meeting.currentRoom()?.roomCode }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Main Lobby Split View -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          
+          <!-- LEFT / MEDIA PREVIEW (7 Cols) -->
+          <div class="lg:col-span-7 space-y-4">
+            <div class="relative aspect-video w-full rounded-3xl overflow-hidden bg-slate-950 border border-white/10 shadow-2xl flex items-center justify-center group">
+              
+              <!-- Video Preview element with directive -->
+              <video 
+                [appMediaStream]="meeting.media.localStream()"
+                autoplay 
+                playsinline 
+                muted 
+                [class.hidden]="!meeting.media.isCameraOn() || !meeting.media.hasPermissions()"
+                class="size-full object-cover -scale-x-100">
+              </video>
+
+              <!-- Avatar / Off Camera State -->
+              @if (!meeting.media.isCameraOn() || !meeting.media.hasPermissions()) {
+                <div class="flex flex-col items-center justify-center space-y-3 p-6 text-center">
+                  <div class="size-24 rounded-full bg-indigo-650/20 border-2 border-indigo-500/40 flex items-center justify-center text-indigo-400 text-3xl font-black shadow-inner">
+                    {{ displayNameInput().charAt(0) || 'U' }}
+                  </div>
+                  <p class="text-xs text-slate-400 font-bold">الكاميرا متوقفة حالياً</p>
+                </div>
+              }
+
+              <!-- Permission Warning overlay -->
+              @if (meeting.media.permissionError()) {
+                <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md p-6 flex flex-col items-center justify-center text-center space-y-3">
+                  <div class="size-12 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center">
+                    <svg lucideIcon="video-off" class="size-6"></svg>
+                  </div>
+                  <p class="text-xs text-rose-300 font-bold max-w-sm">{{ meeting.media.permissionError() }}</p>
+                  <button 
+                    (click)="meeting.media.startPreview(true, true)"
+                    class="h-9 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all">
+                    إعادة المحاولة
+                  </button>
+                </div>
+              }
+
+              <!-- Bottom Floating Media Toggles -->
+              <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 px-4 py-2 bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-white/10 shadow-lg">
+                <!-- Mic Button -->
+                <button 
+                  (click)="toggleMic()"
+                  [ngClass]="meeting.media.isMicOn() ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'"
+                  class="size-12 rounded-xl flex items-center justify-center transition-all active:scale-90"
+                  [title]="meeting.media.isMicOn() ? 'كتم المايك' : 'تشغيل المايك'">
+                  <svg [lucideIcon]="meeting.media.isMicOn() ? 'mic' : 'mic-off'" class="size-5"></svg>
+                </button>
+
+                <!-- Camera Button -->
+                <button 
+                  (click)="toggleCamera()"
+                  [ngClass]="meeting.media.isCameraOn() ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'"
+                  class="size-12 rounded-xl flex items-center justify-center transition-all active:scale-90"
+                  [title]="meeting.media.isCameraOn() ? 'إيقاف الكاميرا' : 'تشغيل الكاميرا'">
+                  <svg [lucideIcon]="meeting.media.isCameraOn() ? 'video' : 'video-off'" class="size-5"></svg>
+                </button>
+              </div>
+
+              <!-- Top Left Tag -->
+              <div class="absolute top-4 right-4 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-[10px] font-bold text-slate-300">
+                معاينة الأجهزة الشخصية
+              </div>
+
+            </div>
+
+            <!-- Audio Meter Visualizer -->
+            <div class="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-2">
+              <div class="flex items-center justify-between text-[11px] font-bold text-slate-400">
+                <span class="flex items-center gap-2">
+                  <svg lucideIcon="mic" class="size-3.5 text-indigo-400"></svg>
+                  <span>مستوى صوت المايكروفون:</span>
+                </span>
+                <span class="font-mono text-indigo-400">{{ meeting.media.audioLevel() }}%</span>
+              </div>
+              <div class="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                <div 
+                  class="h-full bg-gradient-to-l from-indigo-500 via-emerald-400 to-teal-400 rounded-full transition-all duration-75"
+                  [style.width.%]="meeting.media.audioLevel()"></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- RIGHT / ROOM DETAILS & JOIN (5 Cols) -->
+          <div class="lg:col-span-5 space-y-6 bg-slate-900/40 p-6 md:p-8 rounded-[2.5rem] border border-white/10 backdrop-blur-2xl">
+            
+            <div class="space-y-1">
+              <h2 class="text-2xl font-black text-white">جاهز للدخول؟</h2>
+              <p class="text-xs text-slate-400 font-bold">تأكد من اسمك وإعدادات المايكروفون والكاميرا قبل الانضمام.</p>
+            </div>
+
+            <!-- Display Name Input -->
+            <div class="space-y-2">
+              <label class="text-xs font-bold text-slate-300">اسمك الذي سيظهر للجميع:</label>
+              <input 
+                type="text" 
+                [ngModel]="displayNameInput()"
+                (ngModelChange)="displayNameInput.set($event)"
+                placeholder="اكتب اسمك هنا..."
+                class="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-indigo-500 font-bold"
+              />
+            </div>
+
+            <!-- Room Info & Presence List -->
+            <div class="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-3">
+              <div class="flex items-center justify-between text-xs font-bold text-slate-300">
+                <span>المشاركون في الغرفة حالياً:</span>
+                <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded-md font-mono">
+                  {{ meeting.participants().length }}
+                </span>
+              </div>
+
+              @if (meeting.participants().length === 0) {
+                <p class="text-[11px] text-slate-500 font-bold italic">لا يوجد أحد في الغرفة حالياً. ستكون أنت أول المنضمين!</p>
+              } @else {
+                <div class="space-y-2 max-h-36 overflow-y-auto pr-1">
+                  @for (p of meeting.participants(); track p.id) {
+                    <div class="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/5 text-xs">
+                      <div class="flex items-center gap-2">
+                        <div class="size-7 rounded-lg bg-indigo-500/20 text-indigo-300 flex items-center justify-center font-bold text-[10px]">
+                          {{ p.name.charAt(0) }}
+                        </div>
+                        <span class="font-bold text-white text-[11px]">{{ p.name }}</span>
+                      </div>
+                      <span 
+                        [ngClass]="p.role === 'host' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-slate-700/30 text-slate-400 border-white/5'"
+                        class="px-2 py-0.5 rounded text-[9px] font-black border">
+                        {{ p.role === 'host' ? 'مستضيف' : 'مشارك' }}
+                      </span>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Join Button -->
+            <button 
+              (click)="confirmJoinMeeting()"
+              [disabled]="!displayNameInput().trim() || meeting.isConnecting()"
+              class="w-full h-14 rounded-2xl bg-indigo-650 hover:bg-indigo-600 disabled:opacity-50 text-white font-black text-sm flex items-center justify-center gap-3 transition-all shadow-lg shadow-indigo-650/25 active:scale-95">
+              @if (meeting.isConnecting()) {
+                <svg lucideIcon="refresh-cw" class="size-5 animate-spin"></svg>
+                <span>جاري الدخول للاجتماع...</span>
+              } @else {
+                <svg lucideIcon="video" class="size-5"></svg>
+                <span>انضم الآن للاجتماع</span>
+              }
+            </button>
+
+            <!-- Share Link Button -->
+            <button 
+              (click)="copyLink()"
+              class="w-full h-11 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-bold text-xs flex items-center justify-center gap-2 transition-all border border-white/5">
+              <svg lucideIcon="copy" class="size-4 text-indigo-400"></svg>
+              <span>نسخ رابط دعوة الغرفة</span>
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- ======================================================== -->
+  <!-- 3. ACTIVE MEETING STATE (/meeting/:roomId active call)   -->
+  <!-- ======================================================== -->
+  @if (meeting.currentRoom() && meeting.isInMeeting()) {
+    <div class="flex-1 flex flex-col overflow-hidden bg-slate-950 relative">
+      
+      <!-- Top Meeting Header -->
+      <header class="h-16 px-6 border-b border-white/5 bg-slate-900/60 backdrop-blur-2xl flex items-center justify-between shrink-0 z-20">
+        
+        <!-- Left: Room code & mode badge -->
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-black text-white tracking-wider font-mono">
+              {{ meeting.currentRoom()?.roomCode }}
+            </span>
+            <button 
+              (click)="copyLink()" 
+              class="size-8 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-all"
+              title="نسخ رابط الدعوة">
+              <svg lucideIcon="copy" class="size-3.5"></svg>
+            </button>
+          </div>
+
+          <!-- Dynamic Adaptive Mode Badge -->
+          @if (meeting.activeMeetingMode() === 'p2p') {
+            @switch (meeting.p2p.connectionStatus()) {
+              @case ('connected') {
+                <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black">
+                  <span class="size-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>WebRTC P2P مباشر (متصل • 1 Upstream)</span>
+                </span>
+              }
+              @case ('connecting') {
+                <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-black">
+                  <span class="size-2 rounded-full bg-amber-400 animate-spin"></span>
+                  <span>جاري التفاوض المباشر P2P...</span>
+                </span>
+              }
+              @default {
+                <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-500/10 border border-slate-500/20 text-slate-400 text-[10px] font-black">
+                  <span>في انتظار الطرف الآخر (P2P)...</span>
+                </span>
+              }
+            }
+          } @else if (meeting.activeMeetingMode() === 'sfu') {
+            <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-300 text-[10px] font-black">
+              <span class="size-2 rounded-full bg-purple-400 animate-pulse"></span>
+              <span>LiveKit SFU مركزي (3+ مشاركين • 1 Upstream Active)</span>
+            </span>
+          }
+        </div>
+
+        <!-- Right: Participant count & fullscreen -->
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 px-3 py-1 rounded-xl bg-white/5 border border-white/5 text-xs text-slate-300 font-bold">
+            <svg lucideIcon="users" class="size-4 text-indigo-400"></svg>
+            <span>{{ meeting.participants().length }}</span>
+          </div>
+
+          <button 
+            (click)="toggleFullscreen()" 
+            class="size-9 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white flex items-center justify-center transition-all">
+            <svg [lucideIcon]="isFullscreen() ? 'minimize' : 'maximize'" class="size-4"></svg>
+          </button>
+        </div>
+
+      </header>
+
+      <!-- Migration Alert Notice -->
+      @if (meeting.isMigrating()) {
+        <div class="bg-indigo-950/90 border-b border-indigo-500/40 px-6 py-2.5 flex items-center justify-between text-xs text-indigo-200 z-10 shrink-0 animate-pulse">
+          <div class="flex items-center gap-2">
+            <svg lucideIcon="refresh-cw" class="size-4 text-indigo-400 animate-spin"></svg>
+            <span class="font-bold">انضم 3 مشاركين! جاري الانتقال السلس إلى محرك LiveKit SFU دون انقطاع البث...</span>
+          </div>
+          <span class="px-2.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-mono font-bold">Migrating to SFU</span>
+        </div>
+      }
+
+      <!-- Main Stage: Adaptive Video Grid -->
+      <main class="flex-1 p-4 md:p-6 overflow-hidden flex items-center justify-center">
+        
+        <!-- Video Grid Container -->
+        <div 
+          class="w-full h-full grid gap-4 max-w-7xl mx-auto items-center justify-center"
+          [ngClass]="{
+            'grid-cols-1': meeting.participants().length <= 1,
+            'grid-cols-1 md:grid-cols-2': meeting.participants().length === 2,
+            'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3': meeting.participants().length >= 3
+          }">
+
+          <!-- Local Participant Tile (Self) -->
+          <div class="relative w-full h-full max-h-[75vh] rounded-3xl overflow-hidden bg-slate-900 border border-white/10 shadow-2xl flex items-center justify-center group min-h-[220px]">
+            
+            <video 
+              [appMediaStream]="meeting.media.localStream()"
+              autoplay 
+              playsinline 
+              muted 
+              [class.hidden]="!meeting.media.isCameraOn()"
+              class="size-full object-cover -scale-x-100">
+            </video>
+
+            @if (!meeting.media.isCameraOn()) {
+              <div class="flex flex-col items-center justify-center space-y-2">
+                <div class="size-20 rounded-full bg-indigo-650/30 border-2 border-indigo-500/40 flex items-center justify-center text-indigo-300 text-2xl font-black">
+                  {{ displayNameInput().charAt(0) || 'U' }}
+                </div>
+                <p class="text-xs text-slate-400 font-bold">الكاميرا متوقفة</p>
+              </div>
+            }
+
+            <!-- Bottom Left Name & Status Bar -->
+            <div class="absolute bottom-3 right-3 flex items-center gap-2 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-xl border border-white/10 text-xs font-bold text-white">
+              <span>{{ displayNameInput() }} (أنت)</span>
+              <svg [lucideIcon]="meeting.media.isMicOn() ? 'mic' : 'mic-off'" class="size-3.5" [ngClass]="meeting.media.isMicOn() ? 'text-emerald-400' : 'text-rose-400'"></svg>
+            </div>
+
+            <!-- Upstream Bandwidth Badge (One Upstream Rule) -->
+            <div class="absolute top-3 left-3 px-2 py-0.5 rounded bg-black/50 backdrop-blur-sm text-[9px] font-mono font-bold text-emerald-400 border border-emerald-500/20">
+              1 Upstream Active
+            </div>
+
+          </div>
+
+          <!-- Remote Participants Tiles -->
+          @for (p of meeting.participants(); track p.id) {
+            @if (p.id !== meeting.localParticipant()?.id) {
+              <div class="relative w-full h-full max-h-[75vh] rounded-3xl overflow-hidden bg-slate-900 border border-white/10 shadow-2xl flex items-center justify-center group min-h-[220px]">
+                
+                <!-- Remote Video Element with directive -->
+                <video 
+                  [appMediaStream]="getParticipantStream(p.id)"
+                  autoplay 
+                  playsinline 
+                  [class.hidden]="!p.isVideoEnabled || !hasRemoteStream(p.id)"
+                  class="size-full object-cover">
+                </video>
+
+                <!-- Remote Camera Off / Placeholder -->
+                @if (!p.isVideoEnabled || !hasRemoteStream(p.id)) {
+                  <div class="flex flex-col items-center justify-center space-y-3 p-6 text-center">
+                    <div class="size-20 rounded-full bg-purple-650/20 border-2 border-purple-500/40 flex items-center justify-center text-purple-300 text-2xl font-black">
+                      {{ p.name.charAt(0) }}
+                    </div>
+                    <div class="space-y-1">
+                      <p class="text-sm font-black text-white">{{ p.name }}</p>
+                      <p class="text-[10px] text-slate-400 font-bold">
+                        @if (!p.isVideoEnabled) {
+                          الكاميرا متوقفة من الطرف الآخر
+                        } @else if (meeting.activeMeetingMode() === 'sfu') {
+                          بث SFU المركزي
+                        } @else {
+                          بث P2P المباشر
+                        }
+                      </p>
+                    </div>
+                  </div>
+                }
+
+                <!-- Bottom Status -->
+                <div class="absolute bottom-3 right-3 flex items-center gap-2 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-xl border border-white/10 text-xs font-bold text-white">
+                  <span>{{ p.name }}</span>
+                  <svg [lucideIcon]="p.isAudioEnabled ? 'mic' : 'mic-off'" class="size-3.5" [ngClass]="p.isAudioEnabled ? 'text-emerald-400' : 'text-rose-400'"></svg>
+                </div>
+
+                <!-- Role tag -->
+                <div class="absolute top-3 right-3">
+                  <span 
+                    [ngClass]="p.role === 'host' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-white/10 text-slate-300 border-white/10'"
+                    class="px-2.5 py-0.5 rounded-full text-[9px] font-black border backdrop-blur-sm">
+                    {{ p.role === 'host' ? 'المستضيف' : 'مشارك' }}
+                  </span>
+                </div>
+
+                <!-- Downstream Badge -->
+                <div class="absolute top-3 left-3 px-2 py-0.5 rounded bg-black/50 backdrop-blur-sm text-[9px] font-mono font-bold text-slate-400">
+                  @if (meeting.activeMeetingMode() === 'sfu') {
+                    1 Downstream SFU
+                  } @else {
+                    1 Downstream P2P
+                  }
+                </div>
+
+              </div>
+            }
+          }
+
+        </div>
+
+      </main>
+
+      <!-- Bottom Floating Controls Dock -->
+      <footer class="h-20 px-6 bg-slate-900/80 backdrop-blur-2xl border-t border-white/5 flex items-center justify-center gap-4 shrink-0 z-20">
+        
+        <!-- Mic Toggle -->
+        <button 
+          (click)="toggleMic()"
+          [ngClass]="meeting.media.isMicOn() ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-rose-500/20 border border-rose-500/30 text-rose-400'"
+          class="size-13 rounded-2xl flex items-center justify-center transition-all active:scale-95"
+          [title]="meeting.media.isMicOn() ? 'كتم المايك' : 'تشغيل المايك'">
+          <svg [lucideIcon]="meeting.media.isMicOn() ? 'mic' : 'mic-off'" class="size-5"></svg>
+        </button>
+
+        <!-- Camera Toggle -->
+        <button 
+          (click)="toggleCamera()"
+          [ngClass]="meeting.media.isCameraOn() ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-rose-500/20 border border-rose-500/30 text-rose-400'"
+          class="size-13 rounded-2xl flex items-center justify-center transition-all active:scale-95"
+          [title]="meeting.media.isCameraOn() ? 'إيقاف الكاميرا' : 'تشغيل الكاميرا'">
+          <svg [lucideIcon]="meeting.media.isCameraOn() ? 'video' : 'video-off'" class="size-5"></svg>
+        </button>
+
+        <!-- Share Screen (Prepared extension point) -->
+        <button 
+          class="size-13 rounded-2xl bg-white/5 text-slate-500 flex items-center justify-center cursor-not-allowed"
+          title="مشاركة الشاشة (Phase 6)">
+          <svg lucideIcon="monitor" class="size-5"></svg>
+        </button>
+
+        <!-- Copy Link -->
+        <button 
+          (click)="copyLink()"
+          class="size-13 rounded-2xl bg-white/10 hover:bg-white/20 text-indigo-400 flex items-center justify-center transition-all active:scale-95"
+          title="نسخ رابط الغرفة">
+          <svg lucideIcon="copy" class="size-5"></svg>
+        </button>
+
+        <!-- Leave Call Button -->
+        <button 
+          (click)="leave()"
+          class="h-13 px-6 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs flex items-center gap-2 transition-all shadow-lg shadow-rose-600/25 active:scale-95 ml-2">
+          <svg lucideIcon="phone-off" class="size-4"></svg>
+          <span>مغادرة</span>
+        </button>
+
+      </footer>
+
+    </div>
+  }
+
+</div>

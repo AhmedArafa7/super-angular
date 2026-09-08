@@ -1,0 +1,589 @@
+<div class="h-full w-full flex flex-col bg-[#07090e] text-slate-100 font-sans select-none overflow-hidden" dir="rtl">
+
+  <!-- ── Top Header ── -->
+  <header class="h-16 px-6 border-b border-white/5 bg-[#0B0F19]/80 backdrop-blur-xl flex items-center justify-between shrink-0 z-30">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-550 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white">
+        <lucide-icon [img]="HardDrive" class="w-5 h-5"></lucide-icon>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-base font-black text-white tracking-wide">مدير ملفات الجهاز</h1>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Device Files</span>
+        </div>
+        <p class="text-xs text-slate-400">إدارة آمنة وصريحة لمجلداتك وملفاتك على القرص الصلب</p>
+      </div>
+    </div>
+
+    <!-- Environment Status Badge -->
+    <div class="flex items-center gap-3">
+      @if (fs.isElectron) {
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold shadow-sm">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>وضع Si-Neuro المكتبي الفائق (وصول كامل + سلة مهملات الويندوز)</span>
+        </div>
+      } @else {
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold">
+          <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+          <span>وضع الويب الآمن (صلاحية مجلد محدد)</span>
+        </div>
+        <a routerLink="/downloads" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold hover:brightness-110 transition shadow-lg shadow-indigo-500/25">
+          <lucide-icon [img]="Laptop" class="w-3.5 h-3.5"></lucide-icon>
+          <span>تحميل نسخة الحاسوب</span>
+        </a>
+      }
+    </div>
+  </header>
+
+  <!-- ── Web Advisory Banner ── -->
+  @if (!fs.isElectron) {
+    <div class="px-6 py-2.5 bg-gradient-to-r from-indigo-950/40 via-purple-950/30 to-indigo-950/40 border-b border-indigo-500/10 flex items-center justify-between text-xs text-slate-300 shrink-0">
+      <div class="flex items-center gap-2">
+        <lucide-icon [img]="Info" class="w-4 h-4 text-indigo-400 shrink-0"></lucide-icon>
+        <span>
+          <strong class="text-white">نصيحة أمان:</strong>
+          الحذف عبر المتصفح هو حذف نهائي مباشر. للحصول على حماية <strong class="text-indigo-300">سلة مهملات الويندوز (Recycle Bin)</strong> وإمكانية استرجاع الملفات في أي وقت، ننصحك باستخدام نسخة الحاسوب.
+        </span>
+      </div>
+      <a routerLink="/downloads" class="text-indigo-400 hover:text-indigo-300 underline font-semibold flex items-center gap-1 shrink-0">
+        <span>استكشف نسخة الديسكتوب</span>
+        <lucide-icon [img]="ArrowLeft" class="w-3.5 h-3.5"></lucide-icon>
+      </a>
+    </div>
+  }
+
+  <!-- ── Main Workspace ── -->
+  <div class="flex-1 flex flex-col min-h-0 overflow-hidden relative">
+
+    <!-- Case A: No Folder Selected Yet (Hero Welcome) -->
+    @if (!fs.currentDirName()) {
+      <div class="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-300">
+        <div class="relative mb-6">
+          <div class="absolute -inset-4 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-2xl opacity-20 animate-pulse"></div>
+          <div class="w-24 h-24 rounded-3xl bg-slate-900 border border-white/10 flex items-center justify-center text-indigo-400 shadow-2xl relative z-10">
+            <lucide-icon [img]="FolderOpen" class="w-12 h-12"></lucide-icon>
+          </div>
+        </div>
+
+        <h2 class="text-2xl font-black text-white mb-2">اختر المجلد الذي ترغب في إدارته</h2>
+        <p class="text-sm text-slate-400 max-w-md mb-8 leading-relaxed">
+          وفقاً لمبدأ الصلاحية المقصودة والأمان العالي، يمنحك التطبيق تحكماً كاملاً داخل المجلد الذي تحدده فقط دون مساس بأي أجزاء أخرى من نظامك.
+        </p>
+
+        <button (click)="fs.selectDirectory()"
+                class="px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-550 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-base shadow-xl shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-3 cursor-pointer">
+          <lucide-icon [img]="FolderOpen" class="w-5 h-5"></lucide-icon>
+          <span>تحديد مجلد للبدء</span>
+        </button>
+
+        <div class="mt-8 flex items-center gap-6 text-xs text-slate-500">
+          <span class="flex items-center gap-1.5">
+            <lucide-icon [img]="ShieldCheck" class="w-3.5 h-3.5 text-emerald-400"></lucide-icon>
+            وضع القراءة الآمن افتراضياً (Read-First)
+          </span>
+          <span class="flex items-center gap-1.5">
+            <lucide-icon [img]="Check" class="w-3.5 h-3.5 text-emerald-400"></lucide-icon>
+            إذن التعديل عند الطلب فقط (Just-in-Time)
+          </span>
+          <span class="flex items-center gap-1.5">
+            <lucide-icon [img]="Check" class="w-3.5 h-3.5 text-emerald-400"></lucide-icon>
+            دعم المعاينة والفرز والبحث
+          </span>
+        </div>
+      </div>
+    } @else {
+      <!-- Case B: Directory Active (Navigation & Tools) -->
+
+      <!-- Top Path & Action Bar -->
+      <div class="px-6 py-3 border-b border-white/5 bg-slate-900/40 backdrop-blur-md flex items-center justify-between gap-4 shrink-0">
+        <!-- Breadcrumbs Navigation -->
+        <div class="flex items-center gap-1.5 overflow-x-auto text-xs py-1 scrollbar-none flex-1">
+          <button (click)="fs.navigateUp()"
+                  [disabled]="fs.breadcrumbs().length <= 1"
+                  class="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 disabled:opacity-30 disabled:hover:bg-white/5 transition shrink-0"
+                  title="مجلد لأعلى">
+            <lucide-icon [img]="ArrowUp" class="w-4 h-4"></lucide-icon>
+          </button>
+
+          <div class="h-4 w-[1px] bg-white/10 mx-1 shrink-0"></div>
+
+          @for (crumb of fs.breadcrumbs(); track $index) {
+            <button (click)="fs.navigateToBreadcrumb($index)"
+                    class="px-2.5 py-1 rounded-lg transition font-medium flex items-center gap-1 shrink-0"
+                    [ngClass]="$index === fs.breadcrumbs().length - 1 ? 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'">
+              <lucide-icon [img]="$index === 0 ? HardDrive : Folder" class="w-3.5 h-3.5"></lucide-icon>
+              <span>{{ crumb.name }}</span>
+            </button>
+            @if ($index < fs.breadcrumbs().length - 1) {
+              <lucide-icon [img]="ChevronRight" class="w-3.5 h-3.5 text-slate-600 shrink-0"></lucide-icon>
+            }
+          }
+        </div>
+
+        <!-- Folder Actions & Safety Lock -->
+        <div class="flex items-center gap-2 shrink-0">
+          <!-- Safety Lock Status & Quick Toggle -->
+          <button (click)="toggleSafetyLock()"
+                  class="px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                  [ngClass]="fs.permissionMode() === 'read' 
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20' 
+                    : 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20'"
+                  [title]="fs.permissionMode() === 'read' 
+                    ? 'وضع القراءة الآمن مفعّل: ملفاتك محمية تماماً من أي حذف أو تعديل (اضغط لطلب إذن التعديل)' 
+                    : 'وضع التعديل مفعّل: يمكنك الحذف وإعادة التسمية (اضغط لقفل الحماية مجدداً)'">
+            <lucide-icon [img]="fs.permissionMode() === 'read' ? ShieldCheck : LockOpen" class="w-4 h-4"></lucide-icon>
+            <span>{{ fs.permissionMode() === 'read' ? 'وضع القراءة الآمن 🔒' : 'وضع التعديل مفعل 🔓' }}</span>
+          </button>
+
+          <button (click)="openNewFolderModal()"
+                  class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 text-xs font-semibold flex items-center gap-1.5 transition">
+            <lucide-icon [img]="FolderPlus" class="w-4 h-4 text-emerald-400"></lucide-icon>
+            <span>مجلد جديد</span>
+          </button>
+
+          <button (click)="fs.refreshCurrentDirectory()"
+                  [disabled]="fs.isLoading()"
+                  class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-xs transition"
+                  title="تحديث المحتويات">
+            <lucide-icon [img]="RefreshCw" class="w-4 h-4" [class.animate-spin]="fs.isLoading()"></lucide-icon>
+          </button>
+
+          <button (click)="fs.selectDirectory()"
+                  class="px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-bold flex items-center gap-1.5 transition">
+            <lucide-icon [img]="FolderOpen" class="w-4 h-4"></lucide-icon>
+            <span>تغيير المجلد</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters & Toolbar -->
+      <div class="px-6 py-2.5 border-b border-white/5 bg-[#080B13] flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <!-- Category Filters -->
+        <div class="flex items-center gap-1 overflow-x-auto scrollbar-none py-0.5">
+          @for (cat of categories; track cat.id) {
+            <button (click)="setCategory(cat.id)"
+                    class="px-2.5 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shrink-0"
+                    [ngClass]="fs.selectedCategory() === cat.id ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'">
+              <lucide-icon [img]="cat.icon" class="w-3.5 h-3.5"></lucide-icon>
+              <span>{{ cat.label }}</span>
+            </button>
+          }
+        </div>
+
+        <!-- Right Side: Search, Sort & View Mode -->
+        <div class="flex items-center gap-2.5">
+          <!-- Search -->
+          <div class="relative flex items-center bg-black/40 border border-white/10 rounded-xl px-2.5 py-1 focus-within:border-indigo-500/60 transition-colors w-48 lg:w-60">
+            <lucide-icon [img]="Search" class="w-3.5 h-3.5 text-slate-500 ml-1.5 shrink-0"></lucide-icon>
+            <input type="text"
+                   [ngModel]="fs.searchQuery()"
+                   (ngModelChange)="fs.searchQuery.set($event)"
+                   placeholder="بحث في الملفات..."
+                   class="bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none w-full">
+            @if (fs.searchQuery()) {
+              <button (click)="fs.searchQuery.set('')" class="text-slate-500 hover:text-white text-xs mr-1">✕</button>
+            }
+          </div>
+
+          <!-- Sort Menu -->
+          <div class="flex items-center bg-black/40 border border-white/10 rounded-xl p-0.5 text-xs">
+            <button (click)="setSort('name')"
+                    class="px-2 py-1 rounded-lg transition"
+                    [ngClass]="fs.sortBy() === 'name' ? 'bg-white/10 text-white font-bold' : 'text-slate-400 hover:text-white'"
+                    title="فرز بالاسم">
+              الاسم
+            </button>
+            <button (click)="setSort('size')"
+                    class="px-2 py-1 rounded-lg transition"
+                    [ngClass]="fs.sortBy() === 'size' ? 'bg-white/10 text-white font-bold' : 'text-slate-400 hover:text-white'"
+                    title="فرز بالحجم">
+              الحجم
+            </button>
+            <button (click)="setSort('modifiedAt')"
+                    class="px-2 py-1 rounded-lg transition"
+                    [ngClass]="fs.sortBy() === 'modifiedAt' ? 'bg-white/10 text-white font-bold' : 'text-slate-400 hover:text-white'"
+                    title="فرز بالتاريخ">
+              التاريخ
+            </button>
+            <button (click)="fs.sortDirection.set(fs.sortDirection() === 'asc' ? 'desc' : 'asc')"
+                    class="p-1 rounded-lg text-slate-400 hover:text-white transition"
+                    title="عكس الترتيب">
+              <lucide-icon [img]="ArrowUpDown" class="w-3.5 h-3.5"></lucide-icon>
+            </button>
+          </div>
+
+          <!-- View Mode Toggle (Grid vs List) -->
+          <div class="flex items-center bg-black/40 border border-white/10 rounded-xl p-0.5">
+            <button (click)="viewMode.set('grid')"
+                    class="p-1 rounded-lg transition"
+                    [ngClass]="viewMode() === 'grid' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'"
+                    title="عرض شبكي">
+              <lucide-icon [img]="Grid" class="w-4 h-4"></lucide-icon>
+            </button>
+            <button (click)="viewMode.set('list')"
+                    class="p-1 rounded-lg transition"
+                    [ngClass]="viewMode() === 'list' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'"
+                    title="عرض كقائمة">
+              <lucide-icon [img]="List" class="w-4 h-4"></lucide-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Bar -->
+      <div class="px-6 py-1.5 bg-black/20 border-b border-white/5 flex items-center justify-between text-[11px] text-slate-400 shrink-0 font-mono">
+        <div class="flex items-center gap-4">
+          <span>المجلدات: <strong class="text-white">{{ fs.stats().foldersCount }}</strong></span>
+          <span>الملفات: <strong class="text-white">{{ fs.stats().filesCount }}</strong></span>
+          <span>الحجم الإجمالي: <strong class="text-indigo-400">{{ fs.stats().formattedSize }}</strong></span>
+        </div>
+        @if (fs.searchQuery() || fs.selectedCategory() !== 'all') {
+          <span class="text-amber-400 font-sans">
+            (تمت الفلترة: يظهر الآن {{ fs.filteredItems().length }} من أصل {{ fs.items().length }})
+          </span>
+        }
+      </div>
+
+      <!-- Content Area -->
+      <div class="flex-1 overflow-y-auto p-6 scrollbar-thin">
+
+        <!-- Error State -->
+        @if (fs.errorMessage()) {
+          <div class="p-4 mb-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs flex items-center gap-3">
+            <lucide-icon [img]="AlertTriangle" class="w-5 h-5 text-red-400 shrink-0"></lucide-icon>
+            <span>{{ fs.errorMessage() }}</span>
+          </div>
+        }
+
+        <!-- Empty State -->
+        @if (fs.filteredItems().length === 0 && !fs.isLoading()) {
+          <div class="h-64 flex flex-col items-center justify-center text-center text-slate-500">
+            <lucide-icon [img]="Folder" class="w-12 h-12 mb-3 text-slate-700"></lucide-icon>
+            <p class="text-sm font-medium">المجلد فارغ أو لا توجد عناصر تطابق بحثك</p>
+          </div>
+        }
+
+        <!-- GRID VIEW -->
+        @if (viewMode() === 'grid') {
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5">
+            @for (item of fs.filteredItems(); track item.id) {
+              <div (click)="handleItemClick(item)"
+                   class="group relative flex flex-col justify-between p-3.5 rounded-2xl bg-slate-900/40 hover:bg-slate-800/60 border border-white/5 hover:border-indigo-500/40 transition-all duration-200 cursor-pointer hover:shadow-xl hover:shadow-indigo-500/5 hover:-translate-y-0.5">
+
+                <!-- Top Row: Icon & Quick Actions -->
+                <div class="flex items-start justify-between mb-2">
+                  <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0"
+                       [ngClass]="getItemIconColor(item)">
+                    <lucide-icon [img]="getItemIcon(item)" class="w-5 h-5"></lucide-icon>
+                  </div>
+
+                  <!-- Item Hover Action Menu -->
+                  <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity" (click)="$event.stopPropagation()">
+                    @if (fs.isElectron && !item.isDirectory) {
+                      <button (click)="openNative(item, $event)"
+                              class="p-1 rounded-md text-slate-400 hover:text-white hover:bg-white/10 transition"
+                              title="فتح بالبرنامج الافتراضي">
+                        <lucide-icon [img]="ExternalLink" class="w-3.5 h-3.5"></lucide-icon>
+                      </button>
+                    }
+                    <button (click)="openRenameModal(item, $event)"
+                            class="p-1 rounded-md text-slate-400 hover:text-white hover:bg-white/10 transition"
+                            title="إعادة التسمية">
+                      <lucide-icon [img]="Edit2" class="w-3.5 h-3.5"></lucide-icon>
+                    </button>
+                    <button (click)="openDeleteConfirm(item, 'trash', $event)"
+                            class="p-1 rounded-md text-slate-400 hover:text-amber-400 hover:bg-white/10 transition"
+                            title="نقل لسلة المهملات">
+                      <lucide-icon [img]="Trash2" class="w-3.5 h-3.5"></lucide-icon>
+                    </button>
+                    <button (click)="openDeleteConfirm(item, 'permanent', $event)"
+                            class="p-1 rounded-md text-slate-400 hover:text-red-400 hover:bg-white/10 transition"
+                            title="حذف نهائي من القرص">
+                      <lucide-icon [img]="AlertTriangle" class="w-3.5 h-3.5"></lucide-icon>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Center: Name -->
+                <div class="min-w-0 mb-2">
+                  <div class="text-xs font-bold text-slate-200 group-hover:text-white truncate" [title]="item.name">
+                    {{ item.name }}
+                  </div>
+                </div>
+
+                <!-- Bottom Meta: Size & Date -->
+                <div class="flex items-center justify-between text-[10px] text-slate-500 font-mono pt-2 border-t border-white/5">
+                  <span>{{ item.isDirectory ? 'مجلد' : fs.formatBytes(item.size) }}</span>
+                  <span class="truncate">{{ item.extension ? item.extension.toUpperCase() : '' }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- LIST VIEW -->
+        @if (viewMode() === 'list') {
+          <div class="border border-white/5 rounded-2xl overflow-hidden bg-slate-900/30">
+            <table class="w-full text-right text-xs">
+              <thead class="bg-slate-900/80 text-slate-400 border-b border-white/5 font-semibold">
+                <tr>
+                  <th class="p-3">الاسم</th>
+                  <th class="p-3 w-28">النوع</th>
+                  <th class="p-3 w-28">الحجم</th>
+                  <th class="p-3 w-40">تاريخ التعديل</th>
+                  <th class="p-3 w-36 text-center">الإجراءات</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-white/5">
+                @for (item of fs.filteredItems(); track item.id) {
+                  <tr (click)="handleItemClick(item)"
+                      class="hover:bg-slate-800/50 transition cursor-pointer group">
+                    <td class="p-3 flex items-center gap-2.5">
+                      <div class="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center shrink-0"
+                           [ngClass]="getItemIconColor(item)">
+                        <lucide-icon [img]="getItemIcon(item)" class="w-4 h-4"></lucide-icon>
+                      </div>
+                      <span class="font-bold text-slate-200 group-hover:text-white truncate max-w-md">{{ item.name }}</span>
+                    </td>
+                    <td class="p-3 text-slate-400 font-mono">{{ item.isDirectory ? 'مجلد' : (item.extension.toUpperCase() || 'ملف') }}</td>
+                    <td class="p-3 text-slate-400 font-mono">{{ item.isDirectory ? '—' : fs.formatBytes(item.size) }}</td>
+                    <td class="p-3 text-slate-500 font-mono text-[11px]">{{ formatDate(item.modifiedAt) }}</td>
+                    <td class="p-3" (click)="$event.stopPropagation()">
+                      <div class="flex items-center justify-center gap-1">
+                        @if (!item.isDirectory) {
+                          <button (click)="openPreview(item, $event)"
+                                  class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition"
+                                  title="معاينة">
+                            <lucide-icon [img]="Eye" class="w-3.5 h-3.5"></lucide-icon>
+                          </button>
+                        }
+                        @if (fs.isElectron && !item.isDirectory) {
+                          <button (click)="openNative(item, $event)"
+                                  class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition"
+                                  title="فتح بالبرنامج الافتراضي">
+                            <lucide-icon [img]="ExternalLink" class="w-3.5 h-3.5"></lucide-icon>
+                          </button>
+                        }
+                        <button (click)="openRenameModal(item, $event)"
+                                class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition"
+                                title="إعادة تسمية">
+                          <lucide-icon [img]="Edit2" class="w-3.5 h-3.5"></lucide-icon>
+                        </button>
+                        <button (click)="openDeleteConfirm(item, 'trash', $event)"
+                                class="p-1.5 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-white/10 transition"
+                                title="نقل لسلة المهملات">
+                          <lucide-icon [img]="Trash2" class="w-3.5 h-3.5"></lucide-icon>
+                        </button>
+                        <button (click)="openDeleteConfirm(item, 'permanent', $event)"
+                                class="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-white/10 transition"
+                                title="حذف نهائي">
+                          <lucide-icon [img]="AlertTriangle" class="w-3.5 h-3.5"></lucide-icon>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- ── MODAL: Rename ── -->
+  @if (showRenameModal()) {
+    <div class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div class="w-full max-w-md bg-slate-900 border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4" dir="rtl">
+        <div class="flex items-center justify-between">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <lucide-icon [img]="Edit2" class="w-4 h-4 text-indigo-400"></lucide-icon>
+            <span>إعادة تسمية العنصر</span>
+          </h3>
+          <button (click)="showRenameModal.set(false)" class="text-slate-400 hover:text-white">✕</button>
+        </div>
+
+        <input type="text"
+               [ngModel]="renameInput()"
+               (ngModelChange)="renameInput.set($event)"
+               (keyup.enter)="submitRename()"
+               placeholder="الاسم الجديد..."
+               class="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500">
+
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button (click)="showRenameModal.set(false)" class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold">
+            إلغاء
+          </button>
+          <button (click)="submitRename()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">
+            حفظ التسمية
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── MODAL: New Folder ── -->
+  @if (showNewFolderModal()) {
+    <div class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div class="w-full max-w-md bg-slate-900 border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4" dir="rtl">
+        <div class="flex items-center justify-between">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <lucide-icon [img]="FolderPlus" class="w-4 h-4 text-emerald-400"></lucide-icon>
+            <span>إنشاء مجلد جديد</span>
+          </h3>
+          <button (click)="showNewFolderModal.set(false)" class="text-slate-400 hover:text-white">✕</button>
+        </div>
+
+        <input type="text"
+               [ngModel]="newFolderNameInput()"
+               (ngModelChange)="newFolderNameInput.set($event)"
+               (keyup.enter)="submitNewFolder()"
+               placeholder="اسم المجلد..."
+               class="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500">
+
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button (click)="showNewFolderModal.set(false)" class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold">
+            إلغاء
+          </button>
+          <button (click)="submitNewFolder()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">
+            إنشاء المجلد
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── MODAL: Delete Confirm ── -->
+  @if (showDeleteConfirmModal()) {
+    <div class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div class="w-full max-w-md bg-slate-900 border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4" dir="rtl">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+               [ngClass]="deleteMode() === 'trash' ? 'bg-amber-500/20 text-amber-400' : 'bg-red-500/20 text-red-400'">
+            <lucide-icon [img]="deleteMode() === 'trash' ? Trash2 : AlertTriangle" class="w-5 h-5"></lucide-icon>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">
+              {{ deleteMode() === 'trash' ? 'نقل إلى سلة المهملات' : 'حذف نهائي من القرص' }}
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5 truncate max-w-xs">{{ targetDeleteItem()?.name }}</p>
+          </div>
+        </div>
+
+        <!-- Conditional explanation message -->
+        @if (deleteMode() === 'trash' && !fs.isElectron) {
+          <div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs space-y-1.5">
+            <div class="font-bold flex items-center gap-1.5">
+              <lucide-icon [img]="ShieldAlert" class="w-4 h-4"></lucide-icon>
+              <span>تنبيه لبيئة المتصفح:</span>
+            </div>
+            <p class="leading-relaxed">
+              سلة مهملات الويندوز غير مدعومة داخل متصفح الويب. هل ترغب في <strong class="text-white">حذفه نهائياً</strong> من القرص بدلاً من ذلك، أو إلغاء العملية واستخدام نسخة الديسكتوب؟
+            </p>
+          </div>
+        } @else if (deleteMode() === 'trash' && fs.isElectron) {
+          <p class="text-xs text-slate-300 leading-relaxed">
+            سيتم نقل هذا العنصر بأمان إلى <strong class="text-emerald-400">سلة مهملات الويندوز (Recycle Bin)</strong>، مما يتيح لك استعادته لاحقاً في أي وقت.
+          </p>
+        } @else {
+          <div class="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs leading-relaxed font-medium">
+            ⚠️ <strong>تحذير شديد:</strong> سيتم مسح هذا الملف أو المجلد نهائياً من القرص الصلب. لن تتمكن من استعادته من سلة المهملات.
+          </div>
+        }
+
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button (click)="showDeleteConfirmModal.set(false)"
+                  class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold">
+            إلغاء
+          </button>
+          <button (click)="submitDelete()"
+                  class="px-5 py-2 rounded-xl text-white text-xs font-bold shadow-lg transition"
+                  [ngClass]="deleteMode() === 'trash' ? 'bg-amber-600 hover:bg-amber-500 shadow-amber-500/20' : 'bg-red-600 hover:bg-red-500 shadow-red-500/20'">
+            {{ deleteMode() === 'trash' && fs.isElectron ? 'نقل لسلة المهملات' : 'تأكيد الحذف النهائي' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── MODAL: File Preview ── -->
+  @if (showPreviewModal()) {
+    <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div class="w-full max-w-4xl max-h-[90vh] bg-slate-900 border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-2xl" dir="rtl">
+        <!-- Preview Header -->
+        <div class="p-4 border-b border-white/10 flex items-center justify-between bg-slate-950/60">
+          <div class="flex items-center gap-2.5 truncate max-w-lg">
+            <lucide-icon [img]="getItemIcon(previewItem()!)" class="w-5 h-5 text-indigo-400 shrink-0"></lucide-icon>
+            <div>
+              <h3 class="text-sm font-bold text-white truncate">{{ previewItem()?.name }}</h3>
+              <p class="text-[10px] text-slate-400 font-mono">{{ fs.formatBytes(previewItem()?.size || 0) }}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            @if (fs.isElectron) {
+              <button (click)="openNative(previewItem()!)"
+                      class="px-3 py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 text-xs font-bold flex items-center gap-1.5 transition">
+                <lucide-icon [img]="ExternalLink" class="w-3.5 h-3.5"></lucide-icon>
+                <span>فتح بالبرنامج الأصلي</span>
+              </button>
+            }
+            <button (click)="closePreview()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition">
+              <lucide-icon [img]="X" class="w-5 h-5"></lucide-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Preview Body -->
+        <div class="flex-1 overflow-auto p-6 flex items-center justify-center bg-black/50 min-h-[300px]">
+          @if (previewLoading()) {
+            <div class="flex flex-col items-center gap-2 text-slate-400 text-xs">
+              <lucide-icon [img]="RefreshCw" class="w-6 h-6 animate-spin text-indigo-400"></lucide-icon>
+              <span>جاري تحميل المعاينة...</span>
+            </div>
+          } @else if (previewData()?.type === 'image') {
+            <img [src]="previewData()?.blobUrl" class="max-h-[70vh] max-w-full rounded-xl object-contain shadow-xl">
+          } @else if (previewData()?.type === 'video') {
+            <video [src]="previewData()?.blobUrl" controls autoplay class="max-h-[70vh] max-w-full rounded-xl shadow-xl"></video>
+          } @else if (previewData()?.type === 'audio') {
+            <div class="w-full max-w-md p-6 bg-slate-900 border border-white/10 rounded-2xl flex flex-col items-center gap-4">
+              <div class="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                <lucide-icon [img]="Music" class="w-8 h-8"></lucide-icon>
+              </div>
+              <audio [src]="previewData()?.blobUrl" controls autoplay class="w-full"></audio>
+            </div>
+          } @else if (previewData()?.type === 'text') {
+            <div class="w-full h-full max-h-[65vh] overflow-auto bg-slate-950 p-4 rounded-xl border border-white/5 font-mono text-xs text-slate-200 whitespace-pre-wrap select-text leading-relaxed">
+              {{ previewData()?.textContent }}
+            </div>
+          } @else {
+            <div class="text-center text-slate-400 space-y-3">
+              <lucide-icon [img]="File" class="w-12 h-12 mx-auto text-slate-600"></lucide-icon>
+              <p class="text-sm">لا توجد معاينة مدمجة متوفرة لهذه الصيغة ({{ previewItem()?.extension }})</p>
+              @if (fs.isElectron) {
+                <button (click)="openNative(previewItem()!)"
+                        class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-500 transition">
+                  فتح الملف بالبرنامج الافتراضي على الحاسوب
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── Toast Notification ── -->
+  @if (toast()) {
+    <div class="fixed bottom-6 left-6 z-50 px-4 py-3 rounded-xl shadow-2xl text-xs font-bold flex items-center gap-2.5 animate-in slide-in-from-bottom-5 duration-200 border"
+         [ngClass]="{
+           'bg-emerald-950/90 text-emerald-300 border-emerald-500/30': toast()?.type === 'success',
+           'bg-red-950/90 text-red-300 border-red-500/30': toast()?.type === 'error',
+           'bg-amber-950/90 text-amber-300 border-amber-500/30': toast()?.type === 'warning',
+           'bg-indigo-950/90 text-indigo-300 border-indigo-500/30': toast()?.type === 'info'
+         }">
+      <lucide-icon [img]="toast()?.type === 'info' ? Info : (toast()?.type === 'success' ? Check : AlertTriangle)" class="w-4 h-4 shrink-0"></lucide-icon>
+      <span>{{ toast()?.message }}</span>
+    </div>
+  }
+
+</div>

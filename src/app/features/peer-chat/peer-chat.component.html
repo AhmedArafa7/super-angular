@@ -227,7 +227,14 @@
         </div>
 
         <!-- Connection indicators -->
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3">
+          <button 
+            (click)="startDirectMeeting(contact)"
+            class="h-9 px-3.5 rounded-xl bg-indigo-650 hover:bg-indigo-600 text-white text-xs font-black flex items-center gap-2 transition-all shadow-md shadow-indigo-650/20 active:scale-95">
+            <svg lucideIcon="video" class="size-4"></svg>
+            <span>بدء اجتماع Super Meet</span>
+          </button>
+
           <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 border border-indigo-500/20 bg-indigo-500/10 rounded-full flex-row-reverse">
             <svg lucideIcon="shield-check" class="size-3 text-indigo-400"></svg>
             <span class="text-[8px] font-black uppercase text-indigo-400 tracking-wider leading-none">Secure P2P Direct Link</span>

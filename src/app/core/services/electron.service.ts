@@ -14,6 +14,17 @@ export interface DownloadProgress {
   message: string;
 }
 
+export interface DeviceFsItem {
+  name: string;
+  path: string;
+  isDirectory: boolean;
+  size: number;
+  modifiedAt: number;
+  createdAt?: number;
+  extension: string;
+  inaccessible?: boolean;
+}
+
 export interface ElectronAPI {
   isElectron: boolean;
   platform: string;
@@ -35,6 +46,17 @@ export interface ElectronAPI {
   dialog: {
     openFile: (opts?: any) => Promise<string | null>;
     saveFile: (opts?: any) => Promise<string | null>;
+  };
+  deviceFS?: {
+    selectDirectory: () => Promise<string | null>;
+    list: (dirPath: string) => Promise<{ ok: boolean; items?: DeviceFsItem[]; error?: string }>;
+    openPath: (targetPath: string) => Promise<{ ok: boolean; error?: string }>;
+    showInFolder: (targetPath: string) => Promise<{ ok: boolean; error?: string }>;
+    trash: (targetPath: string) => Promise<{ ok: boolean; error?: string }>;
+    delete: (targetPath: string) => Promise<{ ok: boolean; error?: string }>;
+    rename: (oldPath: string, newPath: string) => Promise<{ ok: boolean; error?: string }>;
+    copy: (srcPath: string, destPath: string) => Promise<{ ok: boolean; error?: string }>;
+    createFolder: (folderPath: string) => Promise<{ ok: boolean; error?: string }>;
   };
   app: {
     getInfo: () => Promise<any>;
@@ -218,6 +240,54 @@ export class ElectronService {
     if (!this.isElectron) return false;
     const result = await this.api!.fs.writeFile(filePath, content);
     return result.ok;
+  }
+
+  // ─────────────────────────────────────
+  //  Device File System Access
+  // ─────────────────────────────────────
+  async selectDirectory(): Promise<string | null> {
+    if (!this.isElectron || !this.api?.deviceFS) return null;
+    return this.api.deviceFS.selectDirectory();
+  }
+
+  async listDirectory(dirPath: string): Promise<{ ok: boolean; items?: DeviceFsItem[]; error?: string }> {
+    if (!this.isElectron || !this.api?.deviceFS) return { ok: false, error: 'غير متوفر في المتصفح' };
+    return this.api.deviceFS.list(dirPath);
+  }
+
+  async openDevicePath(targetPath: string): Promise<{ ok: boolean; error?: string }> {
+    if (!this.isElectron || !this.api?.deviceFS) return { ok: false, error: 'غير متوفر في المتصفح' };
+    return this.api.deviceFS.openPath(targetPath);
+  }
+
+  async showInFolder(targetPath: string): Promise<{ ok: boolean; error?: string }> {
+    if (!this.isElectron || !this.api?.deviceFS) return { ok: false, error: 'غير متوفر في المتصفح' };
+    return this.api.deviceFS.showInFolder(targetPath);
+  }
+
+  async trashDeviceItem(targetPath: string): Promise<{ ok: boolean; error?: string }> {
+    if (!this.isElectron || !this.api?.deviceFS) return { ok: false, error: 'غير متوفر في المتصفح' };
+    return this.api.deviceFS.trash(targetPath);
+  }
+
+  async deleteDeviceItem(targetPath: string): Promise<{ ok: boolean; error?: string }> {
+    if (!this.isElectron || !this.api?.deviceFS) return { ok: false, error: 'غير متوفر في المتصفح' };
+    return this.api.deviceFS.delete(targetPath);
+  }
+
+  async renameDeviceItem(oldPath: string, newPath: string): Promise<{ ok: boolean; error?: string }> {
+    if (!this.isElectron || !this.api?.deviceFS) return { ok: false, error: 'غير متوفر في المتصفح' };
+    return this.api.deviceFS.rename(oldPath, newPath);
+  }
+
+  async copyDeviceItem(srcPath: string, destPath: string): Promise<{ ok: boolean; error?: string }> {
+    if (!this.isElectron || !this.api?.deviceFS) return { ok: false, error: 'غير متوفر في المتصفح' };
+    return this.api.deviceFS.copy(srcPath, destPath);
+  }
+
+  async createDeviceFolder(folderPath: string): Promise<{ ok: boolean; error?: string }> {
+    if (!this.isElectron || !this.api?.deviceFS) return { ok: false, error: 'غير متوفر في المتصفح' };
+    return this.api.deviceFS.createFolder(folderPath);
   }
 
   // ─────────────────────────────────────

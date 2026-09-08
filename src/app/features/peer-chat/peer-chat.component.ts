@@ -2,7 +2,9 @@ import { Component, signal, computed, inject, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideDynamicIcon } from '@lucide/angular';
+import { Router } from '@angular/router';
 import { PeerChatService, PeerContact } from '../../core/peer-chat.service';
+import { MeetingRoomService } from '../../core/services/meeting/meeting-room.service';
 
 @Component({
   selector: 'app-peer-chat',
@@ -13,6 +15,8 @@ import { PeerChatService, PeerContact } from '../../core/peer-chat.service';
 })
 export class PeerChatComponent implements OnDestroy {
   chatService = inject(PeerChatService);
+  private meetingRoomService = inject(MeetingRoomService);
+  private router = inject(Router);
   private unsubscribeChat: (() => void) | null = null;
 
   // States
@@ -152,5 +156,16 @@ export class PeerChatComponent implements OnDestroy {
     }
     alert(`🎉 تم ربط ومزامنة قناة ${active} بنجاح! جميع الرسائل مشفرة بنظام Direct Link.`);
     this.activeChannel.set(null);
+  }
+
+  async startDirectMeeting(contact: PeerContact): Promise<void> {
+    const roomCode = this.meetingRoomService.generateRoomCode();
+    await this.meetingRoomService.createRoom('me', 'أنت', roomCode);
+
+    const meetingLink = `${window.location.origin}/meeting/${roomCode}`;
+    const inviteText = `🚀 دعوتك لحضور اجتماع Super Meet مباشر:\n${meetingLink}\nرمز الغرفة: ${roomCode}`;
+    await this.chatService.sendMessage('me', contact.id, inviteText, 'text');
+
+    this.router.navigate(['/meeting', roomCode]);
   }
 }
