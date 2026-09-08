@@ -9,52 +9,15 @@ import {
   ListMusic, Sparkles, Sliders, Camera, Subtitles, Repeat, Eye, HardDrive, Clock,
   Search, ArrowUpDown, Plus, X, Loader2, Check, Settings, HelpCircle, CheckCircle2, Tv
 } from 'lucide-angular';
+import { PlaylistTabComponent } from './components/playlist-tab/playlist-tab.component';
+import { LocalMediaItem, VideoBookmark, RecycleBinItem } from './models/local-player.models';
 import { StorageService } from './services/storage.service';
 import { SnapshotService } from './services/snapshot.service';
-
-export interface VideoBookmark {
-  id: string;
-  time: number;
-  note: string;
-  formattedTime: string;
-}
-
-export interface RecycleBinItem {
-  id: string;
-  name: string;
-  size: number;
-  type: 'video' | 'audio';
-  duration?: number;
-  lastPosition?: number;
-  folderName?: string;
-  deletedAt: number;
-  watchStatus: 'watched' | 'partial' | 'unwatched';
-}
-
-export interface LocalMediaItem {
-  id: string;
-  name: string;
-  relativePath?: string;
-  folderName?: string;
-  size: number;
-  type: 'video' | 'audio';
-  mimeType: string;
-  blobUrl: string;
-  fileBlob?: Blob | File;
-  duration?: number;
-  lastPosition?: number;
-  thumbnail?: string;
-  subtitlesUrl?: string;
-  subtitlesBlob?: Blob | File;
-  subtitlesName?: string;
-  createdAt: number;
-  lastWatchedAt?: number;
-}
 
 @Component({
   selector: 'app-local-player',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, RouterModule, LucideAngularModule, PlaylistTabComponent],
   template: `
     <div class="h-screen w-screen bg-slate-950 text-white flex flex-col font-sans select-none overflow-hidden" dir="rtl">
       
@@ -477,110 +440,20 @@ export interface LocalMediaItem {
 
           <!-- TAB 1: PLAYLIST -->
           <ng-container *ngIf="sidebarTab() === 'playlist'">
-            <!-- Playlist Header -->
-            <div class="p-3.5 border-b border-white/10 bg-slate-900/90 flex flex-col gap-2.5">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <span *ngIf="playlist().length > 0" class="text-[10px] px-1.5 py-0.5 bg-teal-500/20 text-teal-300 rounded font-mono font-bold" title="محفوظ دائماً محلياً">
-                    💾 دائم محلياً
-                  </span>
-                </div>
-
-                <!-- Quick action links -->
-                <div class="flex items-center gap-2">
-                  <label (click)="onFolderLabelClick($event)" class="text-[11px] text-teal-400 hover:text-teal-300 cursor-pointer font-bold flex items-center gap-1 hover:underline">
-                    <lucide-icon [img]="FolderPlus" class="size-3.5"></lucide-icon>
-                    <span>+ مجلد</span>
-                    <input type="file" webkitdirectory directory multiple (change)="onFolderSelected($event)" class="hidden" />
-                  </label>
-                  <span class="text-slate-600">|</span>
-                  <label class="text-[11px] text-indigo-400 hover:text-indigo-300 cursor-pointer font-bold flex items-center gap-1 hover:underline">
-                    <lucide-icon [img]="Plus" class="size-3.5"></lucide-icon>
-                    <span>+ ملف</span>
-                    <input type="file" multiple accept="video/*,audio/*,.mkv,.avi,.wmv,.flv,.m4v,.ts,.mp3,.wav,.aac,.ogg,.flac,.m4a" (change)="onFilesSelected($event)" class="hidden" />
-                  </label>
-                </div>
-              </div>
-
-              <!-- Search & Sort Bar in Playlist -->
-              <div *ngIf="playlist().length > 0" class="flex items-center gap-1.5">
-                <div class="relative flex-1">
-                  <input 
-                    type="text" 
-                    [(ngModel)]="searchQuery" 
-                    placeholder="ابحث في الدروس أو الفيديوهات..." 
-                    class="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 pr-8" />
-                  <lucide-icon [img]="Search" class="size-3.5 text-slate-500 absolute right-2.5 top-2.5"></lucide-icon>
-                  <button *ngIf="searchQuery" (click)="searchQuery = ''" class="absolute left-2.5 top-2 text-slate-500 hover:text-white">
-                    <lucide-icon [img]="X" class="size-3"></lucide-icon>
-                  </button>
-                </div>
-
-                <button 
-                  (click)="toggleSortOrder()" 
-                  class="p-1.5 bg-black/40 hover:bg-white/10 border border-white/10 rounded-xl text-slate-400 hover:text-white transition" 
-                  [title]="sortOrder() === 'asc' ? 'الترتيب: تصاعدي (1-9)' : 'الترتيب: تنازلي (9-1)'">
-                  <lucide-icon [img]="ArrowUpDown" class="size-3.5"></lucide-icon>
-                </button>
-              </div>
-            </div>
-
-            <!-- Playlist Items List -->
-            <div class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
-              @if (displayedPlaylist().length > 0) {
-                @for (item of displayedPlaylist(); track item.id; let idx = $index) {
-                  <div 
-                    (click)="onPlaylistItemClick(item)" 
-                    class="p-2.5 rounded-2xl border transition-all cursor-pointer flex items-center gap-3 group relative"
-                    [ngClass]="activeItem()?.id === item.id ? 'bg-gradient-to-r from-teal-500/20 to-indigo-500/20 border-teal-500/60 text-white shadow-lg shadow-teal-500/10' : 'bg-black/30 border-white/5 hover:border-white/20 text-slate-300'">
-                    
-                    <!-- Index / Play indicator -->
-                    <div class="size-8 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
-                      <span *ngIf="activeItem()?.id !== item.id" class="text-xs font-mono text-slate-400">{{ idx + 1 }}</span>
-                      <lucide-icon *ngIf="activeItem()?.id === item.id" [img]="isPlaying() ? Pause : Play" class="size-4 text-teal-400"></lucide-icon>
-                    </div>
-
-                    <!-- Details -->
-                    <div class="min-w-0 flex-1">
-                      <p class="text-xs font-bold truncate group-hover:text-teal-300 transition-colors" [title]="item.name">{{ item.name }}</p>
-                      <div class="flex items-center gap-1.5 mt-0.5">
-                        <span *ngIf="item.folderName" class="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-teal-300 font-mono truncate max-w-[120px]" [title]="item.folderName">
-                          📁 {{ item.folderName }}
-                        </span>
-                        <span class="text-[10px] text-slate-500 font-mono">{{ item.duration ? formatTime(item.duration) + ' • ' : '' }}{{ formatFileSize(item.size) }}</span>
-                        <span *ngIf="item.lastPosition && item.lastPosition > 10" class="text-[9px] px-1 bg-indigo-500/20 text-indigo-300 rounded font-mono">
-                          {{ formatTime(item.lastPosition) }}
-                        </span>
-                        <span *ngIf="item.subtitlesUrl" class="text-[9px] px-1 bg-amber-500/20 text-amber-300 rounded font-mono">CC</span>
-                      </div>
-                    </div>
-
-                    <!-- Remove Item from Queue & Local Storage -->
-                    <button (click)="$event.stopPropagation(); removeItem(item.id)" class="text-slate-500 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition-opacity" title="حذف من القائمة والذاكرة">
-                      <lucide-icon [img]="Trash2" class="size-3.5"></lucide-icon>
-                    </button>
-                  </div>
-                }
-              } @else if (playlist().length > 0 && searchQuery) {
-                <div class="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-500">
-                  <lucide-icon [img]="Search" class="size-8 mb-2 opacity-30"></lucide-icon>
-                  <p class="text-xs font-bold text-slate-400">لا توجد نتائج مطابقة</p>
-                  <p class="text-[10px] text-slate-500 mt-1">جرب البحث بكلمة أخرى.</p>
-                </div>
-              } @else {
-                <div class="flex-1 flex flex-col items-center justify-center text-center p-8 text-slate-500">
-                  <lucide-icon [img]="Film" class="size-10 mb-2 opacity-30"></lucide-icon>
-                  <p class="text-xs font-bold text-slate-400">القائمة فارغة</p>
-                  <p class="text-[10px] text-slate-500 mt-1">افتح مجلداً كاملاً أو ملفات فيديو من جهازك لبدء التشغيل والحفظ التلقائي.</p>
-                </div>
-              }
-            </div>
-
-            <!-- Bottom Summary Bar if playlist is loaded -->
-            <div *ngIf="playlist().length > 0" class="p-2.5 bg-slate-950/60 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400 px-4">
-              <span>الإجمالي: <b class="text-white font-mono">{{ playlist().length }} فيديو</b></span>
-              <span class="text-slate-500 font-mono">{{ formatFileSize(totalPlaylistSize()) }}</span>
-            </div>
+            <app-playlist-tab
+              [playlist]="playlist()"
+              [displayedPlaylist]="displayedPlaylist()"
+              [activeItemId]="activeItemId()"
+              [isPlaying]="isPlaying()"
+              [sortOrder]="sortOrder()"
+              [(searchQuery)]="searchQuery"
+              [totalPlaylistSize]="totalPlaylistSize()"
+              (selectItem)="onPlaylistItemClick($event)"
+              (removeItem)="removeItem($event)"
+              (sortChange)="toggleSortOrder()"
+              (addFolder)="onFolderSelected($event)"
+              (addFiles)="onFilesSelected($event)">
+            </app-playlist-tab>
           </ng-container>
 
           <!-- TAB 2: BOOKMARKS & NOTES -->
