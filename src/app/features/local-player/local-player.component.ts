@@ -787,6 +787,78 @@ export interface LocalMediaItem {
         </div>
       </div>
 
+      <!-- Snapshot Editor & OCR Modal -->
+      <div *ngIf="showSnapshotModal()" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto" (click)="showSnapshotModal.set(false)">
+        <div class="bg-slate-900 border border-white/20 rounded-[2.5rem] p-6 max-w-4xl w-full shadow-2xl flex flex-col max-h-[92vh]" (click)="$event.stopPropagation()">
+          
+          <!-- Modal Header -->
+          <div class="flex items-center justify-between mb-4 border-b border-white/10 pb-3 shrink-0">
+            <div class="flex items-center gap-2">
+              <lucide-icon [img]="Camera" class="size-5 text-emerald-400"></lucide-icon>
+              <h3 class="text-base font-black text-white">معاينة وتعديل الصورة الملتقطة واستخراج النص (OCR)</h3>
+            </div>
+            <button (click)="showSnapshotModal.set(false)" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10">
+              <lucide-icon [img]="X" class="size-5"></lucide-icon>
+            </button>
+          </div>
+
+          <!-- Modal Body Grid -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 overflow-y-auto custom-scrollbar pr-1">
+            
+            <!-- Left: Image Preview -->
+            <div class="flex flex-col gap-3">
+              <div class="relative bg-black rounded-2xl border border-white/10 overflow-hidden flex items-center justify-center p-2 min-h-[280px]">
+                <img [src]="snapshotDataUrl()" alt="Snapshot" class="max-h-[350px] w-auto object-contain rounded-xl shadow-lg transition-transform pointer-events-none" [style.transform]="'rotate(' + snapshotRotations() + 'deg)'" />
+              </div>
+              
+              <!-- Editing Toolbar -->
+              <div class="flex items-center justify-center flex-wrap gap-2 pt-2">
+                <button (click)="rotateSnapshot()" class="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer" title="تدوير 90 درجة">
+                  <span>🔄 تدوير</span>
+                </button>
+                <button class="px-3 py-2 bg-white/5 opacity-50 text-slate-300 rounded-xl text-xs font-bold transition" title="قريباً">
+                  <span>✂️ قص (قريباً)</span>
+                </button>
+                <button class="px-3 py-2 bg-white/5 opacity-50 text-slate-300 rounded-xl text-xs font-bold transition" title="قريباً">
+                  <span>✍️ نص (قريباً)</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Right: OCR Text Extraction & Copy Panel -->
+            <div class="flex flex-col gap-4">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold text-teal-300 flex items-center gap-1.5">
+                  <span>📄 النص المستخرج (OCR)</span>
+                  <span *ngIf="isExtractingOcr()" class="text-[10px] text-amber-400 animate-pulse">جاري التعرف على الحروف...</span>
+                </h4>
+              </div>
+
+              <textarea 
+                [value]="extractedOcrText()"
+                rows="8"
+                dir="auto"
+                readonly
+                class="flex-1 bg-black/50 border border-white/15 rounded-2xl p-4 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 resize-none font-mono leading-relaxed custom-scrollbar text-left"></textarea>
+            </div>
+          </div>
+
+          <!-- Modal Footer Actions -->
+          <div class="pt-4 mt-4 border-t border-white/10 flex items-center justify-between shrink-0">
+            <button (click)="showSnapshotModal.set(false)" class="px-5 py-2.5 bg-white/10 hover:bg-white/15 text-slate-300 text-xs font-bold rounded-xl transition cursor-pointer">
+              إغلاق
+            </button>
+            <div class="flex items-center gap-2">
+              <button (click)="downloadEditedSnapshot()" class="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white text-xs font-black rounded-xl transition shadow-xl flex items-center gap-2 cursor-pointer">
+                <lucide-icon [img]="Camera" class="size-4"></lucide-icon>
+                <span>حفظ وتنزيل الصورة 💾</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
   `
 })
@@ -2093,6 +2165,21 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     } finally {
       this.isExtractingOcr.set(false);
     }
+  }
+
+  rotateSnapshot() {
+    this.snapshotRotations.update(r => (r + 90) % 360);
+  }
+
+  downloadEditedSnapshot() {
+    const url = this.snapshotDataUrl();
+    if (!url) return;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = this.snapshotImageName();
+    a.click();
+    this.showToast('تم حفظ وتنزيل الصورة النهائية بنجاح 💾');
+    this.showSnapshotModal.set(false);
   }
 
   removeItem(id: string) {
