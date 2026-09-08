@@ -1,7 +1,7 @@
 import { Component, input, output, model } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Search, ArrowUpDown, Trash2, Film, FolderPlus, Plus } from 'lucide-angular';
+import { LucideAngularModule, Search, ArrowUpDown, Trash2, Film, FolderPlus, Plus, Play, Pause, X } from 'lucide-angular';
 import { LocalMediaItem } from '../../models/local-player.models';
 
 @Component({
@@ -109,6 +109,16 @@ import { LocalMediaItem } from '../../models/local-player.models';
   `
 })
 export class PlaylistTabComponent {
+  Play = Play;
+  Pause = Pause;
+  Search = Search;
+  ArrowUpDown = ArrowUpDown;
+  Trash2 = Trash2;
+  Film = Film;
+  FolderPlus = FolderPlus;
+  Plus = Plus;
+  X = X;
+
   playlist = input<LocalMediaItem[]>([]);
   displayedPlaylist = input<LocalMediaItem[]>([]);
   activeItemId = input<string | null>(null);

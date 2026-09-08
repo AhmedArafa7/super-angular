@@ -1028,6 +1028,9 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     const note = this.newBookmarkNote.trim() || `ملاحظة عند الدقيقة ${this.formatTime(time)}`;
     const newBm: VideoBookmark = {
       id: 'bm_' + Date.now(),
+      videoId: cur.id,
+      videoName: cur.name,
+      folderName: cur.folderName || '',
       time,
       note,
       formattedTime: this.formatTime(time)
