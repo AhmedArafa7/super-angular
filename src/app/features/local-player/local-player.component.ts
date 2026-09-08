@@ -2121,9 +2121,15 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
 
   takeSnapshot() {
     const vid = this.videoPlayer?.nativeElement;
-    if (!vid) return;
+    if (!vid) {
+      this.showToast('تعذر الوصول لمشغل الفيديو، يرجى المحاولة لاحقاً', 'warning');
+      return;
+    }
     const dataUrl = this.snapshotService.takeSnapshot(vid);
-    if (!dataUrl) return;
+    if (!dataUrl) {
+      this.showToast('فشل التقاط الصورة، يرجى المحاولة مرة أخرى', 'warning');
+      return;
+    }
 
     this.snapshotDataUrl.set(dataUrl);
     this.snapshotImageName.set(`snapshot_${this.activeItem()?.name || 'video'}_${Math.floor(this.currentTime())}s.png`);
@@ -2161,12 +2167,17 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     this.snapshotRotations.update(r => this.snapshotService.rotate(r));
   }
 
-  downloadEditedSnapshot() {
+  async downloadEditedSnapshot() {
     const url = this.snapshotDataUrl();
     if (!url) return;
-    this.snapshotService.downloadEditedSnapshot(url, this.snapshotRotations(), this.snapshotImageName());
-    this.showToast('تم حفظ وتنزيل الصورة النهائية بنجاح 💾');
-    this.showSnapshotModal.set(false);
+    try {
+      await this.snapshotService.downloadEditedSnapshot(url, this.snapshotRotations(), this.snapshotImageName());
+      this.showToast('تم حفظ وتنزيل الصورة النهائية بنجاح 💾');
+      this.showSnapshotModal.set(false);
+    } catch (e) {
+      console.error('Download failed:', e);
+      this.showToast('فشل في تنزيل الصورة، يرجى المحاولة مرة أخرى', 'warning');
+    }
   }
 
   removeItem(id: string) {
