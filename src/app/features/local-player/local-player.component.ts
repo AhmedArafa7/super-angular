@@ -9,7 +9,7 @@ import {
   ListMusic, Sparkles, Sliders, Camera, Subtitles, Repeat, Eye, HardDrive, Clock,
   Search, ArrowUpDown, Plus, X, Loader2, Check, Settings, HelpCircle, CheckCircle2, Tv
 } from 'lucide-angular';
-import { IndexedDBService } from '../../core/services/indexed-db.service';
+import { StorageService } from './services/storage.service';
 import { SnapshotService } from './services/snapshot.service';
 
 export interface VideoBookmark {
@@ -864,7 +864,7 @@ export interface LocalMediaItem {
 })
 export class LocalPlayerComponent implements OnInit, OnDestroy {
   sanitizer = inject(DomSanitizer);
-  indexedDb = inject(IndexedDBService);
+  storageService = inject(StorageService);
 
   @ViewChild('videoPlayer') videoPlayer?: ElementRef<HTMLVideoElement>;
   @ViewChild('folderInput') folderInput?: ElementRef<HTMLInputElement>;
@@ -932,7 +932,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
             };
             newItems.push(item);
 
-            this.indexedDb.put('local_player_media', {
+            this.storageService.saveMediaItem({
               id: item.id,
               name: item.name,
               relativePath: item.relativePath,
@@ -1424,7 +1424,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   private async restoreStoredPlaylist() {
     this.isLoadingStored.set(true);
     try {
-      const storedItems: any[] = await this.indexedDb.getAll('local_player_media');
+      const storedItems: any[] = await this.storageService.getAllMediaItems();
       if (storedItems && storedItems.length > 0) {
         const restored: LocalMediaItem[] = [];
         for (const item of storedItems) {
@@ -1698,21 +1698,21 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
       newItems.push(item);
 
       // Persist in IndexedDB
-      this.indexedDb.put('local_player_media', {
-        id: item.id,
-        name: item.name,
-        relativePath: item.relativePath,
-        folderName: item.folderName,
-        size: item.size,
-        type: item.type,
-        mimeType: item.mimeType,
-        fileBlob: item.fileBlob,
-        subtitlesBlob: item.subtitlesBlob,
-        subtitlesName: item.subtitlesName,
-        duration: item.duration,
-        lastPosition: 0,
-        createdAt: item.createdAt
-      }).catch(e => {
+        this.storageService.saveMediaItem({
+          id: item.id,
+          name: item.name,
+          relativePath: item.relativePath,
+          folderName: item.folderName,
+          size: item.size,
+          type: item.type,
+          mimeType: item.mimeType,
+          fileBlob: item.fileBlob,
+          subtitlesBlob: item.subtitlesBlob,
+          subtitlesName: item.subtitlesName,
+          duration: item.duration,
+          lastPosition: 0,
+          createdAt: item.createdAt
+        }).catch(e => {
         console.warn('Could not store in IndexedDB:', e);
         if (e?.name === 'QuotaExceededError' || e?.code === 22) {
           this.showToast('تحذير: تم امتلاء المساحة المخصصة للتخزين المؤقت في المتصفح!', 'warning');
@@ -1901,13 +1901,13 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     if (cur && vid) {
       const pos = vid.currentTime;
       cur.lastPosition = pos;
-      this.indexedDb.get('local_player_media', cur.id).then(stored => {
-        if (stored) {
-          stored.lastPosition = pos;
-          stored.lastWatchedAt = Date.now();
-          this.indexedDb.put('local_player_media', stored).catch(() => {});
-        }
-      }).catch(() => {});
+        this.storageService.getMediaItem(cur.id).then(stored => {
+          if (stored) {
+            stored.lastPosition = pos;
+            stored.lastWatchedAt = Date.now();
+            this.storageService.saveMediaItem(stored).catch(() => {});
+          }
+        }).catch(() => {});
     }
   }
 
@@ -1925,10 +1925,10 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
         if (dur && !cur.duration) {
           cur.duration = dur;
           this.playlist.update(list => list.map(i => i.id === cur.id ? { ...i, duration: dur } : i));
-          this.indexedDb.get('local_player_media', cur.id).then(stored => {
+          this.storageService.getMediaItem(cur.id).then(stored => {
             if (stored) {
               stored.duration = dur;
-              this.indexedDb.put('local_player_media', stored).catch(() => {});
+              this.storageService.saveMediaItem(stored).catch(() => {});
             }
           }).catch(() => {});
         }
@@ -2106,11 +2106,11 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
         this.playlist.update(list => list.map(i => i.id === cur.id ? updatedItem : i));
 
         // Update IndexedDB entry
-        this.indexedDb.get('local_player_media', cur.id).then(stored => {
+        this.storageService.getMediaItem(cur.id).then(stored => {
           if (stored) {
             stored.subtitlesBlob = subFile;
             stored.subtitlesName = subFile.name;
-            this.indexedDb.put('local_player_media', stored);
+            this.storageService.saveMediaItem(stored);
           }
         }).catch(() => {});
 
@@ -2190,7 +2190,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     this.playlist.set(updated);
 
     // Delete from IndexedDB
-    this.indexedDb.delete('local_player_media', id).catch(() => {});
+    this.storageService.deleteMediaItem(id).catch(() => {});
 
     if (this.activeItem()?.id === id) {
       if (updated.length > 0) {
@@ -2216,7 +2216,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     this.isPlaying.set(false);
     localStorage.removeItem('local_player_active_id');
 
-    this.indexedDb.clearStore('local_player_media').catch(() => {});
+    this.storageService.clearAllMedia().catch(() => {});
     this.showToast('تم تفريغ قائمة التشغيل والذاكرة المحلية بنجاح 🧹');
   }
 
