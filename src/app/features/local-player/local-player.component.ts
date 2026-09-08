@@ -1215,24 +1215,6 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     await this.restoreStoredPlaylist();
     await this.loadAllBookmarks();
     await this.loadRecycleBinAndState();
-
-    // Test NotesService
-    try {
-      const testNote = await this.notesService.createNote({
-        videoId: null,
-        videoName: 'Test Video',
-        folderName: 'Test Folder',
-        timestampInVideo: 123,
-        text: 'This is a test note',
-        textColor: '#ff0000',
-        images: [],
-        audio: null,
-        isPinned: false
-      });
-      console.log('NotesService test success:', testNote);
-    } catch (e) {
-      console.error('NotesService test failed:', e);
-    }
   }
 
   ngOnDestroy() {
