@@ -8,6 +8,7 @@ import { LocalMediaItem } from '../../models/local-player.models';
   selector: 'app-playlist-tab',
   standalone: true,
   imports: [CommonModule, FormsModule, LucideAngularModule],
+  host: { class: 'flex-1 flex flex-col overflow-hidden' },
   template: `
     <!-- Playlist Header -->
     <div class="p-3.5 border-b border-white/10 bg-slate-900/90 flex flex-col gap-2.5">
