@@ -13,6 +13,7 @@ import { PlaylistTabComponent } from './components/playlist-tab/playlist-tab.com
 import { LocalMediaItem, VideoBookmark, RecycleBinItem } from './models/local-player.models';
 import { StorageService } from './services/storage.service';
 import { SnapshotService } from './services/snapshot.service';
+import { NotesService } from './services/notes.service';
 
 @Component({
   selector: 'app-local-player',
@@ -989,6 +990,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   }
 
   snapshotService = inject(SnapshotService);
+  notesService = inject(NotesService);
 
   showSnapshotModal = signal<boolean>(false);
   snapshotDataUrl = signal<string | null>(null);
@@ -1211,7 +1213,26 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     this.loadUserPreferences();
     this.checkStorageQuota();
     await this.restoreStoredPlaylist();
+    await this.loadAllBookmarks();
     await this.loadRecycleBinAndState();
+
+    // Test NotesService
+    try {
+      const testNote = await this.notesService.createNote({
+        videoId: null,
+        videoName: 'Test Video',
+        folderName: 'Test Folder',
+        timestampInVideo: 123,
+        text: 'This is a test note',
+        textColor: '#ff0000',
+        images: [],
+        audio: null,
+        isPinned: false
+      });
+      console.log('NotesService test success:', testNote);
+    } catch (e) {
+      console.error('NotesService test failed:', e);
+    }
   }
 
   ngOnDestroy() {

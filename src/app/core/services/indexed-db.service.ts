@@ -6,7 +6,7 @@ import { EncryptionService } from './encryption.service';
 })
 export class IndexedDBService {
   private readonly DB_NAME = 'halaltubeDB';
-  private readonly DB_VERSION = 10; // Incremented for local_player_media store
+  private readonly DB_VERSION = 11; // Incremented for local_player_notes store
   private db: IDBDatabase | null = null;
   private encryption = inject(EncryptionService);
 
@@ -99,6 +99,11 @@ export class IndexedDBService {
         // Local Player Media Store (Persistent Offline Library & Courses)
         if (!db.objectStoreNames.contains('local_player_media')) {
           db.createObjectStore('local_player_media', { keyPath: 'id' });
+        }
+
+        // Local Player Notes Store
+        if (!db.objectStoreNames.contains('local_player_notes')) {
+          db.createObjectStore('local_player_notes', { keyPath: 'id' });
         }
       };
     });
