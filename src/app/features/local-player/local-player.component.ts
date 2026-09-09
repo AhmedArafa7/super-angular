@@ -10,7 +10,8 @@ import {
   Search, ArrowUpDown, Plus, X, Loader2, Check, Settings, HelpCircle, CheckCircle2, Tv
 } from 'lucide-angular';
 import { PlaylistTabComponent } from './components/playlist-tab/playlist-tab.component';
-import { LocalMediaItem, VideoBookmark, RecycleBinItem } from './models/local-player.models';
+import { NotesTabComponent } from './components/notes-tab/notes-tab.component';
+import { LocalMediaItem, VideoBookmark, RecycleBinItem, VideoNote } from './models/local-player.models';
 import { StorageService } from './services/storage.service';
 import { SnapshotService } from './services/snapshot.service';
 import { NotesService } from './services/notes.service';
@@ -18,7 +19,7 @@ import { NotesService } from './services/notes.service';
 @Component({
   selector: 'app-local-player',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, LucideAngularModule, PlaylistTabComponent],
+  imports: [CommonModule, FormsModule, RouterModule, LucideAngularModule, PlaylistTabComponent, NotesTabComponent],
   template: `
     <div class="h-screen w-screen bg-slate-950 text-white flex flex-col font-sans select-none overflow-hidden" dir="rtl">
       
@@ -461,7 +462,7 @@ import { NotesService } from './services/notes.service';
           <!-- TAB 2: BOOKMARKS & NOTES -->
           <ng-container *ngIf="sidebarTab() === 'bookmarks'">
             <div class="flex-1 flex flex-col overflow-hidden p-3 space-y-3">
-              <div class="p-3 rounded-2xl bg-black/40 border border-white/10 flex flex-col gap-2">
+              <div class="p-3 rounded-2xl bg-black/40 border border-white/10 flex flex-col gap-2 shrink-0">
                 <p class="text-xs font-bold text-teal-300 flex items-center gap-1.5">
                   <span>🔖 إضافة ملاحظة عند الدقيقة الحالية</span>
                   <span class="text-[10px] font-mono text-slate-400">({{ formatTime(currentTime()) }})</span>
@@ -472,28 +473,15 @@ import { NotesService } from './services/notes.service';
                 </div>
               </div>
 
-              <!-- Bookmarks List -->
-              <div class="flex-1 overflow-y-auto space-y-2 custom-scrollbar">
-                @if (bookmarks().length > 0) {
-                  @for (bm of bookmarks(); track bm.id) {
-                    <div (click)="jumpToBookmark(bm.time)" class="p-2.5 rounded-2xl bg-black/30 border border-white/5 hover:border-teal-500/40 cursor-pointer flex items-center justify-between group transition">
-                      <div class="flex items-center gap-2 min-w-0">
-                        <span class="px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 font-mono text-[10px] font-bold shrink-0">{{ bm.formattedTime }}</span>
-                        <p class="text-xs text-slate-200 truncate group-hover:text-teal-300">{{ bm.note }}</p>
-                      </div>
-                      <button (click)="$event.stopPropagation(); removeBookmark(bm.id)" class="text-slate-500 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition">
-                        <lucide-icon [img]="Trash2" class="size-3.5"></lucide-icon>
-                      </button>
-                    </div>
-                  }
-                } @else {
-                  <div class="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-500">
-                    <lucide-icon [img]="Clock" class="size-8 mb-2 opacity-30"></lucide-icon>
-                    <p class="text-xs font-bold text-slate-400">لا توجد ملاحظات لهذا الفيديو</p>
-                    <p class="text-[10px] text-slate-500 mt-1">أضف ملاحظات أثناء المشاهدة للرجوع إليها فوراً.</p>
-                  </div>
-                }
-              </div>
+              <!-- Notes Tab Component (All Notes & Current Video Notes) -->
+              <app-notes-tab
+                [allNotes]="allNotesList()"
+                [currentVideoId]="activeItem()?.id || null"
+                (editNote)="onEditNote($event)"
+                (deleteNote)="onDeleteNote($event)"
+                (togglePin)="onTogglePin($event)"
+                (noteClick)="jumpToNote($event)">
+              </app-notes-tab>
             </div>
           </ng-container>
 
@@ -747,6 +735,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
 
   playlist = signal<LocalMediaItem[]>([]);
   activeItemId = signal<string | null>(null);
+  allNotesList = signal<VideoNote[]>([]);
 
   activeItem = computed(() => {
     const id = this.activeItemId();
@@ -1024,19 +1013,34 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     }
   }
 
-  addBookmark() {
+  async addBookmark() {
     const vid = this.videoPlayer?.nativeElement;
     const cur = this.activeItem();
     if (!vid || !cur) return;
     const time = vid.currentTime;
-    const note = this.newBookmarkNote.trim() || `ملاحظة عند الدقيقة ${this.formatTime(time)}`;
+    const noteText = this.newBookmarkNote.trim() || `ملاحظة عند الدقيقة ${this.formatTime(time)}`;
+    
+    // Create via NotesService for global notes tab
+    await this.notesService.createNote({
+      videoId: cur.id,
+      videoName: cur.name,
+      folderName: cur.folderName || '',
+      timestampInVideo: time,
+      text: noteText,
+      textColor: null,
+      images: [],
+      audio: null,
+      isPinned: false
+    });
+    await this.refreshNotesCounts();
+
     const newBm: VideoBookmark = {
       id: 'bm_' + Date.now(),
       videoId: cur.id,
       videoName: cur.name,
       folderName: cur.folderName || '',
       time,
-      note,
+      note: noteText,
       formattedTime: this.formatTime(time)
     };
     const updated = [...this.bookmarks(), newBm].sort((a, b) => a.time - b.time);
@@ -1217,10 +1221,12 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     await this.restoreStoredPlaylist();
     await this.loadRecycleBinAndState();
     await this.refreshNotesCounts();
+    this.allNotesList.set(await this.notesService.getAllNotes());
   }
 
   private async refreshNotesCounts() {
     const allNotes = await this.notesService.getAllNotes();
+    this.allNotesList.set(allNotes); // Keep in sync
     const counts: Record<string, number> = {};
     for (const note of allNotes) {
       if (note.videoId) {
@@ -1228,6 +1234,45 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
       }
     }
     this.notesCountByVideoId.set(counts);
+  }
+
+  // TODO: refreshNotesCounts() after note create/delete
+
+  async onEditNote(note: VideoNote) {
+    const newText = window.prompt('تعديل نص الملاحظة:', note.text);
+    if (newText !== null && newText.trim() !== '') {
+      await this.notesService.updateNote(note.id, { text: newText.trim() });
+      await this.refreshNotesCounts();
+      this.showToast('تم تحديث الملاحظة بنجاح ✏️');
+    }
+  }
+
+  async onDeleteNote(id: string) {
+    await this.notesService.softDeleteNote(id);
+    await this.refreshNotesCounts();
+    this.showToast('تم نقل الملاحظة إلى سلة المحذوفات 🗑️');
+  }
+
+  async onTogglePin(note: VideoNote) {
+    await this.notesService.updateNote(note.id, { isPinned: !note.isPinned });
+    await this.refreshNotesCounts();
+    this.showToast(note.isPinned ? 'تم إزالة التثبيت' : 'تم تثبيت الملاحظة 📌');
+  }
+
+  async jumpToNote(note: VideoNote) {
+    if (note.videoId && note.videoId !== this.activeItem()?.id) {
+      const targetItem = this.playlist().find(item => item.id === note.videoId);
+      if (targetItem) {
+        await this.playItem(targetItem, false);
+      }
+    }
+    if (note.timestampInVideo !== null) {
+      const vid = this.videoPlayer?.nativeElement;
+      if (vid) {
+        vid.currentTime = note.timestampInVideo;
+        this.currentTime.set(note.timestampInVideo);
+      }
+    }
   }
 
   // TODO: refreshNotesCounts() after note create/delete
