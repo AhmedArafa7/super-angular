@@ -1310,6 +1310,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     this.checkStorageQuota();
     await this.restoreStoredPlaylist();
     await this.loadRecycleBinAndState();
+    await this.notesService.migrateLegacyBookmarksIfNeeded();
     await this.refreshNotesCounts();
     this.allNotesList.set(await this.notesService.getAllNotes());
   }

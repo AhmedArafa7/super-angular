@@ -67,4 +67,46 @@ export class NotesService {
       await this.updateNote(note.id, { videoId: null });
     }
   }
+
+  async migrateLegacyBookmarksIfNeeded(): Promise<void> {
+    try {
+      if (localStorage.getItem('local_player_notes_migration_done') === 'true') {
+        return;
+      }
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('local_player_bm_')) {
+          try {
+            const videoId = key.replace('local_player_bm_', '');
+            const rawData = localStorage.getItem(key);
+            if (rawData) {
+              const bookmarks = JSON.parse(rawData);
+              if (Array.isArray(bookmarks)) {
+                for (const bm of bookmarks) {
+                  await this.createNote({
+                    videoId: bm.videoId || videoId,
+                    videoName: bm.videoName || 'فيديو',
+                    folderName: bm.folderName || '',
+                    timestampInVideo: bm.time !== undefined ? bm.time : null,
+                    text: bm.note || '',
+                    textColor: null,
+                    images: [],
+                    audio: null,
+                    isPinned: false
+                  });
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Error migrating legacy bookmark key:', key, e);
+          }
+        }
+      }
+
+      localStorage.setItem('local_player_notes_migration_done', 'true');
+    } catch (e) {
+      console.error('Migration failed:', e);
+    }
+  }
 }
