@@ -1111,18 +1111,22 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     const noteText = this.newBookmarkNote.trim() || `ملاحظة عند الدقيقة ${this.formatTime(time)}`;
     
     // Create via NotesService for global notes tab
-    await this.notesService.createNote({
-      videoId: cur.id,
-      videoName: cur.name,
-      folderName: cur.folderName || '',
-      timestampInVideo: time,
-      text: noteText,
-      textColor: null,
-      images: [],
-      audio: null,
-      isPinned: false
-    });
-    await this.refreshNotesCounts();
+    try {
+      await this.notesService.createNote({
+        videoId: cur.id,
+        videoName: cur.name,
+        folderName: cur.folderName || '',
+        timestampInVideo: time,
+        text: noteText,
+        textColor: null,
+        images: [],
+        audio: null,
+        isPinned: false
+      });
+      await this.refreshNotesCounts();
+    } catch (err) {
+      console.error('[LocalPlayer] Error creating note in NotesService:', err);
+    }
 
     const newBm: VideoBookmark = {
       id: 'bm_' + Date.now(),

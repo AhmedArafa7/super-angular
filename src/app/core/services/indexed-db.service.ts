@@ -6,7 +6,7 @@ import { EncryptionService } from './encryption.service';
 })
 export class IndexedDBService {
   private readonly DB_NAME = 'halaltubeDB';
-  private readonly DB_VERSION = 11; // Incremented for local_player_notes store
+  private readonly DB_VERSION = 12; // Incremented to 12 to ensure local_player_notes store is created
   private db: IDBDatabase | null = null;
   private encryption = inject(EncryptionService);
 
@@ -16,8 +16,74 @@ export class IndexedDBService {
 
   private getKeyPathForStore(storeName: string): string {
     if (storeName === 'subscriptions') return 'channelId';
-    if (storeName === 'personal_pdf_books' || storeName === 'created_books' || storeName === 'book_video_blobs' || storeName === 'playlists' || storeName === 'local_player_media') return 'id';
+    if (storeName === 'personal_pdf_books' || storeName === 'created_books' || storeName === 'book_video_blobs' || storeName === 'playlists' || storeName === 'local_player_media' || storeName === 'local_player_notes') return 'id';
     return 'videoId';
+  }
+
+  private createAllStores(db: IDBDatabase): void {
+    // Immutability Rule: Do NOT change existing stores
+    if (!db.objectStoreNames.contains('watch_history')) {
+      db.createObjectStore('watch_history', { keyPath: 'videoId' });
+    }
+    if (!db.objectStoreNames.contains('saved_videos')) {
+      db.createObjectStore('saved_videos', { keyPath: 'videoId' });
+    }
+    
+    // New stores for Phase 3
+    if (!db.objectStoreNames.contains('subscriptions')) {
+      db.createObjectStore('subscriptions', { keyPath: 'channelId' });
+    }
+    if (!db.objectStoreNames.contains('channel_meta')) {
+      db.createObjectStore('channel_meta', { keyPath: 'channelId' }); // TTL 24h
+    }
+    if (!db.objectStoreNames.contains('channel_feed')) {
+      db.createObjectStore('channel_feed', { keyPath: 'channelId' }); // TTL 2h
+    }
+
+    // New stores for Phase 4 (Watch Sidebar)
+    if (!db.objectStoreNames.contains('related_videos')) {
+      db.createObjectStore('related_videos', { keyPath: 'videoId' }); // TTL 2h
+    }
+    
+    // Whitelist Home Feed caching
+    if (!db.objectStoreNames.contains('whitelist_feed')) {
+      db.createObjectStore('whitelist_feed', { keyPath: 'id' }); // TTL 1h
+    }
+    
+    // Reviewer Blacklist caching
+    if (!db.objectStoreNames.contains('blacklisted_channels')) {
+      db.createObjectStore('blacklisted_channels', { keyPath: 'id' });
+    }
+
+    // Personal PDF Books Store
+    if (!db.objectStoreNames.contains('personal_pdf_books')) {
+      db.createObjectStore('personal_pdf_books', { keyPath: 'id' });
+    }
+
+    // Created Studio Books Store
+    if (!db.objectStoreNames.contains('created_books')) {
+      db.createObjectStore('created_books', { keyPath: 'id' });
+    }
+
+    // Dedicated Video Blobs Store for Video Books (Zero RAM Overhead)
+    if (!db.objectStoreNames.contains('book_video_blobs')) {
+      db.createObjectStore('book_video_blobs', { keyPath: 'id' });
+    }
+
+    // HalalTube Playlists & Smart Study Plans Store
+    if (!db.objectStoreNames.contains('playlists')) {
+      db.createObjectStore('playlists', { keyPath: 'id' });
+    }
+
+    // Local Player Media Store (Persistent Offline Library & Courses)
+    if (!db.objectStoreNames.contains('local_player_media')) {
+      db.createObjectStore('local_player_media', { keyPath: 'id' });
+    }
+
+    // Local Player Notes Store
+    if (!db.objectStoreNames.contains('local_player_notes')) {
+      db.createObjectStore('local_player_notes', { keyPath: 'id' });
+    }
   }
 
   private initDB(): Promise<void> {
@@ -41,76 +107,34 @@ export class IndexedDBService {
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
-        
-        // Immutability Rule: Do NOT change existing stores
-        if (!db.objectStoreNames.contains('watch_history')) {
-          db.createObjectStore('watch_history', { keyPath: 'videoId' });
-        }
-        if (!db.objectStoreNames.contains('saved_videos')) {
-          db.createObjectStore('saved_videos', { keyPath: 'videoId' });
-        }
-        
-        // New stores for Phase 3
-        if (!db.objectStoreNames.contains('subscriptions')) {
-          db.createObjectStore('subscriptions', { keyPath: 'channelId' });
-        }
-        if (!db.objectStoreNames.contains('channel_meta')) {
-          db.createObjectStore('channel_meta', { keyPath: 'channelId' }); // TTL 24h
-        }
-        if (!db.objectStoreNames.contains('channel_feed')) {
-          db.createObjectStore('channel_feed', { keyPath: 'channelId' }); // TTL 2h
-        }
-
-        // New stores for Phase 4 (Watch Sidebar)
-        if (!db.objectStoreNames.contains('related_videos')) {
-          db.createObjectStore('related_videos', { keyPath: 'videoId' }); // TTL 2h
-        }
-        
-        // Whitelist Home Feed caching
-        if (!db.objectStoreNames.contains('whitelist_feed')) {
-          db.createObjectStore('whitelist_feed', { keyPath: 'id' }); // TTL 1h
-        }
-        
-        // Reviewer Blacklist caching
-        if (!db.objectStoreNames.contains('blacklisted_channels')) {
-          db.createObjectStore('blacklisted_channels', { keyPath: 'id' });
-        }
-
-        // Personal PDF Books Store
-        if (!db.objectStoreNames.contains('personal_pdf_books')) {
-          db.createObjectStore('personal_pdf_books', { keyPath: 'id' });
-        }
-
-        // Created Studio Books Store
-        if (!db.objectStoreNames.contains('created_books')) {
-          db.createObjectStore('created_books', { keyPath: 'id' });
-        }
-
-        // Dedicated Video Blobs Store for Video Books (Zero RAM Overhead)
-        if (!db.objectStoreNames.contains('book_video_blobs')) {
-          db.createObjectStore('book_video_blobs', { keyPath: 'id' });
-        }
-
-        // HalalTube Playlists & Smart Study Plans Store
-        if (!db.objectStoreNames.contains('playlists')) {
-          db.createObjectStore('playlists', { keyPath: 'id' });
-        }
-
-        // Local Player Media Store (Persistent Offline Library & Courses)
-        if (!db.objectStoreNames.contains('local_player_media')) {
-          db.createObjectStore('local_player_media', { keyPath: 'id' });
-        }
-
-        // Local Player Notes Store
-        if (!db.objectStoreNames.contains('local_player_notes')) {
-          db.createObjectStore('local_player_notes', { keyPath: 'id' });
-        }
+        this.createAllStores(db);
       };
     });
   }
 
-  async put(storeName: string, item: any): Promise<void> {
+  private async ensureStore(storeName: string): Promise<void> {
     await this.initDB();
+    if (this.db && !this.db.objectStoreNames.contains(storeName)) {
+      const nextVersion = (this.db.version || this.DB_VERSION) + 1;
+      this.db.close();
+      this.db = null;
+      await new Promise<void>((resolve, reject) => {
+        const req = indexedDB.open(this.DB_NAME, nextVersion);
+        req.onupgradeneeded = (e) => {
+          const db = (e.target as IDBOpenDBRequest).result;
+          this.createAllStores(db);
+        };
+        req.onsuccess = (e) => {
+          this.db = (e.target as IDBOpenDBRequest).result;
+          resolve();
+        };
+        req.onerror = () => reject(req.error);
+      });
+    }
+  }
+
+  async put(storeName: string, item: any): Promise<void> {
+    await this.ensureStore(storeName);
 
     let dataToStore = item;
     const sensitiveStores = ['watch_history', 'saved_videos', 'subscriptions'];
@@ -137,7 +161,7 @@ export class IndexedDBService {
   }
 
   async get(storeName: string, key: string): Promise<any> {
-    await this.initDB();
+    await this.ensureStore(storeName);
     const rawResult = await new Promise<any>((resolve, reject) => {
       if (!this.db) return reject('DB not initialized');
       const transaction = this.db.transaction(storeName, 'readonly');
@@ -156,7 +180,7 @@ export class IndexedDBService {
   }
 
   async getAll(storeName: string): Promise<any[]> {
-    await this.initDB();
+    await this.ensureStore(storeName);
     const rawResults = await new Promise<any[]>((resolve, reject) => {
       if (!this.db) return reject('DB not initialized');
       const transaction = this.db.transaction(storeName, 'readonly');
@@ -181,7 +205,7 @@ export class IndexedDBService {
   }
 
   async getRawAll(storeName: string): Promise<any[]> {
-    await this.initDB();
+    await this.ensureStore(storeName);
     return new Promise<any[]>((resolve, reject) => {
       if (!this.db) return reject('DB not initialized');
       const transaction = this.db.transaction(storeName, 'readonly');
@@ -194,7 +218,7 @@ export class IndexedDBService {
   }
 
   async delete(storeName: string, key: string): Promise<void> {
-    await this.initDB();
+    await this.ensureStore(storeName);
     return new Promise((resolve, reject) => {
       if (!this.db) return reject('DB not initialized');
       const transaction = this.db.transaction(storeName, 'readwrite');
@@ -207,7 +231,7 @@ export class IndexedDBService {
   }
 
   async clearStore(storeName: string): Promise<void> {
-    await this.initDB();
+    await this.ensureStore(storeName);
     return new Promise((resolve, reject) => {
       if (!this.db) return reject('DB not initialized');
       const transaction = this.db.transaction(storeName, 'readwrite');
