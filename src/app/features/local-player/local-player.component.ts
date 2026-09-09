@@ -1310,36 +1310,6 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     this.checkStorageQuota();
     await this.restoreStoredPlaylist();
     await this.loadRecycleBinAndState();
-
-    // Ensure legacy bookmarks exist for verification if none exist
-    const playlistItems = this.playlist();
-    const existingLegacy = Object.keys(localStorage).filter(k => k.startsWith('local_player_bm_'));
-    if (existingLegacy.length === 0 && playlistItems.length > 0) {
-      const targetItem = playlistItems[0];
-      const sampleLegacy = [
-        {
-          id: 'bm_leg_1',
-          videoId: targetItem.id,
-          videoName: targetItem.name,
-          folderName: targetItem.folderName || '',
-          time: 12,
-          note: 'ملاحظة مستعادة: مقدمة هامة ونقاط ارتكاز 📌',
-          formattedTime: '00:12'
-        },
-        {
-          id: 'bm_leg_2',
-          videoId: targetItem.id,
-          videoName: targetItem.name,
-          folderName: targetItem.folderName || '',
-          time: 45,
-          note: 'ملاحظة مستعادة: القاعدة الأساسية للدرس 💡',
-          formattedTime: '00:45'
-        }
-      ];
-      localStorage.setItem('local_player_bm_' + targetItem.id, JSON.stringify(sampleLegacy));
-      localStorage.removeItem('local_player_notes_migration_done');
-    }
-
     await this.notesService.migrateLegacyBookmarksIfNeeded();
     await this.refreshNotesCounts();
   }
