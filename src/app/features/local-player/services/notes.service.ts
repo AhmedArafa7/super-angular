@@ -74,39 +74,55 @@ export class NotesService {
         return;
       }
 
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('local_player_bm_')) {
-          try {
-            const videoId = key.replace('local_player_bm_', '');
-            const rawData = localStorage.getItem(key);
-            if (rawData) {
-              const bookmarks = JSON.parse(rawData);
-              if (Array.isArray(bookmarks)) {
-                for (const bm of bookmarks) {
+      // Snapshot all matching keys beforehand to prevent index shifts during async awaits
+      const legacyKeys = Object.keys(localStorage).filter(key => key.startsWith('local_player_bm_'));
+
+      // Check existing notes to avoid duplicating notes on re-runs
+      const existingNotes = await this.getAllNotes();
+
+      for (const key of legacyKeys) {
+        try {
+          const videoId = key.substring('local_player_bm_'.length);
+          const rawData = localStorage.getItem(key);
+          if (rawData) {
+            const bookmarks = JSON.parse(rawData);
+            if (Array.isArray(bookmarks)) {
+              for (const bm of bookmarks) {
+                const noteText = bm.note || bm.text || '';
+                const timeVal = bm.time !== undefined ? bm.time : (bm.timestampInVideo !== undefined ? bm.timestampInVideo : (bm.timestamp !== undefined ? bm.timestamp : null));
+                const parsedTime = timeVal !== null && !isNaN(Number(timeVal)) ? Number(timeVal) : null;
+                const targetVid = bm.videoId || videoId;
+
+                const alreadyExists = existingNotes.some(n => 
+                  n.videoId === targetVid && 
+                  n.text === noteText && 
+                  n.timestampInVideo === parsedTime
+                );
+
+                if (!alreadyExists) {
                   await this.createNote({
-                    videoId: bm.videoId || videoId,
+                    videoId: targetVid,
                     videoName: bm.videoName || 'فيديو',
                     folderName: bm.folderName || '',
-                    timestampInVideo: bm.time !== undefined ? bm.time : null,
-                    text: bm.note || '',
-                    textColor: null,
-                    images: [],
-                    audio: null,
-                    isPinned: false
+                    timestampInVideo: parsedTime,
+                    text: noteText,
+                    textColor: bm.color || bm.textColor || null,
+                    images: Array.isArray(bm.images) ? bm.images : [],
+                    audio: bm.audio || null,
+                    isPinned: !!bm.isPinned
                   });
                 }
               }
             }
-          } catch (e) {
-            console.error('Error migrating legacy bookmark key:', key, e);
           }
+        } catch (e) {
+          console.error('[NotesService] Error migrating legacy bookmark key:', key, e);
         }
       }
 
       localStorage.setItem('local_player_notes_migration_done', 'true');
     } catch (e) {
-      console.error('Migration failed:', e);
+      console.error('[NotesService] Migration failed:', e);
     }
   }
 }
