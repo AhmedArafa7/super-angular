@@ -742,7 +742,8 @@ import { NotesService } from './services/notes.service';
             <div class="flex flex-col gap-1.5">
               <label class="text-xs font-bold text-slate-300">نص الملاحظة</label>
               <textarea 
-                [(ngModel)]="noteFormText"
+                [ngModel]="noteFormText()"
+                (ngModelChange)="noteFormText.set($event)"
                 rows="5"
                 dir="auto"
                 placeholder="اكتب ملاحظتك هنا..."
