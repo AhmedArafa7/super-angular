@@ -722,6 +722,91 @@ import { NotesService } from './services/notes.service';
         </div>
       </div>
 
+      <!-- Note Create/Edit Modal -->
+      <div *ngIf="showNoteModal()" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto" (click)="showNoteModal.set(false)">
+        <div class="bg-slate-900 border border-white/20 rounded-[2.5rem] p-6 max-w-lg w-full shadow-2xl flex flex-col max-h-[90vh]" (click)="$event.stopPropagation()">
+          
+          <!-- Modal Header -->
+          <div class="flex items-center justify-between mb-4 border-b border-white/10 pb-3 shrink-0">
+            <div class="flex items-center gap-2">
+              <lucide-icon [img]="Clock" class="size-5 text-teal-400"></lucide-icon>
+              <h3 class="text-base font-black text-white">{{ editingNote() ? 'تعديل الملاحظة' : 'ملاحظة جديدة' }}</h3>
+            </div>
+            <button (click)="showNoteModal.set(false)" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10">
+              <lucide-icon [img]="X" class="size-5"></lucide-icon>
+            </button>
+          </div>
+
+          <!-- Modal Body -->
+          <div class="flex flex-col gap-4 flex-1 overflow-y-auto custom-scrollbar pr-1">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-bold text-slate-300">نص الملاحظة</label>
+              <textarea 
+                [(ngModel)]="noteFormText"
+                rows="5"
+                dir="auto"
+                placeholder="اكتب ملاحظتك هنا..."
+                class="bg-black/50 border border-white/15 rounded-2xl p-4 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 resize-none leading-relaxed custom-scrollbar"></textarea>
+            </div>
+
+            <!-- Color Picker -->
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-slate-300">لون النص</label>
+              <div class="flex items-center gap-3">
+                <button 
+                  type="button" 
+                  (click)="noteFormColor.set(null)"
+                  [class.ring-2]="noteFormColor() === null"
+                  class="size-8 rounded-full bg-slate-200 border border-white/20 flex items-center justify-center text-[10px] font-bold text-slate-900 ring-teal-400 ring-offset-2 ring-offset-slate-900 transition">
+                  افتراضي
+                </button>
+                <button 
+                  type="button" 
+                  (click)="noteFormColor.set('#f59e0b')"
+                  [class.ring-2]="noteFormColor() === '#f59e0b'"
+                  class="size-8 rounded-full bg-amber-500 ring-teal-400 ring-offset-2 ring-offset-slate-900 transition">
+                </button>
+                <button 
+                  type="button" 
+                  (click)="noteFormColor.set('#10b981')"
+                  [class.ring-2]="noteFormColor() === '#10b981'"
+                  class="size-8 rounded-full bg-emerald-500 ring-teal-400 ring-offset-2 ring-offset-slate-900 transition">
+                </button>
+                <button 
+                  type="button" 
+                  (click)="noteFormColor.set('#3b82f6')"
+                  [class.ring-2]="noteFormColor() === '#3b82f6'"
+                  class="size-8 rounded-full bg-blue-500 ring-teal-400 ring-offset-2 ring-offset-slate-900 transition">
+                </button>
+                <button 
+                  type="button" 
+                  (click)="noteFormColor.set('#ec4899')"
+                  [class.ring-2]="noteFormColor() === '#ec4899'"
+                  class="size-8 rounded-full bg-pink-500 ring-teal-400 ring-offset-2 ring-offset-slate-900 transition">
+                </button>
+                <button 
+                  type="button" 
+                  (click)="noteFormColor.set('#ef4444')"
+                  [class.ring-2]="noteFormColor() === '#ef4444'"
+                  class="size-8 rounded-full bg-red-500 ring-teal-400 ring-offset-2 ring-offset-slate-900 transition">
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal Footer Actions -->
+          <div class="pt-4 mt-4 border-t border-white/10 flex items-center justify-between shrink-0">
+            <button (click)="showNoteModal.set(false)" class="px-5 py-2.5 bg-white/10 hover:bg-white/15 text-slate-300 text-xs font-bold rounded-xl transition cursor-pointer">
+              إلغاء
+            </button>
+            <button (click)="saveNoteFromModal()" class="px-6 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 text-white text-xs font-black rounded-xl transition shadow-xl flex items-center gap-2 cursor-pointer">
+              <span>حفظ الملاحظة 💾</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
     </div>
   `
 })
@@ -736,6 +821,10 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   playlist = signal<LocalMediaItem[]>([]);
   activeItemId = signal<string | null>(null);
   allNotesList = signal<VideoNote[]>([]);
+  showNoteModal = signal<boolean>(false);
+  editingNote = signal<VideoNote | null>(null);
+  noteFormText = signal<string>('');
+  noteFormColor = signal<string | null>(null);
 
   activeItem = computed(() => {
     const id = this.activeItemId();
@@ -1238,12 +1327,26 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
 
   // TODO: refreshNotesCounts() after note create/delete
 
-  async onEditNote(note: VideoNote) {
-    const newText = window.prompt('تعديل نص الملاحظة:', note.text);
-    if (newText !== null && newText.trim() !== '') {
-      await this.notesService.updateNote(note.id, { text: newText.trim() });
+  onEditNote(note: VideoNote) {
+    this.editingNote.set(note);
+    this.noteFormText.set(note.text);
+    this.noteFormColor.set(note.textColor);
+    this.showNoteModal.set(true);
+  }
+
+  async saveNoteFromModal() {
+    const edit = this.editingNote();
+    if (edit) {
+      await this.notesService.updateNote(edit.id, {
+        text: this.noteFormText().trim(),
+        textColor: this.noteFormColor()
+      });
       await this.refreshNotesCounts();
-      this.showToast('تم تحديث الملاحظة بنجاح ✏️');
+      this.showNoteModal.set(false);
+      this.showToast('تم حفظ الملاحظة بنجاح ✨');
+    } else {
+      // TODO: creation mode
+      this.showNoteModal.set(false);
     }
   }
 
