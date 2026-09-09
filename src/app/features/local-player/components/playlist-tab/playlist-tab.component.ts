@@ -76,7 +76,12 @@ import { LocalMediaItem } from '../../models/local-player.models';
 
             <!-- Details -->
             <div class="min-w-0 flex-1">
-              <p class="text-xs font-bold truncate group-hover:text-teal-300 transition-colors" [title]="item.name">{{ item.name }}</p>
+              <div class="flex items-center gap-2">
+                <p class="text-xs font-bold truncate group-hover:text-teal-300 transition-colors" [title]="item.name">{{ item.name }}</p>
+                <span *ngIf="notesCountByVideoId()[item.id] > 0" class="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold shrink-0">
+                    {{ notesCountByVideoId()[item.id] }}
+                </span>
+              </div>
               <div class="flex items-center gap-1.5 mt-0.5">
                 <span *ngIf="item.folderName" class="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-teal-300 font-mono truncate max-w-[120px]" [title]="item.folderName">
                   📁 {{ item.folderName }}
@@ -127,6 +132,7 @@ export class PlaylistTabComponent {
   sortOrder = input<'asc' | 'desc'>('asc');
   searchQuery = model<string>('');
   totalPlaylistSize = input<number>(0);
+  notesCountByVideoId = input<Record<string, number>>({});
 
   selectItem = output<LocalMediaItem>();
   removeItem = output<string>();

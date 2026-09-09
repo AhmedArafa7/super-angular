@@ -449,6 +449,7 @@ import { NotesService } from './services/notes.service';
               [sortOrder]="sortOrder()"
               [(searchQuery)]="searchQuery"
               [totalPlaylistSize]="totalPlaylistSize()"
+              [notesCountByVideoId]="notesCountByVideoId()"
               (selectItem)="onPlaylistItemClick($event)"
               (removeItem)="removeItem($event)"
               (sortChange)="toggleSortOrder()"
@@ -1005,6 +1006,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   cropBox = signal<{ x: number; y: number; w: number; h: number }>({ x: 15, y: 15, w: 70, h: 70 });
 
   loopAB = signal<{ a: number | null; b: number | null; active: boolean }>({ a: null, b: null, active: false });
+  notesCountByVideoId = signal<Record<string, number>>({});
   brightness = signal<number>(100);
   isTheaterMode = signal<boolean>(false);
   isFloatingMini = signal<boolean>(false);
@@ -1213,8 +1215,23 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     this.loadUserPreferences();
     this.checkStorageQuota();
     await this.restoreStoredPlaylist();
+    await this.loadAllBookmarks();
     await this.loadRecycleBinAndState();
+    await this.refreshNotesCounts();
   }
+
+  private async refreshNotesCounts() {
+    const allNotes = await this.notesService.getAllNotes();
+    const counts: Record<string, number> = {};
+    for (const note of allNotes) {
+      if (note.videoId) {
+        counts[note.videoId] = (counts[note.videoId] || 0) + 1;
+      }
+    }
+    this.notesCountByVideoId.set(counts);
+  }
+
+  // TODO: refreshNotesCounts() after note create/delete
 
   ngOnDestroy() {
     if (this.controlsTimeout) clearTimeout(this.controlsTimeout);
