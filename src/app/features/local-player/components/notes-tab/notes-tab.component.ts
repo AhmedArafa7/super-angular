@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { 
   LucideAngularModule, Pin, Trash2, Settings, Copy, Check, 
-  Code, Binary, Pencil, RotateCcw, Sparkles, X 
+  Code, Binary, Pencil, RotateCcw, Sparkles, X, MoveHorizontal, WrapText 
 } from 'lucide-angular';
 import { VideoNote } from '../../models/local-player.models';
 import { OcrCleanerService } from '../../services/ocr-cleaner.service';
@@ -13,7 +13,37 @@ import { OcrCleanerService } from '../../services/ocr-cleaner.service';
   standalone: true,
   imports: [CommonModule, FormsModule, LucideAngularModule],
   host: { class: 'flex-1 flex flex-col min-h-0 overflow-hidden' },
+  styles: [`
+    .custom-scrollbar-h::-webkit-scrollbar {
+      height: 6px;
+    }
+    .custom-scrollbar-h::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 4px;
+    }
+    .custom-scrollbar-h::-webkit-scrollbar-thumb {
+      background: rgba(20, 184, 166, 0.4);
+      border-radius: 4px;
+    }
+    .custom-scrollbar-h::-webkit-scrollbar-thumb:hover {
+      background: rgba(20, 184, 166, 0.7);
+    }
+  `],
   template: `
+    <!-- Notes View Controls Bar -->
+    <div class="flex items-center justify-between px-1 pb-2 shrink-0 text-[11px] text-slate-400">
+      <span class="font-bold flex items-center gap-1 text-slate-300">
+        <span>الملاحظات ({{ sortedNotes().length }})</span>
+      </span>
+      <button (click)="toggleWordWrap()" 
+              class="px-2.5 py-1 rounded-xl font-bold transition flex items-center gap-1.5 border text-xs active:scale-95"
+              [ngClass]="isWordWrap() ? 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10' : 'bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border-teal-500/30 shadow-sm shadow-teal-500/10'"
+              [title]="isWordWrap() ? 'النمط الحالي: التفاف الأسطر. انقر لجعله سطراً كاملاً دون تجزئة' : 'النمط الحالي: سطر كامل مع شريط تمرير. انقر لتفعيل التفاف الأسطر'">
+        <lucide-icon [img]="isWordWrap() ? WrapText : MoveHorizontal" class="size-3.5 text-teal-400"></lucide-icon>
+        <span>{{ isWordWrap() ? '↵ التفاف الأسطر' : '↔ سطر كامل' }}</span>
+      </button>
+    </div>
+
     <!-- Notes Scrollable List -->
     <div class="flex-1 overflow-y-auto space-y-3 pr-1 pb-6 custom-scrollbar min-h-0" style="scrollbar-gutter: stable;">
       @if (sortedNotes().length > 0) {
@@ -50,7 +80,9 @@ import { OcrCleanerService } from '../../services/ocr-cleaner.service';
                   (ngModelChange)="inlineEditText.set($event)"
                   rows="7"
                   dir="auto"
-                  class="w-full bg-black/60 border border-teal-500/50 rounded-xl p-3 text-xs text-white placeholder:text-slate-500 focus:outline-none font-mono resize-y leading-relaxed custom-scrollbar select-text"></textarea>
+                  [wrap]="isWordWrap() ? 'soft' : 'off'"
+                  class="w-full bg-black/60 border border-teal-500/50 rounded-xl p-3 text-xs text-white placeholder:text-slate-500 focus:outline-none font-mono resize-y leading-relaxed custom-scrollbar select-text"
+                  [ngClass]="isWordWrap() ? 'whitespace-pre-wrap' : 'whitespace-pre overflow-x-auto custom-scrollbar-h'"></textarea>
                 <div class="flex items-center justify-end gap-2">
                   <button (click)="cancelInlineEdit()" class="px-3 py-1 bg-white/10 hover:bg-white/20 text-slate-300 rounded-lg text-xs font-bold transition">إلغاء</button>
                   <button (click)="saveInlineEdit(note)" class="px-3 py-1 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-bold transition">حفظ التعديل ✓</button>
@@ -58,7 +90,8 @@ import { OcrCleanerService } from '../../services/ocr-cleaner.service';
               </div>
             } @else {
               <!-- Note Text with readable font & formatting -->
-              <div class="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed select-text font-mono bg-black/40 p-3 rounded-xl border border-white/5" 
+              <div class="text-xs text-slate-200 leading-relaxed select-text font-mono bg-black/40 p-3 rounded-xl border border-white/5 transition-all" 
+                   [ngClass]="isWordWrap() ? 'whitespace-pre-wrap' : 'whitespace-pre overflow-x-auto custom-scrollbar-h'"
                    [style.color]="note.textColor || 'inherit'"
                    dir="auto">
                 {{ note.text }}
@@ -72,6 +105,13 @@ import { OcrCleanerService } from '../../services/ocr-cleaner.service';
                       title="تنقية الكود وحذف أرقام الأسطر والرموز ومخلفات المحرر">
                 <lucide-icon [img]="Code" class="size-3 text-teal-400"></lucide-icon>
                 <span>تنقية كود</span>
+              </button>
+
+              <button (click)="applyUnwrapLines(note, $event)" 
+                      class="px-2 py-1 bg-cyan-500/15 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/25 rounded-lg text-[10px] font-bold flex items-center gap-1 transition active:scale-95" 
+                      title="دمج الأسطر البرمجية المتقطعة في سطر واحد كامل">
+                <lucide-icon [img]="MoveHorizontal" class="size-3 text-cyan-400"></lucide-icon>
+                <span>دمج الأسطر</span>
               </button>
 
               <button (click)="applyRemoveNumbers(note, $event)" 
@@ -139,6 +179,26 @@ export class NotesTabComponent {
   readonly RotateCcw = RotateCcw;
   readonly Sparkles = Sparkles;
   readonly X = X;
+  readonly MoveHorizontal = MoveHorizontal;
+  readonly WrapText = WrapText;
+
+  isWordWrap = signal<boolean>(this.loadWordWrap());
+
+  private loadWordWrap(): boolean {
+    try {
+      const saved = localStorage.getItem('local_player_notes_word_wrap');
+      if (saved !== null) {
+        return saved === 'true';
+      }
+    } catch (e) {}
+    return false; // Default: false -> unbroken single full lines!
+  }
+
+  toggleWordWrap() {
+    const newVal = !this.isWordWrap();
+    this.isWordWrap.set(newVal);
+    localStorage.setItem('local_player_notes_word_wrap', String(newVal));
+  }
 
   copiedNoteId: string | null = null;
   editingInlineNoteId = signal<string | null>(null);
@@ -203,6 +263,16 @@ export class NotesTabComponent {
   applyCodeClean(note: VideoNote, event?: Event) {
     if (event) event.stopPropagation();
     const cleaned = this.ocrCleaner.cleanCode(note.text);
+    const originalText = note.originalText || note.text;
+    this.updateNote.emit({
+      id: note.id,
+      changes: { text: cleaned, originalText }
+    });
+  }
+
+  applyUnwrapLines(note: VideoNote, event?: Event) {
+    if (event) event.stopPropagation();
+    const cleaned = this.ocrCleaner.unwrapCodeLines(note.text);
     const originalText = note.originalText || note.text;
     this.updateNote.emit({
       id: note.id,

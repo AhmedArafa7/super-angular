@@ -69,9 +69,10 @@ export class OcrCleanerService {
       line = line.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
 
       // 1. Remove gutter line numbers/symbols before keywords:
-      // "q using", "B using", "8 using", "7 v namespace", "9 v i public"
+      // "q using", "B using", "8 using", "7 v namespace", "9 v i public", "c static"
+      line = line.replace(/^c\s+(static|public|private|protected)\b/i, 'public $1');
       line = line.replace(
-        /^[a-zA-Z0-9\u0600-\u06FF]{1,4}\s+(using|import|from|namespace|public|private|protected|internal|class|struct|interface|enum|record|void|int|string|bool|async|task|const|let|var|function|def|return)\b/i,
+        /^[a-zA-Z0-9\u0600-\u06FF]{1,4}\s+(using|import|from|namespace|public|private|protected|internal|static|readonly|async|class|struct|interface|enum|record|void|int|string|bool|task|const|let|var|function|def|return)\b/i,
         '$1'
       );
 
@@ -93,9 +94,15 @@ export class OcrCleanerService {
       line = line.replace(/\s+\d{1,4}\s*[\]\)\}»>]*$/g, '');
       line = line.replace(/[|!]\s*$/g, '');
 
-      // 4. Fix common code keyword typos
+      // Remove trailing random junk after closing braces or paren: e.g. ") IN", ") EE"
+      line = line.replace(/\)\s+[A-Z]{1,3}\s*[-–—]?\s*$/g, ')');
+
+      // 4. Fix common code keyword typos and assignment errors:
       line = line.replace(/\bSystem\.Ling\b/g, 'System.Linq');
       line = line.replace(/\bSysten\b/g, 'System');
+
+      // Fix parameter default value misreads where "=" was read as "-"
+      line = line.replace(/(\bstring\s+\w+\s*)-\s*(?=["'])/g, '$1= ');
 
       // 5. Fix enum assignment misreads:
       // "Failure = '," -> "Failure = 0,"
@@ -105,12 +112,19 @@ export class OcrCleanerService {
       line = line.replace(/^\|\s*/, '').replace(/\s*\|$/, '');
 
       const trimmed = line.trim();
+      // Filter out pure noise lines like "EE -", "HE $", "[HE $", "IN"
+      if (/^[A-Z\$\-\–—\s\(\)\[\]]{1,4}$/i.test(trimmed)) {
+        continue;
+      }
+
       if (trimmed.length > 0) {
         cleanedLines.push(trimmed);
       }
     }
 
-    return this.indentCode(cleanedLines);
+    const joinedText = cleanedLines.join('\n');
+    const unwrappedText = this.unwrapCodeLines(joinedText);
+    return this.indentCode(unwrappedText.split(/\r?\n/));
   }
 
   /**
@@ -183,5 +197,58 @@ export class OcrCleanerService {
       .map(line => line.replace(/[^\u0600-\u06FF\s0-9\.,!؟\-\(\)]/g, ' ').replace(/\s+/g, ' ').trim())
       .filter(l => l.length > 0)
       .join('\n');
+  }
+
+  /**
+   * Intelligently joins broken code lines that were split mid-statement or mid-signature
+   */
+  unwrapCodeLines(text: string): string {
+    if (!text) return '';
+
+    const lines = text.split(/\r?\n/);
+    const result: string[] = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      let current = lines[i];
+
+      while (i + 1 < lines.length) {
+        const trimmedCurrent = current.trim();
+        const nextRaw = lines[i + 1];
+        const trimmedNext = nextRaw.trim();
+
+        if (!trimmedNext) break;
+
+        // Check if next line is clearly the start of a distinct statement or block
+        const isNextSeparate = /^(using|namespace|public|private|protected|internal|class|struct|interface|enum|record|void|return|if|else|for|while|switch|case|default)\b/i.test(trimmedNext) ||
+                               trimmedNext.startsWith('{') || trimmedNext.startsWith('}') ||
+                               trimmedNext.startsWith('//') || trimmedNext.startsWith('/*');
+
+        // Check if current line clearly continues:
+        // Ends with operator, comma, open paren/bracket, or assignment
+        const endsWithContinuation = /[=,(:+*\/\\&|\^?-]$/.test(trimmedCurrent);
+        // Next line starts with continuation:
+        const startsWithContinuation = /^[,:).+*\/\\&|\^?=>\]]/.test(trimmedNext);
+        // Unclosed quotes in current line:
+        const quoteCount = (trimmedCurrent.match(/"/g) || []).length;
+        const unclosedQuotes = quoteCount % 2 !== 0;
+        // Incomplete statement without semicolon or brace:
+        const incompleteStatement = !/[;{}]$/.test(trimmedCurrent) && !trimmedCurrent.endsWith(':') && !isNextSeparate;
+
+        if (endsWithContinuation || startsWithContinuation || unclosedQuotes || incompleteStatement) {
+          // If the next line is a separate block, don't join unless explicitly continuing with an operator
+          if (isNextSeparate && !endsWithContinuation && !startsWithContinuation && !unclosedQuotes) {
+            break;
+          }
+          current = trimmedCurrent + ' ' + trimmedNext;
+          i++; // Consumed next line
+        } else {
+          break;
+        }
+      }
+
+      result.push(current);
+    }
+
+    return result.join('\n');
   }
 }

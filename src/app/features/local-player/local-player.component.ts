@@ -8,7 +8,7 @@ import {
   RotateCcw, RotateCw, SkipForward, SkipBack, FolderOpen, FolderPlus, Upload, Film, Music, Trash2, 
   ListMusic, Sparkles, Sliders, Camera, Subtitles, Repeat, Eye, HardDrive, Clock,
   Search, ArrowUpDown, Plus, X, Loader2, Check, Settings, HelpCircle, CheckCircle2, Tv,
-  Undo2, Redo2, ChevronLeft, ChevronRight, History, ScanText
+  Undo2, Redo2, ChevronLeft, ChevronRight, History, ScanText, MoveHorizontal
 } from 'lucide-angular';
 import { PlaylistTabComponent } from './components/playlist-tab/playlist-tab.component';
 import { NotesTabComponent } from './components/notes-tab/notes-tab.component';
@@ -475,8 +475,21 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
 
         </main>
 
+        <!-- Drag Divider Handle between Main Video and Sidebar (visible on desktop) -->
+        <div 
+          *ngIf="!isTheaterMode() && !isFloatingMini()"
+          (mousedown)="startResizingSidebar($event)"
+          (dblclick)="cycleSidebarWidth()"
+          class="hidden lg:flex w-2 hover:w-2.5 bg-white/5 hover:bg-teal-500/40 active:bg-teal-500 cursor-col-resize shrink-0 transition-all z-20 items-center justify-center group select-none relative"
+          title="اسحب لتكبير أو تصغير عرض الشريط الجانبي (أو انقر مرتين للتبديل بين القياسات)">
+          <div class="w-0.5 h-12 rounded-full bg-white/20 group-hover:bg-teal-300 group-hover:h-20 transition-all"></div>
+        </div>
+
         <!-- Right Side: Sidebar Tabs (Playlist, Bookmarks, Storage) -->
-        <aside [class.hidden]="isTheaterMode() || isFloatingMini()" class="w-full lg:w-96 bg-slate-900 border-r border-white/10 flex flex-col shrink-0 h-80 lg:h-full overflow-hidden">
+        <aside [class.hidden]="isTheaterMode() || isFloatingMini()" 
+               [style.width.px]="sidebarWidth()"
+               class="w-full lg:w-auto bg-slate-900 border-r border-white/10 flex flex-col shrink-0 h-80 lg:h-full overflow-hidden"
+               [class.select-none]="isResizingSidebar()">
           
           <!-- Sidebar Navigation Tabs -->
           <div class="flex items-center bg-slate-950 border-b border-white/10 px-1 py-1.5 gap-0.5 shrink-0">
@@ -495,6 +508,10 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
             <button (click)="onSelectTab('recycle')" [class.bg-amber-600]="sidebarTab() === 'recycle'" [class.text-white]="sidebarTab() === 'recycle'" class="flex-1 py-1 px-1 rounded-lg text-[10px] font-bold text-slate-300 hover:bg-white/5 transition flex items-center justify-center gap-0.5" title="سلة المحذوفات والسجل">
               <lucide-icon [img]="Trash2" class="size-3"></lucide-icon>
               <span>السجل ({{ recycleBin().length }})</span>
+            </button>
+            <button (click)="cycleSidebarWidth()" class="p-1.5 rounded-lg text-slate-400 hover:text-teal-300 hover:bg-white/5 transition flex items-center gap-1" [title]="'توسيع / تغيير عرض الشريط (الحالي: ' + sidebarWidth() + 'px)'">
+              <lucide-icon [img]="MoveHorizontal" class="size-3.5"></lucide-icon>
+              <span class="text-[9px] font-mono hidden xl:inline">{{ sidebarWidth() }}px</span>
             </button>
             <button (click)="exportPlaylistJson()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition" title="تصدير القائمة والتقدم JSON">
               <lucide-icon [img]="Upload" class="size-3.5"></lucide-icon>
@@ -1241,6 +1258,66 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   }
 
   sidebarTab = signal<'playlist' | 'bookmarks' | 'storage' | 'recycle'>('playlist');
+  sidebarWidth = signal<number>(this.loadSidebarWidth());
+  isResizingSidebar = signal<boolean>(false);
+
+  private loadSidebarWidth(): number {
+    try {
+      const saved = localStorage.getItem('local_player_sidebar_width');
+      if (saved) {
+        const val = parseInt(saved, 10);
+        if (!isNaN(val) && val >= 300 && val <= 1400) {
+          return val;
+        }
+      }
+    } catch (e) {}
+    return 420;
+  }
+
+  startResizingSidebar(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isResizingSidebar.set(true);
+
+    const startX = event.clientX;
+    const startWidth = this.sidebarWidth();
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      // In dir="rtl", sidebar is on the left, video is on the right.
+      // Moving mouse to the right (moveEvent.clientX > startX) widens the sidebar!
+      const deltaX = moveEvent.clientX - startX;
+      const minWidth = 320;
+      const maxWidth = Math.min(window.innerWidth * 0.75, 1200);
+      const newWidth = Math.max(minWidth, Math.min(maxWidth, Math.round(startWidth + deltaX)));
+      this.sidebarWidth.set(newWidth);
+    };
+
+    const onMouseUp = () => {
+      this.isResizingSidebar.set(false);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      localStorage.setItem('local_player_sidebar_width', this.sidebarWidth().toString());
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }
+
+  cycleSidebarWidth() {
+    const current = this.sidebarWidth();
+    let nextWidth = 384;
+    if (current < 450) {
+      nextWidth = 580; // wide
+    } else if (current < 680) {
+      nextWidth = 780; // extra wide
+    } else {
+      nextWidth = 384; // standard
+    }
+    this.sidebarWidth.set(nextWidth);
+    localStorage.setItem('local_player_sidebar_width', nextWidth.toString());
+    this.showToast(`عرض الشريط: ${nextWidth}px`);
+  }
+
   recycleBin = signal<RecycleBinItem[]>([]);
   bookmarks = signal<VideoBookmark[]>([]);
   newBookmarkNote = '';
@@ -1711,6 +1788,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   ChevronRight = ChevronRight;
   History = History;
   ScanText = ScanText;
+  MoveHorizontal = MoveHorizontal;
 
   // Filtered & Sorted playlist
   displayedPlaylist = computed(() => {
@@ -1913,6 +1991,12 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
 
       const savedAutoClean = localStorage.getItem('local_player_ocr_autoclean');
       if (savedAutoClean !== null) this.ocrAutoCleanCode.set(savedAutoClean === 'true');
+
+      const savedSidebarWidth = localStorage.getItem('local_player_sidebar_width');
+      if (savedSidebarWidth) {
+        const w = parseInt(savedSidebarWidth, 10);
+        if (!isNaN(w) && w >= 300 && w <= 1400) this.sidebarWidth.set(w);
+      }
 
       this.loadJumpHistoryFromStorage();
     } catch (e) {
