@@ -135,7 +135,8 @@ export class AppSidebarComponent {
         route: `external-tabs/view/${tab.id}`
       }));
 
-    return [...baseItems, ...customModules, ...pinnedExternalTabs];
+    const all = [...baseItems, ...customModules, ...pinnedExternalTabs];
+    return all.filter((item, index, self) => index === self.findIndex(t => t.id === item.id));
   }
 
   get pinnedItems(): NavItem[] {
@@ -162,7 +163,7 @@ export class AppSidebarComponent {
     if (q) {
       items = visible.filter(item => this.sidebar.matchesSearch(item, q));
     }
-    return items;
+    return items.filter((item, index, self) => index === self.findIndex(t => t.id === item.id));
   }
 
   get unpinnedItems(): NavItem[] {
@@ -181,7 +182,7 @@ export class AppSidebarComponent {
     if (q) {
       items = items.filter(item => this.sidebar.matchesSearch(item, q));
     }
-    return items;
+    return items.filter((item, index, self) => index === self.findIndex(t => t.id === item.id));
   }
 
   get recentItems(): NavItem[] {

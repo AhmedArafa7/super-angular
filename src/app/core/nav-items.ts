@@ -74,7 +74,6 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: "hisn", label: "حصن المسلم", icon: "book-open", restricted: false, category: 'tools', aliases: ['اذكار', 'أذكار', 'حصن', 'أدعية', 'قرآن', 'صباح ومساء'] },
   { id: "about", label: "عن الشركة", icon: "building-2", restricted: false, isPermanent: true, status: 'NEW', route: 'about', category: 'core', aliases: ['معلومات عنا', 'من نحن', 'about', 'فريق العمل'] },
   { id: "features", label: "المميزات", icon: "zap", restricted: false, category: 'tools', aliases: ['خواص', 'ميزات', 'features'] },
-  { id: "notifications", label: "التنبيهات", icon: "bell", restricted: false, category: 'tools', aliases: ['اشعارات', 'تنبيهات', 'notifications', 'alerts'] },
   { id: "settings", label: "الإعدادات", icon: "settings", restricted: false, category: 'tools', aliases: ['تخصيص', 'خيارات', 'settings', 'config'] },
   { id: "admin", label: "لوحة الإدارة", icon: "shield-check", restricted: true, category: 'tools', aliases: ['ادمن', 'ادارة', 'admin', 'لوحة تحكم'] },
 ];

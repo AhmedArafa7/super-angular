@@ -419,19 +419,19 @@ import { NotesService } from './services/notes.service';
           
           <!-- Sidebar Navigation Tabs -->
           <div class="flex items-center bg-slate-950 border-b border-white/10 px-1 py-1.5 gap-0.5 shrink-0">
-            <button (click)="sidebarTab.set('playlist')" [class.bg-teal-600]="sidebarTab() === 'playlist'" [class.text-white]="sidebarTab() === 'playlist'" class="flex-1 py-1 px-1 rounded-lg text-[10px] font-bold text-slate-300 hover:bg-white/5 transition flex items-center justify-center gap-0.5">
+            <button (click)="onSelectTab('playlist')" [class.bg-teal-600]="sidebarTab() === 'playlist'" [class.text-white]="sidebarTab() === 'playlist'" class="flex-1 py-1 px-1 rounded-lg text-[10px] font-bold text-slate-300 hover:bg-white/5 transition flex items-center justify-center gap-0.5">
               <lucide-icon [img]="ListMusic" class="size-3"></lucide-icon>
               <span>القائمة</span>
             </button>
-            <button (click)="sidebarTab.set('bookmarks'); loadBookmarksForVideo(activeItem()?.id || '')" [class.bg-indigo-600]="sidebarTab() === 'bookmarks'" [class.text-white]="sidebarTab() === 'bookmarks'" class="flex-1 py-1 px-1 rounded-lg text-[10px] font-bold text-slate-300 hover:bg-white/5 transition flex items-center justify-center gap-0.5" title="الملاحظات">
+            <button (click)="onSelectTab('bookmarks')" [class.bg-indigo-600]="sidebarTab() === 'bookmarks'" [class.text-white]="sidebarTab() === 'bookmarks'" class="flex-1 py-1 px-1 rounded-lg text-[10px] font-bold text-slate-300 hover:bg-white/5 transition flex items-center justify-center gap-0.5" title="الملاحظات">
               <lucide-icon [img]="Clock" class="size-3"></lucide-icon>
               <span>ملاحظات</span>
             </button>
-            <button (click)="sidebarTab.set('storage'); checkStorageQuota()" [class.bg-emerald-600]="sidebarTab() === 'storage'" [class.text-white]="sidebarTab() === 'storage'" class="flex-1 py-1 px-1 rounded-lg text-[10px] font-bold text-slate-300 hover:bg-white/5 transition flex items-center justify-center gap-0.5" title="التخزين">
+            <button (click)="onSelectTab('storage')" [class.bg-emerald-600]="sidebarTab() === 'storage'" [class.text-white]="sidebarTab() === 'storage'" class="flex-1 py-1 px-1 rounded-lg text-[10px] font-bold text-slate-300 hover:bg-white/5 transition flex items-center justify-center gap-0.5" title="التخزين">
               <lucide-icon [img]="HardDrive" class="size-3"></lucide-icon>
               <span>التخزين</span>
             </button>
-            <button (click)="sidebarTab.set('recycle')" [class.bg-amber-600]="sidebarTab() === 'recycle'" [class.text-white]="sidebarTab() === 'recycle'" class="flex-1 py-1 px-1 rounded-lg text-[10px] font-bold text-slate-300 hover:bg-white/5 transition flex items-center justify-center gap-0.5" title="سلة المحذوفات والسجل">
+            <button (click)="onSelectTab('recycle')" [class.bg-amber-600]="sidebarTab() === 'recycle'" [class.text-white]="sidebarTab() === 'recycle'" class="flex-1 py-1 px-1 rounded-lg text-[10px] font-bold text-slate-300 hover:bg-white/5 transition flex items-center justify-center gap-0.5" title="سلة المحذوفات والسجل">
               <lucide-icon [img]="Trash2" class="size-3"></lucide-icon>
               <span>السجل ({{ recycleBin().length }})</span>
             </button>
@@ -464,11 +464,12 @@ import { NotesService } from './services/notes.service';
             <div class="flex-1 flex flex-col overflow-hidden p-3 space-y-3">
               <div class="p-3 rounded-2xl bg-black/40 border border-white/10 flex flex-col gap-2 shrink-0">
                 <p class="text-xs font-bold text-teal-300 flex items-center gap-1.5">
-                  <span>🔖 إضافة ملاحظة عند الدقيقة الحالية</span>
-                  <span class="text-[10px] font-mono text-slate-400">({{ formatTime(currentTime()) }})</span>
+                  <span *ngIf="activeItem()">🔖 إضافة ملاحظة عند الدقيقة الحالية</span>
+                  <span *ngIf="!activeItem()">📝 إضافة ملاحظة عامة</span>
+                  <span *ngIf="activeItem()" class="text-[10px] font-mono text-slate-400">({{ formatTime(currentTime()) }})</span>
                 </p>
                 <div class="flex gap-1.5">
-                  <input type="text" [(ngModel)]="newBookmarkNote" placeholder="اكتب ملاحظة (مثل: نقطة مهمة)..." class="flex-1 bg-black/60 border border-white/15 rounded-xl px-3 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500" />
+                  <input type="text" [(ngModel)]="newBookmarkNote" (keydown.enter)="addBookmark()" [placeholder]="activeItem() ? 'اكتب ملاحظة (مثل: نقطة مهمة)...' : 'اكتب ملاحظة عامة أو تذكير...'" class="flex-1 bg-black/60 border border-white/15 rounded-xl px-3 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500" />
                   <button (click)="addBookmark()" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-bold transition">إضافة</button>
                 </div>
               </div>
@@ -1104,20 +1105,26 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   }
 
   async addBookmark() {
-    const vid = this.videoPlayer?.nativeElement;
+    const noteText = this.newBookmarkNote.trim();
     const cur = this.activeItem();
-    if (!vid || !cur) return;
-    const time = vid.currentTime;
-    const noteText = this.newBookmarkNote.trim() || `ملاحظة عند الدقيقة ${this.formatTime(time)}`;
+    const vid = this.videoPlayer?.nativeElement;
+
+    if (!noteText && !cur) {
+      this.showToast('يرجى كتابة نص الملاحظة أولاً ✍️', 'warning');
+      return;
+    }
+
+    const time = (cur && vid) ? vid.currentTime : null;
+    const finalNoteText = noteText || (time !== null ? `ملاحظة عند الدقيقة ${this.formatTime(time)}` : 'ملاحظة عامة');
     
     // Create via NotesService for global notes tab
     try {
       await this.notesService.createNote({
-        videoId: cur.id,
-        videoName: cur.name,
-        folderName: cur.folderName || '',
+        videoId: cur ? cur.id : null,
+        videoName: cur ? cur.name : 'ملاحظة عامة',
+        folderName: cur?.folderName || '',
         timestampInVideo: time,
-        text: noteText,
+        text: finalNoteText,
         textColor: null,
         images: [],
         audio: null,
@@ -1128,20 +1135,25 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
       console.error('[LocalPlayer] Error creating note in NotesService:', err);
     }
 
-    const newBm: VideoBookmark = {
-      id: 'bm_' + Date.now(),
-      videoId: cur.id,
-      videoName: cur.name,
-      folderName: cur.folderName || '',
-      time,
-      note: noteText,
-      formattedTime: this.formatTime(time)
-    };
-    const updated = [...this.bookmarks(), newBm].sort((a, b) => a.time - b.time);
-    this.bookmarks.set(updated);
+    if (cur && time !== null) {
+      const newBm: VideoBookmark = {
+        id: 'bm_' + Date.now(),
+        videoId: cur.id,
+        videoName: cur.name,
+        folderName: cur.folderName || '',
+        time,
+        note: finalNoteText,
+        formattedTime: this.formatTime(time)
+      };
+      const updated = [...this.bookmarks(), newBm].sort((a, b) => a.time - b.time);
+      this.bookmarks.set(updated);
+      this.saveBookmarksForVideo(cur.id, updated);
+      this.showToast('تم إضافة العلامة الزمنية والملاحظة 🔖', 'success');
+    } else {
+      this.showToast('تمت إضافة الملاحظة بنجاح 📝', 'success');
+    }
+
     this.newBookmarkNote = '';
-    this.saveBookmarksForVideo(cur.id, updated);
-    this.showToast('تم إضافة العلامة الزمنية والملاحظة 🔖');
   }
 
   jumpToBookmark(time: number) {
@@ -1318,7 +1330,17 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     await this.refreshNotesCounts();
   }
 
-  private async refreshNotesCounts() {
+  async onSelectTab(tab: 'playlist' | 'bookmarks' | 'storage' | 'recycle') {
+    this.sidebarTab.set(tab);
+    if (tab === 'bookmarks') {
+      this.loadBookmarksForVideo(this.activeItem()?.id || '');
+      await this.refreshNotesCounts();
+    } else if (tab === 'storage') {
+      this.checkStorageQuota();
+    }
+  }
+
+  async refreshNotesCounts() {
     const allNotes = await this.notesService.getAllNotes();
     this.allNotesList.set(allNotes); // Keep in sync
     const counts: Record<string, number> = {};
@@ -1357,6 +1379,14 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
 
   async onDeleteNote(id: string) {
     await this.notesService.softDeleteNote(id);
+    const cur = this.activeItem();
+    if (cur) {
+      const bms = this.bookmarks().filter(b => b.id !== id);
+      if (bms.length !== this.bookmarks().length) {
+        this.bookmarks.set(bms);
+        this.saveBookmarksForVideo(cur.id, bms);
+      }
+    }
     await this.refreshNotesCounts();
     this.showToast('تم نقل الملاحظة إلى سلة المحذوفات 🗑️');
   }
