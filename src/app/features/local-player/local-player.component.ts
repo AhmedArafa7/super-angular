@@ -509,7 +509,7 @@ import { NotesService } from './services/notes.service';
 
           <!-- TAB 2: BOOKMARKS & NOTES -->
           <ng-container *ngIf="sidebarTab() === 'bookmarks'">
-            <div class="flex-1 flex flex-col overflow-hidden p-3 space-y-3">
+            <div class="flex-1 flex flex-col min-h-0 overflow-hidden p-3 gap-3">
               <div class="p-3 rounded-2xl bg-black/40 border border-white/10 flex flex-col gap-2 shrink-0">
                 <p class="text-xs font-bold text-teal-300 flex items-center gap-1.5">
                   <span *ngIf="activeItem()">🔖 إضافة ملاحظة عند الدقيقة الحالية</span>
@@ -571,6 +571,7 @@ import { NotesService } from './services/notes.service';
 
               <!-- Notes Tab Component (All Notes & Current Video Notes) -->
               <app-notes-tab
+                class="flex-1 flex flex-col min-h-0 overflow-hidden"
                 [allNotes]="allNotesList()"
                 [currentVideoId]="activeItem()?.id || null"
                 (editNote)="onEditNote($event)"
@@ -583,7 +584,7 @@ import { NotesService } from './services/notes.service';
 
           <!-- TAB 3: STORAGE MANAGER -->
           <ng-container *ngIf="sidebarTab() === 'storage'">
-            <div class="flex-1 flex flex-col overflow-hidden p-3 space-y-3">
+            <div class="flex-1 flex flex-col min-h-0 overflow-hidden p-3 space-y-3">
               <div class="p-3.5 rounded-2xl bg-black/40 border border-white/10 flex flex-col gap-2">
                 <div class="flex items-center justify-between">
                   <span class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
@@ -626,7 +627,7 @@ import { NotesService } from './services/notes.service';
 
           <!-- TAB 4: RECYCLE BIN & HISTORY ARCHIVE -->
           <ng-container *ngIf="sidebarTab() === 'recycle'">
-            <div class="flex-1 flex flex-col overflow-hidden p-3 space-y-3">
+            <div class="flex-1 flex flex-col min-h-0 overflow-hidden p-3 space-y-3">
               <div class="flex items-center justify-between p-3 rounded-2xl bg-black/40 border border-white/10">
                 <div>
                   <p class="text-xs font-bold text-white flex items-center gap-1.5">
