@@ -1,6 +1,7 @@
-import { Component, OnInit, OnChanges, SimpleChanges, Input, Output, EventEmitter, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnChanges, SimpleChanges, Input, Output, EventEmitter, ViewChild, ElementRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AiKeyManagerService } from '../../../core/services/ai-key-manager.service';
 
 @Component({
   selector: 'app-rich-editor',
@@ -19,6 +20,8 @@ export class RichEditorComponent implements OnInit, OnChanges {
   @Output() saveTrigger = new EventEmitter<void>();
 
   @ViewChild('editor') editorEl!: ElementRef;
+
+  private aiKeyManager = inject(AiKeyManagerService);
 
   wordCount = 0;
   charCount = 0;
@@ -157,30 +160,69 @@ export class RichEditorComponent implements OnInit, OnChanges {
   // AI Neuro features
   openAiAssist(action: string) {
     this.aiActionType = action;
-    this.aiPromptText = '';
     this.aiResultText = '';
+    
+    // Auto-grab selected text if available
+    let selectedText = '';
+    if (typeof window !== 'undefined') {
+      const selection = window.getSelection();
+      if (selection && selection.toString().trim()) {
+        selectedText = selection.toString().trim();
+      }
+    }
+
+    if (selectedText) {
+      this.aiPromptText = selectedText;
+    } else if (this.editorEl?.nativeElement?.innerText) {
+      const fullText = this.editorEl.nativeElement.innerText.trim();
+      this.aiPromptText = fullText.length < 1200 ? fullText : fullText.substring(0, 1200) + '...';
+    } else {
+      this.aiPromptText = '';
+    }
+
     this.showAiModal = true;
   }
 
-  generateAiResponse() {
+  async generateAiResponse() {
+    if (!this.aiKeyManager.hasActiveKey()) {
+      this.aiResultText = '⚠️ يرجى تفعيل مفتاح المنصة أو إدخال مفتاح Gemini API في الإعدادات.';
+      return;
+    }
+
+    const prompt = (this.aiPromptText || this.editorEl?.nativeElement?.innerText || '').trim();
+    if (!prompt) {
+      this.aiResultText = '⚠️ يرجى كتابة أو تحديد النص المراد معالجته أولاً.';
+      return;
+    }
+
     this.isAiLoading = true;
-    
-    // Simulate smart AI writing after 2 seconds
-    setTimeout(() => {
-      let result = '';
-      const prompt = this.aiPromptText || 'المستند الحالي';
-      
-      if (this.aiActionType === 'rewrite') {
-        result = `💡 إعادة صياغة ذكية لـ "${prompt}":\n\nلقد قمنا بتحسين الأسلوب ليصبح أكثر احترافية وجاذبية مع الحفاظ على المعنى الأصلي بشكل متكامل ومناسب لبيئة العمل الرسمية.`;
-      } else if (this.aiActionType === 'summarize') {
-        result = `📝 تلخيص تنفيذي لـ "${prompt}":\n\n1. الفكرة الرئيسية: استكشاف الحلول الرقمية العصرية.\n2. المخرجات الأساسية: سرعة التنفيذ، حماية الخصوصية بالكامل.\n3. التوصيات: الانتقال التدريجي للأنظمة الذكية.`;
-      } else if (this.aiActionType === 'grammar') {
-        result = `✅ تدقيق نحوي وإملائي:\n\nلم يتم العثور على أخطاء جسيمة. تم ضبط علامات الترقيم وصياغة الجمل لتبدو منسابة وأكثر قوة وبلاغة!`;
+    this.aiResultText = '';
+
+    let instruction = '';
+    if (this.aiActionType === 'rewrite') {
+      instruction = `أنت محرر نصوص وكاتب بليغ محترف. أعد صياغة النص التالي بأسلوب احترافي، قوي، وواضح مع الحفاظ على المعنى الأصلي دون أي مقدمات أو هوامش إضافية:\n\n"${prompt}"`;
+    } else if (this.aiActionType === 'summarize') {
+      instruction = `أنت مساعد تلخيص تنفيذي ذكي. لخص النص التالي في نقاط موجزة وأهم الأفكار والمخرجات الأساسية:\n\n"${prompt}"`;
+    } else if (this.aiActionType === 'grammar') {
+      instruction = `أنت مدقق لغوي ونحوي وإملائي محترف. قم بفحص النص التالي وتصحيح أي أخطاء لغوية أو نحوية أو إملائية أو علامات ترقيم، ثم أعد النص بعد التصحيح متبوعاً بقائمة سريعة ومختصرة بأبرز التعديلات إن وجدت:\n\n"${prompt}"`;
+    }
+
+    try {
+      const res = await this.aiKeyManager.callGeminiApi({
+        model: 'gemini-2.5-flash',
+        prompt: instruction
+      });
+
+      if (res.ok && res.text) {
+        this.aiResultText = res.text.trim();
+      } else {
+        this.aiResultText = `⚠️ حدث خطأ أثناء المعالجة: ${res.error || 'لم يتم استلام رد من النموذج'}`;
       }
-      
-      this.aiResultText = result;
+    } catch (e: any) {
+      this.aiResultText = `⚠️ تعذر الاتصال بمحرك الذكاء الاصطناعي: ${e.message || 'خطأ غير معروف'}`;
+    } finally {
       this.isAiLoading = false;
-    }, 2000);
+    }
   }
 
   insertAiResult() {

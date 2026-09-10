@@ -92,6 +92,25 @@
     <button (click)="executeFormat('removeFormat')" class="tool-btn" title="مسح التنسيقات">
       <span>🧹</span>
     </button>
+
+    <div class="divider"></div>
+
+    <!-- AI Neuro Assistant Group -->
+    <div class="flex items-center gap-1 bg-indigo-950/40 border border-indigo-500/20 rounded-xl px-1.5 py-0.5">
+      <span class="text-[11px] font-black text-indigo-400 px-1 select-none flex items-center gap-1">
+        <span>⚡</span>
+        <span class="hidden sm:inline">AI</span>
+      </span>
+      <button type="button" (click)="openAiAssist('rewrite')" class="tool-btn text-xs hover:bg-indigo-600/30 text-indigo-200" title="إعادة صياغة احترافية بالذكاء الاصطناعي">
+        <span>✨ صياغة</span>
+      </button>
+      <button type="button" (click)="openAiAssist('summarize')" class="tool-btn text-xs hover:bg-indigo-600/30 text-indigo-200" title="تلخيص ذكي للمستند">
+        <span>📝 تلخيص</span>
+      </button>
+      <button type="button" (click)="openAiAssist('grammar')" class="tool-btn text-xs hover:bg-indigo-600/30 text-indigo-200" title="تدقيق نحوي وإملائي">
+        <span>✅ تدقيق</span>
+      </button>
+    </div>
   </div>
 
   <!-- Editor Sheet Workspace -->
