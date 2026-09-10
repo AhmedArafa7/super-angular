@@ -7,11 +7,12 @@ import {
   LucideAngularModule, Play, Pause, Volume2, VolumeX, Maximize2, Minimize2, 
   RotateCcw, RotateCw, SkipForward, SkipBack, FolderOpen, FolderPlus, Upload, Film, Music, Trash2, 
   ListMusic, Sparkles, Sliders, Camera, Subtitles, Repeat, Eye, HardDrive, Clock,
-  Search, ArrowUpDown, Plus, X, Loader2, Check, Settings, HelpCircle, CheckCircle2, Tv
+  Search, ArrowUpDown, Plus, X, Loader2, Check, Settings, HelpCircle, CheckCircle2, Tv,
+  Undo2, Redo2, ChevronLeft, ChevronRight, History
 } from 'lucide-angular';
 import { PlaylistTabComponent } from './components/playlist-tab/playlist-tab.component';
 import { NotesTabComponent } from './components/notes-tab/notes-tab.component';
-import { LocalMediaItem, VideoBookmark, RecycleBinItem, VideoNote } from './models/local-player.models';
+import { LocalMediaItem, VideoBookmark, RecycleBinItem, VideoNote, VideoJumpPoint } from './models/local-player.models';
 import { StorageService } from './services/storage.service';
 import { SnapshotService } from './services/snapshot.service';
 import { NotesService } from './services/notes.service';
@@ -223,6 +224,34 @@ import { NotesService } from './services/notes.service';
                   <button (click)="playNext()" class="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition" title="الفيديو التالي (N)">
                     <lucide-icon [img]="SkipForward" class="size-5"></lucide-icon>
                   </button>
+
+                  <!-- Quick Jump History Navigation in Player Bar -->
+                  <div class="flex items-center gap-0.5 bg-white/5 px-1.5 py-1 rounded-xl border border-white/10 mr-1" title="ذاكرة الانتقالات السريعة (Alt + ← / →)">
+                    <button (click)="jumpBack()" 
+                            [disabled]="!canJumpBack()" 
+                            [class.opacity-30]="!canJumpBack()"
+                            [class.cursor-not-allowed]="!canJumpBack()"
+                            class="p-1 text-slate-300 hover:text-teal-300 hover:bg-white/10 rounded-lg transition" 
+                            title="الرجوع للّحظة السابقة (Alt + ←)">
+                      <lucide-icon [img]="Undo2" class="size-4"></lucide-icon>
+                    </button>
+                    
+                    <button (click)="showJumpHistoryModal.set(true)" 
+                            class="px-1.5 py-0.5 text-[10px] font-mono font-bold text-teal-300 hover:bg-teal-500/20 rounded transition flex items-center gap-1"
+                            title="فتح سجل وذاكرة الانتقالات">
+                      <lucide-icon [img]="History" class="size-3"></lucide-icon>
+                      <span>{{ jumpHistory().length > 0 ? (jumpHistoryIndex() + 1) + '/' + jumpHistory().length : '0' }}</span>
+                    </button>
+
+                    <button (click)="jumpForward()" 
+                            [disabled]="!canJumpForward()" 
+                            [class.opacity-30]="!canJumpForward()"
+                            [class.cursor-not-allowed]="!canJumpForward()"
+                            class="p-1 text-slate-300 hover:text-teal-300 hover:bg-white/10 rounded-lg transition" 
+                            title="التقدم للّحظة التالية (Alt + →)">
+                      <lucide-icon [img]="Redo2" class="size-4"></lucide-icon>
+                    </button>
+                  </div>
 
                   <!-- Volume Controls -->
                   <div class="flex items-center gap-1.5 mr-2">
@@ -474,6 +503,38 @@ import { NotesService } from './services/notes.service';
                 </div>
               </div>
 
+              <!-- Jump History Navigation Toolbar in Notes Tab -->
+              <div class="px-3 py-2 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-between gap-2 shrink-0">
+                <div class="flex items-center gap-1.5">
+                  <button (click)="jumpBack()" 
+                          [disabled]="!canJumpBack()" 
+                          [class.opacity-30]="!canJumpBack()"
+                          [class.cursor-not-allowed]="!canJumpBack()"
+                          class="px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/15 text-white text-xs font-bold transition flex items-center gap-1 active:scale-95"
+                          title="الرجوع للّحظة السابقة (Alt + ←)">
+                    <lucide-icon [img]="ChevronRight" class="size-3.5 text-teal-400"></lucide-icon>
+                    <span>السابق</span>
+                  </button>
+
+                  <button (click)="jumpForward()" 
+                          [disabled]="!canJumpForward()" 
+                          [class.opacity-30]="!canJumpForward()"
+                          [class.cursor-not-allowed]="!canJumpForward()"
+                          class="px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/15 text-white text-xs font-bold transition flex items-center gap-1 active:scale-95"
+                          title="التقدم للّحظة التالية (Alt + →)">
+                    <span>التالي</span>
+                    <lucide-icon [img]="ChevronLeft" class="size-3.5 text-teal-400"></lucide-icon>
+                  </button>
+                </div>
+
+                <button (click)="showJumpHistoryModal.set(true)" 
+                        class="px-2.5 py-1 rounded-xl bg-teal-500/15 hover:bg-teal-500/30 text-teal-300 text-xs font-bold transition flex items-center gap-1.5 border border-teal-500/20 active:scale-95"
+                        title="دخول ذاكرة الانتقالات المباشرة (حتى 20 نقطة)">
+                  <lucide-icon [img]="History" class="size-3.5 text-teal-400"></lucide-icon>
+                  <span>الذاكرة ({{ jumpHistory().length }}/20)</span>
+                </button>
+              </div>
+
               <!-- Notes Tab Component (All Notes & Current Video Notes) -->
               <app-notes-tab
                 [allNotes]="allNotesList()"
@@ -648,6 +709,104 @@ import { NotesService } from './services/notes.service';
               استعادة الاختصارات الافتراضية ↺
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- Jump Navigation History Modal -->
+      <div *ngIf="showJumpHistoryModal()" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in" (click)="showJumpHistoryModal.set(false)">
+        <div class="bg-slate-900 border border-white/15 rounded-3xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden" (click)="$event.stopPropagation()">
+          
+          <!-- Modal Header -->
+          <div class="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between bg-slate-950/60">
+            <div class="flex items-center gap-3">
+              <div class="size-10 rounded-2xl bg-teal-500/20 text-teal-400 flex items-center justify-center">
+                <lucide-icon [img]="History" class="size-5"></lucide-icon>
+              </div>
+              <div>
+                <h3 class="text-sm font-black text-white flex items-center gap-2">
+                  <span>ذاكرة وتاريخ الانتقالات</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 font-mono">{{ jumpHistory().length }}/20 نقطة</span>
+                </h3>
+                <p class="text-[11px] text-slate-400">انقر على أي نقطة للانتقال الفوري إليها بالفيديو والزمن المحددين</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+              <button *ngIf="jumpHistory().length > 0" (click)="clearJumpHistory()" class="px-2.5 py-1 text-[11px] bg-red-500/20 hover:bg-red-500/40 text-red-300 rounded-xl font-bold transition flex items-center gap-1" title="مسح كل السجل">
+                <lucide-icon [img]="Trash2" class="size-3"></lucide-icon>
+                <span>تفريغ</span>
+              </button>
+              <button (click)="showJumpHistoryModal.set(false)" class="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-white/10 transition">
+                <lucide-icon [img]="X" class="size-4.5"></lucide-icon>
+              </button>
+            </div>
+          </div>
+
+          <!-- Modal Body (Jump Points List) -->
+          <div class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+            @if (jumpHistory().length > 0) {
+              <div class="space-y-1.5">
+                @for (point of jumpHistory(); track point.id; let idx = $index) {
+                  <div (click)="jumpToHistoryPoint(idx)" 
+                       class="p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 group"
+                       [ngClass]="idx === jumpHistoryIndex() ? 'bg-teal-950/40 border-teal-500/60 shadow-lg shadow-teal-950/50' : 'bg-black/30 border-white/5 hover:border-white/20 hover:bg-white/[0.04]'">
+                    
+                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                      <span class="size-6 rounded-lg font-mono text-[10px] font-bold flex items-center justify-center shrink-0"
+                            [ngClass]="idx === jumpHistoryIndex() ? 'bg-teal-500 text-slate-950' : 'bg-white/10 text-slate-400'">
+                        {{ idx + 1 }}
+                      </span>
+
+                      <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-2">
+                          <span class="text-xs font-bold text-white truncate" [title]="point.videoName">{{ point.videoName }}</span>
+                          <span *ngIf="idx === jumpHistoryIndex()" class="text-[9px] px-1.5 py-0.5 rounded bg-teal-500/30 text-teal-300 font-bold shrink-0">🎯 اللحظة الحالية</span>
+                          <span *ngIf="point.videoId === activeItem()?.id && idx !== jumpHistoryIndex()" class="text-[9px] px-1.5 py-0.5 rounded bg-slate-500/20 text-slate-400 font-bold shrink-0">الفيديو الحالي</span>
+                        </div>
+                        <div class="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
+                          <span class="text-teal-400 font-mono font-bold">🕒 {{ point.formattedTime }}</span>
+                          <span>•</span>
+                          <span class="truncate text-slate-300">{{ point.label }}</span>
+                          <span class="text-slate-500 font-mono">({{ formatRelativeTime(point.timestamp) }})</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 shrink-0">
+                      <button (click)="removeJumpPoint(point.id, $event)" class="opacity-0 group-hover:opacity-100 p-1.5 text-slate-500 hover:text-red-400 transition rounded-lg hover:bg-white/5" title="حذف هذه النقطة">
+                        <lucide-icon [img]="Trash2" class="size-3.5"></lucide-icon>
+                      </button>
+                      <span class="text-[11px] font-bold text-teal-400 group-hover:translate-x-[-2px] transition flex items-center gap-0.5">
+                        <span>انتقال</span>
+                        <lucide-icon [img]="ChevronLeft" class="size-3"></lucide-icon>
+                      </span>
+                    </div>
+
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="py-12 text-center text-slate-500 flex flex-col items-center justify-center">
+                <lucide-icon [img]="History" class="size-12 mb-3 opacity-30 text-teal-400"></lucide-icon>
+                <p class="text-xs font-bold text-slate-300">لا توجد نقاط انتقال في الذاكرة بعد</p>
+                <p class="text-[11px] text-slate-500 max-w-xs mt-1">عند النقر على أي ملاحظة أو علامة زمنية أو التنقل بين الفيديوهات، سيتم حفظ موقعك تلقائياً هنا لتتمكن من العودة إليه بضغطة زر واحدة!</p>
+              </div>
+            }
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="p-3.5 border-t border-white/10 bg-slate-950/60 flex items-center justify-between text-xs text-slate-400">
+            <div class="flex items-center gap-2">
+              <span class="font-mono text-[11px] bg-white/10 px-1.5 py-0.5 rounded text-slate-300">Alt + ←</span>
+              <span>السابق</span>
+              <span class="font-mono text-[11px] bg-white/10 px-1.5 py-0.5 rounded text-slate-300">Alt + →</span>
+              <span>التالي</span>
+            </div>
+            <button (click)="showJumpHistoryModal.set(false)" class="px-4 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition">
+              إغلاق
+            </button>
+          </div>
+
         </div>
       </div>
 
@@ -1017,6 +1176,17 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   bookmarks = signal<VideoBookmark[]>([]);
   newBookmarkNote = '';
 
+  // Jump History Stack (Max 20 entries)
+  jumpHistory = signal<VideoJumpPoint[]>([]);
+  jumpHistoryIndex = signal<number>(-1);
+  showJumpHistoryModal = signal<boolean>(false);
+
+  canJumpBack = computed(() => this.jumpHistoryIndex() > 0);
+  canJumpForward = computed(() => {
+    const idx = this.jumpHistoryIndex();
+    return idx >= 0 && idx < this.jumpHistory().length - 1;
+  });
+
   async loadRecycleBinAndState() {
     try {
       if ((window as any).electronAPI?.localPlayer) {
@@ -1157,11 +1327,170 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   }
 
   jumpToBookmark(time: number) {
+    const cur = this.activeItem();
     const vid = this.videoPlayer?.nativeElement;
+    const curTime = vid ? vid.currentTime : this.currentTime();
+
+    if (cur && curTime !== null && curTime !== undefined) {
+      this.recordJumpPoint({
+        videoId: cur.id,
+        videoName: cur.name,
+        folderName: cur.folderName,
+        time: curTime,
+        label: 'موقع المشاهدة السابق'
+      });
+    }
+
     if (vid) {
       vid.currentTime = time;
       this.currentTime.set(time);
     }
+
+    if (cur) {
+      this.recordJumpPoint({
+        videoId: cur.id,
+        videoName: cur.name,
+        folderName: cur.folderName,
+        time: time,
+        label: `علامة زمنية (${this.formatTime(time)})`
+      });
+    }
+  }
+
+  // ==========================================
+  // JUMP NAVIGATION HISTORY (Max 20 entries)
+  // ==========================================
+
+  recordJumpPoint(point: { videoId: string; videoName: string; folderName?: string; time: number; label: string }) {
+    if (!point.videoId || point.time === null || point.time === undefined || isNaN(point.time)) return;
+
+    const newPoint: VideoJumpPoint = {
+      id: 'jp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      videoId: point.videoId,
+      videoName: point.videoName,
+      folderName: point.folderName,
+      time: Math.round(point.time),
+      formattedTime: this.formatTime(point.time),
+      label: point.label,
+      timestamp: Date.now()
+    };
+
+    let history = [...this.jumpHistory()];
+    const currentIndex = this.jumpHistoryIndex();
+
+    // If user navigated backward and is now making a new jump, drop the forward history
+    if (currentIndex >= 0 && currentIndex < history.length - 1) {
+      history = history.slice(0, currentIndex + 1);
+    }
+
+    // Deduplicate: Don't push if the last item is identical video & time (within 2 sec)
+    const last = history[history.length - 1];
+    if (last && last.videoId === newPoint.videoId && Math.abs(last.time - newPoint.time) <= 2) {
+      if (point.label && !last.label.includes(point.label)) {
+        last.label = point.label;
+        this.jumpHistory.set([...history]);
+      }
+      return;
+    }
+
+    history.push(newPoint);
+
+    // Maximum 20 entries
+    if (history.length > 20) {
+      history = history.slice(history.length - 20);
+    }
+
+    this.jumpHistory.set(history);
+    this.jumpHistoryIndex.set(history.length - 1);
+    this.saveJumpHistoryToStorage();
+  }
+
+  async jumpBack() {
+    if (!this.canJumpBack()) return;
+    const newIndex = this.jumpHistoryIndex() - 1;
+    await this.applyJumpPoint(this.jumpHistory()[newIndex], newIndex);
+  }
+
+  async jumpForward() {
+    if (!this.canJumpForward()) return;
+    const newIndex = this.jumpHistoryIndex() + 1;
+    await this.applyJumpPoint(this.jumpHistory()[newIndex], newIndex);
+  }
+
+  async jumpToHistoryPoint(index: number) {
+    const history = this.jumpHistory();
+    if (index >= 0 && index < history.length) {
+      await this.applyJumpPoint(history[index], index);
+      this.showJumpHistoryModal.set(false);
+    }
+  }
+
+  async applyJumpPoint(point: VideoJumpPoint, newIndex: number) {
+    const cur = this.activeItem();
+    this.jumpHistoryIndex.set(newIndex);
+
+    if (point.videoId && point.videoId !== cur?.id) {
+      const targetItem = this.playlist().find(item => item.id === point.videoId);
+      if (targetItem) {
+        this.playItem(targetItem, true, point.time);
+        this.showToast(`تم الانتقال إلى: ${point.videoName} عند ${point.formattedTime} ⏱️`);
+      } else {
+        this.showToast(`الفيديو (${point.videoName}) لم يعد موجوداً في القائمة`, 'warning');
+      }
+    } else {
+      const vid = this.videoPlayer?.nativeElement;
+      if (vid) {
+        vid.currentTime = point.time;
+        this.currentTime.set(point.time);
+        this.showToast(`تم الانتقال إلى ${point.formattedTime} ⏱️`);
+      }
+    }
+  }
+
+  removeJumpPoint(id: string, event?: Event) {
+    if (event) event.stopPropagation();
+    const history = this.jumpHistory().filter(p => p.id !== id);
+    this.jumpHistory.set(history);
+    if (this.jumpHistoryIndex() >= history.length) {
+      this.jumpHistoryIndex.set(history.length - 1);
+    }
+    this.saveJumpHistoryToStorage();
+  }
+
+  clearJumpHistory() {
+    this.jumpHistory.set([]);
+    this.jumpHistoryIndex.set(-1);
+    this.saveJumpHistoryToStorage();
+    this.showToast('تم تفريغ ذاكرة الانتقالات 🧹');
+  }
+
+  formatRelativeTime(timestamp: number): string {
+    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+    if (seconds < 60) return 'الآن';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `منذ ${minutes} د`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `منذ ${hours} س`;
+    return `منذ ${Math.floor(hours / 24)} ي`;
+  }
+
+  private saveJumpHistoryToStorage() {
+    try {
+      localStorage.setItem('local_player_jump_history', JSON.stringify(this.jumpHistory()));
+    } catch (e) {}
+  }
+
+  private loadJumpHistoryFromStorage() {
+    try {
+      const saved = localStorage.getItem('local_player_jump_history');
+      if (saved) {
+        const parsed: VideoJumpPoint[] = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.jumpHistory.set(parsed.slice(-20));
+          this.jumpHistoryIndex.set(this.jumpHistory().length - 1);
+        }
+      }
+    } catch (e) {}
   }
 
   removeBookmark(id: string) {
@@ -1302,6 +1631,11 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   HelpCircle = HelpCircle;
   CheckCircle2 = CheckCircle2;
   Tv = Tv;
+  Undo2 = Undo2;
+  Redo2 = Redo2;
+  ChevronLeft = ChevronLeft;
+  ChevronRight = ChevronRight;
+  History = History;
 
   // Filtered & Sorted playlist
   displayedPlaylist = computed(() => {
@@ -1398,18 +1732,47 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   }
 
   async jumpToNote(note: VideoNote) {
+    const cur = this.activeItem();
+    const vid = this.videoPlayer?.nativeElement;
+    const curTime = vid ? vid.currentTime : this.currentTime();
+
+    // 1. Snapshot current position before jumping if valid
+    if (cur && curTime !== null && curTime !== undefined) {
+      this.recordJumpPoint({
+        videoId: cur.id,
+        videoName: cur.name,
+        folderName: cur.folderName,
+        time: curTime,
+        label: 'موقع المشاهدة السابق'
+      });
+    }
+
+    // 2. Perform the jump (switch video if different)
     if (note.videoId && note.videoId !== this.activeItem()?.id) {
       const targetItem = this.playlist().find(item => item.id === note.videoId);
       if (targetItem) {
-        await this.playItem(targetItem, false);
+        this.playItem(targetItem, true, note.timestampInVideo ?? undefined);
+      } else {
+        this.showToast(`الفيديو (${note.videoName}) لم يعد موجوداً في القائمة`, 'warning');
       }
-    }
-    if (note.timestampInVideo !== null) {
-      const vid = this.videoPlayer?.nativeElement;
+    } else if (note.timestampInVideo !== null) {
       if (vid) {
         vid.currentTime = note.timestampInVideo;
         this.currentTime.set(note.timestampInVideo);
       }
+    }
+
+    // 3. Record target position into history stack
+    if (note.timestampInVideo !== null) {
+      const targetVidId = note.videoId || cur?.id || '';
+      const targetVidName = note.videoName || cur?.name || 'فيديو';
+      this.recordJumpPoint({
+        videoId: targetVidId,
+        videoName: targetVidName,
+        folderName: note.folderName || cur?.folderName,
+        time: note.timestampInVideo,
+        label: note.text ? `ملاحظة: ${note.text.slice(0, 30)}` : 'انتقال لملاحظة'
+      });
     }
   }
 
@@ -1466,6 +1829,8 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
 
       const savedKeepControls = localStorage.getItem('local_player_keep_controls');
       if (savedKeepControls !== null) this.keepControlsVisible.set(savedKeepControls === 'true');
+
+      this.loadJumpHistoryFromStorage();
     } catch (e) {
       console.warn('Could not load user preferences:', e);
     }
@@ -1822,11 +2187,23 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     if (this.activeItem()?.id === item.id) {
       this.togglePlay();
     } else {
+      const cur = this.activeItem();
+      const vid = this.videoPlayer?.nativeElement;
+      const curTime = vid ? vid.currentTime : this.currentTime();
+      if (cur && curTime !== null && curTime !== undefined) {
+        this.recordJumpPoint({
+          videoId: cur.id,
+          videoName: cur.name,
+          folderName: cur.folderName,
+          time: curTime,
+          label: 'موقع المشاهدة السابق'
+        });
+      }
       this.playItem(item);
     }
   }
 
-  playItem(item: LocalMediaItem, autoPlay = true) {
+  playItem(item: LocalMediaItem, autoPlay = true, seekToTime?: number) {
     this.saveCurrentPosition();
     this.activeItemId.set(item.id);
     localStorage.setItem('local_player_active_id', item.id);
@@ -1838,8 +2215,10 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
         this.videoPlayer.nativeElement.volume = this.volume();
         this.videoPlayer.nativeElement.muted = this.isMuted();
 
-        // Resume from last position if saved
-        if (item.lastPosition && item.lastPosition > 5) {
+        if (seekToTime !== undefined && seekToTime !== null) {
+          this.videoPlayer.nativeElement.currentTime = seekToTime;
+          this.currentTime.set(seekToTime);
+        } else if (item.lastPosition && item.lastPosition > 5) {
           this.videoPlayer.nativeElement.currentTime = item.lastPosition;
           this.currentTime.set(item.lastPosition);
         }
@@ -2352,8 +2731,35 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     if (this.showShortcutsModal() || this.showClearConfirm() || this.showSpeedMenu() || this.showSettingsMenu()) {
       return;
     }
+
+    if (this.showJumpHistoryModal()) {
+      if (event.key === 'Escape') {
+        this.showJumpHistoryModal.set(false);
+      }
+      return;
+    }
+
     const tag = (event.target as HTMLElement)?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+    // Alt + Left: Jump Back
+    if (event.altKey && (event.key === 'ArrowLeft' || event.key === '[')) {
+      event.preventDefault();
+      this.jumpBack();
+      return;
+    }
+    // Alt + Right: Jump Forward
+    if (event.altKey && (event.key === 'ArrowRight' || event.key === ']')) {
+      event.preventDefault();
+      this.jumpForward();
+      return;
+    }
+    // Alt + H: Jump History
+    if (event.altKey && (event.key === 'h' || event.key === 'H' || event.key === 'ا')) {
+      event.preventDefault();
+      this.showJumpHistoryModal.set(!this.showJumpHistoryModal());
+      return;
+    }
 
     const shortcuts = this.customShortcuts();
 

@@ -71,3 +71,14 @@ export interface VideoNote {
   deletedAt: number | null; // null = مش محذوفة، غير null = في سلة المهملات
 }
 
+export interface VideoJumpPoint {
+  id: string;
+  videoId: string;
+  videoName: string;
+  folderName?: string;
+  time: number;
+  formattedTime: string;
+  label: string;
+  timestamp: number;
+}
+
