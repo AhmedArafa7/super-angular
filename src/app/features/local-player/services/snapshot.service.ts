@@ -17,8 +17,8 @@ export class SnapshotService {
     return canvas.toDataURL('image/png');
   }
 
-  async extractText(dataUrl: string, imageName: string): Promise<string> {
-    const res = await this.ocrService.recognize(dataUrl, imageName, 'ara+eng');
+  async extractText(dataUrl: string, imageName: string, language: string = 'eng'): Promise<string> {
+    const res = await this.ocrService.recognize(dataUrl, imageName, language);
     return res.fullText || '';
   }
 

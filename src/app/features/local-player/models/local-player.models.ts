@@ -62,6 +62,7 @@ export interface VideoNote {
   folderName: string;
   timestampInVideo: number | null; // اللحظة الزمنية المرتبطة، لو موجودة
   text: string;
+  originalText?: string; // النص الأصلي المستخرج قبل أي تنقية أو تعديل
   textColor: string | null; // hex color، null = افتراضي
   images: NoteImage[];
   audio: NoteAudio | null;

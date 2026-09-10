@@ -16,6 +16,7 @@ import { LocalMediaItem, VideoBookmark, RecycleBinItem, VideoNote, VideoJumpPoin
 import { StorageService } from './services/storage.service';
 import { SnapshotService } from './services/snapshot.service';
 import { NotesService } from './services/notes.service';
+import { OcrCleanerService } from './services/ocr-cleaner.service';
 
 @Component({
   selector: 'app-local-player',
@@ -354,6 +355,18 @@ import { NotesService } from './services/notes.service';
                           <span class="text-[11px] text-slate-300">زر استخراج النص من الشاشة (OCR):</span>
                           <input type="checkbox" [checked]="showQuickOcrButton()" (change)="toggleQuickOcrButton()" class="accent-teal-500 size-4 cursor-pointer" />
                         </div>
+                        <div class="flex items-center justify-between">
+                          <span class="text-[11px] text-slate-300">تنقية الأكواد وإزالة الأرقام تلقائياً:</span>
+                          <input type="checkbox" [checked]="ocrAutoCleanCode()" (change)="toggleOcrAutoClean()" class="accent-teal-500 size-4 cursor-pointer" />
+                        </div>
+                        <div>
+                          <span class="text-[10px] text-slate-400 font-bold block mb-1">نمط ولغة استخراج OCR:</span>
+                          <div class="grid grid-cols-3 gap-1">
+                            <button (click)="setOcrMode('eng')" [class.bg-teal-600]="ocrMode() === 'eng'" [class.text-white]="ocrMode() === 'eng'" class="py-1 text-[10px] rounded-lg bg-white/5 hover:bg-white/15 text-center font-bold">كود / برمجة</button>
+                            <button (click)="setOcrMode('ara+eng')" [class.bg-teal-600]="ocrMode() === 'ara+eng'" [class.text-white]="ocrMode() === 'ara+eng'" class="py-1 text-[10px] rounded-lg bg-white/5 hover:bg-white/15 text-center font-bold">عربي + إنجليزي</button>
+                            <button (click)="setOcrMode('ara')" [class.bg-teal-600]="ocrMode() === 'ara'" [class.text-white]="ocrMode() === 'ara'" class="py-1 text-[10px] rounded-lg bg-white/5 hover:bg-white/15 text-center font-bold">عربي فقط</button>
+                          </div>
+                        </div>
                       </div>
 
                       <div class="border-t border-white/10 pt-2 space-y-1.5">
@@ -535,6 +548,26 @@ import { NotesService } from './services/notes.service';
                     }
                   </button>
                 }
+                <!-- Compact OCR mode quick switcher -->
+                <div *ngIf="showQuickOcrButton() && activeItem()" class="flex items-center justify-between px-1 text-[10px] text-slate-400 font-bold">
+                  <span>نمط الاستخراج:</span>
+                  <div class="flex items-center gap-1">
+                    <button (click)="setOcrMode('eng')" 
+                            [class.bg-teal-600]="ocrMode() === 'eng'" 
+                            [class.text-white]="ocrMode() === 'eng'" 
+                            class="px-2 py-0.5 rounded bg-white/5 hover:bg-white/15 transition" 
+                            title="دقة عالية للأكواد واللغات البرمجية">
+                      💻 كود / إنجليزي
+                    </button>
+                    <button (click)="setOcrMode('ara+eng')" 
+                            [class.bg-teal-600]="ocrMode() === 'ara+eng'" 
+                            [class.text-white]="ocrMode() === 'ara+eng'" 
+                            class="px-2 py-0.5 rounded bg-white/5 hover:bg-white/15 transition" 
+                            title="استخراج نصوص عربية وإنجليزية مشتركة">
+                      🌐 عربي + إنجليزي
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <!-- Jump History Navigation Toolbar in Notes Tab -->
@@ -577,7 +610,8 @@ import { NotesService } from './services/notes.service';
                 (editNote)="onEditNote($event)"
                 (deleteNote)="onDeleteNote($event)"
                 (togglePin)="onTogglePin($event)"
-                (noteClick)="jumpToNote($event)">
+                (noteClick)="jumpToNote($event)"
+                (updateNote)="onUpdateNote($event)">
               </app-notes-tab>
             </div>
           </ng-container>
@@ -1277,6 +1311,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
 
   snapshotService = inject(SnapshotService);
   notesService = inject(NotesService);
+  ocrCleaner = inject(OcrCleanerService);
 
   showSnapshotModal = signal<boolean>(false);
   snapshotDataUrl = signal<string | null>(null);
@@ -1287,6 +1322,8 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   isExtractingOcr = signal<boolean>(false);
   showQuickOcrButton = signal<boolean>(true);
   isQuickExtractingOcr = signal<boolean>(false);
+  ocrMode = signal<'eng' | 'ara+eng' | 'ara'>('eng');
+  ocrAutoCleanCode = signal<boolean>(true);
   snapshotHistory = signal<string[]>([]);
   snapshotRedoStack = signal<string[]>([]);
   snapshotTextToAdd = '';
@@ -1871,10 +1908,40 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
       const savedShowQuickOcr = localStorage.getItem('local_player_show_quick_ocr');
       if (savedShowQuickOcr !== null) this.showQuickOcrButton.set(savedShowQuickOcr === 'true');
 
+      const savedOcrMode = localStorage.getItem('local_player_ocr_mode') as any;
+      if (savedOcrMode) this.ocrMode.set(savedOcrMode);
+
+      const savedAutoClean = localStorage.getItem('local_player_ocr_autoclean');
+      if (savedAutoClean !== null) this.ocrAutoCleanCode.set(savedAutoClean === 'true');
+
       this.loadJumpHistoryFromStorage();
     } catch (e) {
       console.warn('Could not load user preferences:', e);
     }
+  }
+
+  setOcrMode(mode: 'eng' | 'ara+eng' | 'ara') {
+    this.ocrMode.set(mode);
+    localStorage.setItem('local_player_ocr_mode', mode);
+    const labels = {
+      'eng': 'كود وبرمجة (English / Code)',
+      'ara+eng': 'عربي + إنجليزي',
+      'ara': 'عربي فقط'
+    };
+    this.showToast(`تم تعيين نمط OCR إلى: ${labels[mode]}`);
+  }
+
+  toggleOcrAutoClean() {
+    const val = !this.ocrAutoCleanCode();
+    this.ocrAutoCleanCode.set(val);
+    localStorage.setItem('local_player_ocr_autoclean', val.toString());
+    this.showToast(val ? 'تم تفعيل التنقية التلقائية للأكواد البرمجية ✓' : 'تم إيقاف التنقية التلقائية');
+  }
+
+  async onUpdateNote(event: { id: string; changes: Partial<VideoNote> }) {
+    await this.notesService.updateNote(event.id, event.changes);
+    await this.refreshNotesCounts();
+    this.showToast('تم تطبيق التعديل بنجاح ✨');
   }
 
   toggleQuickOcrButton() {
@@ -2705,17 +2772,26 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     this.showToast(`⚡ جارٍ استخراج النص من الشاشة عند (${timeFormatted}) دون إيقاف الفيديو...`, 'info');
 
     try {
-      const text = await this.snapshotService.extractText(dataUrl, imageName);
-      const trimmed = text ? text.trim() : '';
+      const rawText = await this.snapshotService.extractText(dataUrl, imageName, this.ocrMode());
+      const trimmed = rawText ? rawText.trim() : '';
 
       if (!trimmed) {
         this.showToast(`لم يتم العثور على نص واضح في إطار الدقيقة (${timeFormatted})`, 'warning');
         return;
       }
 
+      // Apply smart code cleaning if enabled
+      let finalText = trimmed;
+      if (this.ocrAutoCleanCode()) {
+        const cleaned = this.ocrCleaner.cleanCode(trimmed);
+        if (cleaned && cleaned.trim().length > 0) {
+          finalText = cleaned;
+        }
+      }
+
       // Automatically copy extracted text to clipboard for instant user convenience
       try {
-        await navigator.clipboard.writeText(trimmed);
+        await navigator.clipboard.writeText(finalText);
       } catch (clipErr) {
         // Clipboard failure shouldn't fail note creation
       }
@@ -2726,7 +2802,8 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
         videoName: videoNameAtCapture,
         folderName: folderNameAtCapture,
         timestampInVideo: timeAtCapture !== null && !isNaN(timeAtCapture) ? Math.floor(timeAtCapture) : null,
-        text: trimmed,
+        text: finalText,
+        originalText: trimmed,
         textColor: null,
         images: [{
           id: 'img_' + Date.now(),
@@ -2745,7 +2822,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
         videoName: videoNameAtCapture,
         folderName: folderNameAtCapture,
         time: Math.floor(timeAtCapture),
-        note: trimmed,
+        note: finalText,
         formattedTime: timeFormatted
       };
       const updatedBms = [...this.bookmarks(), newBm].sort((a, b) => a.time - b.time);
@@ -2755,7 +2832,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
       // Refresh global notes list & playlist badges
       await this.refreshNotesCounts();
 
-      this.showToast(`✅ تم استخراج النص وحفظه كملاحظة عند (${timeFormatted}) ونسخه للحافظة بنجاح!`, 'success');
+      this.showToast(`✅ تم استخراج النص وتنقيته وحفظه كملاحظة عند (${timeFormatted}) ونسخه للحافظة!`, 'success');
     } catch (err) {
       console.error('[LocalPlayer] quickExtractOcr error:', err);
       this.showToast('حدث خطأ أثناء استخراج النص من الشاشة', 'warning');
