@@ -285,20 +285,30 @@ ipcMain.handle('power:get-status', () => {
 ipcMain.handle('fs:process-file', async (_, { filePath, mode }) => {
   try {
     const ext = path.extname(filePath).toLowerCase();
-    const buffer = fs.readFileSync(filePath);
     
     if (ext === '.pdf') {
+      const buffer = fs.readFileSync(filePath);
       if (mode === 'text') {
         const data = await pdfParse(buffer);
         return { ok: true, content: data.text, type: 'text' };
       } else if (mode === 'advanced') {
-        // Here you would implement layout preservation if possible
-        // For now, let's return a placeholder or do minimal text extraction
         const data = await pdfParse(buffer);
         return { ok: true, content: data.text, type: 'advanced' };
       }
     }
-    return { ok: false, error: 'Unsupported file type or mode' };
+
+    // Supported text, code, and document extensions
+    const supportedTextExts = [
+      '.txt', '.json', '.md', '.js', '.ts', '.html', '.css', '.csv', 
+      '.ipynb', '.py', '.xml', '.svg', '.yaml', '.yml', '.sql', '.log', '.env'
+    ];
+
+    if (supportedTextExts.includes(ext) || ext === '') {
+      const content = fs.readFileSync(filePath, 'utf-8');
+      return { ok: true, content, type: mode || 'text' };
+    }
+
+    return { ok: false, error: `نوع الملف غير مدعوم (${ext || 'مجهول'})` };
   } catch (e) {
     return { ok: false, error: e.message };
   }

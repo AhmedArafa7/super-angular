@@ -923,9 +923,8 @@ export class AiModuleBuilderComponent {
     this.isGenerating.set(true);
 
     try {
-      const apiKey = this.keyManager.getActiveApiKey();
-      if (!apiKey) {
-        this.toast.show('يرجى إدخال مفتاح API أولاً أو استخدام مفتاح المنصة.', 'warning');
+      if (!this.keyManager.hasActiveKey()) {
+        this.toast.show('يرجى إدخال مفتاح API أولاً أو تفعيل مفتاح المنصة.', 'warning');
         this.isGenerating.set(false);
         return;
       }
@@ -998,22 +997,16 @@ DESIGN & ARCHITECTURE REQUIREMENTS:
         });
       }
 
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts }]
-        })
+      const res = await this.keyManager.callGeminiApi({
+        model: 'gemini-3.5-flash-lite',
+        contents: [{ parts }]
       });
 
       if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(errText);
+        throw new Error(res.error || 'فشل التوليد من محرك Gemini');
       }
 
-      const data = await res.json();
-
-      let htmlOutput = data.candidates?.[0]?.content?.parts?.[0]?.text || '<div class="p-4 text-red-400">فشل التوليد.</div>';
+      let htmlOutput = res.text || '<div class="p-4 text-red-400">فشل التوليد.</div>';
       
       htmlOutput = htmlOutput.replace(/^```html\s*/gi, '').replace(/^```\s*/gi, '').replace(/```\s*$/gi, '').trim();
 

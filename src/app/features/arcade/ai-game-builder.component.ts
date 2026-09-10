@@ -828,9 +828,8 @@ export class AiGameBuilderComponent implements OnInit {
   }
 
   async generateAsset(type: string) {
-    const apiKey = localStorage.getItem('Si-Neuro-chat-apiKey') || '';
-    if (!apiKey) {
-      this.toast.show('⚠️ يرجى إدخال مفتاح Gemini API أولاً!', 'warning');
+    if (!this.keyManager.hasActiveKey()) {
+      this.toast.show('⚠️ يرجى تفعيل مفتاح المنصة أو إدخال مفتاح Gemini API في الإعدادات.', 'warning');
       return;
     }
 
@@ -843,20 +842,17 @@ export class AiGameBuilderComponent implements OnInit {
     };
     
     try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                instances: [{ prompt: assetPrompts[type] }],
-                parameters: { sampleCount: 1 }
-            })
+        const res = await this.keyManager.callGeminiApi({
+            model: 'imagen-3.0-generate-001',
+            action: 'predict',
+            instances: [{ prompt: assetPrompts[type] }],
+            parameters: { sampleCount: 1 }
         });
 
-        if (!res.ok) throw new Error('API Error');
+        if (!res.ok) throw new Error(res.error || 'API Error');
 
-        const data = await res.json();
-        const imageUrl = data.predictions[0].bytesBase64Encoded; 
-        // ملاحظة: قد تحتاج لتحويل الـ base64 إلى رابط فعلي أو استخدامه مباشرة
+        const imageUrl = res.data?.predictions?.[0]?.bytesBase64Encoded; 
+        if (!imageUrl) throw new Error('لم يتم إرجاع صورة من المحرك');
         const finalUrl = `data:image/png;base64,${imageUrl}`;
 
         if(type === 'Sprite') {
@@ -900,9 +896,8 @@ export class AiGameBuilderComponent implements OnInit {
     const prompt = this.promptText.trim();
     if (!prompt) return;
 
-    const apiKey = localStorage.getItem('Si-Neuro-chat-apiKey') || '';
-    if (!apiKey) {
-      this.toast.show('⚠️ يرجى إدخال مفتاح Gemini API أولاً في لوحة الإعدادات أو صانع الموديولات.', 'warning');
+    if (!this.keyManager.hasActiveKey()) {
+      this.toast.show('⚠️ يرجى تفعيل مفتاح المنصة أو إدخال مفتاح Gemini API في لوحة الإعدادات.', 'warning');
       return;
     }
 
@@ -946,20 +941,16 @@ MANDATORY ARCHITECTURE & POLICY REQUIREMENTS (STRICT COMPLIANCE):
 4. OUTPUT FORMAT: Return ONLY executable self-contained HTML/JS. No markdown explanation.`;
       }
 
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: systemPrompt }] }]
-        })
+      const res = await this.keyManager.callGeminiApi({
+        model: 'gemini-3.5-flash-lite',
+        contents: [{ parts: [{ text: systemPrompt }] }]
       });
 
       if (!res.ok) {
-        throw new Error(await res.text());
+        throw new Error(res.error || 'فشل الاتصال بـ Gemini');
       }
 
-      const data = await res.json();
-      let htmlOutput = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      let htmlOutput = res.text || '';
       htmlOutput = htmlOutput.replace(/^```html\s*/gi, '').replace(/^```\s*/gi, '').replace(/```\s*$/gi, '').trim();
 
       this.generatedHtml.set(htmlOutput);

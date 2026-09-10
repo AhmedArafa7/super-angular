@@ -117,16 +117,37 @@ export class FileManagerComponent {
   }
 
   async saveFile() {
-      if (!(window as any).electronAPI) return;
-      const savePath = await (window as any).electronAPI.dialog.saveFile({ defaultPath: this.filePath.replace('.pdf', '_edited.pdf') });
-      if (!savePath) return;
+    if (!(window as any).electronAPI) return;
 
-      const result = await (window as any).electronAPI.fs.writeFile(savePath, this.content);
-      if (result.ok) {
-          alert('تم حفظ الملف بنجاح!');
-      } else {
-          alert('خطأ في الحفظ: ' + result.error);
-      }
+    // Determine extension and default path based on original file
+    const originalPath = this.filePath || 'document.txt';
+    const lastDotIndex = originalPath.lastIndexOf('.');
+    let baseName = originalPath;
+    let ext = 'txt';
+
+    if (lastDotIndex !== -1) {
+      baseName = originalPath.substring(0, lastDotIndex);
+      ext = originalPath.substring(lastDotIndex + 1).toLowerCase();
+    }
+
+    const defaultPath = `${baseName}_edited.${ext}`;
+    const filterName = `${ext.toUpperCase()} Files`;
+
+    const savePath = await (window as any).electronAPI.dialog.saveFile({
+      defaultPath,
+      filters: [
+        { name: filterName, extensions: [ext] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    });
+    if (!savePath) return;
+
+    const result = await (window as any).electronAPI.fs.writeFile(savePath, this.content);
+    if (result && result.ok) {
+      alert('تم حفظ الملف بنجاح!');
+    } else {
+      alert('خطأ في الحفظ: ' + (result?.error || 'حدث خطأ غير متوقع'));
+    }
   }
 
   reset() {

@@ -39,6 +39,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     process: (filePath, mode) => ipcRenderer.invoke('fs:process-file', { filePath, mode })
   },
 
+  // ── File System ──
+  fs: {
+    readFile: (filePath) => ipcRenderer.invoke('fs:read-file', filePath),
+    writeFile: (filePath, content) => ipcRenderer.invoke('fs:write-file', { filePath, content }),
+    saveSvg: (content, filename) => ipcRenderer.invoke('fs:save-svg', { content, filename })
+  },
+
   // ── Dialogs ──
   dialog: {
     openFile: (options) => ipcRenderer.invoke('dialog:open-file', options),

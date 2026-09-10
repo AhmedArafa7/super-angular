@@ -72,14 +72,12 @@ export class AiGameEngineService {
 
     await this.sleep(1200);
 
-    const apiKey = this.keyManager.getActiveApiKey();
-
     let generatedBlueprint: Partial<AiGameBlueprint> | null = null;
 
-    if (apiKey) {
+    if (this.keyManager.hasActiveKey()) {
       try {
         this.updateStep('⚙️ هندسة ميكانيكا وقوانين اللعب وأزرار التحكم...');
-        generatedBlueprint = await this.fetchGameFromGemini(apiKey, customGenreOrPrompt);
+        generatedBlueprint = await this.fetchGameFromGemini(customGenreOrPrompt);
         await this.sleep(1000);
       } catch (err) {
         console.warn('Gemini API call failed or timed out, falling back to autonomous engine:', err);
@@ -124,13 +122,12 @@ export class AiGameEngineService {
 
     this.updateStep(`🧠 الذكاء الاصطناعي يحلل أداءك ويبتكر المراحل ${startLevelNum} إلى ${endLevelNum}...`);
 
-    const apiKey = this.keyManager.getActiveApiKey();
     let newMutation: AiGameMutation | null = null;
     let newLevels: AiGameLevel[] = [];
 
-    if (apiKey) {
+    if (this.keyManager.hasActiveKey()) {
       try {
-        const aiEvolutionResult = await this.fetchEvolutionFromGemini(apiKey, game, startLevelNum, endLevelNum, versionNum);
+        const aiEvolutionResult = await this.fetchEvolutionFromGemini(game, startLevelNum, endLevelNum, versionNum);
         if (aiEvolutionResult) {
           newMutation = aiEvolutionResult.mutation;
           newLevels = aiEvolutionResult.levels;
@@ -172,7 +169,7 @@ export class AiGameEngineService {
     }
   }
 
-  private async fetchGameFromGemini(apiKey: string, promptHint?: string): Promise<Partial<AiGameBlueprint> | null> {
+  private async fetchGameFromGemini(promptHint?: string): Promise<Partial<AiGameBlueprint> | null> {
     const prompt = `You are a visionary AI Game Designer creating a brand new dynamic HTML5 canvas game.
 Requirements:
 1. Come up with a unique, creative Arabic game title and rich cyberpunk/arcade lore.
@@ -267,18 +264,14 @@ Respond ONLY with valid JSON in this structure:
   ]
 }`;
 
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
-      })
+    const res = await this.keyManager.callGeminiApi({
+      model: 'gemini-3.5-flash-lite',
+      prompt
     });
 
-    if (!res.ok) return null;
+    if (!res.ok || !res.text) return null;
 
-    const data = await res.json();
-    let text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    let text = res.text;
     text = text.replace(/^```json\s*/gi, '').replace(/^```\s*/gi, '').replace(/```\s*$/gi, '').trim();
 
     try {
@@ -289,7 +282,7 @@ Respond ONLY with valid JSON in this structure:
     }
   }
 
-  private async fetchEvolutionFromGemini(apiKey: string, game: AiGameBlueprint, startLvl: number, endLvl: number, versionNum: number) {
+  private async fetchEvolutionFromGemini(game: AiGameBlueprint, startLvl: number, endLvl: number, versionNum: number) {
     const prompt = `You are the AI Game Director for the game "${game.title}".
 The player has just beaten level ${startLvl - 1}.
 Invent a completely NEW game mechanic / mutation (e.g. quantum wormholes, gravitational inversion, bullet deflection, color phasing, time warp) that DID NOT exist before, and generate 5 new levels (${startLvl} to ${endLvl}).
@@ -361,17 +354,14 @@ Respond ONLY with valid JSON:
   ]
 }`;
 
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
-      })
+    const res = await this.keyManager.callGeminiApi({
+      model: 'gemini-3.5-flash-lite',
+      prompt
     });
 
-    if (!res.ok) return null;
-    const data = await res.json();
-    let text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if (!res.ok || !res.text) return null;
+
+    let text = res.text;
     text = text.replace(/^```json\s*/gi, '').replace(/^```\s*/gi, '').replace(/```\s*$/gi, '').trim();
 
     try {

@@ -1563,14 +1563,9 @@ export class FlashcardsComponent implements OnInit, OnDestroy {
   }
 
   async processAudioWithGemini(blob: Blob) {
-    const apiKey = this.aiKeyManager.getActiveApiKey();
-    if (!apiKey) {
+    if (!this.aiKeyManager.hasActiveKey()) {
       this.feedbackType.set('error');
       this.feedbackMessage.set('مفتاح Google API غير متوفر في الإعدادات.');
-      return;
-    }
-
-    if (!this.aiKeyManager.checkAndIncrementQuota()) {
       return;
     }
 
@@ -1580,30 +1575,26 @@ export class FlashcardsComponent implements OnInit, OnDestroy {
       reader.onloadend = async () => {
         const base64Data = (reader.result as string).split(',')[1];
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  {
-                    text: "Listen to this audio recording of a flashcard answer. What word, number, or phrase did the speaker say? Reply ONLY with the exact transcribed word/number, with no extra punctuation or explanation."
-                  },
-                  {
-                    inline_data: {
-                      mime_type: "audio/webm",
-                      data: base64Data
-                    }
+        const res = await this.aiKeyManager.callGeminiApi({
+          model: 'gemini-2.5-flash',
+          contents: [
+            {
+              parts: [
+                {
+                  text: "Listen to this audio recording of a flashcard answer. What word, number, or phrase did the speaker say? Reply ONLY with the exact transcribed word/number, with no extra punctuation or explanation."
+                },
+                {
+                  inline_data: {
+                    mime_type: "audio/webm",
+                    data: base64Data
                   }
-                ]
-              }
-            ]
-          })
+                }
+              ]
+            }
+          ]
         });
 
-        const data = await response.json();
-        const transcribedText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+        const transcribedText = (res.text || '').trim();
 
         if (transcribedText) {
           this.userInput = transcribedText.replace(/['".,?!]/g, '');
@@ -1614,7 +1605,7 @@ export class FlashcardsComponent implements OnInit, OnDestroy {
           }, 400);
         } else {
           this.feedbackType.set('error');
-          this.feedbackMessage.set('لم يتبين الصوت بوضوح عبر Gemini AI. حاول مرة أخرى.');
+          this.feedbackMessage.set(res.error || 'لم يتبين الصوت بوضوح عبر Gemini AI. حاول مرة أخرى.');
         }
       };
     } catch (e) {

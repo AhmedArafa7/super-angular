@@ -1,5 +1,23 @@
 import { Injectable, signal } from '@angular/core';
 
+export interface GeminiApiPayload {
+  model?: string;
+  action?: 'generateContent' | 'predict';
+  contents?: any[];
+  prompt?: string;
+  instances?: any[];
+  parameters?: any;
+  generationConfig?: any;
+  systemInstruction?: any;
+}
+
+export interface GeminiApiResponse {
+  ok: boolean;
+  data?: any;
+  text?: string;
+  error?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -77,13 +95,73 @@ export class AiKeyManagerService {
     }
   }
 
+  /**
+   * Check if any valid key configuration exists (either server platform key or user custom key).
+   */
+  public hasActiveKey(): boolean {
+    if (this.usePlatformKey()) return true;
+    return !!(typeof localStorage !== 'undefined' && localStorage.getItem(this.USER_API_KEY)?.trim());
+  }
+
+  /**
+   * Returns user-provided custom key if active, or '__PLATFORM_PROXY__' when routing through edge proxy.
+   * NEVER exposes secret platform keys to the browser.
+   */
   public getActiveApiKey(): string {
     if (typeof localStorage === 'undefined') return '';
     if (this.usePlatformKey()) {
-      // Return built-in default fallback key or route through edge
-      return 'AIzaSyAdHKCp9X3rCTdyyZ0XeiRvxWOp2qVaQws'; // Environment default key
+      return '__PLATFORM_PROXY__';
     } else {
       return localStorage.getItem(this.USER_API_KEY) || '';
+    }
+  }
+
+  /**
+   * Unified, secure caller for Gemini & Imagen APIs.
+   * When using platform mode, routes securely through /api/ai/generate on Cloudflare Edge.
+   * When using user custom mode, passes the key securely to the proxy or handles it directly.
+   */
+  public async callGeminiApi(payload: GeminiApiPayload): Promise<GeminiApiResponse> {
+    if (!this.checkAndIncrementQuota()) {
+      return { ok: false, error: 'تم استنفاذ الحصة اليومية من مفتاح المنصة.' };
+    }
+
+    try {
+      const userKey = !this.usePlatformKey() && typeof localStorage !== 'undefined'
+        ? (localStorage.getItem(this.USER_API_KEY) || '').trim()
+        : '';
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      if (userKey) {
+        headers['x-gemini-api-key'] = userKey;
+      }
+
+      const res = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload)
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        this.decrementQuota();
+        return {
+          ok: false,
+          error: json.error || `خطأ في الاتصال بالخادم (${res.status})`,
+          data: json.data
+        };
+      }
+
+      return {
+        ok: true,
+        data: json.data,
+        text: json.text || json.data?.candidates?.[0]?.content?.parts?.[0]?.text || ''
+      };
+    } catch (err: any) {
+      this.decrementQuota();
+      return { ok: false, error: err.message || 'فشل الاتصال بمحرك الذكاء الاصطناعي.' };
     }
   }
 }
