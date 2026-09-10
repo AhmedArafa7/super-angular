@@ -8,7 +8,7 @@ import {
   RotateCcw, RotateCw, SkipForward, SkipBack, FolderOpen, FolderPlus, Upload, Film, Music, Trash2, 
   ListMusic, Sparkles, Sliders, Camera, Subtitles, Repeat, Eye, HardDrive, Clock,
   Search, ArrowUpDown, Plus, X, Loader2, Check, Settings, HelpCircle, CheckCircle2, Tv,
-  Undo2, Redo2, ChevronLeft, ChevronRight, History
+  Undo2, Redo2, ChevronLeft, ChevronRight, History, ScanText
 } from 'lucide-angular';
 import { PlaylistTabComponent } from './components/playlist-tab/playlist-tab.component';
 import { NotesTabComponent } from './components/notes-tab/notes-tab.component';
@@ -156,6 +156,21 @@ import { NotesService } from './services/notes.service';
                 <button (click)="takeSnapshot()" class="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition" title="التقاط صورة من الفيديو">
                   <lucide-icon [img]="Camera" class="size-4 text-emerald-400"></lucide-icon>
                 </button>
+
+                <!-- Quick Background OCR Extraction Button -->
+                @if (showQuickOcrButton() && activeItem()) {
+                  <button (click)="quickExtractOcr()" 
+                          [disabled]="isQuickExtractingOcr()"
+                          class="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition relative flex items-center justify-center" 
+                          [class.animate-pulse]="isQuickExtractingOcr()"
+                          title="استخراج النص من الشاشة وحفظه كملاحظة دون إيقاف الفيديو (Alt + O)">
+                    @if (isQuickExtractingOcr()) {
+                      <lucide-icon [img]="Loader2" class="size-4 text-cyan-400 animate-spin"></lucide-icon>
+                    } @else {
+                      <lucide-icon [img]="ScanText" class="size-4 text-cyan-400"></lucide-icon>
+                    }
+                  </button>
+                }
 
                 <!-- Picture in Picture (PiP) -->
                 <button (click)="togglePiP()" class="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition" title="صورة داخل صورة (Picture in Picture)">
@@ -335,6 +350,10 @@ import { NotesService } from './services/notes.service';
                           <span class="text-[11px] text-slate-300">إبقاء شريط التحكم ظاهراً:</span>
                           <input type="checkbox" [checked]="keepControlsVisible()" (change)="toggleKeepControls()" class="accent-teal-500 size-4 cursor-pointer" />
                         </div>
+                        <div class="flex items-center justify-between">
+                          <span class="text-[11px] text-slate-300">زر استخراج النص من الشاشة (OCR):</span>
+                          <input type="checkbox" [checked]="showQuickOcrButton()" (change)="toggleQuickOcrButton()" class="accent-teal-500 size-4 cursor-pointer" />
+                        </div>
                       </div>
 
                       <div class="border-t border-white/10 pt-2 space-y-1.5">
@@ -501,6 +520,21 @@ import { NotesService } from './services/notes.service';
                   <input type="text" [(ngModel)]="newBookmarkNote" (keydown.enter)="addBookmark()" [placeholder]="activeItem() ? 'اكتب ملاحظة (مثل: نقطة مهمة)...' : 'اكتب ملاحظة عامة أو تذكير...'" class="flex-1 bg-black/60 border border-white/15 rounded-xl px-3 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500" />
                   <button (click)="addBookmark()" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-bold transition">إضافة</button>
                 </div>
+                <!-- Quick OCR background button in notes tab -->
+                @if (showQuickOcrButton() && activeItem()) {
+                  <button (click)="quickExtractOcr()" 
+                          [disabled]="isQuickExtractingOcr()"
+                          class="w-full py-1.5 px-3 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/30 text-cyan-300 text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-98"
+                          title="استخراج النص من الشاشة كملاحظة دون إيقاف الفيديو (Alt + O)">
+                    @if (isQuickExtractingOcr()) {
+                      <lucide-icon [img]="Loader2" class="size-3.5 animate-spin text-cyan-400"></lucide-icon>
+                      <span>جارٍ استخراج النص في الخلفية...</span>
+                    } @else {
+                      <lucide-icon [img]="ScanText" class="size-3.5 text-cyan-400"></lucide-icon>
+                      <span>⚡ استخراج النص من اللحظة الحالية دون إيقاف</span>
+                    }
+                  </button>
+                }
               </div>
 
               <!-- Jump History Navigation Toolbar in Notes Tab -->
@@ -1250,6 +1284,8 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   snapshotRotations = signal<number>(0);
   extractedOcrText = signal<string>('');
   isExtractingOcr = signal<boolean>(false);
+  showQuickOcrButton = signal<boolean>(true);
+  isQuickExtractingOcr = signal<boolean>(false);
   snapshotHistory = signal<string[]>([]);
   snapshotRedoStack = signal<string[]>([]);
   snapshotTextToAdd = '';
@@ -1636,6 +1672,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   ChevronLeft = ChevronLeft;
   ChevronRight = ChevronRight;
   History = History;
+  ScanText = ScanText;
 
   // Filtered & Sorted playlist
   displayedPlaylist = computed(() => {
@@ -1830,10 +1867,20 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
       const savedKeepControls = localStorage.getItem('local_player_keep_controls');
       if (savedKeepControls !== null) this.keepControlsVisible.set(savedKeepControls === 'true');
 
+      const savedShowQuickOcr = localStorage.getItem('local_player_show_quick_ocr');
+      if (savedShowQuickOcr !== null) this.showQuickOcrButton.set(savedShowQuickOcr === 'true');
+
       this.loadJumpHistoryFromStorage();
     } catch (e) {
       console.warn('Could not load user preferences:', e);
     }
+  }
+
+  toggleQuickOcrButton() {
+    const val = !this.showQuickOcrButton();
+    this.showQuickOcrButton.set(val);
+    localStorage.setItem('local_player_show_quick_ocr', val.toString());
+    this.showToast(val ? 'تم إظهار زر استخراج النص السريع (OCR) ✨' : 'تم إخفاء زر استخراج النص السريع', 'info');
   }
 
   toggleWheelVolume() {
@@ -2623,6 +2670,99 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     this.snapshotRotations.update(r => this.snapshotService.rotate(r));
   }
 
+  /**
+   * Fast background OCR extraction directly from video frame without pausing playback
+   */
+  async quickExtractOcr() {
+    const vid = this.videoPlayer?.nativeElement;
+    const cur = this.activeItem();
+    if (!vid || !cur) {
+      this.showToast('لا يوجد فيديو قيد التشغيل حالياً لاستخراج النص منه', 'warning');
+      return;
+    }
+
+    if (this.isQuickExtractingOcr()) {
+      this.showToast('جاري استخراج النص بالفعل في الخلفية...', 'info');
+      return;
+    }
+
+    // 1. Take snapshot of current frame completely in memory without pausing or interrupting video playback!
+    const dataUrl = this.snapshotService.takeSnapshot(vid);
+    if (!dataUrl) {
+      this.showToast('تعذر التقاط إطار الفيديو الحالي', 'warning');
+      return;
+    }
+
+    const timeAtCapture = vid.currentTime;
+    const timeFormatted = this.formatTime(timeAtCapture);
+    const videoNameAtCapture = cur.name;
+    const videoIdAtCapture = cur.id;
+    const folderNameAtCapture = cur.folderName || '';
+    const imageName = `quick_ocr_${cur.name}_${Math.floor(timeAtCapture)}s.png`;
+
+    this.isQuickExtractingOcr.set(true);
+    this.showToast(`⚡ جارٍ استخراج النص من الشاشة عند (${timeFormatted}) دون إيقاف الفيديو...`, 'info');
+
+    try {
+      const text = await this.snapshotService.extractText(dataUrl, imageName);
+      const trimmed = text ? text.trim() : '';
+
+      if (!trimmed) {
+        this.showToast(`لم يتم العثور على نص واضح في إطار الدقيقة (${timeFormatted})`, 'warning');
+        return;
+      }
+
+      // Automatically copy extracted text to clipboard for instant user convenience
+      try {
+        await navigator.clipboard.writeText(trimmed);
+      } catch (clipErr) {
+        // Clipboard failure shouldn't fail note creation
+      }
+
+      // 2. Save into NotesService tied to the video and exact timestamp
+      await this.notesService.createNote({
+        videoId: videoIdAtCapture,
+        videoName: videoNameAtCapture,
+        folderName: folderNameAtCapture,
+        timestampInVideo: timeAtCapture !== null && !isNaN(timeAtCapture) ? Math.floor(timeAtCapture) : null,
+        text: trimmed,
+        textColor: null,
+        images: [{
+          id: 'img_' + Date.now(),
+          dataUrl: dataUrl,
+          order: 0,
+          createdAt: Date.now()
+        }],
+        audio: null,
+        isPinned: false
+      });
+
+      // Also save to video bookmarks if currently on that video so it reflects in all views
+      const newBm: VideoBookmark = {
+        id: 'bm_' + Date.now(),
+        videoId: videoIdAtCapture,
+        videoName: videoNameAtCapture,
+        folderName: folderNameAtCapture,
+        time: Math.floor(timeAtCapture),
+        note: trimmed,
+        formattedTime: timeFormatted
+      };
+      const updatedBms = [...this.bookmarks(), newBm].sort((a, b) => a.time - b.time);
+      this.bookmarks.set(updatedBms);
+      this.saveBookmarksForVideo(videoIdAtCapture, updatedBms);
+
+      // Refresh global notes list & playlist badges
+      await this.refreshNotesCounts();
+
+      this.showToast(`✅ تم استخراج النص وحفظه كملاحظة عند (${timeFormatted}) ونسخه للحافظة بنجاح!`, 'success');
+    } catch (err) {
+      console.error('[LocalPlayer] quickExtractOcr error:', err);
+      this.showToast('حدث خطأ أثناء استخراج النص من الشاشة', 'warning');
+    } finally {
+      this.isQuickExtractingOcr.set(false);
+    }
+  }
+
   async downloadEditedSnapshot() {
     const url = this.snapshotDataUrl();
     if (!url) return;
@@ -2758,6 +2898,15 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     if (event.altKey && (event.key === 'h' || event.key === 'H' || event.key === 'ا')) {
       event.preventDefault();
       this.showJumpHistoryModal.set(!this.showJumpHistoryModal());
+      return;
+    }
+
+    // Alt + O: Quick OCR without pausing video
+    if (event.altKey && (event.key === 'o' || event.key === 'O' || event.key === 'خ')) {
+      event.preventDefault();
+      if (this.showQuickOcrButton()) {
+        this.quickExtractOcr();
+      }
       return;
     }
 
