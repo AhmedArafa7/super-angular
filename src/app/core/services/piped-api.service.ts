@@ -48,12 +48,32 @@ export class PipedApiService {
   ];
 
   private activeInstanceIndex = 0;
+  private healthMap = new Map<string, { failures: number; lastFailure: number }>();
+  private readonly COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 
-  private getRotatedInstances(): string[] {
+  isInstanceHealthy(url: string): boolean {
+    const record = this.healthMap.get(url);
+    if (!record || record.failures < 2) return true;
+    return Date.now() - record.lastFailure > this.COOLDOWN_MS;
+  }
+
+  recordFailure(url: string): void {
+    const record = this.healthMap.get(url) || { failures: 0, lastFailure: 0 };
+    record.failures += 1;
+    record.lastFailure = Date.now();
+    this.healthMap.set(url, record);
+  }
+
+  recordSuccess(url: string): void {
+    this.healthMap.delete(url);
+  }
+
+  getRotatedInstances(): string[] {
     const list = [...this.instances];
     // Rotate so last successful instance stays first
     const shifted = list.slice(this.activeInstanceIndex).concat(list.slice(0, this.activeInstanceIndex));
-    return shifted;
+    const healthy = shifted.filter(inst => this.isInstanceHealthy(inst));
+    return healthy.length > 0 ? healthy : shifted;
   }
 
   private async smartFetch<T>(targetUrl: string, timeoutMs = 3500): Promise<T> {
@@ -117,9 +137,11 @@ export class PipedApiService {
         const res = await this.smartFetch<PipedVideoDetails>(url, 3500);
         if (res && (res.videoStreams?.length > 0 || res.hls || res.title)) {
           this.activeInstanceIndex = this.instances.indexOf(instance);
+          this.recordSuccess(instance);
           return res;
         }
       } catch (error) {
+        this.recordFailure(instance);
         // Continue to next instance
       }
     }
@@ -197,12 +219,15 @@ export class PipedApiService {
   }
 
   async getChannelDetails(channelId: string, nextpage?: string): Promise<any> {
-    for (const instance of this.instances.slice(0, 3)) {
+    for (const instance of this.getRotatedInstances().slice(0, 3)) {
       try {
         let url = `${instance}/channel/${channelId}`;
         if (nextpage) url += `?nextpage=${nextpage}`;
-        return await this.smartFetch<any>(url, 3500);
+        const res = await this.smartFetch<any>(url, 3500);
+        this.recordSuccess(instance);
+        return res;
       } catch (error) {
+        this.recordFailure(instance);
         // Try next
       }
     }
@@ -297,7 +322,7 @@ export class PipedApiService {
   }
 
   async search(query: string): Promise<any[]> {
-    for (const instance of this.instances.slice(0, 4)) {
+    for (const instance of this.getRotatedInstances().slice(0, 4)) {
       try {
         const url = `${instance}/search?q=${encodeURIComponent(query)}&filter=all`;
         const res = await this.smartFetch<any>(url, 3500);
@@ -322,9 +347,13 @@ export class PipedApiService {
               }
             }
           }
-          if (videos.length > 0) return videos;
+          if (videos.length > 0) {
+            this.recordSuccess(instance);
+            return videos;
+          }
         }
       } catch (err) {
+        this.recordFailure(instance);
         // Try next instance
       }
     }
@@ -332,7 +361,7 @@ export class PipedApiService {
   }
 
   async searchChannels(query: string): Promise<any[]> {
-    for (const instance of this.instances.slice(0, 3)) {
+    for (const instance of this.getRotatedInstances().slice(0, 3)) {
       try {
         const url = `${instance}/search?q=${encodeURIComponent(query)}&filter=all`;
         const res = await this.smartFetch<any>(url, 3500);
@@ -345,9 +374,13 @@ export class PipedApiService {
               name: item.name || item.uploaderName || '',
               avatarUrl: item.thumbnail || item.avatarUrl || ''
             }));
-          if (channels.length > 0) return channels;
+          if (channels.length > 0) {
+            this.recordSuccess(instance);
+            return channels;
+          }
         }
       } catch (err) {
+        this.recordFailure(instance);
         // Try next
       }
     }
@@ -356,14 +389,16 @@ export class PipedApiService {
 
   async getPlaylist(playlistId: string): Promise<any> {
     // 1. Try Piped instances
-    for (const instance of this.instances.slice(0, 4)) {
+    for (const instance of this.getRotatedInstances().slice(0, 4)) {
       try {
         const url = `${instance}/playlists/${playlistId}`;
         const res = await this.smartFetch<any>(url, 3500);
         if (res && (res.relatedStreams || res.videos || res.items)) {
+          this.recordSuccess(instance);
           return res;
         }
       } catch (error) {
+        this.recordFailure(instance);
         // Try next instance
       }
     }

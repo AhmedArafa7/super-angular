@@ -10,6 +10,8 @@ export class InvidiousProviderService implements VideoProvider {
   private http = inject(HttpClient);
   name = 'Invidious';
   private instances = [
+    'https://inv.tux.pizza',
+    'https://invidious.nerdvpn.de',
     'https://inv.nadeko.net',
     'https://invidious.projectsegfau.lt',
     'https://invidious.drgns.space',

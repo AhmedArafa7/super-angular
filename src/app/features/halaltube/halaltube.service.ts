@@ -4,12 +4,11 @@ import { QueryDocumentSnapshot } from 'firebase/firestore';
 import { Video, YouTubeSubscription, FeedVideo, HistoryItem, halaltubeTab, ContentItem, checkIsShorts } from './halaltube.model';
 import { FALLBACK_VIDEOS } from './data/fallback-videos';
 import { FirebaseService } from '../../core/services/firebase.service';
-import { YoutubeDiscoveryService, VideoDetails, YouTubeComment } from '../../core/services/youtube-discovery.service';
+import { VideoDetails, YouTubeComment } from '../../core/services/youtube-discovery.service';
+import { YoutubeProviderService } from '../../core/services/youtube-provider.service';
 import { YoutubeDataService, YouTubeChannelStats, YouTubeVideo } from '../../core/services/youtube-data.service';
 import { YoutubeCacheService } from '../../core/services/youtube-cache.service';
 import { IndexedDBService } from '../../core/services/indexed-db.service';
-import { PipedApiService } from '../../core/services/piped-api.service';
-import { InvidiousProviderService } from '../../core/services/providers/invidious-provider.service';
 import { environment } from '../../../environments/environment';
 import { EncryptionService } from '../../core/services/encryption.service';
 import { HalalModerationService } from '../../core/services/halal-moderation.service';
@@ -27,7 +26,7 @@ export interface AlgorithmConfig {
 })
 export class halaltubeService {
   private firebaseService = inject(FirebaseService);
-  private discoveryService = inject(YoutubeDiscoveryService);
+  private youtubeProvider = inject(YoutubeProviderService);
   private dataService = inject(YoutubeDataService);
   private cacheService = inject(YoutubeCacheService);
   private idb = inject(IndexedDBService);
@@ -307,9 +306,6 @@ export class halaltubeService {
 
   // ── Real data fetching ─────────────────────────────────────
 
-  private pipedApiService = inject(PipedApiService);
-  private invidious = inject(InvidiousProviderService);
-
   private isInitialized = false;
   private currentTopicIndex = 0;
   private readonly CORE_TOPICS = [
@@ -370,8 +366,7 @@ export class halaltubeService {
       const initialTopics = this.CORE_TOPICS.slice(0, 2);
       this.currentTopicIndex = 2;
       const topicPromises = initialTopics.map(topic => 
-        firstValueFrom(this.discoveryService.searchYouTube(topic))
-          .catch(() => this.pipedApiService.search(topic))
+        firstValueFrom(this.youtubeProvider.search(topic))
           .catch(() => [] as FeedVideo[])
       );
 
@@ -473,8 +468,7 @@ export class halaltubeService {
 
       const [result, liveVideos] = await Promise.all([
         this.firebaseService.getPublishedVideos(this.lastVisibleFeedDoc() || undefined, 20).catch(() => ({ videos: [], lastVisible: null })),
-        firstValueFrom(this.discoveryService.searchYouTube(targetTopic))
-          .catch(() => this.pipedApiService.search(targetTopic))
+        firstValueFrom(this.youtubeProvider.search(targetTopic))
           .catch(() => [] as FeedVideo[])
       ]);
       
@@ -553,29 +547,20 @@ export class halaltubeService {
       return;
     }
 
-    this.discoveryService.searchYouTube(query, sp).pipe(
-      catchError(err => {
-        console.warn('[halaltubeService] Discovery search failed, trying Piped...', err);
-        return from(this.pipedApiService.search(query));
-      }),
-      catchError(err => {
-        console.warn('[halaltubeService] Piped search failed, trying Invidious...', err);
-        return this.invidious.search(query, sp);
-      })
-    ).subscribe({
+    this.youtubeProvider.search(query, sp).subscribe({
       next: async (videos) => {
         let finalVideos: any[] = videos || [];
-        // If initial search returned very few results (less than 5), supplement with Piped search
+        // If initial search returned very few results (less than 5), supplement with unfiltered provider search
         if (!finalVideos || finalVideos.length < 5) {
           try {
-            const pipedVids = await this.pipedApiService.search(query);
-            if (pipedVids && pipedVids.length > 0) {
+            const extraVids = await firstValueFrom(this.youtubeProvider.search(query));
+            if (extraVids && extraVids.length > 0) {
               const seen = new Set(finalVideos.map((v: any) => v.id));
               const combined = [...finalVideos];
-              for (const pVid of pipedVids) {
-                if (!seen.has(pVid.id)) {
-                  seen.add(pVid.id);
-                  combined.push(pVid);
+              for (const eVid of extraVids) {
+                if (!seen.has(eVid.id)) {
+                  seen.add(eVid.id);
+                  combined.push(eVid);
                 }
               }
               finalVideos = combined;
@@ -630,7 +615,7 @@ export class halaltubeService {
   }
 
   async loadVideoDetails(videoId: string): Promise<void> {
-    this.discoveryService.fetchVideoDetails(videoId).subscribe({
+    this.youtubeProvider.getVideoDetails(videoId).subscribe({
       next: async (details) => {
         if (details) {
           // Check if video is whitelisted
@@ -658,7 +643,7 @@ export class halaltubeService {
   }
 
   async loadVideoComments(videoId: string): Promise<void> {
-    this.discoveryService.fetchVideoComments(videoId).subscribe({
+    this.youtubeProvider.getVideoComments(videoId).subscribe({
       next: (comments) => this.currentVideoComments.set(comments),
       error: (err) => console.error('[halaltubeService] loadVideoComments failed:', err)
     });
@@ -823,7 +808,7 @@ export class halaltubeService {
     if (!channelId) return [];
 
     try {
-      const channelDetails = await this.pipedApiService.getChannelDetails(channelId);
+      const channelDetails = await this.youtubeProvider.getChannelDetails(channelId);
       if (!channelDetails || !channelDetails.relatedStreams) return [];
 
       const videos: FeedVideo[] = [];
@@ -968,16 +953,14 @@ export class halaltubeService {
         }
       }
 
-      // Fetch new shorts from YouTube with cascading fallbacks
+      // Fetch new shorts from YouTube via unified provider
       let apiShorts: FeedVideo[] = [];
       try {
         apiShorts = await firstValueFrom(
-          this.discoveryService.searchYouTube('shorts', 'EgQYAXAB')
+          this.youtubeProvider.search('shorts', 'EgQYAXAB')
         );
       } catch (e) {
-        try {
-          apiShorts = await this.pipedApiService.search('shorts');
-        } catch (e2) {}
+        apiShorts = [];
       }
 
       // Filter shorts using robust checkIsShorts helper
