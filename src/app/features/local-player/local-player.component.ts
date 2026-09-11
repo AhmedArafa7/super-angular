@@ -204,6 +204,9 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
                   [max]="duration() || 100" 
                   [value]="currentTime()" 
                   (input)="seek($event)"
+                  (mousedown)="onSeekStart()"
+                  (touchstart)="onSeekStart()"
+                  (change)="onSeekChange($event)"
                   class="flex-1 h-2 bg-white/20 rounded-lg accent-teal-400 cursor-pointer hover:h-2.5 transition-all" />
                 <span class="text-xs font-mono text-slate-400 min-w-14 font-bold">{{ formatTime(duration()) }}</span>
               </div>
@@ -626,7 +629,7 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
                         class="py-1.5 px-2.5 sm:px-3 rounded-xl bg-teal-500/15 hover:bg-teal-500/30 text-teal-300 text-xs font-bold transition flex items-center justify-center gap-1.5 border border-teal-500/20 active:scale-95 shrink-0"
                         title="دخول ذاكرة الانتقالات المباشرة (حتى 20 نقطة)">
                   <lucide-icon [img]="History" class="size-3.5 text-teal-400 shrink-0"></lucide-icon>
-                  <span class="whitespace-nowrap">الذاكرة ({{ jumpHistory().length }}/20)</span>
+                  <span class="whitespace-nowrap">الذاكرة ({{ jumpHistory().length > 0 ? (jumpHistoryIndex() + 1) + '/' + jumpHistory().length : '0' }})</span>
                 </button>
               </div>
 
@@ -1350,6 +1353,9 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   jumpHistory = signal<VideoJumpPoint[]>([]);
   jumpHistoryIndex = signal<number>(-1);
   showJumpHistoryModal = signal<boolean>(false);
+  isNavigatingHistory = false;
+  pendingSeekTime: number | null = null;
+  seekStartTime: number | null = null;
 
   canJumpBack = computed(() => this.jumpHistoryIndex() > 0);
   canJumpForward = computed(() => {
@@ -1506,13 +1512,13 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     const vid = this.videoPlayer?.nativeElement;
     const curTime = vid ? vid.currentTime : this.currentTime();
 
-    if (cur && curTime !== null && curTime !== undefined) {
+    if (cur && curTime !== null && curTime !== undefined && Math.abs(curTime - time) > 1) {
       this.recordJumpPoint({
         videoId: cur.id,
         videoName: cur.name,
         folderName: cur.folderName,
         time: curTime,
-        label: 'موقع المشاهدة السابق'
+        label: `موقع المشاهدة السابق (${this.formatTime(curTime)})`
       });
     }
 
@@ -1539,13 +1545,15 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   recordJumpPoint(point: { videoId: string; videoName: string; folderName?: string; time: number; label: string }) {
     if (!point.videoId || point.time === null || point.time === undefined || isNaN(point.time)) return;
 
+    const roundedTime = Math.round(point.time);
+
     const newPoint: VideoJumpPoint = {
       id: 'jp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       videoId: point.videoId,
       videoName: point.videoName,
       folderName: point.folderName,
-      time: Math.round(point.time),
-      formattedTime: this.formatTime(point.time),
+      time: roundedTime,
+      formattedTime: this.formatTime(roundedTime),
       label: point.label,
       timestamp: Date.now()
     };
@@ -1565,6 +1573,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
         last.label = point.label;
         this.jumpHistory.set([...history]);
       }
+      this.jumpHistoryIndex.set(history.length - 1);
       return;
     }
 
@@ -1603,22 +1612,29 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   async applyJumpPoint(point: VideoJumpPoint, newIndex: number) {
     const cur = this.activeItem();
     this.jumpHistoryIndex.set(newIndex);
+    this.isNavigatingHistory = true;
 
-    if (point.videoId && point.videoId !== cur?.id) {
-      const targetItem = this.playlist().find(item => item.id === point.videoId);
-      if (targetItem) {
-        this.playItem(targetItem, true, point.time);
-        this.showToast(`تم الانتقال إلى: ${point.videoName} عند ${point.formattedTime} ⏱️`);
+    try {
+      if (point.videoId && point.videoId !== cur?.id) {
+        const targetItem = this.playlist().find(item => item.id === point.videoId);
+        if (targetItem) {
+          this.playItem(targetItem, true, point.time, false);
+          this.showToast(`تم الانتقال إلى: ${point.videoName} عند ${point.formattedTime} ⏱️`);
+        } else {
+          this.showToast(`الفيديو (${point.videoName}) لم يعد موجوداً في القائمة`, 'warning');
+        }
       } else {
-        this.showToast(`الفيديو (${point.videoName}) لم يعد موجوداً في القائمة`, 'warning');
+        const vid = this.videoPlayer?.nativeElement;
+        if (vid) {
+          vid.currentTime = point.time;
+          this.currentTime.set(point.time);
+          this.showToast(`تم الانتقال إلى ${point.formattedTime} ⏱️`);
+        }
       }
-    } else {
-      const vid = this.videoPlayer?.nativeElement;
-      if (vid) {
-        vid.currentTime = point.time;
-        this.currentTime.set(point.time);
-        this.showToast(`تم الانتقال إلى ${point.formattedTime} ⏱️`);
-      }
+    } finally {
+      setTimeout(() => {
+        this.isNavigatingHistory = false;
+      }, 400);
     }
   }
 
@@ -1913,34 +1929,30 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     const vid = this.videoPlayer?.nativeElement;
     const curTime = vid ? vid.currentTime : this.currentTime();
 
-    // 1. Snapshot current position before jumping if valid
-    if (cur && curTime !== null && curTime !== undefined) {
-      this.recordJumpPoint({
-        videoId: cur.id,
-        videoName: cur.name,
-        folderName: cur.folderName,
-        time: curTime,
-        label: 'موقع المشاهدة السابق'
-      });
-    }
-
-    // 2. Perform the jump (switch video if different)
     if (note.videoId && note.videoId !== this.activeItem()?.id) {
       const targetItem = this.playlist().find(item => item.id === note.videoId);
       if (targetItem) {
-        this.playItem(targetItem, true, note.timestampInVideo ?? undefined);
+        // playItem handles departure & destination recording automatically!
+        this.playItem(targetItem, true, note.timestampInVideo ?? undefined, true);
       } else {
         this.showToast(`الفيديو (${note.videoName}) لم يعد موجوداً في القائمة`, 'warning');
       }
-    } else if (note.timestampInVideo !== null) {
+    } else if (note.timestampInVideo !== null && note.timestampInVideo !== undefined) {
+      if (cur && curTime !== null && !isNaN(curTime) && Math.abs(curTime - note.timestampInVideo) > 1) {
+        this.recordJumpPoint({
+          videoId: cur.id,
+          videoName: cur.name,
+          folderName: cur.folderName,
+          time: curTime,
+          label: `موقع المشاهدة السابق (${this.formatTime(curTime)})`
+        });
+      }
+
       if (vid) {
         vid.currentTime = note.timestampInVideo;
         this.currentTime.set(note.timestampInVideo);
       }
-    }
 
-    // 3. Record target position into history stack
-    if (note.timestampInVideo !== null) {
       const targetVidId = note.videoId || cur?.id || '';
       const targetVidName = note.videoName || cur?.name || 'فيديو';
       this.recordJumpPoint({
@@ -2410,44 +2422,75 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     if (this.activeItem()?.id === item.id) {
       this.togglePlay();
     } else {
-      const cur = this.activeItem();
-      const vid = this.videoPlayer?.nativeElement;
-      const curTime = vid ? vid.currentTime : this.currentTime();
-      if (cur && curTime !== null && curTime !== undefined) {
-        this.recordJumpPoint({
-          videoId: cur.id,
-          videoName: cur.name,
-          folderName: cur.folderName,
-          time: curTime,
-          label: 'موقع المشاهدة السابق'
-        });
-      }
-      this.playItem(item);
+      this.playItem(item, true, undefined, true);
     }
   }
 
-  playItem(item: LocalMediaItem, autoPlay = true, seekToTime?: number) {
+  playItem(item: LocalMediaItem, autoPlay = true, seekToTime?: number, recordHistory = true) {
+    const prevItem = this.activeItem();
+    const vid = this.videoPlayer?.nativeElement;
+    const prevTime = vid ? vid.currentTime : this.currentTime();
+
+    // 1. Snapshot departure point before switching
+    if (
+      recordHistory &&
+      !this.isNavigatingHistory &&
+      prevItem &&
+      prevTime !== null &&
+      !isNaN(prevTime) &&
+      (prevItem.id !== item.id || (seekToTime !== undefined && Math.abs(prevTime - seekToTime) >= 3))
+    ) {
+      this.recordJumpPoint({
+        videoId: prevItem.id,
+        videoName: prevItem.name,
+        folderName: prevItem.folderName,
+        time: prevTime,
+        label: `موقع المشاهدة السابق (${this.formatTime(prevTime)})`
+      });
+    }
+
     this.saveCurrentPosition();
     this.activeItemId.set(item.id);
     localStorage.setItem('local_player_active_id', item.id);
     this.loadBookmarksForVideo(item.id);
 
+    const targetTime = (seekToTime !== undefined && seekToTime !== null)
+      ? seekToTime
+      : ((item.lastPosition && item.lastPosition > 3) ? item.lastPosition : 0);
+
+    this.pendingSeekTime = targetTime;
+
+    // 2. Snapshot destination point in the history stack
+    if (
+      recordHistory &&
+      !this.isNavigatingHistory &&
+      (prevItem?.id !== item.id || (seekToTime !== undefined && Math.abs(prevTime - targetTime) >= 3))
+    ) {
+      this.recordJumpPoint({
+        videoId: item.id,
+        videoName: item.name,
+        folderName: item.folderName,
+        time: targetTime,
+        label: seekToTime !== undefined ? `انتقال إلى (${this.formatTime(targetTime)})` : `تشغيل: ${item.name}`
+      });
+    }
+
     setTimeout(() => {
       if (this.videoPlayer?.nativeElement) {
-        this.videoPlayer.nativeElement.playbackRate = this.playbackRate();
-        this.videoPlayer.nativeElement.volume = this.volume();
-        this.videoPlayer.nativeElement.muted = this.isMuted();
+        const v = this.videoPlayer.nativeElement;
+        v.playbackRate = this.playbackRate();
+        v.volume = this.volume();
+        v.muted = this.isMuted();
 
-        if (seekToTime !== undefined && seekToTime !== null) {
-          this.videoPlayer.nativeElement.currentTime = seekToTime;
-          this.currentTime.set(seekToTime);
-        } else if (item.lastPosition && item.lastPosition > 5) {
-          this.videoPlayer.nativeElement.currentTime = item.lastPosition;
-          this.currentTime.set(item.lastPosition);
+        if (this.pendingSeekTime !== null) {
+          try {
+            v.currentTime = this.pendingSeekTime;
+            this.currentTime.set(this.pendingSeekTime);
+          } catch (e) {}
         }
 
         if (autoPlay) {
-          this.videoPlayer.nativeElement.play().then(() => {
+          v.play().then(() => {
             this.isPlaying.set(true);
           }).catch(() => {});
         }
@@ -2612,7 +2655,12 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
           }).catch(() => {});
         }
 
-        if (cur.lastPosition && cur.lastPosition > 3) {
+        // If we have an intended destination seek time (from jump point or playItem), use it!
+        if (this.pendingSeekTime !== null) {
+          vid.currentTime = this.pendingSeekTime;
+          this.currentTime.set(this.pendingSeekTime);
+          this.pendingSeekTime = null;
+        } else if (cur.lastPosition && cur.lastPosition > 3) {
           vid.currentTime = cur.lastPosition;
           this.currentTime.set(cur.lastPosition);
         }
@@ -2645,7 +2693,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
 
     const curIdx = targetList.findIndex(i => i.id === cur.id);
     const nextIdx = (curIdx + 1) % targetList.length;
-    this.playItem(targetList[nextIdx]);
+    this.playItem(targetList[nextIdx], true, undefined, true);
   }
 
   playPrevious() {
@@ -2659,7 +2707,34 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
 
     const curIdx = targetList.findIndex(i => i.id === cur.id);
     const prevIdx = (curIdx - 1 + targetList.length) % targetList.length;
-    this.playItem(targetList[prevIdx]);
+    this.playItem(targetList[prevIdx], true, undefined, true);
+  }
+
+  onSeekStart() {
+    const vid = this.videoPlayer?.nativeElement;
+    this.seekStartTime = vid ? vid.currentTime : this.currentTime();
+  }
+
+  onSeekChange(event: Event) {
+    const newTime = +(event.target as HTMLInputElement).value;
+    const cur = this.activeItem();
+    if (cur && this.seekStartTime !== null && !isNaN(this.seekStartTime) && Math.abs(newTime - this.seekStartTime) >= 5) {
+      this.recordJumpPoint({
+        videoId: cur.id,
+        videoName: cur.name,
+        folderName: cur.folderName,
+        time: this.seekStartTime,
+        label: `موقع المشاهدة قبل التقديم (${this.formatTime(this.seekStartTime)})`
+      });
+      this.recordJumpPoint({
+        videoId: cur.id,
+        videoName: cur.name,
+        folderName: cur.folderName,
+        time: newTime,
+        label: `موقع المشاهدة بعد التقديم (${this.formatTime(newTime)})`
+      });
+    }
+    this.seekStartTime = null;
   }
 
   seek(event: Event) {
@@ -3068,14 +3143,14 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     const tag = (event.target as HTMLElement)?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 
-    // Alt + Left: Jump Back
-    if (event.altKey && (event.key === 'ArrowLeft' || event.key === '[')) {
+    // Alt + Left or Alt + Z or [: Jump Back
+    if (event.altKey && (event.key === 'ArrowLeft' || event.key === '[' || event.key === 'z' || event.key === 'Z' || event.key === 'ئ')) {
       event.preventDefault();
       this.jumpBack();
       return;
     }
-    // Alt + Right: Jump Forward
-    if (event.altKey && (event.key === 'ArrowRight' || event.key === ']')) {
+    // Alt + Right or Alt + Y or ]: Jump Forward
+    if (event.altKey && (event.key === 'ArrowRight' || event.key === ']' || event.key === 'y' || event.key === 'Y' || event.key === 'إ')) {
       event.preventDefault();
       this.jumpForward();
       return;
