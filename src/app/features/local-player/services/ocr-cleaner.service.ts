@@ -6,7 +6,7 @@ import { CustomTextRule } from '../models/local-player.models';
 })
 export class OcrCleanerService {
 
-  readonly STORAGE_KEY = 'local_player_custom_ocr_rules';
+  readonly STORAGE_KEY = 'local_player_custom_ocr_rules_v3';
 
   // Observable signal holding the current active custom text transformation rules
   customRules = signal<CustomTextRule[]>(this.loadCustomRules());
@@ -14,36 +14,17 @@ export class OcrCleanerService {
   /**
    * Returns pre-configured, battle-tested default rules designed specifically
    * to clean up code screenshots from Visual Studio, VS Code, JetBrains, and other IDEs.
+   * Strips IDE menus, Solution Explorer side-columns, line numbers, and repairs syntax.
    */
   getDefaultRules(): CustomTextRule[] {
+    const codeKeywords = '[ \\t]*(?:using|namespace|public|private|protected|internal|class|interface|struct|record|await|return|try|catch|finally|throw|if|else|switch|case|while|for|foreach|var|async|\\/\\/|_\\w+[ \\t]*=|[{}]|static)';
+
     return [
       {
-        id: 'rule_ide_menus',
-        name: 'إزالة أشرطة وقوائم Visual Studio والأشرطة العلوية',
-        description: 'حذف أشرطة القوائم والـ Debug وتبويبات الحل وأشرطة Copilot',
-        pattern: '^(?:.*?(?:file|edit|view|git|project|build|debug|test|analyze|tools|extensions|window|help).*|(?:@-\\s*He|.*debug\\s*-\\s*any\\s*cpu.*|.*github\\s*copilot.*|exceptionhan\\.\\.\\..*solution\\s*explorer.*))$',
-        replacement: '',
-        isRegex: true,
-        caseSensitive: false,
-        enabled: true,
-        isBuiltIn: true
-      },
-      {
-        id: 'rule_solution_explorer_lines',
-        name: 'إزالة أسطر ومجلدات شجرة Solution Explorer المعزولة',
-        description: 'حذف الأسطر التي تحتوي فقط على أسماء مشاريع، مجلدات، أو ملفات مستكشف الحلول',
-        pattern: '^\\s*(?:[>b\\d\\s]*\\[.*?\\]|[>b\\d\\s]*(?:connected\\s*services|properties|bin|obj|appsettings|dependencies|commonresult|dtos|controllers|attributes|presentationlayer|infrastructurelayer|ecommerce\\s*(?:shared|presentation|services|web)).*|[-=~\\s\\d\\w]{1,6}|[a-z]\\s*=\\s*[\\.\\s\\d]+|be\\s+alo.*|@&.*|it\\s+pb.*)\\s*$',
-        replacement: '',
-        isRegex: true,
-        caseSensitive: false,
-        enabled: true,
-        isBuiltIn: true
-      },
-      {
-        id: 'rule_semicolon_solution_explorer',
-        name: 'إزالة نصوص مستكشف الحلول العالقة بعد الفاصلة المنقوطة ;',
-        description: 'إزالة أي نصوص تبدأ بعد نهاية الجملة البرمجية ; في نفس السطر',
-        pattern: '(?<=;)\\s+(?:[>b4\\[].*|[A-Z][a-zA-Z0-9_\\s\\(\\)\\[\\]\\.]+)$',
+        id: 'rule_ide_menus_bars',
+        name: 'إزالة أشرطة وقوائم Visual Studio وأشرطة الـ Debug والـ Taskbar',
+        description: 'حذف أشرطة القوائم والـ Debug وتبويبات الحل والـ Status Bar والـ Taskbar',
+        pattern: '^(?:.*?(?:file\\s+edit\\s+view|debug\\s*-\\s*any\\s*cpu|github\\s*copilot|solution\\s*explorer|noissues\\s*found|error\\s*list|package\\s*manager\\s*console|select\\s*repository|add\\s*to\\s*source\\s*control|840\\s*pm|mea\\s*rr|zoom\\s*\\d+|\\d+%\\s*=~)[^\\r\\n]*)$',
         replacement: '',
         isRegex: true,
         caseSensitive: false,
@@ -53,8 +34,8 @@ export class OcrCleanerService {
       {
         id: 'rule_leading_line_numbers',
         name: 'إزالة أرقام الأسطر ورموز الهامش من بداية السطر',
-        description: 'حذف أرقام الأسطر 1, 2, 77, 117 من بداية السطر قبل الكود أو التعليق',
-        pattern: '^\\s*\\d{1,4}\\s+(?=[a-zA-Z_{}\\/])',
+        description: 'حذف أرقام أسطر المحرر (1, 2, 77, 10, 117...) ورموز الهامش قبل الكود',
+        pattern: '^[ \\t]*\\d{1,4}[ \\t]+(?=[a-zA-Z_{}\\/])',
         replacement: '',
         isRegex: true,
         caseSensitive: false,
@@ -62,54 +43,21 @@ export class OcrCleanerService {
         isBuiltIn: true
       },
       {
-        id: 'rule_comments_solution_explorer',
-        name: 'تنظيف أسماء الملفات العالقة في نهاية التعليقات البرمجية',
-        description: 'إبقاء نص التعليق فقط وحذف أسماء ملفات .cs العالقة في نهايته',
-        pattern: '(\\/\\/\\s*.+?)\\s+(?:[b>]\\s*)?c[#=]\\s+\\w+\\.cs.*$',
-        replacement: '$1',
-        isRegex: true,
-        caseSensitive: false,
-        enabled: true,
-        isBuiltIn: true
-      },
-      {
-        id: 'rule_typo_try',
-        name: 'تصحيح Fry إلى try في لغة C# / JS',
-        description: 'تصحيح خطأ قراءة OCR الشائع لكلمة try البرمجية',
-        pattern: '\\bFry\\b',
+        id: 'rule_fix_try_block',
+        name: 'تصحيح وتنقية جملة try المشوهة من الـ OCR',
+        description: 'تحويل Fry أو الأرقام قبل try وإزالة نصوص الـ Solution Explorer الملتصقة بها',
+        pattern: '^[ \\t]*(?:\\d+[ \\t]*)?(?:try|Fry)\\b[^\\r\\n]*$',
         replacement: 'try',
         isRegex: true,
-        caseSensitive: true,
-        enabled: true,
-        isBuiltIn: true
-      },
-      {
-        id: 'rule_typo_system_linq',
-        name: 'تصحيح أخطاء أسماء المكتبات System و Linq',
-        description: 'تصحيح System.Ling إلى System.Linq وتصحيح Systen',
-        pattern: '\\bSystem\\.Ling\\b',
-        replacement: 'System.Linq',
-        isRegex: true,
         caseSensitive: false,
         enabled: true,
         isBuiltIn: true
       },
       {
-        id: 'rule_bottom_status_bar',
-        name: 'إزالة شريط الحالة السفلي وشريط مهام Windows',
-        description: 'حذف شريط الحالة وساعة وتاريخ الويندوز وأشرطة Git و Error List',
-        pattern: '^.*(?:\\b(?:no\\s*issues\\s*found|noissues\\s*found|error\\s*list|output|package\\s*manager\\s*console|add\\s*to\\s*source\\s*control|select\\s*repository|ready)\\b|\\d{1,2}:\\d{2}\\s*(?:am|pm)|(?:\\beng\\b|\\bara\\b)).*$',
-        replacement: '',
-        isRegex: true,
-        caseSensitive: false,
-        enabled: true,
-        isBuiltIn: true
-      },
-      {
-        id: 'rule_clean_braces',
-        name: 'تنقية الأقواس المعقوفة { و } من المخلفات المجاورة',
-        description: 'إبقاء القوس المعقوف وحذف أي نصوص لمستكشف الحلول بجانبه في نفس السطر',
-        pattern: '^\\s*\\d*\\s*(\\{|\\})\\s+.*$',
+        id: 'rule_semicolon_strip',
+        name: 'إزالة نصوص مستكشف الحلول بعد الفاصلة المنقوطة (;)',
+        description: 'حذف أي نصوص أو تفريعات ملفات تظهر على يمين نهاية الجملة البرمجية',
+        pattern: '(;)[ \\t]*[^\\r\\n;]+$',
         replacement: '$1',
         isRegex: true,
         caseSensitive: false,
@@ -117,11 +65,132 @@ export class OcrCleanerService {
         isBuiltIn: true
       },
       {
-        id: 'rule_collapse_blank_lines',
-        name: 'تقليص تكرار الأسطر الفارغة',
-        description: 'دمج أي أسطر فارغة متتالية تزيد عن سطرين لتنسيق قراءة الكود',
-        pattern: '\\n{3,}',
-        replacement: '\\n\\n',
+        id: 'rule_comments_strip',
+        name: 'تنقية أسطر التعليقات // من أسماء ملفات المستكشف الملتصقة',
+        description: 'حذف أسماء ملفات مثل BasketController.cs الملتصقة بنهاية التعليق',
+        pattern: '(\\/\\/[ \\t]*.*?)[ \\t]+(?:b[ \\t]+c=|>[b \\t\\d]*c#|\\[|b[ \\t]*#)[^\\r\\n]*$',
+        replacement: '$1',
+        isRegex: true,
+        caseSensitive: false,
+        enabled: true,
+        isBuiltIn: true
+      },
+      {
+        id: 'rule_namespace_strip',
+        name: 'تنقية سطر الـ namespace من نصوص المستكشف',
+        description: 'حفظ اسم الـ namespace فقط وحذف نصوص المجلدات الملتصقة على اليمين',
+        pattern: '^[ \\t]*(namespace[ \\t]+[\\w\\.]+)[ \\t]+[^\\r\\n]*$',
+        replacement: '$1',
+        isRegex: true,
+        caseSensitive: false,
+        enabled: true,
+        isBuiltIn: true
+      },
+      {
+        id: 'rule_class_strip',
+        name: 'تنقية سطر الـ class من نصوص المستكشف والرموز',
+        description: 'حفظ إعلان الـ class وحذف أي رموز أو أحرف ملتصقة على يمين السطر',
+        pattern: '^[ \\t]*((?:public|private|protected|internal|static|abstract|sealed|partial)?[ \\t]*class[ \\t]+\\w+)[ \\t]+[^\\r\\n]*$',
+        replacement: '$1',
+        isRegex: true,
+        caseSensitive: false,
+        enabled: true,
+        isBuiltIn: true
+      },
+      {
+        id: 'rule_ctor_logger_param',
+        name: 'إصلاح دالة البناء ومعامل الـ logger المقطوع',
+        description: 'تصحيح المعامل المبتور logge وإغلاق قوس دالة البناء (logger)',
+        pattern: '(\\bILogger<[\\w]+>)[ \\t]+logge\\b[^\\r\\n]*$',
+        replacement: '$1 logger)',
+        isRegex: true,
+        caseSensitive: false,
+        enabled: true,
+        isBuiltIn: true
+      },
+      {
+        id: 'rule_method_signature_paren',
+        name: 'تنقية توقيع الدوال بعد القوس المغلق )',
+        description: 'حذف أي نصوص أو ملفات ملتصقة بعد إغلاق قوس الدالة مثل InvokeAsync',
+        pattern: '^[ \\t]*([^\\/\\r\\n]*\\))[ \\t]+[^\\r\\n{]*$',
+        replacement: '$1',
+        isRegex: true,
+        caseSensitive: false,
+        enabled: true,
+        isBuiltIn: true
+      },
+      {
+        id: 'rule_braces_strip',
+        name: 'تنقية الأقواس المعقوفة { و } من الرموز والملفات الملتصقة',
+        description: 'استخراج القوس المعقوف فقط { أو } وحذف نصوص الشجرة الملتصقة بجانبه',
+        pattern: '^[ \\t]*(?:\\d+[ \\t]*)?([{}])[ \\t]+[^\\r\\n]*$',
+        replacement: '$1',
+        isRegex: true,
+        caseSensitive: false,
+        enabled: true,
+        isBuiltIn: true
+      },
+      {
+        id: 'rule_explorer_files',
+        name: 'حذف أسطر ملفات مستكشف الحلول (.cs, .http, .json)',
+        description: 'حذف الأسطر المعزولة التي تمثل ملفات مثل ApiBaseController.cs و appsettingsjson',
+        pattern: `^(?!${codeKeywords}).*?(?:c#|c=|\\.cs\\b|\\.http\\b|\\.json\\b|appsettings)[^\\r\\n]*$`,
+        replacement: '',
+        isRegex: true,
+        caseSensitive: false,
+        enabled: true,
+        isBuiltIn: true
+      },
+      {
+        id: 'rule_explorer_folders',
+        name: 'حذف أسطر مجلدات شجرة Solution Explorer المعزولة',
+        description: 'حذف أسطر Properties و bin و obj و Dependencies و Controllers المعزولة',
+        pattern: `^(?!${codeKeywords}).*?(?:connected[ \\t]*services|properties|bin|obj|dependencies|commonresult|dtos|controllers|attributes|presentationlayer|infrastructurelayer|ecommerce|imports|weblayer|domain|solution)[^\\r\\n]*$`,
+        replacement: '',
+        isRegex: true,
+        caseSensitive: false,
+        enabled: true,
+        isBuiltIn: true
+      },
+      {
+        id: 'rule_explorer_branches_noise',
+        name: 'حذف تفريعات الشجرة المعزولة وأيقونات المجلدات [ ] و >',
+        description: 'حذف أسطر الرموز المشوهة مثل [E Presentation] و [wu #=] و > 3) Imports و bin',
+        pattern: `^(?!${codeKeywords})[ \\t]*(?:[-=~ \\t\\d\\w\\.:]{1,8}|[-be \\t\\d]+Alo-sa0.*|@&.*|it[ \\t]+pb.*|\\d+[\\)\\|[ \\t]]+ECommerce.*|[>[ \\t]\\d]*\\[.*?\\](?:[ \\t]*\\w+)?|[\\d[ \\t]]*>[b[ \\t]\\d]*\\[.*?\\]|.*?\\bCPE\\b|.*?c#|.*?\\.cs|.*?bin|.*?obj|.*?properties|[>:]\\s*[\\.\\s\\d\\”\\\"\\\'A-Za-z]+>[b\\s\\d]*\\w+)[^\\r\\n]*$`,
+        replacement: '',
+        isRegex: true,
+        caseSensitive: false,
+        enabled: true,
+        isBuiltIn: true
+      },
+      {
+        id: 'rule_symbols_noise',
+        name: 'إزالة أسطر الرموز الفارغة وبقايا الهوامش',
+        description: 'حذف الأسطر التي لا تحتوي إلا على رموز أو مسافات أو أرقام مشتتة',
+        pattern: '^[ \\t>:\\.\\”\\\"\\\'b\\d|\\-=~#\\$\\[\\]\\(\\)/\\*]+$',
+        replacement: '',
+        isRegex: true,
+        caseSensitive: false,
+        enabled: true,
+        isBuiltIn: true
+      },
+      {
+        id: 'rule_typo_system',
+        name: 'تصحيح Systen إلى System',
+        description: 'تصحيح خطأ قراءة OCR الشائع لكلمة System',
+        pattern: '\\bSysten\\b',
+        replacement: 'System',
+        isRegex: true,
+        caseSensitive: false,
+        enabled: true,
+        isBuiltIn: true
+      },
+      {
+        id: 'rule_typo_linq',
+        name: 'تصحيح Ling إلى Linq',
+        description: 'تصحيح خطأ قراءة OCR الشائع لكلمة Linq',
+        pattern: '\\bLing\\b',
+        replacement: 'Linq',
         isRegex: true,
         caseSensitive: false,
         enabled: true,
@@ -142,9 +211,26 @@ export class OcrCleanerService {
     } catch (e) {
       console.warn('Could not load custom OCR rules:', e);
     }
+
+    // Preserve any user-created custom rules from older versions
+    let userCustomRules: CustomTextRule[] = [];
+    try {
+      const oldKeys = ['local_player_custom_ocr_rules', 'local_player_custom_ocr_rules_v2'];
+      for (const k of oldKeys) {
+        const oldSaved = localStorage.getItem(k);
+        if (oldSaved) {
+          const oldParsed: CustomTextRule[] = JSON.parse(oldSaved);
+          if (Array.isArray(oldParsed)) {
+            userCustomRules.push(...oldParsed.filter(r => !r.isBuiltIn));
+          }
+        }
+      }
+    } catch (e) {}
+
     const defaults = this.getDefaultRules();
-    this.saveCustomRules(defaults);
-    return defaults;
+    const merged = [...defaults, ...userCustomRules];
+    this.saveCustomRules(merged);
+    return merged;
   }
 
   saveCustomRules(rules: CustomTextRule[]): void {
@@ -199,7 +285,9 @@ export class OcrCleanerService {
     if (!text) return '';
     const activeRules = (rules || this.customRules()).filter(r => r.enabled);
 
-    let result = text;
+    // Normalize Windows CRLF and Mac CR to standard LF newlines
+    let result = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
     for (const rule of activeRules) {
       if (!rule.pattern) continue;
       try {
@@ -221,7 +309,8 @@ export class OcrCleanerService {
     }
 
     return result
-      .split(/\r?\n/)
+      .split('\n')
+      .map(line => line.trimEnd())
       .filter((line, idx, arr) => {
         if (line.trim().length > 0) return true;
         return idx > 0 && arr[idx - 1].trim().length > 0;
