@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { LucideAngularModule, Heart, MessageCircle, Share2, MoreVertical, Volume2, VolumeX, Play } from 'lucide-angular';
-import { PipedApiService } from '../../../../core/services/piped-api.service';
+import { YoutubeProviderService } from '../../../../core/services/youtube-provider.service';
 import { VideoStateService } from '../../../../core/services/video-state.service';
 import { ShortVideo } from '../../../../core/services/shorts-queue.service';
 import { IndexedDBService } from '../../../../core/services/indexed-db.service';
@@ -194,7 +194,7 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
   
   videoState = inject(VideoStateService);
   readonly audioFilter = inject(HalalAudioFilterService);
-  private piped = inject(PipedApiService);
+  private youtubeProvider = inject(YoutubeProviderService);
   private idb = inject(IndexedDBService);
   private halaltube = inject(halaltubeService);
   private el = inject(ElementRef);
@@ -355,8 +355,8 @@ export class ShortPlayerComponent implements OnInit, OnDestroy {
       if (this.abortController) this.abortController.abort();
       this.abortController = new AbortController();
 
-      console.log('[ShortPlayer] Attempting Piped stream fetch for YouTube ID:', v.id);
-      const details = await this.piped.getVideoDetails(v.id);
+      console.log('[ShortPlayer] Attempting stream fetch via unified provider for YouTube ID:', v.id);
+      const details = await this.youtubeProvider.getVideoStreamDetails(v.id);
       
       if (details?.hls) {
         this.streamUrl.set(details.hls);

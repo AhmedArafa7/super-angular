@@ -6,7 +6,7 @@ import { halaltubeService } from '../../halaltube.service';
 import { VideoDownloadService } from '../../../../core/services/video-download.service';
 import { HalalAudioFilterService } from '../../../../core/services/halal-audio-filter.service';
 import { HalalModerationService } from '../../../../core/services/halal-moderation.service';
-import { PipedApiService } from '../../../../core/services/piped-api.service';
+import { YoutubeProviderService } from '../../../../core/services/youtube-provider.service';
 
 export interface NeuralMetadata {
   introStart?: number;
@@ -45,7 +45,7 @@ export class SiNeuroVideoPlayerComponent implements AfterViewInit, OnDestroy {
 
   private halaltube = inject(halaltubeService);
   private downloadSvc = inject(VideoDownloadService);
-  private pipedApi = inject(PipedApiService);
+  private youtubeProvider = inject(YoutubeProviderService);
   readonly audioFilter = inject(HalalAudioFilterService);
   readonly moderation = inject(HalalModerationService);
 
@@ -111,10 +111,10 @@ export class SiNeuroVideoPlayerComponent implements AfterViewInit, OnDestroy {
       }
     } catch (e) {}
 
-    // 2. Fetch direct video stream from Piped / Invidious
+    // 2. Fetch direct video stream from unified provider (Piped / Invidious with Circuit Breaker)
     this.isStreamResolving.set(true);
     try {
-      const details = await this.pipedApi.getVideoDetails(ytId);
+      const details = await this.youtubeProvider.getVideoStreamDetails(ytId);
       if (details?.videoStreams && details.videoStreams.length > 0) {
         const stream = details.videoStreams.find(s => !s.videoOnly && (s.quality?.includes('720') || s.quality?.includes('480') || s.quality?.includes('360'))) 
                       || details.videoStreams.find(s => !s.videoOnly)

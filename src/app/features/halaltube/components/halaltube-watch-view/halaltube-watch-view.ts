@@ -14,10 +14,9 @@ import { halaltubeService } from '../../halaltube.service';
 import { HalaltubePlaylistService } from '../../services/halaltube-playlist.service';
 import { SidebarService } from '../../../../core/sidebar.service';
 import { VideoStateService } from '../../../../core/services/video-state.service';
-import { YoutubeDiscoveryService } from '../../../../core/services/youtube-discovery.service';
+import { YoutubeProviderService } from '../../../../core/services/youtube-provider.service';
 import { IndexedDBService } from '../../../../core/services/indexed-db.service';
 import { LucideAngularModule, Flag, CheckCircle2, AlertTriangle } from 'lucide-angular';
-import { PipedApiService } from '../../../../core/services/piped-api.service';
 import { FirebaseService } from '../../../../core/services/firebase.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { VideoDownloadService } from '../../../../core/services/video-download.service';
@@ -55,8 +54,7 @@ export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
   router = inject(Router);
   route = inject(ActivatedRoute);
   videoState = inject(VideoStateService);
-  discovery = inject(YoutubeDiscoveryService);
-  piped = inject(PipedApiService);
+  youtubeProvider = inject(YoutubeProviderService);
   firebase = inject(FirebaseService);
   toast = inject(ToastService);
   downloadSvc = inject(VideoDownloadService);
@@ -206,7 +204,7 @@ export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
           }
         }).catch(() => {});
 
-      this.piped.getVideoDetails(ytId).then(details => {
+      this.youtubeProvider.getVideoStreamDetails(ytId).then(details => {
         if (details) {
           if ((details as any).likes) this.likes.set((details as any).likes);
           const subCount = (details as any).uploaderSubscriberCount || (details as any).subscribers;
@@ -224,7 +222,7 @@ export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
         }
       }).catch(() => {});
 
-      this.discovery.fetchVideoComments(ytId).subscribe({
+      this.youtubeProvider.getVideoComments(ytId).subscribe({
         next: (comments) => this.comments.set(comments),
         error: () => this.comments.set([])
       });
