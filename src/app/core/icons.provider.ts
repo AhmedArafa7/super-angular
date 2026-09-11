@@ -18,11 +18,12 @@ import {
   PackagePlus, Camera, PenTool, Grid, Maximize2, Pause, VolumeX, Volume2, LoaderCircle,
   Maximize, Star, Timer, Sun, Moon, Chrome, CloudCog, CloudUpload, CloudRain, Flag, Lock, BarChart3,
   Type, Code, Bookmark, Building2, Smartphone, Workflow, Database,
-  ScanText, Crop, RotateCw, RotateCcw, ZoomIn, ZoomOut, FileSearch, Sliders, Languages, Share2
+  ScanText, Crop, RotateCw, RotateCcw, ZoomIn, ZoomOut, FileSearch, Sliders, Languages, Share2, FileArchive
 } from 'lucide-angular';
 
 import { 
   provideLucideIcons as provideNewLucideIcons,
+  LucideFileArchive,
   LucideBuilding2,
   LucideSmartphone,
   LucideWorkflow,
@@ -227,10 +228,12 @@ export const provideLucideIcons = () => {
         FileSearch,
         Sliders,
         Languages,
-        Share2
+        Share2,
+        FileArchive
       })
     ),
     provideNewLucideIcons(
+      LucideFileArchive,
       LucideBuilding2,
       LucideLayoutDashboard,
       LucideMessageCircleQuestion,

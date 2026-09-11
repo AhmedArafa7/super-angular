@@ -6,12 +6,31 @@ import { EncryptionService } from './encryption.service';
 })
 export class IndexedDBService {
   private readonly DB_NAME = 'halaltubeDB';
-  private readonly DB_VERSION = 12; // Incremented to 12 to ensure local_player_notes store is created
   private db: IDBDatabase | null = null;
+  private initPromise: Promise<void> | null = null;
   private encryption = inject(EncryptionService);
 
+  private readonly ALL_STORES = [
+    'watch_history',
+    'saved_videos',
+    'subscriptions',
+    'channel_meta',
+    'channel_feed',
+    'related_videos',
+    'whitelist_feed',
+    'blacklisted_channels',
+    'personal_pdf_books',
+    'created_books',
+    'book_video_blobs',
+    'playlists',
+    'local_player_media',
+    'local_player_notes'
+  ];
+
   constructor() {
-    this.initDB();
+    this.initDB().catch(err => {
+      console.warn('[IndexedDBService] Initial DB connection deferred or caught:', err);
+    });
   }
 
   private getKeyPathForStore(storeName: string): string {
@@ -86,49 +105,123 @@ export class IndexedDBService {
     }
   }
 
+  private bindDatabaseEvents(db: IDBDatabase): void {
+    db.onversionchange = () => {
+      console.warn('[IndexedDBService] Database version change detected from another connection, closing.');
+      db.close();
+      this.db = null;
+      this.initPromise = null;
+    };
+    db.onclose = () => {
+      this.db = null;
+      this.initPromise = null;
+    };
+  }
+
+  private checkAllStoresPresent(db: IDBDatabase): boolean {
+    return this.ALL_STORES.every(store => db.objectStoreNames.contains(store));
+  }
+
   private initDB(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (this.db) {
-        resolve();
-        return;
-      }
+    if (this.db) {
+      return Promise.resolve();
+    }
+    if (this.initPromise) {
+      return this.initPromise;
+    }
 
-      const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+    this.initPromise = new Promise<void>((resolve, reject) => {
+      // Opening without version parameter:
+      // In IndexedDB, this ALWAYS opens the database at its current version, completely avoiding VersionError!
+      const openReq = indexedDB.open(this.DB_NAME);
 
-      request.onerror = (event) => {
-        console.error('[IndexedDBService] Error opening DB', event);
-        reject('Error opening IndexedDB');
+      openReq.onerror = () => {
+        const error = openReq.error;
+        console.error('[IndexedDBService] Error opening DB without explicit version:', error);
+        this.initPromise = null;
+        reject(error || 'Error opening IndexedDB');
       };
 
-      request.onsuccess = (event) => {
-        this.db = (event.target as IDBOpenDBRequest).result;
-        resolve();
-      };
-
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
+      openReq.onupgradeneeded = () => {
+        // Only fires if database did not exist at all before (version 0 -> 1)
+        const db = openReq.result;
         this.createAllStores(db);
       };
+
+      openReq.onsuccess = () => {
+        const db = openReq.result;
+        
+        // Verify that all required stores are present
+        if (this.checkAllStoresPresent(db)) {
+          this.bindDatabaseEvents(db);
+          this.db = db;
+          resolve();
+          return;
+        }
+
+        // If any stores are missing, upgrade cleanly to db.version + 1
+        const nextVersion = (db.version || 1) + 1;
+        db.close();
+
+        const upgradeReq = indexedDB.open(this.DB_NAME, nextVersion);
+
+        upgradeReq.onupgradeneeded = () => {
+          const upgradeDb = upgradeReq.result;
+          this.createAllStores(upgradeDb);
+        };
+
+        upgradeReq.onsuccess = () => {
+          const upgradedDb = upgradeReq.result;
+          this.bindDatabaseEvents(upgradedDb);
+          this.db = upgradedDb;
+          resolve();
+        };
+
+        upgradeReq.onerror = () => {
+          console.error('[IndexedDBService] Error upgrading DB for missing stores:', upgradeReq.error);
+          this.initPromise = null;
+          reject(upgradeReq.error || 'Error upgrading IndexedDB');
+        };
+
+        upgradeReq.onblocked = (e) => {
+          console.warn('[IndexedDBService] Database upgrade blocked by another connection/tab:', e);
+        };
+      };
+    }).catch(err => {
+      this.initPromise = null;
+      throw err;
     });
+
+    return this.initPromise;
   }
 
   private async ensureStore(storeName: string): Promise<void> {
     await this.initDB();
     if (this.db && !this.db.objectStoreNames.contains(storeName)) {
-      const nextVersion = (this.db.version || this.DB_VERSION) + 1;
+      const currentVersion = this.db.version || 1;
       this.db.close();
       this.db = null;
+      this.initPromise = null;
+
       await new Promise<void>((resolve, reject) => {
-        const req = indexedDB.open(this.DB_NAME, nextVersion);
-        req.onupgradeneeded = (e) => {
-          const db = (e.target as IDBOpenDBRequest).result;
+        const req = indexedDB.open(this.DB_NAME, currentVersion + 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
           this.createAllStores(db);
         };
-        req.onsuccess = (e) => {
-          this.db = (e.target as IDBOpenDBRequest).result;
+        req.onsuccess = () => {
+          const db = req.result;
+          this.bindDatabaseEvents(db);
+          this.db = db;
           resolve();
         };
-        req.onerror = () => reject(req.error);
+        req.onerror = () => {
+          console.error('[IndexedDBService] Error in ensureStore upgrade:', req.error);
+          reject(req.error);
+        };
+        req.onblocked = (e) => {
+          console.warn('[IndexedDBService] ensureStore blocked:', e);
+        };
       });
     }
   }
