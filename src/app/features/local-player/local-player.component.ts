@@ -540,54 +540,62 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
 
           <!-- TAB 2: BOOKMARKS & NOTES -->
           <ng-container *ngIf="sidebarTab() === 'bookmarks'">
-            <div class="flex-1 flex flex-col min-h-0 overflow-hidden p-2.5 sm:p-3 gap-2 sm:gap-2.5">
-              <div class="p-2.5 sm:p-3 rounded-2xl bg-black/40 border border-white/10 flex flex-col gap-2 shrink-0">
-                <p class="text-xs font-bold text-teal-300 flex items-center justify-between gap-1.5">
-                  <span class="flex items-center gap-1.5 truncate">
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-2.5 sm:p-3 space-y-3 min-h-0 pb-36 select-text" style="scrollbar-gutter: stable;">
+              
+              <!-- Note Creation Card (Collapsible for maximum notes viewing area) -->
+              <div class="p-2.5 sm:p-3 rounded-2xl bg-black/40 border border-white/10 flex flex-col gap-2 transition-all">
+                <div class="flex items-center justify-between cursor-pointer select-none" (click)="toggleAddNoteCollapse()" title="انقر لتوسيع أو طي نموذج الإضافة">
+                  <p class="text-xs font-bold text-teal-300 flex items-center gap-1.5 truncate">
                     <span *ngIf="activeItem()">🔖 إضافة ملاحظة</span>
                     <span *ngIf="!activeItem()">📝 إضافة ملاحظة عامة</span>
                     <span *ngIf="activeItem()" class="text-[10px] font-mono text-teal-400 bg-teal-500/10 px-1.5 py-0.5 rounded-md">({{ formatTime(currentTime()) }})</span>
+                  </p>
+                  <span class="text-[10px] px-2 py-0.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-teal-300 font-bold transition">
+                    {{ isAddNoteCollapsed() ? 'إظهار النموذج ▼' : 'طي النموذج ▲' }}
                   </span>
-                </p>
-                <div class="flex gap-1.5 w-full">
-                  <input type="text" [(ngModel)]="newBookmarkNote" (keydown.enter)="addBookmark()" [placeholder]="activeItem() ? 'اكتب ملاحظة عند اللحظة...' : 'اكتب ملاحظة عامة أو تذكير...'" class="flex-1 min-w-0 bg-black/60 border border-white/15 rounded-xl px-3 py-1.5 sm:py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500" />
-                  <button (click)="addBookmark()" class="px-3.5 sm:px-4 py-1.5 sm:py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-bold transition shrink-0 active:scale-95">إضافة</button>
                 </div>
-                <!-- Quick OCR background button in notes tab -->
-                @if (showQuickOcrButton() && activeItem()) {
-                  <button (click)="quickExtractOcr()" 
-                          [disabled]="isQuickExtractingOcr()"
-                          class="w-full py-1.5 sm:py-2 px-3 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/30 text-cyan-300 text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-98"
-                          title="استخراج النص من الشاشة كملاحظة دون إيقاف الفيديو (Alt + O)">
-                    @if (isQuickExtractingOcr()) {
-                      <lucide-icon [img]="Loader2" class="size-3.5 animate-spin text-cyan-400"></lucide-icon>
-                      <span>جارٍ استخراج النص في الخلفية...</span>
-                    } @else {
-                      <lucide-icon [img]="ScanText" class="size-4 text-cyan-400 shrink-0"></lucide-icon>
-                      <span class="truncate">⚡ استخراج النص من اللحظة الحالية دون إيقاف</span>
-                    }
-                  </button>
-                }
-                <!-- Compact OCR mode quick switcher -->
-                <div *ngIf="showQuickOcrButton() && activeItem()" class="flex items-center justify-between gap-1 flex-wrap px-1 text-[10px] text-slate-400 font-bold">
-                  <span class="shrink-0">نمط الاستخراج:</span>
-                  <div class="flex items-center gap-1">
-                    <button (click)="setOcrMode('eng')" 
-                            [class.bg-teal-600]="ocrMode() === 'eng'" 
-                            [class.text-white]="ocrMode() === 'eng'" 
-                            class="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/15 transition text-[10px] font-bold" 
-                            title="دقة عالية للأكواد واللغات البرمجية">
-                      💻 كود / إنجليزي
-                    </button>
-                    <button (click)="setOcrMode('ara+eng')" 
-                            [class.bg-teal-600]="ocrMode() === 'ara+eng'" 
-                            [class.text-white]="ocrMode() === 'ara+eng'" 
-                            class="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/15 transition text-[10px] font-bold" 
-                            title="استخراج نصوص عربية وإنجليزية مشتركة">
-                      🌐 عربي + إنجليزي
-                    </button>
+
+                @if (!isAddNoteCollapsed()) {
+                  <div class="flex gap-1.5 w-full">
+                    <input type="text" [(ngModel)]="newBookmarkNote" (keydown.enter)="addBookmark()" [placeholder]="activeItem() ? 'اكتب ملاحظة عند اللحظة...' : 'اكتب ملاحظة عامة أو تذكير...'" class="flex-1 min-w-0 bg-black/60 border border-white/15 rounded-xl px-3 py-1.5 sm:py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500" />
+                    <button (click)="addBookmark()" class="px-3.5 sm:px-4 py-1.5 sm:py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-bold transition shrink-0 active:scale-95">إضافة</button>
                   </div>
-                </div>
+                  <!-- Quick OCR background button in notes tab -->
+                  @if (showQuickOcrButton() && activeItem()) {
+                    <button (click)="quickExtractOcr()" 
+                            [disabled]="isQuickExtractingOcr()"
+                            class="w-full py-1.5 sm:py-2 px-3 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/30 text-cyan-300 text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-98"
+                            title="استخراج النص من الشاشة كملاحظة دون إيقاف الفيديو (Alt + O)">
+                      @if (isQuickExtractingOcr()) {
+                        <lucide-icon [img]="Loader2" class="size-3.5 animate-spin text-cyan-400"></lucide-icon>
+                        <span>جارٍ استخراج النص في الخلفية...</span>
+                      } @else {
+                        <lucide-icon [img]="ScanText" class="size-4 text-cyan-400 shrink-0"></lucide-icon>
+                        <span class="truncate">⚡ استخراج النص من اللحظة الحالية دون إيقاف</span>
+                      }
+                    </button>
+                  }
+                  <!-- Compact OCR mode quick switcher -->
+                  <div *ngIf="showQuickOcrButton() && activeItem()" class="flex items-center justify-between gap-1 flex-wrap px-1 text-[10px] text-slate-400 font-bold">
+                    <span class="shrink-0">نمط الاستخراج:</span>
+                    <div class="flex items-center gap-1">
+                      <button (click)="setOcrMode('eng')" 
+                              [class.bg-teal-600]="ocrMode() === 'eng'" 
+                              [class.text-white]="ocrMode() === 'eng'" 
+                              class="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/15 transition text-[10px] font-bold" 
+                              title="دقة عالية للأكواد واللغات البرمجية">
+                        💻 كود / إنجليزي
+                      </button>
+                      <button (click)="setOcrMode('ara+eng')" 
+                              [class.bg-teal-600]="ocrMode() === 'ara+eng'" 
+                              [class.text-white]="ocrMode() === 'ara+eng'" 
+                              class="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/15 transition text-[10px] font-bold" 
+                              title="استخراج نصوص عربية وإنجليزية مشتركة">
+                        🌐 عربي + إنجليزي
+                      </button>
+                    </div>
+                  </div>
+                }
               </div>
 
               <!-- Jump History Navigation Toolbar in Notes Tab -->
@@ -624,7 +632,7 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
 
               <!-- Notes Tab Component (All Notes & Current Video Notes) -->
               <app-notes-tab
-                class="flex-1 flex flex-col min-h-0 overflow-hidden"
+                class="block"
                 [allNotes]="allNotesList()"
                 [currentVideoId]="activeItem()?.id || null"
                 (editNote)="onEditNote($event)"
@@ -638,7 +646,7 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
 
           <!-- TAB 3: STORAGE MANAGER -->
           <ng-container *ngIf="sidebarTab() === 'storage'">
-            <div class="flex-1 flex flex-col min-h-0 overflow-hidden p-3 space-y-3">
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-3 min-h-0 pb-32">
               <div class="p-3.5 rounded-2xl bg-black/40 border border-white/10 flex flex-col gap-2">
                 <div class="flex items-center justify-between">
                   <span class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
@@ -654,7 +662,7 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
               </div>
 
               <p class="text-[11px] text-slate-400 font-bold px-1">إدارة الفيديوهات وحذف ملف محدد لتفريغ المساحة:</p>
-              <div class="flex-1 overflow-y-auto space-y-2 custom-scrollbar">
+              <div class="space-y-2">
                 @if (playlist().length > 0) {
                   @for (item of playlist(); track item.id) {
                     <div class="p-2.5 rounded-xl bg-black/30 border border-white/5 flex items-center justify-between gap-2">
@@ -681,7 +689,7 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
 
           <!-- TAB 4: RECYCLE BIN & HISTORY ARCHIVE -->
           <ng-container *ngIf="sidebarTab() === 'recycle'">
-            <div class="flex-1 flex flex-col min-h-0 overflow-hidden p-3 space-y-3">
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-3 min-h-0 pb-32">
               <div class="flex items-center justify-between p-3 rounded-2xl bg-black/40 border border-white/10">
                 <div>
                   <p class="text-xs font-bold text-white flex items-center gap-1.5">
@@ -695,7 +703,7 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
               </div>
 
               <!-- Recycle Bin Items List -->
-              <div class="flex-1 overflow-y-auto space-y-2 custom-scrollbar">
+              <div class="space-y-2">
                 @if (recycleBin().length > 0) {
                   @for (item of recycleBin(); track item.id) {
                     <div class="p-2.5 rounded-2xl bg-black/30 border border-white/5 flex flex-col gap-1.5 group">
@@ -1264,6 +1272,11 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   sidebarWidth = signal<number>(this.loadSidebarWidth());
   isResizingSidebar = signal<boolean>(false);
   isDesktop = signal<boolean>(typeof window !== 'undefined' ? window.innerWidth >= 1024 : true);
+  isAddNoteCollapsed = signal<boolean>(false);
+
+  toggleAddNoteCollapse() {
+    this.isAddNoteCollapsed.update(v => !v);
+  }
 
   @HostListener('window:resize')
   onWindowResize() {

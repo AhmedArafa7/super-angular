@@ -12,7 +12,7 @@ import { OcrCleanerService } from '../../services/ocr-cleaner.service';
   selector: 'app-notes-tab',
   standalone: true,
   imports: [CommonModule, FormsModule, LucideAngularModule],
-  host: { class: 'flex-1 flex flex-col min-h-0 overflow-hidden' },
+  host: { class: 'block' },
   styles: [`
     .custom-scrollbar-h::-webkit-scrollbar {
       height: 6px;
@@ -44,8 +44,8 @@ import { OcrCleanerService } from '../../services/ocr-cleaner.service';
       </button>
     </div>
 
-    <!-- Notes Scrollable List -->
-    <div class="flex-1 overflow-y-auto space-y-3 pr-1 pb-6 custom-scrollbar min-h-0" style="scrollbar-gutter: stable;">
+    <!-- Notes List (Flows naturally in parent scroll container) -->
+    <div class="space-y-3">
       @if (sortedNotes().length > 0) {
         @for (note of sortedNotes(); track note.id) {
            <div class="p-3.5 rounded-2xl bg-black/40 border transition-all flex flex-col gap-2.5 cursor-pointer hover:border-teal-500/50 group"
