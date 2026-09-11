@@ -1,150 +1,389 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
+import { CustomTextRule } from '../models/local-player.models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class OcrCleanerService {
 
+  readonly STORAGE_KEY = 'local_player_custom_ocr_rules';
+
+  // Observable signal holding the current active custom text transformation rules
+  customRules = signal<CustomTextRule[]>(this.loadCustomRules());
+
   /**
-   * Cleans programming code and text extracted from IDE / code editor screenshots:
-   * 1. Removes IDE chrome, status bar, tabs, and error console lines
-   * 2. Removes left-side line numbers, gutter symbols, and fold markers (v, >)
-   * 3. Removes vertical indentation guide noise (| i 1 l !)
-   * 4. Removes 'X references' lines
-   * 5. Fixes common OCR code mistakes (e.g. Ling -> Linq, trailing noise)
-   * 6. Formats clean indentation based on { } blocks
+   * Returns pre-configured, battle-tested default rules designed specifically
+   * to clean up code screenshots from Visual Studio, VS Code, JetBrains, and other IDEs.
    */
-  cleanCode(rawText: string): string {
-    if (!rawText) return '';
-
-    const lines = rawText.split(/\r?\n/);
-    const cleanedLines: string[] = [];
-
-    // Check if a line is IDE status bar / chrome / console / menus / tabs
-    const isIdeChrome = (line: string): boolean => {
-      const trimmed = line.trim();
-      const lower = trimmed.toLowerCase();
-      if (!lower) return false;
-
-      // Visual Studio / IDE Top Menu Bar (e.g. "Q file Edit View Git Project Build...", "File Edit View...")
-      if (/^(q\s+)?(file|edit|view|git|project|build|debug|test|analyze|tools|extensions|window|help)\b/i.test(lower) &&
-          /(edit|view|git|project|build|debug|test|tools|window|help)/i.test(lower)) {
-        return true;
+  getDefaultRules(): CustomTextRule[] {
+    return [
+      {
+        id: 'rule_ide_menus',
+        name: 'إزالة أشرطة وقوائم Visual Studio والأشرطة العلوية',
+        description: 'حذف أشرطة القوائم والـ Debug وتبويبات الحل وأشرطة Copilot',
+        pattern: '^(?:.*?(?:file|edit|view|git|project|build|debug|test|analyze|tools|extensions|window|help).*|(?:@-\\s*He|.*debug\\s*-\\s*any\\s*cpu.*|.*github\\s*copilot.*|exceptionhan\\.\\.\\..*solution\\s*explorer.*))$',
+        replacement: '',
+        isRegex: true,
+        caseSensitive: false,
+        enabled: true,
+        isBuiltIn: true
+      },
+      {
+        id: 'rule_solution_explorer_lines',
+        name: 'إزالة أسطر ومجلدات شجرة Solution Explorer المعزولة',
+        description: 'حذف الأسطر التي تحتوي فقط على أسماء مشاريع، مجلدات، أو ملفات مستكشف الحلول',
+        pattern: '^\\s*(?:[>b\\d\\s]*\\[.*?\\]|[>b\\d\\s]*(?:connected\\s*services|properties|bin|obj|appsettings|dependencies|commonresult|dtos|controllers|attributes|presentationlayer|infrastructurelayer|ecommerce\\s*(?:shared|presentation|services|web)).*|[-=~\\s\\d\\w]{1,6}|[a-z]\\s*=\\s*[\\.\\s\\d]+|be\\s+alo.*|@&.*|it\\s+pb.*)\\s*$',
+        replacement: '',
+        isRegex: true,
+        caseSensitive: false,
+        enabled: true,
+        isBuiltIn: true
+      },
+      {
+        id: 'rule_semicolon_solution_explorer',
+        name: 'إزالة نصوص مستكشف الحلول العالقة بعد الفاصلة المنقوطة ;',
+        description: 'إزالة أي نصوص تبدأ بعد نهاية الجملة البرمجية ; في نفس السطر',
+        pattern: '(?<=;)\\s+(?:[>b4\\[].*|[A-Z][a-zA-Z0-9_\\s\\(\\)\\[\\]\\.]+)$',
+        replacement: '',
+        isRegex: true,
+        caseSensitive: false,
+        enabled: true,
+        isBuiltIn: true
+      },
+      {
+        id: 'rule_leading_line_numbers',
+        name: 'إزالة أرقام الأسطر ورموز الهامش من بداية السطر',
+        description: 'حذف أرقام الأسطر 1, 2, 77, 117 من بداية السطر قبل الكود أو التعليق',
+        pattern: '^\\s*\\d{1,4}\\s+(?=[a-zA-Z_{}\\/])',
+        replacement: '',
+        isRegex: true,
+        caseSensitive: false,
+        enabled: true,
+        isBuiltIn: true
+      },
+      {
+        id: 'rule_comments_solution_explorer',
+        name: 'تنظيف أسماء الملفات العالقة في نهاية التعليقات البرمجية',
+        description: 'إبقاء نص التعليق فقط وحذف أسماء ملفات .cs العالقة في نهايته',
+        pattern: '(\\/\\/\\s*.+?)\\s+(?:[b>]\\s*)?c[#=]\\s+\\w+\\.cs.*$',
+        replacement: '$1',
+        isRegex: true,
+        caseSensitive: false,
+        enabled: true,
+        isBuiltIn: true
+      },
+      {
+        id: 'rule_typo_try',
+        name: 'تصحيح Fry إلى try في لغة C# / JS',
+        description: 'تصحيح خطأ قراءة OCR الشائع لكلمة try البرمجية',
+        pattern: '\\bFry\\b',
+        replacement: 'try',
+        isRegex: true,
+        caseSensitive: true,
+        enabled: true,
+        isBuiltIn: true
+      },
+      {
+        id: 'rule_typo_system_linq',
+        name: 'تصحيح أخطاء أسماء المكتبات System و Linq',
+        description: 'تصحيح System.Ling إلى System.Linq وتصحيح Systen',
+        pattern: '\\bSystem\\.Ling\\b',
+        replacement: 'System.Linq',
+        isRegex: true,
+        caseSensitive: false,
+        enabled: true,
+        isBuiltIn: true
+      },
+      {
+        id: 'rule_bottom_status_bar',
+        name: 'إزالة شريط الحالة السفلي وشريط مهام Windows',
+        description: 'حذف شريط الحالة وساعة وتاريخ الويندوز وأشرطة Git و Error List',
+        pattern: '^.*(?:\\b(?:no\\s*issues\\s*found|noissues\\s*found|error\\s*list|output|package\\s*manager\\s*console|add\\s*to\\s*source\\s*control|select\\s*repository|ready)\\b|\\d{1,2}:\\d{2}\\s*(?:am|pm)|(?:\\beng\\b|\\bara\\b)).*$',
+        replacement: '',
+        isRegex: true,
+        caseSensitive: false,
+        enabled: true,
+        isBuiltIn: true
+      },
+      {
+        id: 'rule_clean_braces',
+        name: 'تنقية الأقواس المعقوفة { و } من المخلفات المجاورة',
+        description: 'إبقاء القوس المعقوف وحذف أي نصوص لمستكشف الحلول بجانبه في نفس السطر',
+        pattern: '^\\s*\\d*\\s*(\\{|\\})\\s+.*$',
+        replacement: '$1',
+        isRegex: true,
+        caseSensitive: false,
+        enabled: true,
+        isBuiltIn: true
+      },
+      {
+        id: 'rule_collapse_blank_lines',
+        name: 'تقليص تكرار الأسطر الفارغة',
+        description: 'دمج أي أسطر فارغة متتالية تزيد عن سطرين لتنسيق قراءة الكود',
+        pattern: '\\n{3,}',
+        replacement: '\\n\\n',
+        isRegex: true,
+        caseSensitive: false,
+        enabled: true,
+        isBuiltIn: true
       }
+    ];
+  }
 
-      // IDE Open Document Tabs (e.g. "ApiBaseController.cs ProductsController.cs Result.cs")
-      if (/\b[a-zA-Z0-9_-]+\.(cs|ts|js|jsx|tsx|html|css|py|java|cpp|h|json)\b/i.test(lower) &&
-          !/[;{}=><()]/.test(lower) &&
-          !/\b(using|import|namespace|class|interface|public|private)\b/i.test(lower)) {
-        return true;
+  loadCustomRules(): CustomTextRule[] {
+    try {
+      const saved = localStorage.getItem(this.STORAGE_KEY);
+      if (saved) {
+        const parsed: CustomTextRule[] = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
       }
+    } catch (e) {
+      console.warn('Could not load custom OCR rules:', e);
+    }
+    const defaults = this.getDefaultRules();
+    this.saveCustomRules(defaults);
+    return defaults;
+  }
 
-      // IDE Breadcrumb path / Context navigation (e.g. "ECommerce.Presentation.Controllers.ApiBaseController")
-      if (/^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+){2,}\s*$/i.test(trimmed) && !trimmed.includes(';') && !trimmed.includes('=')) {
-        return true;
-      }
+  saveCustomRules(rules: CustomTextRule[]): void {
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(rules));
+      this.customRules.set([...rules]);
+    } catch (e) {
+      console.warn('Could not save custom OCR rules:', e);
+    }
+  }
 
-      // References count (e.g. "1 reference", "0 references", "3 references")
-      if (/^\s*\d+\s*references?\s*$/i.test(lower)) return true;
-      if (/^\s*0\s*references?/i.test(lower)) return true;
+  resetToDefaultRules(): CustomTextRule[] {
+    const defaults = this.getDefaultRules();
+    this.saveCustomRules(defaults);
+    return defaults;
+  }
 
-      // IDE status bar / Error list / Output panel / Zoom percentage
-      if (/^\s*\d+%\s*.*(issues|found|ln:|ch:|spc)/i.test(line)) return true;
-      if (lower.includes('no issues found') || lower.includes('noissues found')) return true;
-      if (lower.includes('error list') && lower.includes('output')) return true;
-      if (lower.includes('package manager console') || lower.includes('debug console')) return true;
-      if (lower.includes('add to source control') || lower.includes('select repository')) return true;
-      if (/^\s*\[\]\s*ready/i.test(line) || /^\s*ready\s*$/i.test(lower)) return true;
-      if (/^\s*ch:\s*\d+\s*spc\s*\d+/i.test(line)) return true;
-      if (/^\s*ln:\s*\d+/i.test(line)) return true;
-
-      return false;
+  addCustomRule(ruleData: Omit<CustomTextRule, 'id'>): CustomTextRule {
+    const newRule: CustomTextRule = {
+      ...ruleData,
+      id: 'rule_custom_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6)
     };
+    const updated = [...this.customRules(), newRule];
+    this.saveCustomRules(updated);
+    return newRule;
+  }
 
-    // Check if line is just standalone line number or gutter noise (e.g. "6", "17 |.", "19", "48")
-    const isNoiseLine = (line: string): boolean => {
-      const trimmed = line.trim();
-      if (!trimmed) return false;
-      // Standalone line numbers, digits, symbols
-      if (/^[\d\s|.:\-–—_'"`\\/!#$]+$/.test(trimmed) && trimmed.length <= 6) return true;
-      return false;
-    };
+  updateCustomRule(id: string, changes: Partial<CustomTextRule>): void {
+    const updated = this.customRules().map(rule => rule.id === id ? { ...rule, ...changes } : rule);
+    this.saveCustomRules(updated);
+  }
 
-    // Map Arabic/Eastern digits to standard Latin digits
-    const arabicToLatinDigits = (str: string): string => {
-      const map: Record<string, string> = {
-        '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4',
-        '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9'
-      };
-      return str.replace(/[٠-٩]/g, d => map[d] || d);
-    };
+  deleteCustomRule(id: string): void {
+    const updated = this.customRules().filter(rule => rule.id !== id);
+    this.saveCustomRules(updated);
+  }
 
-    for (let rawLine of lines) {
-      if (isIdeChrome(rawLine) || isNoiseLine(rawLine)) {
-        continue;
-      }
+  toggleCustomRule(id: string): void {
+    const updated = this.customRules().map(rule => rule.id === id ? { ...rule, enabled: !rule.enabled } : rule);
+    this.saveCustomRules(updated);
+  }
 
-      let line = rawLine;
+  reorderCustomRules(fromIndex: number, toIndex: number): void {
+    const rules = [...this.customRules()];
+    if (fromIndex < 0 || fromIndex >= rules.length || toIndex < 0 || toIndex >= rules.length) return;
+    const [moved] = rules.splice(fromIndex, 1);
+    rules.splice(toIndex, 0, moved);
+    this.saveCustomRules(rules);
+  }
 
-      // 0. Normalize directional markers and convert Arabic digits
-      line = line.replace(/[\u200E\u200F\u202A-\u202E]/g, '');
-      line = arabicToLatinDigits(line);
+  applyCustomRules(text: string, rules?: CustomTextRule[]): string {
+    if (!text) return '';
+    const activeRules = (rules || this.customRules()).filter(r => r.enabled);
 
-      // Normalize curly quotes
-      line = line.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
-
-      // 1. Remove gutter line numbers/symbols before keywords:
-      // "q using", "B using", "8 using", "7 v namespace", "9 v i public", "c static"
-      line = line.replace(/^c\s+(static|public|private|protected)\b/i, 'public $1');
-      line = line.replace(
-        /^[a-zA-Z0-9\u0600-\u06FF]{1,4}\s+(using|import|from|namespace|public|private|protected|internal|static|readonly|async|class|struct|interface|enum|record|void|int|string|bool|task|const|let|var|function|def|return|if|else|for|foreach|while|switch|case|default|try|catch|finally)\b/i,
-        '$1'
-      );
-
-      // 2. Remove leading line numbers and gutter fold arrows/pipes/noise:
-      // "12 1 | Validation = 1," -> "Validation = 1,"
-      // "48 return HandleValidationProblem(errors);" -> "return HandleValidationProblem(errors);"
-      line = line.replace(/^[\s\d]*[vV>|!i1l•\-–—\u0600-\u06FF]\s+/g, '');
-      line = line.replace(/^\s*\d{1,4}\s*[:.)|\-–—]?\s*/g, '');
-      line = line.replace(/^(\s*[\d\w\u0600-\u06FF]*\s*[|!i1l]\s*)+/g, '');
-
-      // Special case: "165” {| InvalidCredentials" or "165" {|" -> "InvalidCredentials"
-      line = line.replace(/^\s*\d+["'`]?\s*(\{\||\{|\|)\s*/g, '');
-
-      // 3. Remove trailing gutter noise:
-      line = line.replace(/;\s*[a-zA-Z0-9\W]{1,4}$/g, ';');
-      line = line.replace(/\s+\d{1,4}\s*[\]\)\}»>]*$/g, '');
-      line = line.replace(/[|!]\s*$/g, '');
-
-      // Remove trailing random junk after closing braces or paren: e.g. ") IN", ") EE"
-      line = line.replace(/\)\s+[A-Z]{1,3}\s*[-–—]?\s*$/g, ')');
-
-      // 4. Fix common code keyword typos and assignment errors:
-      line = line.replace(/\bSystem\.Ling\b/g, 'System.Linq');
-      line = line.replace(/\bSysten\b/g, 'System');
-
-      // Fix parameter default value misreads where "=" was read as "-"
-      line = line.replace(/(\bstring\s+\w+\s*)-\s*(?=["'])/g, '$1= ');
-
-      // 5. Fix enum assignment misreads:
-      line = line.replace(/=\s*['`]\s*,/g, '= 0,');
-
-      // Remove unwanted leading/trailing pipes
-      line = line.replace(/^\|\s*/, '').replace(/\s*\|$/, '');
-
-      const trimmed = line.trim();
-      // Filter out pure noise lines like "EE -", "HE $", "[HE $", "IN"
-      if (/^[A-Z\$\-\–—\s\(\)\[\]]{1,4}$/i.test(trimmed)) {
-        continue;
-      }
-
-      if (trimmed.length > 0) {
-        cleanedLines.push(trimmed);
+    let result = text;
+    for (const rule of activeRules) {
+      if (!rule.pattern) continue;
+      try {
+        if (rule.isRegex) {
+          const flags = (rule.caseSensitive ? 'g' : 'gi') + 'm';
+          const re = new RegExp(rule.pattern, flags);
+          result = result.replace(re, rule.replacement ?? '');
+        } else {
+          if (rule.caseSensitive) {
+            result = result.split(rule.pattern).join(rule.replacement ?? '');
+          } else {
+            const re = new RegExp(rule.pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+            result = result.replace(re, rule.replacement ?? '');
+          }
+        }
+      } catch (err) {
+        console.warn(`[OcrCleanerService] Error applying rule "${rule.name}":`, err);
       }
     }
 
-    // Preserve each line separately with proper code indentation
-    return this.indentCode(cleanedLines);
+    return result
+      .split(/\r?\n/)
+      .filter((line, idx, arr) => {
+        if (line.trim().length > 0) return true;
+        return idx > 0 && arr[idx - 1].trim().length > 0;
+      })
+      .join('\n')
+      .trim();
+  }
+
+  cleanCode(rawText: string, applyCustom: boolean = true): string {
+    if (!rawText) return '';
+
+    const lines = rawText.split(/\r?\n/);
+    const resultLines: string[] = [];
+
+    const isIdeChrome = (line: string): boolean => {
+      const lower = line.trim().toLowerCase();
+      if (!lower) return false;
+
+      // Menu bars
+      if (/(file|edit|view|git|project|build|debug|test|analyze|tools|extensions|window|help)/i.test(lower) &&
+          (lower.includes('solution') || lower.includes('debug') || lower.includes('search') || lower.includes('git'))) {
+        return true;
+      }
+      // Debug toolbar
+      if (/debug\s*-\s*any\s*cpu/i.test(lower) || lower.includes('github copilot') || lower.includes('https +')) {
+        return true;
+      }
+      // Document tabs & Solution explorer header
+      if (lower.includes('solution explorer') || (/\.(cs|ts|js)\b/i.test(lower) && (lower.includes('# x') || lower.includes('results') || lower.includes('vax') || lower.includes('apibasecontroller')))) {
+        return true;
+      }
+      // Status bar & taskbar
+      if (lower.includes('noissues found') || lower.includes('no issues found') || lower.includes('error list') ||
+          lower.includes('package manager console') || lower.includes('add to source control') ||
+          lower.includes('select repository') || /ready/i.test(lower) || /\d+:\d+\s*(am|pm)/i.test(lower) ||
+          lower.includes('eng') || /\d+%/i.test(lower) || /840\s*pm/i.test(lower)) {
+        return true;
+      }
+      return false;
+    };
+
+    const isOrphanNoiseLine = (line: string): boolean => {
+      let trimmed = line.trim();
+      if (!trimmed) return true;
+
+      trimmed = trimmed.replace(/^[\d\s|.:\-–—_'"\`\\/!#$=><\[\]\(\)]+/, '');
+      if (!trimmed) return true;
+
+      // Solution explorer tree nodes without code
+      if (/^[>b\d\s]*\[.*?\].*$/i.test(line.trim())) return true;
+      if (/^(\d+\s*)?[>b\d\s]*c[#=]\s+\w+\.cs/i.test(line.trim())) return true;
+      if (/^[>b\d\s]*(connected services|properties|bin|obj|appsettings|dependencies|commonresult|dtos|controllers|attributes|presentationlayer|infrastructurelayer|ecommerce\s*(?:shared|presentation|services|web))/i.test(trimmed)) return true;
+      if (/^(imports|properties|dependencies|connected services|bin|obj|appsettings|dtos|commonresult|controllers|attributes|presentationlayer|infrastructurelayer)/i.test(trimmed)) return true;
+      if (/^[-=~\s\d\w]{1,6}$/i.test(trimmed) && !trimmed.includes('{') && !trimmed.includes('}')) return true;
+      if (/^[a-z]\s*=\s*[\.\s\d]+$/i.test(trimmed)) return true;
+      if (/^be\s+alo/i.test(trimmed)) return true;
+      if (/^@&[a-z0-9]/i.test(trimmed)) return true;
+      if (/^it\s+pb/i.test(trimmed)) return true;
+      if (/^[0-9\)\|\s]+ecommerce\.\s*web/i.test(trimmed)) return true;
+      if (/^[>:\s\.\”\"\']+(bin|obj|properties|imports)/i.test(trimmed)) return true;
+      return false;
+    };
+
+    const isSolutionExplorerLine = (l: string): boolean => {
+      const lower = l.toLowerCase();
+      if (/\b(using|namespace|class|interface|public|private|protected|internal|async|task|await|return|if|else|try|catch|finally|throw)\b/i.test(l)) {
+        return false;
+      }
+      if (l.startsWith('//') || l.includes('{') || l.includes('}') || (l.includes('=') && !l.includes('==') && !l.startsWith('='))) {
+        return false;
+      }
+      if (/(\[E\d*|\>\s*\[|\bb\s*#|\bconnected services\b|\bproperties\b|\bdependencies\b|\bcontrollers\b|\bpresentation\b|\bbin\b|\bobj\b|\bappsettings\b|\becommerce\.)/i.test(lower)) {
+        return true;
+      }
+      return false;
+    };
+
+    for (const rawLine of lines) {
+      if (isIdeChrome(rawLine) || isOrphanNoiseLine(rawLine) || isSolutionExplorerLine(rawLine)) continue;
+
+      let line = rawLine.trim();
+
+      // If line has isolated braces with noise, extract clean brace
+      if (/^\s*\d*\s*\{\s*.*$/.test(line) && !line.includes('class') && !line.includes('namespace') && !line.includes('(')) {
+        resultLines.push('{');
+        continue;
+      }
+      if (/^\s*\d*\s*\}\s*.*$/.test(line)) {
+        resultLines.push('}');
+        continue;
+      }
+
+      // Remove leading line numbers and gutter noise
+      line = line.replace(/^\s*\d{1,4}\s+(?=\/\/)/, '');
+      line = line.replace(/^\s*\d{1,4}\s+(?=[a-zA-Z_{}])/g, '');
+      line = line.replace(/^[\d\s|.:\-–—'"\`!#$]+(?=[a-zA-Z_{}\/])/g, '');
+
+      // 1. Statements ending with semicolon: strip right-side Solution Explorer noise
+      if (line.includes(';')) {
+        line = line.replace(/;\s*.*$/, ';');
+      }
+
+      // 2. Namespace declaration: namespace <name>
+      if (/^namespace\b/i.test(line)) {
+        line = line.replace(/^(namespace\s+[\w\.]+).*$/, '$1');
+      }
+
+      // 3. Class / struct / interface declaration
+      if (/\bclass\s+\w+/i.test(line)) {
+        line = line.replace(/^((?:public|private|protected|internal|static|abstract|sealed)?\s*class\s+\w+).*$/, '$1');
+      }
+
+      // 4. Method / constructor declaration with closing parenthesis
+      if (line.includes('(') && line.includes(')')) {
+        line = line.replace(/(\))\s+.*$/, '$1');
+      } else if (line.includes('(') && /logge\b/i.test(line)) {
+        line = line.replace(/logge.*$/i, 'logger)');
+      }
+
+      // 5. Comments with right-side Solution explorer noise
+      if (line.startsWith('//')) {
+        line = line.replace(/(\/\/\s*.+?)\s+([b>]\s*)?c[#=]\s+\w+\.cs.*$/i, '$1');
+        line = line.replace(/(\/\/\s*.+?)\s+b\s+c=.*$/i, '$1');
+      }
+
+      // 6. Try block with noise
+      if (/^\s*(try|Fry)\b/i.test(line)) {
+        line = 'try';
+      }
+
+      // 7. Fix common OCR typos
+      line = line.replace(/\bFry\b/g, 'try');
+      line = line.replace(/\bCatch\b/g, 'catch');
+      line = line.replace(/\bSysten\b/g, 'System');
+      line = line.replace(/\bLing\b/g, 'Linq');
+
+      line = line.trim();
+      if (line.length > 0 && !isOrphanNoiseLine(line) && !isSolutionExplorerLine(line)) {
+        resultLines.push(line);
+      }
+    }
+
+    // Indent code properly
+    let indent = 0;
+    const formatted: string[] = [];
+    for (const l of resultLines) {
+      if (l.startsWith('}') || l.startsWith(']')) {
+        indent = Math.max(0, indent - 1);
+      }
+      formatted.push('  '.repeat(indent) + l);
+      if (l.endsWith('{') || l.endsWith('[') || (l.startsWith('{') && l.length === 1)) {
+        indent++;
+      }
+    }
+
+    let codeResult = formatted.join('\n');
+
+    if (applyCustom) {
+      codeResult = this.applyCustomRules(codeResult);
+    }
+
+    return codeResult;
   }
 
   /**

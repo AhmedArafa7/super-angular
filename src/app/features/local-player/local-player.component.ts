@@ -2902,11 +2902,25 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     if (!url) return;
     this.isExtractingOcr.set(true);
     try {
-      const text = await this.snapshotService.extractText(url, this.snapshotImageName());
+      const rawText = await this.snapshotService.extractText(url, this.snapshotImageName(), this.ocrMode());
+      let text = rawText ? rawText.trim() : '';
+      if (text) {
+        if (this.ocrAutoCleanCode()) {
+          const cleaned = this.ocrCleaner.cleanCode(text);
+          if (cleaned && cleaned.trim().length > 0) {
+            text = cleaned;
+          }
+        } else {
+          const customApplied = this.ocrCleaner.applyCustomRules(text);
+          if (customApplied && customApplied.trim().length > 0) {
+            text = customApplied;
+          }
+        }
+      }
       this.extractedOcrText.set(text);
       if (text) {
         await navigator.clipboard.writeText(text);
-        this.showToast('تم استخراج النص ونسخه إلى الحافظة تلقائياً! 📋✨');
+        this.showToast('تم استخراج النص وتنقيته ونسخه إلى الحافظة تلقائياً! 📋✨');
       } else {
         this.showToast('لم يتم العثور على نص واضح في الصورة', 'warning');
       }
@@ -2963,12 +2977,17 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
         return;
       }
 
-      // Apply smart code cleaning if enabled
+      // Apply smart code cleaning and custom rules
       let finalText = trimmed;
       if (this.ocrAutoCleanCode()) {
         const cleaned = this.ocrCleaner.cleanCode(trimmed);
         if (cleaned && cleaned.trim().length > 0) {
           finalText = cleaned;
+        }
+      } else {
+        const customApplied = this.ocrCleaner.applyCustomRules(trimmed);
+        if (customApplied && customApplied.trim().length > 0) {
+          finalText = customApplied;
         }
       }
 

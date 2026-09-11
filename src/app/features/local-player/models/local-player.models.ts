@@ -83,3 +83,15 @@ export interface VideoJumpPoint {
   timestamp: number;
 }
 
+export interface CustomTextRule {
+  id: string;
+  name: string;
+  description?: string;
+  pattern: string;
+  replacement: string;
+  isRegex: boolean;
+  caseSensitive: boolean;
+  enabled: boolean;
+  isBuiltIn?: boolean;
+}
+
