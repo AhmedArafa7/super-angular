@@ -29,53 +29,8 @@ export interface PipedPlaylistDetails {
   items?: any[];
 }
 
-export interface InstanceHealth {
-  url: string;
-  consecutiveFailures: number;
-  lastFailureTime: number;
-  cooldownMs: number;
-}
-
-export class InstanceHealthRegistry {
-  private healthMap = new Map<string, InstanceHealth>();
-  private readonly DEFAULT_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
-
-  isAvailable(url: string): boolean {
-    const health = this.healthMap.get(url);
-    if (!health || health.consecutiveFailures < 2) return true;
-    
-    // Half-open retry window
-    if (Date.now() - health.lastFailureTime > health.cooldownMs) {
-      return true;
-    }
-    return false;
-  }
-
-  recordSuccess(url: string): void {
-    this.healthMap.delete(url);
-  }
-
-  recordFailure(url: string): void {
-    const health = this.healthMap.get(url) || {
-      url,
-      consecutiveFailures: 0,
-      lastFailureTime: 0,
-      cooldownMs: this.DEFAULT_COOLDOWN_MS
-    };
-    health.consecutiveFailures += 1;
-    health.lastFailureTime = Date.now();
-    this.healthMap.set(url, health);
-  }
-
-  filterAvailable(instances: string[]): string[] {
-    const available = instances.filter(url => this.isAvailable(url));
-    // If all instances are in cooldown, don't stall completely: allow attempting the oldest failed instance
-    if (available.length === 0 && instances.length > 0) {
-      return [instances[0]];
-    }
-    return available;
-  }
-}
+import { InstanceHealthRegistry, type InstanceHealth } from './instance-health-registry.service';
+export { InstanceHealthRegistry, type InstanceHealth };
 
 @Injectable({
   providedIn: 'root'
@@ -85,8 +40,7 @@ export class YoutubeProviderService {
   private invidious = inject(InvidiousProviderService);
   private discovery = inject(YoutubeDiscoveryService);
   private cache = inject(YoutubeCacheService);
-
-  readonly healthRegistry = new InstanceHealthRegistry();
+  readonly healthRegistry = inject(InstanceHealthRegistry);
 
   /**
    * Universal Video Search with 3-Tier Multi-Provider Fallback:

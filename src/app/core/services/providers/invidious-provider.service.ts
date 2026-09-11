@@ -1,13 +1,15 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, from, map, catchError, of, concatMap, timeout } from 'rxjs';
+import { Observable, from, map, catchError, of, concatMap, timeout, tap } from 'rxjs';
 import { VideoProvider } from './video-provider.interface';
 import { FeedVideo } from '../../../features/halaltube/halaltube.model';
 import { VideoDetails } from '../youtube-discovery.service';
+import { InstanceHealthRegistry } from '../instance-health-registry.service';
 
 @Injectable({ providedIn: 'root' })
 export class InvidiousProviderService implements VideoProvider {
   private http = inject(HttpClient);
+  private healthRegistry = inject(InstanceHealthRegistry);
   name = 'Invidious';
   private instances = [
     'https://inv.tux.pizza',
@@ -24,11 +26,14 @@ export class InvidiousProviderService implements VideoProvider {
     requestFn: (instance: string) => Observable<T>,
     fallbackValue: T
   ): Observable<T> {
-    return from(this.instances).pipe(
+    const available = this.healthRegistry.filterAvailable(this.instances);
+    return from(available).pipe(
       concatMap(instance => 
         requestFn(instance).pipe(
           timeout(3500),
+          tap(() => this.healthRegistry.recordSuccess(instance)),
           catchError(err => {
+            this.healthRegistry.recordFailure(instance);
             return of(null);
           })
         )
@@ -79,15 +84,18 @@ export class InvidiousProviderService implements VideoProvider {
   }
 
   async fetchChannelRssVideos(channelId: string): Promise<FeedVideo[]> {
-    for (const instance of this.instances) {
+    const available = this.healthRegistry.filterAvailable(this.instances);
+    for (const instance of available) {
       try {
         const response = await fetch(`${instance}/feed/channel/${channelId}`, { signal: AbortSignal.timeout(3500) });
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
         const xmlText = await response.text();
+        this.healthRegistry.recordSuccess(instance);
         return [];
       } catch (err) {
+        this.healthRegistry.recordFailure(instance);
         // Try next
       }
     }

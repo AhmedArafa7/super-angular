@@ -28,11 +28,14 @@ export interface PipedVideoDetails {
   relatedStreams: any[];
 }
 
+import { InstanceHealthRegistry } from './instance-health-registry.service';
+
 @Injectable({
   providedIn: 'root'
 })
 export class PipedApiService {
   private http = inject(HttpClient);
+  private healthRegistry = inject(InstanceHealthRegistry);
   private proxyBase = environment.apiBaseUrl !== undefined && environment.apiBaseUrl !== null ? environment.apiBaseUrl : 'https://super-axd.pages.dev';
   
   // Healthy curated public instances pool (2026 active nodes)
@@ -48,32 +51,12 @@ export class PipedApiService {
   ];
 
   private activeInstanceIndex = 0;
-  private healthMap = new Map<string, { failures: number; lastFailure: number }>();
-  private readonly COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
-
-  isInstanceHealthy(url: string): boolean {
-    const record = this.healthMap.get(url);
-    if (!record || record.failures < 2) return true;
-    return Date.now() - record.lastFailure > this.COOLDOWN_MS;
-  }
-
-  recordFailure(url: string): void {
-    const record = this.healthMap.get(url) || { failures: 0, lastFailure: 0 };
-    record.failures += 1;
-    record.lastFailure = Date.now();
-    this.healthMap.set(url, record);
-  }
-
-  recordSuccess(url: string): void {
-    this.healthMap.delete(url);
-  }
 
   getRotatedInstances(): string[] {
     const list = [...this.instances];
     // Rotate so last successful instance stays first
     const shifted = list.slice(this.activeInstanceIndex).concat(list.slice(0, this.activeInstanceIndex));
-    const healthy = shifted.filter(inst => this.isInstanceHealthy(inst));
-    return healthy.length > 0 ? healthy : shifted;
+    return this.healthRegistry.filterAvailable(shifted);
   }
 
   private async smartFetch<T>(targetUrl: string, timeoutMs = 3500): Promise<T> {
@@ -137,29 +120,30 @@ export class PipedApiService {
         const res = await this.smartFetch<PipedVideoDetails>(url, 3500);
         if (res && (res.videoStreams?.length > 0 || res.hls || res.title)) {
           this.activeInstanceIndex = this.instances.indexOf(instance);
-          this.recordSuccess(instance);
+          this.healthRegistry.recordSuccess(instance);
           return res;
         }
       } catch (error) {
-        this.recordFailure(instance);
+        this.healthRegistry.recordFailure(instance);
         // Continue to next instance
       }
     }
 
-    // 2. Try Invidious instances as secondary fallback with full formatStreams mapping
     const invidiousInstances = [
       'https://inv.tux.pizza',
       'https://invidious.nerdvpn.de',
-      'https://invidious.drgns.space',
       'https://inv.nadeko.net',
       'https://invidious.projectsegfau.lt',
+      'https://invidious.drgns.space',
       'https://yewtu.be'
     ];
 
-    for (const inv of invidiousInstances) {
+    const availableInvidious = this.healthRegistry.filterAvailable(invidiousInstances);
+    for (const inv of availableInvidious) {
       try {
         const invRes = await fetch(`${inv}/api/v1/videos/${videoId}`, { signal: AbortSignal.timeout(3000) });
         if (invRes.ok) {
+          this.healthRegistry.recordSuccess(inv);
           const data = await invRes.json();
           const streams: PipedVideoStream[] = (data.formatStreams || []).map((f: any) => ({
             url: f.url,
@@ -179,8 +163,12 @@ export class PipedApiService {
             audioStreams: [],
             relatedStreams: []
           };
+        } else {
+          this.healthRegistry.recordFailure(inv);
         }
-      } catch (e) {}
+      } catch (e) {
+        this.healthRegistry.recordFailure(inv);
+      }
     }
 
     // 3. Ultra-fast oEmbed fallback for genuine title & channel metadata
@@ -224,10 +212,10 @@ export class PipedApiService {
         let url = `${instance}/channel/${channelId}`;
         if (nextpage) url += `?nextpage=${nextpage}`;
         const res = await this.smartFetch<any>(url, 3500);
-        this.recordSuccess(instance);
+        this.healthRegistry.recordSuccess(instance);
         return res;
       } catch (error) {
-        this.recordFailure(instance);
+        this.healthRegistry.recordFailure(instance);
         // Try next
       }
     }
@@ -348,12 +336,12 @@ export class PipedApiService {
             }
           }
           if (videos.length > 0) {
-            this.recordSuccess(instance);
+            this.healthRegistry.recordSuccess(instance);
             return videos;
           }
         }
       } catch (err) {
-        this.recordFailure(instance);
+        this.healthRegistry.recordFailure(instance);
         // Try next instance
       }
     }
@@ -375,12 +363,12 @@ export class PipedApiService {
               avatarUrl: item.thumbnail || item.avatarUrl || ''
             }));
           if (channels.length > 0) {
-            this.recordSuccess(instance);
+            this.healthRegistry.recordSuccess(instance);
             return channels;
           }
         }
       } catch (err) {
-        this.recordFailure(instance);
+        this.healthRegistry.recordFailure(instance);
         // Try next
       }
     }
@@ -394,27 +382,31 @@ export class PipedApiService {
         const url = `${instance}/playlists/${playlistId}`;
         const res = await this.smartFetch<any>(url, 3500);
         if (res && (res.relatedStreams || res.videos || res.items)) {
-          this.recordSuccess(instance);
+          this.healthRegistry.recordSuccess(instance);
           return res;
         }
       } catch (error) {
-        this.recordFailure(instance);
+        this.healthRegistry.recordFailure(instance);
         // Try next instance
       }
     }
 
     // 2. Invidious Instances Fallback
     const invidiousInstances = [
+      'https://inv.tux.pizza',
+      'https://invidious.nerdvpn.de',
       'https://invidious.projectsegfau.lt',
       'https://inv.nadeko.net',
       'https://invidious.drgns.space',
       'https://yewtu.be'
     ];
 
-    for (const inv of invidiousInstances) {
+    const availableInvidious = this.healthRegistry.filterAvailable(invidiousInstances);
+    for (const inv of availableInvidious) {
       try {
         const invRes = await fetch(`${inv}/api/v1/playlists/${playlistId}`, { signal: AbortSignal.timeout(3500) });
         if (invRes.ok) {
+          this.healthRegistry.recordSuccess(inv);
           const data = await invRes.json();
           const videos = (data.videos || []).map((v: any) => ({
             type: 'stream',
@@ -430,8 +422,12 @@ export class PipedApiService {
             relatedStreams: videos,
             videos: videos
           };
+        } else {
+          this.healthRegistry.recordFailure(inv);
         }
-      } catch (e) {}
+      } catch (e) {
+        this.healthRegistry.recordFailure(inv);
+      }
     }
 
     throw new Error('All Piped and Invidious instances failed to fetch playlist');
