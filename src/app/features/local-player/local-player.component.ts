@@ -26,23 +26,23 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
     <div class="h-screen w-screen bg-slate-950 text-white flex flex-col font-sans select-none overflow-hidden" dir="rtl">
       
       <!-- Top Navigation Header -->
-      <header class="h-16 bg-slate-900/80 border-b border-white/10 px-4 sm:px-6 flex items-center justify-between shrink-0 backdrop-blur-md z-20">
-        <div class="flex items-center gap-3">
-          <div class="p-2.5 bg-gradient-to-tr from-indigo-600 to-teal-500 rounded-2xl text-white shadow-lg shadow-indigo-500/20">
-            <lucide-icon [img]="Film" class="size-6"></lucide-icon>
+      <header class="h-14 sm:h-16 bg-slate-900/80 border-b border-white/10 px-3 sm:px-6 flex items-center justify-between shrink-0 backdrop-blur-md z-20">
+        <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div class="p-2 sm:p-2.5 bg-gradient-to-tr from-indigo-600 to-teal-500 rounded-2xl text-white shadow-lg shadow-indigo-500/20 shrink-0">
+            <lucide-icon [img]="Film" class="size-5 sm:size-6"></lucide-icon>
           </div>
-          <div>
-            <h1 class="text-base font-black tracking-tight text-white flex items-center gap-2">
-              <span>مشغل الوسائط والفيديوهات المحلي</span>
-              <span class="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20 font-mono">Offline Storage 💾</span>
+          <div class="min-w-0">
+            <h1 class="text-sm sm:text-base font-black tracking-tight text-white flex items-center gap-1.5 sm:gap-2 truncate">
+              <span class="truncate">مشغل الوسائط المحلي</span>
+              <span class="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20 font-mono shrink-0">Offline 💾</span>
             </h1>
             <p class="text-[11px] text-slate-400 hidden sm:block">شغّل الفيديوهات والمجلدات من جهازك بدون إنترنت — مع حفظ دائم حتى بعد تحديث الصفحة.</p>
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <!-- Folder Picker Button -->
-          <label (click)="onFolderLabelClick($event)" class="px-3.5 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-lg shadow-teal-600/20" title="رفع مجلد كامل بجميع فيديوهاته وحفظه محلياً">
+          <label (click)="onFolderLabelClick($event)" class="px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 sm:gap-2 cursor-pointer shadow-lg shadow-teal-600/20" title="رفع مجلد كامل بجميع فيديوهاته وحفظه محلياً">
             <lucide-icon [img]="FolderPlus" class="size-4"></lucide-icon>
             <span class="hidden md:inline">فتح مجلد كامل</span>
             <span class="md:hidden">+ مجلد</span>
@@ -50,7 +50,7 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
           </label>
 
           <!-- Files Picker Button -->
-          <label class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-lg shadow-indigo-600/20" title="اختيار ملفات محددة">
+          <label class="px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 sm:gap-2 cursor-pointer shadow-lg shadow-indigo-600/20" title="اختيار ملفات محددة">
             <lucide-icon [img]="FolderOpen" class="size-4"></lucide-icon>
             <span class="hidden md:inline">إضافة ملفات</span>
             <span class="md:hidden">+ ملفات</span>
@@ -58,25 +58,25 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
           </label>
 
           <!-- Shortcuts Help Button -->
-          <button (click)="showShortcutsModal.set(true)" class="p-2 text-slate-400 hover:text-teal-300 hover:bg-white/5 rounded-xl transition" title="اختصارات لوحة المفاتيح">
-            <lucide-icon [img]="HelpCircle" class="size-4.5"></lucide-icon>
+          <button (click)="showShortcutsModal.set(true)" class="p-1.5 sm:p-2 text-slate-400 hover:text-teal-300 hover:bg-white/5 rounded-xl transition" title="اختصارات لوحة المفاتيح">
+            <lucide-icon [img]="HelpCircle" class="size-4 sm:size-4.5"></lucide-icon>
           </button>
 
           <!-- Clear Playlist Button -->
-          <button *ngIf="playlist().length > 0" (click)="showClearConfirm.set(true)" class="p-2 text-slate-400 hover:text-red-400 hover:bg-white/5 rounded-xl transition" title="تفريغ القائمة والذاكرة">
+          <button *ngIf="playlist().length > 0" (click)="showClearConfirm.set(true)" class="p-1.5 sm:p-2 text-slate-400 hover:text-red-400 hover:bg-white/5 rounded-xl transition" title="تفريغ القائمة والذاكرة">
             <lucide-icon [img]="Trash2" class="size-4"></lucide-icon>
           </button>
         </div>
       </header>
 
       <!-- Main Layout -->
-      <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative h-[calc(100vh-4rem)]">
+      <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)]">
         
         <!-- Left / Center: Video Stage & Player -->
         <main 
           class="flex flex-col bg-black relative justify-center items-center overflow-hidden transition-all duration-300" 
           [ngClass]="{
-            'flex-1 min-h-[50vh] lg:min-h-0': !isFloatingMini(),
+            'w-full shrink-0 max-h-[38vh] sm:max-h-[45vh] lg:max-h-none lg:flex-1 lg:min-h-0': !isFloatingMini(),
             'fixed bottom-6 left-6 w-[440px] h-[260px] z-50 shadow-2xl rounded-3xl border-2 border-teal-500 overflow-hidden bg-slate-950': isFloatingMini()
           }"
           (wheel)="onVideoWheel($event)">
@@ -95,7 +95,7 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
             <video 
               #videoPlayer
               [src]="activeItem()?.blobUrl"
-              class="w-full h-full max-h-[85vh] cursor-pointer transition-all duration-200"
+              class="w-full h-full max-h-[38vh] sm:max-h-[45vh] lg:max-h-[85vh] cursor-pointer transition-all duration-200"
               [style.filter]="'brightness(' + brightness() + '%)'"
               [ngClass]="{
                 'object-contain': videoFit() === 'contain',
@@ -241,8 +241,8 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
                     <lucide-icon [img]="SkipForward" class="size-5"></lucide-icon>
                   </button>
 
-                  <!-- Quick Jump History Navigation in Player Bar -->
-                  <div class="flex items-center gap-0.5 bg-white/5 px-1.5 py-1 rounded-xl border border-white/10 mr-1" title="ذاكرة الانتقالات السريعة (Alt + ← / →)">
+                  <!-- Quick Jump History Navigation in Player Bar (Visible on desktop/tablet, hidden on mobile since it's in notes tab) -->
+                  <div class="hidden sm:flex items-center gap-0.5 bg-white/5 px-1.5 py-1 rounded-xl border border-white/10 mr-1" title="ذاكرة الانتقالات السريعة (Alt + ← / →)">
                     <button (click)="jumpBack()" 
                             [disabled]="!canJumpBack()" 
                             [class.opacity-30]="!canJumpBack()"
@@ -269,8 +269,8 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
                     </button>
                   </div>
 
-                  <!-- Volume Controls -->
-                  <div class="flex items-center gap-1.5 mr-2">
+                  <!-- Volume Controls (Slider hidden on phone screen, only mute button) -->
+                  <div class="flex items-center gap-1.5 mr-1 sm:mr-2">
                     <button (click)="toggleMute()" class="p-2 text-slate-300 hover:text-white rounded-xl" title="كتم/تشغيل الصوت (M)">
                       <lucide-icon [img]="isMuted() || volume() === 0 ? VolumeX : Volume2" class="size-5"></lucide-icon>
                     </button>
@@ -281,7 +281,7 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
                       step="0.05" 
                       [value]="isMuted() ? 0 : volume()" 
                       (input)="setVolume($event)" 
-                      class="w-16 sm:w-20 h-1.5 bg-white/20 rounded-lg accent-teal-400 cursor-pointer" />
+                      class="hidden sm:block w-16 sm:w-20 h-1.5 bg-white/20 rounded-lg accent-teal-400 cursor-pointer" />
                   </div>
                 </div>
 
@@ -487,33 +487,34 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
 
         <!-- Right Side: Sidebar Tabs (Playlist, Bookmarks, Storage) -->
         <aside [class.hidden]="isTheaterMode() || isFloatingMini()" 
-               [style.width.px]="sidebarWidth()"
-               class="w-full lg:w-auto bg-slate-900 border-r border-white/10 flex flex-col shrink-0 h-80 lg:h-full overflow-hidden"
+               [style.width.px]="isDesktop() ? sidebarWidth() : null"
+               class="w-full max-w-full lg:w-auto bg-slate-900 border-t lg:border-t-0 lg:border-r border-white/10 flex flex-col flex-1 min-h-0 lg:h-full overflow-hidden"
                [class.select-none]="isResizingSidebar()">
           
           <!-- Sidebar Navigation Tabs -->
-          <div class="flex items-center bg-slate-950 border-b border-white/10 px-1 py-1.5 gap-0.5 shrink-0">
-            <button (click)="onSelectTab('playlist')" [class.bg-teal-600]="sidebarTab() === 'playlist'" [class.text-white]="sidebarTab() === 'playlist'" class="flex-1 py-1 px-1 rounded-lg text-[10px] font-bold text-slate-300 hover:bg-white/5 transition flex items-center justify-center gap-0.5">
-              <lucide-icon [img]="ListMusic" class="size-3"></lucide-icon>
+          <div class="flex items-center bg-slate-950 border-b border-white/10 px-1.5 py-1.5 gap-1 shrink-0 w-full max-w-full overflow-x-auto custom-scrollbar-h">
+            <button (click)="onSelectTab('playlist')" [class.bg-teal-600]="sidebarTab() === 'playlist'" [class.text-white]="sidebarTab() === 'playlist'" class="flex-1 min-w-[70px] sm:min-w-0 py-2 px-1 rounded-xl text-xs font-bold text-slate-300 hover:bg-white/5 transition flex items-center justify-center gap-1 active:scale-95">
+              <lucide-icon [img]="ListMusic" class="size-3.5"></lucide-icon>
               <span>القائمة</span>
             </button>
-            <button (click)="onSelectTab('bookmarks')" [class.bg-indigo-600]="sidebarTab() === 'bookmarks'" [class.text-white]="sidebarTab() === 'bookmarks'" class="flex-1 py-1 px-1 rounded-lg text-[10px] font-bold text-slate-300 hover:bg-white/5 transition flex items-center justify-center gap-0.5" title="الملاحظات">
-              <lucide-icon [img]="Clock" class="size-3"></lucide-icon>
+            <button (click)="onSelectTab('bookmarks')" [class.bg-indigo-600]="sidebarTab() === 'bookmarks'" [class.text-white]="sidebarTab() === 'bookmarks'" class="flex-1 min-w-[70px] sm:min-w-0 py-2 px-1 rounded-xl text-xs font-bold text-slate-300 hover:bg-white/5 transition flex items-center justify-center gap-1 active:scale-95" title="الملاحظات">
+              <lucide-icon [img]="Clock" class="size-3.5"></lucide-icon>
               <span>ملاحظات</span>
             </button>
-            <button (click)="onSelectTab('storage')" [class.bg-emerald-600]="sidebarTab() === 'storage'" [class.text-white]="sidebarTab() === 'storage'" class="flex-1 py-1 px-1 rounded-lg text-[10px] font-bold text-slate-300 hover:bg-white/5 transition flex items-center justify-center gap-0.5" title="التخزين">
-              <lucide-icon [img]="HardDrive" class="size-3"></lucide-icon>
+            <button (click)="onSelectTab('storage')" [class.bg-emerald-600]="sidebarTab() === 'storage'" [class.text-white]="sidebarTab() === 'storage'" class="flex-1 min-w-[70px] sm:min-w-0 py-2 px-1 rounded-xl text-xs font-bold text-slate-300 hover:bg-white/5 transition flex items-center justify-center gap-1 active:scale-95" title="التخزين">
+              <lucide-icon [img]="HardDrive" class="size-3.5"></lucide-icon>
               <span>التخزين</span>
             </button>
-            <button (click)="onSelectTab('recycle')" [class.bg-amber-600]="sidebarTab() === 'recycle'" [class.text-white]="sidebarTab() === 'recycle'" class="flex-1 py-1 px-1 rounded-lg text-[10px] font-bold text-slate-300 hover:bg-white/5 transition flex items-center justify-center gap-0.5" title="سلة المحذوفات والسجل">
-              <lucide-icon [img]="Trash2" class="size-3"></lucide-icon>
-              <span>السجل ({{ recycleBin().length }})</span>
+            <button (click)="onSelectTab('recycle')" [class.bg-amber-600]="sidebarTab() === 'recycle'" [class.text-white]="sidebarTab() === 'recycle'" class="flex-1 min-w-[70px] sm:min-w-0 py-2 px-1 rounded-xl text-xs font-bold text-slate-300 hover:bg-white/5 transition flex items-center justify-center gap-1 active:scale-95" title="سلة المحذوفات والسجل">
+              <lucide-icon [img]="Trash2" class="size-3.5"></lucide-icon>
+              <span>السجل</span>
+              <span *ngIf="recycleBin().length > 0" class="text-[9px] px-1.5 py-0.5 bg-white/10 rounded-full font-mono">{{ recycleBin().length }}</span>
             </button>
-            <button (click)="cycleSidebarWidth()" class="p-1.5 rounded-lg text-slate-400 hover:text-teal-300 hover:bg-white/5 transition flex items-center gap-1" [title]="'توسيع / تغيير عرض الشريط (الحالي: ' + sidebarWidth() + 'px)'">
+            <button (click)="cycleSidebarWidth()" class="hidden lg:flex p-2 rounded-xl text-slate-400 hover:text-teal-300 hover:bg-white/5 transition items-center gap-1 shrink-0" [title]="'توسيع / تغيير عرض الشريط (الحالي: ' + sidebarWidth() + 'px)'">
               <lucide-icon [img]="MoveHorizontal" class="size-3.5"></lucide-icon>
               <span class="text-[9px] font-mono hidden xl:inline">{{ sidebarWidth() }}px</span>
             </button>
-            <button (click)="exportPlaylistJson()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition" title="تصدير القائمة والتقدم JSON">
+            <button (click)="exportPlaylistJson()" class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition shrink-0 active:scale-95" title="تصدير القائمة والتقدم JSON">
               <lucide-icon [img]="Upload" class="size-3.5"></lucide-icon>
             </button>
           </div>
@@ -539,47 +540,49 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
 
           <!-- TAB 2: BOOKMARKS & NOTES -->
           <ng-container *ngIf="sidebarTab() === 'bookmarks'">
-            <div class="flex-1 flex flex-col min-h-0 overflow-hidden p-3 gap-3">
-              <div class="p-3 rounded-2xl bg-black/40 border border-white/10 flex flex-col gap-2 shrink-0">
-                <p class="text-xs font-bold text-teal-300 flex items-center gap-1.5">
-                  <span *ngIf="activeItem()">🔖 إضافة ملاحظة عند الدقيقة الحالية</span>
-                  <span *ngIf="!activeItem()">📝 إضافة ملاحظة عامة</span>
-                  <span *ngIf="activeItem()" class="text-[10px] font-mono text-slate-400">({{ formatTime(currentTime()) }})</span>
+            <div class="flex-1 flex flex-col min-h-0 overflow-hidden p-2.5 sm:p-3 gap-2 sm:gap-2.5">
+              <div class="p-2.5 sm:p-3 rounded-2xl bg-black/40 border border-white/10 flex flex-col gap-2 shrink-0">
+                <p class="text-xs font-bold text-teal-300 flex items-center justify-between gap-1.5">
+                  <span class="flex items-center gap-1.5 truncate">
+                    <span *ngIf="activeItem()">🔖 إضافة ملاحظة</span>
+                    <span *ngIf="!activeItem()">📝 إضافة ملاحظة عامة</span>
+                    <span *ngIf="activeItem()" class="text-[10px] font-mono text-teal-400 bg-teal-500/10 px-1.5 py-0.5 rounded-md">({{ formatTime(currentTime()) }})</span>
+                  </span>
                 </p>
-                <div class="flex gap-1.5">
-                  <input type="text" [(ngModel)]="newBookmarkNote" (keydown.enter)="addBookmark()" [placeholder]="activeItem() ? 'اكتب ملاحظة (مثل: نقطة مهمة)...' : 'اكتب ملاحظة عامة أو تذكير...'" class="flex-1 bg-black/60 border border-white/15 rounded-xl px-3 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500" />
-                  <button (click)="addBookmark()" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-bold transition">إضافة</button>
+                <div class="flex gap-1.5 w-full">
+                  <input type="text" [(ngModel)]="newBookmarkNote" (keydown.enter)="addBookmark()" [placeholder]="activeItem() ? 'اكتب ملاحظة عند اللحظة...' : 'اكتب ملاحظة عامة أو تذكير...'" class="flex-1 min-w-0 bg-black/60 border border-white/15 rounded-xl px-3 py-1.5 sm:py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500" />
+                  <button (click)="addBookmark()" class="px-3.5 sm:px-4 py-1.5 sm:py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-bold transition shrink-0 active:scale-95">إضافة</button>
                 </div>
                 <!-- Quick OCR background button in notes tab -->
                 @if (showQuickOcrButton() && activeItem()) {
                   <button (click)="quickExtractOcr()" 
                           [disabled]="isQuickExtractingOcr()"
-                          class="w-full py-1.5 px-3 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/30 text-cyan-300 text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-98"
+                          class="w-full py-1.5 sm:py-2 px-3 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/30 text-cyan-300 text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-98"
                           title="استخراج النص من الشاشة كملاحظة دون إيقاف الفيديو (Alt + O)">
                     @if (isQuickExtractingOcr()) {
                       <lucide-icon [img]="Loader2" class="size-3.5 animate-spin text-cyan-400"></lucide-icon>
                       <span>جارٍ استخراج النص في الخلفية...</span>
                     } @else {
-                      <lucide-icon [img]="ScanText" class="size-3.5 text-cyan-400"></lucide-icon>
-                      <span>⚡ استخراج النص من اللحظة الحالية دون إيقاف</span>
+                      <lucide-icon [img]="ScanText" class="size-4 text-cyan-400 shrink-0"></lucide-icon>
+                      <span class="truncate">⚡ استخراج النص من اللحظة الحالية دون إيقاف</span>
                     }
                   </button>
                 }
                 <!-- Compact OCR mode quick switcher -->
-                <div *ngIf="showQuickOcrButton() && activeItem()" class="flex items-center justify-between px-1 text-[10px] text-slate-400 font-bold">
-                  <span>نمط الاستخراج:</span>
+                <div *ngIf="showQuickOcrButton() && activeItem()" class="flex items-center justify-between gap-1 flex-wrap px-1 text-[10px] text-slate-400 font-bold">
+                  <span class="shrink-0">نمط الاستخراج:</span>
                   <div class="flex items-center gap-1">
                     <button (click)="setOcrMode('eng')" 
                             [class.bg-teal-600]="ocrMode() === 'eng'" 
                             [class.text-white]="ocrMode() === 'eng'" 
-                            class="px-2 py-0.5 rounded bg-white/5 hover:bg-white/15 transition" 
+                            class="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/15 transition text-[10px] font-bold" 
                             title="دقة عالية للأكواد واللغات البرمجية">
                       💻 كود / إنجليزي
                     </button>
                     <button (click)="setOcrMode('ara+eng')" 
                             [class.bg-teal-600]="ocrMode() === 'ara+eng'" 
                             [class.text-white]="ocrMode() === 'ara+eng'" 
-                            class="px-2 py-0.5 rounded bg-white/5 hover:bg-white/15 transition" 
+                            class="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/15 transition text-[10px] font-bold" 
                             title="استخراج نصوص عربية وإنجليزية مشتركة">
                       🌐 عربي + إنجليزي
                     </button>
@@ -588,34 +591,34 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
               </div>
 
               <!-- Jump History Navigation Toolbar in Notes Tab -->
-              <div class="px-3 py-2 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-between gap-2 shrink-0">
-                <div class="flex items-center gap-1.5">
+              <div class="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-between gap-1.5 sm:gap-2 shrink-0 w-full">
+                <div class="flex items-center gap-1 sm:gap-1.5 flex-1 min-w-0">
                   <button (click)="jumpBack()" 
                           [disabled]="!canJumpBack()" 
                           [class.opacity-30]="!canJumpBack()"
                           [class.cursor-not-allowed]="!canJumpBack()"
-                          class="px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/15 text-white text-xs font-bold transition flex items-center gap-1 active:scale-95"
+                          class="flex-1 py-1.5 px-2 rounded-xl bg-white/5 hover:bg-white/15 text-white text-xs font-bold transition flex items-center justify-center gap-1 active:scale-95 min-w-0"
                           title="الرجوع للّحظة السابقة (Alt + ←)">
-                    <lucide-icon [img]="ChevronRight" class="size-3.5 text-teal-400"></lucide-icon>
-                    <span>السابق</span>
+                    <lucide-icon [img]="ChevronRight" class="size-3.5 text-teal-400 shrink-0"></lucide-icon>
+                    <span class="truncate">السابق</span>
                   </button>
 
                   <button (click)="jumpForward()" 
                           [disabled]="!canJumpForward()" 
                           [class.opacity-30]="!canJumpForward()"
                           [class.cursor-not-allowed]="!canJumpForward()"
-                          class="px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/15 text-white text-xs font-bold transition flex items-center gap-1 active:scale-95"
+                          class="flex-1 py-1.5 px-2 rounded-xl bg-white/5 hover:bg-white/15 text-white text-xs font-bold transition flex items-center justify-center gap-1 active:scale-95 min-w-0"
                           title="التقدم للّحظة التالية (Alt + →)">
-                    <span>التالي</span>
-                    <lucide-icon [img]="ChevronLeft" class="size-3.5 text-teal-400"></lucide-icon>
+                    <span class="truncate">التالي</span>
+                    <lucide-icon [img]="ChevronLeft" class="size-3.5 text-teal-400 shrink-0"></lucide-icon>
                   </button>
                 </div>
 
                 <button (click)="showJumpHistoryModal.set(true)" 
-                        class="px-2.5 py-1 rounded-xl bg-teal-500/15 hover:bg-teal-500/30 text-teal-300 text-xs font-bold transition flex items-center gap-1.5 border border-teal-500/20 active:scale-95"
+                        class="py-1.5 px-2.5 sm:px-3 rounded-xl bg-teal-500/15 hover:bg-teal-500/30 text-teal-300 text-xs font-bold transition flex items-center justify-center gap-1.5 border border-teal-500/20 active:scale-95 shrink-0"
                         title="دخول ذاكرة الانتقالات المباشرة (حتى 20 نقطة)">
-                  <lucide-icon [img]="History" class="size-3.5 text-teal-400"></lucide-icon>
-                  <span>الذاكرة ({{ jumpHistory().length }}/20)</span>
+                  <lucide-icon [img]="History" class="size-3.5 text-teal-400 shrink-0"></lucide-icon>
+                  <span class="whitespace-nowrap">الذاكرة ({{ jumpHistory().length }}/20)</span>
                 </button>
               </div>
 
@@ -1260,6 +1263,14 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   sidebarTab = signal<'playlist' | 'bookmarks' | 'storage' | 'recycle'>('playlist');
   sidebarWidth = signal<number>(this.loadSidebarWidth());
   isResizingSidebar = signal<boolean>(false);
+  isDesktop = signal<boolean>(typeof window !== 'undefined' ? window.innerWidth >= 1024 : true);
+
+  @HostListener('window:resize')
+  onWindowResize() {
+    if (typeof window !== 'undefined') {
+      this.isDesktop.set(window.innerWidth >= 1024);
+    }
+  }
 
   private loadSidebarWidth(): number {
     try {
