@@ -20,28 +20,53 @@ export class OcrCleanerService {
     const lines = rawText.split(/\r?\n/);
     const cleanedLines: string[] = [];
 
-    // Check if a line is IDE status bar / chrome / console
+    // Check if a line is IDE status bar / chrome / console / menus / tabs
     const isIdeChrome = (line: string): boolean => {
-      const lower = line.toLowerCase();
+      const trimmed = line.trim();
+      const lower = trimmed.toLowerCase();
+      if (!lower) return false;
+
+      // Visual Studio / IDE Top Menu Bar (e.g. "Q file Edit View Git Project Build...", "File Edit View...")
+      if (/^(q\s+)?(file|edit|view|git|project|build|debug|test|analyze|tools|extensions|window|help)\b/i.test(lower) &&
+          /(edit|view|git|project|build|debug|test|tools|window|help)/i.test(lower)) {
+        return true;
+      }
+
+      // IDE Open Document Tabs (e.g. "ApiBaseController.cs ProductsController.cs Result.cs")
+      if (/\b[a-zA-Z0-9_-]+\.(cs|ts|js|jsx|tsx|html|css|py|java|cpp|h|json)\b/i.test(lower) &&
+          !/[;{}=><()]/.test(lower) &&
+          !/\b(using|import|namespace|class|interface|public|private)\b/i.test(lower)) {
+        return true;
+      }
+
+      // IDE Breadcrumb path / Context navigation (e.g. "ECommerce.Presentation.Controllers.ApiBaseController")
+      if (/^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+){2,}\s*$/i.test(trimmed) && !trimmed.includes(';') && !trimmed.includes('=')) {
+        return true;
+      }
+
+      // References count (e.g. "1 reference", "0 references", "3 references")
+      if (/^\s*\d+\s*references?\s*$/i.test(lower)) return true;
+      if (/^\s*0\s*references?/i.test(lower)) return true;
+
+      // IDE status bar / Error list / Output panel / Zoom percentage
       if (/^\s*\d+%\s*.*(issues|found|ln:|ch:|spc)/i.test(line)) return true;
       if (lower.includes('no issues found') || lower.includes('noissues found')) return true;
       if (lower.includes('error list') && lower.includes('output')) return true;
       if (lower.includes('package manager console') || lower.includes('debug console')) return true;
       if (lower.includes('add to source control') || lower.includes('select repository')) return true;
-      if (/^\s*\[\]\s*ready/i.test(line)) return true;
+      if (/^\s*\[\]\s*ready/i.test(line) || /^\s*ready\s*$/i.test(lower)) return true;
       if (/^\s*ch:\s*\d+\s*spc\s*\d+/i.test(line)) return true;
       if (/^\s*ln:\s*\d+/i.test(line)) return true;
-      if (/^\s*\d+\s*references?/i.test(line)) return true;
-      if (/^\s*0\s*references?/i.test(line)) return true;
+
       return false;
     };
 
-    // Check if line is just standalone line number or gutter noise (e.g. "6", "17 |.", "19")
+    // Check if line is just standalone line number or gutter noise (e.g. "6", "17 |.", "19", "48")
     const isNoiseLine = (line: string): boolean => {
       const trimmed = line.trim();
       if (!trimmed) return false;
-      // Line contains only digits, spaces, and single symbols
-      if (/^[\d\s|.:\-–—_'"`\\/!]+$/.test(trimmed) && trimmed.length <= 6) return true;
+      // Standalone line numbers, digits, symbols
+      if (/^[\d\s|.:\-–—_'"`\\/!#$]+$/.test(trimmed) && trimmed.length <= 6) return true;
       return false;
     };
 
@@ -72,14 +97,13 @@ export class OcrCleanerService {
       // "q using", "B using", "8 using", "7 v namespace", "9 v i public", "c static"
       line = line.replace(/^c\s+(static|public|private|protected)\b/i, 'public $1');
       line = line.replace(
-        /^[a-zA-Z0-9\u0600-\u06FF]{1,4}\s+(using|import|from|namespace|public|private|protected|internal|static|readonly|async|class|struct|interface|enum|record|void|int|string|bool|task|const|let|var|function|def|return)\b/i,
+        /^[a-zA-Z0-9\u0600-\u06FF]{1,4}\s+(using|import|from|namespace|public|private|protected|internal|static|readonly|async|class|struct|interface|enum|record|void|int|string|bool|task|const|let|var|function|def|return|if|else|for|foreach|while|switch|case|default|try|catch|finally)\b/i,
         '$1'
       );
 
-      // 2. Remove leading line numbers and gutter fold arrows/pipes/noise (including Arabic misread symbols like "11 ‏ا‎ i Failure"):
+      // 2. Remove leading line numbers and gutter fold arrows/pipes/noise:
       // "12 1 | Validation = 1," -> "Validation = 1,"
-      // "11 | Failure = '," -> "Failure = ',"
-      // "165” {| InvalidCredentials" -> "InvalidCredentials"
+      // "48 return HandleValidationProblem(errors);" -> "return HandleValidationProblem(errors);"
       line = line.replace(/^[\s\d]*[vV>|!i1l•\-–—\u0600-\u06FF]\s+/g, '');
       line = line.replace(/^\s*\d{1,4}\s*[:.)|\-–—]?\s*/g, '');
       line = line.replace(/^(\s*[\d\w\u0600-\u06FF]*\s*[|!i1l]\s*)+/g, '');
@@ -88,8 +112,6 @@ export class OcrCleanerService {
       line = line.replace(/^\s*\d+["'`]?\s*(\{\||\{|\|)\s*/g, '');
 
       // 3. Remove trailing gutter noise:
-      // "using System.Ling; 2]" -> "using System.Linq;"
-      // "using System.Text; g" -> "using System.Text;"
       line = line.replace(/;\s*[a-zA-Z0-9\W]{1,4}$/g, ';');
       line = line.replace(/\s+\d{1,4}\s*[\]\)\}»>]*$/g, '');
       line = line.replace(/[|!]\s*$/g, '');
@@ -105,7 +127,6 @@ export class OcrCleanerService {
       line = line.replace(/(\bstring\s+\w+\s*)-\s*(?=["'])/g, '$1= ');
 
       // 5. Fix enum assignment misreads:
-      // "Failure = '," -> "Failure = 0,"
       line = line.replace(/=\s*['`]\s*,/g, '= 0,');
 
       // Remove unwanted leading/trailing pipes
@@ -122,9 +143,8 @@ export class OcrCleanerService {
       }
     }
 
-    const joinedText = cleanedLines.join('\n');
-    const unwrappedText = this.unwrapCodeLines(joinedText);
-    return this.indentCode(unwrappedText.split(/\r?\n/));
+    // Preserve each line separately with proper code indentation
+    return this.indentCode(cleanedLines);
   }
 
   /**
@@ -200,55 +220,10 @@ export class OcrCleanerService {
   }
 
   /**
-   * Intelligently joins broken code lines that were split mid-statement or mid-signature
+   * Safely trims code lines without destroying line breaks
    */
   unwrapCodeLines(text: string): string {
     if (!text) return '';
-
-    const lines = text.split(/\r?\n/);
-    const result: string[] = [];
-
-    for (let i = 0; i < lines.length; i++) {
-      let current = lines[i];
-
-      while (i + 1 < lines.length) {
-        const trimmedCurrent = current.trim();
-        const nextRaw = lines[i + 1];
-        const trimmedNext = nextRaw.trim();
-
-        if (!trimmedNext) break;
-
-        // Check if next line is clearly the start of a distinct statement or block
-        const isNextSeparate = /^(using|namespace|public|private|protected|internal|class|struct|interface|enum|record|void|return|if|else|for|while|switch|case|default)\b/i.test(trimmedNext) ||
-                               trimmedNext.startsWith('{') || trimmedNext.startsWith('}') ||
-                               trimmedNext.startsWith('//') || trimmedNext.startsWith('/*');
-
-        // Check if current line clearly continues:
-        // Ends with operator, comma, open paren/bracket, or assignment
-        const endsWithContinuation = /[=,(:+*\/\\&|\^?-]$/.test(trimmedCurrent);
-        // Next line starts with continuation:
-        const startsWithContinuation = /^[,:).+*\/\\&|\^?=>\]]/.test(trimmedNext);
-        // Unclosed quotes in current line:
-        const quoteCount = (trimmedCurrent.match(/"/g) || []).length;
-        const unclosedQuotes = quoteCount % 2 !== 0;
-        // Incomplete statement without semicolon or brace:
-        const incompleteStatement = !/[;{}]$/.test(trimmedCurrent) && !trimmedCurrent.endsWith(':') && !isNextSeparate;
-
-        if (endsWithContinuation || startsWithContinuation || unclosedQuotes || incompleteStatement) {
-          // If the next line is a separate block, don't join unless explicitly continuing with an operator
-          if (isNextSeparate && !endsWithContinuation && !startsWithContinuation && !unclosedQuotes) {
-            break;
-          }
-          current = trimmedCurrent + ' ' + trimmedNext;
-          i++; // Consumed next line
-        } else {
-          break;
-        }
-      }
-
-      result.push(current);
-    }
-
-    return result.join('\n');
+    return text;
   }
 }

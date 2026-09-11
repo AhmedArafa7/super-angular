@@ -37,10 +37,10 @@ import { OcrCleanerService } from '../../services/ocr-cleaner.service';
       </span>
       <button (click)="toggleWordWrap()" 
               class="px-2.5 py-1 rounded-xl font-bold transition flex items-center gap-1.5 border text-xs active:scale-95"
-              [ngClass]="isWordWrap() ? 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10' : 'bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border-teal-500/30 shadow-sm shadow-teal-500/10'"
-              [title]="isWordWrap() ? 'النمط الحالي: التفاف الأسطر. انقر لجعله سطراً كاملاً دون تجزئة' : 'النمط الحالي: سطر كامل مع شريط تمرير. انقر لتفعيل التفاف الأسطر'">
+              [ngClass]="isWordWrap() ? 'bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border-teal-500/30 shadow-sm shadow-teal-500/10' : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10'"
+              [title]="isWordWrap() ? 'النمط الحالي: التفاف الأسطر مفعّل. انقر للتبديل إلى سطر كامل ممتد مع شريط تمرير أفقي' : 'النمط الحالي: سطر كامل مع شريط تمرير. انقر للتبديل إلى التفاف الأسطر الطبيعي'">
         <lucide-icon [img]="isWordWrap() ? WrapText : MoveHorizontal" class="size-3.5 text-teal-400"></lucide-icon>
-        <span>{{ isWordWrap() ? '↵ التفاف الأسطر' : '↔ سطر كامل' }}</span>
+        <span>{{ isWordWrap() ? '↵ التفاف الأسطر' : '↔ سطر ممتد' }}</span>
       </button>
     </div>
 
@@ -79,7 +79,9 @@ import { OcrCleanerService } from '../../services/ocr-cleaner.service';
                   [ngModel]="inlineEditText()"
                   (ngModelChange)="inlineEditText.set($event)"
                   rows="7"
-                  dir="auto"
+                  [dir]="hasArabic(inlineEditText()) ? 'rtl' : 'ltr'"
+                  [class.text-right]="hasArabic(inlineEditText())"
+                  [class.text-left]="!hasArabic(inlineEditText())"
                   [wrap]="isWordWrap() ? 'soft' : 'off'"
                   class="w-full bg-black/60 border border-teal-500/50 rounded-xl p-3 text-xs text-white placeholder:text-slate-500 focus:outline-none font-mono resize-y leading-relaxed custom-scrollbar select-text"
                   [ngClass]="isWordWrap() ? 'whitespace-pre-wrap' : 'whitespace-pre overflow-x-auto custom-scrollbar-h'"></textarea>
@@ -89,11 +91,13 @@ import { OcrCleanerService } from '../../services/ocr-cleaner.service';
                 </div>
               </div>
             } @else {
-              <!-- Note Text with readable font & formatting -->
+              <!-- Note Text with readable font, preserved lines & smart direction -->
               <div class="text-xs text-slate-200 leading-relaxed select-text font-mono bg-black/40 p-3 rounded-xl border border-white/5 transition-all" 
                    [ngClass]="isWordWrap() ? 'whitespace-pre-wrap' : 'whitespace-pre overflow-x-auto custom-scrollbar-h'"
                    [style.color]="note.textColor || 'inherit'"
-                   dir="auto">
+                   [dir]="hasArabic(note.text) ? 'rtl' : 'ltr'"
+                   [class.text-right]="hasArabic(note.text)"
+                   [class.text-left]="!hasArabic(note.text)">
                 {{ note.text }}
               </div>
             }
@@ -102,16 +106,9 @@ import { OcrCleanerService } from '../../services/ocr-cleaner.service';
             <div class="flex items-center flex-wrap gap-1.5 pt-0.5" (click)="$event.stopPropagation()">
               <button (click)="applyCodeClean(note, $event)" 
                       class="px-2 py-1 bg-teal-500/15 hover:bg-teal-500/30 text-teal-300 border border-teal-500/25 rounded-lg text-[10px] font-bold flex items-center gap-1 transition active:scale-95" 
-                      title="تنقية الكود وحذف أرقام الأسطر والرموز ومخلفات المحرر">
+                      title="تنقية الكود وحذف أرقام الأسطر والرموز ومخلفات المحرر مع الحفاظ على الأسطر">
                 <lucide-icon [img]="Code" class="size-3 text-teal-400"></lucide-icon>
                 <span>تنقية كود</span>
-              </button>
-
-              <button (click)="applyUnwrapLines(note, $event)" 
-                      class="px-2 py-1 bg-cyan-500/15 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/25 rounded-lg text-[10px] font-bold flex items-center gap-1 transition active:scale-95" 
-                      title="دمج الأسطر البرمجية المتقطعة في سطر واحد كامل">
-                <lucide-icon [img]="MoveHorizontal" class="size-3 text-cyan-400"></lucide-icon>
-                <span>دمج الأسطر</span>
               </button>
 
               <button (click)="applyRemoveNumbers(note, $event)" 
@@ -191,13 +188,18 @@ export class NotesTabComponent {
         return saved === 'true';
       }
     } catch (e) {}
-    return false; // Default: false -> unbroken single full lines!
+    return true; // Default: true (wrapped lines, easily readable)
   }
 
   toggleWordWrap() {
     const newVal = !this.isWordWrap();
     this.isWordWrap.set(newVal);
     localStorage.setItem('local_player_notes_word_wrap', String(newVal));
+  }
+
+  hasArabic(text: string): boolean {
+    if (!text) return false;
+    return /[\u0600-\u06FF]/.test(text);
   }
 
   copiedNoteId: string | null = null;
@@ -263,16 +265,6 @@ export class NotesTabComponent {
   applyCodeClean(note: VideoNote, event?: Event) {
     if (event) event.stopPropagation();
     const cleaned = this.ocrCleaner.cleanCode(note.text);
-    const originalText = note.originalText || note.text;
-    this.updateNote.emit({
-      id: note.id,
-      changes: { text: cleaned, originalText }
-    });
-  }
-
-  applyUnwrapLines(note: VideoNote, event?: Event) {
-    if (event) event.stopPropagation();
-    const cleaned = this.ocrCleaner.unwrapCodeLines(note.text);
     const originalText = note.originalText || note.text;
     this.updateNote.emit({
       id: note.id,
