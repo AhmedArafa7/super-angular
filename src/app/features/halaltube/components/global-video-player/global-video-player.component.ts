@@ -84,19 +84,6 @@ import { SafePipe } from '../../../../core/pipes/safe.pipe'; // Need to ensure w
               (load)="onIframeLoaded()">
             </iframe>
 
-            <!-- Quick Action Floating Overlay for Direct Playback & Fallback -->
-            <div class="absolute top-3 right-3 z-30 flex items-center gap-2 pointer-events-auto">
-              <a 
-                [href]="getDirectExternalLink()" 
-                target="_blank" 
-                rel="noopener"
-                (click)="$event.stopPropagation()"
-                class="bg-slate-950/85 hover:bg-indigo-600 backdrop-blur-md border border-white/15 text-white px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-all shadow-lg hover:scale-105"
-                [title]="isDriveVideo() ? 'مشاهدة الفيديو مباشرة على Google Drive إذا تم تقييد التضمين' : 'مشاهدة الفيديو مباشرة على YouTube إذا كان التضمين محظوراً أو تعذر التشغيل'"
-              >
-                <span>{{ isDriveVideo() ? 'مشاهدة على Google Drive ↗' : 'مشاهدة على YouTube ↗' }}</span>
-              </a>
-            </div>
           </div>
         }
 

@@ -97,7 +97,7 @@
 
               <!-- Thumbnail -->
               <div class="relative w-20 aspect-video rounded-lg overflow-hidden bg-slate-950 border border-white/10 shrink-0">
-                <img [src]="v.thumbnail" [alt]="v.title" class="w-full h-full object-cover" />
+                <img [src]="v.thumbnail" [alt]="v.title" class="w-full h-full object-cover" (error)="$any($event.target).src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800'" (load)="$any($event.target).naturalWidth <= 120 && ($any($event.target).src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800')" />
                 @if (v.duration) {
                   <span class="absolute bottom-0.5 left-0.5 bg-black/80 text-white text-[8px] font-bold px-1 rounded">
                     {{ v.duration }}
@@ -177,6 +177,7 @@
                   [alt]="video.title || ''"
                   class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   (error)="$any($event.target).src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800'"
+                  (load)="$any($event.target).naturalWidth <= 120 && ($any($event.target).src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800')"
                 >
                 @if (video.duration) {
                   <span class="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-xs font-medium text-white backdrop-blur-sm">

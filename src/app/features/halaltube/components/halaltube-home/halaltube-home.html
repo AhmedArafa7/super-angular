@@ -100,7 +100,7 @@
               @for (video of halaltube.searchResults(); track video.id) {
                 <div class="video-card group cursor-pointer relative flex flex-col gap-2 sm:gap-2.5 bg-slate-950/50 p-2 sm:p-3 rounded-xl sm:rounded-2xl border border-white/5 hover:border-indigo-500/30 transition-all duration-300" [routerLink]="['/stream/watch', video.id]">
                   <div class="thumbnail-wrapper relative w-full aspect-video rounded-lg sm:rounded-xl overflow-hidden bg-slate-900 border border-white/5">
-                    <img crossorigin="anonymous" [src]="getSafeThumbnail(video)" [alt]="video.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                    <img crossorigin="anonymous" [src]="getSafeThumbnail(video)" (error)="onThumbnailError($event, video)" (load)="onThumbnailLoad($event, video)" [alt]="video.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
                     <span class="absolute bottom-1.5 left-1.5 bg-black/80 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold">{{ video.duration || '12:00' }}</span>
                   </div>
                   <div class="flex flex-col gap-0.5 sm:gap-1">
@@ -197,7 +197,7 @@
               [title]="video.title">
               
               <div class="short-card-thumbnail">
-                <img crossorigin="anonymous" [src]="getSafeThumbnail(video)" [alt]="video.title" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105" loading="lazy">
+                <img crossorigin="anonymous" [src]="getSafeThumbnail(video)" (error)="onThumbnailError($event, video)" (load)="onThumbnailLoad($event, video)" [alt]="video.title" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105" loading="lazy">
                 <span class="absolute top-2 right-2 bg-gradient-to-br from-red-600 to-red-800 text-white px-2 py-0.5 rounded text-[8px] font-black uppercase shadow-lg">SHORTS</span>
               </div>
               
@@ -238,7 +238,7 @@
             @for (video of exploreTopicVideos(); track video.id) {
               <div class="video-card group cursor-pointer relative flex flex-col gap-2 sm:gap-2.5 bg-slate-950/50 p-2 sm:p-3 rounded-xl sm:rounded-2xl border border-white/5 hover:border-indigo-500/30 transition-all duration-300" [routerLink]="['/stream/watch', video.id]">
                 <div class="thumbnail-wrapper relative w-full aspect-video rounded-lg sm:rounded-xl overflow-hidden bg-slate-900 border border-white/5">
-                  <img crossorigin="anonymous" [src]="getSafeThumbnail(video)" [alt]="video.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                  <img crossorigin="anonymous" [src]="getSafeThumbnail(video)" (error)="onThumbnailError($event, video)" (load)="onThumbnailLoad($event, video)" [alt]="video.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
                   <span class="absolute bottom-1.5 left-1.5 bg-black/80 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold">{{ video.duration || '12:00' }}</span>
                 </div>
                 <div class="flex flex-col gap-0.5 sm:gap-1">
@@ -267,7 +267,7 @@
               <div class="video-card group cursor-pointer relative flex flex-col gap-2 sm:gap-3" [routerLink]="['/stream/watch', video.id]">
                 
                 <div class="thumbnail-wrapper relative w-full rounded-xl overflow-hidden bg-slate-900 border border-white/5 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-indigo-500/10 group-hover:-translate-y-1" [ngClass]="video.isShorts ? 'aspect-[9/16]' : 'aspect-video'">
-                  <img crossorigin="anonymous" [src]="getSafeThumbnail(video)" [alt]="video.title" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy">
+                  <img crossorigin="anonymous" [src]="getSafeThumbnail(video)" (error)="onThumbnailError($event, video)" (load)="onThumbnailLoad($event, video)" [alt]="video.title" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy">
                   
                   @if (video.isShorts) {
                     <span class="absolute top-2 right-2 bg-gradient-to-br from-red-600 to-red-800 text-white px-2 py-0.5 rounded text-[8px] sm:text-[10px] font-black shadow-lg">SHORTS</span>

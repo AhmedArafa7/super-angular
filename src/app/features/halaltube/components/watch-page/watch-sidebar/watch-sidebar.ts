@@ -1,6 +1,6 @@
-import { Component, inject, OnInit, OnDestroy, ElementRef, ViewChild, AfterViewInit, effect, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, ElementRef, ViewChild, AfterViewInit, effect, signal, computed, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { VideoStateService } from '../../../../../core/services/video-state.service';
 import { ContextMenuService } from '../../../../../shared/components/context-menu/context-menu.service';
 import { ContextMenuItem } from '../../../../../shared/components/context-menu/context-menu.model';
@@ -25,10 +25,13 @@ import { HalalPlaylistVideo } from '../../../models/halaltube-playlist.model';
   styleUrls: ['./watch-sidebar.scss']
 })
 export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
+  currentVideoId = input<string>();
+
   videoState = inject(VideoStateService);
   halaltube = inject(halaltubeService);
   playlistSvc = inject(HalaltubePlaylistService);
   router = inject(Router);
+  route = inject(ActivatedRoute);
   contextMenu = inject(ContextMenuService);
 
   toast = inject(ToastService);
@@ -73,28 +76,127 @@ export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   filteredVideos = computed(() => {
     const related = this.videoState.relatedVideos() || [];
     const homeContent = this.halaltube.allHomeContent() || [];
+    const activeVid = this.videoState.activeVideo();
     
+    // Collect all variations of current active video identifier to exclude
+    const excluded = new Set<string>();
+
+    // 1. From input property
+    const propId = this.currentVideoId();
+    if (propId) {
+      excluded.add(propId);
+      excluded.add(propId.toLowerCase());
+      const yt = this.extractYoutubeId(propId);
+      if (yt) {
+        excluded.add(yt);
+        excluded.add(yt.toLowerCase());
+      }
+    }
+
+    // 2. From route snapshot / params
+    const routeId = this.route.snapshot?.paramMap?.get('id');
+    if (routeId) {
+      excluded.add(routeId);
+      excluded.add(routeId.toLowerCase());
+      const yt = this.extractYoutubeId(routeId);
+      if (yt) {
+        excluded.add(yt);
+        excluded.add(yt.toLowerCase());
+      }
+    }
+
+    // 3. From router URL (/stream/watch/XYZ)
+    const urlMatch = this.router.url ? this.router.url.match(/\/watch\/([^\/\?#]+)/) : null;
+    if (urlMatch && urlMatch[1]) {
+      const urlId = decodeURIComponent(urlMatch[1]);
+      excluded.add(urlId);
+      excluded.add(urlId.toLowerCase());
+      const yt = this.extractYoutubeId(urlId);
+      if (yt) {
+        excluded.add(yt);
+        excluded.add(yt.toLowerCase());
+      }
+    }
+
+    // 4. From activeVideo state
+    if (activeVid) {
+      if (activeVid.id) {
+        const idStr = String(activeVid.id);
+        excluded.add(idStr);
+        excluded.add(idStr.toLowerCase());
+        const yt = this.extractYoutubeId(idStr);
+        if (yt) {
+          excluded.add(yt);
+          excluded.add(yt.toLowerCase());
+        }
+      }
+      if (activeVid.url) {
+        const yt = this.extractYoutubeId(activeVid.url);
+        if (yt) {
+          excluded.add(yt);
+          excluded.add(yt.toLowerCase());
+        }
+      }
+      if ((activeVid as any).youtubeId) {
+        const ytStr = String((activeVid as any).youtubeId);
+        excluded.add(ytStr);
+        excluded.add(ytStr.toLowerCase());
+      }
+      if ((activeVid as any).docId) {
+        const docStr = String((activeVid as any).docId);
+        excluded.add(docStr);
+        excluded.add(docStr.toLowerCase());
+      }
+      if ((activeVid as any).externalUrl) {
+        const yt = this.extractYoutubeId((activeVid as any).externalUrl);
+        if (yt) {
+          excluded.add(yt);
+          excluded.add(yt.toLowerCase());
+        }
+      }
+    }
+
+    const isCurrent = (item: any): boolean => {
+      if (!item) return false;
+      const vId = this.getVideoId(item);
+      if (vId && (excluded.has(vId) || excluded.has(vId.toLowerCase()))) return true;
+      if (item.id && (excluded.has(String(item.id)) || excluded.has(String(item.id).toLowerCase()))) return true;
+      if (item.youtubeId && (excluded.has(String(item.youtubeId)) || excluded.has(String(item.youtubeId).toLowerCase()))) return true;
+      if (item.docId && (excluded.has(String(item.docId)) || excluded.has(String(item.docId).toLowerCase()))) return true;
+      if (item.driveFileId && (excluded.has(String(item.driveFileId)) || excluded.has(String(item.driveFileId).toLowerCase()))) return true;
+      
+      for (const field of [item.url, item.externalUrl, item.sourceUrl, item.embedUrl]) {
+        if (field && typeof field === 'string') {
+          const yt = this.extractYoutubeId(field);
+          if (yt && (excluded.has(yt) || excluded.has(yt.toLowerCase()))) return true;
+        }
+      }
+
+      // Title similarity matching (if titles match or share the same core name and author)
+      if (activeVid?.title && item.title) {
+        const cleanActive = activeVid.title.replace(/[\s\-_|]/g, '').toLowerCase();
+        const cleanItem = item.title.replace(/[\s\-_|]/g, '').toLowerCase();
+        if (cleanActive && cleanItem && (cleanActive === cleanItem || cleanActive.includes(cleanItem) || cleanItem.includes(cleanActive))) {
+          if (activeVid.author && item.author && activeVid.author === item.author) {
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+
     // Merge related videos first, then append global catalog for endless suggestions
     const seen = new Set<string>();
     const combined: any[] = [];
     
-    // Exclude currently playing video so it does not appear in recommendations
-    const activeVid = this.videoState.activeVideo();
-    if (activeVid) {
-      if (activeVid.id) seen.add(activeVid.id);
-      const activeYt = this.getVideoId(activeVid);
-      if (activeYt) seen.add(activeYt);
-      if (activeVid.url) {
-        const urlYt = this.extractYoutubeId(activeVid.url);
-        if (urlYt) seen.add(urlYt);
-      }
-    }
-    
     for (const v of [...related, ...homeContent]) {
+      if (isCurrent(v)) {
+        continue;
+      }
       const vId = this.getVideoId(v);
       if (vId && !seen.has(vId)) {
         seen.add(vId);
-        if (v.id) seen.add(v.id);
+        if (v.id) seen.add(String(v.id));
         combined.push(v);
       }
     }

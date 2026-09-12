@@ -24,6 +24,8 @@ import { PlaylistSelectorModalComponent } from '../modals/playlist-selector-moda
                [alt]="video().title" 
                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
                [class.blur-md]="isBlurred()"
+               (error)="onThumbnailError($event)"
+               (load)="onThumbnailLoad($event)"
                loading="lazy">
           
           <!-- Halal Badges Overlay -->
@@ -197,6 +199,22 @@ export class VideoCardComponent {
   onAvatarError(event: Event) {
     const imgEl = event.target as HTMLImageElement;
     imgEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(this.video().author || 'Channel')}&background=random&color=fff&bold=true`;
+  }
+
+  onThumbnailError(event: Event) {
+    const imgEl = event.target as HTMLImageElement;
+    if (!imgEl || imgEl.dataset['fallbackApplied'] === 'true') return;
+    imgEl.dataset['fallbackApplied'] = 'true';
+    imgEl.src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800';
+  }
+
+  onThumbnailLoad(event: Event) {
+    const imgEl = event.target as HTMLImageElement;
+    if (!imgEl || imgEl.dataset['fallbackApplied'] === 'true') return;
+    if (imgEl.naturalWidth <= 120 && (imgEl.src.includes('youtube.com') || imgEl.src.includes('ytimg.com'))) {
+      imgEl.dataset['fallbackApplied'] = 'true';
+      imgEl.src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800';
+    }
   }
 
   isWatched(): boolean {

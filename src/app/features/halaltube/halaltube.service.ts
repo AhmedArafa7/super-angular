@@ -381,15 +381,38 @@ export class halaltubeService {
       
       const mappedFirestore: FeedVideo[] = (firestoreResult?.videos || []).map((v: any) => {
         const isYt = v.source === 'youtube';
+        const ytId = this.extractYoutubeId(v.url) || 
+                     this.extractYoutubeId(v.externalUrl) || 
+                     this.extractYoutubeId(v.sourceUrl) || 
+                     this.extractYoutubeId(v.youtubeId) || 
+                     (v.id && /^[a-zA-Z0-9_-]{11}$/.test(v.id) ? v.id : null);
+
+        const safeUrl = v.url || v.externalUrl || (ytId ? `https://www.youtube.com/watch?v=${ytId}` : '');
+        let safeThumb = (v.thumbnail && typeof v.thumbnail === 'string' && v.thumbnail.startsWith('http')) 
+          ? v.thumbnail 
+          : '';
+
+        // Sanitize if thumbnail URL contains a 20-character Firestore doc ID
+        if (safeThumb) {
+          const ytImgMatch = safeThumb.match(/(?:img\.youtube\.com|i\.ytimg\.com)\/vi\/([^/]+)/);
+          if (ytImgMatch && ytImgMatch[1].length !== 11) {
+            safeThumb = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : '';
+          }
+        }
+
+        if (!safeThumb) {
+          safeThumb = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800';
+        }
+
         return {
           id: v.id,
           title: v.title,
-          url: v.url || v.externalUrl || (isYt ? `https://www.youtube.com/watch?v=${v.id}` : ''),
-          thumbnail: v.thumbnail || (isYt ? `https://img.youtube.com/vi/${v.id}/hqdefault.jpg` : ''),
+          url: safeUrl,
+          thumbnail: safeThumb,
           author: v.author,
           authorId: v.authorId,
           time: v.time || 'حديثاً',
-          source: v.source || 'youtube',
+          source: v.source || (ytId ? 'youtube' : 'platform'),
           isShorts: v.isShorts || false,
           isWhitelisted: true,
           _shuffleOrder: Math.random()
@@ -1101,5 +1124,12 @@ export class halaltubeService {
       localStorage.setItem('halaltube_algo_config_enc', encrypted);
       localStorage.removeItem('halaltube_algo_config'); // clean legacy
     }).catch(() => {});
+  }
+
+  extractYoutubeId(str?: string): string | null {
+    if (!str || typeof str !== 'string') return null;
+    if (str.length === 11 && /^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
+    const match = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/|live\/))([^&?\n]+)/);
+    return (match && match[1] && match[1].length === 11) ? match[1] : null;
   }
 }

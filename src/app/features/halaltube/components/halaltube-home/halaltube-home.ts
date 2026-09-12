@@ -279,17 +279,78 @@ export class halaltubeHomeComponent implements OnInit {
     return match ? match[1] : null;
   }
 
+  onThumbnailError(event: Event, video?: any) {
+    const imgElement = event.target as HTMLImageElement;
+    if (!imgElement) return;
+    if (imgElement.dataset['fallbackApplied'] === 'true') return;
+    imgElement.dataset['fallbackApplied'] = 'true';
+    imgElement.src = this.getCategoryPlaceholder(video?.category || video?.topic || video?.title);
+  }
+
+  onThumbnailLoad(event: Event, video?: any) {
+    const imgElement = event.target as HTMLImageElement;
+    if (!imgElement) return;
+    if (imgElement.dataset['fallbackApplied'] === 'true') return;
+    // YouTube returns a 120x90 default placeholder image when the thumbnail is missing / video deleted
+    if (imgElement.naturalWidth <= 120 && (imgElement.src.includes('youtube.com') || imgElement.src.includes('ytimg.com'))) {
+      imgElement.dataset['fallbackApplied'] = 'true';
+      imgElement.src = this.getCategoryPlaceholder(video?.category || video?.topic || video?.title);
+    }
+  }
+
+  getCategoryPlaceholder(categoryOrTitle?: string): string {
+    const text = (categoryOrTitle || '').toLowerCase();
+    if (text.includes('قرآن') || text.includes('quran') || text.includes('تلاوة') || text.includes('مصحف') || text.includes('سورة') || text.includes('الشيخ')) {
+      return 'https://images.unsplash.com/photo-1609599006353-e629aaabfeae?auto=format&fit=crop&q=80&w=800';
+    }
+    if (text.includes('برمجة') || text.includes('تطوير') || text.includes('كود') || text.includes('python') || text.includes('java') || text.includes('تقنية') || text.includes('تكنولوجيا') || text.includes('ويب')) {
+      return 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=800';
+    }
+    if (text.includes('نشيد') || text.includes('أناشيد') || text.includes('صوت') || text.includes('ابتهال')) {
+      return 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=800';
+    }
+    if (text.includes('ألعاب') || text.includes('games') || text.includes('gaming')) {
+      return 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=800';
+    }
+    if (text.includes('طعام') || text.includes('أكل') || text.includes('صحة') || text.includes('طبخ') || text.includes('جوع')) {
+      return 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&q=80&w=800';
+    }
+    return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800';
+  }
+
   getSafeThumbnail(video: any): string {
-    const id = video.id || '';
-    if (id.length === 11 && /^[a-zA-Z0-9_-]{11}$/.test(id)) {
-      return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+    if (!video) return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800';
+
+    // 1. If explicit thumbnail is provided and it's a valid remote URL
+    if (video.thumbnail && typeof video.thumbnail === 'string' && video.thumbnail.startsWith('http')) {
+      // Avoid archive.org CORS/504 image service
+      if (video.thumbnail.includes('archive.org/services/img')) {
+        return this.getCategoryPlaceholder(video.category || video.title);
+      }
+      
+      // If it's a youtube img url, ensure it doesn't contain an invalid 20-char Firestore ID
+      const ytImgMatch = video.thumbnail.match(/(?:img\.youtube\.com|i\.ytimg\.com)\/vi\/([^/]+)/);
+      if (ytImgMatch) {
+        const idInUrl = ytImgMatch[1];
+        if (idInUrl.length !== 11) {
+          const realYtId = this.extractYoutubeId(video.externalUrl || video.url || video.youtubeId || '');
+          if (realYtId) {
+            return `https://img.youtube.com/vi/${realYtId}/hqdefault.jpg`;
+          }
+          return this.getCategoryPlaceholder(video.category || video.title);
+        }
+      }
+      return video.thumbnail;
     }
-    const isYoutube = video.source === 'youtube' || (video.externalUrl && video.externalUrl.includes('youtube')) || (video.url && video.url.includes('youtube'));
-    if (isYoutube) {
-       const ytId = this.extractYoutubeId(video.externalUrl || video.url || video.id);
-       if (ytId) return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+
+    // 2. Try extracting clean 11-char YouTube ID from url / externalUrl / id
+    const ytId = this.extractYoutubeId(video.externalUrl || video.url || video.youtubeId || (video.id && video.id.length === 11 ? video.id : ''));
+    if (ytId) {
+      return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
     }
-    return video.thumbnail || `https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg`;
+
+    // 3. Category placeholder
+    return this.getCategoryPlaceholder(video.category || video.title);
   }
 
   openVaultItem(item: any) {
