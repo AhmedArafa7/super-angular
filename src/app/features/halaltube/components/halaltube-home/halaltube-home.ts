@@ -581,8 +581,14 @@ export class halaltubeHomeComponent implements OnInit {
   }
 
   getAvatarUrl(video: any): string {
-    if (video.channelAvatar && video.channelAvatar.sourcesize || (video.channelAvatar && video.channelAvatar.startsWith('http'))) return video.channelAvatar;
-    if (video.channelAvatar && video.channelAvatar.startsWith('http')) return video.channelAvatar;
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(video.author || 'Channel')}&background=random&color=fff&bold=true`;
+    if (video?.channelAvatar && typeof video.channelAvatar === 'string' && video.channelAvatar.startsWith('http') && !video.channelAvatar.includes('ui-avatars.com')) {
+      return video.channelAvatar;
+    }
+    const name = (video?.author || 'قناة').trim();
+    const initial = name.charAt(0) || 'ق';
+    const colors = ['#4f46e5', '#0891b2', '#059669', '#d97706', '#dc2626', '#7c3aed', '#db2777'];
+    const colorIndex = name.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) % colors.length;
+    const bg = colors[colorIndex];
+    return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="${encodeURIComponent(bg)}"/><text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle" fill="%23fff" font-family="sans-serif" font-size="26" font-weight="bold">${encodeURIComponent(initial)}</text></svg>`;
   }
 }

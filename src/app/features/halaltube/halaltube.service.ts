@@ -39,6 +39,7 @@ export class halaltubeService {
   readonly feedVideos = signal<FeedVideo[]>([]);
   readonly trendingVideos = signal<FeedVideo[]>([]);
   readonly searchResults = signal<FeedVideo[]>([]);
+  readonly matchingChannels = signal<{ channelId: string; name: string; avatarUrl: string; subscriberCount?: string }[]>([]);
   readonly shortsFeed = signal<FeedVideo[]>([]);
   readonly subscriptionsFeed = signal<FeedVideo[]>([]);
   readonly isSubsFeedLoading = signal<boolean>(false);
@@ -284,12 +285,18 @@ export class halaltubeService {
 
   setSearchQuery(query: string) {
     this.searchQuery.set(query);
+    if (!query) {
+      this.searchResults.set([]);
+      this.matchingChannels.set([]);
+      this.searchSp.set('');
+    }
   }
 
   setActiveChannel(channel: { id: string, name: string, avatar?: string } | null) {
     this.activeChannel.set(channel);
     this.activeTab.set('home');
     this.searchResults.set([]);
+    this.matchingChannels.set([]);
     this.searchQuery.set('');
     this.searchSp.set('');
   }
@@ -557,6 +564,7 @@ export class halaltubeService {
     
     if (!query.trim()) {
       this.searchResults.set([]);
+      this.matchingChannels.set([]);
       this.isSearching.set(false);
       return;
     }
@@ -566,9 +574,60 @@ export class halaltubeService {
     if (!queryCheck.isAllowed) {
       console.warn('[halaltubeService] Query blocked by Halal Moderation:', queryCheck.reason);
       this.searchResults.set([]);
+      this.matchingChannels.set([]);
       this.isSearching.set(false);
       return;
     }
+
+    // Search for channels matching the query (Local subscriptions + Cached + Remote)
+    const cleanQ = query.trim().toLowerCase();
+    const foundChannels: { channelId: string; name: string; avatarUrl: string; subscriberCount?: string }[] = [];
+    const seenCh = new Set<string>();
+
+    for (const sub of this.subscriptions()) {
+      if (sub.channelTitle?.toLowerCase().includes(cleanQ)) {
+        if (!seenCh.has(sub.channelId)) {
+          seenCh.add(sub.channelId);
+          foundChannels.push({
+            channelId: sub.channelId,
+            name: sub.channelTitle,
+            avatarUrl: sub.avatarUrl || ''
+          });
+        }
+      }
+    }
+
+    for (const v of this.allHomeContent()) {
+      if (v.author?.toLowerCase().includes(cleanQ) && v.authorId) {
+        if (!seenCh.has(v.authorId)) {
+          seenCh.add(v.authorId);
+          foundChannels.push({
+            channelId: v.authorId,
+            name: v.author,
+            avatarUrl: v.channelAvatar || ''
+          });
+        }
+      }
+    }
+
+    this.matchingChannels.set([...foundChannels]);
+
+    // Query remote provider for channels asynchronously
+    this.youtubeProvider.searchChannels(query).then(remoteCh => {
+      if (Array.isArray(remoteCh) && remoteCh.length > 0) {
+        for (const ch of remoteCh) {
+          if (ch.channelId && !seenCh.has(ch.channelId)) {
+            seenCh.add(ch.channelId);
+            foundChannels.push({
+              channelId: ch.channelId,
+              name: ch.name || 'قناة',
+              avatarUrl: ch.avatarUrl || ''
+            });
+          }
+        }
+        this.matchingChannels.set([...foundChannels]);
+      }
+    }).catch(() => {});
 
     this.youtubeProvider.search(query, sp).subscribe({
       next: async (videos) => {
@@ -594,17 +653,17 @@ export class halaltubeService {
         // Filter through Halal moderation engine
         finalVideos = this.moderation.filterVideos(finalVideos);
 
-        // If still 0 results (all network providers down or filtered), fallback to matching local & curated fallback videos
+        // If still 0 results from network providers, search in locally loaded library, whitelist & fallback videos
         if (!finalVideos || finalVideos.length === 0) {
-          const cleanQ = query.trim().toLowerCase();
-          const allLocal = [...FALLBACK_VIDEOS, ...this.feedVideos()];
+          const allLocal = [...this.allHomeContent(), ...FALLBACK_VIDEOS];
           const matched = allLocal.filter(v => 
             v.title?.toLowerCase().includes(cleanQ) || 
             v.author?.toLowerCase().includes(cleanQ) ||
             v.category?.toLowerCase().includes(cleanQ)
           );
           
-          finalVideos = this.moderation.filterVideos(matched.length > 0 ? matched : FALLBACK_VIDEOS.slice(0, 6));
+          // Only show matched videos, never deceive the user with unrelated fallback videos
+          finalVideos = this.moderation.filterVideos(matched);
         }
 
         // Check which videos are already whitelisted
@@ -623,14 +682,14 @@ export class halaltubeService {
       },
       error: (err) => {
         console.error('[halaltubeService] All search providers failed:', err);
-        const cleanQ = query.trim().toLowerCase();
-        const allLocal = [...FALLBACK_VIDEOS, ...this.feedVideos()];
+        const allLocal = [...this.allHomeContent(), ...FALLBACK_VIDEOS];
         const matched = allLocal.filter(v => 
           v.title?.toLowerCase().includes(cleanQ) || 
           v.author?.toLowerCase().includes(cleanQ) ||
           v.category?.toLowerCase().includes(cleanQ)
         );
-        const safeResults = this.moderation.filterVideos(matched.length > 0 ? matched : FALLBACK_VIDEOS);
+        // Only return real matches, empty array if none found
+        const safeResults = this.moderation.filterVideos(matched);
         this.searchResults.set(safeResults);
         this.isSearching.set(false);
       }

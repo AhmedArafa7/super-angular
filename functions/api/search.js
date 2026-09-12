@@ -9,40 +9,56 @@ export async function onRequestGet(context) {
     });
   }
 
-  const pipedInstances = [
-    'https://pipedapi.kavin.rocks',
+  const filter = url.searchParams.get('filter') || 'all';
+
+  const instances = [
+    'https://pipedapi.adminforge.de',
     'https://pipedapi.drgns.space',
-    'https://piped-api.privacy.com.de'
+    'https://pipedapi.smnz.de',
+    'https://piped-api.garudalinux.org',
+    'https://inv.nadeko.net/api/v1',
+    'https://invidious.nerdvpn.de/api/v1'
   ];
 
   let data = null;
-  for (const instance of pipedInstances) {
+  for (const instance of instances) {
     try {
-      const resp = await fetch(`${instance}/search?q=${encodeURIComponent(query)}&filter=videos`, {
-        cf: { cacheTtl: 86400, cacheEverything: true }
+      const endpoint = instance.includes('invidious') || instance.includes('/api/v1')
+        ? `${instance}/search?q=${encodeURIComponent(query)}`
+        : `${instance}/search?q=${encodeURIComponent(query)}&filter=${encodeURIComponent(filter)}`;
+        
+      const resp = await fetch(endpoint, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+        cf: { cacheTtl: 3600, cacheEverything: true }
       });
       if (resp.ok) {
         const json = await resp.json();
         data = json.items || json;
-        break;
+        if (Array.isArray(data) && data.length > 0) {
+          break;
+        }
       }
     } catch (e) {
       continue;
     }
   }
 
+  const corsHeaders = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Cache-Control': 'public, max-age=3600, s-maxage=3600'
+  };
+
   if (data) {
     return new Response(JSON.stringify({ source: 'edge-cache', data }), {
       status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=86400, s-maxage=86400'
-      }
+      headers: corsHeaders
     });
   } else {
-    return new Response(JSON.stringify({ error: 'Search failed' }), {
-      status: 502,
-      headers: { 'Content-Type': 'application/json' }
+    return new Response(JSON.stringify({ error: 'Search failed', data: [] }), {
+      status: 200,
+      headers: corsHeaders
     });
   }
 }

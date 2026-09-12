@@ -52,7 +52,7 @@
   </div>
 
   <!-- Search Filters Bar (Visible when searching) -->
-  @if (halaltube.searchResults().length > 0 && halaltube.searchQuery()) {
+  @if ((halaltube.searchResults().length > 0 || halaltube.matchingChannels().length > 0 || halaltube.isSearching()) && halaltube.searchQuery()) {
     <div class="search-filters-bar hide-scrollbar bg-slate-950/90 backdrop-blur-md sticky top-[60px] z-10 py-2 px-6 flex gap-2 border-b border-white/5 overflow-x-auto shadow-sm">
       @for (filter of searchFilters; track filter.label) {
         <button
@@ -95,26 +95,53 @@
                 <div class="aspect-video bg-slate-900 rounded-xl"></div>
               }
             </div>
-          } @else if (halaltube.searchResults().length > 0) {
-            <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 gap-y-4 sm:gap-y-8">
-              @for (video of halaltube.searchResults(); track video.id) {
-                <div class="video-card group cursor-pointer relative flex flex-col gap-2 sm:gap-2.5 bg-slate-950/50 p-2 sm:p-3 rounded-xl sm:rounded-2xl border border-white/5 hover:border-indigo-500/30 transition-all duration-300" [routerLink]="['/stream/watch', video.id]">
-                  <div class="thumbnail-wrapper relative w-full aspect-video rounded-lg sm:rounded-xl overflow-hidden bg-slate-900 border border-white/5">
-                    <img crossorigin="anonymous" [src]="getSafeThumbnail(video)" (error)="onThumbnailError($event, video)" (load)="onThumbnailLoad($event, video)" [alt]="video.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
-                    <span class="absolute bottom-1.5 left-1.5 bg-black/80 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold">{{ video.duration || '12:00' }}</span>
-                  </div>
-                  <div class="flex flex-col gap-0.5 sm:gap-1">
-                    <h4 class="text-[11px] sm:text-xs font-bold text-white leading-snug line-clamp-2 group-hover:text-indigo-400 transition-colors">{{ video.title }}</h4>
-                    <p class="text-[10px] text-slate-400 truncate">{{ video.author }}</p>
-                  </div>
-                </div>
-              }
-            </div>
           } @else {
-            <div class="text-center py-16 text-slate-400">
-              <p class="text-sm font-bold">لم يتم العثور على نتائج مطابقة لـ "{{ halaltube.searchQuery() }}"</p>
-              <p class="text-xs text-slate-500 mt-1">جرب البحث بكلمات أخرى أو تحقق من الاتصال.</p>
-            </div>
+            <!-- Matching Channels Section -->
+            @if (halaltube.matchingChannels().length > 0) {
+              <div class="channel-results-section mb-6">
+                <h4 class="text-xs font-bold text-slate-400 mb-3 flex items-center gap-2">
+                  <span>القنوات المطابقة</span>
+                  <span class="text-[10px] bg-indigo-500/20 text-indigo-300 font-black px-2 py-0.5 rounded-full">{{ halaltube.matchingChannels().length }}</span>
+                </h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  @for (ch of halaltube.matchingChannels(); track ch.channelId) {
+                    <div class="flex items-center gap-3 p-3 bg-slate-950/60 border border-white/5 hover:border-indigo-500/40 rounded-2xl transition-all cursor-pointer group" [routerLink]="['/stream/channel', ch.channelId]">
+                      <img [src]="ch.avatarUrl || getAvatarUrl({ author: ch.name })" class="w-12 h-12 rounded-full object-cover border border-white/10 shrink-0 group-hover:scale-105 transition-transform" [alt]="ch.name">
+                      <div class="flex-1 min-w-0">
+                        <h4 class="text-xs sm:text-sm font-bold text-white truncate group-hover:text-indigo-400 transition-colors">{{ ch.name }}</h4>
+                        <p class="text-[10px] text-slate-400">قناة • اضغط لفتح المحتوى</p>
+                      </div>
+                      <button class="px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 text-xs font-bold shrink-0 transition-all">
+                        عرض
+                      </button>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Video Results Grid -->
+            @if (halaltube.searchResults().length > 0) {
+              <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 gap-y-4 sm:gap-y-8">
+                @for (video of halaltube.searchResults(); track video.id) {
+                  <div class="video-card group cursor-pointer relative flex flex-col gap-2 sm:gap-2.5 bg-slate-950/50 p-2 sm:p-3 rounded-xl sm:rounded-2xl border border-white/5 hover:border-indigo-500/30 transition-all duration-300" [routerLink]="['/stream/watch', video.id]">
+                    <div class="thumbnail-wrapper relative w-full aspect-video rounded-lg sm:rounded-xl overflow-hidden bg-slate-900 border border-white/5">
+                      <img crossorigin="anonymous" [src]="getSafeThumbnail(video)" (error)="onThumbnailError($event, video)" (load)="onThumbnailLoad($event, video)" [alt]="video.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                      <span class="absolute bottom-1.5 left-1.5 bg-black/80 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold">{{ video.duration || '12:00' }}</span>
+                    </div>
+                    <div class="flex flex-col gap-0.5 sm:gap-1">
+                      <h4 class="text-[11px] sm:text-xs font-bold text-white leading-snug line-clamp-2 group-hover:text-indigo-400 transition-colors">{{ video.title }}</h4>
+                      <p class="text-[10px] text-slate-400 truncate">{{ video.author }}</p>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else if (halaltube.matchingChannels().length === 0) {
+              <div class="text-center py-16 text-slate-400">
+                <p class="text-sm font-bold">لم يتم العثور على نتائج مطابقة لـ "{{ halaltube.searchQuery() }}"</p>
+                <p class="text-xs text-slate-500 mt-1">جرب البحث بكلمات أخرى أو تحقق من كتابة الاسم بالشكل الصحيح.</p>
+              </div>
+            }
           }
         </div>
       }
