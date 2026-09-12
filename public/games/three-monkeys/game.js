@@ -5,27 +5,35 @@ function showScreen(id) {
     $(id).classList.add('active');
 }
 
-// Variables
+// Variables & URL Launch Parameters
+const urlParams = new URLSearchParams(window.location.search);
+const launchMode = urlParams.get('mode') || 'local';
+const launchRoom = (urlParams.get('room') || '').trim().toUpperCase();
+const launchRole = urlParams.get('role') || ''; // 'host' or 'guest'
+
+let isLocalMode = (launchMode === 'local');
 let myPeer = null;
 let myId = null;
-let myName = localStorage.getItem('arcade_player_name') || '???? ???????';
-
-window.addEventListener('DOMContentLoaded', () => {
-    const nameDisplay = $('player-name-text');
-    if (nameDisplay) {
-        nameDisplay.innerText = myName;
-    }
-    const nameInput = $('player-name');
-    if (nameInput) {
-        nameInput.value = myName;
-    }
-});
+let myName = localStorage.getItem('arcade_player_name') || 'اللاعب';
 
 let myRole = ''; // 'blind', 'deaf', 'mute'
 let isHost = false;
 let hostConn = null;
 let guestConns = {}; // { peerId: DataConnection }
 let myStream = null;
+
+const PEER_CONFIG = {
+    debug: 1,
+    config: {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' }
+        ]
+    }
+};
 
 // Start directly in lobby
 showScreen('lobby-screen');
@@ -230,17 +238,16 @@ let audioElements = [];
 
 // --- Input Validation ---
 function validateName(name) {
-    const trimmed = name.trim();
-    if (!trimmed) return { valid: false, error: '????? ?????' };
-    if (trimmed.length > 20) return { valid: false, error: '????? ???? ???? (20 ??? ??? ????)' };
-    if (!/^[\u0600-\u06FFa-zA-Z0-9\s_-]+$/.test(trimmed)) return { valid: false, error: '????? ????? ??? ???? ??? ??????' };
+    const trimmed = (name || '').trim();
+    if (!trimmed) return { valid: false, error: 'الاسم مطلوب' };
+    if (trimmed.length > 20) return { valid: false, error: 'الاسم طويل جداً (20 حرف كحد أقصى)' };
     return { valid: true, value: trimmed };
 }
 
 function validateRoomCode(code) {
-    const trimmed = code.trim().toUpperCase();
-    if (!trimmed) return { valid: false, error: '??? ?????? ?????' };
-    if (!/^[A-Z0-9]{6}$/.test(trimmed)) return { valid: false, error: '??? ?????? ??? ?? ???? 6 ????/?????' };
+    const trimmed = (code || '').trim().toUpperCase();
+    if (!trimmed) return { valid: false, error: 'كود الغرفة مطلوب' };
+    if (!/^[A-Z0-9_-]{4,12}$/.test(trimmed)) return { valid: false, error: 'كود الغرفة يجب أن يتكون من 4 إلى 12 حرف أو رقم' };
     return { valid: true, value: trimmed };
 }
 
@@ -258,66 +265,85 @@ function clearError(elementId) {
     if (el) el.style.display = 'none';
 }
 
-// --- Init & Lobby ---
-$('host-btn').onclick = () => {
-    const validation = validateName($('player-name').value);
-    if (!validation.valid) {
-        showError('join-error', validation.error);
-        return;
-    }
-    myName = validation.value;
-    clearError('join-error');
+// --- Local Mode ---
+window.startLocalGame = function() {
+    isLocalMode = true;
     isHost = true;
-    $('host-btn').disabled = true;
-    $('host-btn').innerText = '???? ???????...';
-    
-    const myRoomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-    
-    const peerId = 'SUPMONKEY_' + myRoomCode;
-    myPeer = new Peer(peerId);
-    
-    let connectionTimeout = null;
-    const CONNECTION_TIMEOUT = 10000;
-    
-    connectionTimeout = setTimeout(() => {
-        if (!myId && isHost) {
-            alert('????? ???? ???????. ????? ????? ????????.');
-            cleanup();
-            showScreen('lobby-screen');
-            $('host-btn').disabled = false;
-            $('host-btn').innerText = '????? ???? (????)';
+    myRole = 'deaf';
+    gameState.players = [
+        { id: 'local_deaf', name: myName + ' (الأصم 🙉)', role: 'deaf' },
+        { id: 'local_mute', name: 'اللاعب 2 (الأبكم 🙊)', role: 'mute' },
+        { id: 'local_blind', name: 'اللاعب 3 (الأعمى 🙈)', role: 'blind' }
+    ];
+    generateBomb();
+    gameState.phase = 'playing';
+    renderGameUI();
+};
+
+window.setLocalRole = function(role) {
+    if (!isLocalMode) return;
+    myRole = role;
+    ['deaf', 'mute', 'blind'].forEach(r => {
+        const b = $('btn-local-' + r);
+        if (b) {
+            if (r === role) {
+                b.style.background = '#3b82f6';
+                b.style.color = '#ffffff';
+            } else {
+                b.style.background = 'rgba(255,255,255,0.1)';
+                b.style.color = '#cbd5e1';
+            }
         }
-    }, CONNECTION_TIMEOUT);
-    
-    myPeer.on('disconnected', () => {
-        console.warn('?? ????? ??????? ????????. ???? ?????? ????? ???????...');
-        attemptReconnection();
     });
+    renderGameUI();
+};
+
+// --- Networking: Host & Guest ---
+function setupHostState(roomCode) {
+    gameState.players = [{ id: myId, name: myName, role: '' }];
+    showScreen('room-screen');
+    const box = $('room-id-box');
+    if (box) box.classList.remove('hidden');
+    const disp = $('room-id-display');
+    if (disp) disp.innerText = roomCode;
+    updateLobbyUI();
+}
+
+function initHostRoom(customRoomCode) {
+    isLocalMode = false;
+    isHost = true;
+    const roomCode = customRoomCode ? customRoomCode.trim().toUpperCase() : Math.random().toString(36).substring(2, 8).toUpperCase();
+    const peerId = 'SUPMONKEY_' + roomCode;
     
-    myPeer.on('close', () => {
-        console.warn('?? ????? ???????.');
-    });
-    
-    myPeer.on('error', (err) => {
-        console.error('Peer error:', err);
-        if (connectionTimeout) clearTimeout(connectionTimeout);
-        cleanup();
-        showScreen('lobby-screen');
-        $('host-btn').disabled = false;
-        $('host-btn').innerText = '????? ???? (????)';
-        alert('??? ??? ?? ??????? ????????: ' + err.message);
-    });
-    
+    if ($('host-btn')) {
+        $('host-btn').disabled = true;
+        $('host-btn').innerText = 'جاري إنشاء الغرفة...';
+    }
+
+    if (myPeer && !myPeer.destroyed) {
+        myPeer.destroy();
+    }
+
+    myPeer = new Peer(peerId, PEER_CONFIG);
+
+    let connectionTimeout = setTimeout(() => {
+        if (!myId && isHost) {
+            console.warn('Peer connection timeout, activating host room state anyway.');
+            myId = peerId;
+            setupHostState(roomCode);
+        }
+    }, 12000);
+
     myPeer.on('open', id => {
-        if (connectionTimeout) clearTimeout(connectionTimeout);
+        clearTimeout(connectionTimeout);
         myId = id;
-        gameState.players.push({ id: myId, name: myName, role: '' });
-        showScreen('room-screen');
-        $('room-id-box').classList.remove('hidden');
-        $('room-id-display').innerText = myRoomCode;
-        updateLobbyUI();
+        setupHostState(roomCode);
+        if ($('host-btn')) {
+            $('host-btn').disabled = false;
+            $('host-btn').innerText = 'إنشاء غرفة (مضيف)';
+        }
     });
-    
+
     myPeer.on('connection', conn => {
         if (gameState.phase !== 'lobby' && gameState.phase !== 'roles') {
             conn.close();
@@ -333,36 +359,69 @@ $('host-btn').onclick = () => {
             broadcastState();
         });
     });
-    
-    setupMediaCalls();
-};
 
- $('join-btn').onclick = () => {
-    const codeValidation = validateRoomCode($('join-id').value);
-    if (!codeValidation.valid) {
-        showError('join-error', codeValidation.error);
-        return;
+    myPeer.on('disconnected', () => {
+        console.warn('انقطع الاتصال بخادم الإشارات. جاري محاولة إعادة الاتصال...');
+        if (myPeer && !myPeer.destroyed) myPeer.reconnect();
+    });
+
+    myPeer.on('error', (err) => {
+        console.warn('PeerJS host error:', err);
+        clearTimeout(connectionTimeout);
+        if (!myId) {
+            myId = peerId;
+            setupHostState(roomCode);
+        }
+    });
+
+    setupMediaCalls();
+}
+
+function initGuestRoom(targetRoomCode) {
+    isLocalMode = false;
+    isHost = false;
+    const roomCode = targetRoomCode.trim().toUpperCase();
+    const targetPeerId = 'SUPMONKEY_' + roomCode;
+
+    if ($('join-btn')) {
+        $('join-btn').disabled = true;
+        $('join-btn').innerText = 'جاري الانضمام...';
     }
-    const hostId = codeValidation.value;
-    const validation = validateName($('player-name').value);
-    if (!validation.valid) {
-        showError('join-error', validation.error);
-        return;
+
+    if (myPeer && !myPeer.destroyed) {
+        myPeer.destroy();
     }
-    myName = validation.value;
-    clearError('join-error');
-    
-    $('join-btn').disabled = true;
-    $('join-btn').innerText = '???? ????????...';
-    
-    myPeer = new Peer();
+
+    myPeer = new Peer(undefined, PEER_CONFIG);
+
+    let joinTimeout = setTimeout(() => {
+        if (!hostConn || !hostConn.open) {
+            if ($('join-btn')) {
+                $('join-btn').disabled = false;
+                $('join-btn').innerText = 'انضمام';
+            }
+            showError('join-error', 'تعذر الاتصال بالمضيف. تأكد من أن المضيف متواجد وبنفس كود الغرفة.');
+        }
+    }, 15000);
+
     myPeer.on('open', id => {
         myId = id;
-        hostConn = myPeer.connect('SUPMONKEY_' + hostId);
+        hostConn = myPeer.connect(targetPeerId, { reliable: true });
+
         hostConn.on('open', () => {
+            clearTimeout(joinTimeout);
             showScreen('room-screen');
             hostConn.send({ type: 'JOIN', name: myName, id: myId });
+            const box = $('room-id-box');
+            if (box) box.classList.remove('hidden');
+            const disp = $('room-id-display');
+            if (disp) disp.innerText = roomCode;
+            if ($('join-btn')) {
+                $('join-btn').disabled = false;
+                $('join-btn').innerText = 'انضمام';
+            }
         });
+
         hostConn.on('data', data => {
             if (data.type === 'STATE_UPDATE') {
                 gameState = data.state;
@@ -370,13 +429,33 @@ $('host-btn').onclick = () => {
                 checkPhaseChange();
             }
         });
-        hostConn.on('error', () => alert('??? ?? ??????? ???????'));
+
+        hostConn.on('error', (err) => {
+            clearTimeout(joinTimeout);
+            console.error('Guest connection error:', err);
+            showError('join-error', 'خطأ في الاتصال بالمضيف. تأكد من صحة الكود.');
+            if ($('join-btn')) {
+                $('join-btn').disabled = false;
+                $('join-btn').innerText = 'انضمام';
+            }
+        });
     });
-    
+
+    myPeer.on('error', (err) => {
+        clearTimeout(joinTimeout);
+        console.warn('Guest peer error:', err);
+        showError('join-error', 'خطأ في الاتصال: ' + (err.message || ''));
+        if ($('join-btn')) {
+            $('join-btn').disabled = false;
+            $('join-btn').innerText = 'انضمام';
+        }
+    });
+
     setupMediaCalls();
-};
+}
 
 function setupMediaCalls() {
+    if (isLocalMode) return;
     myPeer.on('call', call => {
         call.on('stream', remoteStream => {
             addAudioStream(remoteStream);
@@ -390,9 +469,11 @@ function setupMediaCalls() {
 }
 
 function broadcastState() {
-    if (!isHost) return;
+    if (!isHost || isLocalMode) return;
     Object.values(guestConns).forEach(conn => {
-        conn.send({ type: 'STATE_UPDATE', state: gameState });
+        if (conn && conn.open) {
+            conn.send({ type: 'STATE_UPDATE', state: gameState });
+        }
     });
     updateLobbyUI();
     checkPhaseChange();
@@ -402,7 +483,7 @@ function handleClientData(peerId, data) {
     if (data.type === 'JOIN') {
         if (gameState.players.length >= 3) return; // Room full
         gameState.players.push({ id: data.id, name: data.name, role: '' });
-        if (gameState.players.length === 3) {
+        if (gameState.players.length >= 2) {
             gameState.phase = 'roles';
         }
         broadcastState();
@@ -446,12 +527,14 @@ function updateLobbyUI() {
     if (gameState.phase !== 'lobby' && gameState.phase !== 'roles') return;
     
     const list = $('players-list');
-    list.innerHTML = '';
-    gameState.players.forEach(p => {
-        const li = document.createElement('li');
-        li.innerText = `${p.name} ${p.id === myId ? '(???)' : ''}`;
-        list.appendChild(li);
-    });
+    if (list) {
+        list.innerHTML = '';
+        gameState.players.forEach(p => {
+            const li = document.createElement('li');
+            li.innerText = `${p.name} ${p.id === myId ? '(أنت)' : ''}`;
+            list.appendChild(li);
+        });
+    }
     
     if (gameState.phase === 'roles') {
         ['deaf', 'blind', 'mute'].forEach(role => {
@@ -462,24 +545,28 @@ function updateLobbyUI() {
             
             const p = gameState.players.find(x => x.role === role);
             if (p) {
-                nameDiv.innerText = p.name;
-                card.classList.add('selected');
-                readyDiv.innerText = '? ????';
-                if (p.id === myId) {
-                    btn.innerText = '????? (CANCEL)';
-                    btn.classList.add('my-role');
-                    btn.disabled = false;
-                } else {
-                    btn.innerText = '????? (TAKEN)';
-                    btn.classList.remove('my-role');
-                    btn.disabled = true;
+                if (nameDiv) nameDiv.innerText = p.name;
+                if (card) card.classList.add('selected');
+                if (readyDiv) readyDiv.innerText = '✓ جاهز';
+                if (btn) {
+                    if (p.id === myId) {
+                        btn.innerText = 'إلغاء (CANCEL)';
+                        btn.classList.add('my-role');
+                        btn.disabled = false;
+                    } else {
+                        btn.innerText = 'محجوز (TAKEN)';
+                        btn.classList.remove('my-role');
+                        btn.disabled = true;
+                    }
                 }
             } else {
-                nameDiv.innerText = '--';
-                card.classList.remove('selected');
-                btn.innerText = '??????';
-                btn.classList.remove('my-role');
-                btn.disabled = false;
+                if (nameDiv) nameDiv.innerText = '--';
+                if (card) card.classList.remove('selected');
+                if (btn) {
+                    btn.innerText = 'اختيار';
+                    btn.classList.remove('my-role');
+                    btn.disabled = false;
+                }
             }
         });
         
@@ -488,17 +575,20 @@ function updateLobbyUI() {
             const hasDeaf = gameState.players.find(p => p.role === 'deaf');
             const hasMute = gameState.players.find(p => p.role === 'mute');
             
-            if (hasBlind && hasDeaf && hasMute) {
-                $('start-game-btn').disabled = false;
-                $('start-game-btn').style.display = 'block';
-            } else {
-                $('start-game-btn').disabled = true;
-                $('start-game-btn').style.display = 'none';
+            const startBtn = $('start-game-btn');
+            if (startBtn) {
+                if ((hasBlind && hasDeaf && hasMute) || isLocalMode || gameState.players.length >= 2) {
+                    startBtn.disabled = false;
+                    startBtn.style.display = 'block';
+                } else {
+                    startBtn.disabled = true;
+                    startBtn.style.display = 'none';
+                }
             }
-            $('waiting-msg').classList.add('hidden');
+            if ($('waiting-msg')) $('waiting-msg').classList.add('hidden');
         } else {
-            $('start-game-btn').style.display = 'none';
-            $('waiting-msg').classList.remove('hidden');
+            if ($('start-game-btn')) $('start-game-btn').style.display = 'none';
+            if ($('waiting-msg')) $('waiting-msg').classList.remove('hidden');
         }
     }
     
@@ -524,7 +614,7 @@ window.selectMyRole = function(role) {
             broadcastState();
             updateLobbyUI();
         }
-    } else {
+    } else if (hostConn && hostConn.open) {
         hostConn.send({ type: 'SELECT_ROLE', role: role, id: myId });
     }
 };
@@ -534,27 +624,32 @@ $('start-game-btn').onclick = () => {
     generateBomb();
     gameState.phase = 'playing';
     broadcastState();
-    startAudioNetworking();
+    if (!isLocalMode) startAudioNetworking();
+    renderGameUI();
 };
 
 $('replay-btn').onclick = () => {
-    if (isHost) {
+    if (isLocalMode || isHost) {
         generateBomb();
         gameState.phase = 'playing';
-        broadcastState();
-    } else {
+        if (!isLocalMode) broadcastState();
+        renderGameUI();
+    } else if (hostConn && hostConn.open) {
         hostConn.send({ type: 'REPLAY' });
     }
 };
 
 $('lobby-btn').onclick = () => {
-    if (isHost) {
+    if (isLocalMode) {
+        showScreen('lobby-screen');
+        gameState.phase = 'lobby';
+    } else if (isHost) {
         gameState.phase = 'roles';
         gameState.resultMsg = '';
         gameState.loseReason = '';
         gameState.players.forEach(p => p.role = '');
         broadcastState();
-    } else {
+    } else if (hostConn && hostConn.open) {
         hostConn.send({ type: 'GO_TO_LOBBY' });
     }
 };
@@ -562,9 +657,10 @@ $('lobby-btn').onclick = () => {
 function checkPhaseChange() {
     if (gameState.phase === 'playing') {
         const me = gameState.players.find(p => p.id === myId);
-        myRole = me ? me.role : '';
+        if (me && me.role) myRole = me.role;
+        else if (isLocalMode && !myRole) myRole = 'deaf';
         
-        if (!isHost && myStream === null && myRole !== '') { // guest needs to connect audio
+        if (!isHost && myStream === null && myRole !== '' && !isLocalMode) { // guest needs to connect audio
             startAudioNetworking();
         }
         
@@ -579,8 +675,8 @@ function checkPhaseChange() {
 
 // --- Audio Networking ---
 async function startAudioNetworking() {
+    if (isLocalMode) return;
     if (myRole === 'mute') {
-        // Mute monkey doesn't speak. Just receives.
         callOthers();
         return;
     }
@@ -589,8 +685,7 @@ async function startAudioNetworking() {
         myStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         callOthers();
     } catch(e) {
-        console.error('Failed to access mic', e);
-        alert('??? ??? ?? ?????? ??????????. ???? ?????? ?? ????.');
+        console.warn('Mic access skipped or failed:', e);
     }
 }
 
@@ -906,8 +1001,11 @@ function checkWin() {
 }
 
 function sendAction(action) {
-    if (isHost) handleGameAction(myId, action);
-    else hostConn.send({ type: 'ACTION', action: action });
+    if (isLocalMode || isHost) {
+        handleGameAction(myId || 'local_player', action);
+    } else if (hostConn && hostConn.open) {
+        hostConn.send({ type: 'ACTION', action: action });
+    }
 }
 
 // --- Rendering ---
@@ -921,8 +1019,14 @@ function renderGameUI() {
     $('timer-display').innerText = `${m}:${s}`;
     
     let str = '';
-    for(let i=0; i<gameState.strikes; i++) str += '?';
+    for(let i=0; i<gameState.strikes; i++) str += '❌ ';
     $('strikes-display').innerText = str;
+
+    // Toggle local role switcher
+    const localSwitcher = $('local-role-switcher');
+    if (localSwitcher) {
+        localSwitcher.style.display = isLocalMode ? 'flex' : 'none';
+    }
     
     // Hide all views, show mine
     $('blind-view').classList.add('hidden');
@@ -1188,6 +1292,77 @@ function cleanup() {
     gameState.resultMsg = '';
 }
 
-// Initial
-showScreen('lobby-screen');
+// Initial Setup and Arena Launch handling
+window.addEventListener('DOMContentLoaded', () => {
+    const nameDisplay = $('player-name-text');
+    if (nameDisplay) {
+        nameDisplay.innerText = myName;
+    }
+    const nameInput = $('player-name');
+    if (nameInput) {
+        nameInput.value = myName;
+    }
+
+    // Connect host button
+    const hostBtn = $('host-btn');
+    if (hostBtn) {
+        hostBtn.onclick = () => {
+            const validation = validateName($('player-name').value);
+            if (!validation.valid) {
+                showError('join-error', validation.error);
+                return;
+            }
+            myName = validation.value;
+            clearError('join-error');
+            initHostRoom();
+        };
+    }
+
+    // Connect join button
+    const joinBtn = $('join-btn');
+    if (joinBtn) {
+        joinBtn.onclick = () => {
+            const codeValidation = validateRoomCode($('join-id').value);
+            if (!codeValidation.valid) {
+                showError('join-error', codeValidation.error);
+                return;
+            }
+            const nameValidation = validateName($('player-name').value);
+            if (!nameValidation.valid) {
+                showError('join-error', nameValidation.error);
+                return;
+            }
+            myName = nameValidation.value;
+            clearError('join-error');
+            initGuestRoom(codeValidation.value);
+        };
+    }
+
+    // Auto-launch based on Arcade Arena parameters
+    if (launchMode === 'local') {
+        startLocalGame();
+    } else if (launchMode === 'private') {
+        if (launchRole === 'host' && launchRoom) {
+            initHostRoom(launchRoom);
+        } else if (launchRole === 'guest' && launchRoom) {
+            initGuestRoom(launchRoom);
+        } else {
+            showScreen('lobby-screen');
+            const glossy = $('glossy-options');
+            const roomActions = $('room-actions');
+            if (glossy) glossy.style.display = 'none';
+            if (roomActions) roomActions.style.display = 'block';
+        }
+    } else if (launchMode === 'pro') {
+        const proRoomCode = launchRoom || 'PRO' + Math.random().toString(36).substring(2, 6).toUpperCase();
+        if (launchRole === 'guest') {
+            initGuestRoom(proRoomCode);
+        } else {
+            initHostRoom(proRoomCode);
+        }
+    } else {
+        showScreen('lobby-screen');
+    }
+});
+
 if (window.parent) window.parent.postMessage({ type: 'ARCADE_GAME_START', gameId: 'three-monkeys' }, '*');

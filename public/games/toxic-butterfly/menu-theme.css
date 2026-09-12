@@ -1,0 +1,152 @@
+/* ==========================================================================
+   Toxic Butterfly: Bear Hunt (صائد الفراشات السامة 🐻🦋☠️) Menu Theme
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
+
+#arena-menu-overlay {
+    font-family: 'Tajawal', system-ui, -apple-system, sans-serif !important;
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: radial-gradient(circle at center, rgba(6, 78, 59, 0.45) 0%, rgba(2, 44, 34, 0.85) 60%, rgba(2, 6, 23, 0.95) 100%) !important;
+    direction: rtl !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+}
+
+/* Floating butterflies & bear paw animation overlay */
+#arena-menu-overlay::before {
+    content: "🐻   🦋   ☠️   🍃   ✨   🍯";
+    position: absolute;
+    inset: 0;
+    font-size: 3.2rem;
+    color: rgba(52, 211, 153, 0.2);
+    letter-spacing: 50px;
+    word-spacing: 80px;
+    line-height: 130px;
+    pointer-events: none;
+    user-select: none;
+    animation: floatingButterflies 16s linear infinite;
+    z-index: 1;
+}
+
+@keyframes floatingButterflies {
+    0% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-30px) rotate(3deg); }
+    100% { transform: translateY(0) rotate(0deg); }
+}
+
+/* Menu Container Glass Panel with Toxic Forest Theme */
+#arena-menu-container {
+    display: flex !important;
+    flex-direction: column !important;
+    background: linear-gradient(145deg, rgba(6, 78, 59, 0.88), rgba(15, 23, 42, 0.92)) !important;
+    backdrop-filter: blur(25px) !important;
+    -webkit-backdrop-filter: blur(25px) !important;
+    border: 2px solid #10b981 !important;
+    border-radius: 36px !important;
+    padding: 2.2rem 1.8rem !important;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), inset 0 0 35px rgba(16, 185, 129, 0.25) !important;
+    z-index: 10 !important;
+    position: relative !important;
+}
+
+/* Badge on top of container */
+#arena-menu-container::before {
+    content: "🐻 TOXIC FLUTTER: BEAR HUNT 🦋";
+    position: absolute;
+    top: -14px;
+    right: 25px;
+    background: linear-gradient(135deg, #059669, #10b981, #7c3aed);
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 900;
+    padding: 4px 16px;
+    border-radius: 999px;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.7);
+    letter-spacing: 0.5px;
+}
+
+/* Buttons */
+#arena-menu-container .arena-btn {
+    font-family: 'Tajawal', sans-serif !important;
+    font-weight: 900 !important;
+    letter-spacing: 0 !important;
+    border-radius: 24px !important;
+    height: 3.8rem !important;
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+#arena-menu-container .arena-btn span {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+    font-family: 'Tajawal', sans-serif !important;
+    font-size: 1.15rem !important;
+    font-weight: 900 !important;
+    color: #ffffff !important;
+    width: 100% !important;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5) !important;
+}
+
+/* 1. PLAY (ROOM) -> إنشاء غرفة وتحدي صديق */
+#arena-menu-container .arena-btn.btn-play {
+    background: linear-gradient(135deg, #059669, #047857) !important;
+    border-bottom: 6px solid #065f46 !important;
+    box-shadow: 0 8px 20px rgba(5, 150, 105, 0.4) !important;
+}
+#arena-menu-container .arena-btn.btn-play:hover {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    transform: translateY(-3px) scale(1.02) !important;
+    box-shadow: 0 12px 25px rgba(16, 185, 129, 0.6) !important;
+}
+
+/* 2. JOIN ROOM -> انضمام بكود الغرفة */
+#arena-menu-container .arena-btn.btn-join {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
+    border-bottom: 6px solid #5b21b6 !important;
+    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.4) !important;
+}
+#arena-menu-container .arena-btn.btn-join:hover {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+    transform: translateY(-3px) scale(1.02) !important;
+    box-shadow: 0 12px 25px rgba(139, 92, 246, 0.6) !important;
+}
+
+/* 3. LOCAL PLAY -> اللعب محلياً (نفس الجهاز 4-6 لاعبين) */
+#arena-menu-container .arena-btn.btn-local {
+    background: linear-gradient(135deg, #d97706, #b45309) !important;
+    border-bottom: 6px solid #92400e !important;
+    box-shadow: 0 8px 20px rgba(217, 119, 6, 0.4) !important;
+}
+#arena-menu-container .arena-btn.btn-local:hover {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    transform: translateY(-3px) scale(1.02) !important;
+    box-shadow: 0 12px 25px rgba(245, 158, 11, 0.6) !important;
+}
+
+/* 4. PRO ONLINE MATCHMAKING -> لعب أونلاين Pro */
+#arena-menu-container .arena-btn.btn-online {
+    background: linear-gradient(135deg, #eab308, #ca8a04) !important;
+    border-bottom: 6px solid #a16207 !important;
+    box-shadow: 0 8px 20px rgba(234, 179, 8, 0.4) !important;
+}
+#arena-menu-container .arena-btn.btn-online:hover {
+    background: linear-gradient(135deg, #facc15, #eab308) !important;
+    transform: translateY(-3px) scale(1.02) !important;
+    box-shadow: 0 12px 25px rgba(250, 204, 21, 0.6) !important;
+}
+
+/* 5. QUIT -> خروج */
+#arena-menu-container .arena-btn.btn-quit {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-bottom: 4px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+#arena-menu-container .arena-btn.btn-quit:hover {
+    background: rgba(239, 68, 68, 0.25) !important;
+    border-bottom-color: #ef4444 !important;
+    transform: translateY(-2px) !important;
+}

@@ -235,6 +235,20 @@ export class ArcadeService {
       maxPlayers: 3
     },
     {
+      id: 'toxic-butterfly',
+      category: 'reflex_focus',
+      categories: ['reflex_focus', 'fast_paced', 'mental', 'multiplayer_party'],
+      title: 'صائد الفراشات السامة 🐻🦋☠️',
+      description: 'لعبة الدقة والملاحظة وسرعة البديهة! ساعد الدب المحقق في الغابة السحرية على تمييز واصطياد الفراشة السامة التي تتحرك بحركات غريبة وتطلق شرارات مشعة وتجنب الفراشات البريئة!',
+      thumbnail: 'assets/images/toxic-butterfly-thumb.png',
+      genre: 'Reflex & Observation',
+      platforms: ['browser', 'android', 'pc'],
+      localUrl: '/games/toxic-butterfly/index.html',
+      status: 'available',
+      hasCustomMenu: false,
+      maxPlayers: 6
+    },
+    {
       id: 'tank-battle',
       category: 'general',
       categories: ['action_3d', 'fast_paced', 'multiplayer_party'],

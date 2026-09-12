@@ -1,0 +1,447 @@
+/* ==========================================================================
+   Toxic Butterfly: Bear Hunt (صائد الفراشات السامة 🐻🦋☠️) Main Stylesheet
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Outfit:wght@400;600;800;900&display=swap');
+
+:root {
+    --primary: #10b981;
+    --primary-glow: rgba(16, 185, 129, 0.4);
+    --toxic: #a855f7;
+    --toxic-neon: #c084fc;
+    --toxic-glow: rgba(168, 85, 247, 0.5);
+    --gold: #fbbf24;
+    --gold-glow: rgba(251, 191, 36, 0.4);
+    --danger: #ef4444;
+    --bg-dark: #03120e;
+    --card-bg: rgba(6, 35, 26, 0.88);
+    --card-border: rgba(16, 185, 129, 0.35);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--bg-dark);
+    font-family: 'Tajawal', sans-serif;
+    color: #ffffff;
+    direction: rtl;
+}
+
+/* Background Image Layer */
+.bg-layer {
+    position: fixed;
+    inset: 0;
+    background: url('bg.png') center/cover no-repeat;
+    filter: brightness(0.4) saturate(1.2);
+    z-index: 0;
+    pointer-events: none;
+    transition: filter 0.5s ease;
+}
+
+/* Screen Containers */
+.screen {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    padding: 1.5rem;
+}
+
+.screen.active {
+    display: flex;
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* Glass Card */
+.glass-card {
+    background: var(--card-bg);
+    border: 2px solid var(--card-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 28px;
+    padding: 2.2rem 2.5rem;
+    max-width: 540px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 40px var(--primary-glow);
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.badge-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #059669, #10b981);
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 800;
+    padding: 6px 16px;
+    border-radius: 999px;
+    margin-bottom: 1rem;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.6);
+}
+
+.game-title {
+    font-size: 2.4rem;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 4px 15px rgba(0,0,0,0.8), 0 0 25px var(--primary-glow);
+}
+
+.subtitle {
+    font-size: 1rem;
+    color: #a7f3d0;
+    line-height: 1.6;
+    margin-bottom: 1.8rem;
+    font-weight: 500;
+}
+
+/* Standardized Game Modes Buttons List */
+.modes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 1.5rem;
+}
+
+.mode-btn {
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-align: right;
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+
+.mode-btn:hover {
+    transform: translateY(-2px);
+}
+
+.mode-btn .icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.mode-btn .details {
+    flex: 1;
+}
+
+.mode-btn .mode-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-bottom: 3px;
+}
+
+.mode-btn .mode-desc {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+/* 1. Local Play */
+.mode-btn.local {
+    background: linear-gradient(135deg, #059669, #047857);
+    border-color: #34d399;
+    box-shadow: 0 8px 20px rgba(5, 150, 105, 0.35);
+}
+.mode-btn.local:hover {
+    background: linear-gradient(135deg, #10b981, #059669);
+    box-shadow: 0 12px 25px rgba(16, 185, 129, 0.5);
+}
+
+/* 2. Private Room */
+.mode-btn.room {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    border-color: #a78bfa;
+    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.35);
+}
+.mode-btn.room:hover {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    box-shadow: 0 12px 25px rgba(139, 92, 246, 0.5);
+}
+
+/* 3. Pro Mode */
+.mode-btn.pro {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.3));
+    border-color: #fbbf24;
+    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.25);
+}
+.mode-btn.pro:hover {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(217, 119, 6, 0.45));
+    box-shadow: 0 12px 25px rgba(245, 158, 11, 0.4);
+}
+
+.pro-badge {
+    background: #fbbf24;
+    color: #000;
+    font-size: 0.7rem;
+    font-weight: 900;
+    padding: 3px 8px;
+    border-radius: 6px;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+}
+
+/* HUD Overlay */
+.hud {
+    position: absolute;
+    top: 12px;
+    left: 16px;
+    right: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 20;
+    pointer-events: none;
+}
+
+.hud-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.hud-pill {
+    pointer-events: auto;
+    background: rgba(6, 35, 26, 0.85);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(12px);
+    border-radius: 999px;
+    padding: 8px 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.hud-val {
+    color: #34d399;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 900;
+    font-size: 1.15rem;
+}
+
+.lives-container {
+    color: #ef4444;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+}
+
+/* Radar & Detective Tip Bar */
+.detective-tip {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(6, 35, 26, 0.9);
+    border: 1px solid rgba(168, 85, 247, 0.4);
+    padding: 8px 24px;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #c084fc;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 20;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 20px var(--toxic-glow);
+    animation: tipPulse 2.5s infinite;
+    pointer-events: none;
+    text-align: center;
+}
+
+@keyframes tipPulse {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.02); }
+}
+
+/* Canvas Viewport */
+#game-canvas {
+    width: 100vw;
+    height: 100vh;
+    display: block;
+    cursor: crosshair;
+}
+
+/* Buttons */
+.btn {
+    font-family: 'Tajawal', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    padding: 12px 28px;
+    border-radius: 16px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+}
+.btn-primary:hover {
+    background: linear-gradient(135deg, #34d399, #10b981);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px rgba(16, 185, 129, 0.6);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+/* Modals */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(12px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 1.5rem;
+}
+
+.modal-overlay.active {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Player selection grid in Local Play */
+.player-select-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 1.2rem 0;
+}
+
+.bear-avatar-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.bear-avatar-card:hover {
+    border-color: #34d399;
+    transform: translateY(-2px);
+}
+
+.bear-avatar-card.selected {
+    border-color: #34d399;
+    background: rgba(16, 185, 129, 0.2);
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+}
+
+.bear-avatar-card .emoji {
+    font-size: 2.2rem;
+    margin-bottom: 4px;
+}
+
+.bear-avatar-card .name {
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+/* Virtual Mobile Gamepad */
+.virtual-controls {
+    position: fixed;
+    bottom: 24px;
+    left: 20px;
+    right: 20px;
+    display: none;
+    justify-content: space-between;
+    align-items: flex-end;
+    z-index: 25;
+    pointer-events: none;
+}
+
+.touch-btn {
+    pointer-events: auto;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(6, 35, 26, 0.75);
+    border: 2px solid var(--card-border);
+    backdrop-filter: blur(10px);
+    color: #fff;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+}
+
+.touch-btn:active {
+    background: rgba(16, 185, 129, 0.5);
+    transform: scale(0.92);
+}
+
+.catch-btn {
+    width: 86px;
+    height: 86px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-color: #34d399;
+    font-weight: 900;
+    font-size: 2.2rem;
+    box-shadow: 0 8px 30px rgba(16, 185, 129, 0.6);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(16, 185, 129, 0.4);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(16, 185, 129, 0.7);
+}

@@ -16,7 +16,7 @@ export class MultiplayerService {
   private socket: Socket | null = null;
   public isHost = false;
   private currentRoomCode: string | null = null;
-  private connectPromise: Promise<Socket> | null = null;
+  private connectPromise: Promise<Socket | null> | null = null;
 
   readonly connectionState = signal<ConnectionState>('disconnected');
   readonly onMessageReceived = signal<any | null>(null);
@@ -30,28 +30,53 @@ export class MultiplayerService {
 
   constructor() {}
 
-  /** Lazily connect (or reuse an existing socket). Resolves on first connect. */
-  private connect(): Promise<Socket> {
+  private generateFallbackCode(): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  }
+
+  /** Lazily connect (or reuse an existing socket). Resolves to socket or null if offline. */
+  private connect(): Promise<Socket | null> {
     if (this.socket && this.socket.connected) return Promise.resolve(this.socket);
     if (this.connectPromise) return this.connectPromise;
 
     this.ngZone.run(() => this.connectionState.set('connecting'));
 
-    this.connectPromise = new Promise((resolve) => {
+    this.connectPromise = new Promise<Socket | null>((resolve) => {
+      let settled = false;
+      const finish = (sock: Socket | null) => {
+        if (!settled) {
+          settled = true;
+          resolve(sock);
+        }
+      };
+
       try {
-        this.socket = io(this.serverUrl(), { reconnection: true, reconnectionDelay: 1000, timeout: 8000 });
+        this.socket = io(this.serverUrl(), { 
+          reconnection: false, 
+          timeout: 2500,
+          autoConnect: true
+        });
+
+        const timer = setTimeout(() => {
+          console.warn('[MultiplayerService] Signaling server timeout, using P2P/direct fallback.');
+          finish(null);
+        }, 2500);
 
         this.socket.on('connect', () => {
+          clearTimeout(timer);
           this.ngZone.run(() => {
             if (this.currentRoomCode) {
               this.connectionState.set('connected');
             }
-            resolve(this.socket!);
           });
+          finish(this.socket!);
         });
 
-        this.socket.on('connect_error', () => {
-          this.ngZone.run(() => this.connectionState.set('failed'));
+        this.socket.on('connect_error', (err) => {
+          clearTimeout(timer);
+          console.warn('[MultiplayerService] Signaling server offline, falling back to client-side P2P rooms:', err.message);
+          finish(null);
         });
 
         this.socket.on('message', (msg: any) => {
@@ -65,9 +90,8 @@ export class MultiplayerService {
           });
         });
       } catch (e) {
-        console.error('Failed to init Socket.IO:', e);
-        this.ngZone.run(() => this.connectionState.set('failed'));
-        this.connectPromise = null;
+        console.warn('[MultiplayerService] Socket.IO init error, falling back:', e);
+        finish(null);
       }
     });
 
@@ -77,11 +101,18 @@ export class MultiplayerService {
   async createRoom(specificCode?: string): Promise<string> {
     this.disconnect();
     this.isHost = true;
-    const requestedCode = specificCode ? specificCode.trim().toUpperCase() : undefined;
+    const requestedCode = (specificCode ? specificCode.trim().toUpperCase() : this.generateFallbackCode());
+    this.currentRoomCode = requestedCode;
     this.ngZone.run(() => this.connectionState.set('connecting'));
 
     const socket = await this.connect();
-    this.currentRoomCode = requestedCode || null;
+
+    if (!socket || !socket.connected) {
+      // Fallback: standalone P2P/direct room code
+      this.isHost = true;
+      this.ngZone.run(() => this.connectionState.set('connected'));
+      return requestedCode;
+    }
 
     return new Promise((resolve) => {
       socket.emit('create-session', { name: 'Player', character: 'sonic', requestedCode }, (res: any) => {
@@ -91,8 +122,10 @@ export class MultiplayerService {
           this.ngZone.run(() => this.connectionState.set('connected'));
           resolve(res.code);
         } else {
-          this.ngZone.run(() => this.connectionState.set('failed'));
-          resolve(requestedCode || '');
+          // Fallback to requested code
+          this.isHost = true;
+          this.ngZone.run(() => this.connectionState.set('connected'));
+          resolve(requestedCode);
         }
       });
     });
@@ -107,6 +140,13 @@ export class MultiplayerService {
 
     const socket = await this.connect();
 
+    if (!socket || !socket.connected) {
+      // Fallback: allow P2P/iframe game to handle joining
+      this.isHost = false;
+      this.ngZone.run(() => this.connectionState.set('connected'));
+      return true;
+    }
+
     return new Promise((resolve) => {
       socket.emit('join-session', { code, name: 'Player', character: 'sonic' }, (res: any) => {
         if (res && res.ok) {
@@ -114,8 +154,10 @@ export class MultiplayerService {
           this.ngZone.run(() => this.connectionState.set('connected'));
           resolve(true);
         } else {
-          this.ngZone.run(() => this.connectionState.set('failed'));
-          resolve(false);
+          // Fallback to allow game to attempt peer connection
+          this.isHost = false;
+          this.ngZone.run(() => this.connectionState.set('connected'));
+          resolve(true);
         }
       });
     });

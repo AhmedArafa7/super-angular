@@ -54,10 +54,16 @@
                         <button id="host-btn" class="btn btn-primary">إنشاء غرفة (مضيف)</button>
                     </div>
                     
-                    <div class="join-section" style="margin-top: 20px;">
+                    <div class="join-section" style="margin-top: 15px;">
                         <input type="text" id="join-id" placeholder="كود الغرفة">
                         <button id="join-btn" class="btn btn-secondary">انضمام</button>
                         <p id="join-error" class="error-msg"></p>
+                    </div>
+
+                    <div style="margin-top: 15px; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 15px;">
+                        <button type="button" onclick="startLocalGame()" class="btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; width: 100%; border: none; font-weight: 900; border-radius: 12px; padding: 12px; font-family: 'Tajawal', sans-serif; cursor: pointer; box-shadow: 0 4px 10px rgba(245,158,11,0.3);">
+                            👥 اللعب محلياً (نفس الجهاز)
+                        </button>
                     </div>
                     
                     <button onclick="document.getElementById('room-actions').style.display='none'; document.getElementById('glossy-options').style.display='flex';" style="margin-top: 15px; background: none; border: none; color: #9ca3af; text-decoration: underline; cursor: pointer; font-family: 'Tajawal', sans-serif;">
@@ -134,6 +140,19 @@
             <div class="game-header">
                 <div class="timer" id="timer-display">05:00</div>
                 <div class="strikes" id="strikes-display"></div>
+            </div>
+
+            <!-- Local Mode Role Switcher -->
+            <div id="local-role-switcher" style="display: none; justify-content: center; gap: 8px; margin: 10px auto; max-width: 520px; padding: 6px; background: rgba(15, 23, 42, 0.85); border-radius: 30px; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px); z-index: 50;">
+                <button type="button" class="btn-local-role" id="btn-local-deaf" onclick="setLocalRole('deaf')" style="flex: 1; padding: 8px 12px; border-radius: 20px; font-size: 13px; font-weight: 900; font-family: 'Tajawal', sans-serif; cursor: pointer; border: none; background: #3b82f6; color: white; transition: all 0.2s;">
+                    🙉 الأصم (المعاينة)
+                </button>
+                <button type="button" class="btn-local-role" id="btn-local-mute" onclick="setLocalRole('mute')" style="flex: 1; padding: 8px 12px; border-radius: 20px; font-size: 13px; font-weight: 900; font-family: 'Tajawal', sans-serif; cursor: pointer; border: none; background: rgba(255,255,255,0.1); color: #cbd5e1; transition: all 0.2s;">
+                    🙊 الأبكم (الدليل)
+                </button>
+                <button type="button" class="btn-local-role" id="btn-local-blind" onclick="setLocalRole('blind')" style="flex: 1; padding: 8px 12px; border-radius: 20px; font-size: 13px; font-weight: 900; font-family: 'Tajawal', sans-serif; cursor: pointer; border: none; background: rgba(255,255,255,0.1); color: #cbd5e1; transition: all 0.2s;">
+                    🙈 الأعمى (التفكيك)
+                </button>
             </div>
             
             <!-- Views container -->

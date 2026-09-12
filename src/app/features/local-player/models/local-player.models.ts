@@ -67,9 +67,17 @@ export interface VideoNote {
   images: NoteImage[];
   audio: NoteAudio | null;
   isPinned: boolean;
+  group?: string | null; // اسم المجموعة أو التصنيف (مثل 'تحميل بكدجات'، 'إضافات اختيارية'، null = دون تصنيف)
   createdAt: number;
   updatedAt: number;
   deletedAt: number | null; // null = مش محذوفة، غير null = في سلة المهملات
+}
+
+export interface NoteGroup {
+  id: string;
+  name: string;
+  color?: string | null;
+  createdAt: number;
 }
 
 export interface VideoJumpPoint {

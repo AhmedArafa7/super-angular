@@ -469,8 +469,8 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
       if (state === 'connected' && this.selectedMode === 'private') {
         this.launchGame();
       } else if (state === 'failed') {
-        if (this.game && (this.game.id.startsWith('custom_game_') || this.selectedMode !== 'private')) {
-          console.warn('P2P connection state failed, continuing in local mode.');
+        if (this.game && (this.game.id.startsWith('custom_game_') || this.game.id === 'three-monkeys' || this.selectedMode !== 'private')) {
+          console.warn('P2P connection state failed, continuing with in-game peer networking.');
           this.launchGame();
         } else {
           alert('فشل الاتصال بالغرفة. قد تكون الغرفة غير موجودة أو انتهت صلاحيتها.');
@@ -676,6 +676,14 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
       borderColor: 'rgba(239, 68, 68, 0.8)',
       floatingEmojis: '💥   🛡️   💣   🎯   ⚡',
       badgeBg: 'linear-gradient(135deg, #b91c1c, #f59e0b)'
+    },
+    'toxic-butterfly': {
+      badge: '🐻 TOXIC FLUTTER 🦋',
+      primaryColor: '#10b981',
+      borderColor: 'rgba(16, 185, 129, 0.8)',
+      floatingEmojis: '🐻   🦋   ☠️   🍃   ✨',
+      badgeBg: 'linear-gradient(135deg, #059669, #7c3aed)',
+      cardBg: 'linear-gradient(145deg, rgba(6, 78, 59, 0.92), rgba(15, 23, 42, 0.95))'
     },
     'cairo-runner': {
       badge: '🏎️ GRIDLOCK GURUS 💨',
@@ -886,14 +894,12 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
       this.showPrivateRoomModal = true;
       try {
         const code = await this.multiplayer.createRoom();
-        this.generatedRoomCode = code;
+        this.generatedRoomCode = code || Math.random().toString(36).substring(2, 8).toUpperCase();
         const hostName = this.globalState.userProfile().name || 'مستضيف الغرفة';
-        await this.arcadeCloud.registerPrivateRoom(code, this.game?.id || 'arcade_game', code || 'host_peer', hostName);
+        await this.arcadeCloud.registerPrivateRoom(this.generatedRoomCode, this.game?.id || 'arcade_game', this.generatedRoomCode || 'host_peer', hostName).catch(() => {});
       } catch (err) {
-        console.error('Failed to create room:', err);
-        alert('فشل إنشاء الغرفة. تأكد من اتصالك بالإنترنت أو إعدادات السيرفر.');
-        this.showPrivateRoomModal = false;
-        this.showModeOverlay = true;
+        console.warn('Failed to create room via multiplayer service, using local peer code:', err);
+        this.generatedRoomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
       }
     } else {
       this.launchGame();
@@ -1037,7 +1043,7 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
     this.gameState = 'Launching...';
 
     const maxPlayers = this.game?.maxPlayers || 2;
-    if (maxPlayers > 2 && this.privateRoomRole === 'host' && !this.teamDeploymentCompleted) {
+    if (maxPlayers > 2 && this.game?.id !== 'three-monkeys' && this.privateRoomRole === 'host' && !this.teamDeploymentCompleted) {
       this.showTeamDeploymentModal = true;
       return;
     }
@@ -1082,6 +1088,7 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
       'tank-battle': 'linear-gradient(135deg, #18181b 0%, #27272a 50%, #09090b 100%)',
       'air-hockey': 'radial-gradient(circle at center, #0f172a 0%, #020617 100%)',
       'fruit-slicer': 'linear-gradient(135deg, #022c22 0%, #064e3b 50%, #020617 100%)',
+      'toxic-butterfly': 'radial-gradient(circle at center, rgba(6, 78, 59, 0.5) 0%, rgba(2, 44, 34, 0.85) 60%, rgba(2, 6, 23, 0.98) 100%)',
       'flappy-clone': 'linear-gradient(180deg, #0284c7 0%, #0369a1 50%, #0f172a 100%)',
       'snake-arena': 'radial-gradient(circle at center, #064e3b 0%, #022c22 100%)',
       'bomb-arena': 'linear-gradient(135deg, #450a0a 0%, #1e1b4b 100%)',
