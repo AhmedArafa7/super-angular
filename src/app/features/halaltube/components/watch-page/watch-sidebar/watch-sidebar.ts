@@ -132,7 +132,9 @@ export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     effect(() => {
       // Reset pagination when related videos completely change (e.g. new video loaded)
       this.videoState.relatedVideos();
-      this.currentPage.set(1);
+      if (this.currentPage() !== 1) {
+        this.currentPage.set(1);
+      }
     }, { allowSignalWrites: true });
   }
 

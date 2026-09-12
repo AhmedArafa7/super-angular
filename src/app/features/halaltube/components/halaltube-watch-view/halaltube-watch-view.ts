@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, input, computed, signal, ElementRef, HostListener, effect } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, input, computed, signal, ElementRef, HostListener, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { SiNeuroVideoPlayerComponent } from '../nexus-video-player/nexus-video-player';
@@ -63,6 +63,7 @@ export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
   video = this.videoState.activeVideo;
   isLoading = signal(false);
   comments = signal<any[]>([]);
+  private currentLoadedVideoId: string | null = null;
 
   isLiked = signal(false);
   isDisliked = signal(false);
@@ -128,6 +129,15 @@ export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
 
   async loadVideoById(rawId: string) {
     if (!rawId) return;
+
+    // Check if the current active video already matches this target to prevent redundant reloading
+    const currentActive = this.videoState.activeVideo();
+    const currentYtId = currentActive ? (this.extractYoutubeId(currentActive.url) || currentActive.id) : null;
+    const targetYtId = this.extractYoutubeId(rawId) || rawId;
+    if (currentActive && (currentActive.id === rawId || currentYtId === targetYtId) && this.videoState.playerType() === 'iframe') {
+      return;
+    }
+
     this.isLoading.set(true);
 
     // 1. Check if rawId is already a valid 11-character YouTube ID
@@ -230,14 +240,16 @@ export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
 
     this.isLoading.set(false);
 
-    // Sync watch history locally and to Firebase
-    const vMeta = this.video();
-    if (vMeta && rawId) {
+    // Sync watch history locally and to Firebase without subscribing to signal
+    if (rawId) {
+      const finalTitle = videoTitle || (ytId ? `فيديو يوتيوب (${ytId})` : 'فيديو halaltube المميز');
+      const finalAuthor = videoAuthor || 'قناة halaltube';
+      const finalThumb = videoThumb || (ytId ? `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg` : '');
       this.firebase.syncWatchHistory({
         videoId: rawId,
-        title: vMeta.title || '',
-        thumbnail: vMeta.thumbnail || '',
-        author: vMeta.author || '',
+        title: finalTitle,
+        thumbnail: finalThumb,
+        author: finalAuthor,
         watchedAt: Date.now()
       });
     }
@@ -303,8 +315,11 @@ export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
   constructor() {
     effect(() => {
       const videoId = this.id();
-      if (videoId) {
-        this.loadVideoById(videoId);
+      if (videoId && videoId !== this.currentLoadedVideoId) {
+        this.currentLoadedVideoId = videoId;
+        untracked(() => {
+          this.loadVideoById(videoId);
+        });
       }
     }, { allowSignalWrites: true });
 

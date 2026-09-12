@@ -106,6 +106,14 @@ export class VideoStateService {
   }
 
   async playVideo(video: ActiveVideo, forceIframe = false) {
+    const current = this.activeVideo();
+    if (current && current.id === video.id && (this.playerType() === 'iframe' || this.rawStreamUrl())) {
+      if (video.title && video.title !== current.title) {
+        this.activeVideo.update(v => v ? { ...v, title: video.title, author: video.author || v.author } : v);
+      }
+      return;
+    }
+
     this.activeVideo.set(video);
     this.playerMode.set('full');
     this.currentTime.set(0);

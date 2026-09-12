@@ -26,8 +26,8 @@ import { SafePipe } from '../../../../core/pipes/safe.pipe'; // Need to ensure w
         (click)="onPlayerWrapperClick($event)"
       >
         <!-- Loading State -->
-        @if (videoState.isLoading()) {
-          <div class="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center z-10">
+        @if (videoState.isLoading() && !isContentReady()) {
+          <div class="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center z-10 pointer-events-none transition-opacity duration-300">
             <div class="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
             <span class="text-xs text-slate-400 font-bold">جاري تحميل المشغل...</span>
           </div>
@@ -35,7 +35,7 @@ import { SafePipe } from '../../../../core/pipes/safe.pipe'; // Need to ensure w
 
         <!-- Si-Neuro PRO Optimizer Overlay -->
         @if (isOptimizing()) {
-          <div class="absolute inset-0 bg-slate-950/95 backdrop-blur-3xl z-50 flex flex-col items-center justify-center transition-opacity duration-500">
+          <div class="absolute inset-0 bg-slate-950/95 backdrop-blur-3xl z-50 flex flex-col items-center justify-center transition-opacity duration-500 pointer-events-none">
             <div class="relative w-24 h-24 mb-6">
               <!-- Glowing rings -->
               <div class="absolute inset-0 border-4 border-indigo-500/20 rounded-full animate-[spin_3s_linear_infinite]"></div>
@@ -61,7 +61,8 @@ import { SafePipe } from '../../../../core/pipes/safe.pipe'; // Need to ensure w
             [autoplay]="true"
             controls
             crossorigin="anonymous"
-            (play)="videoState.isPlaying.set(true)"
+            (play)="onNativePlay()"
+            (canplay)="onContentReady()"
             (pause)="videoState.isPlaying.set(false)"
             (timeupdate)="onTimeUpdate($event)"
             (loadedmetadata)="onLoadedMetadata($event)"
@@ -79,7 +80,8 @@ import { SafePipe } from '../../../../core/pipes/safe.pipe'; // Need to ensure w
               sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
               referrerpolicy="strict-origin-when-cross-origin"
-              allowfullscreen>
+              allowfullscreen
+              (load)="onIframeLoaded()">
             </iframe>
 
             <!-- Quick Action Floating Overlay for Direct Playback & Fallback -->
@@ -152,7 +154,27 @@ export class GlobalVideoPlayerComponent {
   Sparkles = Sparkles;
 
   isOptimizing = signal<boolean>(false);
+  isContentReady = signal<boolean>(false);
   windowWidth = signal<number>(typeof window !== 'undefined' ? window.innerWidth : 1200);
+
+  private lastVideoId: string | null = null;
+  private lastOptimizedVideoId: string | null = null;
+
+  onIframeLoaded() {
+    this.isContentReady.set(true);
+    this.videoState.isLoading.set(false);
+  }
+
+  onNativePlay() {
+    this.isContentReady.set(true);
+    this.videoState.isLoading.set(false);
+    this.videoState.isPlaying.set(true);
+  }
+
+  onContentReady() {
+    this.isContentReady.set(true);
+    this.videoState.isLoading.set(false);
+  }
 
   @HostListener('window:resize')
   onWindowResize() {
@@ -167,13 +189,21 @@ export class GlobalVideoPlayerComponent {
 
   constructor() {
     effect(() => {
-      // Trigger Si-Neuro optimization overlay on new video
+      // Trigger Si-Neuro optimization overlay ONCE per unique video
       const activeVid = this.videoState.activeVideo();
       if (activeVid) {
-        this.isOptimizing.set(true);
-        setTimeout(() => {
-          this.isOptimizing.set(false);
-        }, 1000);
+        if (activeVid.id !== this.lastVideoId) {
+          this.lastVideoId = activeVid.id;
+          this.isContentReady.set(false);
+        }
+
+        if (activeVid.id !== this.lastOptimizedVideoId) {
+          this.lastOptimizedVideoId = activeVid.id;
+          this.isOptimizing.set(true);
+          setTimeout(() => {
+            this.isOptimizing.set(false);
+          }, 1000);
+        }
       }
     }, { allowSignalWrites: true });
     effect(() => {

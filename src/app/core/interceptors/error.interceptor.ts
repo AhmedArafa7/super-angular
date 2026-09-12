@@ -10,6 +10,11 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
+      // Suppress console error noise for background proxies and fallback probes
+      if (req.headers.has('X-Silent-Error') || req.url.includes('/api/proxy') || req.url.includes('/piped-proxy')) {
+        return throwError(() => error);
+      }
+
       console.error('[ErrorInterceptor] API Error caught:', error);
 
       // TODO: Integrate a Toast/Snackbar service here to display nice error messages

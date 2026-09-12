@@ -51,6 +51,13 @@ export class PipedApiService {
   ];
 
   private activeInstanceIndex = 0;
+  private corsBlockedOrigins = new Set<string>();
+
+  // In-memory caching and deduplication
+  private videoDetailsCache = new Map<string, { data: PipedVideoDetails; time: number }>();
+  private inFlightVideoDetails = new Map<string, Promise<PipedVideoDetails>>();
+  private commentsCache = new Map<string, { data: any; time: number }>();
+  private inFlightComments = new Map<string, Promise<any>>();
 
   getRotatedInstances(): string[] {
     const list = [...this.instances];
@@ -62,7 +69,10 @@ export class PipedApiService {
   private async smartFetch<T>(targetUrl: string, timeoutMs = 3500): Promise<T> {
     if (targetUrl.includes('/piped-proxy')) {
       const text = await firstValueFrom(
-        this.http.get(targetUrl, { responseType: 'text' }).pipe(timeout(timeoutMs))
+        this.http.get(targetUrl, { 
+          responseType: 'text',
+          headers: { 'X-Silent-Error': 'true' }
+        }).pipe(timeout(timeoutMs))
       );
       if (!text || text.trim().length === 0) {
         throw new Error('Local proxy returned empty response');
@@ -73,25 +83,37 @@ export class PipedApiService {
       return JSON.parse(text) as T;
     }
 
-    // Try direct fetch first (some Piped instances support CORS)
+    let origin = '';
     try {
-      const response = await fetch(targetUrl, { signal: AbortSignal.timeout(timeoutMs) });
-      if (response.ok) {
-        const text = await response.text();
-        if (text && text.trim().length > 0 && !text.trim().startsWith('<')) {
-          const parsed = JSON.parse(text) as any;
-          if (!parsed?.error && !parsed?.message?.toLowerCase().includes('shutdown')) {
-            return parsed as T;
+      origin = new URL(targetUrl).origin;
+    } catch {}
+
+    // Try direct fetch only if origin hasn't failed CORS previously
+    if (origin && !this.corsBlockedOrigins.has(origin)) {
+      try {
+        const response = await fetch(targetUrl, { signal: AbortSignal.timeout(timeoutMs) });
+        if (response.ok) {
+          const text = await response.text();
+          if (text && text.trim().length > 0 && !text.trim().startsWith('<')) {
+            const parsed = JSON.parse(text) as any;
+            if (!parsed?.error && !parsed?.message?.toLowerCase().includes('shutdown')) {
+              return parsed as T;
+            }
           }
+        } else {
+          this.corsBlockedOrigins.add(origin);
         }
+      } catch {
+        this.corsBlockedOrigins.add(origin);
       }
-    } catch {
-      // Direct fetch failed, fall through to proxy
     }
 
     const proxyUrl = `${this.proxyBase}/api/proxy?url=${encodeURIComponent(targetUrl)}`;
     const text = await firstValueFrom(
-      this.http.get(proxyUrl, { responseType: 'text' }).pipe(timeout(timeoutMs))
+      this.http.get(proxyUrl, { 
+        responseType: 'text',
+        headers: { 'X-Silent-Error': 'true' }
+      }).pipe(timeout(timeoutMs))
     );
 
     if (!text || text.trim().length === 0) {
@@ -111,6 +133,30 @@ export class PipedApiService {
   }
 
   async getVideoDetails(videoId: string): Promise<PipedVideoDetails> {
+    const cached = this.videoDetailsCache.get(videoId);
+    if (cached && (Date.now() - cached.time < 30 * 60 * 1000)) {
+      return cached.data;
+    }
+
+    const inFlight = this.inFlightVideoDetails.get(videoId);
+    if (inFlight) {
+      return inFlight;
+    }
+
+    const promise = this.fetchVideoDetailsInternal(videoId).then(res => {
+      this.videoDetailsCache.set(videoId, { data: res, time: Date.now() });
+      this.inFlightVideoDetails.delete(videoId);
+      return res;
+    }).catch(err => {
+      this.inFlightVideoDetails.delete(videoId);
+      throw err;
+    });
+
+    this.inFlightVideoDetails.set(videoId, promise);
+    return promise;
+  }
+
+  private async fetchVideoDetailsInternal(videoId: string): Promise<PipedVideoDetails> {
     // 1. Try Piped instances (fast 3.5s timeout per instance)
     const instancesToTry = this.getRotatedInstances();
     for (let i = 0; i < Math.min(instancesToTry.length, 5); i++) {
@@ -297,6 +343,38 @@ export class PipedApiService {
   }
 
   async getComments(videoId: string, nextpage?: string): Promise<any> {
+    if (!nextpage) {
+      const cached = this.commentsCache.get(videoId);
+      if (cached && (Date.now() - cached.time < 10 * 60 * 1000)) {
+        return cached.data;
+      }
+
+      const inFlight = this.inFlightComments.get(videoId);
+      if (inFlight) {
+        return inFlight;
+      }
+    }
+
+    const promise = this.fetchCommentsInternal(videoId, nextpage).then(res => {
+      if (!nextpage) {
+        this.commentsCache.set(videoId, { data: res, time: Date.now() });
+        this.inFlightComments.delete(videoId);
+      }
+      return res;
+    }).catch(() => {
+      if (!nextpage) {
+        this.inFlightComments.delete(videoId);
+      }
+      return { comments: [], nextpage: null };
+    });
+
+    if (!nextpage) {
+      this.inFlightComments.set(videoId, promise);
+    }
+    return promise;
+  }
+
+  private async fetchCommentsInternal(videoId: string, nextpage?: string): Promise<any> {
     for (const instance of this.instances.slice(0, 3)) {
       try {
         let url = `${instance}/comments/${videoId}`;
