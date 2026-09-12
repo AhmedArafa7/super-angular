@@ -78,17 +78,29 @@ export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     const seen = new Set<string>();
     const combined: any[] = [];
     
+    // Exclude currently playing video so it does not appear in recommendations
+    const activeVid = this.videoState.activeVideo();
+    if (activeVid) {
+      if (activeVid.id) seen.add(activeVid.id);
+      const activeYt = this.getVideoId(activeVid);
+      if (activeYt) seen.add(activeYt);
+      if (activeVid.url) {
+        const urlYt = this.extractYoutubeId(activeVid.url);
+        if (urlYt) seen.add(urlYt);
+      }
+    }
+    
     for (const v of [...related, ...homeContent]) {
       const vId = this.getVideoId(v);
       if (vId && !seen.has(vId)) {
         seen.add(vId);
+        if (v.id) seen.add(v.id);
         combined.push(v);
       }
     }
 
     let videos = combined;
     const cat = this.activeCategory();
-    const activeVid = this.videoState.activeVideo();
     
     if (cat === 'نفس القناة') {
        if (activeVid?.author) {
@@ -293,8 +305,67 @@ export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  onSelectVideo(video: any, event?: Event) {
+    if (event) {
+      const target = event.target as HTMLElement;
+      // Do not navigate if clicking channel name or context menu trigger
+      if (target.closest('button') || target.closest('[data-channel]')) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    const videoId = this.getVideoId(video);
+    if (!videoId) return;
+
+    // Smoothly scroll window to top
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    this.router.navigate(['/stream/watch', videoId]);
+  }
+
+  formatViews(views: any): string {
+    if (views === null || views === undefined || views === '') return '0 مشاهدة';
+    if (typeof views === 'string') {
+      if (views.includes('مشاهدة')) return views;
+      const clean = views.trim();
+      if (clean.includes('M') || clean.includes('K') || clean.includes('B')) {
+        return `${clean} مشاهدة`;
+      }
+      const num = Number(clean.replace(/[^0-9.]/g, ''));
+      if (isNaN(num) || num === 0) return `${clean} مشاهدة`;
+      return `${num.toLocaleString('ar-EG')} مشاهدة`;
+    }
+    if (typeof views === 'number') {
+      return `${views.toLocaleString('ar-EG')} مشاهدة`;
+    }
+    return `${views} مشاهدة`;
+  }
+
+  formatDuration(duration: any): string {
+    if (!duration) return '';
+    if (typeof duration === 'string' && duration.includes(':')) return duration;
+    const sec = Number(duration);
+    if (!isNaN(sec) && sec > 0) {
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+    return String(duration);
+  }
+
+  extractYoutubeId(str?: string): string | null {
+    if (!str || typeof str !== 'string') return null;
+    if (str.length === 11 && /^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
+    const match = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/|live\/))([^&?\n]+)/);
+    return (match && match[1] && match[1].length === 11) ? match[1] : null;
+  }
+
   getThumbnail(video: any): string {
-    if (video.thumbnail && video.thumbnail.startsWith('http')) {
+    if (video.thumbnail && typeof video.thumbnail === 'string' && video.thumbnail.startsWith('http') && !video.thumbnail.includes('placeholder')) {
       return video.thumbnail;
     }
     const id = this.getVideoId(video);
@@ -306,22 +377,27 @@ export class WatchSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   
   getVideoId(video: any): string {
     if (!video) return '';
-    if (video.id && /^[a-zA-Z0-9_-]{11}$/.test(video.id)) return video.id;
-    if (video.youtubeId) return video.youtubeId;
-    if (video.url) {
-      if (video.url.includes('?v=')) {
-        return video.url.split('?v=')[1].split('&')[0];
-      }
-      if (video.url.includes('/watch/')) {
-        return video.url.split('/watch/')[1].split('?')[0];
-      }
-      if (video.url.includes('youtu.be/')) {
-        return video.url.split('youtu.be/')[1].split('?')[0];
-      }
-      if (/^[a-zA-Z0-9_-]{11}$/.test(video.url)) {
-        return video.url;
-      }
+    if (typeof video === 'string') {
+      return this.extractYoutubeId(video) || video;
     }
-    return video.id || video.url || '';
+    // 1. Explicit youtubeId
+    if (video.youtubeId && /^[a-zA-Z0-9_-]{11}$/.test(video.youtubeId)) {
+      return video.youtubeId;
+    }
+    // 2. Extract from URL fields
+    for (const field of [video.url, video.externalUrl, video.sourceUrl, video.embedUrl]) {
+      const yt = this.extractYoutubeId(field);
+      if (yt) return yt;
+    }
+    // 3. Direct 11-char ID
+    if (video.id && /^[a-zA-Z0-9_-]{11}$/.test(video.id)) {
+      return video.id;
+    }
+    // 4. Drive file ID
+    if (video.driveFileId) {
+      return video.driveFileId;
+    }
+    // 5. Fallback to docId, id, or url
+    return video.id || (video as any).docId || video.url || '';
   }
 }

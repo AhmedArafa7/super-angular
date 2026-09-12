@@ -163,6 +163,10 @@
         @for (video of displayedVideos(); track getVideoId(video)) {
           @defer (on viewport) {
             <div class="video-card group flex gap-2 cursor-pointer relative rounded-xl p-1 hover:bg-white/5 transition-colors"
+                 role="button"
+                 tabindex="0"
+                 (click)="onSelectVideo(video, $event)"
+                 (keydown.enter)="onSelectVideo(video, $event)"
                  [routerLink]="['/stream/watch', getVideoId(video)]">
               
               <!-- Thumbnail -->
@@ -176,7 +180,7 @@
                 >
                 @if (video.duration) {
                   <span class="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-xs font-medium text-white backdrop-blur-sm">
-                    {{ video.duration >= 0 ? (video.duration | number:'1.0-0') : video.duration }}
+                    {{ formatDuration(video.duration) }}
                   </span>
                 }
               </div>
@@ -188,13 +192,13 @@
                 </h3>
                 
                 <div class="text-xs text-slate-400 mt-auto">
-                  <p class="hover:text-white transition-colors cursor-pointer truncate" (click)="goToChannel($event, video.uploaderUrl?.split('/channel/')[1])">
-                    {{ video.uploaderName }}
+                  <p data-channel class="hover:text-white transition-colors cursor-pointer truncate" (click)="goToChannel($event, video.uploaderUrl?.split('/channel/')[1] || video.authorId)">
+                    {{ video.uploaderName || video.author }}
                   </p>
                   <p class="truncate mt-0.5">
-                    {{ video.views | number:'1.0-0' }} مشاهدة
-                    @if (video.uploadedDate) {
-                      <span class="mx-1">•</span>{{ video.uploadedDate }}
+                    {{ formatViews(video.views) }}
+                    @if (video.uploadedDate || video.time) {
+                      <span class="mx-1">•</span>{{ video.uploadedDate || video.time }}
                     }
                   </p>
                 </div>

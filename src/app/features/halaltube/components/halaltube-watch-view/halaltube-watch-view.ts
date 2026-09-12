@@ -130,14 +130,6 @@ export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
   async loadVideoById(rawId: string) {
     if (!rawId) return;
 
-    // Check if the current active video already matches this target to prevent redundant reloading
-    const currentActive = this.videoState.activeVideo();
-    const currentYtId = currentActive ? (this.extractYoutubeId(currentActive.url) || currentActive.id) : null;
-    const targetYtId = this.extractYoutubeId(rawId) || rawId;
-    if (currentActive && (currentActive.id === rawId || currentYtId === targetYtId) && this.videoState.playerType() === 'iframe') {
-      return;
-    }
-
     this.isLoading.set(true);
 
     // 1. Check if rawId is already a valid 11-character YouTube ID
@@ -190,7 +182,7 @@ export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
       url: targetUrl || (ytId ? `https://www.youtube.com/watch?v=${ytId}` : ''),
       source: playingSource,
       isWhitelisted: homeVideo?.isWhitelisted || false
-    });
+    }, true);
 
     // Check if video is already in the whitelist database
     this.firebase.checkVideosExist([playingId]).then(existing => {
@@ -318,6 +310,9 @@ export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
       if (videoId && videoId !== this.currentLoadedVideoId) {
         this.currentLoadedVideoId = videoId;
         untracked(() => {
+          if (typeof window !== 'undefined') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
           this.loadVideoById(videoId);
         });
       }

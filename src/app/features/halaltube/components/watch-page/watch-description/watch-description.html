@@ -1,6 +1,6 @@
 <div class="description-container">
   <div class="description-header">
-    <span class="views">{{ views | number }} مشاهدة</span>
+    <span class="views">{{ formatViews(views) }}</span>
     <span class="date">{{ date }}</span>
     <span class="category" *ngIf="category">{{ category }}</span>
   </div>
