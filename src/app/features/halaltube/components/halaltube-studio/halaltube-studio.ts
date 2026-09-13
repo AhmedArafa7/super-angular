@@ -1,16 +1,21 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { FirebaseService } from '../../../../core/services/firebase.service';
 import { halaltubeService } from '../../halaltube.service';
 import { PipedApiService } from '../../../../core/services/piped-api.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { doc, updateDoc } from 'firebase/firestore';
-import { LucideAngularModule, LayoutDashboard, Eye, Users, Video, Heart, BarChart3, PlusCircle, Youtube, Link2, CheckCircle2, CloudLightning, Lock } from 'lucide-angular';
+import { 
+  LucideAngularModule, LayoutDashboard, Eye, Users, Video, Heart, BarChart3, 
+  PlusCircle, Youtube, Link2, CheckCircle2, CloudLightning, Lock, Clock, 
+  AlertCircle, Play, ShieldAlert, Sparkles, Trash2, CheckCircle, XCircle 
+} from 'lucide-angular';
 
 @Component({
   selector: 'app-halaltube-studio',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, RouterModule, LucideAngularModule],
   templateUrl: './halaltube-studio.html',
   styleUrls: ['./halaltube-studio.scss']
 })
@@ -32,11 +37,33 @@ export class halaltubeStudioComponent implements OnInit {
   CheckCircle2 = CheckCircle2;
   CloudLightning = CloudLightning;
   Lock = Lock;
+  Clock = Clock;
+  AlertCircle = AlertCircle;
+  Play = Play;
+  ShieldAlert = ShieldAlert;
+  Sparkles = Sparkles;
+  Trash2 = Trash2;
+  CheckCircle = CheckCircle;
+  XCircle = XCircle;
 
   isLoadingStats = signal(false);
   channelStats = signal<{ viewCount: string, subscriberCount: string, videoCount: string, name?: string } | null>(null);
   videos = signal<any[]>([]);
   isPreviewMode = signal(false);
+
+  // User Submissions Review Tracking
+  mySubmissions = signal<any[]>([]);
+  selectedSubFilter = signal<'all' | 'pending' | 'published' | 'rejected'>('all');
+
+  filteredSubmissions = computed(() => {
+    const list = this.mySubmissions();
+    const filter = this.selectedSubFilter();
+    if (filter === 'all') return list;
+    if (filter === 'pending') return list.filter(s => s.status === 'pending_review' || !s.status);
+    if (filter === 'published') return list.filter(s => s.status === 'published');
+    if (filter === 'rejected') return list.filter(s => s.status === 'rejected');
+    return list;
+  });
 
   connectedPlatforms = signal<{id: string, name: string, icon: any, connected: boolean}[]>([
     { id: 'youtube', name: 'YouTube', icon: Youtube, connected: false },
@@ -46,6 +73,29 @@ export class halaltubeStudioComponent implements OnInit {
 
   ngOnInit() {
     this.checkConnections();
+    this.loadMySubmissions();
+  }
+
+  loadMySubmissions() {
+    try {
+      const local = JSON.parse(localStorage.getItem('halaltube_my_submissions') || '[]');
+      this.mySubmissions.set(local);
+    } catch (e) {
+      this.mySubmissions.set([]);
+    }
+  }
+
+  deleteSubmission(id: string) {
+    const updated = this.mySubmissions().filter(s => s.id !== id);
+    this.mySubmissions.set(updated);
+    try {
+      localStorage.setItem('halaltube_my_submissions', JSON.stringify(updated));
+    } catch (e) {}
+    this.toast.show('تم حذف الفيديو من سجلك', 'info');
+  }
+
+  extractYtId(url?: string): string {
+    return this.halaltube.extractYoutubeId(url) || '';
   }
 
   private async checkConnections() {

@@ -2101,6 +2101,9 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   private async restoreStoredPlaylist() {
     this.isLoadingStored.set(true);
     try {
+      // Recover any orphaned media files stored across IndexedDB stores
+      await this.indexedDb.recoverOrphanedMediaFiles().catch(() => {});
+
       const storedItems: any[] = await this.storageService.getAllMediaItems();
       if (storedItems && storedItems.length > 0) {
         const restored: LocalMediaItem[] = [];

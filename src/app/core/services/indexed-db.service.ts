@@ -469,5 +469,51 @@ export class IndexedDBService {
     }
     return map;
   }
+
+  async recoverOrphanedMediaFiles(): Promise<number> {
+    try {
+      await this.initDB();
+      if (!this.db) return 0;
+
+      const storeNames = Array.from(this.db.objectStoreNames);
+      let recoveredCount = 0;
+
+      for (const storeName of storeNames) {
+        try {
+          const items = await this.getAll(storeName);
+          if (Array.isArray(items)) {
+            for (const item of items) {
+              if (item && (item.fileBlob || item.blob || item.videoBlob || (item.size && item.size > 100000))) {
+                const mediaItem = {
+                  id: item.id || ('recovered_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6)),
+                  name: item.name || item.title || 'recovered_video.mp4',
+                  size: item.size || item.fileBlob?.size || item.blob?.size || item.videoBlob?.size || 0,
+                  type: item.type || (item.mimeType?.startsWith('audio') ? 'audio' : 'video'),
+                  mimeType: item.mimeType || item.fileBlob?.type || 'video/mp4',
+                  fileBlob: item.fileBlob || item.blob || item.videoBlob,
+                  subtitlesBlob: item.subtitlesBlob,
+                  subtitlesName: item.subtitlesName,
+                  lastPosition: item.lastPosition || 0,
+                  createdAt: item.createdAt || Date.now()
+                };
+
+                if (mediaItem.fileBlob) {
+                  await this.put('local_player_media', mediaItem);
+                  recoveredCount++;
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.warn(`[IndexedDBService] Error scanning store ${storeName} for recovery:`, e);
+        }
+      }
+
+      return recoveredCount;
+    } catch (e) {
+      console.warn('[IndexedDBService] recoverOrphanedMediaFiles failed:', e);
+      return 0;
+    }
+  }
 }
 

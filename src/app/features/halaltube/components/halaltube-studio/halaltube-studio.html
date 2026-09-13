@@ -123,33 +123,125 @@
 
   <!-- Main Content Areas -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    <!-- Recent Videos -->
+    <!-- User Submitted Videos Tracking Section -->
     <div class="lg:col-span-2 space-y-6">
-      <div class="flex items-center justify-between px-2">
-        <h2 class="text-xl font-black tracking-tight">آخر الفيديوهات المرفوعة</h2>
-        <button class="text-indigo-400 font-bold hover:text-indigo-300 transition-colors">عرض الكل</button>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-2">
+        <div>
+          <h2 class="text-xl font-black tracking-tight flex items-center gap-2">
+            <span>فيديوهاتي المرسلة للمراجعة</span>
+            <span class="text-xs bg-indigo-500/20 text-indigo-300 font-bold px-2 py-0.5 rounded-full border border-indigo-500/30">
+              {{ mySubmissions().length }} فيديو
+            </span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">تتبع حالة مراجعة مقاطعك، قرارات القبول والرفض، ونتيجة الفحص الذكي</p>
+        </div>
+
+        <!-- Status Filter Tabs -->
+        <div class="flex items-center gap-1.5 bg-slate-900/60 p-1 rounded-xl border border-white/5 overflow-x-auto hide-scrollbar">
+          <button 
+            (click)="selectedSubFilter.set('all')"
+            class="px-3 py-1 rounded-lg text-xs font-bold transition"
+            [ngClass]="selectedSubFilter() === 'all' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'">
+            الكل
+          </button>
+          <button 
+            (click)="selectedSubFilter.set('pending')"
+            class="px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1"
+            [ngClass]="selectedSubFilter() === 'pending' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'text-slate-400 hover:text-white'">
+            <span>قيد المراجعة</span>
+          </button>
+          <button 
+            (click)="selectedSubFilter.set('published')"
+            class="px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1"
+            [ngClass]="selectedSubFilter() === 'published' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'text-slate-400 hover:text-white'">
+            <span>معتمدة</span>
+          </button>
+          <button 
+            (click)="selectedSubFilter.set('rejected')"
+            class="px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1"
+            [ngClass]="selectedSubFilter() === 'rejected' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'text-slate-400 hover:text-white'">
+            <span>مرفوضة</span>
+          </button>
+        </div>
       </div>
-      <div class="space-y-4">
-        @if (!isLoadingStats() && videos().length === 0) {
-          <div class="flex flex-col items-center justify-center py-12 bg-slate-900/20 rounded-[2rem] border border-dashed border-white/10 text-slate-500">
-            <lucide-icon [img]="Video" class="w-12 h-12 mb-4 opacity-20"></lucide-icon>
-            <p class="font-bold">لا يوجد فيديوهات مرفوعة حتى الآن</p>
-          </div>
-        } @else if (isLoadingStats()) {
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="h-24 bg-white/5 rounded-2xl animate-pulse"></div>
-            <div class="h-24 bg-white/5 rounded-2xl animate-pulse"></div>
+
+      <!-- Submissions List -->
+      <div class="space-y-3">
+        @if (filteredSubmissions().length === 0) {
+          <div class="flex flex-col items-center justify-center py-12 bg-slate-900/30 rounded-3xl border border-dashed border-white/10 text-slate-400 text-center p-6">
+            <lucide-icon [img]="Video" class="w-10 h-10 mb-3 text-slate-600"></lucide-icon>
+            <h4 class="font-black text-sm text-slate-300">لا توجد فيديوهات في هذا القسم</h4>
+            <p class="text-xs text-slate-500 mt-1 max-w-sm">عندما ترسل مقاطع لمشاركتها ونشرها في halaltube، ستظهر هنا حالتها فورياً مع نتيجة فحص الذكاء الاصطناعي</p>
           </div>
         } @else {
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            @for (vid of videos(); track vid.id) {
-              <div class="bg-slate-900/40 p-3 rounded-2xl border border-white/5 flex gap-4 hover:border-indigo-500/30 transition-all group cursor-pointer">
-                <div class="relative shrink-0 overflow-hidden rounded-xl w-20 h-20">
-                  <img crossorigin="anonymous" [src]="vid.thumbnail" [alt]="vid.title" class="object-cover w-full h-full group-hover:scale-110 transition-transform" />
+          <div class="grid grid-cols-1 gap-3">
+            @for (item of filteredSubmissions(); track item.id) {
+              <div class="bg-slate-900/50 hover:bg-slate-900 border border-white/5 hover:border-indigo-500/30 rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all group">
+                <div class="flex items-center gap-3.5 min-w-0 w-full sm:w-auto flex-1">
+                  <div class="relative shrink-0 overflow-hidden rounded-xl w-24 sm:w-28 aspect-video bg-slate-950 border border-white/10">
+                    <img [src]="item.thumbnail || 'assets/placeholder.jpg'" [alt]="item.title" class="object-cover w-full h-full group-hover:scale-105 transition-transform" />
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2 mb-1 flex-wrap">
+                      <!-- Status Badge -->
+                      @if (item.status === 'published') {
+                        <span class="text-[10px] font-black bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-md flex items-center gap-1">
+                          <lucide-icon [img]="CheckCircle" size="11"></lucide-icon>
+                          <span>تمت الموافقة والنشر</span>
+                        </span>
+                      } @else if (item.status === 'rejected') {
+                        <span class="text-[10px] font-black bg-rose-500/15 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded-md flex items-center gap-1">
+                          <lucide-icon [img]="XCircle" size="11"></lucide-icon>
+                          <span>تم الرفض للنشر العام</span>
+                        </span>
+                      } @else {
+                        <span class="text-[10px] font-black bg-amber-500/15 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-md flex items-center gap-1">
+                          <lucide-icon [img]="Clock" size="11"></lucide-icon>
+                          <span>قيد المراجعة والتدقيق</span>
+                        </span>
+                      }
+
+                      <!-- AI Status Badge -->
+                      @if (item.aiScore !== undefined) {
+                        <span class="text-[10px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-md flex items-center gap-1" title="تقييم الذكاء الاصطناعي">
+                          <lucide-icon [img]="Sparkles" size="11" class="text-indigo-400"></lucide-icon>
+                          <span>ذكاء اصطناعي: {{ item.aiScore }}%</span>
+                        </span>
+                      }
+                    </div>
+
+                    <h4 class="text-xs sm:text-sm font-bold text-white truncate max-w-md leading-snug group-hover:text-indigo-300 transition-colors" [title]="item.title">
+                      {{ item.title }}
+                    </h4>
+                    <p class="text-[10px] text-slate-400 mt-0.5">القناة: {{ item.author || 'الرئيسية' }}</p>
+
+                    <!-- Rejection Reason or AI Notes -->
+                    @if (item.rejectionReason) {
+                      <div class="mt-1 text-[10px] text-rose-400 flex items-center gap-1 bg-rose-950/40 px-2 py-0.5 rounded-md border border-rose-500/20">
+                        <lucide-icon [img]="AlertCircle" size="11"></lucide-icon>
+                        <span>سبب الرفض: {{ item.rejectionReason }}</span>
+                      </div>
+                    } @else if (item.hasMusicWarning) {
+                      <div class="mt-1 text-[10px] text-amber-400 flex items-center gap-1 bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-500/20">
+                        <lucide-icon [img]="ShieldAlert" size="11"></lucide-icon>
+                        <span>تنبيه: يحتوي على خلفية موسيقية (يتم عزله تلقائياً بالذكاء الاصطناعي)</span>
+                      </div>
+                    }
+                  </div>
                 </div>
-                <div class="flex flex-col justify-center min-w-0">
-                  <h4 class="text-sm font-bold text-white truncate mb-1">{{vid.title}}</h4>
-                  <span class="text-[10px] text-slate-400 font-medium">الآن</span>
+
+                <!-- Actions -->
+                <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
+                  @let yt = extractYtId(item.url);
+                  @if (yt) {
+                    <a [routerLink]="['/stream/watch', yt]" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-md shadow-indigo-600/20">
+                      <lucide-icon [img]="Play" size="12"></lucide-icon>
+                      <span>مشاهدة</span>
+                    </a>
+                  }
+                  <button (click)="deleteSubmission(item.id)" class="w-8 h-8 rounded-xl bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-white/5 transition flex items-center justify-center" title="حذف من السجل">
+                    <lucide-icon [img]="Trash2" size="13"></lucide-icon>
+                  </button>
                 </div>
               </div>
             }

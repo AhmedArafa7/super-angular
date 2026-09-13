@@ -678,7 +678,15 @@ export class UploadModalComponent implements OnInit, AfterViewInit, OnChanges {
 
       const calculatedIsShorts = checkIsShorts({ url: finalUrl, title: titleVal });
 
-      await this.firebaseService.addVideoForReview({
+      // Preliminary AI Moderation Assessment
+      const aiEval = this.halaltubeService.moderation.evaluateVideo({
+        title: titleVal,
+        author: this.selectedChannel,
+        category: calculatedIsShorts ? 'shorts' : 'تكنولوجيا',
+        description: ''
+      });
+
+      const submissionPayload = {
         title: titleVal,
         author: this.selectedChannel,
         category: calculatedIsShorts ? 'shorts' : 'تكنولوجيا',
@@ -687,8 +695,28 @@ export class UploadModalComponent implements OnInit, AfterViewInit, OnChanges {
         url: finalUrl,
         isShorts: calculatedIsShorts,
         isLargeFile: isLargeFile,
-        fileSizeMB: this.selectedFile ? +(this.selectedFile.size / (1024 * 1024)).toFixed(1) : 0
-      });
+        fileSizeMB: this.selectedFile ? +(this.selectedFile.size / (1024 * 1024)).toFixed(1) : 0,
+        userId: this.firebaseService.currentUser()?.uid || 'guest',
+        userEmail: this.firebaseService.currentUser()?.email || '',
+        aiScore: aiEval.score,
+        aiStatus: aiEval.status,
+        aiReasons: aiEval.reasons,
+        hasMusicWarning: aiEval.hasMusicWarning
+      };
+
+      await this.firebaseService.addVideoForReview(submissionPayload);
+
+      // Save locally so the user can track their submissions in halaltube Studio anytime
+      try {
+        const localSub = {
+          ...submissionPayload,
+          id: 'sub_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+          status: 'pending_review',
+          createdAt: Date.now()
+        };
+        const existing = JSON.parse(localStorage.getItem('halaltube_my_submissions') || '[]');
+        localStorage.setItem('halaltube_my_submissions', JSON.stringify([localSub, ...existing]));
+      } catch (e) {}
       
       this.isUploading = false;
       const successMsg = isLargeFile 
