@@ -192,10 +192,10 @@ export class OcrCleanerService {
   saveCustomRules(rules: CustomTextRule[]): void {
     try {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(rules));
-      this.customRules.set([...rules]);
     } catch (e) {
       console.warn('Could not save custom OCR rules:', e);
     }
+    this.customRules.set([...rules]);
   }
 
   resetToDefaultRules(): CustomTextRule[] {
