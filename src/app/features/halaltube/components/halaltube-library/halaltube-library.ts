@@ -74,6 +74,24 @@ export interface HistoryGroup {
                 </div>
               </div>
 
+              <!-- Feature Highlights Banner -->
+              <div class="bg-gradient-to-r from-indigo-950/50 via-slate-900/80 to-purple-950/40 border border-indigo-500/25 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-slate-300 shadow-lg shadow-indigo-950/20">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-amber-400 shrink-0 shadow-inner">
+                    <lucide-icon [img]="Flame" size="20"></lucide-icon>
+                  </div>
+                  <div>
+                    <h4 class="font-black text-white text-xs sm:text-sm flex items-center gap-2">
+                      <span>حوّل أي قائمة إلى خطة دراسة والتزام يومي!</span>
+                      <span class="text-[9px] bg-indigo-500/20 text-indigo-300 font-black px-2 py-0.5 rounded-full border border-indigo-500/30">ميزة حصرية</span>
+                    </h4>
+                    <p class="text-slate-400 text-[11px] mt-0.5 leading-relaxed">
+                      استورد أي دورة برابطها من يوتيوب، وحدد هدفك (مثلاً مقطعين يومياً). سيقوم حلال تيوب بتذكيرك بموعدك وإرشادك للفيديو التالي مع قياس سلسلة التزامك 🔥 بدون تشتيت.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <!-- Playlists Grid -->
               @if (playlistSvc.playlists().length === 0) {
                 <div class="text-slate-400 py-12 text-center bg-slate-900/40 border border-white/5 rounded-3xl flex flex-col items-center justify-center gap-3">

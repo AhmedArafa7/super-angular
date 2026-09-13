@@ -27,9 +27,14 @@
         </div>
       </div>
 
-      <button (click)="close()" class="w-7 h-7 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition shrink-0" title="إغلاق">
-        <lucide-icon [img]="X" size="15"></lucide-icon>
-      </button>
+      <div class="flex items-center gap-1 shrink-0">
+        <a [routerLink]="['/stream/playlist', reminder.playlist.id]" (click)="close()" class="w-7 h-7 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-indigo-300 flex items-center justify-center transition" title="إدارة الخطة وتعديل الأهداف">
+          <lucide-icon [img]="Settings" size="14"></lucide-icon>
+        </a>
+        <button (click)="close()" class="w-7 h-7 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition" title="إغلاق">
+          <lucide-icon [img]="X" size="15"></lucide-icon>
+        </button>
+      </div>
     </div>
 
     <!-- Suggested Video Row -->

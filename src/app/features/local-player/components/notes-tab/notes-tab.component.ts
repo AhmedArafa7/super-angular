@@ -707,7 +707,11 @@ export class NotesTabComponent {
         caseSensitive: this.ruleFormCaseSensitive
       });
     } else {
-      this.ocrCleaner.addCustomRule({
+      if (this.customRules().length >= 1000) {
+        this.ruleFormErrorMessage.set('عذراً، تم الوصول إلى الحد الأقصى للقواعد (1000 قاعدة).');
+        return;
+      }
+      const res = this.ocrCleaner.addCustomRule({
         name,
         description: this.ruleFormDescription.trim(),
         pattern,
@@ -717,6 +721,10 @@ export class NotesTabComponent {
         enabled: true,
         isBuiltIn: false
       });
+      if (!res) {
+        this.ruleFormErrorMessage.set('عذراً، تم الوصول إلى الحد الأقصى للقواعد (1000 قاعدة).');
+        return;
+      }
     }
 
     this.cancelRuleForm();

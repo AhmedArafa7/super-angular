@@ -35,7 +35,7 @@ export class OcrCleanerService {
         id: 'rule_leading_line_numbers',
         name: 'إزالة أرقام الأسطر ورموز الهامش من بداية السطر',
         description: 'حذف أرقام أسطر المحرر (1, 2, 77, 10, 117...) ورموز الهامش قبل الكود',
-        pattern: '^[ \\t]*\\d{1,4}[ \\t]+(?=[a-zA-Z_{}\\/])',
+        pattern: '^[ \t]*(?:\d{1,4}|[a-zA-Z]{1,3})[ \t]*[\}\)\]\|®v]?[ \t]*[v®]?[ \t]+(?=[a-zA-Z_\{}])',
         replacement: '',
         isRegex: true,
         caseSensitive: false,
@@ -131,50 +131,6 @@ export class OcrCleanerService {
         isBuiltIn: true
       },
       {
-        id: 'rule_explorer_files',
-        name: 'حذف أسطر ملفات مستكشف الحلول (.cs, .http, .json)',
-        description: 'حذف الأسطر المعزولة التي تمثل ملفات مثل ApiBaseController.cs و appsettingsjson',
-        pattern: `^(?!${codeKeywords}).*?(?:c#|c=|\\.cs\\b|\\.http\\b|\\.json\\b|appsettings)[^\\r\\n]*$`,
-        replacement: '',
-        isRegex: true,
-        caseSensitive: false,
-        enabled: true,
-        isBuiltIn: true
-      },
-      {
-        id: 'rule_explorer_folders',
-        name: 'حذف أسطر مجلدات شجرة Solution Explorer المعزولة',
-        description: 'حذف أسطر Properties و bin و obj و Dependencies و Controllers المعزولة',
-        pattern: `^(?!${codeKeywords}).*?(?:connected[ \\t]*services|properties|bin|obj|dependencies|commonresult|dtos|controllers|attributes|presentationlayer|infrastructurelayer|ecommerce|imports|weblayer|domain|solution)[^\\r\\n]*$`,
-        replacement: '',
-        isRegex: true,
-        caseSensitive: false,
-        enabled: true,
-        isBuiltIn: true
-      },
-      {
-        id: 'rule_explorer_branches_noise',
-        name: 'حذف تفريعات الشجرة المعزولة وأيقونات المجلدات [ ] و >',
-        description: 'حذف أسطر الرموز المشوهة مثل [E Presentation] و [wu #=] و > 3) Imports و bin',
-        pattern: `^(?!${codeKeywords})[ \\t]*(?:[-=~ \\t\\d\\w\\.:]{1,8}|[-be \\t\\d]+Alo-sa0.*|@&.*|it[ \\t]+pb.*|\\d+[\\)\\|[ \\t]]+ECommerce.*|[>[ \\t]\\d]*\\[.*?\\](?:[ \\t]*\\w+)?|[\\d[ \\t]]*>[b[ \\t]\\d]*\\[.*?\\]|.*?\\bCPE\\b|.*?c#|.*?\\.cs|.*?bin|.*?obj|.*?properties|[>:]\\s*[\\.\\s\\d\\”\\\"\\\'A-Za-z]+>[b\\s\\d]*\\w+)[^\\r\\n]*$`,
-        replacement: '',
-        isRegex: true,
-        caseSensitive: false,
-        enabled: true,
-        isBuiltIn: true
-      },
-      {
-        id: 'rule_symbols_noise',
-        name: 'إزالة أسطر الرموز الفارغة وبقايا الهوامش',
-        description: 'حذف الأسطر التي لا تحتوي إلا على رموز أو مسافات أو أرقام مشتتة',
-        pattern: '^[ \\t>:\\.\\”\\\"\\\'b\\d|\\-=~#\\$\\[\\]\\(\\)/\\*]+$',
-        replacement: '',
-        isRegex: true,
-        caseSensitive: false,
-        enabled: true,
-        isBuiltIn: true
-      },
-      {
         id: 'rule_typo_system',
         name: 'تصحيح Systen إلى System',
         description: 'تصحيح خطأ قراءة OCR الشائع لكلمة System',
@@ -248,7 +204,10 @@ export class OcrCleanerService {
     return defaults;
   }
 
-  addCustomRule(ruleData: Omit<CustomTextRule, 'id'>): CustomTextRule {
+  addCustomRule(ruleData: Omit<CustomTextRule, 'id'>): CustomTextRule | null {
+    if (this.customRules().length >= 1000) {
+      return null;
+    }
     const newRule: CustomTextRule = {
       ...ruleData,
       id: 'rule_custom_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6)

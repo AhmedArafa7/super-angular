@@ -61,12 +61,34 @@ export class HalaltubePlaylistService {
     try {
       const stored = await this.idb.getAll('playlists');
       if (stored && stored.length > 0) {
-        // Ensure all stored playlists have properly structured studyPlan
-        const normalized = stored.map(p => ({
-          ...p,
-          studyPlan: p.studyPlan ? { ...createDefaultStudyPlan(), ...p.studyPlan } : createDefaultStudyPlan(),
-          videos: (p.videos || []).sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
-        }));
+        let needsResave = false;
+        // Ensure all stored playlists have properly structured studyPlan and replace any legacy mock videos
+        const normalized = stored.map(p => {
+          let updatedVideos = p.videos || [];
+          // Replace legacy fake mock videos (containing dQw4w9WgXcQ) with real playable videos
+          if (p.id === 'course_web_dev' || p.videos?.some((v: any) => v.id?.includes('dQw4w9WgXcQ'))) {
+            const realCourse = this.getDefaultPlaylists().find(d => d.id === 'course_web_dev');
+            if (realCourse) {
+              p.title = realCourse.title;
+              p.description = realCourse.description;
+              p.thumbnail = realCourse.thumbnail;
+              p.studyPlan = { ...realCourse.studyPlan, lastReminderTimestamp: Date.now() };
+              updatedVideos = realCourse.videos;
+              needsResave = true;
+            }
+          }
+          return {
+            ...p,
+            studyPlan: p.studyPlan ? { ...createDefaultStudyPlan(), ...p.studyPlan } : createDefaultStudyPlan(),
+            videos: updatedVideos.sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+          };
+        });
+
+        if (needsResave) {
+          for (const p of normalized) {
+            await this.idb.put('playlists', p);
+          }
+        }
         this.playlists.set(normalized.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)));
       } else {
         // Initialize default starter playlists
@@ -117,9 +139,9 @@ export class HalaltubePlaylistService {
 
     const courseExample: HalalPlaylist = {
       id: 'course_web_dev',
-      title: 'دورة هندسة البرمجيات وتطبيقات الذكاء الاصطناعي 🚀',
-      description: 'مسار تعليمي متكامل لتعلم بناء المنصات الذكية وتطوير الويب الحديث خطوة بخطوة',
-      thumbnail: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=800',
+      title: 'قائمه مقترحه من حلال تيوب',
+      description: 'قائمه فيديوهات تجريبيه ننصح بها كل المستخدمين',
+      thumbnail: 'https://img.youtube.com/vi/o34lXn87U88/hqdefault.jpg',
       source: 'custom',
       isPrivate: false,
       createdAt: now - 86400000 * 3,
@@ -133,69 +155,73 @@ export class HalaltubePlaylistService {
         scheduledTime: '20:00',
         activeDays: [0, 1, 2, 3, 4, 5, 6],
         soundAlert: true,
-        browserNotification: true,
+        browserNotification: false,
         streak: 2,
         todayCompletedCount: 1,
         todayDate: todayStr,
-        lastReminderTimestamp: 0
+        lastReminderTimestamp: now
       },
       videos: [
         {
-          id: 'dQw4w9WgXcQ_1',
-          title: 'الدرس الأول: مقدمة في بناء البنية التحتية لتطبيقات الويب الحديثة',
-          thumbnail: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=800',
-          author: 'أكاديمية البرمجة الهادفة',
-          duration: '18:45',
-          durationSeconds: 1125,
+          id: 'o34lXn87U88',
+          title: 'مدخل إلى عالم البرمجة ولغة بايثون Python للمبتدئين',
+          thumbnail: 'https://img.youtube.com/vi/o34lXn87U88/hqdefault.jpg',
+          author: 'أكاديمية البرمجة العربية',
+          duration: '35:20',
+          durationSeconds: 2120,
           addedAt: now - 86400000 * 3,
           watched: true,
           watchedAt: now - 86400000 * 2,
-          order: 0
+          order: 0,
+          source: 'youtube'
         },
         {
-          id: 'dQw4w9WgXcQ_2',
-          title: 'الدرس الثاني: تصميم قواعد البيانات المتطورة والمزامنة اللحظية',
-          thumbnail: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?auto=format&fit=crop&q=80&w=800',
-          author: 'أكاديمية البرمجة الهادفة',
-          duration: '24:10',
-          durationSeconds: 1450,
-          addedAt: now - 86400000 * 3,
-          watched: true,
-          watchedAt: now - 86400000,
-          order: 1
-        },
-        {
-          id: 'dQw4w9WgXcQ_3',
-          title: 'الدرس الثالث: دمج نماذج الذكاء الاصطناعي وبناء تجربة مستخدم فائقة',
-          thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800',
-          author: 'أكاديمية البرمجة الهادفة',
-          duration: '31:50',
-          durationSeconds: 1910,
+          id: 'bm0OyhwFDuY',
+          title: 'كيف تبدأ في تعلم تطوير الويب وبناء أول موقع إلكتروني',
+          thumbnail: 'https://img.youtube.com/vi/bm0OyhwFDuY/hqdefault.jpg',
+          author: 'شروحات تقنية هادفة',
+          duration: '22:10',
+          durationSeconds: 1330,
           addedAt: now - 86400000 * 3,
           watched: false,
-          order: 2
+          order: 1,
+          source: 'youtube'
         },
         {
-          id: 'dQw4w9WgXcQ_4',
-          title: 'الدرس الرابع: تحسين الأداء والأمان وحماية خصوصية المستخدمين',
-          thumbnail: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&q=80&w=800',
-          author: 'أكاديمية البرمجة الهادفة',
-          duration: '21:15',
-          durationSeconds: 1275,
+          id: 'jV8B24rSN5o',
+          title: 'ما هو الذكاء الاصطناعي وكيف يغير مستقبل العالم والعمل؟',
+          thumbnail: 'https://img.youtube.com/vi/jV8B24rSN5o/hqdefault.jpg',
+          author: 'عالم الذكاء الاصطناعي',
+          duration: '15:40',
+          durationSeconds: 940,
           addedAt: now - 86400000 * 3,
           watched: false,
-          order: 3
+          order: 2,
+          source: 'youtube'
         },
         {
-          id: 'dQw4w9WgXcQ_5',
-          title: 'الدرس الخامس: نشر المشروع على السحابة وإدارة التحديثات المستمرة',
-          thumbnail: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=800',
-          author: 'أكاديمية البرمجة الهادفة',
-          duration: '28:40',
-          durationSeconds: 1720,
+          id: '3K1G3s-W3H4',
+          title: 'إعجاز خلق جسم الإنسان وأسرار عمل الدماغ والخلايا',
+          thumbnail: 'https://img.youtube.com/vi/3K1G3s-W3H4/hqdefault.jpg',
+          author: 'عجائب العلوم',
+          duration: '19:50',
+          durationSeconds: 1190,
           addedAt: now - 86400000 * 3,
           watched: false,
-          order: 4
+          order: 3,
+          source: 'youtube'
+        },
+        {
+          id: 'rS6vF_6_y9I',
+          title: 'كيف تبني عادات يومية إيجابية وتتخلص من التسويف والمماطلة',
+          thumbnail: 'https://img.youtube.com/vi/rS6vF_6_y9I/hqdefault.jpg',
+          author: 'تطوير الذات والإنتاجية',
+          duration: '14:25',
+          durationSeconds: 865,
+          addedAt: now - 86400000 * 3,
+          watched: false,
+          order: 4,
+          source: 'youtube'
         }
       ]
     };
@@ -548,19 +574,25 @@ export class HalaltubePlaylistService {
       // Check if reminder is due
       let isDue = false;
 
-      if (plan.targetType === 'interval' || plan.reminderIntervalMinutes > 0) {
+      if (plan.targetType === 'interval') {
         const intervalMs = (plan.reminderIntervalMinutes || 60) * 60 * 1000;
         const lastRemind = plan.lastReminderTimestamp || 0;
-        if (now - lastRemind >= intervalMs) {
+        if (lastRemind === 0) {
+          plan.lastReminderTimestamp = now;
+          this.updatePlaylist(playlist);
+        } else if (now - lastRemind >= intervalMs) {
           isDue = true;
         }
       } else if (plan.targetType === 'daily' && plan.scheduledTime) {
         // Daily scheduled mode
-        const isScheduledHour = currentTimeStr === plan.scheduledTime;
-        const isTodayActive = (plan.activeDays || [0,1,2,3,4,5,6]).includes(currentDayOfWeek);
+        const isTodayActive = (plan.activeDays || [0, 1, 2, 3, 4, 5, 6]).includes(currentDayOfWeek);
         const lastRemindToday = plan.lastReminderTimestamp && (new Date(plan.lastReminderTimestamp).toISOString().split('T')[0] === todayStr);
+        const todayDone = (plan.todayDate === todayStr) ? (plan.todayCompletedCount || 0) : 0;
+        const todayTarget = plan.dailyTarget || 1;
+        const hasUnfinishedTarget = todayDone < todayTarget;
 
-        if (isScheduledHour && isTodayActive && !lastRemindToday) {
+        // Triggers if scheduled hour has arrived, today is active, hasn't reminded yet today, and goal isn't completed yet
+        if (currentTimeStr >= plan.scheduledTime && isTodayActive && !lastRemindToday && hasUnfinishedTarget) {
           isDue = true;
         }
       }
@@ -675,6 +707,15 @@ export class HalaltubePlaylistService {
   }
 
   dismissReminder() {
+    const reminder = this.pendingReminder();
+    if (reminder) {
+      const playlist = this.playlists().find(p => p.id === reminder.playlist.id);
+      if (playlist && playlist.studyPlan) {
+        // Snooze for 45 minutes on manual dismiss so it doesn't immediately re-appear in the same session
+        playlist.studyPlan.snoozeUntilTimestamp = Date.now() + 45 * 60 * 1000;
+        this.updatePlaylist(playlist);
+      }
+    }
     this.showReminderToast.set(false);
     this.pendingReminder.set(null);
   }

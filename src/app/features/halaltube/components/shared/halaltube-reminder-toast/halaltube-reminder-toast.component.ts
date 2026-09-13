@@ -1,12 +1,13 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, Play, CheckCircle2, Clock, SkipForward, X, Flame, Bell, Sparkles, BookOpen } from 'lucide-angular';
+import { RouterModule } from '@angular/router';
+import { LucideAngularModule, Play, CheckCircle2, Clock, SkipForward, X, Flame, Bell, Sparkles, BookOpen, Settings } from 'lucide-angular';
 import { HalaltubePlaylistService } from '../../../services/halaltube-playlist.service';
 
 @Component({
   selector: 'app-halaltube-reminder-toast',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, RouterModule, LucideAngularModule],
   templateUrl: './halaltube-reminder-toast.component.html',
   styleUrls: ['./halaltube-reminder-toast.component.scss']
 })
@@ -23,6 +24,7 @@ export class HalaltubeReminderToastComponent {
   Bell = Bell;
   Sparkles = Sparkles;
   BookOpen = BookOpen;
+  Settings = Settings;
 
   get reminder() {
     return this.playlistSvc.pendingReminder();
