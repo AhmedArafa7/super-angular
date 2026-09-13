@@ -76,6 +76,14 @@ export class halaltubeTopbarComponent {
     this.showSuggestions.set(false);
     const q = this.searchQuery().trim();
     if (!q) return;
+
+    const directYtId = this.halaltube.extractYoutubeId(q);
+    if (directYtId) {
+      this.searchQuery.set('');
+      this.router.navigate(['/stream/watch', directYtId]);
+      return;
+    }
+
     this.halaltube.search(q);
     this.router.navigate(['/stream']);
   }

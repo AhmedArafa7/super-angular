@@ -1,5 +1,6 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { CustomTextRule } from '../models/local-player.models';
+import { StorageService } from './storage.service';
 
 @Injectable({
   providedIn: 'root'
@@ -7,9 +8,26 @@ import { CustomTextRule } from '../models/local-player.models';
 export class OcrCleanerService {
 
   readonly STORAGE_KEY = 'local_player_custom_ocr_rules_v3';
+  private storage = inject(StorageService);
 
   // Observable signal holding the current active custom text transformation rules
   customRules = signal<CustomTextRule[]>(this.loadCustomRules());
+
+  constructor() {
+    this.loadFromIndexedDb();
+  }
+
+  private async loadFromIndexedDb() {
+    try {
+      const stored = await this.storage.getItem('local_player_settings', 'ocr_rules_v3');
+      if (stored && Array.isArray(stored.rules) && stored.rules.length >= this.customRules().length) {
+        this.customRules.set(stored.rules);
+        try {
+          localStorage.setItem(this.STORAGE_KEY, JSON.stringify(stored.rules));
+        } catch (e) {}
+      }
+    } catch (e) {}
+  }
 
   /**
    * Returns pre-configured, battle-tested default rules designed specifically
@@ -190,12 +208,15 @@ export class OcrCleanerService {
   }
 
   saveCustomRules(rules: CustomTextRule[]): void {
+    this.customRules.set([...rules]);
     try {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(rules));
     } catch (e) {
-      console.warn('Could not save custom OCR rules:', e);
+      console.warn('Could not save custom OCR rules to localStorage:', e);
     }
-    this.customRules.set([...rules]);
+    this.storage.saveItem('local_player_settings', { id: 'ocr_rules_v3', rules }).catch(e => {
+      console.warn('Could not save custom OCR rules to IndexedDB:', e);
+    });
   }
 
   resetToDefaultRules(): CustomTextRule[] {

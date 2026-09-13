@@ -27,6 +27,7 @@ export const routes: Routes = [
           { path: 'history', loadComponent: () => import('./features/halaltube/components/halaltube-library/halaltube-library').then(c => c.halaltubeLibraryComponent), title: 'سجل المشاهدة - halaltube' },
           { path: 'liked', loadComponent: () => import('./features/halaltube/components/halaltube-library/halaltube-library').then(c => c.halaltubeLibraryComponent), title: 'فيديوهات أعجبتني - halaltube' },
           { path: 'studio', loadComponent: () => import('./features/halaltube/components/halaltube-studio/halaltube-studio').then(c => c.halaltubeStudioComponent), title: 'halaltube Studio' },
+          { path: 'watch', loadComponent: () => import('./features/halaltube/components/halaltube-watch-view/halaltube-watch-view').then(c => c.halaltubeWatchViewComponent), title: 'مشاهدة الفيديو - halaltube' },
           { path: 'watch/:id', loadComponent: () => import('./features/halaltube/components/halaltube-watch-view/halaltube-watch-view').then(c => c.halaltubeWatchViewComponent), title: 'مشاهدة الفيديو - halaltube' },
           { path: 'channel/:id', loadComponent: () => import('./features/halaltube/components/halaltube-channel/halaltube-channel.component').then(c => c.halaltubeChannelComponent) }
         ]

@@ -46,7 +46,7 @@ import { PlaylistSelectorModalComponent } from '../modals/playlist-selector-moda
   styleUrls: ['./halaltube-watch-view.scss']
 })
 export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
-  id = input.required<string>();
+  id = input<string>('');
   
   sidebar = inject(SidebarService);
   halaltube = inject(halaltubeService);
@@ -306,7 +306,11 @@ export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
 
   constructor() {
     effect(() => {
-      const videoId = this.id();
+      let videoId = this.id();
+      if (!videoId) {
+        const qv = this.route.snapshot.queryParamMap.get('v') || this.route.snapshot.queryParamMap.get('id');
+        if (qv) videoId = qv;
+      }
       if (videoId && videoId !== this.currentLoadedVideoId) {
         this.currentLoadedVideoId = videoId;
         untracked(() => {

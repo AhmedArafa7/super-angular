@@ -1,4 +1,5 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { firstValueFrom, from, catchError } from 'rxjs';
 import { QueryDocumentSnapshot } from 'firebase/firestore';
 import { Video, YouTubeSubscription, FeedVideo, HistoryItem, halaltubeTab, ContentItem, checkIsShorts } from './halaltube.model';
@@ -25,6 +26,7 @@ export interface AlgorithmConfig {
   providedIn: 'root'
 })
 export class halaltubeService {
+  private router = inject(Router);
   private firebaseService = inject(FirebaseService);
   private youtubeProvider = inject(YoutubeProviderService);
   private dataService = inject(YoutubeDataService);
@@ -566,6 +568,15 @@ export class halaltubeService {
       this.searchResults.set([]);
       this.matchingChannels.set([]);
       this.isSearching.set(false);
+      return;
+    }
+
+    // Direct YouTube Link Detection: Navigate directly to player
+    const directYtId = this.extractYoutubeId(query.trim());
+    if (directYtId) {
+      this.isSearching.set(false);
+      this.setSearchQuery('');
+      this.router.navigate(['/stream/watch', directYtId]);
       return;
     }
 
