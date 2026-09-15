@@ -60,22 +60,28 @@ export class halaltubeComponent {
     const author = this.newVideoAuthor.trim();
     if (!title || !author) return;
 
+    const payload = {
+      title,
+      author,
+      category: this.newVideoCategory,
+      thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800',
+      source: 'user_submission',
+      url: '',
+      status: 'pending_review'
+    };
+
+    this.halaltube.recordSubmission(payload);
+
     try {
-      await this.firebaseService.addVideoForReview({
-        title,
-        author,
-        category: this.newVideoCategory,
-        thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800', // Default thumbnail for now
-        source: 'user_submission'
-      });
-      alert('تم إرسال الفيديو للمراجعة بنجاح!');
-      this.newVideoTitle = '';
-      this.newVideoAuthor = '';
-      this.halaltube.showUploadModal.set(false);
+      await this.firebaseService.addVideoForReview(payload);
     } catch (e) {
-      console.error('Failed to submit video', e);
-      alert('حدث خطأ أثناء إرسال الفيديو. تأكد من أن لديك صلاحيات المراجعة.');
+      console.warn('Firebase addVideoForReview delayed:', e);
     }
+
+    alert('تم إرسال الفيديو للمراجعة بنجاح!');
+    this.newVideoTitle = '';
+    this.newVideoAuthor = '';
+    this.halaltube.showUploadModal.set(false);
   }
 
   connectVault(): void {

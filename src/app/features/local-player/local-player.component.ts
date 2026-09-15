@@ -8,7 +8,7 @@ import {
   RotateCcw, RotateCw, SkipForward, SkipBack, FolderOpen, FolderPlus, Upload, Film, Music, Trash2, 
   ListMusic, Sparkles, Sliders, Camera, Subtitles, Repeat, Eye, HardDrive, Clock,
   Search, ArrowUpDown, Plus, X, Loader2, Check, Settings, HelpCircle, CheckCircle2, Tv,
-  Undo2, Redo2, ChevronLeft, ChevronRight, History, ScanText, MoveHorizontal
+  Undo2, Redo2, ChevronLeft, ChevronRight, History, ScanText, MoveHorizontal, Zap
 } from 'lucide-angular';
 import { PlaylistTabComponent } from './components/playlist-tab/playlist-tab.component';
 import { NotesTabComponent } from './components/notes-tab/notes-tab.component';
@@ -17,6 +17,7 @@ import { StorageService } from './services/storage.service';
 import { SnapshotService } from './services/snapshot.service';
 import { NotesService } from './services/notes.service';
 import { OcrCleanerService } from './services/ocr-cleaner.service';
+import { IndexedDBService } from '../../core/services/indexed-db.service';
 
 @Component({
   selector: 'app-local-player',
@@ -327,9 +328,15 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
                         </div>
                       </div>
 
-                      <div class="border-t border-white/10 pt-2 flex items-center justify-between">
-                        <span class="text-[11px] text-slate-300">تشغيل تلقائي للتالي:</span>
-                        <input type="checkbox" [checked]="autoplayNext()" (change)="autoplayNext.set(!autoplayNext())" class="accent-teal-500 size-4 cursor-pointer" />
+                      <div class="border-t border-white/10 pt-2 space-y-2">
+                        <div class="flex items-center justify-between">
+                          <span class="text-[11px] text-slate-300">تشغيل تلقائي للتالي:</span>
+                          <input type="checkbox" [checked]="autoplayNext()" (change)="toggleAutoplayNext()" class="accent-teal-500 size-4 cursor-pointer" />
+                        </div>
+                        <div *ngIf="autoplayNext()" class="flex items-center justify-between pr-2 border-r-2 border-teal-500/40">
+                          <span class="text-[10px] text-slate-400">نفس المجلد فقط 📁:</span>
+                          <input type="checkbox" [checked]="autoplaySameFolderOnly()" (change)="toggleSameFolderOnly()" class="accent-teal-500 size-3.5 cursor-pointer" />
+                        </div>
                       </div>
 
                       <div class="border-t border-white/10 pt-2 space-y-1.5">
@@ -401,6 +408,18 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
                   <!-- Loop Toggle -->
                   <button (click)="isLooping.set(!isLooping())" [class.text-indigo-400]="isLooping()" [class.bg-indigo-500/20]="isLooping()" class="p-2 text-slate-300 hover:text-white rounded-xl transition" title="تكرار التشغيل">
                     <lucide-icon [img]="Repeat" class="size-4.5"></lucide-icon>
+                  </button>
+
+                  <!-- Autoplay Toggle Button -->
+                  <button 
+                    (click)="cycleAutoplayMode()" 
+                    [class.text-teal-400]="autoplayNext()" 
+                    [class.bg-teal-500/20]="autoplayNext()" 
+                    [class.text-slate-500]="!autoplayNext()" 
+                    class="p-2 rounded-xl transition hover:text-white flex items-center gap-1" 
+                    [title]="autoplayNext() ? (autoplaySameFolderOnly() ? 'التشغيل التلقائي: نفس المجلد 📁 (انقر للتبديل)' : 'التشغيل التلقائي: كامل القائمة 📑 (انقر للتبديل)') : 'التشغيل التلقائي معطل ⏸️ (انقر للتفعيل)'">
+                    <lucide-icon [img]="Zap" class="size-4.5"></lucide-icon>
+                    <span *ngIf="autoplayNext()" class="text-[10px] font-bold hidden xl:inline">{{ autoplaySameFolderOnly() ? 'نفس المجلد' : 'الكل' }}</span>
                   </button>
 
                   <!-- Fullscreen -->
@@ -533,6 +552,9 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
               [(searchQuery)]="searchQuery"
               [totalPlaylistSize]="totalPlaylistSize()"
               [notesCountByVideoId]="notesCountByVideoId()"
+              [autoplayNext]="autoplayNext()"
+              [autoplaySameFolderOnly]="autoplaySameFolderOnly()"
+              (cycleAutoplay)="cycleAutoplayMode()"
               (selectItem)="onPlaylistItemClick($event)"
               (removeItem)="removeItem($event)"
               (sortChange)="toggleSortOrder()"
@@ -711,10 +733,20 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
                   @for (item of recycleBin(); track item.id) {
                     <div class="p-2.5 rounded-2xl bg-black/30 border border-white/5 flex flex-col gap-1.5 group">
                       <div class="flex items-center justify-between gap-2">
-                        <p class="text-xs font-bold text-slate-200 truncate" [title]="item.name">{{ item.name }}</p>
-                        <button (click)="removeRecycleBinItem(item.id)" class="text-slate-500 hover:text-red-400 p-1 transition" title="حذف نهائي من السجل">
-                          <lucide-icon [img]="Trash2" class="size-3"></lucide-icon>
-                        </button>
+                        <div class="min-w-0 flex-1">
+                          <p class="text-xs font-bold text-slate-200 truncate" [title]="item.name">{{ item.name }}</p>
+                          <p *ngIf="item.folderName" class="text-[10px] text-teal-400 font-mono mt-0.5">📁 {{ item.folderName }}</p>
+                          <p *ngIf="item.relativePath" class="text-[9px] text-slate-500 font-mono truncate" [title]="item.relativePath">📍 {{ item.relativePath }}</p>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                          <button (click)="restoreRecycleBinItem(item)" class="px-2 py-1 bg-teal-500/20 hover:bg-teal-500/40 text-teal-300 rounded-lg text-[10px] font-bold transition flex items-center gap-1" title="استعادة إلى قائمة التشغيل">
+                            <lucide-icon [img]="RotateCcw" class="size-3"></lucide-icon>
+                            <span>استعادة</span>
+                          </button>
+                          <button (click)="removeRecycleBinItem(item.id)" class="text-slate-500 hover:text-red-400 p-1.5 transition rounded-lg hover:bg-white/5" title="حذف نهائي من السجل">
+                            <lucide-icon [img]="Trash2" class="size-3"></lucide-icon>
+                          </button>
+                        </div>
                       </div>
 
                       <div class="flex items-center justify-between text-[10px] font-mono">
@@ -726,7 +758,8 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
                               }">
                           {{ item.watchStatus === 'watched' ? '✅ مشاهدة بالكامل' : (item.watchStatus === 'partial' ? '⏳ مشاهدة جزئية' : '⭕ لم تبدأ') }}
                         </span>
-                        <span class="text-slate-500">حُذف منذ {{ formatDaysAgo(item.deletedAt) }}</span>
+                        <span *ngIf="item.lastPosition" class="text-indigo-300 font-mono">{{ formatTime(item.lastPosition) }}</span>
+                        <span class="text-slate-500">حُذف {{ formatDaysAgo(item.deletedAt) }}</span>
                       </div>
                     </div>
                   }
@@ -1074,6 +1107,7 @@ import { OcrCleanerService } from './services/ocr-cleaner.service';
 export class LocalPlayerComponent implements OnInit, OnDestroy {
   sanitizer = inject(DomSanitizer);
   storageService = inject(StorageService);
+  private indexedDb = inject(IndexedDBService);
 
   @ViewChild('videoPlayer') videoPlayer?: ElementRef<HTMLVideoElement>;
   @ViewChild('folderInput') folderInput?: ElementRef<HTMLInputElement>;
@@ -1101,6 +1135,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   playbackRate = signal<number>(1.0);
   isLooping = signal<boolean>(false);
   autoplayNext = signal<boolean>(true);
+  autoplaySameFolderOnly = signal<boolean>(true);
   wheelVolumeEnabled = signal<boolean>(true);
   keyboardVolumeEnabled = signal<boolean>(true);
   skipStep = signal<number>(10);
@@ -1414,6 +1449,67 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     if (days === 0) return 'اليوم';
     if (days === 1) return 'أمس';
     return `منذ ${days} أيام`;
+  }
+
+  deduceFolderFromName(name: string): string {
+    if (!name) return '';
+    const suffix = name.match(/(?:(?:\.mp4|\.mkv|\.webm|\.avi|\.mov|\.flv|\.ts|\.mp3|\.m4a))?\s*[-_#(\[]*\s*(\d{1,3})\s*[)\]]*$/i);
+    if (suffix && suffix[1]) return `فولدر ${suffix[1]}`;
+    const prefix = name.match(/^\[?(\d{1,3})\]?\s*[-_.]\s*/);
+    if (prefix && prefix[1]) return `فولدر ${prefix[1]}`;
+    return '';
+  }
+
+  getEffectiveFolderName(item: { folderName?: string; relativePath?: string; name: string } | null | undefined): string {
+    if (!item) return '';
+    if (item.folderName && item.folderName.trim()) return item.folderName.trim();
+    if (item.relativePath) {
+      const parts = item.relativePath.replace(/\\/g, '/').split('/');
+      if (parts.length > 1) return parts.slice(0, -1).join(' / ');
+    }
+    return this.deduceFolderFromName(item.name);
+  }
+
+  restoreRecycleBinItem(item: RecycleBinItem) {
+    if (item.relativePath && this.isElectron) {
+      const fileUrl = item.relativePath.startsWith('file://') ? item.relativePath : `file://${item.relativePath.replace(/\\/g, '/')}`;
+      const restoredItem: LocalMediaItem = {
+        id: item.id,
+        name: item.name,
+        relativePath: item.relativePath,
+        folderName: item.folderName,
+        size: item.size,
+        type: item.type,
+        mimeType: item.type === 'video' ? 'video/mp4' : 'audio/mp3',
+        blobUrl: fileUrl,
+        duration: item.duration,
+        lastPosition: item.lastPosition || 0,
+        createdAt: Date.now()
+      };
+      this.playlist.update(list => this.sortMediaItems([...list, restoredItem], this.sortOrder()));
+      this.removeRecycleBinItem(item.id);
+      this.showToast(`تمت استعادة "${item.name}" إلى قائمة التشغيل ↩️`, 'success');
+      return;
+    }
+
+    this.storageService.getMediaItem(item.id).then(stored => {
+      if (stored && (stored.fileBlob || stored.relativePath)) {
+        const blobUrl = stored.fileBlob 
+          ? URL.createObjectURL(stored.fileBlob)
+          : (stored.relativePath.startsWith('file://') ? stored.relativePath : `file://${stored.relativePath.replace(/\\/g, '/')}`);
+        const restoredItem: LocalMediaItem = {
+          ...stored,
+          blobUrl
+        };
+        this.playlist.update(list => this.sortMediaItems([...list, restoredItem], this.sortOrder()));
+        this.removeRecycleBinItem(item.id);
+        this.showToast(`تمت استعادة "${item.name}" إلى قائمة التشغيل ↩️`, 'success');
+      } else {
+        this.showToast(`الملف الأصلي لم يعد متاحاً في الذاكرة المؤقتة، ولكن بياناته وملاحظاته محفوظة في السجل.`, 'warning');
+      }
+    }).catch(() => {
+      this.showToast(`تعذر استعادة الملف من الذاكرة`, 'warning');
+    });
   }
 
   snapshotService = inject(SnapshotService);
@@ -1829,6 +1925,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   History = History;
   ScanText = ScanText;
   MoveHorizontal = MoveHorizontal;
+  Zap = Zap;
 
   // Filtered & Sorted playlist
   displayedPlaylist = computed(() => {
@@ -2001,6 +2098,9 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
       const savedAutoplay = localStorage.getItem('local_player_autoplay');
       if (savedAutoplay !== null) this.autoplayNext.set(savedAutoplay === 'true');
 
+      const savedSameFolder = localStorage.getItem('local_player_same_folder');
+      if (savedSameFolder !== null) this.autoplaySameFolderOnly.set(savedSameFolder === 'true');
+
       const savedWheelVol = localStorage.getItem('local_player_wheel_volume');
       if (savedWheelVol !== null) this.wheelVolumeEnabled.set(savedWheelVol === 'true');
 
@@ -2095,6 +2195,38 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     localStorage.setItem('local_player_keep_controls', val.toString());
   }
 
+  toggleAutoplayNext() {
+    const val = !this.autoplayNext();
+    this.autoplayNext.set(val);
+    localStorage.setItem('local_player_autoplay', val.toString());
+    this.showToast(val ? 'تم تفعيل التشغيل التلقائي للتالي ⚡' : 'تم إيقاف التشغيل التلقائي ⏸️', 'info');
+  }
+
+  toggleSameFolderOnly() {
+    const val = !this.autoplaySameFolderOnly();
+    this.autoplaySameFolderOnly.set(val);
+    localStorage.setItem('local_player_same_folder', val.toString());
+    this.showToast(val ? 'الانتقال التلقائي: محصور داخل نفس المجلد 📁' : 'الانتقال التلقائي: يشمل كامل القائمة 📑', 'info');
+  }
+
+  cycleAutoplayMode() {
+    if (!this.autoplayNext()) {
+      this.autoplayNext.set(true);
+      this.autoplaySameFolderOnly.set(true);
+      localStorage.setItem('local_player_autoplay', 'true');
+      localStorage.setItem('local_player_same_folder', 'true');
+      this.showToast('التشغيل التلقائي: نفس المجلد فقط 📁⚡', 'info');
+    } else if (this.autoplaySameFolderOnly()) {
+      this.autoplaySameFolderOnly.set(false);
+      localStorage.setItem('local_player_same_folder', 'false');
+      this.showToast('التشغيل التلقائي: كامل القائمة 📑⚡', 'info');
+    } else {
+      this.autoplayNext.set(false);
+      localStorage.setItem('local_player_autoplay', 'false');
+      this.showToast('تم إيقاف التشغيل التلقائي ⏸️', 'info');
+    }
+  }
+
   /**
    * Restores previously uploaded playlist and media files from IndexedDB
    */
@@ -2108,14 +2240,17 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
       if (storedItems && storedItems.length > 0) {
         const restored: LocalMediaItem[] = [];
         for (const item of storedItems) {
-          if (item.fileBlob) {
-            const blobUrl = URL.createObjectURL(item.fileBlob);
+          if (item.fileBlob || item.relativePath) {
+            const blobUrl = item.fileBlob 
+              ? URL.createObjectURL(item.fileBlob) 
+              : (item.relativePath.startsWith('file://') ? item.relativePath : `file://${item.relativePath.replace(/\\/g, '/')}`);
             let subtitlesUrl: string | undefined;
             if (item.subtitlesBlob) {
               subtitlesUrl = URL.createObjectURL(item.subtitlesBlob);
             }
             restored.push({
               ...item,
+              folderName: item.folderName || this.getEffectiveFolderName(item),
               blobUrl,
               subtitlesUrl
             });
@@ -2284,8 +2419,8 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   private sortMediaItems(items: LocalMediaItem[], order: 'asc' | 'desc' = 'asc'): LocalMediaItem[] {
     const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
     return items.sort((a, b) => {
-      const folderA = (a.folderName || '').trim();
-      const folderB = (b.folderName || '').trim();
+      const folderA = this.getEffectiveFolderName(a);
+      const folderB = this.getEffectiveFolderName(b);
       if (folderA !== folderB) {
         return collator.compare(folderA, folderB);
       }
@@ -2343,6 +2478,9 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
         if (parts.length > 1) {
           folderName = parts.slice(0, -1).join(' / ');
         }
+      }
+      if (!folderName) {
+        folderName = this.deduceFolderFromName(file.name);
       }
 
       let subtitlesUrl: string | undefined;
@@ -2690,13 +2828,33 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     const cur = this.activeItem();
     if (!cur || list.length <= 1) return;
 
-    // Filter to items in the same folder
-    const sameFolderList = list.filter(i => (i.folderName || '') === (cur.folderName || ''));
-    const targetList = sameFolderList.length > 0 ? sameFolderList : list;
+    const curFolder = this.getEffectiveFolderName(cur);
 
-    const curIdx = targetList.findIndex(i => i.id === cur.id);
-    const nextIdx = (curIdx + 1) % targetList.length;
-    this.playItem(targetList[nextIdx], true, undefined, true);
+    if (this.autoplaySameFolderOnly() && curFolder) {
+      const sameFolderList = list.filter(i => this.getEffectiveFolderName(i) === curFolder);
+      if (sameFolderList.length > 0) {
+        const curIdxInFolder = sameFolderList.findIndex(i => i.id === cur.id);
+        if (curIdxInFolder >= 0 && curIdxInFolder < sameFolderList.length - 1) {
+          // Play next video in the same folder
+          this.playItem(sameFolderList[curIdxInFolder + 1], true, undefined, true);
+          return;
+        } else if (curIdxInFolder === sameFolderList.length - 1) {
+          // Reached the end of current folder! Move to the next folder in the list
+          const curIdxInAll = list.findIndex(i => i.id === cur.id);
+          if (curIdxInAll >= 0 && curIdxInAll < list.length - 1) {
+            const nextItem = list[curIdxInAll + 1];
+            const nextFolder = this.getEffectiveFolderName(nextItem);
+            this.showToast(`اكتملت فيديوهات "${curFolder}"! الانتقال للمجلد التالي "${nextFolder || 'القادم'}" 🚀`, 'info');
+            this.playItem(nextItem, true, undefined, true);
+            return;
+          }
+        }
+      }
+    }
+
+    const curIdx = list.findIndex(i => i.id === cur.id);
+    const nextIdx = (curIdx + 1) % list.length;
+    this.playItem(list[nextIdx], true, undefined, true);
   }
 
   playPrevious() {
@@ -2704,13 +2862,28 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     const cur = this.activeItem();
     if (!cur || list.length <= 1) return;
 
-    // Filter to items in the same folder
-    const sameFolderList = list.filter(i => (i.folderName || '') === (cur.folderName || ''));
-    const targetList = sameFolderList.length > 0 ? sameFolderList : list;
+    const curFolder = this.getEffectiveFolderName(cur);
 
-    const curIdx = targetList.findIndex(i => i.id === cur.id);
-    const prevIdx = (curIdx - 1 + targetList.length) % targetList.length;
-    this.playItem(targetList[prevIdx], true, undefined, true);
+    if (this.autoplaySameFolderOnly() && curFolder) {
+      const sameFolderList = list.filter(i => this.getEffectiveFolderName(i) === curFolder);
+      if (sameFolderList.length > 0) {
+        const curIdxInFolder = sameFolderList.findIndex(i => i.id === cur.id);
+        if (curIdxInFolder > 0) {
+          this.playItem(sameFolderList[curIdxInFolder - 1], true, undefined, true);
+          return;
+        } else if (curIdxInFolder === 0) {
+          const curIdxInAll = list.findIndex(i => i.id === cur.id);
+          if (curIdxInAll > 0) {
+            this.playItem(list[curIdxInAll - 1], true, undefined, true);
+            return;
+          }
+        }
+      }
+    }
+
+    const curIdx = list.findIndex(i => i.id === cur.id);
+    const prevIdx = (curIdx - 1 + list.length) % list.length;
+    this.playItem(list[prevIdx], true, undefined, true);
   }
 
   onSeekStart() {
@@ -3061,8 +3234,36 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
 
   removeItem(id: string) {
     const item = this.playlist().find(i => i.id === id);
-    if (item && item.blobUrl && item.blobUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(item.blobUrl);
+    if (item) {
+      let watchStatus: 'watched' | 'partial' | 'unwatched' = 'unwatched';
+      if (item.duration && item.lastPosition) {
+        if (item.lastPosition >= item.duration * 0.9) {
+          watchStatus = 'watched';
+        } else if (item.lastPosition > 10) {
+          watchStatus = 'partial';
+        }
+      }
+
+      const effectiveFolder = this.getEffectiveFolderName(item);
+      const recycleItem: RecycleBinItem = {
+        id: item.id,
+        name: item.name,
+        folderName: effectiveFolder || item.folderName,
+        relativePath: item.relativePath,
+        size: item.size,
+        type: item.type || 'video',
+        duration: item.duration,
+        lastPosition: item.lastPosition,
+        watchStatus,
+        deletedAt: Date.now()
+      };
+
+      this.recycleBin.update(list => [recycleItem, ...list.filter(i => i.id !== item.id)]);
+      this.saveRecycleBinAndState();
+
+      if (item.blobUrl && item.blobUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(item.blobUrl);
+      }
     }
 
     const updated = this.playlist().filter(i => i.id !== id);
@@ -3080,10 +3281,39 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
         localStorage.removeItem('local_player_active_id');
       }
     }
+
+    this.showToast('تم نقل الفيديو إلى سلة المحذوفات وحفظ بياناته 🗑️', 'info');
   }
 
   confirmClearPlaylist() {
     this.showClearConfirm.set(false);
+    const now = Date.now();
+    const newRecycled: RecycleBinItem[] = this.playlist().map(item => {
+      let watchStatus: 'watched' | 'partial' | 'unwatched' = 'unwatched';
+      if (item.duration && item.lastPosition) {
+        if (item.lastPosition >= item.duration * 0.9) {
+          watchStatus = 'watched';
+        } else if (item.lastPosition > 10) {
+          watchStatus = 'partial';
+        }
+      }
+      return {
+        id: item.id,
+        name: item.name,
+        folderName: this.getEffectiveFolderName(item) || item.folderName,
+        relativePath: item.relativePath,
+        size: item.size,
+        type: item.type || 'video',
+        duration: item.duration,
+        lastPosition: item.lastPosition,
+        watchStatus,
+        deletedAt: now
+      };
+    });
+
+    this.recycleBin.update(list => [...newRecycled, ...list]);
+    this.saveRecycleBinAndState();
+
     for (const item of this.playlist()) {
       if (item.blobUrl && item.blobUrl.startsWith('blob:')) {
         URL.revokeObjectURL(item.blobUrl);
@@ -3096,7 +3326,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     localStorage.removeItem('local_player_active_id');
 
     this.storageService.clearAllMedia().catch(() => {});
-    this.showToast('تم تفريغ قائمة التشغيل والذاكرة المحلية بنجاح 🧹');
+    this.showToast('تم تفريغ القائمة ونقل بياناتها إلى سلة المحذوفات 🧹', 'info');
   }
 
   onMouseMove() {

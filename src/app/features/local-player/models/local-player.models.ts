@@ -16,6 +16,7 @@ export interface RecycleBinItem {
   duration?: number;
   lastPosition?: number;
   folderName?: string;
+  relativePath?: string;
   deletedAt: number;
   watchStatus: 'watched' | 'partial' | 'unwatched';
 }

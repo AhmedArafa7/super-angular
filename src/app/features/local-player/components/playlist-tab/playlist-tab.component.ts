@@ -1,7 +1,7 @@
 import { Component, input, output, model } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Search, ArrowUpDown, Trash2, Film, FolderPlus, Plus, Play, Pause, X } from 'lucide-angular';
+import { LucideAngularModule, Search, ArrowUpDown, Trash2, Film, FolderPlus, Plus, Play, Pause, X, Zap } from 'lucide-angular';
 import { LocalMediaItem } from '../../models/local-player.models';
 
 @Component({
@@ -13,10 +13,20 @@ import { LocalMediaItem } from '../../models/local-player.models';
     <!-- Playlist Header -->
     <div class="p-3.5 border-b border-white/10 bg-slate-900/90 flex flex-col gap-2.5">
       <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5 flex-wrap">
           <span *ngIf="playlist().length > 0" class="text-[10px] px-1.5 py-0.5 bg-teal-500/20 text-teal-300 rounded font-mono font-bold" title="محفوظ دائماً محلياً">
-            💾 دائم محلياً
+            💾 دائم
           </span>
+          <!-- Autoplay Mode Badge / Button -->
+          <button 
+            *ngIf="playlist().length > 0"
+            (click)="cycleAutoplay.emit()" 
+            class="text-[10px] px-2 py-0.5 rounded-full font-bold transition flex items-center gap-1 cursor-pointer"
+            [ngClass]="autoplayNext() ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30 hover:bg-teal-500/30' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'"
+            [title]="'انقر لتبديل وضع التشغيل التلقائي: نفس المجلد / الكل / معطل'">
+            <lucide-icon [img]="Zap" class="size-3"></lucide-icon>
+            <span>التالي: {{ autoplayNext() ? (autoplaySameFolderOnly() ? 'نفس المجلد 📁' : 'الكل 📑') : 'معطل ⏸️' }}</span>
+          </button>
         </div>
 
         <!-- Quick action links -->
@@ -83,8 +93,8 @@ import { LocalMediaItem } from '../../models/local-player.models';
                 </span>
               </div>
               <div class="flex items-center gap-1.5 mt-0.5">
-                <span *ngIf="item.folderName" class="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-teal-300 font-mono truncate max-w-[120px]" [title]="item.folderName">
-                  📁 {{ item.folderName }}
+                <span *ngIf="getEffectiveFolderName(item)" class="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-teal-300 font-mono truncate max-w-[120px]" [title]="getEffectiveFolderName(item)">
+                  📁 {{ getEffectiveFolderName(item) }}
                 </span>
                 <span class="text-[10px] text-slate-500 font-mono">{{ formatTime(item.duration || 0) + ' • ' }}{{ formatFileSize(item.size) }}</span>
                 <span *ngIf="item.lastPosition && item.lastPosition > 10" class="text-[9px] px-1 bg-indigo-500/20 text-indigo-300 rounded font-mono">
@@ -124,6 +134,7 @@ export class PlaylistTabComponent {
   FolderPlus = FolderPlus;
   Plus = Plus;
   X = X;
+  Zap = Zap;
 
   playlist = input<LocalMediaItem[]>([]);
   displayedPlaylist = input<LocalMediaItem[]>([]);
@@ -133,12 +144,15 @@ export class PlaylistTabComponent {
   searchQuery = model<string>('');
   totalPlaylistSize = input<number>(0);
   notesCountByVideoId = input<Record<string, number>>({});
+  autoplayNext = input<boolean>(true);
+  autoplaySameFolderOnly = input<boolean>(true);
 
   selectItem = output<LocalMediaItem>();
   removeItem = output<string>();
   sortChange = output<void>();
   addFolder = output<Event>();
   addFiles = output<Event>();
+  cycleAutoplay = output<void>();
 
   formatTime(seconds: number): string {
     if (!seconds || isNaN(seconds)) return '00:00';
@@ -152,5 +166,19 @@ export class PlaylistTabComponent {
     const mb = bytes / (1024 * 1024);
     if (mb >= 1000) return (mb / 1024).toFixed(1) + ' GB';
     return mb.toFixed(1) + ' MB';
+  }
+
+  getEffectiveFolderName(item: LocalMediaItem): string {
+    if (item.folderName && item.folderName.trim()) return item.folderName.trim();
+    if (item.relativePath) {
+      const parts = item.relativePath.replace(/\\/g, '/').split('/');
+      if (parts.length > 1) return parts.slice(0, -1).join(' / ');
+    }
+    const name = item.name || '';
+    const suffix = name.match(/(?:(?:\.mp4|\.mkv|\.webm|\.avi|\.mov|\.flv|\.ts|\.mp3|\.m4a))?\s*[-_#(\[]*\s*(\d{1,3})\s*[)\]]*$/i);
+    if (suffix && suffix[1]) return `فولدر ${suffix[1]}`;
+    const prefix = name.match(/^\[?(\d{1,3})\]?\s*[-_.]\s*/);
+    if (prefix && prefix[1]) return `فولدر ${prefix[1]}`;
+    return '';
   }
 }

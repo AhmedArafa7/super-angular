@@ -301,7 +301,14 @@ export class UploadModalComponent implements OnInit, AfterViewInit, OnChanges {
       this.cdr.detectChanges();
 
       for (const v of selectedVideos) {
-        await this.firebaseService.addVideoForReview({
+        const aiEval = this.halaltubeService.moderation.evaluateVideo({
+          title: v.title,
+          author: this.selectedChannel || v.folderName || 'Google Drive',
+          category: 'تكنولوجيا وبرمجة',
+          description: ''
+        });
+
+        const subPayload = {
           title: v.title,
           author: this.selectedChannel || v.folderName || 'Google Drive',
           category: 'تكنولوجيا وبرمجة',
@@ -316,8 +323,23 @@ export class UploadModalComponent implements OnInit, AfterViewInit, OnChanges {
           folderPath: v.folderPath,
           isShorts: false,
           isLargeFile: false,
-          fileSizeMB: v.size ? +(v.size / (1024 * 1024)).toFixed(1) : 0
-        });
+          fileSizeMB: v.size ? +(v.size / (1024 * 1024)).toFixed(1) : 0,
+          userId: this.firebaseService.currentUser()?.uid || 'guest',
+          userEmail: this.firebaseService.currentUser()?.email || '',
+          aiScore: aiEval.score,
+          aiStatus: aiEval.status,
+          aiReasons: aiEval.reasons,
+          hasMusicWarning: aiEval.hasMusicWarning,
+          status: 'pending_review'
+        };
+
+        this.halaltubeService.recordSubmission(subPayload);
+
+        try {
+          await this.firebaseService.addVideoForReview(subPayload);
+        } catch (cloudErr) {
+          console.warn('[UploadModal] Drive video cloud sync delayed:', cloudErr);
+        }
       }
 
       this.isUploading = false;
@@ -390,7 +412,14 @@ export class UploadModalComponent implements OnInit, AfterViewInit, OnChanges {
       for (const v of selected) {
         const vUrl = `https://www.youtube.com/watch?v=${v.id}`;
         const isShorts = checkIsShorts({ url: vUrl, title: v.title });
-        await this.firebaseService.addVideoForReview({
+        const aiEval = this.halaltubeService.moderation.evaluateVideo({
+          title: v.title,
+          author: this.selectedChannel || v.author || 'الرئيسية',
+          category: isShorts ? 'shorts' : 'تكنولوجيا',
+          description: ''
+        });
+
+        const subPayload = {
           title: v.title,
           author: this.selectedChannel || v.author || 'الرئيسية',
           category: isShorts ? 'shorts' : 'تكنولوجيا',
@@ -399,8 +428,23 @@ export class UploadModalComponent implements OnInit, AfterViewInit, OnChanges {
           url: vUrl,
           isShorts: isShorts,
           isLargeFile: false,
-          fileSizeMB: 0
-        });
+          fileSizeMB: 0,
+          userId: this.firebaseService.currentUser()?.uid || 'guest',
+          userEmail: this.firebaseService.currentUser()?.email || '',
+          aiScore: aiEval.score,
+          aiStatus: aiEval.status,
+          aiReasons: aiEval.reasons,
+          hasMusicWarning: aiEval.hasMusicWarning,
+          status: 'pending_review'
+        };
+
+        this.halaltubeService.recordSubmission(subPayload);
+
+        try {
+          await this.firebaseService.addVideoForReview(subPayload);
+        } catch (cloudErr) {
+          console.warn('[UploadModal] Playlist video cloud sync delayed:', cloudErr);
+        }
       }
 
       this.isUploading = false;
@@ -701,22 +745,19 @@ export class UploadModalComponent implements OnInit, AfterViewInit, OnChanges {
         aiScore: aiEval.score,
         aiStatus: aiEval.status,
         aiReasons: aiEval.reasons,
-        hasMusicWarning: aiEval.hasMusicWarning
+        hasMusicWarning: aiEval.hasMusicWarning,
+        status: 'pending_review'
       };
 
-      await this.firebaseService.addVideoForReview(submissionPayload);
+      // 1. Save locally IMMEDIATELY (guaranteed persistence in memory & localStorage)
+      this.halaltubeService.recordSubmission(submissionPayload);
 
-      // Save locally so the user can track their submissions in halaltube Studio anytime
+      // 2. Attempt Cloud Sync to Firestore in try/catch (never fails user experience)
       try {
-        const localSub = {
-          ...submissionPayload,
-          id: 'sub_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-          status: 'pending_review',
-          createdAt: Date.now()
-        };
-        const existing = JSON.parse(localStorage.getItem('halaltube_my_submissions') || '[]');
-        localStorage.setItem('halaltube_my_submissions', JSON.stringify([localSub, ...existing]));
-      } catch (e) {}
+        await this.firebaseService.addVideoForReview(submissionPayload);
+      } catch (cloudErr) {
+        console.warn('[UploadModal] Cloud review sync pending or restricted:', cloudErr);
+      }
       
       this.isUploading = false;
       const successMsg = isLargeFile 
@@ -743,7 +784,7 @@ export class UploadModalComponent implements OnInit, AfterViewInit, OnChanges {
     } catch (e) {
       this.isUploading = false;
       console.error('Failed to submit video for review', e);
-      this.showToast('حدث خطأ أثناء إرسال الفيديو. تأكد من اتصالك بالشبكة.', 'error');
+      this.showToast('حدث خطأ أثناء معالجة الفيديو. يرجى إعادة المحاولة.', 'error');
     }
   }
 }

@@ -1,0 +1,60 @@
+<div class="h-full w-full bg-slate-950 text-white flex flex-col font-sans select-none overflow-hidden" dir="rtl">
+  
+  <!-- Header -->
+  <header class="h-14 sm:h-16 bg-slate-900/80 border-b border-white/10 px-4 sm:px-6 flex items-center justify-between shrink-0 backdrop-blur-md z-20">
+    <div class="flex items-center gap-3">
+      <div class="p-2.5 bg-gradient-to-tr from-teal-600 to-emerald-500 rounded-2xl text-white shadow-lg shadow-teal-500/20">
+        <lucide-icon [img]="Calculator" class="size-5"></lucide-icon>
+      </div>
+      <div>
+        <h1 class="text-sm sm:text-base font-black text-white">الآلة الحاسبة العلمية المتقدمة (Casio Pro)</h1>
+        <p class="text-[11px] text-slate-400">حسابات رياضية هندسية، مصفوفات، ودوال علمية دقيقة</p>
+      </div>
+    </div>
+
+    <!-- Mode Tabs -->
+    <div class="flex items-center bg-black/40 border border-white/10 p-1 rounded-2xl gap-1">
+      <button (click)="mode.set('standard')" [class.bg-teal-600]="mode() === 'standard'" class="px-3 py-1.5 rounded-xl text-xs font-bold transition">عادية</button>
+      <button (click)="mode.set('scientific')" [class.bg-teal-600]="mode() === 'scientific'" class="px-3 py-1.5 rounded-xl text-xs font-bold transition">علمية</button>
+      <button (click)="mode.set('matrix')" [class.bg-teal-600]="mode() === 'matrix'" class="px-3 py-1.5 rounded-xl text-xs font-bold transition">مصفوفات</button>
+      <button (click)="mode.set('history')" [class.bg-teal-600]="mode() === 'history'" class="px-3 py-1.5 rounded-xl text-xs font-bold transition">السجل</button>
+    </div>
+  </header>
+
+  <!-- Main Calculator Body -->
+  <main class="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 overflow-hidden">
+    <div class="bg-slate-900 border border-white/15 rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl flex flex-col gap-4">
+      
+      <!-- Screen Display -->
+      <div class="bg-black/70 border border-white/15 rounded-2xl p-4 flex flex-col items-end gap-1 shadow-inner">
+        <span class="text-xs text-slate-400 font-mono min-h-[18px]" dir="ltr">{{ expression() || '' }}</span>
+        <span class="text-2xl sm:text-3xl font-black text-teal-300 font-mono tracking-wider min-h-[36px]" dir="ltr">{{ result() }}</span>
+      </div>
+
+      <!-- Angle Mode Toggle (Deg / Rad) -->
+      @if (mode() === 'scientific') {
+        <div class="flex items-center justify-between text-xs px-1">
+          <span class="text-slate-400">نظام الزوايا:</span>
+          <button (click)="toggleAngleMode()" class="px-3 py-1 bg-teal-500/20 text-teal-300 border border-teal-500/30 rounded-lg font-mono font-bold">
+            {{ angleMode().toUpperCase() }}
+          </button>
+        </div>
+      }
+
+      <!-- Dynamic Keypads based on Mode -->
+      <div class="flex-1 flex flex-col">
+        @if (mode() === 'standard') {
+          <app-standard-pad (action)="onPadAction($event)"></app-standard-pad>
+        } @else if (mode() === 'scientific') {
+          <app-scientific-pad (action)="onPadAction($event)"></app-scientific-pad>
+        } @else if (mode() === 'matrix') {
+          <app-matrix-pad></app-matrix-pad>
+        } @else if (mode() === 'history') {
+          <app-history-pad (selectItem)="recallHistory($event)"></app-history-pad>
+        }
+      </div>
+
+    </div>
+  </main>
+
+</div>

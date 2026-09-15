@@ -1,7 +1,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom, from, catchError } from 'rxjs';
-import { QueryDocumentSnapshot } from 'firebase/firestore';
+import { QueryDocumentSnapshot, collection, query, where, getDocs } from 'firebase/firestore';
 import { Video, YouTubeSubscription, FeedVideo, HistoryItem, halaltubeTab, ContentItem, checkIsShorts } from './halaltube.model';
 import { FALLBACK_VIDEOS } from './data/fallback-videos';
 import { FirebaseService } from '../../core/services/firebase.service';
@@ -78,6 +78,85 @@ export class halaltubeService {
   // Channel stats (for the authenticated YouTube channel)
   readonly myChannelStats = signal<YouTubeChannelStats | null>(null);
   readonly myVideos = signal<YouTubeVideo[]>([]);
+
+  // User Submissions State
+  readonly mySubmissions = signal<any[]>(this.loadStoredSubmissions());
+
+  loadStoredSubmissions(): any[] {
+    try {
+      const stored = localStorage.getItem('halaltube_my_submissions');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  recordSubmission(submission: any): any {
+    const item = {
+      id: submission.id || ('sub_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6)),
+      status: submission.status || 'pending_review',
+      createdAt: submission.createdAt || Date.now(),
+      ...submission
+    };
+
+    this.mySubmissions.update(list => {
+      const filtered = list.filter(s => s.id !== item.id && (!item.url || s.url !== item.url));
+      const updated = [item, ...filtered];
+      try {
+        localStorage.setItem('halaltube_my_submissions', JSON.stringify(updated));
+      } catch (e) {
+        console.error('[halaltubeService] Failed to cache submission in localStorage', e);
+      }
+      return updated;
+    });
+
+    return item;
+  }
+
+  removeSubmission(id: string): void {
+    this.mySubmissions.update(list => {
+      const updated = list.filter(s => s.id !== id);
+      try {
+        localStorage.setItem('halaltube_my_submissions', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+  }
+
+  async syncUserSubmissionsFromFirestore(userId?: string): Promise<void> {
+    const uid = userId || this.firebaseService.currentUser()?.uid;
+    if (!uid || uid === 'guest') return;
+
+    try {
+      const videosRef = collection(this.firebaseService.firestore, 'videos');
+      const q = query(videosRef, where('userId', '==', uid));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const firestoreSubs = snap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        this.mySubmissions.update(currentList => {
+          const combined = [...currentList];
+          for (const fSub of firestoreSubs) {
+            const idx = combined.findIndex(c => (c.url && c.url === (fSub as any).url) || c.id === fSub.id);
+            if (idx >= 0) {
+              combined[idx] = { ...combined[idx], ...fSub };
+            } else {
+              combined.push(fSub);
+            }
+          }
+          try {
+            localStorage.setItem('halaltube_my_submissions', JSON.stringify(combined));
+          } catch (e) {}
+          return combined;
+        });
+      }
+    } catch (err) {
+      console.warn('[halaltubeService] Cloud submissions sync skipped:', err);
+    }
+  }
   
   readonly algoConfig = signal<AlgorithmConfig>({
     subscriptionWeight: 50,

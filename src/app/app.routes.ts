@@ -79,6 +79,7 @@ export const routes: Routes = [
       { path: 'external-tabs', loadComponent: () => import('./features/external-tabs/external-tabs.component').then(c => c.ExternalTabsComponent), title: 'أرشيف التبويبات الخارجية' },
       { path: 'external-tabs/view/:id', loadComponent: () => import('./features/external-tabs/external-tab-viewer.component').then(c => c.ExternalTabViewerComponent), title: 'عرض القسم الخارجي' },
       { path: 'external-tabs/view', loadComponent: () => import('./features/external-tabs/external-tab-viewer.component').then(c => c.ExternalTabViewerComponent), title: 'عرض القسم الخارجي' },
+      { path: 'calculator', loadComponent: () => import('./features/calculator/calculator.component').then(c => c.CalculatorComponent), title: 'الآلة الحاسبة العلمية المتقدمة - Casio Pro' },
       { path: 'local-player', loadComponent: () => import('./features/local-player/local-player.component').then(c => c.LocalPlayerComponent), title: 'مشغل الوسائط والفيديوهات المحلي' },
       { path: 'html-editor', loadComponent: () => import('./features/html-editor/html-editor.component').then(c => c.HtmlEditorComponent), title: 'محرر HTML الشامل' },
       { path: 'text-fixer', loadComponent: () => import('./features/text-fixer/text-fixer.component').then(c => c.TextFixerComponent), title: 'مصحح اتجاه النصوص (RTL/LTR)' },

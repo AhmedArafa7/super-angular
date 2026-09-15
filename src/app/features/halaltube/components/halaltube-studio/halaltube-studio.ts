@@ -51,9 +51,15 @@ export class halaltubeStudioComponent implements OnInit {
   videos = signal<any[]>([]);
   isPreviewMode = signal(false);
 
-  // User Submissions Review Tracking
-  mySubmissions = signal<any[]>([]);
+  // User Submissions Review Tracking (Directly connected to reactive halaltubeService state)
+  mySubmissions = this.halaltube.mySubmissions;
   selectedSubFilter = signal<'all' | 'pending' | 'published' | 'rejected'>('all');
+
+  totalVideoCount = computed(() => {
+    const externalCount = parseInt(this.channelStats()?.videoCount || '0', 10);
+    const submissionsCount = this.mySubmissions().length;
+    return (externalCount > 0 ? externalCount : submissionsCount).toString();
+  });
 
   filteredSubmissions = computed(() => {
     const list = this.mySubmissions();
@@ -73,24 +79,11 @@ export class halaltubeStudioComponent implements OnInit {
 
   ngOnInit() {
     this.checkConnections();
-    this.loadMySubmissions();
-  }
-
-  loadMySubmissions() {
-    try {
-      const local = JSON.parse(localStorage.getItem('halaltube_my_submissions') || '[]');
-      this.mySubmissions.set(local);
-    } catch (e) {
-      this.mySubmissions.set([]);
-    }
+    this.halaltube.syncUserSubmissionsFromFirestore();
   }
 
   deleteSubmission(id: string) {
-    const updated = this.mySubmissions().filter(s => s.id !== id);
-    this.mySubmissions.set(updated);
-    try {
-      localStorage.setItem('halaltube_my_submissions', JSON.stringify(updated));
-    } catch (e) {}
+    this.halaltube.removeSubmission(id);
     this.toast.show('تم حذف الفيديو من سجلك', 'info');
   }
 

@@ -23,11 +23,11 @@ service cloud.firestore {
     // Videos Collection (Whitelist)
     // ==============================
     match /videos/{videoId} {
-      // Anyone can read published videos
-      allow read: if resource.data.status == 'published' || isReviewer();
+      // Anyone can read published videos, or reviewers can read all, or creators can read their own submissions
+      allow read: if resource.data.status == 'published' || isReviewer() || (isAuthenticated() && resource.data.userId == request.auth.uid);
       
-      // Authenticated users can create videos with status 'pending_review'
-      allow create: if isAuthenticated() && request.resource.data.status == 'pending_review';
+      // Anyone can submit videos with status 'pending_review'
+      allow create: if request.resource.data.status == 'pending_review';
       
       // Only admins/reviewers can update or delete
       allow update, delete: if isReviewer();

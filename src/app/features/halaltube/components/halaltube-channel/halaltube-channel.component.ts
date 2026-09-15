@@ -41,9 +41,9 @@ import { SkeletonLoaderComponent } from '../skeleton-loader/skeleton-loader.comp
           <div class="flex-1 pb-2">
             <h1 class="text-2xl md:text-4xl font-bold mb-1">{{ channelData().name }}</h1>
             <div class="flex items-center text-sm md:text-base text-gray-400 gap-2 mb-3">
-              <span>{{ channelData().subscriberCount | number }} مشترك</span>
+              <span>{{ formatStatCount(channelData().subscriberCount) }} مشترك</span>
               <span>•</span>
-              <span>{{ channelData().videoCount | number }} فيديو</span>
+              <span>{{ formatStatCount(channelData().videoCount) }} فيديو</span>
             </div>
             <p class="text-sm text-gray-400 line-clamp-2 max-w-2xl">{{ channelData().description }}</p>
           </div>
@@ -153,8 +153,8 @@ import { SkeletonLoaderComponent } from '../skeleton-loader/skeleton-loader.comp
             <div class="border-t border-gray-800 pt-6">
               <h4 class="font-bold mb-3">إحصائيات القناة</h4>
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm text-gray-400">
-                <div>المشتركون: <span class="text-white font-medium">{{ channelData()?.subscriberCount | number }}</span></div>
-                <div>عدد الفيديوهات: <span class="text-white font-medium">{{ channelData()?.videoCount | number }}</span></div>
+                <div>المشتركون: <span class="text-white font-medium">{{ formatStatCount(channelData()?.subscriberCount) }}</span></div>
+                <div>عدد الفيديوهات: <span class="text-white font-medium">{{ formatStatCount(channelData()?.videoCount) }}</span></div>
                 <div>معرف القناة: <span class="text-white font-medium select-all">{{ channelData()?.channelId }}</span></div>
               </div>
             </div>
@@ -198,6 +198,15 @@ export class halaltubeChannelComponent implements OnInit {
   Bell = Bell;
   Share2 = Share2;
   Play = Play;
+
+  formatStatCount(val: any): string {
+    if (val === null || val === undefined) return '0';
+    if (typeof val === 'number') return val.toLocaleString();
+    const str = String(val).trim();
+    const num = Number(str.replace(/,/g, ''));
+    if (!isNaN(num) && str !== '') return num.toLocaleString();
+    return str;
+  }
 
   channelId = signal<string>('');
   channelData = signal<any>(null);

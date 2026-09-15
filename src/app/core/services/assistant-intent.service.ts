@@ -39,7 +39,7 @@ export class AssistantIntentService {
     { keywords: ['اوبن كود', 'كود', 'برمجة', 'محرر البرمجة', 'opencode', 'المبرمج'], route: '/opencode', label: 'مساعد البرمجة (OpenCode)' },
     { keywords: ['مستندات', 'محرر المستندات', 'وورد', 'docs', 'سوبر دوك', 'كتابة'], route: '/docs', label: 'محرر المستندات (SuperDoc)' },
     { keywords: ['رسم', 'استوديو الرسم', 'draw', 'لوحة الرسم', 'ارسم'], route: '/draw', label: 'استوديو الرسم (SuperDraw)' },
-    { keywords: ['مشغل', 'مشغل الوسائط', 'مشغل الفيديو', 'local-player', 'فيديو محلي'], route: '/local-player', label: 'مشغل الوسائط المحلي' },
+    { keywords: ['حاسبة', 'آلة حاسبة', 'calculator', 'رياضيات', 'حساب'], route: '/calculator', label: 'الآلة الحاسبة العلمية المتقدمة' },
     { keywords: ['الوقت', 'تنظيم الوقت', 'بومودورو', 'تركيز', 'time', 'مؤقت بومودورو'], route: '/time', label: 'تنظيم الوقت والتركيز' },
     { keywords: ['صحة', 'رياضة', 'health', 'تمارين', 'اللياقة'], route: '/health', label: 'الصحة والرياضة' },
     { keywords: ['شات', 'دردشة', 'chat', 'المحادثة الذكية', 'شات جي بي تي'], route: '/chat', label: 'الدردشة الذكية' },

@@ -27,6 +27,10 @@ export class StorageService {
     return this.indexedDb.clearStore('local_player_media');
   }
 
+  async recoverOrphanedMediaFiles(): Promise<number> {
+    return this.indexedDb.recoverOrphanedMediaFiles();
+  }
+
   // --- New generic methods ---
 
   async saveItem(storeName: string, item: any): Promise<void> {

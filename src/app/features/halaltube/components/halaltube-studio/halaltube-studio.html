@@ -70,11 +70,7 @@
         <div class="space-y-3">
           <p class="text-sm font-bold text-slate-400">عدد الفيديوهات</p>
           <p class="text-3xl font-black">
-            @if (isLoadingStats()) {
-              <span class="inline-block w-16 h-8 bg-white/10 rounded-md animate-pulse"></span>
-            } @else {
-              {{ formatNumber(channelStats()?.videoCount || '0') }}
-            }
+            {{ mySubmissions().length }}
           </p>
         </div>
         <div class="p-3 rounded-2xl bg-amber-500/10 text-amber-500 group-hover:scale-110 transition-transform">
