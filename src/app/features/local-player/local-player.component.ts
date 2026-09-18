@@ -2595,9 +2595,10 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     localStorage.setItem('local_player_active_id', item.id);
     this.loadBookmarksForVideo(item.id);
 
+    const isCompleted = item.duration && item.lastPosition && item.lastPosition >= item.duration * 0.9;
     const targetTime = (seekToTime !== undefined && seekToTime !== null)
       ? seekToTime
-      : ((item.lastPosition && item.lastPosition > 3) ? item.lastPosition : 0);
+      : (isCompleted ? 0 : ((item.lastPosition && item.lastPosition > 3) ? item.lastPosition : 0));
 
     this.pendingSeekTime = targetTime;
 
@@ -2801,6 +2802,9 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
           vid.currentTime = this.pendingSeekTime;
           this.currentTime.set(this.pendingSeekTime);
           this.pendingSeekTime = null;
+        } else if (cur.duration && cur.lastPosition && cur.lastPosition >= cur.duration * 0.9) {
+          vid.currentTime = 0;
+          this.currentTime.set(0);
         } else if (cur.lastPosition && cur.lastPosition > 3) {
           vid.currentTime = cur.lastPosition;
           this.currentTime.set(cur.lastPosition);

@@ -806,6 +806,13 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
       floatingEmojis: '⌨️   🚀   💥   🔤   🎯',
       badgeBg: 'linear-gradient(135deg, #a855f7, #ec4899)'
     },
+    'speed-typer': {
+      badge: '🏎️ NITRO TYPER ⌨️',
+      primaryColor: '#06b6d4',
+      borderColor: 'rgba(6, 182, 212, 0.8)',
+      floatingEmojis: '🏎️   ⌨️   ⚡   💨   🏆',
+      badgeBg: 'linear-gradient(135deg, #06b6d4, #2563eb)'
+    },
     'air-hockey': {
       badge: '🏒 GLOW PUCK ✨',
       primaryColor: '#38bdf8',
@@ -1103,6 +1110,7 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
       'memory-match': 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
       'arabic-wordle': 'linear-gradient(135deg, #18181b 0%, #121213 100%)',
       'typing-defense': 'linear-gradient(135deg, #2e1065 0%, #0f172a 100%)',
+      'speed-typer': 'linear-gradient(135deg, #083344 0%, #0f172a 100%)',
       'spyfall': 'linear-gradient(135deg, #1e293b 0%, #020617 100%)',
       'tick-tock-bomb': 'radial-gradient(circle at center, #7f1d1d 0%, #000000 100%)',
       'heads-up': 'linear-gradient(135deg, #1d4ed8 0%, #1e1b4b 100%)',

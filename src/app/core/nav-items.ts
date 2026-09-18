@@ -60,7 +60,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: "downloads", label: "التحميلات", icon: "download-cloud", restricted: false, isPermanent: true, status: 'BETA', category: 'tools', aliases: ['تنزيلات', 'تحميل', 'downloads', 'ملفات محملة'] },
   { id: "wallet", label: "المحفظة الذكية", icon: "wallet", restricted: false, isPermanent: true, route: 'wallet', category: 'tools', aliases: ['رصيد', 'فلوس', 'اموال', 'wallet', 'دفع', 'محفظة'] },
   { id: "lab", label: "المختبر التجريبي", icon: "microscope", restricted: false, isPermanent: true, category: 'dev', aliases: ['تجارب', 'مختبر', 'بيتا', 'lab'] },
-  
+  { id: "local-player", label: "مشغل الوسائط المحلي", icon: "film", restricted: false, isPermanent: true, status: 'NEW', route: 'local-player', category: 'tools', aliases: ['مشغل فيديو', 'مشغل محلي', 'سينما', 'فيديوهاتي', 'media player', 'mp4', 'mkv', 'صوتيات'] },
   { id: "market", label: "المتجر التقني", icon: "shopping-cart", restricted: false, isPermanent: true, status: 'PRO', route: 'market', category: 'tools', aliases: ['سوق', 'متجر', 'شراء', 'store', 'market', 'منتجات'] },
   { id: "study-ai", label: "المساعد الدراسي", icon: "graduation-cap", restricted: false, isPermanent: true, status: 'NEW', route: 'study-ai', category: 'ai', aliases: ['دراسة', 'مذاكرة', 'معلم', 'امتحانات', 'study'] },
   { id: "knowledge", label: "المكتبة المعرفية", icon: "library-big", restricted: false, category: 'ai', aliases: ['معلومات', 'معرفة', 'مقالات', 'موسوعة'] },

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nitro Typer 🏎️⌨️💨 | سباق الطباعة الخارقة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Outfit:wght@400;600;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div id="app">
+        <!-- Header -->
+        <header class="game-header">
+            <div class="logo-area">
+                <span class="logo-icon">🏎️</span>
+                <div class="logo-text">
+                    <h1 id="brand-title">Nitro Typer ⌨️</h1>
+                    <span id="brand-subtitle">سباق الطباعة الخارقة</span>
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <div class="lang-switch">
+                    <button class="lang-btn active" id="btn-lang-ar">🇸🇦 عربي</button>
+                    <button class="lang-btn" id="btn-lang-en">🇬🇧 English</button>
+                </div>
+                <button class="icon-btn" id="btn-sound-toggle" title="كتم / تشغيل الصوت">🔊</button>
+                <button class="icon-btn" id="btn-help-toggle" title="تعليمات اللعب">❓</button>
+            </div>
+        </header>
+
+        <!-- SCREEN 1: MAIN MENU & MODES -->
+        <div id="menu-screen" class="screen active">
+            <div class="hero-card">
+                <h2 class="hero-title" id="menu-headline">زوّد سرعة كتابتك وتحدّى أسرع الطابعين! ⚡</h2>
+                <p class="hero-subtitle" id="menu-subheadline">
+                    سواء بالعربية أو بالإنجليزية، نافس سيارات النيون على المضمار السريع، وحسّن معدل كتابتك (WPM) بدقة عالية من خلال 3 أنماط لعب احترافية!
+                </p>
+
+                <!-- Text Mode / Category Selector -->
+                <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 1rem;">
+                    <button class="action-tag active" id="cat-quotes" style="background: rgba(6, 182, 212, 0.2); border: 1px solid #06b6d4; color: #fff; padding: 6px 14px; border-radius: 20px; font-weight: 700; cursor: pointer;">📖 نصوص وأقوال أدبية</button>
+                    <button class="action-tag" id="cat-common" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #94a3b8; padding: 6px 14px; border-radius: 20px; font-weight: 700; cursor: pointer;">🔤 الكلمات الشائعة السريعة</button>
+                    <button class="action-tag" id="cat-tech" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #94a3b8; padding: 6px 14px; border-radius: 20px; font-weight: 700; cursor: pointer;">🌐 مصطلحات تقنية وعلمية</button>
+                    <button class="action-tag" id="cat-code" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(168, 85, 247, 0.4); color: #c084fc; padding: 6px 14px; border-radius: 20px; font-weight: 700; cursor: pointer;">💻 أكواد برمجية للمطورين</button>
+                    <button class="action-tag" id="cat-custom" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(52, 211, 153, 0.4); color: #34d399; padding: 6px 14px; border-radius: 20px; font-weight: 700; cursor: pointer;">✍️ نص مخصص من عندك</button>
+                    <button class="action-tag" id="cat-sprint" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #94a3b8; padding: 6px 14px; border-radius: 20px; font-weight: 700; cursor: pointer;">⏱️ سباق الدقيقة (60s)</button>
+                </div>
+
+                <!-- Programming Language Bar (Shown when Dev Code is active) -->
+                <div id="code-lang-selector" style="display: none; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 1.2rem; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 16px; border: 1px solid rgba(168, 85, 247, 0.3);">
+                    <span style="font-size: 0.85rem; color: #a78bfa; align-self: center; font-weight: 700; margin-inline-end: 6px;">اختر لغة البرمجة:</span>
+                    <button class="code-lang-btn active" data-lang="js" style="background: #a855f7; border: none; color: #fff; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 800; cursor: pointer;">⚡ JavaScript / TS</button>
+                    <button class="code-lang-btn" data-lang="py" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #ddd; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 700; cursor: pointer;">🐍 Python</button>
+                    <button class="code-lang-btn" data-lang="cpp" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #ddd; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 700; cursor: pointer;">⚙️ C++ / Rust</button>
+                    <button class="code-lang-btn" data-lang="sql" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #ddd; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 700; cursor: pointer;">🗄️ SQL</button>
+                    <button class="code-lang-btn" data-lang="html" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #ddd; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 700; cursor: pointer;">🌐 HTML / CSS</button>
+                </div>
+
+                <!-- Text Customization Options Bar (Punctuation Strip Toggle) -->
+                <div style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                    <label class="toggle-pill" style="display: inline-flex; align-items: center; gap: 8px; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 20px; padding: 6px 14px; cursor: pointer; font-size: 0.85rem; font-weight: 700; color: #cbd5e1; user-select: none;">
+                        <input type="checkbox" id="toggle-no-punct" style="accent-color: #06b6d4; cursor: pointer; width: 16px; height: 16px;">
+                        <span>🚫 خالي من علامات الترقيم (No Punctuation)</span>
+                    </label>
+                </div>
+
+                <!-- 3 MANDATED GAME MODES -->
+                <div class="modes-grid">
+                    <!-- Mode 1: Local Play (4 to 6 Players) -->
+                    <div class="mode-card local" id="btn-mode-local">
+                        <div>
+                            <div class="mode-header">
+                                <span class="mode-icon">👥</span>
+                                <span class="mode-badge badge-local">4-6 لاعبين</span>
+                            </div>
+                            <h3 class="mode-title">1. اللعب محلياً (Local Play)</h3>
+                            <p class="mode-desc">تنافس مع 4 إلى 6 من أصدقائك على نفس الجهاز بنظام الجولات المتتابعة لنفس النص لتحديد أسرع كاتب!</p>
+                        </div>
+                        <div class="mode-footer">
+                            <span>بدء جولات التحدي المحلي</span>
+                            <span>←</span>
+                        </div>
+                    </div>
+
+                    <!-- Mode 2: Private Room (P2P) -->
+                    <div class="mode-card room" id="btn-mode-room">
+                        <div>
+                            <div class="mode-header">
+                                <span class="mode-icon">🔑</span>
+                                <span class="mode-badge badge-room">P2P أونلاين</span>
+                            </div>
+                            <h3 class="mode-title">2. إنشاء غرفة (Private Room)</h3>
+                            <p class="mode-desc">أنشئ غرفة سباق خاصة وشارك الكود أو الرابط لتتسابق لحظياً مع أصدقائك عبر الإنترنت!</p>
+                        </div>
+                        <div class="mode-footer">
+                            <span>إنشاء أو دخول غرفة</span>
+                            <span>←</span>
+                        </div>
+                    </div>
+
+                    <!-- Mode 3: Online Matchmaking (Pro Mode) -->
+                    <div class="mode-card pro" id="btn-mode-pro">
+                        <div>
+                            <div class="mode-header">
+                                <span class="mode-icon">👑</span>
+                                <span class="mode-badge badge-pro">PRO 🔒</span>
+                            </div>
+                            <h3 class="mode-title" style="color: #fbbf24;">3. لعب أونلاين (Online Matchmaking)</h3>
+                            <p class="mode-desc" style="color: #fef08a;">مطابقة سريعة في الوقت الحقيقي ضد محترفي الطباعة عالمياً مع تسجيل في لوحة الشرف الرسمية.</p>
+                        </div>
+                        <div class="mode-footer" style="color: #fbbf24;">
+                            <span>دخول السيرفرات السحابية Pro</span>
+                            <span>←</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Solo Button -->
+                <div class="quick-solo-bar">
+                    <button class="btn-primary" id="btn-quick-solo">
+                        <span>تدريب فردي سريع 🏎️💨</span>
+                    </button>
+                </div>
+
+                <!-- Player Stats Ribbon -->
+                <div class="stats-ribbon">
+                    <div class="stat-pill">
+                        <div class="stat-pill-label">أفضل سرعة عربي</div>
+                        <div class="stat-pill-value" id="stat-best-ar">0 <small style="font-size:0.8rem; font-weight:normal;">WPM</small></div>
+                    </div>
+                    <div class="stat-pill">
+                        <div class="stat-pill-label">أفضل سرعة إنجليزي</div>
+                        <div class="stat-pill-value" id="stat-best-en">0 <small style="font-size:0.8rem; font-weight:normal;">WPM</small></div>
+                    </div>
+                    <div class="stat-pill">
+                        <div class="stat-pill-label">متوسط الدقة</div>
+                        <div class="stat-pill-value" id="stat-avg-acc">100%</div>
+                    </div>
+                    <div class="stat-pill">
+                        <div class="stat-pill-label">إجمالي السباقات</div>
+                        <div class="stat-pill-value" id="stat-total-races">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: GAMEPLAY & RACE TRACK -->
+        <div id="game-screen" class="screen">
+            <!-- Race Track Container -->
+            <div class="race-track-card">
+                <div class="track-header">
+                    <div class="track-title">
+                        <span>🏁 مضمار سباق النيترو</span>
+                        <span id="track-mode-badge" style="font-size: 0.75rem; background: rgba(56, 189, 248, 0.2); padding: 2px 8px; border-radius: 8px; color: #38bdf8;">فردي</span>
+                    </div>
+                    <div style="font-size: 0.85rem; color: #94a3b8;" id="race-progress-text">التقدم: 0%</div>
+                </div>
+
+                <div class="race-lanes" id="race-lanes-container">
+                    <div class="finish-line"></div>
+                    <!-- Lane 1: Player -->
+                    <div class="race-lane" id="lane-p1">
+                        <div class="lane-player-info">
+                            <span class="player-car-emoji">🏎️</span>
+                            <span class="player-name-label" id="lane-p1-name">أنت</span>
+                            <span class="lane-wpm" id="lane-p1-wpm">0 WPM</span>
+                        </div>
+                        <div class="lane-track-strip">
+                            <div class="racer-car" id="car-p1" style="right: 0%;">
+                                <span class="turbo-trail"></span>
+                                🏎️
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lane 2: Rival / Ghost -->
+                    <div class="race-lane" id="lane-p2">
+                        <div class="lane-player-info">
+                            <span class="player-car-emoji">🚗</span>
+                            <span class="player-name-label" id="lane-p2-name">الروبوت النيون</span>
+                            <span class="lane-wpm" id="lane-p2-wpm">45 WPM</span>
+                        </div>
+                        <div class="lane-track-strip">
+                            <div class="racer-car" id="car-p2" style="right: 0%;">
+                                <span class="turbo-trail"></span>
+                                🚗
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live HUD / Speedometer -->
+            <div class="live-hud">
+                <div class="hud-box highlight">
+                    <div class="hud-box-title">السرعة الحالية (WPM)</div>
+                    <div class="hud-box-val turbo" id="hud-wpm">0</div>
+                </div>
+                <div class="hud-box">
+                    <div class="hud-box-title">الحروف/الدقيقة (CPM)</div>
+                    <div class="hud-box-val" id="hud-cpm">0</div>
+                </div>
+                <div class="hud-box">
+                    <div class="hud-box-title">الدقة (Accuracy)</div>
+                    <div class="hud-box-val" id="hud-accuracy">100%</div>
+                </div>
+                <div class="hud-box">
+                    <div class="hud-box-title">الأخطاء (Errors)</div>
+                    <div class="hud-box-val" id="hud-errors" style="color: #f87171;">0</div>
+                </div>
+                <div class="hud-box">
+                    <div class="hud-box-title">الوقت (Time)</div>
+                    <div class="hud-box-val" id="hud-time">00:00</div>
+                </div>
+            </div>
+
+            <!-- Interactive Typing Arena -->
+            <div class="typing-card" id="typing-container">
+                <div id="words-display">
+                    <!-- Dynamic chars injected here -->
+                </div>
+                <input type="text" id="hidden-type-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
+                <div class="typing-instructions" id="typing-prompt-hint">
+                    💡 ابدأ في كتابة النص أعلاه مباشرة على لوحة المفاتيح لدفع سيارتك للأمام! (اضغط في أي مكان هنا للتركيز)
+                </div>
+            </div>
+
+            <!-- Gameplay Action Bar -->
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button class="btn-secondary" id="btn-restart-race">
+                    <span>إعادة السباق 🔄</span>
+                </button>
+                <button class="btn-secondary" id="btn-back-to-menu">
+                    <span>القائمة الرئيسية 🏠</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- SCREEN 3: RESULTS & PODIUM -->
+        <div id="results-screen" class="screen">
+            <div class="results-card">
+                <div style="font-size: 3.5rem; margin-bottom: 8px;">🏆</div>
+                <h2 class="hero-title" id="results-title">سباق أسطوري! 🏁</h2>
+                <p class="hero-subtitle" id="results-subtitle">لقد حققت أداءً مذهلاً في هذا السباق!</p>
+
+                <!-- Podium (For Local multiplayer & Solo rankings) -->
+                <div class="podium-container" id="podium-area">
+                    <!-- Step 2: Silver -->
+                    <div class="podium-step silver">
+                        <div class="podium-player-name" id="podium-p2-name">اللاعب 2</div>
+                        <div class="podium-player-wpm" id="podium-p2-wpm">45 WPM</div>
+                        <div class="podium-pedestal">2</div>
+                    </div>
+                    <!-- Step 1: Gold -->
+                    <div class="podium-step gold">
+                        <div class="podium-player-name" id="podium-p1-name">أنت 👑</div>
+                        <div class="podium-player-wpm" id="podium-p1-wpm">78 WPM</div>
+                        <div class="podium-pedestal">1</div>
+                    </div>
+                    <!-- Step 3: Bronze -->
+                    <div class="podium-step bronze">
+                        <div class="podium-player-name" id="podium-p3-name">اللاعب 3</div>
+                        <div class="podium-player-wpm" id="podium-p3-wpm">38 WPM</div>
+                        <div class="podium-pedestal">3</div>
+                    </div>
+                </div>
+
+                <!-- Stat Summary Table -->
+                <div class="stats-ribbon" style="margin-bottom: 2rem;">
+                    <div class="stat-pill">
+                        <div class="stat-pill-label">السرعة الصافية</div>
+                        <div class="stat-pill-value" id="res-final-wpm">0 WPM</div>
+                    </div>
+                    <div class="stat-pill">
+                        <div class="stat-pill-label">نسبة الدقة</div>
+                        <div class="stat-pill-value" id="res-final-acc">100%</div>
+                    </div>
+                    <div class="stat-pill">
+                        <div class="stat-pill-label">الحروف بالدقيقة</div>
+                        <div class="stat-pill-value" id="res-final-cpm">0 CPM</div>
+                    </div>
+                    <div class="stat-pill">
+                        <div class="stat-pill-label">إجمالي الوقت</div>
+                        <div class="stat-pill-value" id="res-final-time">00:00</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn-primary" id="btn-race-again">
+                        <span>العب مرة أخرى 🚀</span>
+                    </button>
+                    <button class="btn-secondary" id="btn-res-menu">
+                        <span>العودة للقائمة 🏠</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================================================
+             MODALS
+             ========================================================================== -->
+        <!-- MODAL 1: LOCAL PLAY SETUP (4 to 6 Players) -->
+        <div class="modal-overlay" id="modal-local">
+            <div class="glass-modal">
+                <span class="modal-badge badge-local">👥 اللعب الجماعي المحلي</span>
+                <h3 class="modal-title">إعداد سباق الأصدقاء (4-6 لاعبين)</h3>
+                <p class="modal-desc">يتناوب اللاعبون على نفس الجهاز لكتابة نفس النص المحدد لضمان النزاهة التامة والتتويج بالمركز الأول!</p>
+
+                <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 1.2rem;">
+                    <label style="font-weight: 700;">عدد المتسابقين:</label>
+                    <select id="select-local-count" style="padding: 8px 16px; border-radius: 12px; background: #0f172a; color: #38bdf8; border: 1px solid #38bdf8; font-weight: 800; font-size: 1rem; cursor: pointer;">
+                        <option value="4">4 لاعبين (4 Players)</option>
+                        <option value="5">5 لاعبين (5 Players)</option>
+                        <option value="6" selected>6 لاعبين (6 Players Max)</option>
+                    </select>
+                </div>
+
+                <div id="local-player-inputs-container">
+                    <!-- Injected dynamically via JS -->
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 1.5rem;">
+                    <button class="btn-primary" id="btn-start-local-tournament" style="flex: 2;">
+                        <span>بدء جولة التحدي الأول 🏁</span>
+                    </button>
+                    <button class="btn-secondary" id="btn-close-local-modal" style="flex: 1;">
+                        <span>إلغاء</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL 2: PRIVATE ROOM (P2P Host / Join) -->
+        <div class="modal-overlay" id="modal-room">
+            <div class="glass-modal">
+                <span class="modal-badge badge-room">🌐 غرف الأصدقاء أونلاين P2P</span>
+                <h3 class="modal-title">إنشاء أو انضمام لغرفة سباق</h3>
+                <p class="modal-desc">تسابق في نفس اللحظة مع أصدقائك عبر الإنترنت، وتابع سياراتهم وهي تنطلق على المضمار مع كل كلمة يكتبونها!</p>
+
+                <!-- Section A: Host Room -->
+                <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 18px; padding: 16px; margin-bottom: 1.2rem;">
+                    <h4 style="color: #c084fc; font-weight: 800; margin-bottom: 8px;">1. استضافة غرفة جديدة (Host)</h4>
+                    <button class="btn-primary" id="btn-create-p2p-room" style="background: linear-gradient(135deg, #7c3aed, #9333ea); width: 100%;">
+                        <span>توليد كود الغرفة 🔑</span>
+                    </button>
+                    <div id="host-room-info" style="display: none; background: rgba(0,0,0,0.5); padding: 12px; border-radius: 14px; margin-top: 10px; text-align: center;">
+                        <div style="font-size: 0.85rem; color: #a78bfa;">شارك هذا الكود مع صديقك:</div>
+                        <div id="display-room-code" style="font-size: 2rem; font-weight: 900; font-family: 'JetBrains Mono', monospace; color: #34d399; letter-spacing: 4px; margin: 8px 0;">---</div>
+                        <button class="btn-secondary" id="btn-copy-p2p-code" style="width: 100%; padding: 8px; font-size: 0.85rem; margin-bottom: 6px;">
+                            <span>نسخ كود الغرفة 📋</span>
+                        </button>
+                        <div style="font-size: 0.8rem; color: #fef08a;" id="host-p2p-status">في انتظار انضمام المتسابق المنافس... ⏳</div>
+                    </div>
+                </div>
+
+                <!-- Section B: Join Room -->
+                <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 18px; padding: 16px; margin-bottom: 1.5rem;">
+                    <h4 style="color: #38bdf8; font-weight: 800; margin-bottom: 8px;">2. انضمام لغرفة موجودة (Join)</h4>
+                    <input type="text" id="input-room-code" placeholder="أدخل كود الغرفة (مثال: SPEED9)" maxlength="10" style="width: 100%; padding: 12px; border-radius: 12px; background: rgba(0,0,0,0.6); border: 1px solid #38bdf8; color: #fff; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 800; letter-spacing: 3px; margin-bottom: 10px; outline: none;">
+                    <button class="btn-primary" id="btn-join-p2p-room" style="width: 100%;">
+                        <span>انضمام للمضمار 🏎️</span>
+                    </button>
+                </div>
+
+                <button class="btn-secondary" id="btn-close-room-modal" style="width: 100%;">
+                    <span>إغلاق</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- MODAL 3: PRO UPGRADE MODAL -->
+        <div class="modal-overlay" id="modal-pro">
+            <div class="glass-modal pro-card">
+                <div style="font-size: 3.5rem; text-align: center; margin-bottom: 6px;">👑</div>
+                <h3 class="modal-title" style="color: #fbbf24; text-align: center;">ميزة حصرية لمشتركي باقة Pro</h3>
+                <p class="modal-desc" style="color: #fef08a; text-align: center;">
+                    نمط <b>اللعب أونلاين والمطابقة العالمية (Online Matchmaking)</b> يتطلب خوادم سحابية فائقة السرعة ومزامنة لحظية لحساب معدلات الـ WPM، ولذلك فهو مخصص حصرياً للمشتركين في الباقة الممتازة <b>Pro</b>.
+                </p>
+
+                <div class="pro-features-list">
+                    <div class="pro-feature-item">
+                        <span>⚡</span>
+                        <span>مطابقة فورية وتحدي متسابقي الطباعة من جميع دول العالم 🌍</span>
+                    </div>
+                    <div class="pro-feature-item">
+                        <span>🏆</span>
+                        <span>توثيق رسمي لمعدل سرعتك ودقتك في قائمة المتصدرين العالمية المعتمدة 🏅</span>
+                    </div>
+                    <div class="pro-feature-item">
+                        <span>🏎️</span>
+                        <span>فتح أسطول كامل من سيارات السوبركار النيون وألسنة لهب التوربو الحصرية 🎁</span>
+                    </div>
+                    <div class="pro-feature-item">
+                        <span>⌨️</span>
+                        <span>حزم أصوات نادرة ومميزة لكيبوردات ميكانيكية احترافية (Cherry MX Blue & Custom Switches) 🎶</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-primary" id="btn-pro-upgrade-action" style="flex: 2; background: linear-gradient(135deg, #fbbf24, #d97706); color: #000; font-weight: 900;">
+                        <span>ترقية الحساب إلى Pro 🚀</span>
+                    </button>
+                    <button class="btn-secondary" id="btn-close-pro-modal" style="flex: 1;">
+                        <span>إغلاق</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notice -->
+        <div class="toast-notice" id="toast-notice">تم نسخ كود الغرفة بنجاح!</div>
+    </div>
+
+    <!-- Core Game Logic -->
+    <script src="game.js"></script>
+</body>
+</html>

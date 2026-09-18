@@ -112,14 +112,23 @@ export class SidebarItemComponent {
 
   onContextMenu(event: MouseEvent) {
     event.preventDefault();
-    this.closeContextMenu();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
     
+    if (this.overlayRef) {
+      this.closeContextMenu();
+      return;
+    }
+
     const target = event.currentTarget as HTMLElement;
     const positionStrategy = this.overlay.position()
       .flexibleConnectedTo(target)
       .withPositions([{
         originX: 'start', originY: 'bottom',
         overlayX: 'start', overlayY: 'top',
+      }, {
+        originX: 'start', originY: 'top',
+        overlayX: 'start', overlayY: 'bottom',
       }]);
 
     this.overlayRef = this.overlay.create({

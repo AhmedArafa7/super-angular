@@ -1,0 +1,94 @@
+/* ==========================================================================
+   Nitro Typer (سباق النيترو للكتابة السريعة 🏎️⌨️💨) Menu Theme
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Outfit:wght@600;900&display=swap');
+
+#arena-menu-overlay {
+    font-family: 'Cairo', 'Outfit', system-ui, -apple-system, sans-serif !important;
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: radial-gradient(circle at center, rgba(6, 182, 212, 0.35) 0%, rgba(15, 23, 42, 0.85) 60%, rgba(2, 6, 23, 0.98) 100%) !important;
+    direction: rtl !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+}
+
+/* Floating speed typing emojis */
+#arena-menu-overlay::before {
+    content: "🏎️   ⌨️   ⚡   💨   🏆   🏁   ✨";
+    position: absolute;
+    inset: 0;
+    font-size: 3.2rem;
+    color: rgba(6, 182, 212, 0.2);
+    letter-spacing: 50px;
+    word-spacing: 80px;
+    line-height: 130px;
+    pointer-events: none;
+    user-select: none;
+    animation: floatingTyper 14s linear infinite;
+    z-index: 1;
+}
+
+@keyframes floatingTyper {
+    0% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-25px) rotate(2deg); }
+    100% { transform: translateY(0) rotate(0deg); }
+}
+
+/* Menu Container Glass Panel */
+#arena-menu-container {
+    display: flex !important;
+    flex-direction: column !important;
+    background: linear-gradient(145deg, rgba(8, 51, 68, 0.9), rgba(15, 23, 42, 0.95)) !important;
+    backdrop-filter: blur(25px) !important;
+    -webkit-backdrop-filter: blur(25px) !important;
+    border: 2px solid #06b6d4 !important;
+    border-radius: 36px !important;
+    padding: 2.2rem 1.8rem !important;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), inset 0 0 35px rgba(6, 182, 212, 0.25) !important;
+    z-index: 10 !important;
+    position: relative !important;
+}
+
+/* Badge on top of container */
+#arena-menu-container::before {
+    content: "🏎️ NITRO TYPER: SPEED RACE ⌨️";
+    position: absolute;
+    top: -14px;
+    right: 25px;
+    background: linear-gradient(135deg, #06b6d4, #2563eb);
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 900;
+    padding: 4px 18px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+    box-shadow: 0 5px 15px rgba(6, 182, 212, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.arena-menu-title {
+    color: #38bdf8 !important;
+    font-weight: 900 !important;
+    font-size: 2.2rem !important;
+    text-shadow: 0 0 20px rgba(6, 182, 212, 0.6) !important;
+}
+
+.arena-menu-subtitle {
+    color: #cbd5e1 !important;
+}
+
+.arena-mode-btn {
+    border-radius: 20px !important;
+    border: 2px solid rgba(6, 182, 212, 0.4) !important;
+    background: rgba(15, 23, 42, 0.8) !important;
+    transition: all 0.25s ease !important;
+}
+
+.arena-mode-btn:hover {
+    border-color: #06b6d4 !important;
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.5) !important;
+    transform: translateY(-3px) !important;
+}
