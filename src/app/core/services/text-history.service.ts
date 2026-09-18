@@ -9,8 +9,11 @@ export class TextHistoryManager {
   private step = -1;
   private storageKey: string;
 
-  constructor(storageKey: string) {
+  private maxLimit: number;
+
+  constructor(storageKey: string, maxLimit: number = 200) {
     this.storageKey = storageKey;
+    this.maxLimit = maxLimit;
     this.loadSaved();
   }
 
@@ -36,7 +39,7 @@ export class TextHistoryManager {
     const timeStr = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     this.entries.push({ text, time: timeStr });
     this.step = this.stack.length - 1;
-    if (this.stack.length > 30) {
+    if (this.stack.length > this.maxLimit) {
       this.stack.shift();
       this.entries.shift();
       this.step--;

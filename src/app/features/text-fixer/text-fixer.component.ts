@@ -152,7 +152,7 @@ export class TextFixerComponent implements OnInit {
   outputText = '';
   showHistoryModal = false;
 
-  historyManager = new TextHistoryManager('rtlTextFixer');
+  historyManager = new TextHistoryManager('rtlTextFixer', 200);
   private isInternalChange = false;
   private debounceTimer: any = null;
   private storageKey = 'rtlTextFixerData';
@@ -225,8 +225,13 @@ export class TextFixerComponent implements OnInit {
       return;
     }
 
-    let safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    const regex = /([a-zA-Z0-9#_]+(?:[-' ][a-zA-Z0-9#_]+)*)/g;
+    let processed = text
+      .replace(/\s+([،,.;:؟!])/g, '$1')
+      .replace(/([،,.;:؟!])([^\s\d])/g, '$1 $2')
+      .replace(/[ \t]+/g, ' ');
+
+    let safeText = processed.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const regex = /\b([a-zA-Z0-9#_]+(?:[-_. ][a-zA-Z0-9#_]+)*)\b/g;
     safeText = safeText.replace(regex, '<span class="tech-term">$1</span>');
     this.outputText = safeText;
   }
