@@ -1927,17 +1927,18 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   MoveHorizontal = MoveHorizontal;
   Zap = Zap;
 
-  // Filtered & Sorted playlist
+  // Filtered & Sorted playlist with smart multi-word search
   displayedPlaylist = computed(() => {
-    let list = [...this.playlist()];
+    const list = this.playlist();
     const q = this.searchQuery?.trim().toLowerCase();
-    if (q) {
-      list = list.filter(i => 
-        i.name.toLowerCase().includes(q) || 
-        (i.folderName && i.folderName.toLowerCase().includes(q))
-      );
-    }
-    return list;
+    if (!q) return list;
+
+    const terms = q.split(/\s+/);
+    return list.filter(i => {
+      const name = i.name.toLowerCase();
+      const folder = (i.folderName || '').toLowerCase();
+      return terms.every(term => name.includes(term) || folder.includes(term));
+    });
   });
 
   totalPlaylistSize = computed(() => {
