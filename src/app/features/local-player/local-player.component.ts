@@ -1212,7 +1212,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     }
   }
 
-  searchQuery = '';
+  searchQuery = signal<string>('');
   sortOrder = signal<'asc' | 'desc'>('asc');
 
   showControls = signal<boolean>(true);
@@ -1930,7 +1930,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   // Filtered & Sorted playlist with smart multi-word search
   displayedPlaylist = computed(() => {
     const list = this.playlist();
-    const q = this.searchQuery?.trim().toLowerCase();
+    const q = this.searchQuery()?.trim().toLowerCase();
     if (!q) return list;
 
     const terms = q.split(/\s+/);
