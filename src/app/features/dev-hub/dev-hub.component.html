@@ -236,6 +236,105 @@
       <!-- ========================================== -->
       <div class="space-y-10 pt-4">
 
+        <!-- Widget 0: C# DTO to TypeScript Converter -->
+        <div id="csharp-ts" class="p-6 md:p-8 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-6">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                <lucide-icon name="server" class="w-5 h-5"></lucide-icon>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="text-lg font-bold text-white">محول كود C# DTO إلى TypeScript</h3>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">.NET ⇄ Angular Bridge</span>
+                </div>
+                <p class="text-xs text-slate-400">تحويل فوري لكود الـ Records والـ Classes من C# إلى واجهات TypeScript أو Reactive Forms جاهزة للنسخ</p>
+              </div>
+            </div>
+
+            <!-- Controls & Link to Full Studio -->
+            <div class="flex items-center flex-wrap gap-2">
+              <div class="flex items-center gap-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60 text-xs">
+                <button 
+                  (click)="csharpOutputTarget.set('interface')"
+                  [ngClass]="csharpOutputTarget() === 'interface' ? 'bg-purple-500 text-white font-bold' : 'text-slate-300 hover:text-white'"
+                  class="px-2.5 py-1 rounded-lg transition-all"
+                >
+                  TS Interface
+                </button>
+                <button 
+                  (click)="csharpOutputTarget.set('reactiveForm')"
+                  [ngClass]="csharpOutputTarget() === 'reactiveForm' ? 'bg-purple-500 text-white font-bold' : 'text-slate-300 hover:text-white'"
+                  class="px-2.5 py-1 rounded-lg transition-all"
+                >
+                  Reactive Form
+                </button>
+                <button 
+                  (click)="csharpOutputTarget.set('mockJson')"
+                  [ngClass]="csharpOutputTarget() === 'mockJson' ? 'bg-purple-500 text-white font-bold' : 'text-slate-300 hover:text-white'"
+                  class="px-2.5 py-1 rounded-lg transition-all"
+                >
+                  Mock JSON
+                </button>
+              </div>
+
+              <!-- Open Full Studio Link -->
+              <a 
+                routerLink="/csharp-to-ts"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-500/20"
+                title="فتح الاستوديو الكامل في صفحة مخصصة أثناء عملك على الباك إند"
+              >
+                <span>الاستوديو الكامل المستقل</span>
+                <lucide-icon name="external-link" class="w-3.5 h-3.5"></lucide-icon>
+              </a>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Left: C# Input -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-xs text-slate-400">
+                <span>الصق كود الـ C# DTO أو Record هنا:</span>
+                <span class="font-mono text-[11px] text-purple-400">C# Syntax</span>
+              </div>
+              <textarea 
+                [(ngModel)]="csharpInput"
+                dir="ltr"
+                rows="12"
+                placeholder="public record AuthResponseDto { ... }"
+                class="w-full p-4 rounded-2xl bg-slate-950/80 border border-slate-800 font-mono text-xs text-purple-300 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 shadow-inner resize-y leading-relaxed"
+              ></textarea>
+            </div>
+
+            <!-- Right: TypeScript Output -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-xs text-slate-400">
+                <div class="flex items-center gap-2">
+                  <span>النتيجة المولدة:</span>
+                  <select 
+                    [(ngModel)]="csharpCasing"
+                    class="text-xs px-2 py-0.5 bg-slate-800 border border-slate-700 rounded text-cyan-300 font-mono"
+                  >
+                    <option value="camelCase">camelCase</option>
+                    <option value="PascalCase">PascalCase</option>
+                  </select>
+                </div>
+                <button 
+                  (click)="copyToClipboard(csharpConvertedOutput(), 'csharp-out')"
+                  class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono transition-colors"
+                >
+                  <lucide-icon [name]="copiedId() === 'csharp-out' ? 'check' : 'copy'" class="w-3.5 h-3.5 text-cyan-400"></lucide-icon>
+                  <span>{{ copiedId() === 'csharp-out' ? 'تم النسخ!' : 'نسخ الكود' }}</span>
+                </button>
+              </div>
+              <pre 
+                dir="ltr"
+                class="w-full p-4 rounded-2xl bg-slate-950/90 border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto h-[290px] shadow-inner selection:bg-cyan-500/30"
+              >{{ csharpConvertedOutput() }}</pre>
+            </div>
+          </div>
+        </div>
+
         <!-- Widget 1: JSON to TypeScript / Formatter -->
         <div id="json-ts" class="p-6 md:p-8 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-6">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">

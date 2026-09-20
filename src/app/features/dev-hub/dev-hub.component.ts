@@ -12,6 +12,8 @@ import {
   AIPromptTemplate 
 } from './models/dev-hub.models';
 
+import { CsharpToTsService } from '../../core/services/csharp-to-ts.service';
+
 @Component({
   selector: 'app-dev-hub',
   standalone: true,
@@ -21,6 +23,7 @@ import {
 })
 export class DevHubComponent {
   hubService = inject(DevHubService);
+  csharpService = inject(CsharpToTsService);
 
   // Copy Feedback state
   copiedId = signal<string | null>(null);
@@ -33,6 +36,29 @@ export class DevHubComponent {
   // ----------------------------------------------------
   // Interactive Tools State
   // ----------------------------------------------------
+
+  // 0. C# DTO to TypeScript Converter Widget
+  csharpInput = signal<string>(`public record AuthResponseDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string UserName { get; set; } = string.Empty;
+    public string Token { get; set; } = string.Empty;
+    public IList<string> Roles { get; set; } = [];
+    public DateTime ExpiresOn { get; set; }
+}`);
+  csharpCasing = signal<'camelCase' | 'PascalCase'>('camelCase');
+  csharpOutputTarget = signal<'interface' | 'reactiveForm' | 'mockJson'>('interface');
+
+  csharpConvertedOutput = computed(() => {
+    return this.csharpService.convert(this.csharpInput(), {
+      casing: this.csharpCasing(),
+      outputTarget: this.csharpOutputTarget(),
+      dateType: 'string',
+      nullableStyle: 'optional'
+    }).code;
+  });
 
   // 1. JSON to TypeScript / Formatter
   jsonInput = signal<string>(`{\n  "id": 101,\n  "title": "Super Dev Hub",\n  "isActive": true,\n  "tags": ["angular", "typescript", "tools"],\n  "metrics": {\n    "stars": 1250,\n    "rating": 4.9\n  }\n}`);

@@ -1,0 +1,12 @@
+// C# to TypeScript Studio Styles
+:host {
+  display: block;
+  width: 100%;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -1,0 +1,14 @@
+// Tank Battle Component Styles
+:host {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  user-select: none;
+}
+
+canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7);
+}

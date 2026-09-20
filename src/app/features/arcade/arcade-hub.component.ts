@@ -1332,6 +1332,8 @@ export class ArcadeHubComponent implements OnInit {
       this.router.navigate(['/arcade/neuro-physio']);
     } else if (id === 'godot-builder') {
       this.router.navigate(['/arcade/godot-builder']);
+    } else if (id === 'tank-battle' || id === 'crazy-shells') {
+      this.router.navigate(['/arcade/tank-battle']);
     } else {
       this.router.navigate(['/arcade/arena', id]);
     }

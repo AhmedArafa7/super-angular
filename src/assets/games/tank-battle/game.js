@@ -548,12 +548,22 @@ function update() {
             if (p.targetBase && base && base.alive) {
                 target = { x: base.x + base.w/2, y: base.y + base.h/2 };
             } else {
+                // First look for human players
                 players.forEach(other => {
                     if (!other.isAI && other.alive) {
                         let d = Math.hypot(other.x - p.x, other.y - p.y);
                         if (d < minDist) { minDist = d; target = other; }
                     }
                 });
+                // If no human players left, target any other alive tank
+                if (!target) {
+                    players.forEach(other => {
+                        if (other !== p && other.alive) {
+                            let d = Math.hypot(other.x - p.x, other.y - p.y);
+                            if (d < minDist) { minDist = d; target = other; }
+                        }
+                    });
+                }
             }
 
             if (target) {
@@ -992,15 +1002,27 @@ function checkWinCondition() {
     }
 
     // Classic Deathmatch
-    const alivePlayers = players.filter(p => p.alive && !p.isAI);
-    if (alivePlayers.length <= 1 && players.filter(p => p.alive).length <= 1) {
-        if (alivePlayers.length === 1) {
-            let msg = `Player ${alivePlayers[0].id} Wins!`;
+    const aliveHumans = players.filter(p => p.alive && !p.isAI);
+    const aliveTotal = players.filter(p => p.alive);
+
+    // If human(s) were playing vs AI and all humans died
+    if (numAI > 0 && aliveHumans.length === 0) {
+        endGame("Game Over! You were destroyed.", "#ef4444");
+        return;
+    }
+
+    // If only 1 or 0 tanks remain in the entire match
+    if (aliveTotal.length <= 1) {
+        if (aliveTotal.length === 1) {
+            const winner = aliveTotal[0];
+            let msg = winner.isAI ? "Game Over! Bot Wins!" : `Player ${winner.id} Wins!`;
             if (activeMode === 'p2p-host') {
-                if (alivePlayers[0].id === 1) msg = "You Win!";
+                if (winner.id === 1) msg = "You Win!";
                 else msg = "You Lose! Guest Wins!";
+            } else if (numAI > 0 && !winner.isAI) {
+                msg = "Victory! You destroyed all enemy tanks!";
             }
-            endGame(msg, alivePlayers[0].color);
+            endGame(msg, winner.color);
         } else {
             endGame("Draw! Everyone is destroyed.", "#fff");
         }

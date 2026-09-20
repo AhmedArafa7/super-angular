@@ -373,6 +373,18 @@ export const SPECIALIZATION_TRACKS: SpecializationTrack[] = [
 
 export const DEV_TOOLS: DevToolItem[] = [
   {
+    id: 'csharp-ts-converter',
+    name: 'محول كود C# DTO إلى TypeScript',
+    nameEn: 'C# DTO to TypeScript Studio',
+    category: 'Backend & Models Bridge',
+    icon: 'server',
+    description: 'تحويل فوري لكود C# (Records, Classes, Enums) إلى واجهات TypeScript و Reactive Forms و Mock JSON مع دعم كامل لحالة الأحرف والأنواع المعقدة.',
+    isBuiltIn: true,
+    widgetId: 'csharp-ts',
+    trackIds: ['backend', 'fullstack', 'frontend'],
+    tags: ['C#', 'ASP.NET', 'DTO', 'TypeScript', 'Angular', 'Models', 'Backend']
+  },
+  {
     id: 'json-ts-transformer',
     name: 'محلل ومحول JSON إلى TypeScript',
     nameEn: 'JSON to TypeScript & Formatter',

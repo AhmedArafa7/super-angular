@@ -1240,7 +1240,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   private clickTimer: any = null;
   private clickCount = 0;
 
-  speedRates = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 3.5, 4.0];
+  speedRates = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0];
 
   Object = Object;
   shortcutLabels: Record<string, string> = {
@@ -2979,7 +2979,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     if (idx >= 0 && idx < this.speedRates.length - 1) {
       this.setSpeed(this.speedRates[idx + 1]);
     } else {
-      const next = Math.min(4.0, Number((cur + 0.25).toFixed(2)));
+      const next = Math.min(this.speedRates[-1], Number((cur + 0.25).toFixed(2)));
       this.setSpeed(next);
     }
   }

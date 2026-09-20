@@ -43,6 +43,7 @@ export const routes: Routes = [
       { path: 'arcade/metro-dash-3d', loadComponent: () => import('./features/arcade/subway-surfers/subway-surfers-3d.component').then(c => c.SubwaySurfers3DComponent), title: 'Metro Dash 3D 🚇⚡' },
       { path: 'arcade/subway-surfers', loadComponent: () => import('./features/arcade/subway-surfers/subway-surfers-3d.component').then(c => c.SubwaySurfers3DComponent), title: 'Metro Dash 3D 🚇⚡' },
       { path: 'arcade/subway-surfers-3d', loadComponent: () => import('./features/arcade/subway-surfers/subway-surfers-3d.component').then(c => c.SubwaySurfers3DComponent), title: 'Metro Dash 3D 🚇⚡' },
+      { path: 'arcade/tank-battle', loadComponent: () => import('./features/arcade/tank-battle/tank-battle.component').then(c => c.TankBattleComponent), title: 'Crazy Shells 💣💥 - معركة الدبابات' },
       { path: 'arcade/ai-games', loadComponent: () => import('./features/arcade/ai-games/ai-games-hub.component').then(c => c.AiGamesHubComponent), title: 'ألعاب الذكاء الاصطناعي - Si-Neuro 🧬✨' },
       { path: 'arcade/ai-games/play/:id', loadComponent: () => import('./features/arcade/ai-games/components/ai-game-runner/ai-game-runner.component').then(c => c.AiGameRunnerComponent), title: 'تشغيل اللعبة - ألعاب الذكاء الاصطناعي 🎮' },
       { path: 'ai-games', redirectTo: 'arcade/ai-games', pathMatch: 'full' },
@@ -93,6 +94,9 @@ export const routes: Routes = [
       { path: 'learning', loadComponent: () => import('./features/learning/learning.component').then(c => c.LearningComponent), title: 'المساعد الدراسي والتعلم' },
       { path: 'dev-hub', loadComponent: () => import('./features/dev-hub/dev-hub.component').then(c => c.DevHubComponent), title: 'مركز المطورين الشامل - DevHub' },
       { path: 'developers', redirectTo: 'dev-hub', pathMatch: 'full' },
+      { path: 'csharp-to-ts', loadComponent: () => import('./features/csharp-converter/csharp-converter.component').then(c => c.CsharpConverterComponent), title: 'محول كود C# DTO إلى TypeScript - .NET Studio' },
+      { path: 'csharp-converter', redirectTo: 'csharp-to-ts', pathMatch: 'full' },
+      { path: 'backend-studio', redirectTo: 'csharp-to-ts', pathMatch: 'full' },
       { path: 'about', loadComponent: () => import('./features/about/about.component').then(c => c.AboutComponent), title: 'عن الشركة - Super Platform' },
       { path: 'admin', loadComponent: () => import('./features/admin/admin.component').then(c => c.AdminComponent), canActivate: [adminGuard] }
     ]

@@ -1,0 +1,410 @@
+<div class="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-6 space-y-6 font-sans selection:bg-indigo-500 selection:text-white" dir="rtl">
+
+  <!-- ========================================== -->
+  <!-- 1. Header & Quick Controls                 -->
+  <!-- ========================================== -->
+  <header class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 border border-slate-800/80 p-5 md:p-7 shadow-2xl backdrop-blur-xl">
+    <div class="absolute -top-24 -right-24 w-80 h-80 bg-cyan-600/15 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-24 -left-24 w-80 h-80 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+      <div class="space-y-2">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold">
+          <lucide-icon name="server" class="w-3.5 h-3.5"></lucide-icon>
+          <span>استوديو مطور الباك إند • .NET ⇄ Angular Bridge</span>
+          <span class="bg-cyan-500/20 text-cyan-300 text-[10px] px-1.5 py-0.5 rounded font-mono">Live Studio</span>
+        </div>
+
+        <h1 class="text-2xl md:text-4xl font-black tracking-tight text-white flex items-center gap-3">
+          <span>محول كود</span>
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-400 to-fuchsia-400">
+            C# DTOs إلى TypeScript
+          </span>
+        </h1>
+
+        <p class="text-slate-400 text-xs md:text-sm leading-relaxed max-w-3xl">
+          أداة مخصصة لتبقيها مفتوحة دائماً أثناء برمجتك للباك إند: الصق أي Record أو Class أو Enum من C# واستخرج واجهات TypeScript، نماذج Reactive Forms، أو Mock JSON جاهزة للنسخ والاستخدام في Angular فوراً.
+        </p>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="flex items-center flex-wrap gap-2.5">
+        <!-- History Drawer Button -->
+        <button 
+          (click)="showHistoryDrawer.update(v => !v)"
+          class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 border border-slate-700 text-xs transition-all shadow-md hover:border-slate-600"
+          title="سجل التحويلات السابقة"
+        >
+          <lucide-icon name="history" class="w-4 h-4 text-cyan-400"></lucide-icon>
+          <span>السجل السابق</span>
+          @if (historyList().length > 0) {
+            <span class="px-1.5 py-0.2 bg-cyan-500/20 text-cyan-300 text-[10px] rounded-full font-mono font-bold">{{ historyList().length }}</span>
+          }
+        </button>
+
+        <!-- Dev Hub Link -->
+        <a 
+          routerLink="/dev-hub"
+          class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-950/60 hover:bg-indigo-900/60 text-indigo-300 border border-indigo-800/60 text-xs transition-all"
+        >
+          <lucide-icon name="wrench" class="w-4 h-4"></lucide-icon>
+          <span>مركز المطورين</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Presets Quick Bar -->
+    <div class="mt-4 pt-4 border-t border-slate-800/80 flex flex-wrap items-center gap-2">
+      <span class="text-xs text-slate-400 font-medium ml-2">نماذج جاهزة للاختبار:</span>
+      @for (preset of presets; track preset.id) {
+        <button 
+          (click)="loadPreset(preset)"
+          class="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs bg-slate-850 hover:bg-slate-800 border border-slate-700/80 text-slate-300 hover:text-white transition-all font-mono"
+        >
+          <span>{{ preset.title }}</span>
+          <span class="text-[10px] px-1 py-0.2 rounded bg-indigo-500/20 text-indigo-300">{{ preset.badge }}</span>
+        </button>
+      }
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- 2. Settings & Output Mode Switcher Bar     -->
+  <!-- ========================================== -->
+  <section class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl shadow-lg space-y-4">
+    <!-- Output Target Tabs -->
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+      <div class="flex items-center gap-1 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-none">
+        <button 
+          (click)="outputTarget.set('interface')"
+          [ngClass]="outputTarget() === 'interface' ? 'bg-cyan-500 text-black font-bold shadow-lg shadow-cyan-500/20' : 'text-slate-300 hover:text-white hover:bg-slate-800'"
+          class="px-3.5 py-2 rounded-xl text-xs transition-all whitespace-nowrap flex items-center gap-1.5"
+        >
+          <lucide-icon name="code-2" class="w-4 h-4"></lucide-icon>
+          <span>TS Interface (واجهة)</span>
+        </button>
+
+        <button 
+          (click)="outputTarget.set('type')"
+          [ngClass]="outputTarget() === 'type' ? 'bg-cyan-500 text-black font-bold shadow-lg shadow-cyan-500/20' : 'text-slate-300 hover:text-white hover:bg-slate-800'"
+          class="px-3.5 py-2 rounded-xl text-xs transition-all whitespace-nowrap flex items-center gap-1.5"
+        >
+          <lucide-icon name="type" class="w-4 h-4"></lucide-icon>
+          <span>TS Type (نوع مخصص)</span>
+        </button>
+
+        <button 
+          (click)="outputTarget.set('reactiveForm')"
+          [ngClass]="outputTarget() === 'reactiveForm' ? 'bg-cyan-500 text-black font-bold shadow-lg shadow-cyan-500/20' : 'text-slate-300 hover:text-white hover:bg-slate-800'"
+          class="px-3.5 py-2 rounded-xl text-xs transition-all whitespace-nowrap flex items-center gap-1.5"
+        >
+          <lucide-icon name="check-square" class="w-4 h-4"></lucide-icon>
+          <span>Angular Reactive Form</span>
+        </button>
+
+        <button 
+          (click)="outputTarget.set('mockJson')"
+          [ngClass]="outputTarget() === 'mockJson' ? 'bg-cyan-500 text-black font-bold shadow-lg shadow-cyan-500/20' : 'text-slate-300 hover:text-white hover:bg-slate-800'"
+          class="px-3.5 py-2 rounded-xl text-xs transition-all whitespace-nowrap flex items-center gap-1.5"
+        >
+          <lucide-icon name="box" class="w-4 h-4"></lucide-icon>
+          <span>بيانات وهمية (Mock JSON)</span>
+        </button>
+
+        <button 
+          (click)="outputTarget.set('apiService')"
+          [ngClass]="outputTarget() === 'apiService' ? 'bg-cyan-500 text-black font-bold shadow-lg shadow-cyan-500/20' : 'text-slate-300 hover:text-white hover:bg-slate-800'"
+          class="px-3.5 py-2 rounded-xl text-xs transition-all whitespace-nowrap flex items-center gap-1.5"
+        >
+          <lucide-icon name="workflow" class="w-4 h-4"></lucide-icon>
+          <span>دوال الخدمة (HttpClient)</span>
+        </button>
+
+        <button 
+          (click)="outputTarget.set('class')"
+          [ngClass]="outputTarget() === 'class' ? 'bg-cyan-500 text-black font-bold shadow-lg shadow-cyan-500/20' : 'text-slate-300 hover:text-white hover:bg-slate-800'"
+          class="px-3.5 py-2 rounded-xl text-xs transition-all whitespace-nowrap flex items-center gap-1.5"
+        >
+          <span>TS Class</span>
+        </button>
+      </div>
+
+      <!-- Quick Stats Pill -->
+      <div class="flex items-center gap-3 text-xs text-slate-400 font-mono">
+        <span class="flex items-center gap-1">
+          <strong class="text-cyan-400">{{ conversionResult().stats.classesCount }}</strong> نماذج
+        </span>
+        <span>•</span>
+        <span class="flex items-center gap-1">
+          <strong class="text-indigo-400">{{ conversionResult().stats.propertiesCount }}</strong> حقول
+        </span>
+        <span>•</span>
+        <span class="flex items-center gap-1">
+          <strong class="text-emerald-400">{{ conversionResult().stats.linesCount }}</strong> أسطر
+        </span>
+      </div>
+    </div>
+
+    <!-- Options Controls Bar -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+      <!-- Casing -->
+      <div class="space-y-1">
+        <label class="text-slate-400 block font-medium">حالة أسماء الخصائص (Casing):</label>
+        <select 
+          [(ngModel)]="casing" 
+          class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-cyan-500"
+        >
+          <option value="camelCase">camelCase (المعياري لـ Angular)</option>
+          <option value="PascalCase">PascalCase (كما هي في C#)</option>
+          <option value="preserve">Preserve (كما هي تماماً)</option>
+        </select>
+      </div>
+
+      <!-- Nullable Style -->
+      <div class="space-y-1">
+        <label class="text-slate-400 block font-medium">معاملة الـ Nullable (?):</label>
+        <select 
+          [(ngModel)]="nullableStyle" 
+          class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-cyan-500"
+        >
+          <option value="optional">اختياري (prop?: string)</option>
+          <option value="nullUnion">اتحاد null (prop: string | null)</option>
+          <option value="both">كلاهما (prop?: string | null)</option>
+        </select>
+      </div>
+
+      <!-- Date Type -->
+      <div class="space-y-1">
+        <label class="text-slate-400 block font-medium">نوع التواريخ (DateTime):</label>
+        <select 
+          [(ngModel)]="dateType" 
+          class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-cyan-500"
+        >
+          <option value="string">string (ISO 8601 الافتراضي في الـ JSON)</option>
+          <option value="Date">Date كائن تاريخي</option>
+        </select>
+      </div>
+
+      <!-- Export Keyword Toggle -->
+      <div class="space-y-1">
+        <label class="text-slate-400 block font-medium">كلمة التصدير (export):</label>
+        <button 
+          (click)="exportKeyword.update(v => !v)"
+          class="w-full py-2 px-3 rounded-lg border text-center transition-all flex items-center justify-between"
+          [ngClass]="exportKeyword() ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-300' : 'bg-slate-950 border-slate-700 text-slate-400'"
+        >
+          <span>إضافة export</span>
+          <span class="font-mono text-[11px]">{{ exportKeyword() ? 'نعم' : 'لا' }}</span>
+        </button>
+      </div>
+
+      <!-- Respect JsonPropertyName Toggle -->
+      <div class="space-y-1">
+        <label class="text-slate-400 block font-medium">سمة JsonPropertyName:</label>
+        <button 
+          (click)="respectJsonPropertyName.update(v => !v)"
+          class="w-full py-2 px-3 rounded-lg border text-center transition-all flex items-center justify-between"
+          [ngClass]="respectJsonPropertyName() ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300' : 'bg-slate-950 border-slate-700 text-slate-400'"
+        >
+          <span>اعتماد السمة</span>
+          <span class="font-mono text-[11px]">{{ respectJsonPropertyName() ? 'نعم' : 'لا' }}</span>
+        </button>
+      </div>
+
+      <!-- Readonly modifier -->
+      <div class="space-y-1">
+        <label class="text-slate-400 block font-medium">خاصية القراءة فقط (readonly):</label>
+        <button 
+          (click)="includeReadonly.update(v => !v)"
+          class="w-full py-2 px-3 rounded-lg border text-center transition-all flex items-center justify-between"
+          [ngClass]="includeReadonly() ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-300' : 'bg-slate-950 border-slate-700 text-slate-400'"
+        >
+          <span>إضافة readonly</span>
+          <span class="font-mono text-[11px]">{{ includeReadonly() ? 'نعم' : 'لا' }}</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- 3. Dual-Pane Live Code Studio              -->
+  <!-- ========================================== -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+    
+    <!-- LEFT PANE: C# DTO Input -->
+    <div class="flex flex-col bg-slate-900/90 rounded-3xl border border-slate-800 shadow-2xl overflow-hidden">
+      <!-- Pane Header -->
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 font-bold font-mono text-sm">
+            C#
+          </div>
+          <div>
+            <h2 class="font-bold text-sm text-white">كود C# (Record / Class / Enum / DTO)</h2>
+            <span class="text-[11px] text-slate-400">الصق الكود هنا وسيقوم بالتحويل لحظياً أثناء الكتابة</span>
+          </div>
+        </div>
+
+        <!-- Left Actions -->
+        <div class="flex items-center gap-1.5">
+          <button 
+            (click)="pasteFromClipboard()"
+            class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono transition-colors"
+            title="لصق من الحافظة"
+          >
+            <lucide-icon name="copy" class="w-3.5 h-3.5 text-cyan-400"></lucide-icon>
+            <span>لصق</span>
+          </button>
+
+          <button 
+            (click)="clearInput()"
+            class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-rose-900/50 text-slate-400 hover:text-rose-300 text-xs font-mono transition-colors"
+            title="مسح الحقل"
+          >
+            <lucide-icon name="trash-2" class="w-3.5 h-3.5"></lucide-icon>
+            <span>مسح</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Textarea Editor -->
+      <div class="relative flex-1 p-4 bg-slate-950/60">
+        <textarea 
+          [(ngModel)]="inputCode"
+          dir="ltr"
+          rows="20"
+          placeholder="public record AuthResponseDto { ... }"
+          class="w-full h-full min-h-[420px] p-4 rounded-2xl bg-slate-950/90 border border-slate-800/90 font-mono text-xs text-purple-300 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 shadow-inner resize-y leading-relaxed"
+          spellcheck="false"
+        ></textarea>
+      </div>
+
+      <!-- Pane Footer Tips -->
+      <div class="px-4 py-2.5 border-t border-slate-800/80 bg-slate-900/40 text-[11px] text-slate-500 flex items-center justify-between">
+        <span>يدعم C# 9, 10, 11, 12 بما فيها Positional Records و Collection Expressions [ ]</span>
+        <span class="font-mono text-slate-400">{{ inputCode().length }} حرفاً</span>
+      </div>
+    </div>
+
+    <!-- RIGHT PANE: TypeScript / Target Output -->
+    <div class="flex flex-col bg-slate-900/90 rounded-3xl border border-slate-800 shadow-2xl overflow-hidden">
+      <!-- Pane Header -->
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold font-mono text-sm">
+            TS
+          </div>
+          <div>
+            <h2 class="font-bold text-sm text-white">الناتج الجاهز لمشروع Angular</h2>
+            <span class="text-[11px] text-slate-400">انقر نسخ وضعه فوراً في ملف الـ Model أو الخدمة</span>
+          </div>
+        </div>
+
+        <!-- Right Actions -->
+        <div class="flex items-center gap-2">
+          <!-- Download Button -->
+          <button 
+            (click)="downloadFile()"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono transition-colors"
+            title="تحميل كملف"
+          >
+            <lucide-icon name="download" class="w-3.5 h-3.5 text-cyan-400"></lucide-icon>
+            <span class="hidden sm:inline">تحميل</span>
+          </button>
+
+          <!-- Primary Copy Button -->
+          <button 
+            (click)="copyOutput()"
+            class="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold font-mono transition-all duration-200 shadow-lg"
+            [ngClass]="copiedTarget() === 'output' ? 'bg-emerald-500 text-black shadow-emerald-500/30' : 'bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-indigo-600/30'"
+          >
+            <lucide-icon [name]="copiedTarget() === 'output' ? 'check' : 'copy'" class="w-4 h-4"></lucide-icon>
+            <span>{{ copiedTarget() === 'output' ? 'تم النسخ!' : 'نسخ الكود' }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Preformatted Output -->
+      <div class="relative flex-1 p-4 bg-slate-950/60">
+        <pre 
+          dir="ltr"
+          class="w-full h-full min-h-[420px] p-4 rounded-2xl bg-slate-950/90 border border-slate-800/90 font-mono text-xs text-emerald-400 overflow-auto shadow-inner selection:bg-cyan-500/30 leading-relaxed"
+        >{{ conversionResult().code }}</pre>
+      </div>
+
+      <!-- Pane Footer -->
+      <div class="px-4 py-2.5 border-t border-slate-800/80 bg-slate-900/40 text-[11px] text-slate-400 flex items-center justify-between">
+        <span class="text-emerald-400 font-medium">جاهز للاستخدام المباشر في Angular (مع الـ Signals أو RxJS)</span>
+        <span class="font-mono text-slate-500">{{ conversionResult().stats.linesCount }} سطر</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 4. History Drawer / Modal                  -->
+  <!-- ========================================== -->
+  @if (showHistoryDrawer()) {
+    <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end" (click)="showHistoryDrawer.set(false)">
+      <div class="w-full max-w-md bg-slate-900 border-r border-slate-800 h-full p-6 space-y-4 shadow-2xl flex flex-col" (click)="$event.stopPropagation()">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2">
+            <lucide-icon name="history" class="w-5 h-5 text-cyan-400"></lucide-icon>
+            <h3 class="font-bold text-white text-base">سجل النماذج السابقة</h3>
+          </div>
+          <button (click)="showHistoryDrawer.set(false)" class="p-1 text-slate-400 hover:text-white rounded-lg bg-slate-800">
+            <lucide-icon name="x" class="w-4 h-4"></lucide-icon>
+          </button>
+        </div>
+
+        <p class="text-xs text-slate-400 leading-relaxed">
+          جميع الـ DTOs التي قمت بنسخها أو تحويلها تحفظ تلقائياً هنا في المتصفح لتتمكن من الرجوع إليها بضغطة زر.
+        </p>
+
+        <div class="flex-1 overflow-y-auto space-y-2 pr-1">
+          @if (historyList().length === 0) {
+            <div class="text-center py-12 text-slate-500 text-xs">
+              لا توجد عناصر محفوظة حتى الآن في السجل.
+            </div>
+          } @else {
+            @for (item of historyList(); track item.id) {
+              <div 
+                (click)="recallHistoryItem(item)"
+                class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-cyan-500/50 hover:bg-slate-850 cursor-pointer transition-all space-y-1.5 group"
+              >
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-xs text-cyan-300 group-hover:text-cyan-200 font-mono">{{ item.title }}</span>
+                  <span class="text-[10px] text-slate-500">{{ item.timestamp | date:'shortTime' }}</span>
+                </div>
+                <div class="text-[11px] font-mono text-slate-400 truncate max-w-full" dir="ltr">
+                  {{ item.csharpCode }}
+                </div>
+              </div>
+            }
+          }
+        </div>
+
+        @if (historyList().length > 0) {
+          <div class="pt-3 border-t border-slate-800">
+            <button 
+              (click)="clearAllHistory()"
+              class="w-full py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs transition-colors flex items-center justify-center gap-1.5"
+            >
+              <lucide-icon name="trash-2" class="w-3.5 h-3.5"></lucide-icon>
+              <span>مسح كل السجل</span>
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Toast Notification Floating Pill -->
+  @if (notificationMsg()) {
+    <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-2xl bg-slate-900/95 border border-cyan-500/40 text-cyan-300 shadow-2xl flex items-center gap-2 text-xs font-semibold backdrop-blur-md animate-bounce">
+      <lucide-icon name="sparkles" class="w-4 h-4 text-cyan-400"></lucide-icon>
+      <span>{{ notificationMsg() }}</span>
+    </div>
+  }
+
+</div>

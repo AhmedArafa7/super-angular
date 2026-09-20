@@ -491,6 +491,10 @@ export class ArcadeArenaComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
       const gameId = params.get('id');
+      if (gameId === 'tank-battle' || gameId === 'crazy-shells') {
+        this.router.navigate(['/arcade/tank-battle']);
+        return;
+      }
       if (gameId) {
         this.arcadeService.getGameById(gameId).subscribe(game => {
           if (game && (game.localUrl || gameId.startsWith('custom_game_'))) {
