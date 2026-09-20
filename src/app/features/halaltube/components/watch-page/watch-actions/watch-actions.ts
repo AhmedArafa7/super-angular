@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { LucideAngularModule, ThumbsUp, ThumbsDown, Share2, Download, Plus, Scissors, Flag, VolumeX, CheckCircle } from 'lucide-angular';
 import { halaltubeService } from '../../../halaltube.service';
 import { getInitialAvatarSvg } from '../../../../../core/services/button-inspector.service';
@@ -14,13 +15,22 @@ import { HalalAudioFilterService } from '../../../../../core/services/halal-audi
 })
 export class WatchActionsComponent {
   private halaltube = inject(halaltubeService);
+  private router = inject(Router);
   readonly audioFilter = inject(HalalAudioFilterService);
+
+  goToChannel() {
+    const target = (this.channelId || this.channelName || '').trim();
+    if (target) {
+      this.router.navigate(['/stream/channel', target]);
+    }
+  }
 
   onRecommendNoMusicClick() {
     this.audioFilter.toggleFilter();
     this.recommendNoMusic.emit();
   }
 
+  @Input() channelId?: string = '';
   @Input() likes: number = 0;
   @Input() isLiked: boolean = false;
   @Input() isDisliked: boolean = false;

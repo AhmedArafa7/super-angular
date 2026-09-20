@@ -44,11 +44,15 @@ export class ProxyService {
 
   private extractJSONFromHTML(html: string, variableName: string): any {
     try {
-      const pattern = `var ${variableName} = `;
-      const startIndex = html.indexOf(pattern);
+      let startIndex = html.indexOf(`var ${variableName} = `);
+      let patternLen = `var ${variableName} = `.length;
+      if (startIndex === -1) {
+        startIndex = html.indexOf(`${variableName} = `);
+        patternLen = `${variableName} = `.length;
+      }
       if (startIndex === -1) return null;
 
-      const jsonStart = html.indexOf('{', startIndex + pattern.length);
+      const jsonStart = html.indexOf('{', startIndex + patternLen);
       if (jsonStart === -1) return null;
 
       let braceCount = 0;

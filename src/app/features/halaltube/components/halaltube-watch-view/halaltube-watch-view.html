@@ -30,6 +30,7 @@
            [isDisliked]="isDisliked()"
            [isSubscribed]="isSubscribed()"
            [channelName]="vid.author"
+           [channelId]="$any(vid).authorId || $any(vid).channelId || ''"
            [channelAvatar]="vid.channelAvatar"
            [subscriberCount]="subscriberCount()"
            [isYoutube]="vid.source === 'youtube'"

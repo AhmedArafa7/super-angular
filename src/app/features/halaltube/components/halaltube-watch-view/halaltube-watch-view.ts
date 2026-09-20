@@ -198,9 +198,19 @@ export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
         .then(res => res.json())
         .then((data: any) => {
           if (data && data.author_name) {
+            let extractedAuthorId = '';
+            if (data.author_url) {
+              const match = data.author_url.match(/(?:channel\/|@)([^/?&]+)/);
+              if (match && match[1]) {
+                extractedAuthorId = data.author_url.includes('/@') ? `@${match[1]}` : match[1];
+              }
+            }
+
             this.videoState.activeVideo.update(current => current ? { 
               ...current, 
               author: data.author_name,
+              authorId: extractedAuthorId || (current as any).authorId || (current as any).channelId,
+              channelId: extractedAuthorId || (current as any).channelId,
               title: data.title || current.title
             } : current);
           }
@@ -213,12 +223,16 @@ export class halaltubeWatchViewComponent implements OnInit, OnDestroy {
           if (subCount) {
             this.subscriberCount.set(typeof subCount === 'number' ? this.formatSubscribers(subCount) : subCount);
           }
-          if (details.title) {
+          const authorId = (details as any).authorId || (details as any).uploaderUrl?.replace('/channel/', '') || '';
+          if (details.title || authorId) {
             this.videoState.activeVideo.update(current => current ? { 
               ...current, 
-              title: details.title, 
+              title: details.title || current.title, 
               author: details.uploader || current.author,
-              thumbnail: details.thumbnailUrl || current.thumbnail
+              authorId: authorId || (current as any).authorId,
+              channelId: authorId || (current as any).channelId,
+              thumbnail: details.thumbnailUrl || current.thumbnail,
+              channelAvatar: (details as any).uploaderAvatar || current.channelAvatar
             } : current);
           }
         }

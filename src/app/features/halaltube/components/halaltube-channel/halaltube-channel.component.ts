@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { PipedApiService } from '../../../../core/services/piped-api.service';
 import { IndexedDBService } from '../../../../core/services/indexed-db.service';
 import { halaltubeService } from '../../halaltube.service';
+import { YoutubeProviderService } from '../../../../core/services/youtube-provider.service';
 import { LucideAngularModule, Bell, Share2, Play } from 'lucide-angular';
 import { VideoCardComponent } from '../video-card/video-card.component';
 import { SkeletonLoaderComponent } from '../skeleton-loader/skeleton-loader.component';
@@ -194,6 +195,7 @@ export class halaltubeChannelComponent implements OnInit {
   private piped = inject(PipedApiService);
   private idb = inject(IndexedDBService);
   private halaltube = inject(halaltubeService);
+  private youtubeProvider = inject(YoutubeProviderService);
 
   Bell = Bell;
   Share2 = Share2;
@@ -253,105 +255,164 @@ export class halaltubeChannelComponent implements OnInit {
     const FEED_TTL = 2 * 60 * 60 * 1000;
 
     let realChannelId = id;
+    let cleanName = '';
 
     if (id.startsWith('title_')) {
-      const raw = id.replace('title_', '');
-      let channelName = '';
+      const raw = id.replace(/^title_/, '');
       try {
-        channelName = decodeURIComponent(raw);
+        cleanName = decodeURIComponent(raw);
       } catch {
-        channelName = raw;
+        cleanName = raw;
       }
-      channelName = channelName.replace(/\s*-\s*/, ' ').trim();
-      console.log('[Channel] Resolving title_ ID:', id, '→ channelName:', channelName);
-
-      const resolved = await this.resolveChannelByName(channelName);
-      if (resolved) {
-        console.log('[Channel] Resolved to real channel:', resolved.channelId);
-        realChannelId = resolved.channelId;
-        this.channelData.set(resolved.meta);
-      } else {
-        console.warn('[Channel] Could not resolve channel name, showing error');
-        this.isLoadingMeta.set(false);
-        return;
-      }
+      cleanName = cleanName.replace(/\s*-\s*/, ' ').trim();
+      realChannelId = cleanName;
+      console.log('[Channel] Resolving title_ ID:', id, '→ channelName:', cleanName);
     }
 
+    // Check IndexedDB cache first
     const cachedMeta = await this.idb.getWithTTL('channel_meta', realChannelId, META_TTL);
     const cachedFeed = await this.idb.getWithTTL('channel_feed', realChannelId, FEED_TTL);
 
-    if (cachedMeta) {
-      await this.idb.setWithTTL('channel_meta', cachedMeta);
-    }
-
-    if (cachedMeta && cachedFeed) {
+    if (cachedMeta && cachedFeed && cachedFeed.videos?.length > 0) {
       this.channelData.set(cachedMeta);
       this.videos.set(cachedFeed.videos || []);
       this.nextpage.set(cachedFeed.nextpage || '');
       this.isLoadingMeta.set(false);
-      this.updateSubscriptionWithRealId(id, realChannelId, cachedMeta.name, cachedMeta.avatarUrl);
+      this.updateSubscriptionWithRealId(id, cachedMeta.channelId || realChannelId, cachedMeta.name, cachedMeta.avatarUrl);
       this.setupIntersectionObserver();
       return;
     }
 
     try {
-      const data = await this.piped.getChannelDetails(realChannelId);
+      // 1. Fetch via YoutubeProviderService (Direct YouTube channel scraper via proxy first)
+      const data = await this.youtubeProvider.getChannelDetails(realChannelId || id);
       
+      const resolvedChannelId = data.id || realChannelId || id;
       const meta = {
-        channelId: realChannelId,
-        name: data.name,
+        channelId: resolvedChannelId,
+        name: data.name || cleanName || 'قناة',
         avatarUrl: data.avatarUrl,
-        bannerUrl: data.bannerUrl,
+        bannerUrl: data.bannerUrl || '',
         subscriberCount: data.subscriberCount || 0,
-        videoCount: data.videoCount || data.relatedStreams?.length || 0,
-        description: data.description
+        videoCount: data.relatedStreams?.length || 0,
+        description: data.description || ''
       };
       
       this.channelData.set(meta);
       
       const mappedVideos = (data.relatedStreams || []).map((v: any) => ({
-        id: v.url.split('v=')[1] || v.url,
+        id: (v.url ? (v.url.split('v=')[1] || v.url) : v.id) || '',
         title: v.title,
         thumbnail: v.thumbnail,
         author: meta.name,
-        authorId: realChannelId,
-        views: v.views,
+        authorId: resolvedChannelId,
+        views: v.views || '',
         time: v.uploadedDate || '',
-        duration: v.duration > 0 ? this.formatDuration(v.duration) : '',
+        duration: typeof v.duration === 'number' && v.duration > 0 ? this.formatDuration(v.duration) : (v.duration || ''),
         channelAvatar: meta.avatarUrl
       }));
 
       this.videos.set(mappedVideos);
       this.nextpage.set(data.nextpage || '');
 
-      const mappedPlaylists = (data.playlists || []).map((p: any) => ({
-        id: p.url?.split('/playlist/')[1] || p.playlistId || p.id,
-        title: p.title,
-        thumbnail: p.thumbnail,
-        videoCount: p.videoCount || p.videos || 0,
-        isPrivate: p.isPrivate || false
-      }));
-      this.playlists.set(mappedPlaylists);
-
       await this.idb.setWithTTL('channel_meta', meta);
-      await this.idb.setWithTTL('channel_feed', { channelId: realChannelId, videos: mappedVideos, nextpage: data.nextpage });
+      await this.idb.setWithTTL('channel_feed', { channelId: resolvedChannelId, videos: mappedVideos, nextpage: data.nextpage });
 
-      this.updateSubscriptionWithRealId(id, realChannelId, meta.name, meta.avatarUrl);
+      this.updateSubscriptionWithRealId(id, resolvedChannelId, meta.name, meta.avatarUrl);
       this.isLoadingMeta.set(false);
       this.setupIntersectionObserver();
+      return;
     } catch (e) {
-      console.error('Failed to load channel details', e);
-      this.isLoadingMeta.set(false);
+      console.warn('[Channel] Primary channel details fetch failed, checking fallbacks:', e);
     }
+
+    // 2. Fallback: Resolve by channel name search
+    if (cleanName || id) {
+      try {
+        const resolved = await this.resolveChannelByName(cleanName || id);
+        if (resolved) {
+          const resolvedChannelId = resolved.channelId;
+          this.channelData.set(resolved.meta);
+
+          // Attempt to load videos for the resolved real channel ID
+          try {
+            const data = await this.youtubeProvider.getChannelDetails(resolvedChannelId);
+            if (data?.relatedStreams?.length > 0) {
+              const mappedVideos = (data.relatedStreams || []).map((v: any) => ({
+                id: (v.url ? (v.url.split('v=')[1] || v.url) : v.id) || '',
+                title: v.title,
+                thumbnail: v.thumbnail,
+                author: resolved.meta.name,
+                authorId: resolvedChannelId,
+                views: v.views || '',
+                time: v.uploadedDate || '',
+                duration: typeof v.duration === 'number' && v.duration > 0 ? this.formatDuration(v.duration) : (v.duration || ''),
+                channelAvatar: resolved.meta.avatarUrl
+              }));
+              this.videos.set(mappedVideos);
+            }
+          } catch {}
+
+          this.updateSubscriptionWithRealId(id, resolvedChannelId, resolved.meta.name, resolved.meta.avatarUrl);
+          this.isLoadingMeta.set(false);
+          return;
+        }
+      } catch (err) {
+        console.warn('[Channel] resolveChannelByName failed:', err);
+      }
+    }
+
+    // 3. Fallback: Check local subscriptions and home content for this author
+    const targetName = (cleanName || id).toLowerCase();
+    const sub = this.halaltube.subscriptions().find(s => {
+      const sId = (s.channelId || s.id || '').toLowerCase();
+      const sName = (s.channelTitle || '').toLowerCase();
+      return sId === id.toLowerCase() || sName === targetName || (targetName && sName.includes(targetName));
+    });
+
+    const localVids = this.halaltube.allHomeContent().filter(v => {
+      const vAuthor = (v.author || '').toLowerCase();
+      const vAuthorId = (v.authorId || '').toLowerCase();
+      return vAuthorId === id.toLowerCase() || vAuthor === targetName || (targetName && vAuthor.includes(targetName));
+    });
+
+    if (sub || localVids.length > 0) {
+      const meta = {
+        channelId: sub?.channelId || id,
+        name: sub?.channelTitle || localVids[0]?.author || cleanName || id,
+        avatarUrl: sub?.avatarUrl || localVids[0]?.channelAvatar || '',
+        bannerUrl: '',
+        subscriberCount: 0,
+        videoCount: localVids.length,
+        description: `قناة ${sub?.channelTitle || cleanName || id}`
+      };
+      this.channelData.set(meta);
+      this.videos.set(localVids.map(v => ({
+        id: v.id,
+        title: v.title,
+        thumbnail: v.thumbnail,
+        author: meta.name,
+        authorId: meta.channelId,
+        views: v.views || '',
+        time: v.time || '',
+        duration: v.duration || '',
+        channelAvatar: meta.avatarUrl
+      })));
+      this.isLoadingMeta.set(false);
+      return;
+    }
+
+    // All failed
+    this.isLoadingMeta.set(false);
   }
 
   private async resolveChannelByName(name: string): Promise<{ channelId: string; meta: any } | null> {
     try {
       const searchTerms = name.split(/\s+/).filter(Boolean);
-      let channels = await this.piped.searchChannels(name);
+      let channels = await this.youtubeProvider.searchChannels(name);
       
       if (channels.length === 0 && searchTerms.length > 1) {
-        channels = await this.piped.searchChannels(searchTerms[0]);
+        channels = await this.youtubeProvider.searchChannels(searchTerms[0]);
       }
 
       const match = channels.find((c: any) => {
@@ -362,17 +423,17 @@ export class halaltubeChannelComponent implements OnInit {
 
       const best = match || channels[0];
       if (best?.channelId) {
-        const data = await this.piped.getChannelDetails(best.channelId);
+        const data = await this.youtubeProvider.getChannelDetails(best.channelId).catch(() => null);
         return {
           channelId: best.channelId,
           meta: {
             channelId: best.channelId,
-            name: data.name,
-            avatarUrl: data.avatarUrl,
-            bannerUrl: data.bannerUrl,
-            subscriberCount: data.subscriberCount,
-            videoCount: 0,
-            description: data.description
+            name: data?.name || best.name || name,
+            avatarUrl: data?.avatarUrl || best.avatarUrl || '',
+            bannerUrl: data?.bannerUrl || '',
+            subscriberCount: data?.subscriberCount || 0,
+            videoCount: data?.relatedStreams?.length || 0,
+            description: data?.description || ''
           }
         };
       }
