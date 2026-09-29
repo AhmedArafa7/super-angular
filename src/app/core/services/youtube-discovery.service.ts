@@ -351,15 +351,43 @@ export class YoutubeDiscoveryService {
 
       // Parse videos
       const tabs = data.contents?.twoColumnBrowseResultsRenderer?.tabs || [];
-      const videosTab = tabs.find((t: any) => 
-        t.tabRenderer?.selected || 
-        t.tabRenderer?.title === 'Videos' || 
-        t.tabRenderer?.title === 'فيديوهات'
-      ) || tabs[0];
+      let videosTab = tabs.find((t: any) => {
+        const title = (t.tabRenderer?.title || '').toLowerCase();
+        return title.includes('vid') || title.includes('فيديو');
+      });
 
-      const gridContents = videosTab?.tabRenderer?.content?.richGridRenderer?.contents || 
-                           videosTab?.tabRenderer?.content?.sectionListRenderer?.contents?.[0]?.itemSectionRenderer?.contents?.[0]?.gridRenderer?.items ||
-                           [];
+      if (!videosTab || !videosTab.tabRenderer?.content?.richGridRenderer?.contents?.length) {
+        videosTab = tabs.find((t: any) => t.tabRenderer?.content?.richGridRenderer?.contents?.length) || tabs[0];
+      }
+
+      let gridContents = videosTab?.tabRenderer?.content?.richGridRenderer?.contents || [];
+      
+      // If still empty, search all tabs for richGridRenderer or sectionListRenderer
+      if (!gridContents.length) {
+        for (const t of tabs) {
+          const g = t.tabRenderer?.content?.richGridRenderer?.contents;
+          if (g && g.length) {
+            gridContents = g;
+            break;
+          }
+        }
+      }
+
+      if (!gridContents.length) {
+        for (const t of tabs) {
+          const sections = t.tabRenderer?.content?.sectionListRenderer?.contents || [];
+          for (const s of sections) {
+            const shelfItems = s.itemSectionRenderer?.contents?.[0]?.gridRenderer?.items ||
+                               s.itemSectionRenderer?.contents?.[0]?.shelfRenderer?.content?.horizontalListRenderer?.items ||
+                               s.itemSectionRenderer?.contents;
+            if (shelfItems && shelfItems.length) {
+              gridContents = shelfItems;
+              break;
+            }
+          }
+          if (gridContents.length) break;
+        }
+      }
 
       const relatedStreams: any[] = [];
 

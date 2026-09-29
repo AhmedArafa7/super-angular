@@ -1,7 +1,7 @@
-import { Component, input, output, model } from '@angular/core';
+import { Component, input, output, model, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Search, ArrowUpDown, Trash2, Film, FolderPlus, Plus, Play, Pause, X, Zap } from 'lucide-angular';
+import { LucideAngularModule, Search, ArrowUpDown, Trash2, Film, FolderPlus, Plus, Play, Pause, X, Zap, Pencil, Check } from 'lucide-angular';
 import { LocalMediaItem } from '../../models/local-player.models';
 
 @Component({
@@ -84,29 +84,66 @@ import { LocalMediaItem } from '../../models/local-player.models';
               <lucide-icon *ngIf="activeItemId() === item.id" [img]="isPlaying() ? Pause : Play" class="size-4 text-teal-400"></lucide-icon>
             </div>
 
-            <!-- Details -->
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-2">
-                <p class="text-xs font-bold truncate group-hover:text-teal-300 transition-colors" [title]="item.name">{{ item.name }}</p>
-                <span *ngIf="notesCountByVideoId()[item.id] > 0" class="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold shrink-0">
-                    {{ notesCountByVideoId()[item.id] }}
-                </span>
+            <!-- Details or Inline Rename -->
+            @if (editingItemId() === item.id) {
+              <div class="min-w-0 flex-1 flex items-center gap-1.5" (click)="$event.stopPropagation()">
+                <input 
+                  type="text" 
+                  [id]="'rename-input-' + item.id"
+                  [ngModel]="editingName()" 
+                  (ngModelChange)="editingName.set($event)"
+                  (keydown.enter)="saveRename(item, $event)" 
+                  (keydown.escape)="cancelRename($event)"
+                  class="flex-1 min-w-0 bg-black/80 border border-teal-500 rounded-xl px-2.5 py-1 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-teal-400 font-bold" />
+                <button 
+                  (click)="saveRename(item, $event)" 
+                  class="p-1.5 bg-teal-500/20 hover:bg-teal-500/40 text-teal-300 rounded-lg transition"
+                  title="حفظ الاسم (Enter)">
+                  <lucide-icon [img]="Check" class="size-3.5"></lucide-icon>
+                </button>
+                <button 
+                  (click)="cancelRename($event)" 
+                  class="p-1.5 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-lg transition"
+                  title="إلغاء (Esc)">
+                  <lucide-icon [img]="X" class="size-3.5"></lucide-icon>
+                </button>
               </div>
-              <div class="flex items-center gap-1.5 mt-0.5">
-                <span *ngIf="getEffectiveFolderName(item)" class="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-teal-300 font-mono truncate max-w-[120px]" [title]="getEffectiveFolderName(item)">
-                  📁 {{ getEffectiveFolderName(item) }}
-                </span>
-                <span class="text-[10px] text-slate-500 font-mono">{{ formatTime(item.duration || 0) + ' • ' }}{{ formatFileSize(item.size) }}</span>
-                <span *ngIf="item.lastPosition && item.lastPosition > 10" class="text-[9px] px-1 bg-indigo-500/20 text-indigo-300 rounded font-mono">
-                  {{ formatTime(item.lastPosition) }}
-                </span>
+            } @else {
+              <!-- Details -->
+              <div class="min-w-0 flex-1" (dblclick)="startRename(item, $event)">
+                <div class="flex items-center gap-2">
+                  <p class="text-xs font-bold truncate group-hover:text-teal-300 transition-colors" [title]="item.name + ' (انقر مرتين للتعديل)'">{{ item.name }}</p>
+                  <span *ngIf="notesCountByVideoId()[item.id] > 0" class="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold shrink-0">
+                      {{ notesCountByVideoId()[item.id] }}
+                  </span>
+                </div>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <span *ngIf="getEffectiveFolderName(item)" class="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-teal-300 font-mono truncate max-w-[120px]" [title]="getEffectiveFolderName(item)">
+                    📁 {{ getEffectiveFolderName(item) }}
+                  </span>
+                  <span class="text-[10px] text-slate-500 font-mono">{{ formatTime(item.duration || 0) + ' • ' }}{{ formatFileSize(item.size) }}</span>
+                  <span *ngIf="item.lastPosition && item.lastPosition > 10" class="text-[9px] px-1 bg-indigo-500/20 text-indigo-300 rounded font-mono">
+                    {{ formatTime(item.lastPosition) }}
+                  </span>
+                </div>
               </div>
-            </div>
 
-            <!-- Remove Item -->
-            <button (click)="$event.stopPropagation(); removeItem.emit(item.id)" class="text-slate-500 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition-opacity" title="حذف">
-              <lucide-icon [img]="Trash2" class="size-3.5"></lucide-icon>
-            </button>
+              <!-- Action Buttons (Edit & Remove) -->
+              <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                <button 
+                  (click)="startRename(item, $event)" 
+                  class="text-slate-400 hover:text-teal-300 p-1 hover:bg-white/5 rounded-lg transition" 
+                  title="تعديل اسم الفيديو">
+                  <lucide-icon [img]="Pencil" class="size-3.5"></lucide-icon>
+                </button>
+                <button 
+                  (click)="$event.stopPropagation(); removeItem.emit(item.id)" 
+                  class="text-slate-500 hover:text-red-400 p-1 hover:bg-white/5 rounded-lg transition" 
+                  title="حذف">
+                  <lucide-icon [img]="Trash2" class="size-3.5"></lucide-icon>
+                </button>
+              </div>
+            }
           </div>
         }
       } @else {
@@ -135,6 +172,8 @@ export class PlaylistTabComponent {
   Plus = Plus;
   X = X;
   Zap = Zap;
+  Pencil = Pencil;
+  Check = Check;
 
   playlist = input<LocalMediaItem[]>([]);
   displayedPlaylist = input<LocalMediaItem[]>([]);
@@ -149,10 +188,41 @@ export class PlaylistTabComponent {
 
   selectItem = output<LocalMediaItem>();
   removeItem = output<string>();
+  renameItem = output<{ id: string; newName: string }>();
   sortChange = output<void>();
   addFolder = output<Event>();
   addFiles = output<Event>();
   cycleAutoplay = output<void>();
+
+  editingItemId = signal<string | null>(null);
+  editingName = signal<string>('');
+
+  startRename(item: LocalMediaItem, event?: Event) {
+    if (event) event.stopPropagation();
+    this.editingItemId.set(item.id);
+    this.editingName.set(item.name);
+    setTimeout(() => {
+      const input = document.getElementById('rename-input-' + item.id) as HTMLInputElement;
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    }, 50);
+  }
+
+  saveRename(item: LocalMediaItem, event?: Event) {
+    if (event) event.stopPropagation();
+    const newName = this.editingName().trim();
+    if (newName && newName !== item.name) {
+      this.renameItem.emit({ id: item.id, newName });
+    }
+    this.editingItemId.set(null);
+  }
+
+  cancelRename(event?: Event) {
+    if (event) event.stopPropagation();
+    this.editingItemId.set(null);
+  }
 
   formatTime(seconds: number): string {
     if (!seconds || isNaN(seconds)) return '00:00';

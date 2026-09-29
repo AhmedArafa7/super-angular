@@ -15,23 +15,21 @@ export class ProxyService {
     headers?: Record<string, string>;
     body?: any;
   }): Observable<string> {
-    const proxyUrl = `${this.baseUrl}/api/proxy?url=${encodeURIComponent(targetUrl)}`;
+    const primaryProxy = `${this.baseUrl}/api/proxy?url=${encodeURIComponent(targetUrl)}`;
+    const fallbackProxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
 
-    const headers = new HttpHeaders({
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-      'Accept-Language': 'en-US,en;q=0.9,ar;q=0.8',
-      'X-Silent-Error': 'true',
-      ...(options?.headers || {})
-    });
-
-    return this.http.get(proxyUrl, {
-      headers,
+    return this.http.get(primaryProxy, {
       responseType: 'text',
       observe: 'body'
     }).pipe(
       catchError(() => {
-        return of('');
+        // If primary proxy fails or times out, seamlessly try fallback proxy
+        return this.http.get(fallbackProxy, {
+          responseType: 'text',
+          observe: 'body'
+        }).pipe(
+          catchError(() => of(''))
+        );
       })
     );
   }

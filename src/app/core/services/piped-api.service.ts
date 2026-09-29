@@ -111,8 +111,7 @@ export class PipedApiService {
     const proxyUrl = `${this.proxyBase}/api/proxy?url=${encodeURIComponent(targetUrl)}`;
     const text = await firstValueFrom(
       this.http.get(proxyUrl, { 
-        responseType: 'text',
-        headers: { 'X-Silent-Error': 'true' }
+        responseType: 'text'
       }).pipe(timeout(timeoutMs))
     );
 

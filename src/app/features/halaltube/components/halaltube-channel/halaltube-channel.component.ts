@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal, computed, ElementRef, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { PipedApiService } from '../../../../core/services/piped-api.service';
 import { IndexedDBService } from '../../../../core/services/indexed-db.service';
 import { halaltubeService } from '../../halaltube.service';
@@ -102,6 +103,19 @@ import { SkeletonLoaderComponent } from '../skeleton-loader/skeleton-loader.comp
                 }
               }
             </div>
+
+            @if (videos().length === 0 && !isLoadingFeed()) {
+              <div class="w-full min-h-[35vh] flex flex-col items-center justify-center p-8 text-center">
+                <div class="w-16 h-16 bg-gray-800/80 border border-white/5 rounded-2xl flex items-center justify-center mb-4">
+                  <lucide-icon [img]="Play" class="w-8 h-8 text-gray-400"></lucide-icon>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">لا تتوفر فيديوهات حالياً لهذه القناة</h3>
+                <p class="text-sm text-gray-400 max-w-sm mb-4">لم نتمكن من جلب فيديوهات القناة، قد تكون القناة لا تحتوي على فيديوهات عامة أو يمكنك إعادة المحاولة.</p>
+                <button class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-indigo-600/20" (click)="loadChannelData(channelId())">
+                  إعادة المحاولة
+                </button>
+              </div>
+            }
             
             <!-- Infinite Scroll Trigger -->
             <div #scrollTrigger class="w-full h-20 flex items-center justify-center mt-4">
@@ -376,7 +390,7 @@ export class halaltubeChannelComponent implements OnInit {
       return vAuthorId === id.toLowerCase() || vAuthor === targetName || (targetName && vAuthor.includes(targetName));
     });
 
-    if (sub || localVids.length > 0) {
+    if (localVids.length > 0) {
       const meta = {
         channelId: sub?.channelId || id,
         name: sub?.channelTitle || localVids[0]?.author || cleanName || id,
@@ -398,6 +412,54 @@ export class halaltubeChannelComponent implements OnInit {
         duration: v.duration || '',
         channelAvatar: meta.avatarUrl
       })));
+      this.isLoadingMeta.set(false);
+      return;
+    }
+
+    // 4. Fallback: Try general YouTube video search for the author's videos
+    try {
+      const authorQuery = cleanName || sub?.channelTitle || id.replace(/^@/, '');
+      const vids = await firstValueFrom(this.youtubeProvider.search(authorQuery));
+      if (vids && vids.length > 0) {
+        const meta = {
+          channelId: id,
+          name: sub?.channelTitle || authorQuery,
+          avatarUrl: sub?.avatarUrl || vids[0].channelAvatar || '',
+          bannerUrl: '',
+          subscriberCount: 0,
+          videoCount: vids.length,
+          description: `قناة ${sub?.channelTitle || authorQuery}`
+        };
+        this.channelData.set(meta);
+        this.videos.set(vids.map((v: any) => ({
+          id: v.id,
+          title: v.title,
+          thumbnail: v.thumbnail,
+          author: v.author || meta.name,
+          authorId: v.authorId || meta.channelId,
+          views: v.views || '',
+          time: v.time || '',
+          duration: v.duration || '',
+          channelAvatar: v.channelAvatar || meta.avatarUrl
+        })));
+        this.isLoadingMeta.set(false);
+        return;
+      }
+    } catch {}
+
+    // If sub exists, show header even if videos couldn't be loaded yet
+    if (sub) {
+      const meta = {
+        channelId: sub.channelId || id,
+        name: sub.channelTitle || cleanName || id,
+        avatarUrl: sub.avatarUrl || '',
+        bannerUrl: '',
+        subscriberCount: 0,
+        videoCount: 0,
+        description: `قناة ${sub.channelTitle || cleanName || id}`
+      };
+      this.channelData.set(meta);
+      this.videos.set([]);
       this.isLoadingMeta.set(false);
       return;
     }

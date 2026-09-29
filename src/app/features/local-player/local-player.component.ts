@@ -8,7 +8,7 @@ import {
   RotateCcw, RotateCw, SkipForward, SkipBack, FolderOpen, FolderPlus, Upload, Film, Music, Trash2, 
   ListMusic, Sparkles, Sliders, Camera, Subtitles, Repeat, Eye, HardDrive, Clock,
   Search, ArrowUpDown, Plus, X, Loader2, Check, Settings, HelpCircle, CheckCircle2, Tv,
-  Undo2, Redo2, ChevronLeft, ChevronRight, History, ScanText, MoveHorizontal, Zap
+  Undo2, Redo2, ChevronLeft, ChevronRight, History, ScanText, MoveHorizontal, Zap, Pencil
 } from 'lucide-angular';
 import { PlaylistTabComponent } from './components/playlist-tab/playlist-tab.component';
 import { NotesTabComponent } from './components/notes-tab/notes-tab.component';
@@ -138,8 +138,40 @@ import { IndexedDBService } from '../../core/services/indexed-db.service';
                 <span class="px-2.5 py-1 rounded-lg bg-white/10 text-[11px] font-mono font-bold text-teal-300">
                   {{ activeItem()?.type === 'video' ? '🎬 فيديو' : '🎵 صوت' }}
                 </span>
-                <div>
-                  <h2 class="text-sm font-bold text-white truncate max-w-md">{{ activeItem()?.name }}</h2>
+                <div class="min-w-0">
+                  @if (isEditingActiveTitle()) {
+                    <div class="flex items-center gap-1.5" (click)="$event.stopPropagation()">
+                      <input 
+                        type="text" 
+                        id="active-title-input"
+                        [(ngModel)]="activeTitleEditName" 
+                        (keydown.enter)="saveActiveTitleRename()" 
+                        (keydown.escape)="cancelActiveTitleRename()"
+                        class="bg-black/90 border border-teal-500 rounded-xl px-2.5 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-teal-400 font-bold min-w-[200px] sm:min-w-[300px]" />
+                      <button 
+                        (click)="saveActiveTitleRename()" 
+                        class="p-1.5 bg-teal-500/20 hover:bg-teal-500/40 text-teal-300 rounded-lg transition"
+                        title="حفظ الاسم (Enter)">
+                        <lucide-icon [img]="Check" class="size-3.5"></lucide-icon>
+                      </button>
+                      <button 
+                        (click)="cancelActiveTitleRename()" 
+                        class="p-1.5 bg-white/10 hover:bg-white/20 text-slate-400 hover:text-white rounded-lg transition"
+                        title="إلغاء (Esc)">
+                        <lucide-icon [img]="X" class="size-3.5"></lucide-icon>
+                      </button>
+                    </div>
+                  } @else {
+                    <div class="flex items-center gap-2 group/title">
+                      <h2 class="text-sm font-bold text-white truncate max-w-md cursor-pointer hover:text-teal-300 transition" [title]="(activeItem()?.name || '') + ' (انقر مرتين لتعديل الاسم)'" (dblclick)="startEditingActiveTitle()">{{ activeItem()?.name }}</h2>
+                      <button 
+                        (click)="startEditingActiveTitle()" 
+                        class="opacity-0 group-hover/title:opacity-100 p-1 text-slate-400 hover:text-teal-300 hover:bg-white/10 rounded-lg transition" 
+                        title="تعديل اسم الفيديو">
+                        <lucide-icon [img]="Pencil" class="size-3.5"></lucide-icon>
+                      </button>
+                    </div>
+                  }
                   <p *ngIf="activeItem()?.folderName" class="text-[10px] text-slate-400 truncate max-w-xs font-mono">📁 {{ activeItem()?.folderName }}</p>
                 </div>
               </div>
@@ -557,6 +589,7 @@ import { IndexedDBService } from '../../core/services/indexed-db.service';
               (cycleAutoplay)="cycleAutoplayMode()"
               (selectItem)="onPlaylistItemClick($event)"
               (removeItem)="removeItem($event)"
+              (renameItem)="onRenameItem($event)"
               (sortChange)="toggleSortOrder()"
               (addFolder)="onFolderSelected($event)"
               (addFiles)="onFilesSelected($event)">
@@ -1120,6 +1153,8 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   editingNote = signal<VideoNote | null>(null);
   noteFormText = signal<string>('');
   noteFormColor = signal<string | null>(null);
+  isEditingActiveTitle = signal<boolean>(false);
+  activeTitleEditName = '';
 
   activeItem = computed(() => {
     const id = this.activeItemId();
@@ -1926,6 +1961,7 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
   ScanText = ScanText;
   MoveHorizontal = MoveHorizontal;
   Zap = Zap;
+  Pencil = Pencil;
 
   // Filtered & Sorted playlist with smart multi-word search
   displayedPlaylist = computed(() => {
@@ -2558,6 +2594,99 @@ export class LocalPlayerComponent implements OnInit, OnDestroy {
     this.sortOrder.set(newOrder);
     const sorted = this.sortMediaItems([...this.playlist()], newOrder);
     this.playlist.set(sorted);
+  }
+
+  startEditingActiveTitle() {
+    const cur = this.activeItem();
+    if (!cur) return;
+    this.activeTitleEditName = cur.name;
+    this.isEditingActiveTitle.set(true);
+    setTimeout(() => {
+      const input = document.getElementById('active-title-input') as HTMLInputElement;
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    }, 50);
+  }
+
+  saveActiveTitleRename() {
+    const cur = this.activeItem();
+    if (!cur) {
+      this.isEditingActiveTitle.set(false);
+      return;
+    }
+    const newName = this.activeTitleEditName.trim();
+    if (newName && newName !== cur.name) {
+      this.onRenameItem({ id: cur.id, newName });
+    }
+    this.isEditingActiveTitle.set(false);
+  }
+
+  cancelActiveTitleRename() {
+    this.isEditingActiveTitle.set(false);
+  }
+
+  async onRenameItem(event: { id: string; newName: string }) {
+    const trimmed = event.newName.trim();
+    if (!trimmed) {
+      this.showToast('اسم الفيديو لا يمكن أن يكون فارغاً ⚠️', 'warning');
+      return;
+    }
+
+    const existing = this.playlist().find(i => i.id === event.id);
+    if (!existing || existing.name === trimmed) return;
+
+    // 1. Update playlist signal (which automatically updates activeItem computed signal)
+    this.playlist.update(list => list.map(i => i.id === event.id ? { ...i, name: trimmed } : i));
+
+    // 2. Update IndexedDB stored item in local_player_media
+    try {
+      const stored = await this.storageService.getMediaItem(event.id);
+      if (stored) {
+        stored.name = trimmed;
+        await this.storageService.saveMediaItem(stored);
+      }
+    } catch (err) {
+      console.warn('[LocalPlayer] Could not update stored item in IndexedDB:', err);
+    }
+
+    // 3. Update jump points history and persist to localStorage
+    this.jumpHistory.update(list => list.map(pt => pt.videoId === event.id ? { ...pt, videoName: trimmed } : pt));
+    this.saveJumpHistoryToStorage();
+
+    // 4. Update bookmarks if present
+    if (this.activeItem()?.id === event.id) {
+      this.bookmarks.update(list => list.map(bm => ({ ...bm, videoName: trimmed })));
+      this.saveBookmarksForVideo(event.id, this.bookmarks());
+    } else {
+      try {
+        const savedBm = localStorage.getItem('local_player_bm_' + event.id);
+        if (savedBm) {
+          const parsed = JSON.parse(savedBm);
+          if (Array.isArray(parsed)) {
+            const updated = parsed.map((bm: any) => ({ ...bm, videoName: trimmed }));
+            this.saveBookmarksForVideo(event.id, updated);
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 5. Update notes associated with this video in NotesService (IndexedDB)
+    try {
+      await this.notesService.updateVideoNameForNotes(event.id, trimmed);
+      await this.refreshNotesCounts();
+    } catch (err) {
+      console.warn('[LocalPlayer] Could not update notes video name:', err);
+    }
+
+    // 6. Update recycle bin if this video was ever referenced there
+    if (this.recycleBin().some(i => i.id === event.id)) {
+      this.recycleBin.update(list => list.map(i => i.id === event.id ? { ...i, name: trimmed } : i));
+      this.saveRecycleBinAndState();
+    }
+
+    this.showToast(`تم تعديل اسم الفيديو إلى: "${trimmed}" ✏️`, 'success');
   }
 
   onPlaylistItemClick(item: LocalMediaItem) {

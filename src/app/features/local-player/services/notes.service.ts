@@ -165,6 +165,14 @@ export class NotesService {
     }
   }
 
+  async updateVideoNameForNotes(videoId: string, newVideoName: string): Promise<void> {
+    const all = await this.storage.getAllItems(this.STORE_NAME);
+    const targetNotes = all.filter(n => n.videoId === videoId);
+    for (const note of targetNotes) {
+      await this.updateNote(note.id, { videoName: newVideoName });
+    }
+  }
+
   async migrateLegacyBookmarksIfNeeded(): Promise<void> {
     try {
       if (localStorage.getItem('local_player_notes_migration_done') === 'true') {
